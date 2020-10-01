@@ -1,4 +1,4 @@
-from main import hello
+from api_iso_antares.main import hello
 
 
 def test_hello():
