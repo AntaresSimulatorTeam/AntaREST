@@ -37,7 +37,7 @@ jobs:
       run: |
         export PYTHONPATH=$PYTHONPATH:$(pwd)
         pytest --cov=api_iso_antares tests/
-        coverage xml i
+        coverage xml -i
     - name: SonarCloud Scan
       if: matrix.python-version == 3.6 && matrix.os == 'ubuntu-latest'
       uses: sonarsource/sonarcloud-github-action@master
