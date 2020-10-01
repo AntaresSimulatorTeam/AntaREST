@@ -1,5 +1,5 @@
-def Hello():
-    return 'Hello, World'
+def Hello(name:str='Antares'):
+    return 'Hello, World %s' % name
 
 
 if __name__ == '__main__':
