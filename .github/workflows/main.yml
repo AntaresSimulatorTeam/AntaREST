@@ -35,8 +35,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest --cov=api_iso_antares tests/
-        coverage xml -i
+        pytest
     - name: SonarCloud Scan
       if: matrix.python-version == 3.6 && matrix.os == 'ubuntu-latest'
       uses: sonarsource/sonarcloud-github-action@master
