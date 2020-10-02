@@ -1,6 +1,6 @@
-from api_iso_antares.main import Hello
+from api_iso_antares.main import hello
 
 
 def test_hello():
 
-    assert "Hello, World Antares" == Hello()
+    assert "Hello, World Antares" == hello()

@@ -5,3 +5,7 @@ line-length = 79
 [tool.pytest.ini_options]
 addopts = "--cov=api_iso_antares --cov-report xml"
 testpaths = ["tests"]
+
+[mypy]
+strict = 1
+files = "./api_iso_antares/**/*.py"
