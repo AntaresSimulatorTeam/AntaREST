@@ -23,14 +23,13 @@ jobs:
       - name: Check with black
         uses: psf/black@stable
       - name: SonarCloud Scan
-          if: matrix.python-version == 3.6 && matrix.os == 'ubuntu-latest'
-          uses: sonarsource/sonarcloud-github-action@master
-          with:
-            name: coverage-report
-            path: coverage.xml
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        uses: sonarsource/sonarcloud-github-action@master
+        with:
+          name: coverage-report
+          path: coverage.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   test:
     runs-on: ${{ matrix.os }}
