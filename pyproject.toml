@@ -6,4 +6,3 @@ line-length = 79
 addopts = "--cov=api_iso_antares --cov-report xml"
 testpaths = ["tests"]
 
-[tool.coverage]
