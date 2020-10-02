@@ -1,1 +1,2 @@
+-r requirements.txt
 pytest-cov>=2.10.1,<3
