@@ -24,7 +24,7 @@ jobs:
         uses: psf/black@stable
       - name: Check Typing (mypy)
         run: |
-          mypy --config-file pyproject.toml
+          mypy
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@master
         with:
