@@ -4,8 +4,8 @@
 * Pylint linter
 * How to install ?
 * Github actions
-* Branching
-* Python typing
+* Branching gitflow
+* Python typing: check mypy
 * Documentation:
     * Docstring
     * Avoid comment in code
