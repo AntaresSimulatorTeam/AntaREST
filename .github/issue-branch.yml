@@ -1,0 +1,6 @@
+autoCloseIssue: true
+
+branches:
+  - label: '*'
+    name: dev
+
