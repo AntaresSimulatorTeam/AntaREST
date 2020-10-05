@@ -1,9 +1,4 @@
-"""
-Hello world
-"""
-
-
-def hello(name="Antares"):
+def hello(name: str = "Antares") -> str:
     """
 
     Args:
