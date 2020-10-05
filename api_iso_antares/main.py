@@ -1,6 +1,15 @@
-def Hello(name: str = "Antares"):
+def hello(name: str = "Antares") -> str:
+    """
+
+    Args:
+        name:
+
+    Returns:
+
+    """
     return "Hello, World %s" % name
 
 
 if __name__ == "__main__":
-    print(Hello())
+
+    print(hello())
