@@ -15,3 +15,6 @@ jobs:
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             autoCloseIssue: true
+          branches:
+            - label: '*'
+              name: dev
