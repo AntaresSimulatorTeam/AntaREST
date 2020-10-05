@@ -1,2 +1,3 @@
-# api-iso-antares
-API REST for Antares_Simulator
+# API REST for Antares Simulator
+
+![architecture api antares](./docs/images/archi-api-antares.png)
