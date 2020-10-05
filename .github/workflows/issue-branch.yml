@@ -6,6 +6,12 @@ on:
     issue_comment:
         types: [created]
 
+autoCloseIssue: true
+
+branches:
+  - label: '*'
+    name: dev
+
 jobs:
     create_issue_branch_job:
         runs-on: ubuntu-latest
@@ -14,8 +20,3 @@ jobs:
           uses: robvanderleek/create-issue-branch@master
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-            autoCloseIssue: true
-            branches:
-              - label: '*'
-                name: dev
