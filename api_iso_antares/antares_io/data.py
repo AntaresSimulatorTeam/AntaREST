@@ -3,7 +3,6 @@ from typing import Any, Dict
 
 
 def to_json_with_jsonschema(
-        config: ConfigParser,
-        jsonschema: Dict
+    config: ConfigParser, jsonschema: Dict
 ) -> Dict[str, Any]:
     pass
