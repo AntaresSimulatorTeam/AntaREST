@@ -45,8 +45,8 @@ jobs:
         run: |
           pytest
       - name: See what inside
-          run: |
-            ls -al
+        run: |
+          ls -al
       - name: SonarCloud Scan
         if: matrix.python-version == 3.6 && matrix.os == 'ubuntu-latest'
         uses: sonarsource/sonarcloud-github-action@master
