@@ -53,4 +53,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: See what inside 2
+        run: |
+          ls -al /home/runner/work/api-iso-antares/
+          ls -al /home/runner/work/api-iso-antares/api-iso-antares/
+          ls -al /home/runner/work/api-iso-antares/api-iso-antares/api_iso_antares
 
