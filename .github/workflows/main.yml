@@ -48,7 +48,6 @@ jobs:
         if: matrix.python-version == 3.6 && matrix.os == 'ubuntu-latest'
         run: |
           sed -i 's/\/home\/runner\/work\/api-iso-antares\/api-iso-antares/\/github\/workspace/g' coverage.xml
-          cat ./coverage.xml
       - name: SonarCloud Scan
         if: matrix.python-version == 3.6 && matrix.os == 'ubuntu-latest'
         uses: sonarsource/sonarcloud-github-action@master
