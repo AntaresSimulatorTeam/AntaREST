@@ -44,14 +44,15 @@ jobs:
       - name: Test with pytest
         run: |
           pytest
+      - name: See what inside
+          run: |
+            ls -al
       - name: SonarCloud Scan
         if: matrix.python-version == 3.6 && matrix.os == 'ubuntu-latest'
         uses: sonarsource/sonarcloud-github-action@master
         with:
           name: coverage-report
           path: coverage.xml
-        run: |
-          ls -al
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
