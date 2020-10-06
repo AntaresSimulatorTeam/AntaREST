@@ -46,6 +46,7 @@ jsonschema_litteral = """
 """
 
 
+@pytest.mark.unit_test
 def test_validate_json_ok() -> None:
     jsonschema = json.loads(jsonschema_litteral)
 
@@ -57,6 +58,7 @@ def test_validate_json_ok() -> None:
     validate(jsondata, jsonschema)
 
 
+@pytest.mark.unit_test
 def test_validate_json_wrong_key() -> None:
     jsonschema = json.loads(jsonschema_litteral)
 
@@ -69,6 +71,7 @@ def test_validate_json_wrong_key() -> None:
         validate(jsondata, jsonschema)
 
 
+@pytest.mark.unit_test
 def test_validate_json_wrong_type() -> None:
     jsonschema = json.loads(jsonschema_litteral)
 

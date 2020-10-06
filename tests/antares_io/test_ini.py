@@ -1,8 +1,11 @@
 from pathlib import Path
 
+import pytest
+
 from api_iso_antares.antares_io.ini import read_ini
 
 
+@pytest.mark.unit_test
 def test_read_ini(tmp_path: str) -> None:
     path = Path(tmp_path) / "test.ini"
 
