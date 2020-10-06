@@ -1,6 +1,8 @@
 import configparser
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Optional, Union
+
+from api_iso_antares.types import JSON, ELEMENT
 
 
 def parse_bool(value: str) -> Optional[bool]:
@@ -21,18 +23,18 @@ def parse_float(value: str) -> Optional[float]:
         return None
 
 
-def parse_value(value: str) -> Union[str, int, float, bool]:
+def parse_value(value: str) -> ELEMENT:
     parsed: Union[str, int, float, bool, None] = parse_bool(value)
     parsed = parsed if parsed is not None else parse_int(value)
     parsed = parsed if parsed is not None else parse_float(value)
     return parsed if parsed is not None else value
 
 
-def parse_json(json: configparser.SectionProxy) -> Dict[str, Any]:
+def parse_json(json: configparser.SectionProxy) -> JSON:
     return {key: parse_value(value) for key, value in json.items()}
 
 
-def read_ini(path: Path) -> Dict[str, Any]:
+def read_ini(path: Path) -> JSON:
     config = configparser.ConfigParser()
     config.read(path)
 
