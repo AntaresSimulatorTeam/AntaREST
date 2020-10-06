@@ -1,3 +1,3 @@
 from typing import Any, Dict
 
-from jsonschema import validate
+from jsonschema import validate  # type: ignore

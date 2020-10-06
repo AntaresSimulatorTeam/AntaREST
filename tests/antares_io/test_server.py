@@ -6,7 +6,7 @@ import api_iso_antares.antares_io.server as server
 
 
 class MockEngine:
-    def __init__(self):
+    def __init__(self) -> None:
         self.count = 0
         self.path = ""
 
@@ -16,8 +16,8 @@ class MockEngine:
         return {}
 
 
-def test_server(monkeypatch: MonkeyPatch):
-    mock = MockEngine()
+def test_server(monkeypatch: MonkeyPatch) -> None:
+    mock: MockEngine = MockEngine()
     monkeypatch.setattr(server, "engine", mock)
 
     app = server.application.test_client()

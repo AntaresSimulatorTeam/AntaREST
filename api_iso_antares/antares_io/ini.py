@@ -22,7 +22,7 @@ def parse_float(value: str) -> Optional[float]:
 
 
 def parse_value(value: str) -> Union[str, int, float, bool]:
-    parsed = parse_bool(value)
+    parsed: Union[str, int, float, bool, None] = parse_bool(value)
     parsed = parsed if parsed is not None else parse_int(value)
     parsed = parsed if parsed is not None else parse_float(value)
     return parsed if parsed is not None else value
@@ -36,4 +36,4 @@ def read_ini(path: Path) -> Dict[str, Any]:
     config = configparser.ConfigParser()
     config.read(path)
 
-    return {key: parse_json(config[key]) for key in config._sections}
+    return {key: parse_json(config[key]) for key in config if key != "DEFAULT"}

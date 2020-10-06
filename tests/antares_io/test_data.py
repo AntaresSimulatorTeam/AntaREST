@@ -1,7 +1,7 @@
 import pytest
 import json
 
-from jsonschema import ValidationError
+from jsonschema import ValidationError  # type: ignore
 
 from api_iso_antares.antares_io.data import validate
 
