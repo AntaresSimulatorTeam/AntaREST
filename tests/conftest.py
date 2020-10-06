@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
 
-from api_iso_antares.types import JSON
-
 project_dir: Path = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_dir))
+
+from api_iso_antares.types import JSON
 
 
 @pytest.fixture
