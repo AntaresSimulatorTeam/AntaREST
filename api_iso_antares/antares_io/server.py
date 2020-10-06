@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from flask import Flask, request
 
 from api_iso_antares.engine.url import UrlEngine
@@ -10,7 +12,7 @@ engine = UrlEngine()
 @application.route(
     "/api/<path:path>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"]
 )
-def home(path: str):
+def home(path: str) -> Dict[str, Any]:
     return engine.apply(path)
 
 
