@@ -43,7 +43,7 @@ jobs:
         pip install -r requirements-dev.txt
     - name: Test with pytest
       run: |
-        pytest --cov=api_iso_antares --cov-report xml
+        pytest --cov=api_iso_antares --cov-report=xml tests/
     - name: SonarCloud Scan
       if: matrix.python-version == 3.6 && matrix.os == 'ubuntu-latest'
       uses: sonarsource/sonarcloud-github-action@master
