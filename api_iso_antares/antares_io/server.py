@@ -6,28 +6,37 @@ from typing import Any
 from flask import Flask
 from jsonschema import validate
 
-from api_iso_antares.antares_io.ini import read_ini
+from antares_io.ini import IniReader
+from api_iso_antares.antares_io.data import SimulationReader
 from api_iso_antares.engine.url import UrlEngine
 
+
+class App:
+    def __init__(self, simulation_reader: SimulationReader, url_engine: UrlEngine):
+        self.simulation_reader = simulation_reader
+        self.url_engine = url_engine
+
+    def get(self, route: str) -> Any:
+        project_dir: Path = Path(__file__).resolve().parents[1]
+        path_to_ini = project_dir / "../tests/integration/study"
+        data = self.simulation_reader.read_simulation(path_to_ini)
+
+        print(os.getcwd())
+        jsonschema = json.load((project_dir / "jsonschema.json").open())
+
+        validate(data, jsonschema)
+
+        return self.url_engine.apply(route, jsonschema, data)
+
+
 application = Flask(__name__)
-
-project_dir: Path = Path(__file__).resolve().parents[1]
-path_to_ini = project_dir / "../tests/integration/generaldata.ini"
-data = read_ini(path_to_ini)
-
-print(os.getcwd())
-jsonschema = json.load(open("../../api_iso_antares/jsonschema.json"))
-
-validate(data, jsonschema)
-
-engine = UrlEngine(jsonschema, data)
-
+app = App(simulation_reader=SimulationReader(reader_ini=IniReader()), url_engine=UrlEngine())
 
 @application.route(
-    "/api/<path:path>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"]
+    "/api/simulations/<path:path>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"]
 )
 def home(path: str) -> Any:
-    output = engine.apply(path)
+    output = app.get(path)
     if output is None:
         return "", 404
     return json.dumps(output), 200

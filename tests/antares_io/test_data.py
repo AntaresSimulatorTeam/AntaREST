@@ -1,9 +1,13 @@
+from pathlib import Path
+from unittest.mock import Mock
+
 import pytest
 import json
 
 from jsonschema import ValidationError  # type: ignore
 
-from api_iso_antares.antares_io.data import validate
+from antares_io.ini import IniReader
+from api_iso_antares.antares_io.data import validate, SimulationReader
 
 jsonschema_litteral = """
 {
@@ -82,3 +86,24 @@ def test_validate_json_wrong_type() -> None:
 
     with pytest.raises(ValidationError):
         validate(jsondata, jsonschema)
+
+
+@pytest.mark.unit_test
+def test_read_simulation() -> None:
+    # Input
+    path = Path('my-simulation')
+
+    # Mock
+    ini_reader = IniReader()
+    ini_reader.read_ini = Mock(return_value={"section": {"parms": 123}})
+
+    # Expected
+    expected_data = {'settings': {'generaldata.ini': {"section": {"parms": 123}}}}
+
+    # Test
+    simulation_reader = SimulationReader(reader_ini=ini_reader)
+    res = simulation_reader.read_simulation(path)
+
+    # Verify
+    assert res == expected_data
+    ini_reader.read_ini.assert_called_once_with(path / 'settings/generaldata.ini')

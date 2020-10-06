@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from api_iso_antares.antares_io.ini import read_ini
+from api_iso_antares.antares_io.ini import IniReader
 
 
 @pytest.mark.unit_test
@@ -26,4 +26,5 @@ def test_read_ini(tmp_path: str) -> None:
         "part1": {"key_int": 1, "key_str": "value1", "key_float": 2.1},
         "part2": {"key_bool": True, "key_bool2": False},
     }
-    assert read_ini(path) == expected_json
+    reader = IniReader()
+    assert reader.read_ini(path) == expected_json
