@@ -5,7 +5,6 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
 import api_iso_antares.antares_io.server as server
-from antares_io.data import SimulationReader
 
 
 @pytest.mark.unit_test

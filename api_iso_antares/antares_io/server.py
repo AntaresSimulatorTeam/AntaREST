@@ -6,7 +6,7 @@ from typing import Any
 from flask import Flask
 from jsonschema import validate
 
-from antares_io.ini import IniReader
+from api_iso_antares.antares_io.ini import IniReader
 from api_iso_antares.antares_io.data import SimulationReader
 from api_iso_antares.engine.url import UrlEngine
 

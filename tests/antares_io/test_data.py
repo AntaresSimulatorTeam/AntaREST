@@ -6,7 +6,7 @@ import json
 
 from jsonschema import ValidationError  # type: ignore
 
-from antares_io.ini import IniReader
+from api_iso_antares.antares_io.ini import IniReader
 from api_iso_antares.antares_io.data import validate, SimulationReader
 
 jsonschema_litteral = """
