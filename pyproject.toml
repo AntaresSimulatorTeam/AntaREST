@@ -2,6 +2,7 @@
 target-version = ["py36"]
 line-length = 79
 
-[tool.pytest.ini_options]
+["tool:pytest"]
 addopts = "--cov=api_iso_antares --cov-report xml"
 testpaths = ["tests"]
+
