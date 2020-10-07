@@ -107,3 +107,49 @@ def test_read() -> None:
     # Verify
     assert res == expected_data
     ini_reader.read.assert_called_once_with(path / "settings/generaldata.ini")
+
+
+@pytest.mark.unit_test
+def test_read_folder(tmp_path: str) -> None:
+
+    """
+    study1
+    |
+    _ file1.ini
+    |_folder1
+        |_ file2.ini
+        |_ matrice1.txt
+        |_ folder2
+            |_ matrice2.txt
+    """
+
+    path = Path(tmp_path) / "study1"
+    path_study = Path(path)
+    path.mkdir()
+    (path / "file1.ini").touch()
+    path /= "folder1"
+    path.mkdir()
+    (path / "file2.ini").touch()
+    (path / "matrice1.txt").touch()
+    path /= "folder2"
+    path.mkdir()
+    (path / "matrice2.txt").touch()
+
+    file_content = {"section": {"parms": 123}}
+    ini_reader = Mock()
+    ini_reader.read.return_value = file_content
+
+    study_reader = StudyReader(reader_ini=file_content)
+
+    expected_json = {
+        "file1.ini": file_content,
+        "folder1": {
+            "file2.ini": file_content,
+            "matrice1.txt": "matrices/study1/folder1/matrice1.txt",
+            "folder2": {
+                "matrice2.txt": "matrices/study1/folder1/matrice2.txt",
+            },
+        },
+    }
+
+    assert study_reader.read(path_study) == expected_json
