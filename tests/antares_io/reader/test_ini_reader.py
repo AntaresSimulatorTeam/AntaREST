@@ -6,7 +6,7 @@ from api_iso_antares.antares_io.reader import IniReader
 
 
 @pytest.mark.unit_test
-def test_read_ini(tmp_path: str) -> None:
+def test_read(tmp_path: str) -> None:
     path = Path(tmp_path) / "test.ini"
 
     ini_content = """

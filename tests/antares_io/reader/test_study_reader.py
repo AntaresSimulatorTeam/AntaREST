@@ -87,7 +87,7 @@ def test_validate_json_wrong_type() -> None:
 
 
 @pytest.mark.unit_test
-def test_read_simulation() -> None:
+def test_read() -> None:
     # Input
     path = Path("my-simulation")
 

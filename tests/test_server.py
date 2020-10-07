@@ -4,32 +4,28 @@ from unittest.mock import Mock
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-import api_iso_antares.server as server
+from api_iso_antares.web.server import create_server
 
 
 @pytest.mark.unit_test
-def test_server(monkeypatch: MonkeyPatch) -> None:
-    path = Path("my-path")
+def test_server() -> None:
+    mock_handler = Mock()
+    mock_handler.get = Mock(return_value={})
 
-    mock_app = Mock()
-    mock_app.get = Mock(return_value={})
+    app = create_server(mock_handler)
+    client = app.test_client()
+    client.get("/api/studies/settings/general/params")
 
-    monkeypatch.setattr(server, "app", mock_app)
-
-    app = server.application.test_client()
-    app.get("/api/simulations/settings/general/params")
-
-    mock_app.get.assert_called_once_with("settings/general/params")
+    mock_handler.get.assert_called_once_with("settings/general/params")
 
 
 @pytest.mark.unit_test
-def test_404(monkeypatch: MonkeyPatch) -> None:
-    mock_app = Mock()
-    mock_app.get = Mock(return_value=None)
+def test_404() -> None:
+    mock_handler = Mock()
+    mock_handler.get.return_value = None
 
-    monkeypatch.setattr(server, "app", mock_app)
-
-    app = server.application.test_client()
-    result = app.get("/api/simulations/ettings/general/params")
+    app = create_server(mock_handler)
+    client = app.test_client()
+    result = client.get("/api/studies/settings/general/params")
 
     assert result.status_code == 404

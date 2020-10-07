@@ -1,25 +1,19 @@
-import json
+import sys
 from pathlib import Path
-from typing import Any
 
-from jsonschema import validate  # type: ignore
-
-from api_iso_antares.antares_io.reader import StudyReader
+from api_iso_antares.antares_io.reader import StudyReader, IniReader
 from api_iso_antares.engine import UrlEngine
+from api_iso_antares.web import RequestHandler
+from api_iso_antares.web.server import create_server
 
+if __name__ == "__main__":
+    project_dir: Path = Path(__file__).resolve().parents[2]
+    request_handler = RequestHandler(
+        study_reader=StudyReader(reader_ini=IniReader()),
+        url_engine=UrlEngine(),
+        path_to_schema=Path(sys.argv[1]),
+        path_to_study=Path(sys.argv[2]),
+    )
+    application = create_server(request_handler)
 
-class App:
-    def __init__(self, simulation_reader: StudyReader, url_engine: UrlEngine):
-        self.simulation_reader = simulation_reader
-        self.url_engine = url_engine
-
-    def get(self, route: str) -> Any:
-        project_dir: Path = Path(__file__).resolve().parents[0]
-        path_to_ini = project_dir / "../tests/integration/study"
-        data = self.simulation_reader.read(path_to_ini)
-
-        jsonschema = json.load((project_dir / "jsonschema.json").open())
-
-        validate(data, jsonschema)
-
-        return self.url_engine.apply(route, jsonschema, data)
+    application.run(debug=False, host="0.0.0.0", port=8080)
