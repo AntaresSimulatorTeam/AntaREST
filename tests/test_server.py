@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-import api_iso_antares.antares_io.server as server
+import api_iso_antares.server as server
 
 
 @pytest.mark.unit_test
