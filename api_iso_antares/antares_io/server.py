@@ -4,22 +4,22 @@ from pathlib import Path
 from typing import Any
 
 from flask import Flask
-from jsonschema import validate
+from jsonschema import validate  # type: ignore
 
 from api_iso_antares.antares_io.ini import IniReader
-from api_iso_antares.antares_io.data import SimulationReader
+from api_iso_antares.antares_io.data import StudyReader
 from api_iso_antares.engine.url import UrlEngine
 
 
 class App:
-    def __init__(self, simulation_reader: SimulationReader, url_engine: UrlEngine):
+    def __init__(self, simulation_reader: StudyReader, url_engine: UrlEngine):
         self.simulation_reader = simulation_reader
         self.url_engine = url_engine
 
     def get(self, route: str) -> Any:
         project_dir: Path = Path(__file__).resolve().parents[1]
         path_to_ini = project_dir / "../tests/integration/study"
-        data = self.simulation_reader.read_simulation(path_to_ini)
+        data = self.simulation_reader.read(path_to_ini)
 
         print(os.getcwd())
         jsonschema = json.load((project_dir / "jsonschema.json").open())
@@ -30,7 +30,7 @@ class App:
 
 
 application = Flask(__name__)
-app = App(simulation_reader=SimulationReader(reader_ini=IniReader()), url_engine=UrlEngine())
+app = App(simulation_reader=StudyReader(reader_ini=IniReader()), url_engine=UrlEngine())
 
 @application.route(
     "/api/simulations/<path:path>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"]

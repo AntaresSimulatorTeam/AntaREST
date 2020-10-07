@@ -4,10 +4,9 @@ from unittest.mock import Mock
 import pytest
 import json
 
-from jsonschema import ValidationError  # type: ignore
+from jsonschema import ValidationError, validate  # type: ignore
 
-from api_iso_antares.antares_io.ini import IniReader
-from api_iso_antares.antares_io.data import validate, SimulationReader
+from api_iso_antares.antares_io.data import  StudyReader
 
 jsonschema_litteral = """
 {
@@ -94,15 +93,15 @@ def test_read_simulation() -> None:
     path = Path('my-simulation')
 
     # Mock
-    ini_reader = IniReader()
+    ini_reader = Mock()
     ini_reader.read_ini = Mock(return_value={"section": {"parms": 123}})
 
     # Expected
     expected_data = {'settings': {'generaldata.ini': {"section": {"parms": 123}}}}
 
     # Test
-    simulation_reader = SimulationReader(reader_ini=ini_reader)
-    res = simulation_reader.read_simulation(path)
+    simulation_reader = StudyReader(reader_ini=ini_reader)
+    res = simulation_reader.read(path)
 
     # Verify
     assert res == expected_data
