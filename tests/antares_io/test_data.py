@@ -1,12 +1,11 @@
+import json
 from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-import json
-
 from jsonschema import ValidationError, validate  # type: ignore
 
-from api_iso_antares.antares_io.reader.study_reader import StudyReader
+from api_iso_antares.antares_io.reader import StudyReader
 
 jsonschema_litteral = """
 {

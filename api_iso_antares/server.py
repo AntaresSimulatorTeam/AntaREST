@@ -3,9 +3,8 @@ from typing import Any
 
 from flask import Flask
 
-from api_iso_antares.antares_io.reader.ini_reader import IniReader
-from api_iso_antares.antares_io.reader.study_reader import StudyReader
-from api_iso_antares.engine.url_engine import UrlEngine
+from api_iso_antares.antares_io.reader import IniReader, StudyReader
+from api_iso_antares.engine import UrlEngine
 from api_iso_antares.main import App
 
 application = Flask(__name__)

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from api_iso_antares.antares_io.reader.ini_reader import IniReader
+from api_iso_antares.antares_io.reader import IniReader
 
 
 @pytest.mark.unit_test

@@ -4,8 +4,8 @@ from typing import Any
 
 from jsonschema import validate  # type: ignore
 
-from api_iso_antares.antares_io.reader.study_reader import StudyReader
-from api_iso_antares.engine.url_engine import UrlEngine
+from api_iso_antares.antares_io.reader import StudyReader
+from api_iso_antares.engine import UrlEngine
 
 
 class App:
