@@ -11,40 +11,37 @@ class StudyReader:
         self._reader_ini = reader_ini
 
     def read(self, study_path: Path) -> JSON:
-
-        # study: JSON = dict()
-        # study["settings"] = {}
-        # study["settings"]["generaldata.ini"] = self._reader_ini.read(
-        #     path / "settings/generaldata.ini"
-        # )
-        # print("JSON DATA", study)
-        # return study
-
         study: JSON = dict()
+        sub_study: JSON = None
+        previous_parts = []
 
         for path in glob(f"{study_path}/**", recursive=True)[1:]:
 
-            print(path)
             relative_path = path.replace(str(study_path) + "/", "")
             relative_path = Path(relative_path)
+            parts = relative_path.parts[:-1]
 
-            sub_study: JSON
             if relative_path.suffix:
-                sub_study = StudyReader._handle_file()
-            else:
-                sub_study = StudyReader._handle_folder(relative_path.parts)
-            study.update(sub_study)
+                if previous_parts != parts:
+                    sub_study = StudyReader._handle_folder(parts, study)
+                sub_study[relative_path.name] = StudyReader._handle_file(path)
+                previous_parts = parts
 
         return study
 
     @staticmethod
-    def _handle_file() -> JSON:
-        return {}
+    def _handle_file(path: str) -> JSON:
+        path = Path(path)
+        ext = path.suffix
+        if ext == '.ini':
+            pass # TODO read ini
+        elif ext == '.txt':
+            pass # TODO get url
 
     @staticmethod
-    def _handle_folder(parts: Tuple[str]) -> JSON:
-        sub_study: JSON = dict()
+    def _handle_folder(parts: Tuple[str], study: JSON) -> JSON:
         for part in parts:
-            sub_study[part] = {}
-            sub_study = sub_study[part]
-        return sub_study
+            if part not in study:
+                study[part] = {}
+            study = study[part]
+        return study

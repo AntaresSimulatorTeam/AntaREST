@@ -121,6 +121,8 @@ def test_read_folder(tmp_path: str) -> None:
         |_ matrice1.txt
         |_ folder2
             |_ matrice2.txt
+    |_folder3
+        |_ file3.ini
     """
 
     path = Path(tmp_path) / "study1"
@@ -134,6 +136,9 @@ def test_read_folder(tmp_path: str) -> None:
     path /= "folder2"
     path.mkdir()
     (path / "matrice2.txt").touch()
+    path = Path(path_study) / "folder3"
+    path.mkdir()
+    (path / "file3.ini").touch()
 
     file_content = {"section": {"parms": 123}}
     ini_reader = Mock()
@@ -150,6 +155,41 @@ def test_read_folder(tmp_path: str) -> None:
                 "matrice2.txt": "matrices/study1/folder1/matrice2.txt",
             },
         },
+        "folder3": {
+            "file3.ini": file_content
+        }
     }
 
-    assert study_reader.read(path_study) == expected_json
+    res = study_reader.read(path_study)
+    assert res == expected_json
+
+
+@pytest.mark.unit_test
+def test_handle_folder_direct_depth():
+    # Input
+    parts = ('folder1', 'folder2')
+    study = {'folder1': {}}
+
+    # Expected
+    exp = {'folder1': {'folder2': {}}}
+
+    # Test & verify
+    sub = StudyReader._handle_folder(parts, study)
+    assert study == exp
+    assert sub == {}
+
+
+@pytest.mark.unit_test
+def test_handle_folder_side_depth():
+    # Input
+    parts = ('folder3', )
+    study = {'folder1': {'folder2': {}}}
+
+    # Expected
+    exp = {'folder1': {'folder2': {}}, 'folder3': {}}
+
+    # Test & verify
+    sub = StudyReader._handle_folder(parts, study)
+    assert study == exp
+    assert sub == {}
+
