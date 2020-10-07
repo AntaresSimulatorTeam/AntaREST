@@ -6,7 +6,7 @@ import json
 
 from jsonschema import ValidationError, validate  # type: ignore
 
-from api_iso_antares.antares_io.data import  StudyReader
+from api_iso_antares.antares_io.reader.study_reader import StudyReader
 
 jsonschema_litteral = """
 {
@@ -90,14 +90,16 @@ def test_validate_json_wrong_type() -> None:
 @pytest.mark.unit_test
 def test_read_simulation() -> None:
     # Input
-    path = Path('my-simulation')
+    path = Path("my-simulation")
 
     # Mock
     ini_reader = Mock()
-    ini_reader.read_ini = Mock(return_value={"section": {"parms": 123}})
+    ini_reader.read = Mock(return_value={"section": {"parms": 123}})
 
     # Expected
-    expected_data = {'settings': {'generaldata.ini': {"section": {"parms": 123}}}}
+    expected_data = {
+        "settings": {"generaldata.ini": {"section": {"parms": 123}}}
+    }
 
     # Test
     simulation_reader = StudyReader(reader_ini=ini_reader)
@@ -105,4 +107,4 @@ def test_read_simulation() -> None:
 
     # Verify
     assert res == expected_data
-    ini_reader.read_ini.assert_called_once_with(path / 'settings/generaldata.ini')
+    ini_reader.read.assert_called_once_with(path / "settings/generaldata.ini")

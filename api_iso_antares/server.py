@@ -3,18 +3,21 @@ from typing import Any
 
 from flask import Flask
 
-from api_iso_antares.antares_io.data import StudyReader
-from api_iso_antares.antares_io.ini import IniReader
-from api_iso_antares.engine.url import UrlEngine
+from api_iso_antares.antares_io.reader.ini_reader import IniReader
+from api_iso_antares.antares_io.reader.study_reader import StudyReader
+from api_iso_antares.engine.url_engine import UrlEngine
+from api_iso_antares.main import App
 
 application = Flask(__name__)
-app = App(simulation_reader=StudyReader(reader_ini=IniReader()),
-          url_engine=UrlEngine())
+app = App(
+    simulation_reader=StudyReader(reader_ini=IniReader()),
+    url_engine=UrlEngine(),
+)
 
 
 @application.route(
     "/api/simulations/<path:path>",
-    methods=["GET", "POST", "PUT", "PATCH", "DELETE"]
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
 )
 def home(path: str) -> Any:
     output = app.get(path)

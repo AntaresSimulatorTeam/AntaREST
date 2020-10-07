@@ -2,10 +2,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from jsonschema import validate
+from jsonschema import validate  # type: ignore
 
-from api_iso_antares.antares_io.data import StudyReader
-from api_iso_antares.engine.url import UrlEngine
+from api_iso_antares.antares_io.reader.study_reader import StudyReader
+from api_iso_antares.engine.url_engine import UrlEngine
 
 
 class App:
@@ -23,4 +23,3 @@ class App:
         validate(data, jsonschema)
 
         return self.url_engine.apply(route, jsonschema, data)
-

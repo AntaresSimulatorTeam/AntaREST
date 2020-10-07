@@ -9,7 +9,7 @@ import api_iso_antares.server as server
 
 @pytest.mark.unit_test
 def test_server(monkeypatch: MonkeyPatch) -> None:
-    path = Path('my-path')
+    path = Path("my-path")
 
     mock_app = Mock()
     mock_app.get = Mock(return_value={})
