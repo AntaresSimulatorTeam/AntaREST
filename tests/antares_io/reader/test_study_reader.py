@@ -1,9 +1,11 @@
-import pytest
 import json
+from pathlib import Path
+from unittest.mock import Mock
 
-from jsonschema import ValidationError  # type: ignore
+import pytest
+from jsonschema import ValidationError, validate  # type: ignore
 
-from api_iso_antares.antares_io.data import validate
+from api_iso_antares.antares_io.reader import StudyReader
 
 jsonschema_litteral = """
 {
@@ -46,6 +48,7 @@ jsonschema_litteral = """
 """
 
 
+@pytest.mark.unit_test
 def test_validate_json_ok() -> None:
     jsonschema = json.loads(jsonschema_litteral)
 
@@ -57,6 +60,7 @@ def test_validate_json_ok() -> None:
     validate(jsondata, jsonschema)
 
 
+@pytest.mark.unit_test
 def test_validate_json_wrong_key() -> None:
     jsonschema = json.loads(jsonschema_litteral)
 
@@ -69,6 +73,7 @@ def test_validate_json_wrong_key() -> None:
         validate(jsondata, jsonschema)
 
 
+@pytest.mark.unit_test
 def test_validate_json_wrong_type() -> None:
     jsonschema = json.loads(jsonschema_litteral)
 
@@ -79,3 +84,26 @@ def test_validate_json_wrong_type() -> None:
 
     with pytest.raises(ValidationError):
         validate(jsondata, jsonschema)
+
+
+@pytest.mark.unit_test
+def test_read() -> None:
+    # Input
+    path = Path("my-simulation")
+
+    # Mock
+    ini_reader = Mock()
+    ini_reader.read = Mock(return_value={"section": {"parms": 123}})
+
+    # Expected
+    expected_data = {
+        "settings": {"generaldata.ini": {"section": {"parms": 123}}}
+    }
+
+    # Test
+    simulation_reader = StudyReader(reader_ini=ini_reader)
+    res = simulation_reader.read(path)
+
+    # Verify
+    assert res == expected_data
+    ini_reader.read.assert_called_once_with(path / "settings/generaldata.ini")
