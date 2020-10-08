@@ -157,9 +157,7 @@ def test_read_folder(tmp_path: str) -> None:
                 "matrice2.txt": "matrices/study1/folder1/folder2/matrice2.txt",
             },
         },
-        "folder3": {
-            "file3.ini": file_content
-        }
+        "folder3": {"file3.ini": file_content},
     }
 
     res = study_reader.read(path_study)
@@ -169,11 +167,11 @@ def test_read_folder(tmp_path: str) -> None:
 @pytest.mark.unit_test
 def test_handle_folder_direct_depth() -> None:
     # Input
-    parts: Tuple[str, ...] = ('folder1', 'folder2')
-    study: JSON = {'folder1': {}}
+    parts: Tuple[str, ...] = ("folder1", "folder2")
+    study: JSON = {"folder1": {}}
 
     # Expected
-    exp: JSON = {'folder1': {'folder2': {}}}
+    exp: JSON = {"folder1": {"folder2": {}}}
 
     # Test & verify
     sub = StudyReader._handle_folder(parts, study)
@@ -184,14 +182,13 @@ def test_handle_folder_direct_depth() -> None:
 @pytest.mark.unit_test
 def test_handle_folder_side_depth() -> None:
     # Input
-    parts = ('folder3', )
-    study: JSON = {'folder1': {'folder2': {}}}
+    parts = ("folder3",)
+    study: JSON = {"folder1": {"folder2": {}}}
 
     # Expected
-    exp = {'folder1': {'folder2': {}}, 'folder3': {}}
+    exp = {"folder1": {"folder2": {}}, "folder3": {}}
 
     # Test & verify
     sub = StudyReader._handle_folder(parts, study)
     assert study == exp
     assert sub == {}
-

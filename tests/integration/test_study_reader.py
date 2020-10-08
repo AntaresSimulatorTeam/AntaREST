@@ -54,9 +54,7 @@ def test_read_folder(tmp_path: str) -> None:
                 "matrice2.txt": "matrices/study1/folder1/folder2/matrice2.txt",
             },
         },
-        "folder3": {
-            "file3.ini": ini_content
-        }
+        "folder3": {"file3.ini": ini_content},
     }
 
     res = study_reader.read(path_study)

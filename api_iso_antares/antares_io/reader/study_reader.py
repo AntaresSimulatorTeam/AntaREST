@@ -24,7 +24,9 @@ class StudyReader:
             if relative_path.suffix:
                 if previous_parts != parts:
                     sub_study = StudyReader._handle_folder(parts, study)
-                sub_study[relative_path.name] = self._handle_file(path, study_path)
+                sub_study[relative_path.name] = self._handle_file(
+                    path, study_path
+                )
                 previous_parts = parts
 
         return study
@@ -32,9 +34,9 @@ class StudyReader:
     def _handle_file(self, path: str, study_path: Path) -> SUB_JSON:
         path_file = Path(path)
         ext = path_file.suffix
-        if ext == '.ini':
+        if ext == ".ini":
             return self._reader_ini.read(path_file)
-        elif ext == '.txt':
+        elif ext == ".txt":
             study_path_parent = str(study_path.parent) + "/"
             relative_path = path.replace(study_path_parent, "")
             return f"matrices/{relative_path}"
