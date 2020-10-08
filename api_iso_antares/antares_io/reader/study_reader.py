@@ -5,13 +5,15 @@ from typing import Tuple, List
 
 from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.custom_types import JSON, SUB_JSON
+from jsonschema import validate
 
 
 class StudyReader:
-    def __init__(self, reader_ini: IniReader):
+    def __init__(self, reader_ini: IniReader, jsonschema: JSON):
         self._reader_ini = reader_ini
+        self.jsonschema = jsonschema
 
-    def read(self, study_path: Path) -> JSON:
+    def read(self, study_path: Path, do_validate=True) -> JSON:
         study: JSON = dict()
         sub_study: JSON = study
         previous_parts: Tuple[str, ...] = tuple()
@@ -29,6 +31,9 @@ class StudyReader:
                     path, study_path
                 )
                 previous_parts = parts
+
+        if do_validate:
+            self.validate(study)
 
         return study
 
@@ -50,3 +55,8 @@ class StudyReader:
                 study[part] = {}
             study = study[part]
         return study
+
+    def validate(self, study_json: JSON):
+        if (not self.jsonschema) and study_json:
+            raise ValueError("Jsonschema is empty.")
+        validate(study_json, self.jsonschema)

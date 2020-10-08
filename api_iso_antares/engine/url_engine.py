@@ -4,7 +4,10 @@ from api_iso_antares.custom_types import JSON, SUB_JSON
 
 
 class UrlEngine:
-    def apply(self, path: str, jsonschema: JSON, json_data: JSON) -> SUB_JSON:
+    def __init__(self, jsonschema: JSON) -> None:
+        self.jsonschema = jsonschema
+
+    def apply(self, path: str, json_data: JSON) -> SUB_JSON:
         fragments = path.split("/")
         return self._apply(fragments, json_data)
 
