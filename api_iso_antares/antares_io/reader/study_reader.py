@@ -1,3 +1,4 @@
+import os
 from glob import glob
 from pathlib import Path
 from typing import Tuple, List
@@ -17,7 +18,7 @@ class StudyReader:
 
         for path in glob(f"{study_path}/**", recursive=True)[1:]:
 
-            relative_path_str = path.replace(str(study_path) + "/", "")
+            relative_path_str = path.replace(str(study_path) + os.sep, "")
             relative_path = Path(relative_path_str)
             parts = relative_path.parts[:-1]
 
@@ -37,7 +38,7 @@ class StudyReader:
         if ext == ".ini":
             return self._reader_ini.read(path_file)
         elif ext == ".txt":
-            study_path_parent = str(study_path.parent) + "/"
+            study_path_parent = str(study_path.parent) + os.sep
             relative_path = path.replace(study_path_parent, "")
             return f"matrices/{relative_path}"
         return path

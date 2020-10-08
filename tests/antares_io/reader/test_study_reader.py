@@ -129,9 +129,11 @@ def test_read_folder(tmp_path: str) -> None:
         "file1.ini": file_content,
         "folder1": {
             "file2.ini": file_content,
-            "matrice1.txt": "matrices/study1/folder1/matrice1.txt",
+            "matrice1.txt": str(Path("matrices/study1/folder1/matrice1.txt")),
             "folder2": {
-                "matrice2.txt": "matrices/study1/folder1/folder2/matrice2.txt",
+                "matrice2.txt": str(
+                    Path("matrices/study1/folder1/folder2/matrice2.txt")
+                ),
             },
         },
         "folder3": {"file3.ini": file_content},
