@@ -1,8 +1,6 @@
-from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 
 from api_iso_antares.web.server import create_server
 
@@ -27,5 +25,7 @@ def test_404() -> None:
     app = create_server(mock_handler)
     client = app.test_client()
     result = client.get("/api/studies/settings/general/params")
+    assert result.status_code == 404
 
+    result = client.get("/api/studies/WRONG_STUDY")
     assert result.status_code == 404

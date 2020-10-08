@@ -14,9 +14,12 @@ def create_routes(application: Flask) -> None:
     )
     def studies(path: str) -> Any:
         global request_handler
-        output = request_handler.get(path)
-        if output is None:
-            return "", 404
+        try:
+            output = request_handler.get(path)
+            if output is None:  # TODO: raise exceptions instead of none
+                raise NotImplementedError
+        except Exception as e:
+            return str(e), 404
         return jsonify(output), 200
 
 
