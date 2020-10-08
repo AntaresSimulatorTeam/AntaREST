@@ -89,29 +89,6 @@ def test_validate_json_wrong_type() -> None:
 
 
 @pytest.mark.unit_test
-def test_read() -> None:
-    # Input
-    path = Path("my-simulation")
-
-    # Mock
-    ini_reader = Mock()
-    ini_reader.read = Mock(return_value={"section": {"parms": 123}})
-
-    # Expected
-    expected_data = {
-        "settings": {"generaldata.ini": {"section": {"parms": 123}}}
-    }
-
-    # Test
-    simulation_reader = StudyReader(reader_ini=ini_reader)
-    res = simulation_reader.read(path)
-
-    # Verify
-    assert res == expected_data
-    ini_reader.read.assert_called_once_with(path / "settings/generaldata.ini")
-
-
-@pytest.mark.unit_test
 def test_read_folder(tmp_path: str) -> None:
 
     """
@@ -162,6 +139,7 @@ def test_read_folder(tmp_path: str) -> None:
 
     res = study_reader.read(path_study)
     assert res == expected_json
+    assert ini_reader.read.call_count == 3
 
 
 @pytest.mark.unit_test
