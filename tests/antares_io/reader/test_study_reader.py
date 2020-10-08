@@ -1,11 +1,13 @@
 import json
 from pathlib import Path
+from typing import Tuple
 from unittest.mock import Mock
 
 import pytest
 from jsonschema import ValidationError, validate  # type: ignore
 
 from api_iso_antares.antares_io.reader import StudyReader
+from api_iso_antares.custom_types import JSON
 
 jsonschema_litteral = """
 {
@@ -144,7 +146,7 @@ def test_read_folder(tmp_path: str) -> None:
     ini_reader = Mock()
     ini_reader.read.return_value = file_content
 
-    study_reader = StudyReader(reader_ini=file_content)
+    study_reader = StudyReader(reader_ini=ini_reader)
 
     expected_json = {
         "file1.ini": file_content,
@@ -152,7 +154,7 @@ def test_read_folder(tmp_path: str) -> None:
             "file2.ini": file_content,
             "matrice1.txt": "matrices/study1/folder1/matrice1.txt",
             "folder2": {
-                "matrice2.txt": "matrices/study1/folder1/matrice2.txt",
+                "matrice2.txt": "matrices/study1/folder1/folder2/matrice2.txt",
             },
         },
         "folder3": {
@@ -165,13 +167,13 @@ def test_read_folder(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
-def test_handle_folder_direct_depth():
+def test_handle_folder_direct_depth() -> None:
     # Input
-    parts = ('folder1', 'folder2')
-    study = {'folder1': {}}
+    parts: Tuple[str, ...] = ('folder1', 'folder2')
+    study: JSON = {'folder1': {}}
 
     # Expected
-    exp = {'folder1': {'folder2': {}}}
+    exp: JSON = {'folder1': {'folder2': {}}}
 
     # Test & verify
     sub = StudyReader._handle_folder(parts, study)
@@ -180,10 +182,10 @@ def test_handle_folder_direct_depth():
 
 
 @pytest.mark.unit_test
-def test_handle_folder_side_depth():
+def test_handle_folder_side_depth() -> None:
     # Input
     parts = ('folder3', )
-    study = {'folder1': {'folder2': {}}}
+    study: JSON = {'folder1': {'folder2': {}}}
 
     # Expected
     exp = {'folder1': {'folder2': {}}, 'folder3': {}}
