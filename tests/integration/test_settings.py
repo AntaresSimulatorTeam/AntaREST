@@ -27,6 +27,8 @@ def test_request(tmp_path: str) -> None:
 
     app = create_server(request_handler)
     client = app.test_client()
-    res = client.get("/api/studies/study/settings/generaldata.ini/general/nbyears")
+    res = client.get(
+        "/api/studies/study/settings/generaldata.ini/general/nbyears"
+    )
 
     assert json.loads(res.data) == 2

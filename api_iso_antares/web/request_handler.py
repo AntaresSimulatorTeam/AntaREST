@@ -32,10 +32,10 @@ class RequestHandler:
         self.study_reader.validate(data)
 
         route_cut = path_route.relative_to(Path(study_name))
-        return self.url_engine.apply(str(route_cut), data)
+        return self.url_engine.apply(route_cut, data)
 
     def _assert_study_exist(self, study_name: str) -> None:
-        dirs_files = self.path_to_studies.glob(pattern='*')
+        dirs_files = self.path_to_studies.glob(pattern="*")
         dirs = [str(folder.name) for folder in dirs_files if folder.is_dir()]
         if study_name not in dirs:
             raise StudyNotFoundError(f"{study_name} not found")

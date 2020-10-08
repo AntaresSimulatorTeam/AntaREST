@@ -1,4 +1,5 @@
-from typing import List
+from pathlib import Path
+from typing import List, Tuple
 
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.custom_types import JSON, SUB_JSON
@@ -13,12 +14,12 @@ class UrlEngine:
     def __init__(self, jsonschema: JSON) -> None:
         self.jsonschema = jsonschema
 
-    def apply(self, path: str, json_data: JSON) -> SUB_JSON:
-        fragments = path.split("/")
+    def apply(self, path: Path, json_data: JSON) -> SUB_JSON:
+        fragments = path.parts
         return self._apply_recursive(fragments, json_data)
 
     @staticmethod
-    def _apply_recursive(path: List[str], json_data: JSON) -> SUB_JSON:
+    def _apply_recursive(path: Tuple[str, ...], json_data: JSON) -> SUB_JSON:
         if not path:
             return json_data
 

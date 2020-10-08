@@ -38,9 +38,11 @@ def test_get(tmp_path: str) -> None:
 
     assert output == expected_data
 
-    study_reader_mock.read.assert_called_once_with(path_to_studies / "study2.py")
+    study_reader_mock.read.assert_called_once_with(
+        path_to_studies / "study2.py"
+    )
     study_reader_mock.validate.assert_called_once_with(data)
-    url_engine_mock.apply.assert_called_once_with(sub_route, data)
+    url_engine_mock.apply.assert_called_once_with(Path(sub_route), data)
 
 
 @pytest.mark.unit_test
@@ -54,11 +56,13 @@ def test_assert_study_exist(tmp_path: str) -> None:
     (path_study2 / "settings").mkdir()
 
     # Input
-    study_name = 'study2.py'
+    study_name = "study2.py"
     path_to_studies = Path(tmp_path)
 
     # Test & Verify
-    request_handler = RequestHandler(study_reader=Mock(), url_engine=Mock(), path_to_studies=path_to_studies)
+    request_handler = RequestHandler(
+        study_reader=Mock(), url_engine=Mock(), path_to_studies=path_to_studies
+    )
     request_handler._assert_study_exist(study_name)
 
 
@@ -73,11 +77,12 @@ def test_assert_study_not_exist(tmp_path: str) -> None:
     (path_study2 / "settings").mkdir()
 
     # Input
-    study_name = 'study3'
+    study_name = "study3"
     path_to_studies = Path(tmp_path)
 
     # Test & Verify
-    request_handler = RequestHandler(study_reader=Mock(), url_engine=Mock(), path_to_studies=path_to_studies)
+    request_handler = RequestHandler(
+        study_reader=Mock(), url_engine=Mock(), path_to_studies=path_to_studies
+    )
     with pytest.raises(StudyNotFoundError):
         request_handler._assert_study_exist(study_name)
-
