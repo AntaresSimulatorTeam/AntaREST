@@ -22,11 +22,11 @@ def test_request(tmp_path: str) -> None:
             reader_ini=IniReader(), jsonschema=jsonschema
         ),
         url_engine=UrlEngine(jsonschema={}),
-        path_to_study=project_dir / "tests/integration/study",
+        path_to_studies=project_dir / "tests/integration",
     )
 
     app = create_server(request_handler)
     client = app.test_client()
-    res = client.get("/api/studies/settings/generaldata.ini/general/nbyears")
+    res = client.get("/api/studies/study/settings/generaldata.ini/general/nbyears")
 
     assert json.loads(res.data) == 2

@@ -314,7 +314,7 @@ def test_validate() -> None:
         },
     }
 
-    folder_reader = FolderReader(reader_ini=None, jsonschema=jsonschema)
+    folder_reader = FolderReader(reader_ini=Mock(), jsonschema=jsonschema)
 
     try:
         folder_reader.validate(folder_json)

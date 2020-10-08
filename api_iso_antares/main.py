@@ -11,7 +11,7 @@ if __name__ == "__main__":
     request_handler = RequestHandler(
         study_reader=FolderReader(reader_ini=IniReader(), jsonschema={}),
         url_engine=UrlEngine(jsonschema={}),
-        path_to_study=Path(sys.argv[2]),
+        path_to_studies=Path(sys.argv[2]),
     )
     application = create_server(request_handler)
 
