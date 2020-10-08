@@ -40,7 +40,7 @@ class StudyReader:
         elif ext == ".txt":
             study_path_parent = str(study_path.parent) + os.sep
             relative_path = path.replace(study_path_parent, "")
-            return f"matrices/{relative_path}"
+            return f"matrices{os.sep}{relative_path}"
         return path
 
     @staticmethod
