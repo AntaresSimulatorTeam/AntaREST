@@ -9,9 +9,8 @@ from api_iso_antares.web.server import create_server
 if __name__ == "__main__":
     project_dir: Path = Path(__file__).resolve().parents[2]
     request_handler = RequestHandler(
-        study_reader=StudyReader(reader_ini=IniReader()),
-        url_engine=UrlEngine(),
-        path_to_schema=Path(sys.argv[1]),
+        study_reader=StudyReader(reader_ini=IniReader(), jsonschema={}),
+        url_engine=UrlEngine(jsonschema={}),
         path_to_study=Path(sys.argv[2]),
     )
     application = create_server(request_handler)

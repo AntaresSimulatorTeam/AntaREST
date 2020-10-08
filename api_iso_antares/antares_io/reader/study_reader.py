@@ -13,7 +13,7 @@ class StudyReader:
         self._reader_ini = reader_ini
         self.jsonschema = jsonschema
 
-    def read(self, study_path: Path, do_validate=True) -> JSON:
+    def read(self, study_path: Path, do_validate: bool = True) -> JSON:
         study: JSON = dict()
         sub_study: JSON = study
         previous_parts: Tuple[str, ...] = tuple()
@@ -56,7 +56,7 @@ class StudyReader:
             study = study[part]
         return study
 
-    def validate(self, study_json: JSON):
+    def validate(self, study_json: JSON) -> None:
         if (not self.jsonschema) and study_json:
             raise ValueError("Jsonschema is empty.")
         validate(study_json, self.jsonschema)
