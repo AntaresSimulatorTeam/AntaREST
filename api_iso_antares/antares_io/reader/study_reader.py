@@ -12,7 +12,7 @@ class StudyReader:
 
     def read(self, study_path: Path) -> JSON:
         study: JSON = dict()
-        sub_study: JSON = dict()
+        sub_study: JSON = study
         previous_parts: Tuple[str, ...] = tuple()
 
         for path in glob(f"{study_path}/**", recursive=True)[1:]:
