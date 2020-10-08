@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import pytest
 from jsonschema import ValidationError, validate  # type: ignore
 
-from api_iso_antares.antares_io.reader import StudyReader
+from api_iso_antares.antares_io.reader import FolderReader
 from api_iso_antares.custom_types import JSON
 
 jsonschema_litteral = """
@@ -92,7 +92,7 @@ def test_validate_json_wrong_type() -> None:
 def test_read_folder(tmp_path: str) -> None:
 
     """
-    study1
+    root1
     |
     _ file1.ini
     |_folder1
@@ -104,8 +104,8 @@ def test_read_folder(tmp_path: str) -> None:
         |_ file3.ini
     """
 
-    path = Path(tmp_path) / "study1"
-    path_study = Path(path)
+    path = Path(tmp_path) / "root1"
+    path_folder = Path(path)
     path.mkdir()
     (path / "file1.ini").touch()
     path /= "folder1"
@@ -115,7 +115,7 @@ def test_read_folder(tmp_path: str) -> None:
     path /= "folder2"
     path.mkdir()
     (path / "matrice2.txt").touch()
-    path = Path(path_study) / "folder3"
+    path = Path(path_folder) / "folder3"
     path.mkdir()
     (path / "file3.ini").touch()
 
@@ -123,23 +123,23 @@ def test_read_folder(tmp_path: str) -> None:
     ini_reader = Mock()
     ini_reader.read.return_value = file_content
 
-    study_reader = StudyReader(reader_ini=ini_reader, jsonschema={})
+    folder_reader = FolderReader(reader_ini=ini_reader, jsonschema={})
 
     expected_json = {
         "file1.ini": file_content,
         "folder1": {
             "file2.ini": file_content,
-            "matrice1.txt": str(Path("matrices/study1/folder1/matrice1.txt")),
+            "matrice1.txt": str(Path("matrices/root1/folder1/matrice1.txt")),
             "folder2": {
                 "matrice2.txt": str(
-                    Path("matrices/study1/folder1/folder2/matrice2.txt")
+                    Path("matrices/root1/folder1/folder2/matrice2.txt")
                 ),
             },
         },
         "folder3": {"file3.ini": file_content},
     }
 
-    res = study_reader.read(path_study, do_validate=False)
+    res = folder_reader.read(path_folder, do_validate=False)
     assert res == expected_json
     assert ini_reader.read.call_count == 3
 
@@ -148,14 +148,14 @@ def test_read_folder(tmp_path: str) -> None:
 def test_handle_folder_direct_depth() -> None:
     # Input
     parts: Tuple[str, ...] = ("folder1", "folder2")
-    study: JSON = {"folder1": {}}
+    folder: JSON = {"folder1": {}}
 
     # Expected
     exp: JSON = {"folder1": {"folder2": {}}}
 
     # Test & verify
-    sub = StudyReader._handle_folder(parts, study)
-    assert study == exp
+    sub = FolderReader._handle_folder(parts, folder)
+    assert folder == exp
     assert sub == {}
 
 
@@ -163,14 +163,14 @@ def test_handle_folder_direct_depth() -> None:
 def test_handle_folder_side_depth() -> None:
     # Input
     parts = ("folder3",)
-    study: JSON = {"folder1": {"folder2": {}}}
+    folder: JSON = {"folder1": {"folder2": {}}}
 
     # Expected
     exp = {"folder1": {"folder2": {}}, "folder3": {}}
 
     # Test & verify
-    sub = StudyReader._handle_folder(parts, study)
-    assert study == exp
+    sub = FolderReader._handle_folder(parts, folder)
+    assert folder == exp
     assert sub == {}
 
 
@@ -178,14 +178,14 @@ def test_handle_folder_side_depth() -> None:
 def test_validate() -> None:
 
     file_content = {"section": {"parms": 123}}
-    study_json = {
+    folder_json = {
         "file1.ini": file_content,
         "folder1": {
             "file2.ini": file_content,
-            "matrice1.txt": str(Path("matrices/study1/folder1/matrice1.txt")),
+            "matrice1.txt": str(Path("matrices/root1/folder1/matrice1.txt")),
             "folder2": {
                 "matrice2.txt": str(
-                    Path("matrices/study1/folder1/folder2/matrice2.txt")
+                    Path("matrices/root1/folder1/folder2/matrice2.txt")
                 ),
             },
         },
@@ -314,9 +314,9 @@ def test_validate() -> None:
         },
     }
 
-    study_reader = StudyReader(reader_ini=None, jsonschema=jsonschema)
+    folder_reader = FolderReader(reader_ini=None, jsonschema=jsonschema)
 
     try:
-        study_reader.validate(study_json)
+        folder_reader.validate(folder_json)
     except Exception:
         pytest.fail()

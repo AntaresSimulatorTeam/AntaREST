@@ -1,14 +1,14 @@
 from pathlib import Path
 from typing import Any
 
-from api_iso_antares.antares_io.reader import StudyReader
+from api_iso_antares.antares_io.reader import FolderReader
 from api_iso_antares.engine import UrlEngine
 
 
 class RequestHandler:
     def __init__(
         self,
-        study_reader: StudyReader,
+        study_reader: FolderReader,
         url_engine: UrlEngine,
         path_to_study: Path,
     ):

@@ -2,6 +2,7 @@ from typing import Any
 
 from flask import Flask, jsonify
 
+from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.web.request_handler import RequestHandler
 
 request_handler: RequestHandler
@@ -16,10 +17,8 @@ def create_routes(application: Flask) -> None:
         global request_handler
         try:
             output = request_handler.get(path)
-            if output is None:  # TODO: raise exceptions instead of none
-                raise NotImplementedError
-        except Exception as e:
-            return str(e), 404
+        except HtmlException as e:
+            return e.message, e.html_code_error
         return jsonify(output), 200
 
 
