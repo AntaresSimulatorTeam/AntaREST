@@ -5,8 +5,8 @@ import pytest
 from api_iso_antares.antares_io.reader import IniReader, StudyReader
 
 
-@pytest.mark.unit_test
-def test_read_folder(tmp_path: str) -> None:
+@pytest.mark.integration_test
+def test_reader_folder(tmp_path: str) -> None:
 
     """
     study1
