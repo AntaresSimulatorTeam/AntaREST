@@ -1,6 +1,6 @@
-from typing import Any, Dict
+from typing import Any
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.web.request_handler import (
@@ -23,10 +23,10 @@ def _construct_parameters(
 
 def create_routes(application: Flask) -> None:
     @application.route(
-        "/api/studies/<path:path>",
+        "/metadata/<path:path>",
         methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     )
-    def studies(path: str) -> Any:
+    def metadata(path: str) -> Any:
         global request_handler
 
         parameters = _construct_parameters(request.args)
@@ -36,6 +36,18 @@ def create_routes(application: Flask) -> None:
         except HtmlException as e:
             return e.message, e.html_code_error
         return jsonify(output), 200
+
+    @application.route(
+        "/data/<path:path>",  # TODO: demander au metier le nom de metadata/data
+        methods=["GET"],
+    )
+    def data(path: str) -> Any:
+        global request_handler
+
+        try:
+            return send_file(str(request_handler.path_to_studies / path))
+        except FileNotFoundError:
+            return f"{path} not found", 404
 
 
 def create_server(req: RequestHandler) -> Flask:

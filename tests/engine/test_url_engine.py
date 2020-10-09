@@ -1,10 +1,9 @@
-from copy import deepcopy
 from pathlib import Path
 
 import pytest
 
-from api_iso_antares.engine import UrlEngine
 from api_iso_antares.custom_types import JSON
+from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.url_engine import UrlNotMatchJsonDataError
 
 

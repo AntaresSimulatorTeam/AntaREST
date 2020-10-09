@@ -6,7 +6,6 @@ import pytest
 from api_iso_antares.antares_io.reader import FolderReader, IniReader
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.web import RequestHandler
-from api_iso_antares.web.request_handler import RequestHandlerParameters
 from api_iso_antares.web.server import create_server
 
 
@@ -29,7 +28,7 @@ def test_request(tmp_path: str) -> None:
     app = create_server(request_handler)
     client = app.test_client()
     res = client.get(
-        "/api/studies/study/settings/generaldata.ini/general/nbyears"
+        "/metadata/study/settings/generaldata.ini/general/nbyears"
     )
 
     assert json.loads(res.data) == 2

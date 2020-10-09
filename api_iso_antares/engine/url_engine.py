@@ -1,6 +1,6 @@
 from copy import deepcopy
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import Tuple, Optional
 
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.custom_types import JSON, SUB_JSON
