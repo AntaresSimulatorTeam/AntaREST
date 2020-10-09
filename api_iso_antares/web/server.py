@@ -1,11 +1,24 @@
-from typing import Any
+from typing import Any, Dict
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
 from api_iso_antares.custom_exceptions import HtmlException
-from api_iso_antares.web.request_handler import RequestHandler
+from api_iso_antares.web.request_handler import (
+    RequestHandler,
+    RequestHandlerParameters,
+)
 
 request_handler: RequestHandler
+
+
+def _construct_parameters(
+    params: Any,
+) -> RequestHandlerParameters:
+    request_parameters = RequestHandlerParameters()
+    request_parameters.depth = params.get(
+        "depth", request_parameters.depth, type=int
+    )
+    return request_parameters
 
 
 def create_routes(application: Flask) -> None:
@@ -15,8 +28,11 @@ def create_routes(application: Flask) -> None:
     )
     def studies(path: str) -> Any:
         global request_handler
+
+        parameters = _construct_parameters(request.args)
+
         try:
-            output = request_handler.get(path)
+            output = request_handler.get(path, parameters)
         except HtmlException as e:
             return e.message, e.html_code_error
         return jsonify(output), 200

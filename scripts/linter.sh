@@ -25,7 +25,7 @@ printf "%s======\n" "$grn"
 printf " mypy"
 printf "\n======\n %s \n" "$end"
 
-mypy .
+mypy
 
 printf "\n"
 

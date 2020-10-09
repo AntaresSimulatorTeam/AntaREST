@@ -14,7 +14,7 @@ class UrlEngine:
     def __init__(self, jsonschema: JSON) -> None:
         self.jsonschema = jsonschema
 
-    def apply(self, path: Path, json_data: JSON) -> SUB_JSON:
+    def apply(self, path: Path, json_data: JSON, depth: int) -> SUB_JSON:
         fragments = path.parts
         return self._apply_recursive(fragments, json_data)
 

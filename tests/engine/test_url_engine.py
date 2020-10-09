@@ -12,7 +12,7 @@ def test_get_right_settings(test_json_data: JSON) -> None:
     path = Path("part1/key_int")
     url_engine = UrlEngine(jsonschema={})
 
-    assert url_engine.apply(path, test_json_data) == 1
+    assert url_engine.apply(path, test_json_data, depth=-1) == 1
 
 
 @pytest.mark.unit_test
@@ -21,4 +21,4 @@ def test_get_wrong_path(test_json_data: JSON) -> None:
     url_engine = UrlEngine(jsonschema={})
 
     with pytest.raises(UrlNotMatchJsonDataError):
-        url_engine.apply(path, test_json_data)
+        url_engine.apply(path, test_json_data, depth=-1)

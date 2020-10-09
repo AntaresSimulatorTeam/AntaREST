@@ -1,25 +1,37 @@
 from pathlib import Path
+from typing import Dict
 from unittest.mock import Mock
 
 import pytest
 
 from api_iso_antares.web import RequestHandler
-from api_iso_antares.web.request_handler import StudyNotFoundError
+from api_iso_antares.web.request_handler import (
+    RequestHandlerParameters,
+    StudyNotFoundError,
+)
 
 
 @pytest.mark.unit_test
 def test_get(tmp_path: str) -> None:
+
+    """
+    path_to_studies
+    |_study1 (d)
+    |_ study2.py
+        |_ settings (d)
+    |_myfile (f)
+    """
+
     # Create folders
-    tmp = Path(tmp_path)
-    (tmp / "study1").mkdir()
-    (tmp / "myfile").touch()
-    path_study2 = tmp / "study2.py"
-    path_study2.mkdir()
-    (path_study2 / "settings").mkdir()
+    path_to_studies = Path(tmp_path)
+    (path_to_studies / "study1").mkdir()
+    (path_to_studies / "myfile").touch()
+    path_study = path_to_studies / "study2.py"
+    path_study.mkdir()
+    (path_study / "settings").mkdir()
 
     data = {"toto": 42}
     expected_data = {"titi": 43}
-    path_to_studies = tmp
     sub_route = "settings/blabla"
 
     study_reader_mock = Mock()
@@ -34,7 +46,11 @@ def test_get(tmp_path: str) -> None:
         path_to_studies=path_to_studies,
     )
 
-    output = request_handler.get(route=f"study2.py/{sub_route}")
+    parameters = RequestHandlerParameters(depth=2)
+
+    output = request_handler.get(
+        route=f"study2.py/{sub_route}", parameters=parameters
+    )
 
     assert output == expected_data
 
@@ -42,7 +58,9 @@ def test_get(tmp_path: str) -> None:
         path_to_studies / "study2.py"
     )
     study_reader_mock.validate.assert_called_once_with(data)
-    url_engine_mock.apply.assert_called_once_with(Path(sub_route), data)
+    url_engine_mock.apply.assert_called_once_with(
+        Path(sub_route), data, parameters.depth
+    )
 
 
 @pytest.mark.unit_test
