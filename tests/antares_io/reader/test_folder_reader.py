@@ -4,7 +4,7 @@ from typing import Tuple
 from unittest.mock import Mock
 
 import pytest
-from jsonschema import ValidationError, validate  # type: ignore
+from jsonschema import ValidationError, validate
 
 from api_iso_antares.antares_io.reader import FolderReader
 from api_iso_antares.custom_types import JSON

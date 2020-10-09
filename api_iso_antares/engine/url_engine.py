@@ -1,5 +1,6 @@
+from copy import deepcopy
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.custom_types import JSON, SUB_JSON
@@ -14,17 +15,34 @@ class UrlEngine:
     def __init__(self, jsonschema: JSON) -> None:
         self.jsonschema = jsonschema
 
-    def apply(self, path: Path, json_data: JSON, depth: int) -> SUB_JSON:
+    def apply(
+        self, path: Path, json_data: JSON, depth: Optional[int] = None
+    ) -> SUB_JSON:
+        json_data = deepcopy(json_data)
         fragments = path.parts
-        return self._apply_recursive(fragments, json_data)
+        return self._apply_recursive(fragments, json_data, depth)
 
     @staticmethod
-    def _apply_recursive(path: Tuple[str, ...], json_data: JSON) -> SUB_JSON:
+    def _apply_recursive(
+        path: Tuple[str, ...], json_data: JSON, depth: Optional[int]
+    ) -> SUB_JSON:
         if not path:
+            if depth:
+                UrlEngine.prune(json_data, max_depth=depth)
             return json_data
 
         key = path[0]
         if key not in json_data:
             raise UrlNotMatchJsonDataError(f"Key {key} not in data.")
 
-        return UrlEngine._apply_recursive(path[1:], json_data[key])
+        return UrlEngine._apply_recursive(path[1:], json_data[key], depth)
+
+    @staticmethod
+    def prune(json_data: SUB_JSON, max_depth: int) -> None:
+        if not isinstance(json_data, dict):
+            return
+        for key, value in json_data.items():
+            if max_depth == 1:
+                json_data[key] = None if isinstance(value, dict) else value
+            else:
+                UrlEngine.prune(value, max_depth - 1)
