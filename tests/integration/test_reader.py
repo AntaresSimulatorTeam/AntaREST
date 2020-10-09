@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from api_iso_antares.antares_io.reader import IniReader, StudyReader
+from api_iso_antares.antares_io.reader import IniReader, FolderReader
 
 
 @pytest.mark.integration_test
@@ -43,7 +43,7 @@ def test_reader_folder(tmp_path: str) -> None:
 
     ini_content = {"section": {"params": 123}}
 
-    study_reader = StudyReader(reader_ini=IniReader())
+    study_reader = FolderReader(reader_ini=IniReader(), jsonschema={})
 
     expected_json = {
         "file1.ini": ini_content,
@@ -59,5 +59,5 @@ def test_reader_folder(tmp_path: str) -> None:
         "folder3": {"file3.ini": ini_content},
     }
 
-    res = study_reader.read(path_study)
+    res = study_reader.read(path_study, do_validate=False)
     assert res == expected_json

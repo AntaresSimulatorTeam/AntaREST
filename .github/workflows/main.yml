@@ -26,9 +26,9 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
-      max-parallel: 4
+      max-parallel: 9
       matrix:
-        os: [ ubuntu-latest, macOS-latest, windows-latest ]
+        os: [windows-latest, ubuntu-latest, macOS-latest]
         python-version: [ 3.6, 3.7, 3.8 ]
 
     steps:
