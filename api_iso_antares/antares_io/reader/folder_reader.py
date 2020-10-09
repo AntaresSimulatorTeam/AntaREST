@@ -1,11 +1,12 @@
 import os
 from glob import glob
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple
 
-from api_iso_antares.antares_io.reader import IniReader
-from api_iso_antares.custom_types import JSON, SUB_JSON
 from jsonschema import validate
+
+from api_iso_antares.antares_io.reader.ini_reader import IniReader
+from api_iso_antares.custom_types import JSON, SUB_JSON
 
 
 class FolderReader:

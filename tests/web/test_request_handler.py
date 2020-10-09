@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict
 from unittest.mock import Mock
 
 import pytest
