@@ -31,6 +31,7 @@ class FolderReader:
     def _parse_recursive(
         self, current_path: Path, jsonschema: JSON, output: JSON
     ) -> None:
+
         keys = jsonschema["properties"].items()
         for key, value in keys:
             child_path = current_path / key
@@ -42,12 +43,27 @@ class FolderReader:
             child_jsonschema = jsonschema["properties"][key]
 
             if child_path.is_dir():
-                output[key] = dict()
-                self._parse_recursive(
-                    child_path, child_jsonschema, output[key]
-                )
+                self._parse_dir(child_path, child_jsonschema, output, key)
             else:
                 output[key] = self._parse_file(child_path)
+
+    def _parse_dir(
+        self, path: Path, jsonschema: JSON, output: JSON, key: str
+    ) -> None:
+        jsm_type = jsonschema["type"]
+        if jsm_type == "object":
+            output[key] = {}
+            return self._parse_recursive(path, jsonschema, output[key])
+        elif jsm_type == "array":
+            output[key] = []
+            del jsonschema["items"]["properties"]["name"]
+
+            sorted_areas = sorted(path.iterdir())
+            for path in sorted_areas:
+                output[key].append({"name": path.name})
+                self._parse_recursive(
+                    path, jsonschema["items"], output[key][-1]
+                )
 
     def _parse_file(self, path: Path) -> SUB_JSON:
         if path.suffix == ".txt":
@@ -60,7 +76,7 @@ class FolderReader:
             f"File extension {path.suffix} not implemented"
         )  # TODO custom exception
 
-    def validate(self, folder_json: JSON) -> None:
-        if (not self.jsonschema) and folder_json:
+    def validate(self, jsondata: JSON) -> None:
+        if (not self.jsonschema) and jsondata:
             raise ValueError("Jsonschema is empty.")
-        validate(folder_json, self.jsonschema)
+        validate(jsondata, self.jsonschema)
