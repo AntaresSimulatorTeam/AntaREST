@@ -32,8 +32,8 @@ class FolderReader:
     def _parse_recursive(self, offset: Offset) -> None:
 
         # keys = jsonschema["properties"].items()
-        keys = offset.get_properties()
-        for key, value in keys:
+        keys = offset.get_jsm_keys()
+        for key in keys:
             # child_path = current_path / key
             child = offset.next(key)
             if not child.path.exists():
@@ -44,7 +44,7 @@ class FolderReader:
             # child_jsonschema = jsonschema["properties"][key]
 
             if child.path.is_dir():
-                self._parse_dir(child.path, child.jsm, offset.output, key)
+                self._parse_dir(child, offset, key)
             else:
                 offset.set_data(key, self._parse_file(child.path))
 
@@ -58,7 +58,7 @@ class FolderReader:
         elif jsm_type == "array":
             # output[key] = []
             parent.json_data[key] = []
-            # del jsonschema["items"]["properties"]["name"]
+            del child.jsm["items"]["properties"]["name"]
 
             sorted_areas = sorted(child.path.iterdir())
             for path in sorted_areas:
