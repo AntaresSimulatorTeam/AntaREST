@@ -19,7 +19,7 @@ def test_request(tmp_path: str) -> None:
 
     request_handler = RequestHandler(
         study_reader=FolderReader(
-            reader_ini=IniReader(), jsonschema=jsonschema
+            reader_ini=IniReader(), jsonschema=jsonschema, root=project_dir
         ),
         url_engine=UrlEngine(jsonschema={}),
         path_to_studies=project_dir / "tests/integration",

@@ -9,88 +9,9 @@ from jsonschema import ValidationError, validate
 from api_iso_antares.antares_io.reader import FolderReader
 from api_iso_antares.custom_types import JSON
 
-jsonschema_litteral = """
-{
-  "$id": "http://json-schema.org/draft-07/schema#",
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "A small exemple.",
-  "type": "object",
-  "properties": {
-    "part1": {
-      "type": "object",
-      "required": [
-        "key_int",
-        "key_str"
-      ],
-      "properties": {
-        "key_int": {
-          "type": "integer",
-          "description": "A description"
-        },
-        "key_str": {
-          "type": "string",
-          "description": "An other description"
-        }
-      }
-    },
-    "part2": {
-      "type": "object",
-      "properties": {
-        "key_bool": {
-          "type": "boolean",
-          "description": "A description"
-        },
-        "key_bool2": {
-          "type": "boolean"
-        }
-      }
-    }
-  }
-}
-"""
-
 
 @pytest.mark.unit_test
-def test_validate_json_ok() -> None:
-    jsonschema = json.loads(jsonschema_litteral)
-
-    jsondata = {
-        "part1": {"key_int": 1, "key_str": "value1"},
-        "part2": {"key_bool": True, "key_bool2": False},
-    }
-
-    validate(jsondata, jsonschema)
-
-
-@pytest.mark.unit_test
-def test_validate_json_wrong_key() -> None:
-    jsonschema = json.loads(jsonschema_litteral)
-
-    jsondata = {
-        "part1": {"WRONG_KEY": 1, "key_str": "value1"},
-        "part2": {"key_bool": True, "key_bool2": False},
-    }
-
-    with pytest.raises(ValidationError):
-        validate(jsondata, jsonschema)
-
-
-@pytest.mark.unit_test
-def test_validate_json_wrong_type() -> None:
-    jsonschema = json.loads(jsonschema_litteral)
-
-    jsondata = {
-        "part1": {"key_int": 1.9, "key_str": "value1"},
-        "part2": {"key_bool": True, "key_bool2": False},
-    }
-
-    with pytest.raises(ValidationError):
-        validate(jsondata, jsonschema)
-
-
-@pytest.mark.unit_test
-def test_read_folder(tmp_path: str) -> None:
-
+def test_read_folder(tmp_path: str, lite_jsonschema: JSON) -> None:
     """
     root1
     |
@@ -104,6 +25,7 @@ def test_read_folder(tmp_path: str) -> None:
         |_ file3.ini
     """
 
+    # Input
     path = Path(tmp_path) / "root1"
     path_folder = Path(path)
     path.mkdir()
@@ -123,7 +45,9 @@ def test_read_folder(tmp_path: str) -> None:
     ini_reader = Mock()
     ini_reader.read.return_value = file_content
 
-    folder_reader = FolderReader(reader_ini=ini_reader, jsonschema={})
+    folder_reader = FolderReader(
+        reader_ini=ini_reader, jsonschema=lite_jsonschema, root=Path(tmp_path)
+    )
 
     expected_json = {
         "file1.ini": file_content,
@@ -139,44 +63,13 @@ def test_read_folder(tmp_path: str) -> None:
         "folder3": {"file3.ini": file_content},
     }
 
-    res = folder_reader.read(path_folder, do_validate=False)
+    res = folder_reader.read(path_folder)
     assert res == expected_json
     assert ini_reader.read.call_count == 3
 
 
 @pytest.mark.unit_test
-def test_handle_folder_direct_depth() -> None:
-    # Input
-    parts: Tuple[str, ...] = ("folder1", "folder2")
-    folder: JSON = {"folder1": {}}
-
-    # Expected
-    exp: JSON = {"folder1": {"folder2": {}}}
-
-    # Test & verify
-    sub = FolderReader._handle_folder(parts, folder)
-    assert folder == exp
-    assert sub == {}
-
-
-@pytest.mark.unit_test
-def test_handle_folder_side_depth() -> None:
-    # Input
-    parts = ("folder3",)
-    folder: JSON = {"folder1": {"folder2": {}}}
-
-    # Expected
-    exp = {"folder1": {"folder2": {}}, "folder3": {}}
-
-    # Test & verify
-    sub = FolderReader._handle_folder(parts, folder)
-    assert folder == exp
-    assert sub == {}
-
-
-@pytest.mark.unit_test
-def test_validate() -> None:
-
+def test_validate(lite_jsonschema: JSON) -> None:
     file_content = {"section": {"parms": 123}}
     folder_json = {
         "file1.ini": file_content,
@@ -192,129 +85,9 @@ def test_validate() -> None:
         "folder3": {"file3.ini": file_content},
     }
 
-    jsonschema = {
-        "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "http://example.com/example.json",
-        "type": "object",
-        "title": "The root schema",
-        "description": "The root schema comprises the entire JSON document.",
-        "required": [],
-        "properties": {
-            "file1.ini": {
-                "$id": "#/properties/file1.ini",
-                "type": "object",
-                "title": "The file1.ini schema",
-                "description": "An explanation about the purpose of this instance.",
-                "required": [],
-                "properties": {
-                    "section": {
-                        "$id": "#/properties/file1.ini/properties/section",
-                        "type": "object",
-                        "title": "The section schema",
-                        "description": "An explanation about the purpose of this instance.",
-                        "required": [],
-                        "properties": {
-                            "parms": {
-                                "$id": "#/properties/file1.ini/properties/section/properties/parms",
-                                "type": "integer",
-                                "title": "The parms schema",
-                                "description": "An explanation about the purpose of this instance.",
-                            }
-                        },
-                    }
-                },
-            },
-            "folder1": {
-                "$id": "#/properties/folder1",
-                "type": "object",
-                "title": "The folder1 schema",
-                "description": "An explanation about the purpose of this instance.",
-                "required": [],
-                "properties": {
-                    "file2.ini": {
-                        "$id": "#/properties/folder1/properties/file2.ini",
-                        "type": "object",
-                        "title": "The file2.ini schema",
-                        "description": "An explanation about the purpose of this instance.",
-                        "required": [],
-                        "properties": {
-                            "section": {
-                                "$id": "#/properties/folder1/properties/file2.ini/properties/section",
-                                "type": "object",
-                                "title": "The section schema",
-                                "description": "An explanation about the purpose of this instance.",
-                                "required": [],
-                                "properties": {
-                                    "parms": {
-                                        "$id": "#/properties/folder1/properties/file2.ini/properties/section/properties/parms",
-                                        "type": "integer",
-                                        "title": "The parms schema",
-                                        "description": "An explanation about the purpose of this instance.",
-                                    }
-                                },
-                            }
-                        },
-                    },
-                    "matrice1.txt": {
-                        "$id": "#/properties/folder1/properties/matrice1.txt",
-                        "type": "string",
-                        "title": "The matrice1.txt schema",
-                        "description": "An explanation about the purpose of this instance.",
-                    },
-                    "folder2": {
-                        "$id": "#/properties/folder1/properties/folder2",
-                        "type": "object",
-                        "title": "The folder2 schema",
-                        "description": "An explanation about the purpose of this instance.",
-                        "required": [],
-                        "properties": {
-                            "matrice2.txt": {
-                                "$id": "#/properties/folder1/properties/folder2/properties/matrice2.txt",
-                                "type": "string",
-                                "title": "The matrice2.txt schema",
-                                "description": "An explanation about the purpose of this instance.",
-                            }
-                        },
-                    },
-                },
-            },
-            "folder3": {
-                "$id": "#/properties/folder3",
-                "type": "object",
-                "title": "The folder3 schema",
-                "description": "An explanation about the purpose of this instance.",
-                "required": [],
-                "properties": {
-                    "file3.ini": {
-                        "$id": "#/properties/folder3/properties/file3.ini",
-                        "type": "object",
-                        "title": "The file3.ini schema",
-                        "description": "An explanation about the purpose of this instance.",
-                        "required": [],
-                        "properties": {
-                            "section": {
-                                "$id": "#/properties/folder3/properties/file3.ini/properties/section",
-                                "type": "object",
-                                "title": "The section schema",
-                                "description": "An explanation about the purpose of this instance.",
-                                "required": [],
-                                "properties": {
-                                    "parms": {
-                                        "$id": "#/properties/folder3/properties/file3.ini/properties/section/properties/parms",
-                                        "type": "integer",
-                                        "title": "The parms schema",
-                                        "description": "An explanation about the purpose of this instance.",
-                                    }
-                                },
-                            }
-                        },
-                    }
-                },
-            },
-        },
-    }
-
-    folder_reader = FolderReader(reader_ini=Mock(), jsonschema=jsonschema)
+    folder_reader = FolderReader(
+        reader_ini=Mock(), jsonschema=lite_jsonschema, root=Mock()
+    )
 
     try:
         folder_reader.validate(folder_json)
