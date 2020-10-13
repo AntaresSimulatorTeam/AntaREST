@@ -26,31 +26,29 @@ class FolderReader:
     def read(self, folder: Path) -> JSON:
         jsonschema = deepcopy(self.jsonschema)
         output: JSON = dict()
-        self._parse_recursive(PathCursor(folder), JsmCursor(jsonschema), DataCursor(output))
+
+        data_cursor = DataCursor(output, JsmCursor(jsonschema))
+        path_cursor = PathCursor(folder)
+        self._parse_recursive(path_cursor, data_cursor)
+
         return output
 
-    def _parse_recursive(
-        self, path: PathCursor, jsm: JsmCursor, data: DataCursor
-    ) -> None:
-
-        for key in jsm.get_properties():
+    def _parse_recursive(self, path: PathCursor, data: DataCursor) -> None:
+        for key in data.get_properties():
             next_path = path.next(key)
+            next_data = data.next(key)
 
             if next_path.is_dir():
-                next_jsm = jsm.next(key)
-                next_data = data.next(key, next_jsm.get_type())
-                self._parse_dir(next_path, next_jsm, next_data)
+                self._parse_dir(next_path, next_data)
             else:
                 data.set(key, self._parse_file(next_path))
 
-    def _parse_dir(
-        self, path: PathCursor, jsm: JsmCursor, data: DataCursor
-    ) -> None:
-        if jsm.get_type() == "object":
-            self._parse_recursive(path, jsm, data)
-        elif jsm.get_type() == "array":
-            for path, id in path.next_items():
-                self._parse_recursive(path, jsm, data.next_item(id))
+    def _parse_dir(self, path: PathCursor, data: DataCursor) -> None:
+        if data.get_type() == "object":
+            self._parse_recursive(path, data)
+        elif data.get_type() == "array":
+            for path, key in path.next_items():
+                self._parse_recursive(path, data.next_item(key))
 
     def _parse_file(self, cursor: PathCursor) -> SUB_JSON:
         path = cursor.path

@@ -33,19 +33,27 @@ class JsmCursor:
 
 
 class DataCursor:
-    def __init__(self, data: Any):
+    def __init__(self, data: Any, jsm: JsmCursor):
         self.data = data
+        self.jsm = jsm
 
     def set(self, key: str, value: Any) -> None:
         self.data[key] = value
 
-    def next(self, key: str, data_type: str = "object") -> "DataCursor":
-        self.data[key] = [] if data_type == "array" else {}
-        return DataCursor(self.data[key])
+    def next(self, key: str) -> "DataCursor":
+        next_jsm = self.jsm.next(key)
+        self.data[key] = [] if next_jsm.get_type() == "array" else {}
+        return DataCursor(self.data[key], next_jsm)
 
     def next_item(self, id: str) -> "DataCursor":
         self.data.append({"name": id})
-        return DataCursor(self.data[-1])
+        return DataCursor(self.data[-1], self.jsm)
+
+    def get_properties(self) -> List[str]:
+        return self.jsm.get_properties()
+
+    def get_type(self) -> str:
+        return self.jsm.get_type()
 
 
 class PathCursor:
