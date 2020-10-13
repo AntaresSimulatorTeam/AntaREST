@@ -81,6 +81,6 @@ class PathCursor:
         ]
 
     @staticmethod
-    def check_path(path) -> None:
+    def check_path(path: Path) -> None:
         if not path.exists():
             raise PathNotMatchJsonSchema(f"{path} not in study.")
