@@ -62,7 +62,7 @@ class FolderReader:
             f"File extension {path.suffix} not implemented"
         )  # TODO custom exception
 
-    def validate(self, jsondata: JSON) -> None:
-        if (not self.jsonschema) and jsondata:
+    def validate(self, folder_json: JSON) -> None:
+        if (not self.jsonschema) and folder_json:
             raise ValueError("Jsonschema is empty.")
-        validate(jsondata, self.jsonschema)
+        validate(folder_json, self.jsonschema)
