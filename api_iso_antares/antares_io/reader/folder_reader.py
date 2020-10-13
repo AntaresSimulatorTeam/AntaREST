@@ -1,61 +1,70 @@
 import os
-from glob import glob
+from copy import deepcopy
 from pathlib import Path
-from typing import Tuple
 
 from jsonschema import validate
 
+from api_iso_antares.antares_io.reader.cursor import (
+    PathCursor,
+    JsmCursor,
+    DataCursor,
+)
 from api_iso_antares.antares_io.reader.ini_reader import IniReader
+from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.custom_types import JSON, SUB_JSON
 
 
+class PathNotMatchJsonSchema(HtmlException):
+    def __init__(self, message: str) -> None:
+        super(PathNotMatchJsonSchema, self).__init__(message, 405)
+
+
 class FolderReader:
-    def __init__(self, reader_ini: IniReader, jsonschema: JSON):
+    def __init__(self, reader_ini: IniReader, jsonschema: JSON, root: Path):
         self._reader_ini = reader_ini
         self.jsonschema = jsonschema
+        self.root = root
 
-    def read(self, folder_path: Path, do_validate: bool = True) -> JSON:
-        folder: JSON = dict()
-        sub_folder: JSON = folder
-        previous_parts: Tuple[str, ...] = tuple()
+    def read(self, folder: Path) -> JSON:
+        jsonschema = deepcopy(self.jsonschema)
+        output: JSON = dict()
 
-        for path in glob(f"{folder_path}/**", recursive=True)[1:]:
+        data_cursor = DataCursor(output, JsmCursor(jsonschema))
+        path_cursor = PathCursor(folder)
+        self._parse_recursive(path_cursor, data_cursor)
 
-            relative_path_str = path.replace(str(folder_path) + os.sep, "")
-            relative_path = Path(relative_path_str)
-            parts = relative_path.parts[:-1]
+        return output
 
-            if relative_path.suffix:
-                if previous_parts != parts:
-                    sub_folder = FolderReader._handle_folder(parts, folder)
-                sub_folder[relative_path.name] = self._handle_file(
-                    path, folder_path
-                )
-                previous_parts = parts
+    def _parse_recursive(
+        self, path_cursor: PathCursor, data_cursor: DataCursor
+    ) -> None:
+        for key in data_cursor.get_properties():
+            next_path = path_cursor.next(key)
+            next_data = data_cursor.next(key)
 
-        if do_validate:
-            self.validate(folder)
+            if next_path.is_dir():
+                self._parse_dir(next_path, next_data)
+            else:
+                data_cursor.set(key, self._parse_file(next_path))
 
-        return folder
+    def _parse_dir(self, path: PathCursor, data: DataCursor) -> None:
+        if data.is_object():
+            self._parse_recursive(path, data)
+        elif data.is_array():
+            for path, key in path.next_items():
+                self._parse_recursive(path, data.next_item(key))
 
-    def _handle_file(self, path: str, folder_path: Path) -> SUB_JSON:
-        path_file = Path(path)
-        ext = path_file.suffix
-        if ext == ".ini":
-            return self._reader_ini.read(path_file)
-        elif ext == ".txt":
-            folder_path_parent = str(folder_path.parent) + os.sep
-            relative_path = path.replace(folder_path_parent, "")
+    def _parse_file(self, cursor: PathCursor) -> SUB_JSON:
+        path = cursor.path
+        if path.suffix == ".txt":
+            path_parent = f"{self.root}{os.sep}"
+            relative_path = str(path).replace(path_parent, "")
             return f"matrices{os.sep}{relative_path}"
-        return path
-
-    @staticmethod
-    def _handle_folder(parts: Tuple[str, ...], folder: JSON) -> JSON:
-        for part in parts:
-            if part not in folder:
-                folder[part] = {}
-            folder = folder[part]
-        return folder
+        elif path.suffix == ".ini":
+            return self._reader_ini.read(path)
+        raise NotImplementedError(
+            f"File extension {path.suffix} not implemented"
+        )
 
     def validate(self, folder_json: JSON) -> None:
         if (not self.jsonschema) and folder_json:
