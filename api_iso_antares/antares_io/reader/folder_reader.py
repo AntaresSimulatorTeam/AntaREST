@@ -35,15 +35,17 @@ class FolderReader:
 
         return output
 
-    def _parse_recursive(self, path: PathCursor, data: DataCursor) -> None:
-        for key in data.get_properties():
-            next_path = path.next(key)
-            next_data = data.next(key)
+    def _parse_recursive(
+        self, path_cursor: PathCursor, data_cursor: DataCursor
+    ) -> None:
+        for key in data_cursor.get_properties():
+            next_path = path_cursor.next(key)
+            next_data = data_cursor.next(key)
 
             if next_path.is_dir():
                 self._parse_dir(next_path, next_data)
             else:
-                data.set(key, self._parse_file(next_path))
+                data_cursor.set(key, self._parse_file(next_path))
 
     def _parse_dir(self, path: PathCursor, data: DataCursor) -> None:
         if data.is_object():
