@@ -46,9 +46,9 @@ class FolderReader:
                 data.set(key, self._parse_file(next_path))
 
     def _parse_dir(self, path: PathCursor, data: DataCursor) -> None:
-        if data.get_type() == "object":
+        if data.is_object():
             self._parse_recursive(path, data)
-        elif data.get_type() == "array":
+        elif data.is_array():
             for path, key in path.next_items():
                 self._parse_recursive(path, data.next_item(key))
 
@@ -60,9 +60,9 @@ class FolderReader:
             return f"matrices{os.sep}{relative_path}"
         elif path.suffix == ".ini":
             return self._reader_ini.read(path)
-        raise NotImplemented(
+        raise NotImplementedError(
             f"File extension {path.suffix} not implemented"
-        )  # TODO custom exception
+        )
 
     def validate(self, folder_json: JSON) -> None:
         if (not self.jsonschema) and folder_json:

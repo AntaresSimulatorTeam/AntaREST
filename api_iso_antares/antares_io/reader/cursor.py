@@ -44,8 +44,8 @@ class DataCursor:
         self.data[key] = [] if next_jsm.get_type() == "array" else {}
         return DataCursor(self.data[key], next_jsm)
 
-    def next_item(self, id: str) -> "DataCursor":
-        self.data.append({"name": id})
+    def next_item(self, key: str) -> "DataCursor":
+        self.data.append({"name": key})
         return DataCursor(self.data[-1], self.jsm)
 
     def get_properties(self) -> List[str]:
@@ -54,16 +54,21 @@ class DataCursor:
     def get_type(self) -> str:
         return self.jsm.get_type()
 
+    def is_array(self) -> bool:
+        return self.get_type() == "array"
+
+    def is_object(self) -> bool:
+        return self.get_type() == "object"
+
 
 class PathCursor:
     def __init__(self, path: Path):
         self.path = path
+        PathCursor.check_path(path)
 
     def next(self, key: str) -> "PathCursor":
         path = self.path / key
 
-        if not path.exists():
-            raise PathNotMatchJsonSchema(f"{path} not in study.")
         return PathCursor(path)
 
     def is_dir(self) -> bool:
@@ -74,3 +79,8 @@ class PathCursor:
             (PathCursor(path), path.name)
             for path in sorted(self.path.iterdir())
         ]
+
+    @staticmethod
+    def check_path(path) -> None:
+        if not path.exists():
+            raise PathNotMatchJsonSchema(f"{path} not in study.")
