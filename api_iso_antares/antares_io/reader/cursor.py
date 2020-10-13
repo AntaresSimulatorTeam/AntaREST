@@ -2,12 +2,13 @@ from pathlib import Path
 from typing import List, Any, Tuple
 
 from api_iso_antares.custom_exceptions import HtmlException
-from api_iso_antares.custom_types import JSON, SUB_JSON
+from api_iso_antares.custom_types import JSON
 
 
 class PathNotMatchJsonSchema(HtmlException):
     def __init__(self, message: str) -> None:
         super(PathNotMatchJsonSchema, self).__init__(message, 405)
+
 
 class JsmCursor:
     def __init__(self, jsm: JSON, type_data: str = "object"):
@@ -16,13 +17,11 @@ class JsmCursor:
 
     def get_properties(self) -> List[str]:
         return [
-            key
-            for key in self.jsm["properties"].keys()
-            if not (key == 'name')
+            key for key in self.jsm["properties"].keys() if not (key == "name")
         ]
 
     def next(self, key: str) -> "JsmCursor":
-        attr = self.jsm['properties'][key]
+        attr = self.jsm["properties"][key]
         if attr["type"] == "array":
             return JsmCursor(attr["items"], type_data="array")
         else:
@@ -64,9 +63,7 @@ class PathCursor:
         path = self.path / key
 
         if not path.exists():
-            raise PathNotMatchJsonSchema(
-                f"{path} not in study."
-            )
+            raise PathNotMatchJsonSchema(f"{path} not in study.")
         return PathCursor(path)
 
     def is_dir(self) -> bool:
