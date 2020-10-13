@@ -6,6 +6,7 @@ from typing import Tuple, Optional
 
 from jsonschema import validate
 
+from api_iso_antares.antares_io.reader.cursor import PathCursor, JsmCursor, DataCursor
 from api_iso_antares.antares_io.reader.ini_reader import IniReader
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.custom_types import JSON, SUB_JSON
@@ -25,47 +26,32 @@ class FolderReader:
     def read(self, folder: Path) -> JSON:
         jsonschema = deepcopy(self.jsonschema)
         output: JSON = dict()
-        self._parse_recursive(folder, jsonschema, output)
+
+        data_cursor = DataCursor(output, JsmCursor(jsonschema))
+        path_cursor = PathCursor(folder)
+        self._parse_recursive(path_cursor, data_cursor)
+
         return output
 
-    def _parse_recursive(
-        self, current_path: Path, jsonschema: JSON, output: JSON
-    ) -> None:
+    def _parse_recursive(self, path: PathCursor, data: DataCursor) -> None:
+        for key in data.get_properties():
+            next_path = path.next(key)
+            next_data = data.next(key)
 
-        keys = jsonschema["properties"].items()
-        for key, value in keys:
-            child_path = current_path / key
-            if not child_path.exists():
-                raise PathNotMatchJsonSchema(
-                    f"{child_path} not in study. Needs keys {keys}"
-                )
-
-            child_jsonschema = jsonschema["properties"][key]
-
-            if child_path.is_dir():
-                self._parse_dir(child_path, child_jsonschema, output, key)
+            if next_path.is_dir():
+                self._parse_dir(next_path, next_data)
             else:
-                output[key] = self._parse_file(child_path)
+                data.set(key, self._parse_file(next_path))
 
-    def _parse_dir(
-        self, path: Path, jsonschema: JSON, output: JSON, key: str
-    ) -> None:
-        jsm_type = jsonschema["type"]
-        if jsm_type == "object":
-            output[key] = {}
-            return self._parse_recursive(path, jsonschema, output[key])
-        elif jsm_type == "array":
-            output[key] = []
-            del jsonschema["items"]["properties"]["name"]
+    def _parse_dir(self, path: PathCursor, data: DataCursor) -> None:
+        if data.get_type() == "object":
+            self._parse_recursive(path, data)
+        elif data.get_type() == "array":
+            for path, key in path.next_items():
+                self._parse_recursive(path, data.next_item(key))
 
-            sorted_areas = sorted(path.iterdir())
-            for path in sorted_areas:
-                output[key].append({"name": path.name})
-                self._parse_recursive(
-                    path, jsonschema["items"], output[key][-1]
-                )
-
-    def _parse_file(self, path: Path) -> SUB_JSON:
+    def _parse_file(self, cursor: PathCursor) -> SUB_JSON:
+        path = cursor.path
         if path.suffix == ".txt":
             path_parent = f"{self.root}{os.sep}"
             relative_path = str(path).replace(path_parent, "")
