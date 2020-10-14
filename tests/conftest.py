@@ -61,27 +61,7 @@ def lite_jsonschema() -> JSON:
                 "type": "object",
                 "required": ["file3.ini"],
                 "properties": {
-                    "file3.ini": {"$ref": "#/definitions/file.ini"}
-                },
-            },
-        },
-        "definitions": {
-            "file.ini": {
-                "type": "object",
-                "title": "The file3.ini schema",
-                "required": ["section"],
-                "properties": {
-                    "section": {
-                        "type": "object",
-                        "title": "The section schema",
-                        "required": ["parms"],
-                        "properties": {
-                            "parms": {
-                                "type": "integer",
-                                "title": "The parms schema",
-                            }
-                        },
-                    },
+                    "file3.ini": {"$ref": "#/definitions/file.ini"},
                     "areas": {
                         "type": "array",
                         "items": {
@@ -111,43 +91,24 @@ def lite_jsonschema() -> JSON:
             },
         },
         "definitions": {
-            "area": {
+            "file.ini": {
                 "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "matrice1.txt": {"type": "string"},
-                    "file4.ini": {
-                        "type": "object",
-                        "required": ["section"],
-                        "properties": {
-                            "section": {
-                                "type": "object",
-                                "required": ["params"],
-                                "properties": {
-                                    "params": {
-                                        "type": "integer",
-                                    }
-                                },
-                            }
-                        },
-                    },
-                },
-            },
-            "file": {
-                "type": "object",
+                "title": "The file3.ini schema",
                 "required": ["section"],
                 "properties": {
                     "section": {
                         "type": "object",
+                        "title": "The section schema",
                         "required": ["params"],
                         "properties": {
                             "params": {
                                 "type": "integer",
+                                "title": "The params schema",
                             }
                         },
                     }
                 },
-            }
+            },
         },
     }
 
