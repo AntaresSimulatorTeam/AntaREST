@@ -65,7 +65,7 @@ def test_server_with_parameters() -> None:
 
 
 @pytest.mark.unit_test
-def test_matrix(tmp_path: str):
+def test_matrix(tmp_path: str) -> None:
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
     (tmp / "study1" / "matrix").write_text("toto")

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from api_iso_antares.antares_io.reader import FolderReader, IniReader
+from api_iso_antares.antares_io.reader import FolderReaderEngine, IniReader
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.server import create_server
@@ -18,7 +18,7 @@ def test_request(tmp_path: str) -> None:
     jsonschema = json.load(path_to_schema.open())
 
     request_handler = RequestHandler(
-        study_reader=FolderReader(
+        study_reader=FolderReaderEngine(
             reader_ini=IniReader(), jsonschema=jsonschema, root=project_dir
         ),
         url_engine=UrlEngine(jsonschema={}),

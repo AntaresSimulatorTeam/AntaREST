@@ -67,7 +67,7 @@ def lite_jsonschema() -> JSON:
                         "items": {
                             "type": "object",
                             "properties": {
-                                "name": {"type": "string"},
+                                "$id": {"type": "string"},
                                 "matrice1.txt": {"type": "string"},
                                 "file4.ini": {
                                     "type": "object",
@@ -131,21 +131,21 @@ def lite_jsondata() -> JSON:
             "file3.ini": file_content,
             "areas": [
                 {
-                    "name": "area1",
+                    "$id": "area1",
                     "matrice1.txt": str(
                         Path("matrices/folder3/areas/area1/matrice1.txt")
                     ),
                     "file4.ini": file_content,
                 },
                 {
-                    "name": "area2",
+                    "$id": "area2",
                     "matrice1.txt": str(
                         Path("matrices/folder3/areas/area2/matrice1.txt")
                     ),
                     "file4.ini": file_content,
                 },
                 {
-                    "name": "area3",
+                    "$id": "area3",
                     "matrice1.txt": str(
                         Path("matrices/folder3/areas/area3/matrice1.txt")
                     ),
