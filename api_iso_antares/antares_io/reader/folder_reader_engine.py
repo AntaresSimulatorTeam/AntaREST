@@ -19,7 +19,7 @@ class PathNotMatchJsonSchema(HtmlException):
         super(PathNotMatchJsonSchema, self).__init__(message, 405)
 
 
-class FolderReader:
+class FolderReaderEngine:
     def __init__(self, reader_ini: IniReader, jsonschema: JSON, root: Path):
         self._reader_ini = reader_ini
         self.jsonschema = jsonschema
@@ -32,6 +32,8 @@ class FolderReader:
         data_cursor = DataCursor(output, JsmCursor(jsonschema))
         path_cursor = PathCursor(folder)
         self._parse_recursive(path_cursor, data_cursor)
+
+        self.validate(output)
 
         return output
 

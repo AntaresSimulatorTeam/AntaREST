@@ -20,7 +20,7 @@ class JsmCursor:
 
     def get_properties(self) -> List[str]:
         return [
-            key for key in self.jsm["properties"].keys() if not (key == "name")
+            key for key in self.jsm["properties"].keys() if not (key == "$id")
         ]
 
     def next(self, key: str) -> "JsmCursor":
@@ -57,7 +57,7 @@ class DataCursor:
         return DataCursor(self.data[key], next_jsm)
 
     def next_item(self, key: str) -> "DataCursor":
-        self.data.append({"name": key})
+        self.data.append({"$id": key})
         return DataCursor(self.data[-1], self.jsm)
 
     def get_properties(self) -> List[str]:

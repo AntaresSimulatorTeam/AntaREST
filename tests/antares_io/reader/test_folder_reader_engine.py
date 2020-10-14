@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from api_iso_antares.antares_io.reader import FolderReader
+from api_iso_antares.antares_io.reader import FolderReaderEngine
 from api_iso_antares.custom_types import JSON
 
 
@@ -16,7 +16,7 @@ def test_read_folder(
     ini_reader = Mock()
     ini_reader.read.return_value = file_content
 
-    folder_reader = FolderReader(
+    folder_reader = FolderReaderEngine(
         reader_ini=ini_reader, jsonschema=lite_jsonschema, root=lite_path
     )
 
@@ -29,7 +29,7 @@ def test_read_folder(
 @pytest.mark.unit_test
 def test_validate(lite_jsondata: JSON, lite_jsonschema: JSON) -> None:
 
-    folder_reader = FolderReader(
+    folder_reader = FolderReaderEngine(
         reader_ini=Mock(), jsonschema=lite_jsonschema, root=Mock()
     )
 
