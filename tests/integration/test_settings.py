@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from api_iso_antares.antares_io.reader import FolderReaderEngine, IniReader
-from api_iso_antares.antares_io.validator.jsonschema import Validator
+from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.server import create_server
@@ -18,9 +18,7 @@ def test_request(tmp_path: str) -> None:
     path_to_schema = project_dir / "examples/jsonschemas/jsonschema.json"
     jsonschema = json.load(path_to_schema.open())
 
-    jsm_validator = Validator(
-        root_resolver=path_to_schema.parent, jsm=jsonschema
-    )
+    jsm_validator = JsmValidator(jsm=jsonschema)
 
     request_handler = RequestHandler(
         study_reader=FolderReaderEngine(

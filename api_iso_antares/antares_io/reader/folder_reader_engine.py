@@ -10,7 +10,7 @@ from api_iso_antares.antares_io.reader.cursor import (
     DataCursor,
 )
 from api_iso_antares.antares_io.reader.ini_reader import IniReader
-from api_iso_antares.antares_io.validator.jsonschema import Validator
+from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.custom_types import JSON, SUB_JSON
 
@@ -26,7 +26,7 @@ class FolderReaderEngine:
         reader_ini: IniReader,
         jsonschema: JSON,
         root: Path,
-        jsm_validator: Validator,
+        jsm_validator: JsmValidator,
     ):
         self._reader_ini = reader_ini
         self.jsonschema = jsonschema

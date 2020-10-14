@@ -28,14 +28,48 @@ def lite_jsonschema() -> JSON:
         "title": "The root schema",
         "required": ["file1.ini", "folder1", "folder3"],
         "properties": {
-            "file1.ini": {"$ref": "#/definitions/file.ini"},
+            "file1.ini": {
+                "type": "object",
+                "title": "The file3.ini schema",
+                "required": ["section"],
+                "properties": {
+                    "section": {
+                        "type": "object",
+                        "title": "The section schema",
+                        "required": ["params"],
+                        "properties": {
+                            "params": {
+                                "type": "integer",
+                                "title": "The params schema",
+                            }
+                        },
+                    }
+                },
+            },
             "folder1": {
                 "$id": "#/properties/folder1",
                 "type": "object",
                 "title": "The folder1 schema",
                 "required": ["file2.ini", "matrice1.txt", "folder2"],
                 "properties": {
-                    "file2.ini": {"$ref": "#/definitions/file.ini"},
+                    "file2.ini": {
+                        "type": "object",
+                        "title": "The file3.ini schema",
+                        "required": ["section"],
+                        "properties": {
+                            "section": {
+                                "type": "object",
+                                "title": "The section schema",
+                                "required": ["params"],
+                                "properties": {
+                                    "params": {
+                                        "type": "integer",
+                                        "title": "The params schema",
+                                    }
+                                },
+                            }
+                        },
+                    },
                     "matrice1.txt": {
                         "$id": "#/properties/folder1/properties/matrice1.txt",
                         "type": "string",
@@ -61,7 +95,24 @@ def lite_jsonschema() -> JSON:
                 "type": "object",
                 "required": ["file3.ini"],
                 "properties": {
-                    "file3.ini": {"$ref": "#/definitions/file.ini"},
+                    "file3.ini": {
+                        "type": "object",
+                        "title": "The file3.ini schema",
+                        "required": ["section"],
+                        "properties": {
+                            "section": {
+                                "type": "object",
+                                "title": "The section schema",
+                                "required": ["params"],
+                                "properties": {
+                                    "params": {
+                                        "type": "integer",
+                                        "title": "The params schema",
+                                    }
+                                },
+                            }
+                        },
+                    },
                     "areas": {
                         "type": "array",
                         "items": {
@@ -89,26 +140,6 @@ def lite_jsonschema() -> JSON:
                             },
                         },
                     },
-                },
-            },
-        },
-        "definitions": {
-            "file.ini": {
-                "type": "object",
-                "title": "The file3.ini schema",
-                "required": ["section"],
-                "properties": {
-                    "section": {
-                        "type": "object",
-                        "title": "The section schema",
-                        "required": ["params"],
-                        "properties": {
-                            "params": {
-                                "type": "integer",
-                                "title": "The params schema",
-                            }
-                        },
-                    }
                 },
             },
         },
@@ -160,7 +191,6 @@ def lite_jsondata() -> JSON:
 
 @pytest.fixture
 def lite_path(tmp_path: Path) -> Path:
-
     """
     root1
     |
