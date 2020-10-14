@@ -16,7 +16,7 @@ if __name__ == "__main__":
             reader_ini=IniReader(),
             jsonschema=jsonschema,
             root=project_dir,
-            jsm_validator=Validator(root_resolver=Path(), jsm=jsonschema),
+            jsm_validator=Validator(jsm=jsonschema),
         ),
         url_engine=UrlEngine(jsonschema={}),
         path_to_studies=Path(sys.argv[2]),

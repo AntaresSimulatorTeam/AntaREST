@@ -16,7 +16,7 @@ def test_reader_folder(
         reader_ini=IniReader(),
         jsonschema=lite_jsonschema,
         root=lite_path,
-        jsm_validator=Validator(root_resolver=Path(), jsm=lite_jsonschema),
+        jsm_validator=Validator(jsm=lite_jsonschema),
     )
 
     res = study_reader.read(lite_path)

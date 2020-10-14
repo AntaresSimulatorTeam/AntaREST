@@ -14,7 +14,5 @@ def path_ressources() -> Path:
 
 
 @pytest.fixture
-def jsonschema_with_refs_outside(path_ressources: Path) -> JSON:
-    with open(str(path_ressources / "jsonschema.json"), "r") as inputfile:
-        data = json.load(inputfile)
-    return data
+def path_jsm_with_refs_outside(path_ressources: Path) -> Path:
+    return path_ressources / "jsonschema.json"

@@ -18,9 +18,7 @@ def test_request(tmp_path: str) -> None:
     path_to_schema = project_dir / "examples/jsonschemas/jsonschema.json"
     jsonschema = json.load(path_to_schema.open())
 
-    jsm_validator = Validator(
-        root_resolver=path_to_schema.parent, jsm=jsonschema
-    )
+    jsm_validator = Validator(jsm=jsonschema)
 
     request_handler = RequestHandler(
         study_reader=FolderReaderEngine(

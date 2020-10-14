@@ -37,7 +37,7 @@ def test_validate(lite_jsondata: JSON, lite_jsonschema: JSON) -> None:
         reader_ini=Mock(),
         jsonschema=lite_jsonschema,
         root=Mock(),
-        jsm_validator=Validator(root_resolver=Path(""), jsm=lite_jsonschema),
+        jsm_validator=Validator(jsm=lite_jsonschema),
     )
 
     try:
