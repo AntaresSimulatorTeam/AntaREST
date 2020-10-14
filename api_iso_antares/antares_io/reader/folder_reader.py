@@ -66,7 +66,7 @@ class FolderReader:
             f"File extension {path.suffix} not implemented"
         )
 
-    def validate(self, folder_json: JSON) -> None:
-        if (not self.jsonschema) and folder_json:
+    def validate(self, jsondata: JSON) -> None:
+        if (not self.jsonschema) and jsondata:
             raise ValueError("Jsonschema is empty.")
-        validate(folder_json, self.jsonschema)
+        validate(jsondata, self.jsonschema)

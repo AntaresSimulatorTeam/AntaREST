@@ -11,9 +11,12 @@ class PathNotMatchJsonSchema(HtmlException):
 
 
 class JsmCursor:
-    def __init__(self, jsm: JSON, type_data: str = "object"):
+    def __init__(
+        self, jsm: JSON, type_data: str = "object", origin: JSON = {}
+    ):
         self.jsm = jsm
         self.type_data = type_data
+        self.origin = origin or self.jsm
 
     def get_properties(self) -> List[str]:
         return [
@@ -21,11 +24,20 @@ class JsmCursor:
         ]
 
     def next(self, key: str) -> "JsmCursor":
-        attr = self.jsm["properties"][key]
-        if attr["type"] == "array":
-            return JsmCursor(attr["items"], type_data="array")
+        sub_jsm = self.jsm["properties"][key]
+        if "$ref" in sub_jsm and sub_jsm["$ref"][0] == "#":
+            definition = self.origin
+            for key in sub_jsm["$ref"].split("/")[1:]:
+                definition = definition[key]
+            return JsmCursor(jsm=definition, origin=self.origin)
+        elif sub_jsm["type"] == "array":
+            return JsmCursor(
+                sub_jsm["items"], type_data="array", origin=self.origin
+            )
         else:
-            return JsmCursor(attr, type_data=attr["type"])
+            return JsmCursor(
+                sub_jsm, type_data=sub_jsm["type"], origin=self.origin
+            )
 
     def get_type(self) -> str:
         return self.type_data
