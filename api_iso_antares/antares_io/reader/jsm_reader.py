@@ -10,5 +10,5 @@ from api_iso_antares.custom_types import JSON
 class JsmReader:
     @staticmethod
     def read(path: Path) -> JSON:
-        data = jsonref.load_uri(f"file:{path}")
+        data = jsonref.load_uri(path.as_uri())
         return cast(JSON, data)

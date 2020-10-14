@@ -25,12 +25,7 @@ class JsmCursor:
 
     def next(self, key: str) -> "JsmCursor":
         sub_jsm = self.jsm["properties"][key]
-        if "$ref" in sub_jsm and sub_jsm["$ref"][0] == "#":
-            definition = self.origin
-            for key in sub_jsm["$ref"].split("/")[1:]:
-                definition = definition[key]
-            return JsmCursor(jsm=definition, origin=self.origin)
-        elif sub_jsm["type"] == "array":
+        if sub_jsm["type"] == "array":
             return JsmCursor(
                 sub_jsm["items"], type_data="array", origin=self.origin
             )

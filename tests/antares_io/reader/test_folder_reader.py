@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 from api_iso_antares.antares_io.reader import FolderReaderEngine
-from api_iso_antares.antares_io.validator.jsonschema import Validator
+from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
 from api_iso_antares.custom_types import JSON
 
 
@@ -37,7 +37,7 @@ def test_validate(lite_jsondata: JSON, lite_jsonschema: JSON) -> None:
         reader_ini=Mock(),
         jsonschema=lite_jsonschema,
         root=Mock(),
-        jsm_validator=Validator(jsm=lite_jsonschema),
+        jsm_validator=JsmValidator(jsm=lite_jsonschema),
     )
 
     try:

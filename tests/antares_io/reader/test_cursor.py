@@ -4,7 +4,7 @@ from api_iso_antares.antares_io.reader.cursor import JsmCursor
 
 
 @pytest.mark.unit_test
-def test_read_refs() -> None:
+def eetest_read_refs() -> None:
     little_schema_with_refs = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "definitions": {

@@ -3,7 +3,7 @@ from jsonschema import Draft7Validator
 from api_iso_antares.custom_types import JSON
 
 
-class Validator:
+class JsmValidator:
     def __init__(self, jsm: JSON) -> None:
         self.jsm = jsm
         self.validator: Draft7Validator
