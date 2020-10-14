@@ -10,6 +10,7 @@ from api_iso_antares.antares_io.reader.cursor import (
     DataCursor,
 )
 from api_iso_antares.antares_io.reader.ini_reader import IniReader
+from api_iso_antares.antares_io.validator.jsonschema import Validator
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.custom_types import JSON, SUB_JSON
 
@@ -20,10 +21,17 @@ class PathNotMatchJsonSchema(HtmlException):
 
 
 class FolderReaderEngine:
-    def __init__(self, reader_ini: IniReader, jsonschema: JSON, root: Path):
+    def __init__(
+        self,
+        reader_ini: IniReader,
+        jsonschema: JSON,
+        root: Path,
+        jsm_validator: Validator,
+    ):
         self._reader_ini = reader_ini
         self.jsonschema = jsonschema
         self.root = root
+        self.jsm_validator = jsm_validator
 
     def read(self, folder: Path) -> JSON:
         jsonschema = deepcopy(self.jsonschema)
@@ -71,4 +79,4 @@ class FolderReaderEngine:
     def validate(self, jsondata: JSON) -> None:
         if (not self.jsonschema) and jsondata:
             raise ValueError("Jsonschema is empty.")
-        validate(jsondata, self.jsonschema)
+        self.jsm_validator.validate(jsondata)

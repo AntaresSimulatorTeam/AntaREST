@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import sys
 from pathlib import Path
 
@@ -23,7 +24,6 @@ def test_json_data() -> JSON:
 def lite_jsonschema() -> JSON:
     return {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "http://example.com/example.json",
         "type": "object",
         "title": "The root schema",
         "required": ["file1.ini", "folder1", "folder3"],
@@ -68,7 +68,9 @@ def lite_jsonschema() -> JSON:
                             "type": "object",
                             "properties": {
                                 "$id": {"type": "string"},
-                                "matrice1.txt": {"type": "string"},
+                                "matrice1.txt": {
+                                    "type": "string",
+                                },
                                 "file4.ini": {
                                     "type": "object",
                                     "required": ["section"],
