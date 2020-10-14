@@ -2,7 +2,11 @@ import json
 import sys
 from pathlib import Path
 
-from api_iso_antares.antares_io.reader import FolderReaderEngine, IniReader, JsmReader
+from api_iso_antares.antares_io.reader import (
+    FolderReaderEngine,
+    IniReader,
+    JsmReader,
+)
 from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.web import RequestHandler
