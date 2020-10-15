@@ -1,9 +1,9 @@
 import json
+import os
 from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
-from flask import Response
 from flask.testing import FlaskClient
 
 from api_iso_antares.antares_io.reader import (
@@ -14,7 +14,6 @@ from api_iso_antares.antares_io.reader import (
 from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.web import RequestHandler
-from api_iso_antares.web.request_handler import RequestHandlerParameters
 from api_iso_antares.web.server import create_server
 
 
@@ -36,7 +35,7 @@ def assert_url_content(
         ("/metadata/STA-mini/settings/generaldata.ini/general/horizon", 2030),
         (
             "/metadata/STA-mini/settings/comments.txt",
-            "file/STA-mini/settings/comments.txt",
+            f"file{os.sep}STA-mini{os.sep}settings{os.sep}comments.txt",
         ),
     ],
 )
