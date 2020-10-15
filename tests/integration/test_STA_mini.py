@@ -20,17 +20,7 @@ def assert_url_content(
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url,expected_output",
-    [
-        (
-            "/metadata/STA-mini/Desktop.ini/.shellclassinfo/infotip",
-            "Antares Study7.0: STA-mini",
-        ),
-        ("/metadata/STA-mini/settings/generaldata.ini/general/horizon", 2030),
-        (
-            "/metadata/STA-mini/settings/comments.txt",
-            f"file{os.sep}STA-mini{os.sep}settings{os.sep}comments.txt",
-        ),
-    ],
+    [],
 )
 def test_sta_mini(
     request_handler: RequestHandler, url: str, expected_output: str
@@ -82,6 +72,87 @@ def test_sta_mini_settings(
     assert_url_content(
         request_handler=request_handler,
         url=url,
+        expected_output=expected_output,
+    )
+
+
+@pytest.mark.integration_test
+@pytest.mark.parametrize(
+    "url, expected_output",
+    [
+        (
+            "layers/layers.ini/activeLayer/showAllLayer",
+            True,
+        ),
+        (
+            "layers/layers.ini/layers/0",
+            "All",
+        ),
+    ],
+)
+def test_sta_mini_layers_layers(
+    request_handler: RequestHandler, url: str, expected_output: str
+):
+
+    url_path = Path("/metadata/STA-mini") / url
+
+    assert_url_content(
+        request_handler=request_handler,
+        url=str(url_path),
+        expected_output=expected_output,
+    )
+
+
+@pytest.mark.integration_test
+@pytest.mark.parametrize(
+    "url, expected_output",
+    [
+        (
+            "Desktop.ini/.shellclassinfo/iconfile",
+            "settings/resources/study.ico",
+        ),
+        (
+            "Desktop.ini/.shellclassinfo/infotip",
+            "Antares Study7.0: STA-mini",
+        ),
+        ("Desktop.ini/.shellclassinfo/iconindex", 0),
+    ],
+)
+def test_sta_mini_desktop(
+    request_handler: RequestHandler, url: str, expected_output: str
+):
+    url_path = Path("/metadata/STA-mini") / url
+
+    assert_url_content(
+        request_handler=request_handler,
+        url=str(url_path),
+        expected_output=expected_output,
+    )
+
+
+@pytest.mark.integration_test
+@pytest.mark.parametrize(
+    "url, expected_output",
+    [
+        (
+            "study.antares/antares/created",
+            1480683452,
+        ),
+        (
+            "study.antares/antares/author",
+            "Andrea SGATTONI",
+        ),
+    ],
+)
+def test_sta_mini_study_antares(
+    request_handler: RequestHandler, url: str, expected_output: str
+):
+
+    url_path = Path("/metadata/STA-mini") / url
+
+    assert_url_content(
+        request_handler=request_handler,
+        url=str(url_path),
         expected_output=expected_output,
     )
 

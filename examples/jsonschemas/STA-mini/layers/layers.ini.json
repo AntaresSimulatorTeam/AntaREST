@@ -1,0 +1,41 @@
+{
+    "type": "object",
+    "definitions": {
+        "layers": {
+            "type": "object",
+            "properties": {
+                "layers.ini": {
+                    "type": "object",
+                    "properties": {
+                        "layers": {
+                            "type": "object",
+                            "properties": {
+                                "0": {
+                                    "type": "string"
+                                },
+                                "1": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": []
+                        },
+                        "activeLayer": {
+                            "type": "object",
+                            "properties": {
+                                "activeLayerID": {
+                                    "type": "integer"
+                                },
+                                "showAllLayer": {
+                                    "type": "boolean"
+                                }
+                            },
+                            "required": []
+                        }
+                    },
+                    "required": []
+                }
+            },
+            "required": []
+        }
+    }
+}

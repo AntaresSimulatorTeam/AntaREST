@@ -70,7 +70,10 @@ class FolderReaderEngine:
             path_parent = f"{self.root}{os.sep}"
             relative_path = str(path).replace(path_parent, "")
             return f"file{os.sep}{relative_path}"
-        elif path.suffix == ".ini":
+        elif path.suffix in [
+            ".ini",
+            ".antares",
+        ]:  # TODO: add a hook remove business antares
             return self._reader_ini.read(path)
         raise NotImplementedError(
             f"File extension {path.suffix} not implemented"

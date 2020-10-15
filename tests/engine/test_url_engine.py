@@ -64,9 +64,9 @@ def test_get_right_settings_with_depth() -> None:
 def test_get_array_items(lite_jsondata: JSON) -> None:
     data = lite_jsondata
 
-    url_engine = UrlEngine(jsonschema={})
+    url_engine = UrlEngine(jsm={})
 
-    expected = str(Path("matrices/folder3/areas/area1/matrice1.txt"))
+    expected = str(Path("file/folder3/areas/area1/matrice1.txt"))
 
     assert (
         url_engine.apply(Path("folder3/areas/area1/matrice1.txt"), data)
