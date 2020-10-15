@@ -10,7 +10,10 @@
             "$ref": "study.antares.json#/definitions/study.antares"
         },
         "settings": {
-            "$ref": "settings.json#/definitions/settings"
+            "$ref": "settings/settings.json#/definitions/settings"
+        },
+        "layers": {
+            "$ref": "layers/layers.ini.json#/definitions/layers"
         },
         "input": {
             "$ref": "input/input.json#/definitions/input"

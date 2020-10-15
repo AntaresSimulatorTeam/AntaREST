@@ -6,6 +6,9 @@
       "properties": {
         "bindingconstraints": {
           "$ref": "bindingconstraints/bindingconstraints.json#/definitions/bindingconstraints"
+        },
+        "hydro": {
+          "$ref": "hydro/hydro.json#/definitions/hydro"
         }
       }
     }

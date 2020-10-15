@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 import pytest
 
@@ -162,6 +163,7 @@ def test_sta_mini_study_antares(
     "url, expected_output",
     [
         ("/metadata/STA-mini/input/bindingconstraints/bindingconstraints.ini", {}),
+        ("/metadata/STA-mini/input/hydro/series/de/mod.txt", 'file/STA-mini/input/hydro/series/de/mod.txt')
 
     ],
 )
