@@ -18,8 +18,8 @@ def test_read_folder(
     ini_reader.read.return_value = file_content
 
     folder_reader = FolderReaderEngine(
-        reader_ini=ini_reader,
-        jsonschema=lite_jsonschema,
+        ini_reader=ini_reader,
+        jsm=lite_jsonschema,
         root=lite_path,
         jsm_validator=Mock(),
     )
@@ -34,8 +34,8 @@ def test_read_folder(
 def test_validate(lite_jsondata: JSON, lite_jsonschema: JSON) -> None:
 
     folder_reader = FolderReaderEngine(
-        reader_ini=Mock(),
-        jsonschema=lite_jsonschema,
+        ini_reader=Mock(),
+        jsm=lite_jsonschema,
         root=Mock(),
         jsm_validator=JsmValidator(jsm=lite_jsonschema),
     )

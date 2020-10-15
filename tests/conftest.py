@@ -12,6 +12,11 @@ from api_iso_antares.custom_types import JSON
 
 
 @pytest.fixture
+def project_path() -> Path:
+    return project_dir
+
+
+@pytest.fixture
 def test_json_data() -> JSON:
     json_data = {
         "part1": {"key_int": 1, "key_str": "value1"},

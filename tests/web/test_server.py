@@ -71,7 +71,7 @@ def test_matrix(tmp_path: str) -> None:
     (tmp / "study1" / "matrix").write_text("toto")
 
     request_handler = RequestHandler(
-        study_reader=Mock(), url_engine=Mock(), path_to_studies=Path(tmp_path)
+        study_reader=Mock(), url_engine=Mock(), path_studies=Path(tmp_path)
     )
     app = create_server(request_handler)
     client = app.test_client()

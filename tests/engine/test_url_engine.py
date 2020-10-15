@@ -10,7 +10,7 @@ from api_iso_antares.engine.url_engine import UrlNotMatchJsonDataError
 @pytest.mark.unit_test
 def test_get_right_settings(test_json_data: JSON) -> None:
     path = Path("part1/key_int")
-    url_engine = UrlEngine(jsonschema={})
+    url_engine = UrlEngine(jsm={})
 
     assert url_engine.apply(path, test_json_data) == 1
 
@@ -18,7 +18,7 @@ def test_get_right_settings(test_json_data: JSON) -> None:
 @pytest.mark.unit_test
 def test_get_wrong_path(test_json_data: JSON) -> None:
     path = Path("WRONG/PATH")
-    url_engine = UrlEngine(jsonschema={})
+    url_engine = UrlEngine(jsm={})
 
     with pytest.raises(UrlNotMatchJsonDataError):
         url_engine.apply(path, test_json_data, depth=-1)
@@ -39,7 +39,7 @@ def test_get_right_settings_with_depth() -> None:
         }
     }
 
-    url_engine = UrlEngine(jsonschema={})
+    url_engine = UrlEngine(jsm={})
 
     expected_enough_depth = {
         "value1": 43,

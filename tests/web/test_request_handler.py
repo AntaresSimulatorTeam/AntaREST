@@ -42,7 +42,7 @@ def test_get(tmp_path: str) -> None:
     request_handler = RequestHandler(
         study_reader=study_reader_mock,
         url_engine=url_engine_mock,
-        path_to_studies=path_to_studies,
+        path_studies=path_to_studies,
     )
 
     parameters = RequestHandlerParameters(depth=2)
@@ -78,7 +78,7 @@ def test_assert_study_exist(tmp_path: str) -> None:
 
     # Test & Verify
     request_handler = RequestHandler(
-        study_reader=Mock(), url_engine=Mock(), path_to_studies=path_to_studies
+        study_reader=Mock(), url_engine=Mock(), path_studies=path_to_studies
     )
     request_handler._assert_study_exist(study_name)
 
@@ -99,7 +99,7 @@ def test_assert_study_not_exist(tmp_path: str) -> None:
 
     # Test & Verify
     request_handler = RequestHandler(
-        study_reader=Mock(), url_engine=Mock(), path_to_studies=path_to_studies
+        study_reader=Mock(), url_engine=Mock(), path_studies=path_to_studies
     )
     with pytest.raises(StudyNotFoundError):
         request_handler._assert_study_exist(study_name)

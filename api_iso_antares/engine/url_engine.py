@@ -12,8 +12,8 @@ class UrlNotMatchJsonDataError(HtmlException):
 
 
 class UrlEngine:
-    def __init__(self, jsonschema: JSON) -> None:
-        self.jsonschema = jsonschema
+    def __init__(self, jsm: JSON) -> None:
+        self.jsonschema = jsm
 
     def apply(
         self, path: Path, json_data: JSON, depth: Optional[int] = None

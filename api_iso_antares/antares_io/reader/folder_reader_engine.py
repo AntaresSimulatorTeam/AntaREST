@@ -23,13 +23,13 @@ class PathNotMatchJsonSchema(HtmlException):
 class FolderReaderEngine:
     def __init__(
         self,
-        reader_ini: IniReader,
-        jsonschema: JSON,
+        ini_reader: IniReader,
+        jsm: JSON,
         root: Path,
         jsm_validator: JsmValidator,
     ):
-        self._reader_ini = reader_ini
-        self.jsonschema = jsonschema
+        self._reader_ini = ini_reader
+        self.jsonschema = jsm
         self.root = root
         self.jsm_validator = jsm_validator
 
