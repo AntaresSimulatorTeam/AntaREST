@@ -82,11 +82,11 @@ def test_sta_mini_settings(
     "url, expected_output",
     [
         (
-            "layers/layers.ini/activeLayer/showAllLayer",
+            "/metadata/STA-mini/layers/layers.ini/activeLayer/showAllLayer",
             True,
         ),
         (
-            "layers/layers.ini/layers/0",
+            "/metadata/STA-mini/layers/layers.ini/layers/0",
             "All",
         ),
     ],
@@ -95,11 +95,9 @@ def test_sta_mini_layers_layers(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
 
-    url_path = Path("/metadata/STA-mini") / url
-
     assert_url_content(
         request_handler=request_handler,
-        url=str(url_path),
+        url=url,
         expected_output=expected_output,
     )
 
@@ -109,24 +107,22 @@ def test_sta_mini_layers_layers(
     "url, expected_output",
     [
         (
-            "Desktop.ini/.shellclassinfo/iconfile",
+            "/metadata/STA-mini/Desktop.ini/.shellclassinfo/iconfile",
             "settings/resources/study.ico",
         ),
         (
-            "Desktop.ini/.shellclassinfo/infotip",
+            "/metadata/STA-mini/Desktop.ini/.shellclassinfo/infotip",
             "Antares Study7.0: STA-mini",
         ),
-        ("Desktop.ini/.shellclassinfo/iconindex", 0),
+        ("/metadata/STA-mini/Desktop.ini/.shellclassinfo/iconindex", 0),
     ],
 )
 def test_sta_mini_desktop(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
-    url_path = Path("/metadata/STA-mini") / url
-
     assert_url_content(
         request_handler=request_handler,
-        url=str(url_path),
+        url=url,
         expected_output=expected_output,
     )
 
@@ -136,11 +132,11 @@ def test_sta_mini_desktop(
     "url, expected_output",
     [
         (
-            "study.antares/antares/created",
+            "/metadata/STA-mini/study.antares/antares/created",
             1480683452,
         ),
         (
-            "study.antares/antares/author",
+            "/metadata/STA-mini/study.antares/antares/author",
             "Andrea SGATTONI",
         ),
     ],
@@ -148,12 +144,9 @@ def test_sta_mini_desktop(
 def test_sta_mini_study_antares(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
-
-    url_path = Path("/metadata/STA-mini") / url
-
     assert_url_content(
         request_handler=request_handler,
-        url=str(url_path),
+        url=url,
         expected_output=expected_output,
     )
 
@@ -162,16 +155,23 @@ def test_sta_mini_study_antares(
 @pytest.mark.parametrize(
     "url, expected_output",
     [
-        ("/metadata/STA-mini/input/bindingconstraints/bindingconstraints.ini", {}),
-        ("/metadata/STA-mini/input/hydro/series/de/mod.txt", 'file/STA-mini/input/hydro/series/de/mod.txt')
-
+        (
+            "/metadata/STA-mini/input/bindingconstraints/bindingconstraints.ini",
+            {},
+        ),
+        (
+            "/metadata/STA-mini/input/hydro/series/de/mod.txt",
+            "file/STA-mini/input/hydro/series/de/mod.txt",
+        ),
     ],
 )
 def test_sta_mini_input(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
     url = url[10:]
-    assert request_handler.get(url, RequestHandlerParameters()) == expected_output
+    assert (
+        request_handler.get(url, RequestHandlerParameters()) == expected_output
+    )
     # assert_url_content(
     #     request_handler=request_handler,
     #     url=url,
