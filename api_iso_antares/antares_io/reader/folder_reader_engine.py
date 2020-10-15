@@ -69,7 +69,7 @@ class FolderReaderEngine:
         if path.suffix == ".txt":
             path_parent = f"{self.root}{os.sep}"
             relative_path = str(path).replace(path_parent, "")
-            return f"matrices{os.sep}{relative_path}"
+            return f"file{os.sep}{relative_path}"
         elif path.suffix == ".ini":
             return self._reader_ini.read(path)
         raise NotImplementedError(

@@ -1,0 +1,16 @@
+{
+    "type": "object",
+    "definitions": {
+        "settings": {
+            "type": "object",
+            "properties": {
+                "generaldata.ini": {
+                    "$ref": "generaldata.ini.json#/definitions/generaldata.ini"
+                },
+                "comments.txt": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

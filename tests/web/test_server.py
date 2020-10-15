@@ -75,9 +75,9 @@ def test_matrix(tmp_path: str) -> None:
     )
     app = create_server(request_handler)
     client = app.test_client()
-    result_right = client.get("/data/study1/matrix")
+    result_right = client.get("/file/study1/matrix")
 
     assert result_right.data == b"toto"
 
-    result_wrong = client.get("/data/study1/WRONG_MATRIX")
+    result_wrong = client.get("/file/study1/WRONG_MATRIX")
     assert result_wrong.status_code == 404

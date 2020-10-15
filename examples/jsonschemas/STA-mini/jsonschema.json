@@ -9,12 +9,21 @@
                 ".shellclassinfo": {
                     "type": "object",
                     "properties": {
-                        "iconfile" : {"type":  "string"},
-                        "iconindex" : {"type":  "integer"},
-                        "infotip" : {"type":  "string"}
+                        "iconfile": {
+                            "type": "string"
+                        },
+                        "iconindex": {
+                            "type": "integer"
+                        },
+                        "infotip": {
+                            "type": "string"
+                        }
                     }
                 }
             }
+        },
+        "settings": {
+            "$ref": "settings.json#/definitions/settings"
         }
     }
 }
