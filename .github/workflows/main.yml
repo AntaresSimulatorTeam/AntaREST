@@ -13,7 +13,7 @@ jobs:
         with:
           lfs: true
       - name: Checkout LFS objects
-        run: git lfs checkout
+        run: git lfs checkout ${GITHUB_REF##*/}
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
