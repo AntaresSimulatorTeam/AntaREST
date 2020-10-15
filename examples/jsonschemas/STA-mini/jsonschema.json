@@ -4,26 +4,16 @@
     "required": [],
     "properties": {
         "Desktop.ini": {
-            "type": "object",
-            "properties": {
-                ".shellclassinfo": {
-                    "type": "object",
-                    "properties": {
-                        "iconfile": {
-                            "type": "string"
-                        },
-                        "iconindex": {
-                            "type": "integer"
-                        },
-                        "infotip": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
+            "$ref": "Desktop.ini.json#/definitions/Desktop.ini"
+        },
+        "study.antares": {
+            "$ref": "study.antares.json#/definitions/study.antares"
         },
         "settings": {
             "$ref": "settings/settings.json#/definitions/settings"
+        },
+        "layers": {
+            "$ref": "layers/layers.ini.json#/definitions/layers"
         }
     }
 }
