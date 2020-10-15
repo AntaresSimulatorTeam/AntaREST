@@ -1,18 +1,8 @@
 import json
 import os
-from pathlib import Path
-from zipfile import ZipFile
 
 import pytest
-from flask.testing import FlaskClient
 
-from api_iso_antares.antares_io.reader import (
-    FolderReaderEngine,
-    IniReader,
-    JsmReader,
-)
-from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
-from api_iso_antares.engine import UrlEngine
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.request_handler import RequestHandlerParameters
 from api_iso_antares.web.server import create_server
@@ -69,11 +59,26 @@ def test_sta_mini(
             "/metadata/STA-mini/settings/comments.txt",
             f"file{os.sep}STA-mini{os.sep}settings{os.sep}comments.txt",
         ),
+        (
+            "/metadata/STA-mini/settings/scenariobuilder.dat",
+            f"file{os.sep}STA-mini{os.sep}settings{os.sep}scenariobuilder.dat",
+        ),
+        ("/metadata/STA-mini/settings/simulations", {}),
+        (
+            "/metadata/STA-mini/settings/resources/study.ico",
+            f"file{os.sep}STA-mini{os.sep}settings{os.sep}resources{os.sep}study.ico",
+        ),
     ],
 )
 def test_sta_mini_settings(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
+    # url = url[10:]
+    # print(url)
+    # assert (
+    #     request_handler.get(route=url, parameters=RequestHandlerParameters())
+    #     == expected_output
+    # )
     assert_url_content(
         request_handler=request_handler,
         url=url,
