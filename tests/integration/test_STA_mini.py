@@ -108,7 +108,7 @@ def test_sta_mini_layers_layers(
     [
         (
             "/metadata/STA-mini/Desktop.ini/.shellclassinfo/iconfile",
-            "settings/resources/study.ico",
+            f"settings{os.sep}resources{os.sep}study.ico",
         ),
         (
             "/metadata/STA-mini/Desktop.ini/.shellclassinfo/infotip",
@@ -161,7 +161,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/metadata/STA-mini/input/hydro/series/de/mod.txt",
-            "file/STA-mini/input/hydro/series/de/mod.txt",
+            f"file{os.sep}STA-mini{os.sep}input{os.sep}hydro{os.sep}series{os.sep}de{os.sep}mod.txt",
         ),
     ],
 )
