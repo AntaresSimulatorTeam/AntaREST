@@ -108,7 +108,7 @@ def test_sta_mini_layers_layers(
     [
         (
             "/metadata/STA-mini/Desktop.ini/.shellclassinfo/iconfile",
-            f"settings{os.sep}resources{os.sep}study.ico",
+            "settings/resources/study.ico",
         ),
         (
             "/metadata/STA-mini/Desktop.ini/.shellclassinfo/infotip",
