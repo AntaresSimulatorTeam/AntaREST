@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "definitions": {
+    "array": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "optimization.ini": {
+            "$ref": "optimization.ini.json#/definitions/optimization.ini"
+          }
+        }
+      }
+    }
+  }
+}

@@ -24,6 +24,9 @@
         },
         "settings": {
             "$ref": "settings.json#/definitions/settings"
+        },
+        "input": {
+            "$ref": "input/input.json#/definitions/input"
         }
     }
 }

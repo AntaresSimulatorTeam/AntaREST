@@ -14,6 +14,7 @@ from api_iso_antares.antares_io.reader import (
 from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.web import RequestHandler
+from api_iso_antares.web.request_handler import RequestHandlerParameters
 from api_iso_antares.web.server import create_server
 
 
@@ -78,3 +79,23 @@ def test_sta_mini_settings(
         url=url,
         expected_output=expected_output,
     )
+
+
+@pytest.mark.integration_test
+@pytest.mark.parametrize(
+    "url, expected_output",
+    [
+        ("/metadata/STA-mini/input/bindingconstraints/bindingconstraints.ini", {}),
+
+    ],
+)
+def test_sta_mini_input(
+    request_handler: RequestHandler, url: str, expected_output: str
+):
+    url = url[10:]
+    assert request_handler.get(url, RequestHandlerParameters()) == expected_output
+    # assert_url_content(
+    #     request_handler=request_handler,
+    #     url=url,
+    #     expected_output=expected_output,
+    # )

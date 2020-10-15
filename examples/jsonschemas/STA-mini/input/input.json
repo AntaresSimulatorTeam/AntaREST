@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "definitions": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "bindingconstraints": {
+          "$ref": "bindingconstraints/bindingconstraints.json#/definitions/bindingconstraints"
+        }
+      }
+    }
+  }
+}
