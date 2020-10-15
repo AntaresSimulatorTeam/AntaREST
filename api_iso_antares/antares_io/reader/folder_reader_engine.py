@@ -66,7 +66,7 @@ class FolderReaderEngine:
 
     def _parse_file(self, cursor: PathCursor) -> SUB_JSON:
         path = cursor.path
-        if path.suffix in [".txt", ".dat", ".ico"]:
+        if path.suffix in [".txt", ".dat", ".ico", ".log"]:
             path_parent = f"{self.root}{os.sep}"
             relative_path = str(path).replace(path_parent, "")
             return f"file{os.sep}{relative_path}"

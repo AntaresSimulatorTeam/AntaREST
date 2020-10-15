@@ -17,6 +17,9 @@
         },
         "input": {
             "$ref": "input/input.json#/definitions/input"
+        },
+        "output": {
+            "$ref": "output/output.json#/definitions/output"
         }
     }
 }

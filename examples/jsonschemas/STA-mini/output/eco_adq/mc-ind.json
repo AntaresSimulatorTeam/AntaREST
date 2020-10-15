@@ -1,0 +1,11 @@
+{
+    "type": "object",
+    "definitions": {
+        "mc-ind": {
+            "type": "array",
+            "items": {
+                "type": "object"
+            }
+        }
+    }
+}
