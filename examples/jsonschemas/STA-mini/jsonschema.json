@@ -23,7 +23,7 @@
             }
         },
         "settings": {
-            "$ref": "settings.json#/definitions/settings"
+            "$ref": "settings/settings.json#/definitions/settings"
         }
     }
 }
