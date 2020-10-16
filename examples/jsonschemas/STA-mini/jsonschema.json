@@ -13,7 +13,7 @@
             "$ref": "settings/settings.json#/definitions/settings"
         },
         "layers": {
-            "$ref": "layers/layers.ini.json#/definitions/layers"
+            "$ref": "layers/layers.json#/definitions/layers"
         },
         "input": {
             "$ref": "input/input.json#/definitions/input"
