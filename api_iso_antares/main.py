@@ -33,13 +33,12 @@ def parse_arguments() -> argparse.Namespace:
 if __name__ == "__main__":
     arguments: argparse.Namespace = parse_arguments()
 
-    project_dir: Path = Path(__file__).resolve().parents[2]
     jsonschema = JsmReader.read(Path(arguments.jsm_path))
     request_handler = RequestHandler(
         study_reader=FolderReaderEngine(
             ini_reader=IniReader(),
             jsm=jsonschema,
-            root=project_dir,
+            root=arguments.studies_path,
             jsm_validator=JsmValidator(jsm=jsonschema),
         ),
         url_engine=UrlEngine(jsm={}),
