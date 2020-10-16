@@ -11,6 +11,8 @@ from api_iso_antares.web.server import create_server
 def assert_url_content(
     request_handler: RequestHandler, url: str, expected_output: str
 ) -> None:
+    # url = url[10:]
+    # assert request_handler.get(url, RequestHandlerParameters()) == expected_output
     app = create_server(request_handler)
     client = app.test_client()
     res = client.get(url)
