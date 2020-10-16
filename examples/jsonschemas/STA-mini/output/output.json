@@ -11,7 +11,7 @@
                     "checkIntegrity.txt": {"type": "string"},
                     "simulation-comments.txt": {"type": "string"},
                     "simulation.log": {"type": "string"},
-                    "about-the-study":{"$ref" : "about-the-study.json#/definitions/about-the-study"}
+                    "about-the-study":{"$ref" : "about-the-study/about-the-study.json#/definitions/about-the-study"}
                 }
             }
         }

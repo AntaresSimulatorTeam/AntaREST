@@ -7,8 +7,8 @@
                 "areas.txt": {"type": "string"},
                 "comments.txt": {"type":  "string"},
                 "links.txt": {"type":  "string"},
-                "parameters.ini": {"$ref": "about-the-study/parameters.ini.json#/definitions/parameters.ini"},
-                "study.ini": {"$ref": "about-the-study/study.ini.json#/definitions/study.ini"}
+                "parameters.ini": {"$ref": "parameters.ini.json#/definitions/parameters.ini"},
+                "study.ini": {"$ref": "study.ini.json#/definitions/study.ini"}
             }
         }
     }
