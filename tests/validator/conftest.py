@@ -1,9 +1,6 @@
-import json
 from pathlib import Path
 
 import pytest
-
-from api_iso_antares.custom_types import JSON
 
 PATH_TESTS = Path(__file__).parents[0]
 

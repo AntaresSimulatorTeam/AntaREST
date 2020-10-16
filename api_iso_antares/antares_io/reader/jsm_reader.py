@@ -1,6 +1,6 @@
-import json
 from pathlib import Path
-from typing import Any, cast, Dict
+from pathlib import Path
+from typing import cast
 
 import jsonref
 

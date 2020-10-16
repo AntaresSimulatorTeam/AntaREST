@@ -2,8 +2,6 @@ import os
 from copy import deepcopy
 from pathlib import Path
 
-from jsonschema import validate
-
 from api_iso_antares.antares_io.reader.cursor import (
     PathCursor,
     JsmCursor,
