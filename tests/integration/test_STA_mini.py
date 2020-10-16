@@ -45,19 +45,7 @@ def test_sta_mini(
     "url, expected_output",
     [
         ("/metadata/STA-mini/settings/generaldata.ini/general/horizon", 2030),
-        (
-            "/metadata/STA-mini/settings/comments.txt",
-            f"file{os.sep}STA-mini{os.sep}settings{os.sep}comments.txt",
-        ),
-        (
-            "/metadata/STA-mini/settings/scenariobuilder.dat",
-            f"file{os.sep}STA-mini{os.sep}settings{os.sep}scenariobuilder.dat",
-        ),
         ("/metadata/STA-mini/settings/simulations", {}),
-        (
-            "/metadata/STA-mini/settings/resources/study.ico",
-            f"file{os.sep}STA-mini{os.sep}settings{os.sep}resources{os.sep}study.ico",
-        ),
     ],
 )
 def test_sta_mini_settings(
