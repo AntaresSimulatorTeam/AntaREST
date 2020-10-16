@@ -157,15 +157,11 @@ def test_sta_mini_study_antares(
 def test_sta_mini_input(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
-    url = url[10:]
-    assert (
-        request_handler.get(url, RequestHandlerParameters()) == expected_output
+    assert_url_content(
+        request_handler=request_handler,
+        url=url,
+        expected_output=expected_output,
     )
-    # assert_url_content(
-    #     request_handler=request_handler,
-    #     url=url,
-    #     expected_output=expected_output,
-    # )
 
 
 @pytest.mark.integration_test
