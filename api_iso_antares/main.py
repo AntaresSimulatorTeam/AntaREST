@@ -27,7 +27,7 @@ def parse_arguments() -> argparse.Namespace:
         dest="studies_path",
         help="Path to the studies directory",
     )
-    return parser.parse_args(sys.argv[1:])
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
