@@ -29,5 +29,5 @@ jobs:
       - name: Archive server binary
         uses: actions/upload-artifact@v2
         with:
-          name: server
+          name: server-${{ matrix.os }}
           path: dist/server*
