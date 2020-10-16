@@ -10,7 +10,7 @@ from api_iso_antares.engine.url_engine import UrlNotMatchJsonDataError
 @pytest.mark.unit_test
 def test_get_right_settings(test_json_data: JSON) -> None:
     path = Path("part1/key_int")
-    url_engine = UrlEngine(jsonschema={})
+    url_engine = UrlEngine(jsm={})
 
     assert url_engine.apply(path, test_json_data) == 1
 
@@ -18,7 +18,7 @@ def test_get_right_settings(test_json_data: JSON) -> None:
 @pytest.mark.unit_test
 def test_get_wrong_path(test_json_data: JSON) -> None:
     path = Path("WRONG/PATH")
-    url_engine = UrlEngine(jsonschema={})
+    url_engine = UrlEngine(jsm={})
 
     with pytest.raises(UrlNotMatchJsonDataError):
         url_engine.apply(path, test_json_data, depth=-1)
@@ -39,7 +39,7 @@ def test_get_right_settings_with_depth() -> None:
         }
     }
 
-    url_engine = UrlEngine(jsonschema={})
+    url_engine = UrlEngine(jsm={})
 
     expected_enough_depth = {
         "value1": 43,
@@ -57,4 +57,18 @@ def test_get_right_settings_with_depth() -> None:
     assert (
         url_engine.apply(Path("level0/level1/level2/level3"), data, 1)
         == expected_deeper_depth
+    )
+
+
+@pytest.mark.unit_test
+def test_get_array_items(lite_jsondata: JSON) -> None:
+    data = lite_jsondata
+
+    url_engine = UrlEngine(jsm={})
+
+    expected = str(Path("file/folder3/areas/area1/matrice1.txt"))
+
+    assert (
+        url_engine.apply(Path("folder3/areas/area1/matrice1.txt"), data)
+        == expected
     )

@@ -1,0 +1,9 @@
+{
+    "type": "object",
+    "definitions": {
+        "bindingconstraints.ini": {
+            "type": "object",
+            "properties": {}
+        }
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "type": "object",
+    "definitions": {
+        "output": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "$id" : {"type":    "string"},
+                    "annualSystemCost.txt": {"type": "string"},
+                    "checkIntegrity.txt": {"type": "string"},
+                    "simulation-comments.txt": {"type": "string"},
+                    "simulation.log": {"type": "string"},
+                    "about-the-study":{"$ref" : "about-the-study/about-the-study.json#/definitions/about-the-study"}
+                }
+            }
+        }
+    }
+}

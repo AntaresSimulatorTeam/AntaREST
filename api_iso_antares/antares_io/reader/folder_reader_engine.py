@@ -2,8 +2,6 @@ import os
 from copy import deepcopy
 from pathlib import Path
 
-from jsonschema import validate
-
 from api_iso_antares.antares_io.reader.cursor import (
     PathCursor,
     JsmCursor,
@@ -23,13 +21,13 @@ class PathNotMatchJsonSchema(HtmlException):
 class FolderReaderEngine:
     def __init__(
         self,
-        reader_ini: IniReader,
-        jsonschema: JSON,
+        ini_reader: IniReader,
+        jsm: JSON,
         root: Path,
         jsm_validator: JsmValidator,
     ):
-        self._reader_ini = reader_ini
-        self.jsonschema = jsonschema
+        self._reader_ini = ini_reader
+        self.jsonschema = jsm
         self.root = root
         self.jsm_validator = jsm_validator
 
@@ -66,11 +64,14 @@ class FolderReaderEngine:
 
     def _parse_file(self, cursor: PathCursor) -> SUB_JSON:
         path = cursor.path
-        if path.suffix == ".txt":
+        if path.suffix in [".txt", ".log"]:
             path_parent = f"{self.root}{os.sep}"
             relative_path = str(path).replace(path_parent, "")
-            return f"matrices{os.sep}{relative_path}"
-        elif path.suffix == ".ini":
+            return f"file{os.sep}{relative_path}"
+        elif path.suffix in [
+            ".ini",
+            ".antares",
+        ]:  # TODO: add a hook remove business antares
             return self._reader_ini.read(path)
         raise NotImplementedError(
             f"File extension {path.suffix} not implemented"

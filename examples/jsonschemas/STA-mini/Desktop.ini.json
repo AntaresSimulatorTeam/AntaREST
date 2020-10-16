@@ -1,0 +1,26 @@
+{
+    "type": "object",
+    "definitions": {
+        "Desktop.ini": {
+            "type": "object",
+            "properties": {
+                ".shellclassinfo": {
+                    "type": "object",
+                    "properties": {
+                        "iconfile": {
+                            "type": "string"
+                        },
+                        "iconindex": {
+                            "type": "integer"
+                        },
+                        "infotip": {
+                            "type": "string"
+                        }
+                    },
+                    "required": []
+                }
+            },
+            "required": []
+        }
+    }
+}

@@ -1,0 +1,32 @@
+{
+    "type": "object",
+    "definitions": {
+        "study.antares": {
+            "type": "object",
+            "properties": {
+                "antares": {
+                    "type": "object",
+                    "properties": {
+                        "version": {
+                            "type": "integer"
+                        },
+                        "caption": {
+                            "type": "string"
+                        },
+                        "created": {
+                            "type": "integer"
+                        },
+                        "lastsave": {
+                            "type": "integer"
+                        },
+                        "author": {
+                            "type": "string"
+                        }
+                    },
+                    "required": []
+                }
+            },
+            "required": []
+        }
+    }
+}

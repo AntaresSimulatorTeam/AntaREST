@@ -13,8 +13,8 @@ def test_reader_folder(
 ) -> None:
 
     study_reader = FolderReaderEngine(
-        reader_ini=IniReader(),
-        jsonschema=lite_jsonschema,
+        ini_reader=IniReader(),
+        jsm=lite_jsonschema,
         root=lite_path,
         jsm_validator=JsmValidator(jsm=lite_jsonschema),
     )

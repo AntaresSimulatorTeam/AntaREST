@@ -15,26 +15,28 @@ def test_request(tmp_path: str) -> None:
 
     project_dir: Path = Path(__file__).resolve().parents[2]
 
-    path_to_schema = project_dir / "examples/jsonschemas/jsonschema.json"
+    path_to_schema = (
+        project_dir / "examples/jsonschemas/sub-study/jsonschema.json"
+    )
     jsonschema = json.load(path_to_schema.open())
 
     jsm_validator = JsmValidator(jsm=jsonschema)
 
     request_handler = RequestHandler(
         study_reader=FolderReaderEngine(
-            reader_ini=IniReader(),
-            jsonschema=jsonschema,
+            ini_reader=IniReader(),
+            jsm=jsonschema,
             root=project_dir,
             jsm_validator=jsm_validator,
         ),
-        url_engine=UrlEngine(jsonschema={}),
-        path_to_studies=project_dir / "tests/integration",
+        url_engine=UrlEngine(jsm={}),
+        path_studies=project_dir / "examples/studies",
     )
 
     app = create_server(request_handler)
     client = app.test_client()
     res = client.get(
-        "/metadata/study/settings/generaldata.ini/general/nbyears"
+        "/metadata/sub-study/settings/generaldata.ini/general/nbyears"
     )
 
     assert json.loads(res.data) == 2

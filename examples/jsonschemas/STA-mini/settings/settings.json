@@ -1,0 +1,17 @@
+{
+    "type": "object",
+    "definitions": {
+        "settings": {
+            "type": "object",
+            "properties": {
+                "generaldata.ini": {
+                    "$ref": "generaldata.ini.json#/definitions/generaldata.ini"
+                },
+                "simulations": {
+                    "type": "object",
+                    "properties": {}
+                }
+            }
+        }
+    }
+}

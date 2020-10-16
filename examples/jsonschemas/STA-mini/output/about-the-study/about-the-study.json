@@ -1,0 +1,15 @@
+{
+    "type": "object",
+    "definitions": {
+        "about-the-study": {
+            "type" : "object",
+            "properties": {
+                "areas.txt": {"type": "string"},
+                "comments.txt": {"type":  "string"},
+                "links.txt": {"type":  "string"},
+                "parameters.ini": {"$ref": "parameters.ini.json#/definitions/parameters.ini"},
+                "study.ini": {"$ref": "study.ini.json#/definitions/study.ini"}
+            }
+        }
+    }
+}

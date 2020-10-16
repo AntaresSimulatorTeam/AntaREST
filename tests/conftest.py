@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
 import sys
 from pathlib import Path
 
@@ -9,6 +8,11 @@ project_dir: Path = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_dir))
 
 from api_iso_antares.custom_types import JSON
+
+
+@pytest.fixture
+def project_path() -> Path:
+    return project_dir
 
 
 @pytest.fixture
@@ -153,11 +157,9 @@ def lite_jsondata() -> JSON:
         "file1.ini": file_content,
         "folder1": {
             "file2.ini": file_content,
-            "matrice1.txt": str(Path("matrices/folder1/matrice1.txt")),
+            "matrice1.txt": str(Path("file/folder1/matrice1.txt")),
             "folder2": {
-                "matrice2.txt": str(
-                    Path("matrices/folder1/folder2/matrice2.txt")
-                ),
+                "matrice2.txt": str(Path("file/folder1/folder2/matrice2.txt")),
             },
         },
         "folder3": {
@@ -166,21 +168,21 @@ def lite_jsondata() -> JSON:
                 {
                     "$id": "area1",
                     "matrice1.txt": str(
-                        Path("matrices/folder3/areas/area1/matrice1.txt")
+                        Path("file/folder3/areas/area1/matrice1.txt")
                     ),
                     "file4.ini": file_content,
                 },
                 {
                     "$id": "area2",
                     "matrice1.txt": str(
-                        Path("matrices/folder3/areas/area2/matrice1.txt")
+                        Path("file/folder3/areas/area2/matrice1.txt")
                     ),
                     "file4.ini": file_content,
                 },
                 {
                     "$id": "area3",
                     "matrice1.txt": str(
-                        Path("matrices/folder3/areas/area3/matrice1.txt")
+                        Path("file/folder3/areas/area3/matrice1.txt")
                     ),
                     "file4.ini": file_content,
                 },

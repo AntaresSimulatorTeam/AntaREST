@@ -1,4 +1,3 @@
-import json
 import sys
 from pathlib import Path
 
@@ -17,13 +16,13 @@ if __name__ == "__main__":
     jsonschema = JsmReader.read(Path(sys.argv[1]))
     request_handler = RequestHandler(
         study_reader=FolderReaderEngine(
-            reader_ini=IniReader(),
-            jsonschema=jsonschema,
+            ini_reader=IniReader(),
+            jsm=jsonschema,
             root=project_dir,
             jsm_validator=JsmValidator(jsm=jsonschema),
         ),
-        url_engine=UrlEngine(jsonschema={}),
-        path_to_studies=Path(sys.argv[2]),
+        url_engine=UrlEngine(jsm={}),
+        path_studies=Path(sys.argv[2]),
     )
     application = create_server(request_handler)
 

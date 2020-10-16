@@ -42,11 +42,11 @@ class RequestHandler:
         self,
         study_reader: FolderReaderEngine,
         url_engine: UrlEngine,
-        path_to_studies: Path,
+        path_studies: Path,
     ):
         self.study_reader = study_reader
         self.url_engine = url_engine
-        self.path_to_studies = path_to_studies
+        self.path_to_studies = path_studies
 
     def get(self, route: str, parameters: RequestHandlerParameters) -> Any:
         path_route = Path(route)

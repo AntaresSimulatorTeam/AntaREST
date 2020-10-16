@@ -71,13 +71,13 @@ def test_matrix(tmp_path: str) -> None:
     (tmp / "study1" / "matrix").write_text("toto")
 
     request_handler = RequestHandler(
-        study_reader=Mock(), url_engine=Mock(), path_to_studies=Path(tmp_path)
+        study_reader=Mock(), url_engine=Mock(), path_studies=Path(tmp_path)
     )
     app = create_server(request_handler)
     client = app.test_client()
-    result_right = client.get("/data/study1/matrix")
+    result_right = client.get("/file/study1/matrix")
 
     assert result_right.data == b"toto"
 
-    result_wrong = client.get("/data/study1/WRONG_MATRIX")
+    result_wrong = client.get("/file/study1/WRONG_MATRIX")
     assert result_wrong.status_code == 404

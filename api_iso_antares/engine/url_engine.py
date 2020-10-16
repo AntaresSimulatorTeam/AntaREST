@@ -12,8 +12,8 @@ class UrlNotMatchJsonDataError(HtmlException):
 
 
 class UrlEngine:
-    def __init__(self, jsonschema: JSON) -> None:
-        self.jsonschema = jsonschema
+    def __init__(self, jsm: JSON) -> None:
+        self.jsonschema = jsm
 
     def apply(
         self, path: Path, json_data: JSON, depth: Optional[int] = None
@@ -32,10 +32,20 @@ class UrlEngine:
             return json_data
 
         key = path[0]
-        if key not in json_data:
-            raise UrlNotMatchJsonDataError(f"Key {key} not in data.")
 
-        return UrlEngine._apply_recursive(path[1:], json_data[key], depth)
+        if isinstance(json_data, list):
+            search_element = [
+                element for element in json_data if element["$id"] == key
+            ]
+            if not search_element:
+                raise UrlNotMatchJsonDataError(f"Key {key} not in data.")
+            new_jsondata = search_element[0]
+        else:
+            if key not in json_data:
+                raise UrlNotMatchJsonDataError(f"Key {key} not in data.")
+            new_jsondata = json_data[key]
+
+        return UrlEngine._apply_recursive(path[1:], new_jsondata, depth)
 
     @staticmethod
     def prune(json_data: SUB_JSON, max_depth: int) -> None:

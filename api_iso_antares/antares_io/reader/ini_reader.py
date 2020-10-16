@@ -43,7 +43,7 @@ class IniReader:
 
     @staticmethod
     def read(path: Path) -> JSON:
-        config = configparser.ConfigParser()
+        config = IniConfigParser()
         config.read(path)
 
         return {
@@ -51,3 +51,8 @@ class IniReader:
             for key in config
             if key != "DEFAULT"
         }
+
+
+class IniConfigParser(configparser.ConfigParser):
+    def optionxform(self, optionstr: str) -> str:
+        return optionstr

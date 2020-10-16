@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "definitions": {
+    "series": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "mod.txt": {"type":  "string"},
+          "ror.txt": {"type":  "string"}
+        }
+      }
+    }
+  }
+}

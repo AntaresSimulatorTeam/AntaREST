@@ -1,0 +1,13 @@
+{
+    "type": "object",
+    "definitions": {
+        "layers": {
+            "type": "object",
+            "properties": {
+                "layers.ini": {
+                    "$ref": "layers.ini.json#/definitions/layers"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,25 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "title": "Root of study STA-mini",
+    "required": [],
+    "properties": {
+        "Desktop.ini": {
+            "$ref": "Desktop.ini.json#/definitions/Desktop.ini"
+        },
+        "study.antares": {
+            "$ref": "study.antares.json#/definitions/study.antares"
+        },
+        "settings": {
+            "$ref": "settings/settings.json#/definitions/settings"
+        },
+        "layers": {
+            "$ref": "layers/layers.json#/definitions/layers"
+        },
+        "input": {
+            "$ref": "input/input.json#/definitions/input"
+        },
+        "output": {
+            "$ref": "output/output.json#/definitions/output"
+        }
+    }
+}
