@@ -7,18 +7,9 @@
                 "generaldata.ini": {
                     "$ref": "generaldata.ini.json#/definitions/generaldata.ini"
                 },
-                "comments.txt": {
-                    "type": "string"
-                },
-                "scenariobuilder.dat": {
-                    "type": "string"
-                },
                 "simulations": {
                     "type": "object",
                     "properties": {}
-                },
-                "resources": {
-                    "$ref": "resources/resources.json#definitions/resources"
                 }
             }
         }
