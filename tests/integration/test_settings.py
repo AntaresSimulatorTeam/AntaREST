@@ -22,15 +22,16 @@ def test_request(tmp_path: str) -> None:
 
     jsm_validator = JsmValidator(jsm=jsonschema)
 
+    studies_path = project_dir / "examples/studies"
     request_handler = RequestHandler(
         study_reader=FolderReaderEngine(
             ini_reader=IniReader(),
             jsm=jsonschema,
-            root=project_dir,
+            root=studies_path,
             jsm_validator=jsm_validator,
         ),
         url_engine=UrlEngine(jsm={}),
-        path_studies=project_dir / "examples/studies",
+        path_studies=studies_path,
     )
 
     app = create_server(request_handler)
