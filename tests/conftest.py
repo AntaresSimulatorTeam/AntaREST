@@ -29,18 +29,13 @@ def lite_jsonschema() -> JSON:
     return {
         "$schema": "http://json-schema.org/draft-07/schema",
         "type": "object",
-        "title": "The root schema",
-        "required": ["file1.ini", "folder1", "folder3"],
         "properties": {
-            "file1.ini": {
+            "key_file1": {
                 "type": "object",
-                "title": "The file3.ini schema",
-                "required": ["section"],
+                "rte-metadata": {"filename": "file1.ini"},
                 "properties": {
                     "section": {
                         "type": "object",
-                        "title": "The section schema",
-                        "required": ["params"],
                         "properties": {
                             "params": {
                                 "type": "integer",
@@ -154,7 +149,7 @@ def lite_jsonschema() -> JSON:
 def lite_jsondata() -> JSON:
     file_content = {"section": {"params": 123}}
     return {
-        "file1.ini": file_content,
+        "key_file1": file_content,
         "folder1": {
             "file2.ini": file_content,
             "matrice1.txt": str(Path("file/folder1/matrice1.txt")),

@@ -1,8 +1,11 @@
 {
     "type": "object",
     "definitions": {
-        "Desktop.ini": {
+        "desktop": {
             "type": "object",
+            "rte-metadata": {
+                "filename": "Desktop.ini"
+            },
             "properties": {
                 ".shellclassinfo": {
                     "type": "object",

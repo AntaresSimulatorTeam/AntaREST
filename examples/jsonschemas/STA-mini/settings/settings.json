@@ -4,8 +4,8 @@
         "settings": {
             "type": "object",
             "properties": {
-                "generaldata.ini": {
-                    "$ref": "generaldata.ini.json#/definitions/generaldata.ini"
+                "generaldata": {
+                    "$ref": "generaldata.ini.json#/definitions/generaldata"
                 },
                 "simulations": {
                     "type": "object",

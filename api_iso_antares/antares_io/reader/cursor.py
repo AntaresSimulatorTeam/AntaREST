@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Any, Tuple
+from typing import Dict, List, Any, Optional, Tuple
 
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.custom_types import JSON
@@ -37,35 +37,37 @@ class JsmCursor:
     def get_type(self) -> str:
         return self.type_data
 
+    def get_metadata(self) -> Optional[JSON]:
+        return self.jsm.get("rte-metadata", None)
 
-class DataCursor:
-    def __init__(self, data: Any, jsm: JsmCursor):
-        self.data = data
-        self.jsm = jsm
-
-    def set(self, key: str, value: Any) -> None:
-        self.data[key] = value
-
-    def next(self, key: str) -> "DataCursor":
-        next_jsm = self.jsm.next(key)
-        self.data[key] = [] if next_jsm.get_type() == "array" else {}
-        return DataCursor(self.data[key], next_jsm)
-
-    def next_item(self, key: str) -> "DataCursor":
-        self.data.append({"$id": key})
-        return DataCursor(self.data[-1], self.jsm)
-
-    def get_properties(self) -> List[str]:
-        return self.jsm.get_properties()
-
-    def get_type(self) -> str:
-        return self.jsm.get_type()
+    def get_filename(self) -> Optional[str]:
+        metadata = self.get_metadata()
+        filename: Optional[str] = None
+        if metadata is not None:
+            filename = metadata.get("filename", None)
+        return filename
 
     def is_array(self) -> bool:
         return self.get_type() == "array"
 
     def is_object(self) -> bool:
         return self.get_type() == "object"
+
+
+class DataCursor:
+    def __init__(self, data: Any):
+        self.data = data
+
+    def set(self, key: str, value: Any) -> None:
+        self.data[key] = value
+
+    def next(self, key: str, jsm: JsmCursor) -> "DataCursor":
+        self.data[key] = [] if jsm.get_type() == "array" else {}
+        return DataCursor(self.data[key])
+
+    def next_item(self, key: str) -> "DataCursor":
+        self.data.append({"$id": key})
+        return DataCursor(self.data[-1])
 
 
 class PathCursor:
@@ -75,7 +77,6 @@ class PathCursor:
 
     def next(self, key: str) -> "PathCursor":
         path = self.path / key
-
         return PathCursor(path)
 
     def is_dir(self) -> bool:

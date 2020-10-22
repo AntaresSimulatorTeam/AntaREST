@@ -4,7 +4,7 @@
         "layers": {
             "type": "object",
             "properties": {
-                "layers.ini": {
+                "layers": {
                     "$ref": "layers.ini.json#/definitions/layers"
                 }
             }
