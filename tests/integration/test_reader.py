@@ -2,9 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from api_iso_antares.antares_io.reader import IniReader, FolderReaderEngine
+from api_iso_antares.antares_io.reader import IniReader
+from api_iso_antares.antares_io.jsonschema import JsonSchema
 from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
 from api_iso_antares.custom_types import JSON
+from api_iso_antares.engine.filesystem_engine import FileSystemEngine
 
 
 @pytest.mark.integration_test
@@ -12,12 +14,13 @@ def test_reader_folder(
     lite_path: Path, lite_jsonschema: JSON, lite_jsondata: JSON
 ) -> None:
 
-    study_reader = FolderReaderEngine(
-        ini_reader=IniReader(),
-        jsm=lite_jsonschema,
-        root=lite_path,
-        jsm_validator=JsmValidator(jsm=lite_jsonschema),
-    )
+    jsm = JsonSchema(lite_jsonschema)
+    readers = {"default": IniReader()}
 
-    res = study_reader.read(lite_path)
+    study_reader = FileSystemEngine(jsm=jsm, readers=readers)
+    res = study_reader.parse(lite_path)
+
+    jsm_validator = JsmValidator(jsm=jsm)
+    jsm_validator.validate(res)
+
     assert res == lite_jsondata

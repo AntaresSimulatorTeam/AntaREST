@@ -2,7 +2,7 @@ import configparser
 from pathlib import Path
 from typing import Optional, Union
 
-from api_iso_antares.custom_types import JSON, ELEMENT
+from api_iso_antares.custom_types import ELEMENT, JSON
 
 
 class IniReader:

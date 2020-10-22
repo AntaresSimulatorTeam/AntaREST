@@ -1,14 +1,13 @@
 from pathlib import Path
-from pathlib import Path
-from typing import cast
 
 import jsonref
 
-from api_iso_antares.custom_types import JSON
+from api_iso_antares.antares_io.jsonschema import JsonSchema
 
 
 class JsmReader:
     @staticmethod
-    def read(path: Path) -> JSON:
+    def read(path: Path) -> JsonSchema:
         data = jsonref.load_uri(path.resolve().as_uri())
-        return cast(JSON, data)
+        jsm = JsonSchema(data)
+        return jsm

@@ -18,7 +18,7 @@ def assert_url_content(
 
 
 def assert_with_errors(
-    url: str, request_handler: RequestHandler, expected_output: dict
+    request_handler: RequestHandler, url: str, expected_output: dict
 ) -> None:
     url = url[10:]
     print(url)
@@ -54,6 +54,11 @@ def test_sta_mini(
 def test_sta_mini_settings(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
+    assert_with_errors(
+        request_handler=request_handler,
+        url=url,
+        expected_output=expected_output,
+    )
     assert_url_content(
         request_handler=request_handler,
         url=url,

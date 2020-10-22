@@ -57,4 +57,4 @@ def test_jsm_reader(tmp_path: str) -> None:
     path_jsm.write_text(content_jsm)
     jsm = JsmReader.read(path_jsm)
 
-    assert jsm == expected_jsm
+    assert jsm.data == expected_jsm

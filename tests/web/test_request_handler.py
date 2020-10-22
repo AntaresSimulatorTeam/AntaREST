@@ -34,15 +34,19 @@ def test_get(tmp_path: str) -> None:
     sub_route = "settings/blabla"
 
     study_reader_mock = Mock()
-    study_reader_mock.read.return_value = data
+    study_reader_mock.parse.return_value = data
 
     url_engine_mock = Mock()
     url_engine_mock.apply.return_value = expected_data
 
+    jsm_validator_mock = Mock()
+    jsm_validator_mock.validate.return_value = None
+
     request_handler = RequestHandler(
-        study_reader=study_reader_mock,
+        study_parser=study_reader_mock,
         url_engine=url_engine_mock,
         path_studies=path_to_studies,
+        jsm_validator=jsm_validator_mock,
     )
 
     parameters = RequestHandlerParameters(depth=2)
@@ -53,10 +57,10 @@ def test_get(tmp_path: str) -> None:
 
     assert output == expected_data
 
-    study_reader_mock.read.assert_called_once_with(
+    study_reader_mock.parse.assert_called_once_with(
         path_to_studies / "study2.py"
     )
-    study_reader_mock.validate.assert_called_once_with(data)
+    jsm_validator_mock.validate.assert_called_once_with(data)
     url_engine_mock.apply.assert_called_once_with(
         Path(sub_route), data, parameters.depth
     )
@@ -78,7 +82,10 @@ def test_assert_study_exist(tmp_path: str) -> None:
 
     # Test & Verify
     request_handler = RequestHandler(
-        study_reader=Mock(), url_engine=Mock(), path_studies=path_to_studies
+        study_parser=Mock(),
+        url_engine=Mock(),
+        path_studies=path_to_studies,
+        jsm_validator=Mock(),
     )
     request_handler._assert_study_exist(study_name)
 
@@ -99,7 +106,10 @@ def test_assert_study_not_exist(tmp_path: str) -> None:
 
     # Test & Verify
     request_handler = RequestHandler(
-        study_reader=Mock(), url_engine=Mock(), path_studies=path_to_studies
+        study_parser=Mock(),
+        url_engine=Mock(),
+        path_studies=path_to_studies,
+        jsm_validator=Mock(),
     )
     with pytest.raises(StudyNotFoundError):
         request_handler._assert_study_exist(study_name)

@@ -3,13 +3,11 @@ from zipfile import ZipFile
 
 import pytest
 
-from api_iso_antares.antares_io.reader import (
-    FolderReaderEngine,
-    IniReader,
-    JsmReader,
-)
+from api_iso_antares.antares_io.jsonschema import JsonSchema
+from api_iso_antares.antares_io.reader import IniReader, JsmReader
 from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
 from api_iso_antares.engine import UrlEngine
+from api_iso_antares.engine.filesystem_engine import FileSystemEngine
 from api_iso_antares.web import RequestHandler
 
 
@@ -28,15 +26,14 @@ def request_handler(tmp_path: str, project_path: Path) -> RequestHandler:
     jsm = JsmReader.read(path_jsm)
     jsm_validator = JsmValidator(jsm=jsm)
 
+    readers = {"default": IniReader()}
+    study_reader = FileSystemEngine(jsm=jsm, readers=readers)
+
     request_handler = RequestHandler(
-        study_reader=FolderReaderEngine(
-            ini_reader=IniReader(),
-            jsm=jsm,
-            root=path_studies,
-            jsm_validator=jsm_validator,
-        ),
+        study_parser=study_reader,
         url_engine=UrlEngine(jsm=jsm),
         path_studies=path_studies,
+        jsm_validator=jsm_validator,
     )
 
     return request_handler

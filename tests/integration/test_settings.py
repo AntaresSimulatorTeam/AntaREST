@@ -3,9 +3,11 @@ from pathlib import Path
 
 import pytest
 
-from api_iso_antares.antares_io.reader import FolderReaderEngine, IniReader
+from api_iso_antares.antares_io.reader import IniReader, JsmReader
+from api_iso_antares.antares_io.jsonschema import JsonSchema
 from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
 from api_iso_antares.engine import UrlEngine
+from api_iso_antares.engine.filesystem_engine import FileSystemEngine
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.server import create_server
 
@@ -18,20 +20,19 @@ def test_request(tmp_path: str) -> None:
     path_to_schema = (
         project_dir / "examples/jsonschemas/sub-study/jsonschema.json"
     )
-    jsonschema = json.load(path_to_schema.open())
+    jsm = JsmReader.read(path_to_schema)
 
-    jsm_validator = JsmValidator(jsm=jsonschema)
+    jsm_validator = JsmValidator(jsm=jsm)
+
+    readers = {"default": IniReader()}
+    study_reader = FileSystemEngine(jsm=jsm, readers=readers)
 
     studies_path = project_dir / "examples/studies"
     request_handler = RequestHandler(
-        study_reader=FolderReaderEngine(
-            ini_reader=IniReader(),
-            jsm=jsonschema,
-            root=studies_path,
-            jsm_validator=jsm_validator,
-        ),
+        study_parser=study_reader,
         url_engine=UrlEngine(jsm={}),
         path_studies=studies_path,
+        jsm_validator=jsm_validator,
     )
 
     app = create_server(request_handler)

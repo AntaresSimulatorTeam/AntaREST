@@ -1,7 +1,8 @@
 from copy import deepcopy
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
+from api_iso_antares.antares_io.jsonschema import JsonSchema
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.custom_types import JSON, SUB_JSON
 
@@ -12,8 +13,8 @@ class UrlNotMatchJsonDataError(HtmlException):
 
 
 class UrlEngine:
-    def __init__(self, jsm: JSON) -> None:
-        self.jsonschema = jsm
+    def __init__(self, jsm: JsonSchema) -> None:
+        self.jsm = jsm
 
     def apply(
         self, path: Path, json_data: JSON, depth: Optional[int] = None
