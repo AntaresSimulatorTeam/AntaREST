@@ -38,7 +38,7 @@ def create_routes(application: Flask) -> None:
         return jsonify(output), 200
 
     @application.route(
-        "/file/<path:path>",  # TODO: demander au metier le nom de metadata/data
+        "/file/<path:path>",
         methods=["GET"],
     )
     def data(path: str) -> Any:

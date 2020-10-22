@@ -54,12 +54,6 @@ def test_sta_mini(
 def test_sta_mini_settings(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
-    # url = url[10:]
-    # print(url)
-    # assert (
-    #     request_handler.get(route=url, parameters=RequestHandlerParameters())
-    #     == expected_output
-    # )
     assert_url_content(
         request_handler=request_handler,
         url=url,

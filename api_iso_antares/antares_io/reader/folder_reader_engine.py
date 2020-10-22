@@ -35,32 +35,43 @@ class FolderReaderEngine:
         jsonschema = deepcopy(self.jsonschema)
         output: JSON = dict()
 
-        data_cursor = DataCursor(output, JsmCursor(jsonschema))
+        data_cursor = DataCursor(output)
+        jsm_cursor = JsmCursor(jsonschema)
         path_cursor = PathCursor(folder)
-        self._parse_recursive(path_cursor, data_cursor)
+        self._parse_recursive(path_cursor, data_cursor, jsm_cursor)
 
         self.validate(output)
 
         return output
 
     def _parse_recursive(
-        self, path_cursor: PathCursor, data_cursor: DataCursor
+        self,
+        path_cursor: PathCursor,
+        data_cursor: DataCursor,
+        jsm_cursor: JsmCursor,
     ) -> None:
-        for key in data_cursor.get_properties():
-            next_path = path_cursor.next(key)
-            next_data = data_cursor.next(key)
+
+        for key in jsm_cursor.get_properties():
+
+            next_jsm = jsm_cursor.next(key)
+            next_path = self._build_next_path_cursor(
+                path_cursor, next_jsm, key
+            )
+            next_data = data_cursor.next(key, next_jsm)
 
             if next_path.is_dir():
-                self._parse_dir(next_path, next_data)
+                self._parse_dir(next_path, next_data, next_jsm)
             else:
                 data_cursor.set(key, self._parse_file(next_path))
 
-    def _parse_dir(self, path: PathCursor, data: DataCursor) -> None:
-        if data.is_object():
-            self._parse_recursive(path, data)
-        elif data.is_array():
+    def _parse_dir(
+        self, path: PathCursor, data: DataCursor, jsm: JsmCursor
+    ) -> None:
+        if jsm.is_object():
+            self._parse_recursive(path, data, jsm)
+        elif jsm.is_array():
             for path, key in path.next_items():
-                self._parse_recursive(path, data.next_item(key))
+                self._parse_recursive(path, data.next_item(key), jsm)
 
     def _parse_file(self, cursor: PathCursor) -> SUB_JSON:
         path = cursor.path
@@ -76,6 +87,14 @@ class FolderReaderEngine:
         raise NotImplementedError(
             f"File extension {path.suffix} not implemented"
         )
+
+    def _build_next_path_cursor(
+        self, path_cursor: PathCursor, next_jsm: JsmCursor, key: str
+    ) -> PathCursor:
+        file_or_dirname = next_jsm.get_filename()
+        if file_or_dirname is None:
+            file_or_dirname = key
+        return path_cursor.next(file_or_dirname)
 
     def validate(self, jsondata: JSON) -> None:
         if (not self.jsonschema) and jsondata:
