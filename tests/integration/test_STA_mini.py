@@ -30,21 +30,6 @@ def assert_with_errors(
 
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
-    "url,expected_output",
-    [],
-)
-def test_sta_mini(
-    request_handler: RequestHandler, url: str, expected_output: str
-) -> None:
-    assert_url_content(
-        request_handler=request_handler,
-        url=url,
-        expected_output=expected_output,
-    )
-
-
-@pytest.mark.integration_test
-@pytest.mark.parametrize(
     "url, expected_output",
     [
         ("/metadata/STA-mini/settings/generaldata/general/horizon", 2030),

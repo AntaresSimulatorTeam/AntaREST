@@ -3,9 +3,8 @@ from zipfile import ZipFile
 
 import pytest
 
-from api_iso_antares.antares_io.jsonschema import JsonSchema
 from api_iso_antares.antares_io.reader import IniReader, JsmReader
-from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
+from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.filesystem_engine import FileSystemEngine
 from api_iso_antares.web import RequestHandler

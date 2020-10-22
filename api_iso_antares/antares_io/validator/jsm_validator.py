@@ -1,7 +1,7 @@
 from jsonschema import Draft7Validator
 
 from api_iso_antares.custom_types import JSON
-from api_iso_antares.antares_io.jsonschema import JsonSchema
+from api_iso_antares.jsonschema import JsonSchema
 
 
 class JsmValidator:

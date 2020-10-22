@@ -2,7 +2,7 @@ from pathlib import Path
 
 import jsonref
 
-from api_iso_antares.antares_io.jsonschema import JsonSchema
+from api_iso_antares.jsonschema import JsonSchema
 
 
 class JsmReader:

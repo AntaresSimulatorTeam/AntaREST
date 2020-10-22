@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, cast, Dict, List, Optional, Type
 
 from api_iso_antares.antares_io.reader import IniReader
-from api_iso_antares.antares_io.jsonschema import JsonSchema
+from api_iso_antares.jsonschema import JsonSchema
 from api_iso_antares.custom_types import JSON, SUB_JSON
 
 
@@ -111,11 +111,11 @@ class NodeFactory:
     ) -> INode:
         path = NodeFactory._build_path(root_path, jsm, key)
         node_class = NodeFactory.get_node_class_by_strategy(jsm, path)
-        reader = self.get_reader(reader_name="default")
+        reader = self.get_reader("default")
         return node_class(path, jsm, reader, parent, self)
 
-    def get_reader(self, reader_name: str) -> Any:
-        return self.readers[reader_name]
+    def get_reader(self, key: str) -> Any:
+        return self.readers[key]
 
     @staticmethod
     def get_node_class_by_strategy(jsm: JsonSchema, path: Path) -> Type[INode]:

@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from api_iso_antares.antares_io.reader import JsmReader
-from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
+from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_types import JSON
 
 

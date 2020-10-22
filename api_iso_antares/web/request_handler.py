@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from api_iso_antares.antares_io.validator.jsonschema import JsmValidator
+from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.filesystem_engine import FileSystemEngine
