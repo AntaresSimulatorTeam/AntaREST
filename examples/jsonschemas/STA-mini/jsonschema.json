@@ -3,11 +3,11 @@
     "title": "Root of study STA-mini",
     "required": [],
     "properties": {
-        "Desktop.ini": {
-            "$ref": "Desktop.ini.json#/definitions/Desktop.ini"
+        "desktop": {
+            "$ref": "Desktop.ini.json#/definitions/desktop"
         },
-        "study.antares": {
-            "$ref": "study.antares.json#/definitions/study.antares"
+        "study": {
+            "$ref": "study.antares.json#/definitions/study"
         },
         "settings": {
             "$ref": "settings/settings.json#/definitions/settings"

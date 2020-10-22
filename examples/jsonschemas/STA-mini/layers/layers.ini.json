@@ -3,27 +3,35 @@
     "definitions": {
         "layers": {
             "type": "object",
-            "properties": {
-                "0": {
-                    "type": "string"
-                },
-                "1": {
-                    "type": "string"
-                }
+            "rte-metadata": {
+                "filename": "layers.ini"
             },
-            "required": []
-        },
-        "activeLayer": {
-            "type": "object",
             "properties": {
-                "activeLayerID": {
-                    "type": "integer"
+                "layers": {
+                    "type": "object",
+                    "properties": {
+                        "0": {
+                            "type": "string"
+                        },
+                        "1": {
+                            "type": "string"
+                        }
+                    },
+                    "required": []
                 },
-                "showAllLayer": {
-                    "type": "boolean"
+                "activeLayer": {
+                    "type": "object",
+                    "properties": {
+                        "activeLayerID": {
+                            "type": "integer"
+                        },
+                        "showAllLayer": {
+                            "type": "boolean"
+                        }
+                    },
+                    "required": []
                 }
-            },
-            "required": []
+            }
         }
     }
 }

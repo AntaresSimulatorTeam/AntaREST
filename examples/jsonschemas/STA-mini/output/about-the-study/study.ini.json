@@ -1,8 +1,11 @@
 {
     "type": "object",
     "definitions": {
-        "study.ini": {
+        "study": {
             "type": "object",
+            "rte-metadata": {
+                "filename": "study.ini"
+            },
             "properties": {
                 "antares": {
                     "type": "object",

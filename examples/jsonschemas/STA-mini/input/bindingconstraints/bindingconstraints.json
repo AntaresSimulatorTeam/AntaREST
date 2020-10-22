@@ -4,8 +4,8 @@
         "bindingconstraints": {
             "type": "object",
             "properties": {
-                "bindingconstraints.ini": {
-                    "$ref": "bindingconstraints.ini.json#/definitions/bindingconstraints.ini"
+                "bindingconstraints": {
+                    "$ref": "bindingconstraints.ini.json#/definitions/bindingconstraints"
                 }
             }
         }

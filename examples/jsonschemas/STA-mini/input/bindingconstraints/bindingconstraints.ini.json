@@ -1,8 +1,11 @@
 {
     "type": "object",
     "definitions": {
-        "bindingconstraints.ini": {
+        "bindingconstraints": {
             "type": "object",
+            "rte-metadata": {
+                "filename": "bindingconstraints.ini"
+            },
             "properties": {}
         }
     }

@@ -1,8 +1,11 @@
 {
     "type": "object",
     "definitions": {
-        "study.antares": {
+        "study": {
             "type": "object",
+            "rte-metadata": {
+                "filename": "study.antares"
+            },
             "properties": {
                 "antares": {
                     "type": "object",

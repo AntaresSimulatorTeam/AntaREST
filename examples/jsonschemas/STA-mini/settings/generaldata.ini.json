@@ -1,57 +1,17 @@
 {
     "type": "object",
     "definitions": {
-        "generaldata.ini": {
-            "$id": "#/properties/settings/properties/generaldata.ini",
+        "generaldata": {
             "type": "object",
-            "title": "The generaldata.ini schema",
-            "description": "An explanation about the purpose of this instance.",
+            "rte-metadata": {
+                "filename": "generaldata.ini"
+            },
             "required": [
-                "general",
-                "input",
-                "output",
-                "optimization",
-                "other preferences",
-                "advanced parameters",
-                "seeds - Mersenne Twister"
             ],
             "properties": {
                 "general": {
-                    "$id": "#/properties/settings/properties/generaldata.ini/properties/general",
                     "type": "object",
-                    "title": "The general schema",
-                    "description": "An explanation about the purpose of this instance.",
                     "required": [
-                        "mode",
-                        "horizon",
-                        "nbyears",
-                        "simulation.start",
-                        "simulation.end",
-                        "january.1st",
-                        "first-month-in-year",
-                        "first.weekday",
-                        "leapyear",
-                        "year-by-year",
-                        "derated",
-                        "custom-ts-numbers",
-                        "user-playlist",
-                        "filtering",
-                        "active-rules-scenario",
-                        "generate",
-                        "nbtimeseriesload",
-                        "nbtimeserieshydro",
-                        "nbtimeserieswind",
-                        "nbtimeseriesthermal",
-                        "nbtimeseriessolar",
-                        "refreshtimeseries",
-                        "intra-modal",
-                        "inter-modal",
-                        "refreshintervalload",
-                        "refreshintervalhydro",
-                        "refreshintervalwind",
-                        "refreshintervalthermal",
-                        "refreshintervalsolar",
-                        "readonly"
                     ],
                     "properties": {
                         "mode": {

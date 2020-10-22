@@ -37,7 +37,7 @@ class JsmCursor:
     def get_type(self) -> str:
         return self.type_data
 
-    def get_metadata(self) -> Optional[Dict]:
+    def get_metadata(self) -> Optional[JSON]:
         return self.jsm.get("rte-metadata", None)
 
     def get_filename(self) -> Optional[str]:

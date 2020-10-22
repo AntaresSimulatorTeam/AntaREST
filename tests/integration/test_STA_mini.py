@@ -47,7 +47,7 @@ def test_sta_mini(
 @pytest.mark.parametrize(
     "url, expected_output",
     [
-        ("/metadata/STA-mini/settings/generaldata.ini/general/horizon", 2030),
+        ("/metadata/STA-mini/settings/generaldata/general/horizon", 2030),
         ("/metadata/STA-mini/settings/simulations", {}),
     ],
 )
@@ -66,11 +66,11 @@ def test_sta_mini_settings(
     "url, expected_output",
     [
         (
-            "/metadata/STA-mini/layers/layers.ini/activeLayer/showAllLayer",
+            "/metadata/STA-mini/layers/layers/activeLayer/showAllLayer",
             True,
         ),
         (
-            "/metadata/STA-mini/layers/layers.ini/layers/0",
+            "/metadata/STA-mini/layers/layers/layers/0",
             "All",
         ),
     ],
@@ -91,14 +91,14 @@ def test_sta_mini_layers_layers(
     "url, expected_output",
     [
         (
-            "/metadata/STA-mini/Desktop.ini/.shellclassinfo/iconfile",
+            "/metadata/STA-mini/desktop/.shellclassinfo/iconfile",
             "settings/resources/study.ico",
         ),
         (
-            "/metadata/STA-mini/Desktop.ini/.shellclassinfo/infotip",
+            "/metadata/STA-mini/desktop/.shellclassinfo/infotip",
             "Antares Study7.0: STA-mini",
         ),
-        ("/metadata/STA-mini/Desktop.ini/.shellclassinfo/iconindex", 0),
+        ("/metadata/STA-mini/desktop/.shellclassinfo/iconindex", 0),
     ],
 )
 def test_sta_mini_desktop(
@@ -116,11 +116,11 @@ def test_sta_mini_desktop(
     "url, expected_output",
     [
         (
-            "/metadata/STA-mini/study.antares/antares/created",
+            "/metadata/STA-mini/study/antares/created",
             1480683452,
         ),
         (
-            "/metadata/STA-mini/study.antares/antares/author",
+            "/metadata/STA-mini/study/antares/author",
             "Andrea SGATTONI",
         ),
     ],
@@ -140,7 +140,7 @@ def test_sta_mini_study_antares(
     "url, expected_output",
     [
         (
-            "/metadata/STA-mini/input/bindingconstraints/bindingconstraints.ini",
+            "/metadata/STA-mini/input/bindingconstraints/bindingconstraints",
             {},
         ),
         (
@@ -192,11 +192,11 @@ def test_sta_mini_input(
             f"file{os.sep}STA-mini{os.sep}output{os.sep}20201014-1427eco{os.sep}about-the-study{os.sep}links.txt",
         ),
         (
-            "/metadata/STA-mini/output/20201014-1430adq/about-the-study/parameters.ini/general/horizon",
+            "/metadata/STA-mini/output/20201014-1430adq/about-the-study/parameters/general/horizon",
             2030,
         ),
         (
-            "/metadata/STA-mini/output/20201014-1422eco-hello/about-the-study/study.ini/antares/author",
+            "/metadata/STA-mini/output/20201014-1422eco-hello/about-the-study/study/antares/author",
             "Andrea SGATTONI",
         ),
     ],
