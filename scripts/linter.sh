@@ -6,7 +6,7 @@ PROJECT_DIR=$BASEDIR/..
 cd "$PROJECT_DIR" || exit
 
 source ./venv/bin/activate
-export PYTHONPATH=$PYTHONPATH:./api_iso_antares
+export PYTHONPATH=$PYTHONPATH:.
 
 grn=$'\e[1;32m'
 end=$'\e[0m'

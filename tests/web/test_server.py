@@ -5,8 +5,8 @@ import pytest
 
 from api_iso_antares.engine.url_engine import UrlNotMatchJsonDataError
 from api_iso_antares.web.request_handler import (
-    RequestHandlerParameters,
     RequestHandler,
+    RequestHandlerParameters,
 )
 from api_iso_antares.web.server import create_server
 
@@ -71,7 +71,10 @@ def test_matrix(tmp_path: str) -> None:
     (tmp / "study1" / "matrix").write_text("toto")
 
     request_handler = RequestHandler(
-        study_reader=Mock(), url_engine=Mock(), path_studies=Path(tmp_path)
+        study_parser=Mock(),
+        url_engine=Mock(),
+        path_studies=Path(tmp_path),
+        jsm_validator=Mock(),
     )
     app = create_server(request_handler)
     client = app.test_client()

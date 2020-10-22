@@ -1,0 +1,139 @@
+import abc
+from pathlib import Path
+from typing import Any, cast, Dict, List, Optional, Type
+
+from api_iso_antares.antares_io.reader import IniReader
+from api_iso_antares.jsonschema import JsonSchema
+from api_iso_antares.custom_types import JSON, SUB_JSON
+
+
+class INode(abc.ABC):
+    def __init__(
+        self,
+        path: Path,
+        jsm: JsonSchema,
+        ini_reader: IniReader,
+        parent: Optional["INode"],
+        node_factory: "NodeFactory",
+    ) -> None:
+        self._path = path
+        self._jsm = jsm
+        self._ini_reader = ini_reader
+        self._parent = parent
+        self._node_factory = node_factory
+
+    def get_content(self) -> SUB_JSON:
+        return self._build_content()
+
+    def get_root_path(self) -> Path:
+        if self._parent is None:
+            return self._path
+        return self._parent.get_root_path()
+
+    @abc.abstractmethod
+    def _build_content(self) -> SUB_JSON:
+        pass
+
+
+class ObjectNode(INode):
+    def _build_content(self) -> SUB_JSON:
+
+        output: Dict[str, SUB_JSON] = dict()
+
+        for key in self._jsm.get_properties():
+
+            child_node = self._node_factory.build(
+                key=key,
+                root_path=self._path,
+                jsm=self._jsm.get_child(key),
+                parent=self,
+            )
+
+            output[key] = child_node.get_content()
+
+        return output
+
+
+class ArrayNode(INode):
+    def _build_content(self) -> SUB_JSON:
+
+        output: List[SUB_JSON] = list()
+
+        for key in self._get_children():
+
+            child_node = self._node_factory.build(
+                key=key,
+                root_path=self._path,
+                jsm=self._jsm.get_child(),
+                parent=self,
+            )
+
+            # TODO: True now... False later. A child of an array node will not always be a Dict
+
+            child_content: JSON = cast(JSON, child_node.get_content())
+            child_content["$id"] = key
+            output.append(child_content)
+
+        return output
+
+    def _get_children(self) -> List[str]:
+        return [path.name for path in sorted(self._path.iterdir())]
+
+
+class FileNode(INode):
+    def _build_content(self) -> SUB_JSON:
+        path = self._path
+        if path.suffix in [".txt", ".log"]:
+            relative_path = str(path).replace(
+                str(self.get_root_path().parent), ""
+            )
+            return f"file{relative_path}"
+        elif path.suffix in [
+            ".ini",
+            ".antares",
+        ]:
+            return self._ini_reader.read(path)
+        raise NotImplementedError(
+            f"File extension {path.suffix} not implemented"
+        )
+
+
+class NodeFactory:
+    def __init__(self, readers: Dict[str, Any]) -> None:
+        self.readers = readers
+
+    def build(
+        self,
+        key: str,
+        root_path: Path,
+        jsm: JsonSchema,
+        parent: Optional[INode] = None,
+    ) -> INode:
+        path = NodeFactory._build_path(root_path, jsm, key)
+        node_class = NodeFactory.get_node_class_by_strategy(jsm, path)
+        reader = self.get_reader("default")
+        return node_class(path, jsm, reader, parent, self)
+
+    def get_reader(self, key: str) -> Any:
+        return self.readers[key]
+
+    @staticmethod
+    def get_node_class_by_strategy(jsm: JsonSchema, path: Path) -> Type[INode]:
+
+        node_class: Type[INode] = ObjectNode
+        if path.is_file():
+            node_class = FileNode
+        else:
+            if jsm.is_array():
+                node_class = ArrayNode
+            elif jsm.is_object():
+                node_class = ObjectNode
+
+        return node_class
+
+    @staticmethod
+    def _build_path(path: Path, jsm: JsonSchema, key: str) -> Path:
+        file_or_directory_name: str = jsm.get_filename()
+        if file_or_directory_name is None:
+            file_or_directory_name = key
+        return path / file_or_directory_name

@@ -1,9 +1,10 @@
 from pathlib import Path
 from typing import Any
 
-from api_iso_antares.antares_io.reader import FolderReaderEngine
+from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.engine import UrlEngine
+from api_iso_antares.engine.filesystem_engine import FileSystemEngine
 
 
 class StudyNotFoundError(HtmlException):
@@ -40,21 +41,23 @@ class RequestHandlerParameters:
 class RequestHandler:
     def __init__(
         self,
-        study_reader: FolderReaderEngine,
+        study_parser: FileSystemEngine,
         url_engine: UrlEngine,
         path_studies: Path,
+        jsm_validator: JsmValidator,
     ):
-        self.study_reader = study_reader
+        self.study_reader = study_parser
         self.url_engine = url_engine
         self.path_to_studies = path_studies
+        self.jsm_validator = jsm_validator
 
     def get(self, route: str, parameters: RequestHandlerParameters) -> Any:
         path_route = Path(route)
         study_name = path_route.parts[0]
         self._assert_study_exist(study_name)
 
-        data = self.study_reader.read(self.path_to_studies / study_name)
-        self.study_reader.validate(data)
+        data = self.study_reader.parse(self.path_to_studies / study_name)
+        self.jsm_validator.validate(data)
 
         route_cut = path_route.relative_to(Path(study_name))
         return self.url_engine.apply(route_cut, data, parameters.depth)
