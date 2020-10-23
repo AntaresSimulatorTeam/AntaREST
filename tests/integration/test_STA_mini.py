@@ -1,5 +1,5 @@
 import json
-import os
+from pathlib import Path
 
 import pytest
 
@@ -135,14 +135,23 @@ def test_sta_mini_study_antares(
         ),
         (
             "/metadata/STA-mini/input/hydro/series/de/mod.txt",
-            f"file{os.sep}STA-mini{os.sep}input{os.sep}hydro{os.sep}series{os.sep}de{os.sep}mod.txt",
+            str(Path("file/STA-mini/input/hydro/series/de/mod.txt")),
         ),
+        (
+            "/metadata/STA-mini/input/areas/list",
+            str(Path("file/STA-mini/input/areas/list.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
+            0,
+        ),
+        ("/metadata/STA-mini/input/areas/de/ui/layerX/0", 1),
     ],
 )
 def test_sta_mini_input(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
-    assert_url_content(
+    assert_with_errors(
         request_handler=request_handler,
         url=url,
         expected_output=expected_output,
@@ -155,31 +164,59 @@ def test_sta_mini_input(
     [
         (
             "/metadata/STA-mini/output/20201014-1427eco/annualSystemCost.txt",
-            f"file{os.sep}STA-mini{os.sep}output{os.sep}20201014-1427eco{os.sep}annualSystemCost.txt",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1427eco/annualSystemCost.txt"
+                )
+            ),
         ),
         (
             "/metadata/STA-mini/output/20201014-1422eco-hello/checkIntegrity.txt",
-            f"file{os.sep}STA-mini{os.sep}output{os.sep}20201014-1422eco-hello{os.sep}checkIntegrity.txt",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/checkIntegrity.txt"
+                )
+            ),
         ),
         (
             "/metadata/STA-mini/output/20201014-1430adq/simulation-comments.txt",
-            f"file{os.sep}STA-mini{os.sep}output{os.sep}20201014-1430adq{os.sep}simulation-comments.txt",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1430adq/simulation-comments.txt"
+                )
+            ),
         ),
         (
             "/metadata/STA-mini/output/20201014-1425eco-goodbye/simulation.log",
-            f"file{os.sep}STA-mini{os.sep}output{os.sep}20201014-1425eco-goodbye{os.sep}simulation.log",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1425eco-goodbye/simulation.log"
+                )
+            ),
         ),
         (
             "/metadata/STA-mini/output/20201014-1422eco-hello/about-the-study/areas.txt",
-            f"file{os.sep}STA-mini{os.sep}output{os.sep}20201014-1422eco-hello{os.sep}about-the-study{os.sep}areas.txt",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/about-the-study/areas.txt"
+                )
+            ),
         ),
         (
             "/metadata/STA-mini/output/20201014-1425eco-goodbye/about-the-study/comments.txt",
-            f"file{os.sep}STA-mini{os.sep}output{os.sep}20201014-1425eco-goodbye{os.sep}about-the-study{os.sep}comments.txt",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1425eco-goodbye/about-the-study/comments.txt"
+                )
+            ),
         ),
         (
             "/metadata/STA-mini/output/20201014-1427eco/about-the-study/links.txt",
-            f"file{os.sep}STA-mini{os.sep}output{os.sep}20201014-1427eco{os.sep}about-the-study{os.sep}links.txt",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1427eco/about-the-study/links.txt"
+                )
+            ),
         ),
         (
             "/metadata/STA-mini/output/20201014-1430adq/about-the-study/parameters/general/horizon",

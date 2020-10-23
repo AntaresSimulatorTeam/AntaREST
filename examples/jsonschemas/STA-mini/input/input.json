@@ -4,6 +4,9 @@
     "input": {
       "type": "object",
       "properties": {
+        "areas": {
+          "$ref": "areas/areas.json#/definitions/areas"
+        },
         "bindingconstraints": {
           "$ref": "bindingconstraints/bindingconstraints.json#/definitions/bindingconstraints"
         },

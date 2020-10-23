@@ -21,6 +21,10 @@ class JsonSchema:
             data = self.data["properties"][key]
         return JsonSchema(data)
 
+    def get_additional_properties(self) -> "JsonSchema":
+        data = self.data["additionalProperties"]
+        return JsonSchema(data)
+
     def get_metadata(self) -> Optional[JSON]:
         return self.data.get("rte-metadata", None)
 
@@ -31,8 +35,11 @@ class JsonSchema:
             element = metadata.get(key, None)
         return element
 
-    def get_filename(self) -> str:
+    def get_filename(self) -> Optional[str]:
         return cast(str, self.get_metadata_element("filename"))
+
+    def get_strategy(self) -> Optional[str]:
+        return cast(Optional[str], self.get_metadata_element("strategy"))
 
     def get_type(self) -> str:
         return cast(str, self.data["type"])

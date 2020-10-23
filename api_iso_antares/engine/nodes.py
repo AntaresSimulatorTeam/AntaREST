@@ -54,6 +54,35 @@ class ObjectNode(INode):
         return output
 
 
+class MixFolderNode(INode):
+    def _build_content(self) -> SUB_JSON:
+        output: JSON = dict()
+        properties = self._jsm.get_properties()
+
+        for key in properties:
+            child_node = self._node_factory.build(
+                key=key,
+                root_path=self._path,
+                jsm=self._jsm.get_child(key),
+                parent=self,
+            )
+            output[key] = child_node.get_content()
+
+        for folder in self._path.iterdir():
+            if folder.is_dir() and folder.name not in properties:
+                key = folder.name
+                # TODO '*' to refactor
+                child_node = self._node_factory.build(
+                    key=key,
+                    root_path=self._path,
+                    jsm=self._jsm.get_additional_properties(),
+                    parent=self,
+                )
+                output[key] = child_node.get_content()
+
+        return output
+
+
 class ArrayNode(INode):
     def _build_content(self) -> SUB_JSON:
 
@@ -121,6 +150,10 @@ class NodeFactory:
     def get_node_class_by_strategy(jsm: JsonSchema, path: Path) -> Type[INode]:
 
         node_class: Type[INode] = ObjectNode
+        strategy = jsm.get_strategy()
+        if strategy in ["S1"]:
+            return MixFolderNode
+
         if path.is_file():
             node_class = FileNode
         else:
@@ -133,7 +166,7 @@ class NodeFactory:
 
     @staticmethod
     def _build_path(path: Path, jsm: JsonSchema, key: str) -> Path:
-        file_or_directory_name: str = jsm.get_filename()
+        file_or_directory_name: Optional[str] = jsm.get_filename()
         if file_or_directory_name is None:
             file_or_directory_name = key
         return path / file_or_directory_name

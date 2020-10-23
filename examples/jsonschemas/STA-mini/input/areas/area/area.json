@@ -1,0 +1,12 @@
+{
+    "type": "object",
+    "definitions": {
+        "area": {
+            "type": "object",
+            "properties": {
+                "optimization": {"$ref":  "optimization.ini.json#/definitions/optimization"},
+                "ui": {"$ref":  "ui.ini.json#/definitions/ui"}
+            }
+        }
+    }
+}
