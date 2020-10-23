@@ -22,6 +22,9 @@ class INode(abc.ABC):
         self._parent = parent
         self._node_factory = node_factory
 
+    def get_filename(self) -> str:
+        return self._path.name
+
     def get_content(self) -> SUB_JSON:
         return self._build_content()
 
@@ -59,6 +62,8 @@ class MixFolderNode(INode):
         output: JSON = dict()
         properties = self._jsm.get_properties()
 
+        filenames: List[str] = []
+
         for key in properties:
             child_node = self._node_factory.build(
                 key=key,
@@ -67,9 +72,10 @@ class MixFolderNode(INode):
                 parent=self,
             )
             output[key] = child_node.get_content()
+            filenames.append(child_node.get_filename())
 
         for folder in self._path.iterdir():
-            if folder.is_dir() and folder.name not in properties:
+            if folder.name not in filenames:
                 key = folder.name
                 # TODO '*' to refactor
                 child_node = self._node_factory.build(
@@ -146,8 +152,10 @@ class NodeFactory:
 
         node_class: Type[INode] = ObjectNode
         strategy = jsm.get_strategy()
-        if strategy in ["S1"]:
+        if strategy in ["S1", "S3"]:
             return MixFolderNode
+        elif strategy in ["S2"]:
+            return IniFileNode
 
         if path.is_file():
             if path.suffix in [".txt", ".log"]:
