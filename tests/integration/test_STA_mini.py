@@ -139,7 +139,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/metadata/STA-mini/input/areas/list",
-            "file/STA-mini/input/areas/list.txt",
+            str(Path("file/STA-mini/input/areas/list.txt")),
         ),
         (
             "/metadata/STA-mini/input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
