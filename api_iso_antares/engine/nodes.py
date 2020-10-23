@@ -109,22 +109,17 @@ class ArrayNode(INode):
         return [path.name for path in sorted(self._path.iterdir())]
 
 
-class FileNode(INode):
+class IniFileNode(INode):
     def _build_content(self) -> SUB_JSON:
         path = self._path
-        if path.suffix in [".txt", ".log"]:
-            relative_path = str(path).replace(
-                str(self.get_root_path().parent), ""
-            )
-            return f"file{relative_path}"
-        elif path.suffix in [
-            ".ini",
-            ".antares",
-        ]:
-            return self._ini_reader.read(path)
-        raise NotImplementedError(
-            f"File extension {path.suffix} not implemented"
-        )
+        return self._ini_reader.read(path)
+
+
+class UrlFileNode(INode):
+    def _build_content(self) -> SUB_JSON:
+        path = self._path
+        relative_path = str(path).replace(str(self.get_root_path().parent), "")
+        return f"file{relative_path}"
 
 
 class NodeFactory:
@@ -155,7 +150,13 @@ class NodeFactory:
             return MixFolderNode
 
         if path.is_file():
-            node_class = FileNode
+            if path.suffix in [".txt", ".log"]:
+                node_class = UrlFileNode
+            elif path.suffix in [
+                ".ini",
+                ".antares",
+            ]:
+                node_class = IniFileNode
         else:
             if jsm.is_array():
                 node_class = ArrayNode
