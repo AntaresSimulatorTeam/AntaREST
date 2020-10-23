@@ -137,12 +137,21 @@ def test_sta_mini_study_antares(
             "/metadata/STA-mini/input/hydro/series/de/mod.txt",
             f"file{os.sep}STA-mini{os.sep}input{os.sep}hydro{os.sep}series{os.sep}de{os.sep}mod.txt",
         ),
+        (
+            "/metadata/STA-mini/input/areas/list",
+            "file/STA-mini/input/areas/list.txt",
+        ),
+        (
+            "/metadata/STA-mini/input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
+            0,
+        ),
+        ("/metadata/STA-mini/input/areas/de/ui/layerX/0", 1),
     ],
 )
 def test_sta_mini_input(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
-    assert_url_content(
+    assert_with_errors(
         request_handler=request_handler,
         url=url,
         expected_output=expected_output,

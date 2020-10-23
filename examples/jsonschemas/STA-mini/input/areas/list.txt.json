@@ -1,0 +1,10 @@
+{
+    "definitions": {
+        "list": {
+            "type": "string",
+            "rte-metadata": {
+                "filename": "list.txt"
+            }
+        }
+    }
+}
