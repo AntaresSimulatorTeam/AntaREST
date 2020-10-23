@@ -126,7 +126,6 @@ def test_mix_file_with_zones_list(project_path: Path) -> None:
     )
     json_data = node.get_content()
 
-    assert (
-        json_data["northern mesh.txt"]
-        == "file/bindingconstraints/northern mesh.txt"
+    assert json_data["northern mesh.txt"] == str(
+        Path("file/bindingconstraints/northern mesh.txt")
     )
