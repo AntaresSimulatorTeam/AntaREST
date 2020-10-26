@@ -1,16 +1,19 @@
 {
-  "type": "object",
-  "definitions": {
-    "hydro": {
-      "type": "object",
-      "properties": {
-        "series": {
-          "$ref": "series/series.json#/definitions/series"
-        },
-        "allocation": {
-          "$ref": "allocation/allocation.json#/definitions/allocation"
+    "type": "object",
+    "definitions": {
+        "hydro": {
+            "type": "object",
+            "properties": {
+                "series": {
+                    "$ref": "series/series.json#/definitions/series"
+                },
+                "allocation": {
+                    "$ref": "allocation/allocation.json#/definitions/allocation"
+                },
+                "common": {
+                    "$ref": "common/common.json#/definitions/common"
+                }
+            }
         }
-      }
     }
-  }
 }

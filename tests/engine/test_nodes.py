@@ -182,3 +182,56 @@ def test_dir_with_dynamic_ini_files(project_path: Path) -> None:
     json_data = node.get_content()
 
     assert json_data == expected_json_data
+
+
+@pytest.mark.unit_test
+def test_dir_with_dynamic_multi_txt_files(project_path: Path) -> None:
+    path = project_path / "tests/engine/resources/s6/capacity"
+    jsm = {
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "type": "object",
+        "rte-metadata": {"strategy": "S6"},
+        "properties": {},
+        "additionalProperties": {"type": "string"},
+    }
+
+    content = "Hello, World"
+
+    expected_json_data = {
+        "reservoir_de": content,
+        "waterValues_de": content,
+        "waterValues_it": content,
+        "reservoir_it": content,
+        "inflowPattern_fr": content,
+        "maxpower_es": content,
+        "maxpower_de": content,
+        "maxpower_it": content,
+        "creditmodulations_fr": content,
+        "reservoir_es": content,
+        "waterValues_es": content,
+        "waterValues_fr": content,
+        "reservoir_fr": content,
+        "creditmodulations_es": content,
+        "inflowPattern_it": content,
+        "inflowPattern_de": content,
+        "creditmodulations_de": content,
+        "maxpower_fr": content,
+        "inflowPattern_es": content,
+        "creditmodulations_it": content,
+    }
+
+    node_mock = Mock()
+    node_mock.get_content.return_value = content
+    factory_mock = Mock()
+    factory_mock.build.return_value = node_mock
+
+    node = ListFilesNode(
+        path=path,
+        jsm=JsonSchema(jsm),
+        ini_reader=Mock(),
+        parent=None,
+        node_factory=factory_mock,
+    )
+    json_data = node.get_content()
+
+    assert json_data == expected_json_data

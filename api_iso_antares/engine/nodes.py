@@ -175,7 +175,7 @@ class NodeFactory:
             return MixFolderNode
         elif strategy in ["S2"]:
             return IniFileNode
-        elif strategy in ["S4"]:
+        elif strategy in ["S4", "S6"]:
             return ListFilesNode
 
         if path.is_file():

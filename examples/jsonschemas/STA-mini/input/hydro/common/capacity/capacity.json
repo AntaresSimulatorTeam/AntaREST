@@ -1,0 +1,11 @@
+{
+    "type": "object",
+    "definitions": {
+        "capacity": {
+            "type": "object",
+            "rte-metadata": {"strategy":  "S6"},
+            "properties": {},
+            "additionalProperties": {"type":  "string"}
+        }
+    }
+}

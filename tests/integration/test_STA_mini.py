@@ -147,6 +147,14 @@ def test_sta_mini_study_antares(
         ),
         ("/metadata/STA-mini/input/areas/de/ui/layerX/0", 1),
         ("/metadata/STA-mini/input/hydro/allocation/de/[allocation/de", 1),
+        (
+            "/metadata/STA-mini/input/hydro/common/capacity/reservoir_fr",
+            str(
+                Path(
+                    "file/STA-mini/input/hydro/common/capacity/reservoir_fr.txt"
+                )
+            ),
+        ),
     ],
 )
 def test_sta_mini_input(
