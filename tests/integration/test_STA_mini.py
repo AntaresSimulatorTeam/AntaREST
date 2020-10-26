@@ -146,6 +146,7 @@ def test_sta_mini_study_antares(
             0,
         ),
         ("/metadata/STA-mini/input/areas/de/ui/layerX/0", 1),
+        ("/metadata/STA-mini/input/hydro/allocation/de/[allocation/de", 1),
     ],
 )
 def test_sta_mini_input(

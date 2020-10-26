@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Any, cast, Dict, List, Optional, Type
 
 from api_iso_antares.antares_io.reader import IniReader
-from api_iso_antares.jsonschema import JsonSchema
 from api_iso_antares.custom_types import JSON, SUB_JSON
+from api_iso_antares.jsonschema import JsonSchema
 
 
 class INode(abc.ABC):
@@ -128,6 +128,25 @@ class UrlFileNode(INode):
         return f"file{relative_path}"
 
 
+class ListFilesNode(INode):
+    def _build_content(self) -> SUB_JSON:
+        path = self._path
+
+        output = {}
+        for file in path.iterdir():
+            key = file.stem
+            child_node = self._node_factory.build(
+                key=file.name,
+                root_path=path,
+                jsm=self._jsm.get_additional_properties(),
+                parent=self,
+            )
+
+            output[key] = child_node.get_content()
+
+        return output
+
+
 class NodeFactory:
     def __init__(self, readers: Dict[str, Any]) -> None:
         self.readers = readers
@@ -156,6 +175,8 @@ class NodeFactory:
             return MixFolderNode
         elif strategy in ["S2"]:
             return IniFileNode
+        elif strategy in ["S4"]:
+            return ListFilesNode
 
         if path.is_file():
             if path.suffix in [".txt", ".log"]:
