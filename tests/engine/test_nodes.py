@@ -9,7 +9,7 @@ from api_iso_antares.engine.nodes import (
     MixFolderNode,
     IniFileNode,
     NodeFactory,
-    ListFilesNode,
+    OnlyListNode,
 )
 from api_iso_antares.jsonschema import JsonSchema
 
@@ -168,11 +168,10 @@ def test_dir_with_dynamic_ini_files(project_path: Path) -> None:
 
     node_mock = Mock()
     node_mock.get_content.return_value = content
-    node_mock.get_filename.side_effect = ["list.txt", "sets.ini"]
     factory_mock = Mock()
     factory_mock.build.return_value = node_mock
 
-    node = ListFilesNode(
+    node = OnlyListNode(
         path=path,
         jsm=JsonSchema(jsm),
         ini_reader=Mock(),
@@ -225,7 +224,7 @@ def test_dir_with_dynamic_multi_txt_files(project_path: Path) -> None:
     factory_mock = Mock()
     factory_mock.build.return_value = node_mock
 
-    node = ListFilesNode(
+    node = OnlyListNode(
         path=path,
         jsm=JsonSchema(jsm),
         ini_reader=Mock(),

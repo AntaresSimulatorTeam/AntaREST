@@ -155,6 +155,14 @@ def test_sta_mini_study_antares(
                 )
             ),
         ),
+        (
+            "/metadata/STA-mini/input/thermal/series/fr/05_nuclear/series",
+            str(
+                Path(
+                    "file/STA-mini/input//thermal/series/fr/05_nuclear/series.txt"
+                )
+            ),
+        ),
     ],
 )
 def test_sta_mini_input(

@@ -128,7 +128,7 @@ class UrlFileNode(INode):
         return f"file{relative_path}"
 
 
-class ListFilesNode(INode):
+class OnlyListNode(INode):
     def _build_content(self) -> SUB_JSON:
         path = self._path
 
@@ -171,12 +171,12 @@ class NodeFactory:
 
         node_class: Type[INode] = ObjectNode
         strategy = jsm.get_strategy()
-        if strategy in ["S1", "S3"]:
+        if strategy in ["S1", "S3", "S7"]:
             return MixFolderNode
         elif strategy in ["S2"]:
             return IniFileNode
         elif strategy in ["S4", "S6"]:
-            return ListFilesNode
+            return OnlyListNode
 
         if path.is_file():
             if path.suffix in [".txt", ".log"]:
