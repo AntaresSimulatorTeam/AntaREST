@@ -1,4 +1,5 @@
 import abc
+import re
 from pathlib import Path
 from typing import Any, cast, Dict, List, Optional, Type
 
@@ -147,6 +148,38 @@ class OnlyListNode(INode):
         return output
 
 
+class OutputFolderNode(INode):
+    @staticmethod
+    def _parse_output(name: str) -> JSON:
+        modes = {"eco": "economy", "adq": "adequacy"}
+        regex = re.search("^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", name)
+        return {
+            "date": regex.group(1),
+            "type": modes[regex.group(2)],
+            "name": regex.group(3),
+        }
+
+    def _build_content(self) -> SUB_JSON:
+        output = dict()
+        jsm = self._jsm.get_additional_properties()
+
+        directories = sorted(self._path.iterdir())
+        for i, dir in enumerate(directories):
+            index = str(i + 1)
+            output[index] = OutputFolderNode._parse_output(dir.name)
+            for child in dir.iterdir():
+                if (
+                    child.stem in jsm.get_properties()
+                ):  # TODO remove when jsonschema complet
+                    output[index][child.stem] = self._node_factory.build(
+                        key=child.name,
+                        root_path=dir,
+                        jsm=jsm.get_child(child.stem),
+                        parent=self,
+                    ).get_content()
+        return output
+
+
 class NodeFactory:
     def __init__(self, readers: Dict[str, Any]) -> None:
         self.readers = readers
@@ -177,6 +210,8 @@ class NodeFactory:
             return IniFileNode
         elif strategy in ["S4", "S6"]:
             return OnlyListNode
+        elif strategy in ["S8"]:
+            return OutputFolderNode
 
         if path.is_file():
             if path.suffix in [".txt", ".log"]:
