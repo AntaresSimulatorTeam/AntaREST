@@ -1,11 +1,10 @@
 import abc
-from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any, cast, Dict, List, Optional, Type
 
 from api_iso_antares.antares_io.reader import IniReader
-from api_iso_antares.jsonschema import JsonSchema
 from api_iso_antares.custom_types import JSON, SUB_JSON
+from api_iso_antares.jsonschema import JsonSchema
 
 
 class INode(abc.ABC):
@@ -138,7 +137,7 @@ class ListFilesNode(INode):
             key = file.stem
             child_node = self._node_factory.build(
                 key=file.name,
-                root_path=file,
+                root_path=path,
                 jsm=self._jsm.get_additional_properties(),
                 parent=self,
             )

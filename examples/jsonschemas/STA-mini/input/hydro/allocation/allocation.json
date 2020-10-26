@@ -1,0 +1,24 @@
+{
+    "type": "object",
+    "definitions": {
+        "allocation": {
+            "type": "object",
+            "rte-metadata": {
+                "strategy": "S4"
+            },
+            "properties": {},
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "[allocation": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": {
+                            "type": "number"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

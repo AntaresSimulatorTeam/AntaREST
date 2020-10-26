@@ -6,6 +6,9 @@
       "properties": {
         "series": {
           "$ref": "series/series.json#/definitions/series"
+        },
+        "allocation": {
+          "$ref": "allocation/allocation.json#/definitions/allocation"
         }
       }
     }
