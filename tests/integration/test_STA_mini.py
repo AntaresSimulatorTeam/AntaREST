@@ -243,6 +243,14 @@ def test_sta_mini_input(
             "/metadata/STA-mini/output/1/about-the-study/study/antares/author",
             "Andrea SGATTONI",
         ),
+        (
+            "/metadata/STA-mini/output/1/economy/mc-all/areas/de/id-daily",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/areas/de/id-daily.txt"
+                )
+            ),
+        ),
     ],
 )
 def test_sta_mini_output(
