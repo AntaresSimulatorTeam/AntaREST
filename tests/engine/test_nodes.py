@@ -10,6 +10,7 @@ from api_iso_antares.engine.nodes import (
     IniFileNode,
     NodeFactory,
     OnlyListNode,
+    OutputFolderNode,
 )
 from api_iso_antares.jsonschema import JsonSchema
 
@@ -234,3 +235,56 @@ def test_dir_with_dynamic_multi_txt_files(project_path: Path) -> None:
     json_data = node.get_content()
 
     assert json_data == expected_json_data
+
+
+def test_output_folder(project_path):
+    path = project_path / "tests/engine/resources/s8/output"
+
+    jsm = {
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "rte-metadata": {"strategy": "S8"},
+        "type": "object",
+        "properties": {},
+        "additionalProperties": {
+            "type": "object",
+            "properties": {
+                "hello": {"type": "string"},
+                "world": {"type": "string"},
+            },
+        },
+    }
+
+    content = 42
+
+    exp_data = {
+        "1": {
+            "date": "19450623-0565",
+            "type": "adequacy",
+            "name": "",
+            "hello": content,
+        },
+        "2": {
+            "date": "20201009-1221",
+            "type": "economy",
+            "name": "hello-world",
+            "hello": content,
+            "world": content,
+        },
+    }
+
+    node_mock = Mock()
+    node_mock.get_content.return_value = content
+    factory_mock = Mock()
+    factory_mock.build.return_value = node_mock
+
+    node = OutputFolderNode(
+        path=path,
+        jsm=JsonSchema(jsm),
+        ini_reader=Mock(),
+        parent=None,
+        node_factory=factory_mock,
+    )
+
+    data = node.get_content()
+
+    assert data == exp_data

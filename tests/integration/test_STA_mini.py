@@ -180,7 +180,7 @@ def test_sta_mini_input(
     "url, expected_output",
     [
         (
-            "/metadata/STA-mini/output/20201014-1427eco/annualSystemCost.txt",
+            "/metadata/STA-mini/output/3/annualSystemCost",
             str(
                 Path(
                     "file/STA-mini/output/20201014-1427eco/annualSystemCost.txt"
@@ -188,7 +188,7 @@ def test_sta_mini_input(
             ),
         ),
         (
-            "/metadata/STA-mini/output/20201014-1422eco-hello/checkIntegrity.txt",
+            "/metadata/STA-mini/output/1/checkIntegrity",
             str(
                 Path(
                     "file/STA-mini/output/20201014-1422eco-hello/checkIntegrity.txt"
@@ -196,7 +196,7 @@ def test_sta_mini_input(
             ),
         ),
         (
-            "/metadata/STA-mini/output/20201014-1430adq/simulation-comments.txt",
+            "/metadata/STA-mini/output/4/simulation-comments",
             str(
                 Path(
                     "file/STA-mini/output/20201014-1430adq/simulation-comments.txt"
@@ -204,7 +204,7 @@ def test_sta_mini_input(
             ),
         ),
         (
-            "/metadata/STA-mini/output/20201014-1425eco-goodbye/simulation.log",
+            "/metadata/STA-mini/output/2/simulation",
             str(
                 Path(
                     "file/STA-mini/output/20201014-1425eco-goodbye/simulation.log"
@@ -212,7 +212,7 @@ def test_sta_mini_input(
             ),
         ),
         (
-            "/metadata/STA-mini/output/20201014-1422eco-hello/about-the-study/areas.txt",
+            "/metadata/STA-mini/output/1/about-the-study/areas",
             str(
                 Path(
                     "file/STA-mini/output/20201014-1422eco-hello/about-the-study/areas.txt"
@@ -220,7 +220,7 @@ def test_sta_mini_input(
             ),
         ),
         (
-            "/metadata/STA-mini/output/20201014-1425eco-goodbye/about-the-study/comments.txt",
+            "/metadata/STA-mini/output/2/about-the-study/comments",
             str(
                 Path(
                     "file/STA-mini/output/20201014-1425eco-goodbye/about-the-study/comments.txt"
@@ -228,7 +228,7 @@ def test_sta_mini_input(
             ),
         ),
         (
-            "/metadata/STA-mini/output/20201014-1427eco/about-the-study/links.txt",
+            "/metadata/STA-mini/output/3/about-the-study/links",
             str(
                 Path(
                     "file/STA-mini/output/20201014-1427eco/about-the-study/links.txt"
@@ -236,11 +236,11 @@ def test_sta_mini_input(
             ),
         ),
         (
-            "/metadata/STA-mini/output/20201014-1430adq/about-the-study/parameters/general/horizon",
+            "/metadata/STA-mini/output/4/about-the-study/parameters/general/horizon",
             2030,
         ),
         (
-            "/metadata/STA-mini/output/20201014-1422eco-hello/about-the-study/study/antares/author",
+            "/metadata/STA-mini/output/1/about-the-study/study/antares/author",
             "Andrea SGATTONI",
         ),
     ],
@@ -248,7 +248,7 @@ def test_sta_mini_input(
 def test_sta_mini_output(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
-    assert_url_content(
+    assert_with_errors(
         request_handler=request_handler,
         url=url,
         expected_output=expected_output,

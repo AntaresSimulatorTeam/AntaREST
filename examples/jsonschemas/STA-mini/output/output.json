@@ -2,15 +2,19 @@
     "type": "object",
     "definitions": {
         "output": {
-            "type": "array",
-            "items": {
+            "type": "object",
+            "rte-metadata": {"strategy":  "S8"},
+            "properties": {},
+            "additionalProperties": {
                 "type": "object",
                 "properties": {
-                    "$id" : {"type":    "string"},
-                    "annualSystemCost.txt": {"type": "string"},
-                    "checkIntegrity.txt": {"type": "string"},
-                    "simulation-comments.txt": {"type": "string"},
-                    "simulation.log": {"type": "string"},
+                    "date": {"type":  "string"},
+                    "type": {"type":  "string"},
+                    "name": {"type":  "string"},
+                    "annualSystemCost": {"type": "string"},
+                    "checkIntegrity": {"type": "string"},
+                    "simulation-comments": {"type": "string"},
+                    "simulation": {"type": "string"},
                     "about-the-study":{"$ref" : "about-the-study/about-the-study.json#/definitions/about-the-study"}
                 }
             }
