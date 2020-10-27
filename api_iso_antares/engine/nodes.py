@@ -45,15 +45,18 @@ class ObjectNode(INode):
         output: Dict[str, SUB_JSON] = dict()
 
         for key in self._jsm.get_properties():
-
-            child_node = self._node_factory.build(
-                key=key,
-                root_path=self._path,
-                jsm=self._jsm.get_child(key),
-                parent=self,
+            file = self._path / (
+                self._jsm.get_child(key).get_filename() or key
             )
+            if file.exists():
+                child_node = self._node_factory.build(
+                    key=key,
+                    root_path=self._path,
+                    jsm=self._jsm.get_child(key),
+                    parent=self,
+                )
 
-            output[key] = child_node.get_content()
+                output[key] = child_node.get_content()
 
         return output
 
@@ -204,13 +207,12 @@ class NodeFactory:
 
         node_class: Type[INode] = ObjectNode
         strategy = jsm.get_strategy()
-        if strategy == "S9":
-            pass
+
         if strategy in ["S1", "S3", "S7"]:
             return MixFolderNode
         elif strategy in ["S2"]:
             return IniFileNode
-        elif strategy in ["S4", "S6", "S9"]:
+        elif strategy in ["S4", "S6", "S9", "S10"]:
             return OnlyListNode
         elif strategy in ["S8"]:
             return OutputFolderNode

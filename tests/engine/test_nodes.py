@@ -329,3 +329,42 @@ def test_set_of_temporality(project_path: Path):
     data = node.get_content()
 
     assert data == exp_data
+
+
+@pytest.mark.unit_test
+def test_set_of_scenarios(project_path: Path):
+    path = project_path / "tests/engine/resources/s10/mc-ind"
+
+    jsm = {
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "rte-metadata": {"strategy": "S10"},
+        "type": "object",
+        "additionalProperties": {
+            "type": "number",
+        },
+    }
+
+    content = 42
+
+    exp_data = {
+        "00001": content,
+        "00002": content,
+        "00003": content,
+    }
+
+    node_mock = Mock()
+    node_mock.get_content.return_value = content
+    factory_mock = Mock()
+    factory_mock.build.return_value = node_mock
+
+    node = OnlyListNode(
+        path=path,
+        jsm=JsonSchema(jsm),
+        ini_reader=Mock(),
+        parent=None,
+        node_factory=factory_mock,
+    )
+
+    data = node.get_content()
+
+    assert data == exp_data

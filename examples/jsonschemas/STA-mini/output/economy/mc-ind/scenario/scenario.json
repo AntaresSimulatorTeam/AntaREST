@@ -1,0 +1,12 @@
+{
+    "definitions": {
+        "scenario": {
+            "type": "object",
+            "properties": {
+                "areas": {
+                    "$ref": "areas/areas.json#/definitions/areas"
+                }
+            }
+        }
+    }
+}
