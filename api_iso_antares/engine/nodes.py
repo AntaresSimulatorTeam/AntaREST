@@ -152,7 +152,7 @@ class OutputFolderNode(INode):
     @staticmethod
     def _parse_output(name: str) -> JSON:
         modes = {"eco": "economy", "adq": "adequacy"}
-        regex = re.search("^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", name)
+        regex: Any = re.search("^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", name)
         return {
             "date": regex.group(1),
             "type": modes[regex.group(2)],
