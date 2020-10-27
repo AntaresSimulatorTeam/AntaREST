@@ -15,7 +15,8 @@
                     "checkIntegrity": {"type": "string"},
                     "simulation-comments": {"type": "string"},
                     "simulation": {"type": "string"},
-                    "about-the-study":{"$ref" : "about-the-study/about-the-study.json#/definitions/about-the-study"}
+                    "about-the-study":{"$ref" : "about-the-study/about-the-study.json#/definitions/about-the-study"},
+                    "economy": {"$ref":  "economy/economy.json#/definitions/economy"}
                 }
             }
         }
