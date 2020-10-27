@@ -10,7 +10,6 @@ from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine.nodes import (
     MixFolderNode,
     IniFileNode,
-    NodeFactory,
     OnlyListNode,
     OutputFolderNode,
 )
@@ -45,9 +44,9 @@ def test_mix_folder_with_zones_list(project_path: Path) -> None:
         "es": content,
     }
 
-    side_effect = ["list.txt", "sets.ini"]
+    filenames = ["list.txt", "sets.ini"]
 
-    mix_folder(path, jsm, expected, side_effect)
+    mix_folder(path, jsm, expected, filenames)
 
 
 @pytest.mark.unit_test
@@ -72,15 +71,15 @@ def test_mix_file_with_zones_list(project_path: Path) -> None:
         "southern mesh.txt": content,
     }
 
-    side_effect = ["bindingconstraints.ini"]
+    filenames = ["bindingconstraints.ini"]
 
-    mix_folder(path, jsm, exp_data, side_effect)
+    mix_folder(path, jsm, exp_data, filenames)
 
 
-def mix_folder(path: Path, jsm: JSON, exp_data: JSON, side_effect: List[str]):
+def mix_folder(path: Path, jsm: JSON, exp_data: JSON, filenames: List[str]):
     node_mock = Mock()
     node_mock.get_content.return_value = content
-    node_mock.get_filename.side_effect = side_effect
+    node_mock.get_filename.side_effect = filenames
     factory = Mock()
     factory.build.return_value = node_mock
 
@@ -93,7 +92,7 @@ def mix_folder(path: Path, jsm: JSON, exp_data: JSON, side_effect: List[str]):
     )
     json_data = node.get_content()
 
-    assert exp_data == json_data
+    assert json_data == exp_data
 
 
 @pytest.mark.unit_test
