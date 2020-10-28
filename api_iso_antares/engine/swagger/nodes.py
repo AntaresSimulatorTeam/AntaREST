@@ -28,7 +28,7 @@ class INode(abc.ABC):
         self._swagger: Swagger = self._parent._swagger
 
     def get_url(self) -> str:
-        return str(Path(self._parent.get_url()) / self._key)
+        return self._parent.get_url() + "/" + self._key
 
     @abc.abstractmethod
     def build_content(self) -> None:
