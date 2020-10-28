@@ -1,0 +1,12 @@
+{
+    "definitions": {
+        "mc-ind": {
+            "type": "object",
+            "rte-metadata": {"strategy":  "S10"},
+            "properties": {},
+            "additionalProperties": {
+                "$ref":  "scenario/scenario.json#/definitions/scenario"
+            }
+        }
+    }
+}
