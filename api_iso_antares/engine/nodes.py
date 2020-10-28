@@ -37,7 +37,7 @@ class INode(abc.ABC):
     def parse_properties(
         self, not_checking: bool = False
     ) -> Tuple[Dict[str, "INode"], List[str]]:
-        output: JSON = dict()
+        output: Dict[str, "INode"] = dict()
         properties = self._jsm.get_properties()
 
         filenames: List[str] = []
@@ -58,6 +58,21 @@ class INode(abc.ABC):
 
         return output, filenames
 
+    def parse_additional_properties(
+        self, avoid_filenames: Optional[List[str]] = None
+    ) -> Dict[Path, "INode"]:
+        avoid_filenames = avoid_filenames or list()
+        children: Dict[Path, "INode"] = dict()
+        for folder in self._path.iterdir():
+            if folder.name not in avoid_filenames:
+                children[folder] = self._node_factory.build(
+                    key=folder.name,
+                    root_path=self._path,
+                    jsm=self._jsm.get_additional_properties(),
+                    parent=self,
+                )
+        return children
+
     @abc.abstractmethod
     def _build_content(self) -> SUB_JSON:
         pass
@@ -74,28 +89,17 @@ class MixFolderNode(INode):
         children, filenames = self.parse_properties(not_checking=True)
         output = {key: child.get_content() for key, child in children.items()}
 
-        for folder in self._path.iterdir():
-            if folder.name not in filenames:
-                key = folder.name
-                # TODO '*' to refactor
-                child_node = self._node_factory.build(
-                    key=key,
-                    root_path=self._path,
-                    jsm=self._jsm.get_additional_properties(),
-                    parent=self,
-                )
-                output[key] = child_node.get_content()
+        for path, child in self.parse_additional_properties(filenames).items():
+            output[path.name] = child.get_content()
 
         return output
 
 
 class ArrayNode(INode):
     def _build_content(self) -> SUB_JSON:
-
         output: List[SUB_JSON] = list()
 
         for key in self._get_children():
-
             child_node = self._node_factory.build(
                 key=key,
                 root_path=self._path,
@@ -130,21 +134,8 @@ class UrlFileNode(INode):
 
 class OnlyListNode(INode):
     def _build_content(self) -> SUB_JSON:
-        path = self._path
-
-        output = {}
-        for file in path.iterdir():
-            key = file.stem
-            child_node = self._node_factory.build(
-                key=file.name,
-                root_path=path,
-                jsm=self._jsm.get_additional_properties(),
-                parent=self,
-            )
-
-            output[key] = child_node.get_content()
-
-        return output
+        children = self.parse_additional_properties().items()
+        return {file.stem: child.get_content() for file, child in children}
 
 
 class OutputFolderNode(INode):
