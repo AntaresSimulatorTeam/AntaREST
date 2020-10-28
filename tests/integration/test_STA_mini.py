@@ -252,6 +252,14 @@ def test_sta_mini_input(
             ),
         ),
         (
+            "/metadata/STA-mini/output/1/economy/mc-all/grid/areas.txt",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/grid/areas.txt"
+                )
+            ),
+        ),
+        (
             "/metadata/STA-mini/output/1/economy/mc-ind/00001/areas/de/details-annual",
             str(
                 Path(

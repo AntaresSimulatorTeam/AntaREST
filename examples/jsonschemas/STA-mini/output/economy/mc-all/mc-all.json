@@ -4,7 +4,8 @@
         "mc-all": {
             "type": "object",
             "properties": {
-                "areas": {"$ref":  "areas/areas.json#/definitions/areas"}
+                "areas": {"$ref":  "areas/areas.json#/definitions/areas"},
+                "grid": {"$ref":  "grid/grid.json#/definitions/grid"}
             }
         }
     }

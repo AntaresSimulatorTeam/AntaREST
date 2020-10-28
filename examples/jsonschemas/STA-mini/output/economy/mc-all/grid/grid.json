@@ -1,0 +1,13 @@
+{
+    "definitions": {
+        "grid": {
+            "type": "object",
+            "properties": {
+                "areas.txt": {"type":  "string"},
+                "digest.txt": {"type":  "string"},
+                "links.txt": {"type":  "string"},
+                "thermal.txt": {"type":  "string"}
+            }
+        }
+    }
+}
