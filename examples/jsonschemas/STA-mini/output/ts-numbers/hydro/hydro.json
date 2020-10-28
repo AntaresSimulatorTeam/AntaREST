@@ -1,11 +1,11 @@
 {
     "definitions": {
-        "links": {
+        "hydro": {
             "type": "object",
-            "rte-metadata": {"strategy":  "S1"},
+            "rte-metadata": {"strategy":  "S4"},
             "properties": {},
             "additionalProperties": {
-                "$ref": "links-item.json#/definitions/links-item"
+                "type": "string"
             }
         }
     }

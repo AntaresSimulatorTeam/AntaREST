@@ -1,0 +1,19 @@
+{
+    "type": "object",
+    "definitions": {
+        "cluster": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "string",
+                    "rte-metadata": {"filename": "data.txt"}
+                },
+                "modulation": {
+                    "type": "string",
+                    "rte-metadata": {"filename": "modulation.txt"}
+                }
+            },
+            "additionalProperties": {}
+        }
+    }
+}

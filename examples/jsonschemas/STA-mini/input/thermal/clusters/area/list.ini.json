@@ -1,0 +1,35 @@
+{
+    "type": "object",
+    "definitions": {
+        "list": {
+            "type": "object",
+            "rte-metadata": {
+                "filename": "list.ini"
+            },
+            "properties": {},
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "group": {
+                        "type": "string"
+                    },
+                    "unitcount": {
+                        "type": "number"
+                    },
+                    "nominalcapacity": {
+                        "type": "number"
+                    },
+                    "marginal-cost": {
+                        "type": "number"
+                    },
+                    "market-bid-cost": {
+                        "type": "number"
+                    }
+                }
+            }
+        }
+    }
+}

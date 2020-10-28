@@ -5,7 +5,8 @@
             "properties": {
                 "areas": {
                     "$ref": "areas/areas.json#/definitions/areas"
-                }
+                },
+                "links": {"$ref":  "links/links.json#/definitions/links"}
             }
         }
     }
