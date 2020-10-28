@@ -7,6 +7,7 @@ from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.filesystem.engine import (
     FileSystemEngine,
 )
+from api_iso_antares.jsm import JsonSchema
 
 
 class StudyNotFoundError(HtmlException):
@@ -69,3 +70,6 @@ class RequestHandler:
         dirs = [str(folder.name) for folder in dirs_files if folder.is_dir()]
         if study_name not in dirs:
             raise StudyNotFoundError(f"{study_name} not found")
+
+    def get_jsm(self) -> JsonSchema:
+        return self.jsm_validator.jsm
