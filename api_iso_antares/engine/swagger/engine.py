@@ -9,8 +9,8 @@ from api_iso_antares.jsm import JsonSchema
 
 class SwaggerEngine:
     @staticmethod
-    def parse(jsonschema: JsonSchema) -> JSON:
-        return SwaggerEngine._build(jsonschema)
+    def parse(jsm: JsonSchema) -> JSON:
+        return SwaggerEngine._build(jsm)
 
     @staticmethod
     def _build(jsm: JsonSchema) -> JSON:
