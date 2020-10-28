@@ -1,0 +1,15 @@
+{
+    "type": "object",
+    "definitions": {
+        "area": {
+            "type": "object",
+            "rte-metadata": {"stategy": "S3"},
+            "properties": {
+                "properties": {
+                    "$ref": "properties.ini.json#/definitions/properties"
+                }
+            },
+            "additionalProperties": {"type": "string"}
+        }
+    }
+}

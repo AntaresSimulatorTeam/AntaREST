@@ -1,7 +1,7 @@
 {
     "type": "object",
     "definitions": {
-        "thermal": {
+        "load": {
             "type": "object",
             "properties": {
                 "series": {
@@ -9,9 +9,6 @@
                 },
                 "prepro": {
                     "$ref": "prepro/prepro.json#/definitions/prepro"
-                },
-                "clusters": {
-                    "$ref": "clusters/clusters.json#/definitions/clusters"
                 }
             }
         }

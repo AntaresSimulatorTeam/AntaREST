@@ -163,6 +163,75 @@ def test_sta_mini_study_antares(
                 )
             ),
         ),
+        (
+            "/metadata/STA-mini/input/hydro/prepro/correlation/general/mode",
+            "annual",
+        ),
+        (
+            "/metadata/STA-mini/input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation",
+            0.5,
+        ),
+        (
+            "/metadata/STA-mini/input/hydro/prepro/fr/energy",
+            str(Path("file/STA-mini/input/hydro/prepro/fr/energy.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/hydro/hydro/inter-monthly-breakdown/fr",
+            1,
+        ),
+        (
+            "/metadata/STA-mini/input/thermal/prepro/fr/05_nuclear/modulation",
+            str(
+                Path(
+                    "file/STA-mini/input/thermal/prepro/fr/05_nuclear/modulation.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/input/thermal/clusters/fr/list/05_nuclear/marginal-cost",
+            50,
+        ),
+        (
+            "/metadata/STA-mini/input/links/fr/properties/it/hurdles-cost",
+            True,
+        ),
+        # TODO: not working yet
+        # (
+        #     "/metadata/STA-mini/input/links/fr/it",
+        #     str(Path("file/STA-mini/input/links/fr/it.txt")),
+        # ),
+        (
+            "/metadata/STA-mini/input/load/prepro/fr/k",
+            str(Path("file/STA-mini/input/load/prepro/fr/k.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/load/series/load_fr",
+            str(Path("file/STA-mini/input/load/series/load_fr.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/misc-gen/miscgen-fr",
+            str(Path("file/STA-mini/input/misc-gen/miscgen-fr.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/reserves/fr",
+            str(Path("file/STA-mini/input/reserves/fr.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/solar/prepro/fr/k",
+            str(Path("file/STA-mini/input/solar/prepro/fr/k.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/solar/series/solar_fr",
+            str(Path("file/STA-mini/input/solar/series/solar_fr.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/wind/prepro/fr/k",
+            str(Path("file/STA-mini/input/wind/prepro/fr/k.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/wind/series/wind_fr",
+            str(Path("file/STA-mini/input/wind/series/wind_fr.txt")),
+        ),
     ],
 )
 def test_sta_mini_input(

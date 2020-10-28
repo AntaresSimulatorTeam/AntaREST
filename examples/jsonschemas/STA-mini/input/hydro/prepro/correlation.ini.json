@@ -1,0 +1,28 @@
+{
+    "type": "object",
+    "definitions": {
+        "correlation": {
+            "type": "object",
+            "rte-metadata": {
+                "filename": "correlation.ini"
+            },
+            "properties": {
+                "general": {
+                    "type": "object",
+                    "properties": {
+                        "mode": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "additionalProperties": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
