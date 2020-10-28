@@ -276,6 +276,54 @@ def test_sta_mini_input(
                 )
             ),
         ),
+        (
+            "/metadata/STA-mini/output/1/economy/mc-ind/00001/areas/de/details-annual",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/1/ts-numbers/hydro/de",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/de.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/1/ts-numbers/load/de",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/load/de.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/1/ts-numbers/solar/de",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/solar/de.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/1/ts-numbers/wind/de",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/wind/de.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/1/ts-numbers/thermal/de/07_gas",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/thermal/de/07_gas.txt"
+                )
+            ),
+        ),
     ],
 )
 def test_sta_mini_output(

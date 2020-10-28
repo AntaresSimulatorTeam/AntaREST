@@ -1,0 +1,12 @@
+{
+    "definitions": {
+        "thermal-item": {
+            "type": "object",
+            "rte-metadata": {"strategy":  "S7"},
+            "properties": {},
+            "additionalProperties": {
+                "type": "string"
+            }
+        }
+    }
+}
