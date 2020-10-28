@@ -1,6 +1,6 @@
 from typing import Any
 
-from flask import Flask, jsonify, request, send_file, Response
+from flask import Flask, jsonify, request, Response, send_file
 
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.web.request_handler import (

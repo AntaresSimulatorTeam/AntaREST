@@ -7,7 +7,7 @@ import pytest
 from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_types import JSON
-from api_iso_antares.engine.nodes import (
+from api_iso_antares.engine.filesystem.nodes import (
     IniFileNode,
     MixFolderNode,
     OnlyListNode,
