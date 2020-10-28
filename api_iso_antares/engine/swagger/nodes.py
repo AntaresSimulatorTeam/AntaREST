@@ -1,5 +1,4 @@
 import abc
-from pathlib import Path
 from typing import Type
 
 from api_iso_antares.custom_types import JSON

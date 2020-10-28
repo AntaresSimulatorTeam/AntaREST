@@ -1,6 +1,5 @@
 import abc
 import enum
-from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
