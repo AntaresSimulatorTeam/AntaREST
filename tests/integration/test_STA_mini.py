@@ -261,6 +261,14 @@ def test_sta_mini_input(
         ),
         ("/metadata/STA-mini/output/1/economy/mc-all/links/de - fr", {}),
         (
+            "/metadata/STA-mini/output/1/economy/mc-ind/00001/links/de - fr/values-hourly",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/links/de - fr/values-hourly.txt"
+                )
+            ),
+        ),
+        (
             "/metadata/STA-mini/output/1/economy/mc-ind/00001/areas/de/details-annual",
             str(
                 Path(
