@@ -2,9 +2,9 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Optional, Tuple
 
-from api_iso_antares.jsonschema import JsonSchema
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.custom_types import JSON, SUB_JSON
+from api_iso_antares.jsonschema import JsonSchema
 
 
 class UrlNotMatchJsonDataError(HtmlException):

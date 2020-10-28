@@ -1,10 +1,11 @@
 import abc
+import re
 from pathlib import Path
-from typing import Any, cast, Dict, List, Optional, Type
+from typing import Any, cast, Dict, List, Optional, Type, Tuple
 
 from api_iso_antares.antares_io.reader import IniReader
-from api_iso_antares.jsonschema import JsonSchema
 from api_iso_antares.custom_types import JSON, SUB_JSON
+from api_iso_antares.jsonschema import JsonSchema
 
 
 class INode(abc.ABC):
@@ -33,6 +34,30 @@ class INode(abc.ABC):
             return self._path
         return self._parent.get_root_path()
 
+    def parse_properties(
+        self, not_checking: bool = False
+    ) -> Tuple[Dict[str, "INode"], List[str]]:
+        output: JSON = dict()
+        properties = self._jsm.get_properties()
+
+        filenames: List[str] = []
+
+        for key in properties:
+            file = self._path / (
+                self._jsm.get_child(key).get_filename() or key
+            )
+            if not_checking or file.exists():
+                child_node = self._node_factory.build(
+                    key=key,
+                    root_path=self._path,
+                    jsm=self._jsm.get_child(key),
+                    parent=self,
+                )
+                output[key] = child_node
+                filenames.append(child_node.get_filename())
+
+        return output, filenames
+
     @abc.abstractmethod
     def _build_content(self) -> SUB_JSON:
         pass
@@ -40,39 +65,14 @@ class INode(abc.ABC):
 
 class ObjectNode(INode):
     def _build_content(self) -> SUB_JSON:
-
-        output: Dict[str, SUB_JSON] = dict()
-
-        for key in self._jsm.get_properties():
-
-            child_node = self._node_factory.build(
-                key=key,
-                root_path=self._path,
-                jsm=self._jsm.get_child(key),
-                parent=self,
-            )
-
-            output[key] = child_node.get_content()
-
-        return output
+        children, _ = self.parse_properties()
+        return {key: child.get_content() for key, child in children.items()}
 
 
 class MixFolderNode(INode):
     def _build_content(self) -> SUB_JSON:
-        output: JSON = dict()
-        properties = self._jsm.get_properties()
-
-        filenames: List[str] = []
-
-        for key in properties:
-            child_node = self._node_factory.build(
-                key=key,
-                root_path=self._path,
-                jsm=self._jsm.get_child(key),
-                parent=self,
-            )
-            output[key] = child_node.get_content()
-            filenames.append(child_node.get_filename())
+        children, filenames = self.parse_properties(not_checking=True)
+        output = {key: child.get_content() for key, child in children.items()}
 
         for folder in self._path.iterdir():
             if folder.name not in filenames:
@@ -128,6 +128,57 @@ class UrlFileNode(INode):
         return f"file{relative_path}"
 
 
+class OnlyListNode(INode):
+    def _build_content(self) -> SUB_JSON:
+        path = self._path
+
+        output = {}
+        for file in path.iterdir():
+            key = file.stem
+            child_node = self._node_factory.build(
+                key=file.name,
+                root_path=path,
+                jsm=self._jsm.get_additional_properties(),
+                parent=self,
+            )
+
+            output[key] = child_node.get_content()
+
+        return output
+
+
+class OutputFolderNode(INode):
+    @staticmethod
+    def _parse_output(name: str) -> JSON:
+        modes = {"eco": "economy", "adq": "adequacy"}
+        regex: Any = re.search("^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", name)
+        return {
+            "date": regex.group(1),
+            "type": modes[regex.group(2)],
+            "name": regex.group(3),
+        }
+
+    def _build_content(self) -> SUB_JSON:
+        output = dict()
+        jsm = self._jsm.get_additional_properties()
+
+        directories = sorted(self._path.iterdir())
+        for i, dir in enumerate(directories):
+            index = str(i + 1)
+            output[index] = OutputFolderNode._parse_output(dir.name)
+            for child in dir.iterdir():
+                if (
+                    child.stem in jsm.get_properties()
+                ):  # TODO remove when jsonschema complet
+                    output[index][child.stem] = self._node_factory.build(
+                        key=child.name,
+                        root_path=dir,
+                        jsm=jsm.get_child(child.stem),
+                        parent=self,
+                    ).get_content()
+        return output
+
+
 class NodeFactory:
     def __init__(self, readers: Dict[str, Any]) -> None:
         self.readers = readers
@@ -152,10 +203,15 @@ class NodeFactory:
 
         node_class: Type[INode] = ObjectNode
         strategy = jsm.get_strategy()
-        if strategy in ["S1", "S3"]:
+
+        if strategy in ["S1", "S3", "S7"]:
             return MixFolderNode
         elif strategy in ["S2"]:
             return IniFileNode
+        elif strategy in ["S4", "S6", "S9", "S10"]:
+            return OnlyListNode
+        elif strategy in ["S8"]:
+            return OutputFolderNode
 
         if path.is_file():
             if path.suffix in [".txt", ".log"]:

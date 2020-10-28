@@ -4,9 +4,9 @@
         "about-the-study": {
             "type" : "object",
             "properties": {
-                "areas.txt": {"type": "string"},
-                "comments.txt": {"type":  "string"},
-                "links.txt": {"type":  "string"},
+                "areas": {"rte-metadata":{"filename": "areas.txt"},"type": "string"},
+                "comments": {"rte-metadata":{"filename": "comments.txt"},"type": "string"},
+                "links": {"rte-metadata":{"filename": "links.txt"},"type": "string"},
                 "parameters": {"$ref": "parameters.ini.json#/definitions/parameters"},
                 "study": {"$ref": "study.ini.json#/definitions/study"}
             }

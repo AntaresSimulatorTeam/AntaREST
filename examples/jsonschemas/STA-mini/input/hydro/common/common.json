@@ -1,0 +1,11 @@
+{
+    "type": "object",
+    "definitions": {
+        "common": {
+            "type": "object",
+            "properties": {
+                "capacity": {"$ref":  "capacity/capacity.json#/definitions/capacity"}
+            }
+        }
+    }
+}

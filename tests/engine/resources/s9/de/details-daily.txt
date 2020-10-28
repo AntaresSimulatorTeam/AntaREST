@@ -1,0 +1,14 @@
+DE	area	de	daily
+	VARIABLES	BEGIN	END
+	27	1	7
+
+DE	daily			01_solar	02_wind_on	03_wind_off	04_res	05_nuclear	06_coal	07_gas	08_non-res	09_hydro_pump	01_solar	02_wind_on	03_wind_off	04_res	05_nuclear	06_coal	07_gas	08_non-res	09_hydro_pump	01_solar	02_wind_on	03_wind_off	04_res	05_nuclear	06_coal	07_gas	08_non-res	09_hydro_pump
+				MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NODU	NODU	NODU	NODU	NODU	NODU	NODU	NODU	NODU
+	index	day	month	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP
+	1	01	JAN	27000	600	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	23	3	0	0	0	0	0	0	0
+	2	02	JAN	48000	34400	2800	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	24	24	7	0	0	0	0	0	0
+	3	03	JAN	48000	48000	40200	6600	0	0	0	0	0	0	0	0	0	0	0	0	0	0	24	24	24	11	0	0	0	0	0
+	4	04	JAN	48000	48000	48000	44400	12000	0	0	0	0	0	0	0	0	0	0	0	0	0	24	24	24	24	15	0	0	0	0
+	5	05	JAN	48000	48000	48000	48000	47000	19000	0	0	0	0	0	0	0	0	0	0	0	0	24	24	24	24	24	19	0	0	0
+	6	06	JAN	48000	48000	48000	48000	48000	48000	27000	600	0	0	0	0	0	0	0	0	0	0	24	24	24	24	24	24	23	3	0
+	7	07	JAN	48000	48000	48000	48000	48000	48000	48000	34400	2800	0	0	0	0	0	0	0	0	0	24	24	24	24	24	24	24	24	7

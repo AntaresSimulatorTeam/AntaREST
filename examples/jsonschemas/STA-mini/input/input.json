@@ -12,6 +12,9 @@
         },
         "hydro": {
           "$ref": "hydro/hydro.json#/definitions/hydro"
+        },
+        "thermal": {
+          "$ref": "thermal/thermal.json#/definitions/thermal"
         }
       }
     }

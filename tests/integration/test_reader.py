@@ -3,10 +3,10 @@ from pathlib import Path
 import pytest
 
 from api_iso_antares.antares_io.reader import IniReader
-from api_iso_antares.jsonschema import JsonSchema
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine.filesystem_engine import FileSystemEngine
+from api_iso_antares.jsonschema import JsonSchema
 
 
 @pytest.mark.integration_test

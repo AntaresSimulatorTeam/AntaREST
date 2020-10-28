@@ -1,0 +1,29 @@
+{
+    "type": "object",
+    "definitions": {
+        "series": {
+            "type": "object",
+            "rte-metadata": {
+                "strategy": "S4"
+            },
+            "properties": {},
+            "additionalProperties": {
+                "type": "object",
+                "rte-metadata": {
+                    "strategy": "S7"
+                },
+                "properties": {
+                },
+                "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                        "series": {
+                            "rte-metadata": {"filename": "series.txt"},
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
