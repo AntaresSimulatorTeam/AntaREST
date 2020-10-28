@@ -5,7 +5,7 @@ import pytest
 
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine.filesystem_engine import FileSystemEngine
-from api_iso_antares.jsonschema import JsonSchema
+from api_iso_antares.jsm import JsonSchema
 
 
 @pytest.mark.unit_test

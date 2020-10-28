@@ -1,11 +1,11 @@
 import abc
 import re
 from pathlib import Path
-from typing import Any, cast, Dict, List, Optional, Type, Tuple
+from typing import Any, cast, Dict, List, Optional, Tuple, Type
 
 from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.custom_types import JSON, SUB_JSON
-from api_iso_antares.jsonschema import JsonSchema
+from api_iso_antares.jsm import JsonSchema
 
 
 class INode(abc.ABC):

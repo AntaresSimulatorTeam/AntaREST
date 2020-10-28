@@ -3,7 +3,7 @@ from typing import Any, cast, Dict
 
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine.nodes import NodeFactory
-from api_iso_antares.jsonschema import JsonSchema
+from api_iso_antares.jsm import JsonSchema
 
 
 class FileSystemEngine:
