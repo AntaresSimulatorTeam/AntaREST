@@ -1,0 +1,48 @@
+{
+    "type": "object",
+    "definitions": {
+        "hydro": {
+            "type": "object",
+            "rte-metadata": {
+                "filename": "hydro.ini"
+            },
+            "properties": {
+                "initialize reservoir date": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": {
+                        "type": "number"
+                    }
+                },
+                "leeway low": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": {
+                        "type": "number"
+                    }
+                },
+                "leeway up": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": {
+                        "type": "number"
+                    }
+                },
+                "pumping efficiency": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": {
+                        "type": "number"
+                    }
+                }
+            },
+            "additionalProperties": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {
+                    "type": "number"
+                }
+            }
+        }
+    }
+}

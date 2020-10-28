@@ -12,6 +12,12 @@
                 },
                 "common": {
                     "$ref": "common/common.json#/definitions/common"
+                },
+                "prepro": {
+                    "$ref": "prepro/prepro.json#/definitions/prepro"
+                },
+                "hydro": {
+                    "$ref": "hydro.ini.json#/definitions/hydro"
                 }
             }
         }

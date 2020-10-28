@@ -1,0 +1,17 @@
+{
+    "type": "object",
+    "definitions": {
+        "settings": {
+            "type": "object",
+            "rte-metadata": {
+                "filename": "settings.ini"
+            },
+            "properties": {},
+            "additionalProperties": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {"type": "string"}
+            }
+        }
+    }
+}
