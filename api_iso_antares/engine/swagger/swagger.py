@@ -169,6 +169,10 @@ class SwaggerPath(ISwaggerElement):
     def get_url(self) -> str:
         return self._url
 
+    def get_parent_url(self) -> str:
+        splitted_url = self.get_url().split("/")
+        return "/".join(splitted_url[:-1])
+
     def add_operation(self, operation: SwaggerOperation) -> None:
         if operation._verb == SwaggerOperation.OperationVerbs.get:
             self.get = operation
@@ -217,7 +221,7 @@ class Swagger(ISwaggerElement):
     def get_previous_path_parameters(
         self, path: SwaggerPath
     ) -> List[SwaggerParameter]:
-        url_parent = str(Path(path.get_url()).parent)
+        url_parent = path.get_parent_url()
         previous_path_parameters = []
         for prev_url, prev_path in self.paths.items():
             if url_parent == prev_url:
