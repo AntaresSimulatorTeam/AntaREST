@@ -1,6 +1,6 @@
 from typing import Any
 
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, Response, send_file
 
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.web.request_handler import (
@@ -36,6 +36,12 @@ def create_routes(application: Flask) -> None:
         except HtmlException as e:
             return e.message, e.html_code_error
         return jsonify(output), 200
+
+    @application.after_request
+    def after_request(response: Response) -> Response:
+        header = response.headers
+        header["Access-Control-Allow-Origin"] = "*"
+        return response
 
     @application.route(
         "/file/<path:path>",

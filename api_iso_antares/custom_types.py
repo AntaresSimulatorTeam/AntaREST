@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union, List
+from typing import Any, Dict, List, Union
 
 JSON = Dict[str, Any]
 ELEMENT = Union[str, int, float, bool]
