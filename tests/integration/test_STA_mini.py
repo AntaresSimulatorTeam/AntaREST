@@ -354,6 +354,14 @@ def test_sta_mini_input(
             ),
         ),
         (
+            "/metadata/STA-mini/output/4/adequacy/mc-all/areas/de/id-daily",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1430adq/adequacy/mc-all/areas/de/id-daily.txt"
+                )
+            ),
+        ),
+        (
             "/metadata/STA-mini/output/1/ts-numbers/hydro/de",
             str(
                 Path(

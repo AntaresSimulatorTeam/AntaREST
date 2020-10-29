@@ -17,6 +17,7 @@
                     "simulation": {"type": "string"},
                     "about-the-study":{"$ref" : "about-the-study/about-the-study.json#/definitions/about-the-study"},
                     "economy": {"$ref":  "economy/economy.json#/definitions/economy"},
+                    "adequacy": {"$ref":  "adequacy/adequacy.json#/definitions/adequacy"},
                     "ts-numbers": {"$ref":  "ts-numbers/ts-numbers.json#/definitions/ts-numbers"}
                 }
             }
