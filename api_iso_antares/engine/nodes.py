@@ -170,6 +170,28 @@ class OutputFolderNode(INode):
         return output
 
 
+class OutputLinksNode(INode):
+    @staticmethod
+    def _parse_folder_name(path: Path) -> List[str]:
+        return path.name.split(" - ")
+
+    def _build_content(self) -> SUB_JSON:
+        output: JSON = dict()
+
+        for dir in self._path.iterdir():
+            src, dest = dir.name.split(" - ")
+            if src not in output:
+                output[src] = dict()
+            output[src][dest] = self._node_factory.build(
+                key=dir.name,
+                root_path=self._path,
+                jsm=self._jsm.get_additional_properties().get_additional_properties(),
+                parent=self,
+            ).get_content()
+
+        return output
+
+
 class NodeFactory:
     def __init__(self, readers: Dict[str, Any]) -> None:
         self.readers = readers
@@ -201,8 +223,10 @@ class NodeFactory:
             return IniFileNode
         elif strategy in ["S4", "S6", "S9", "S10", "S7"]:
             return OnlyListNode
-        elif strategy in ["S8"]:
+        elif strategy in ["S12"]:
             return OutputFolderNode
+        elif strategy in ["S15"]:
+            return OutputLinksNode
 
         if path.is_file():
             if path.suffix in [".txt", ".log"]:

@@ -3,7 +3,7 @@
     "definitions": {
         "output": {
             "type": "object",
-            "rte-metadata": {"strategy":  "S8"},
+            "rte-metadata": {"strategy":  "S12"},
             "properties": {},
             "additionalProperties": {
                 "type": "object",

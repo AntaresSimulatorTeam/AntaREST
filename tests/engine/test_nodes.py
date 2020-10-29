@@ -12,6 +12,7 @@ from api_iso_antares.engine.nodes import (
     IniFileNode,
     OnlyListNode,
     OutputFolderNode,
+    OutputLinksNode,
 )
 from api_iso_antares.jsonschema import JsonSchema
 
@@ -135,11 +136,11 @@ def test_mix_keys_in_ini_file(project_path: str):
 
 @pytest.mark.unit_test
 def test_output_folder(project_path):
-    path = project_path / "tests/engine/resources/s8/output"
+    path = project_path / "tests/engine/resources/s12/output"
 
     jsm = {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "rte-metadata": {"strategy": "S8"},
+        "rte-metadata": {"strategy": "S12"},
         "type": "object",
         "properties": {},
         "additionalProperties": {
@@ -306,6 +307,46 @@ def only_list_node(path: Path, jsm: JSON, exp_data: JSON):
     factory_mock.build.return_value = node_mock
 
     node = OnlyListNode(
+        path=path,
+        jsm=JsonSchema(jsm),
+        ini_reader=Mock(),
+        parent=None,
+        node_factory=factory_mock,
+    )
+
+    data = node.get_content()
+
+    assert data == exp_data
+
+
+@pytest.mark.unit_test
+def test_set_of_output_link(project_path: Path):
+    path = project_path / "tests/engine/resources/s15/links"
+
+    jsm = {
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "rte-metadata": {"strategy": "S15"},
+        "type": "object",
+        "properties": {},
+        "additionalProperties": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {"type": "number"},
+        },
+    }
+
+    exp_data = {
+        "de": {"fr": content, "it": content},
+        "es": {"fr": content},
+        "fr": {"it": content},
+    }
+
+    node_mock = Mock()
+    node_mock.get_content.return_value = content
+    factory_mock = Mock()
+    factory_mock.build.return_value = node_mock
+
+    node = OutputLinksNode(
         path=path,
         jsm=JsonSchema(jsm),
         ini_reader=Mock(),
