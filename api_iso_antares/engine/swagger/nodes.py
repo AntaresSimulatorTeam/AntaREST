@@ -26,11 +26,13 @@ class INode(abc.ABC):
         self._parent = parent
         self._swagger: Swagger = self._parent._swagger
 
+        self.build()
+
     def get_url(self) -> str:
         return self._parent.get_url() + "/" + self._key
 
     @abc.abstractmethod
-    def build_content(self) -> None:
+    def build(self) -> None:
         pass
 
 
@@ -44,11 +46,12 @@ class RootNode(INode):
         self._node_factory = NodeFactory()
         self._swagger = Swagger()
         self._root_url: str = "/metadata/{study}"
+        self.build()
 
     def get_url(self) -> str:
         return self._root_url
 
-    def build_swagger(self) -> None:
+    def build(self) -> None:
 
         study_path = SwaggerPath(url=self._root_url)
         study_path.add_parameter(
@@ -67,44 +70,41 @@ class RootNode(INode):
 
         self._swagger.add_path(study_path)
 
-    def build_content(self) -> None:
-        self.build_swagger()
+        self.build_children()
+
+    def build_children(self) -> None:
 
         properties = self._jsm.get_properties()
 
         for key in properties:
 
-            child_node = self._node_factory.build(
+            self._node_factory.build(
                 key=key,
                 jsm=self._jsm.get_child(key),
                 parent=self,
             )
 
-            child_node.build_content()
-
     def get_content(self) -> JSON:
-        self.build_content()
         return self._swagger.json()
 
 
 class PathNode(INode):
-    def build_content(self) -> None:
+    def build(self) -> None:
+        path = self.get_path()
+        self._swagger.add_path(path)
+        self.build_children()
 
-        self.build_swagger()
+    def build_children(self) -> None:
 
-        properties = self._jsm.get_properties()
+        if self._jsm.has_properties():
 
-        for key in properties:
-            child_node = self._node_factory.build(
-                key=key,
-                jsm=self._jsm.get_child(key),
-                parent=self,
-            )
-
-            child_node.build_content()
-
-    def build_swagger(self) -> None:
-        self._swagger.add_path(self.get_path())
+            properties = self._jsm.get_properties()
+            for key in properties:
+                self._node_factory.build(
+                    key=key,
+                    jsm=self._jsm.get_child(key),
+                    parent=self,
+                )
 
     def get_path(self) -> SwaggerPath:
         swagger_path = SwaggerPath(url=self.get_url())
@@ -121,8 +121,16 @@ class PathNode(INode):
         return self.get_url().split("/")[3]
 
 
+class FileNode(INode):
+    def build(self) -> None:
+        pass
+
+
 class EmptyNode(INode):
-    def build_content(self) -> None:
+    def build(self) -> None:
+        pass
+
+    def build_children(self) -> None:
         pass
 
 
@@ -143,6 +151,11 @@ class NodeFactory:
 
     @staticmethod
     def get_node_class_by_strategy(jsm: JsonSchema) -> Type[INode]:
+        node_class: Type[INode] = EmptyNode
+
         if jsm.is_object():
-            return PathNode
-        return EmptyNode
+            node_class = PathNode
+        elif jsm.is_value():
+            node_class = PathNode
+
+        return node_class

@@ -13,6 +13,9 @@ class JsonSchema:
             key for key in self.data["properties"].keys() if not (key == "$id")
         ]
 
+    def has_properties(self) -> bool:
+        return "properties" in self.data
+
     def get_child(self, key: Optional[str] = None) -> "JsonSchema":
         data: JSON
         if key is None:
@@ -49,3 +52,6 @@ class JsonSchema:
 
     def is_object(self) -> bool:
         return self.get_type() == "object"
+
+    def is_value(self) -> bool:
+        return self.get_type() in ["string", "number", "boolean"]
