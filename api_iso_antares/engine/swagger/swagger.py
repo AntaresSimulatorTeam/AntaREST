@@ -137,9 +137,11 @@ class SwaggerOperation(ISwaggerElement):
 class SwaggerParameter(ISwaggerElement):
     class ParametersIn(enum.Enum):
         path = enum.auto()
+        query = enum.auto()
 
     class SchemaType(enum.Enum):
         string = enum.auto()
+        integer = enum.auto()
 
     def __init__(
         self,
@@ -198,6 +200,7 @@ class SwaggerTag(ISwaggerElement):
 
 class Swagger(ISwaggerElement):
     def __init__(self) -> None:
+
         self.openapi = "3.0.0"
         self.info = {
             "description": "API ANTARES",
@@ -208,6 +211,8 @@ class Swagger(ISwaggerElement):
         self.paths: Dict[str, SwaggerPath] = dict()
         # TODO: add set_servers / Tech debt for the demo
         self.servers = [{"url": "http://0.0.0.0:8080"}]
+
+        self._global_parameters: List[SwaggerParameter] = []
 
     def add_tag(self, tag: SwaggerTag) -> None:
         self.tags.append(tag)
@@ -227,3 +232,18 @@ class Swagger(ISwaggerElement):
                 previous_path_parameters = prev_path.get_path_parameters()
                 break
         return previous_path_parameters
+
+    def get_global_parameters(self) -> List[SwaggerParameter]:
+        return self._global_parameters
+
+    def add_global_parameters(self, parameter: SwaggerParameter) -> None:
+        self._global_parameters.append(parameter)
+
+    def _add_global_parameters_to_paths(self) -> None:
+        for parameter in self.get_global_parameters():
+            for _, path in self.paths.items():
+                path.add_parameter(parameter)
+
+    def json(self) -> JSON:
+        self._add_global_parameters_to_paths()
+        return super().json()
