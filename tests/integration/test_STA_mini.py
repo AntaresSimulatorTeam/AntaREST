@@ -163,6 +163,75 @@ def test_sta_mini_study_antares(
                 )
             ),
         ),
+        (
+            "/metadata/STA-mini/input/hydro/prepro/correlation/general/mode",
+            "annual",
+        ),
+        (
+            "/metadata/STA-mini/input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation",
+            0.5,
+        ),
+        (
+            "/metadata/STA-mini/input/hydro/prepro/fr/energy",
+            str(Path("file/STA-mini/input/hydro/prepro/fr/energy.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/hydro/hydro/inter-monthly-breakdown/fr",
+            1,
+        ),
+        (
+            "/metadata/STA-mini/input/thermal/prepro/fr/05_nuclear/modulation",
+            str(
+                Path(
+                    "file/STA-mini/input/thermal/prepro/fr/05_nuclear/modulation.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/input/thermal/clusters/fr/list/05_nuclear/marginal-cost",
+            50,
+        ),
+        (
+            "/metadata/STA-mini/input/links/fr/properties/it/hurdles-cost",
+            True,
+        ),
+        # TODO: not working yet
+        # (
+        #     "/metadata/STA-mini/input/links/fr/it",
+        #     str(Path("file/STA-mini/input/links/fr/it.txt")),
+        # ),
+        (
+            "/metadata/STA-mini/input/load/prepro/fr/k",
+            str(Path("file/STA-mini/input/load/prepro/fr/k.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/load/series/load_fr",
+            str(Path("file/STA-mini/input/load/series/load_fr.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/misc-gen/miscgen-fr",
+            str(Path("file/STA-mini/input/misc-gen/miscgen-fr.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/reserves/fr",
+            str(Path("file/STA-mini/input/reserves/fr.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/solar/prepro/fr/k",
+            str(Path("file/STA-mini/input/solar/prepro/fr/k.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/solar/series/solar_fr",
+            str(Path("file/STA-mini/input/solar/series/solar_fr.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/wind/prepro/fr/k",
+            str(Path("file/STA-mini/input/wind/prepro/fr/k.txt")),
+        ),
+        (
+            "/metadata/STA-mini/input/wind/series/wind_fr",
+            str(Path("file/STA-mini/input/wind/series/wind_fr.txt")),
+        ),
     ],
 )
 def test_sta_mini_input(
@@ -252,10 +321,75 @@ def test_sta_mini_input(
             ),
         ),
         (
+            "/metadata/STA-mini/output/1/economy/mc-all/grid/areas",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/grid/areas.txt"
+                )
+            ),
+        ),
+        ("/metadata/STA-mini/output/1/economy/mc-all/links/de - fr", {}),
+        (
+            "/metadata/STA-mini/output/1/economy/mc-ind/00001/links/de - fr/values-hourly",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/links/de - fr/values-hourly.txt"
+                )
+            ),
+        ),
+        (
             "/metadata/STA-mini/output/1/economy/mc-ind/00001/areas/de/details-annual",
             str(
                 Path(
                     "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/1/economy/mc-ind/00001/areas/de/details-annual",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/1/ts-numbers/hydro/de",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/de.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/1/ts-numbers/load/de",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/load/de.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/1/ts-numbers/solar/de",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/solar/de.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/1/ts-numbers/wind/de",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/wind/de.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/1/ts-numbers/thermal/de/07_gas",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/thermal/de/07_gas.txt"
                 )
             ),
         ),

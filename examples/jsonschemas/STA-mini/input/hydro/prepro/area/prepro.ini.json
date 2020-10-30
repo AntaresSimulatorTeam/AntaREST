@@ -1,0 +1,21 @@
+{
+    "type": "object",
+    "definitions": {
+        "prepro": {
+            "type": "object",
+            "rte-metadata": {
+                "filename": "prepro.ini"
+            },
+            "properties": {
+                "prepro": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": {
+                        "type": "number"
+                    }
+                }
+            },
+            "additionalProperties": {}
+        }
+    }
+}

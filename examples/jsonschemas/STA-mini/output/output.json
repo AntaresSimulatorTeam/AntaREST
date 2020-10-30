@@ -16,7 +16,8 @@
                     "simulation-comments": {"type": "string"},
                     "simulation": {"type": "string"},
                     "about-the-study":{"$ref" : "about-the-study/about-the-study.json#/definitions/about-the-study"},
-                    "economy": {"$ref":  "economy/economy.json#/definitions/economy"}
+                    "economy": {"$ref":  "economy/economy.json#/definitions/economy"},
+                    "ts-numbers": {"$ref":  "ts-numbers/ts-numbers.json#/definitions/ts-numbers"}
                 }
             }
         }

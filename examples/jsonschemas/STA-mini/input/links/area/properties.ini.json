@@ -1,0 +1,27 @@
+{
+    "type": "object",
+    "definitions": {
+        "properties": {
+            "type": "object",
+            "rte-metadata": {"filename": "properties.ini"},
+            "properties": {},
+            "additionalProperties": {"type": "object",
+                "properties": {
+                    "hurdles-cost": {"type":"boolean"},
+                    "loop-flow": {"type":"boolean"},
+                    "use-phase-shifter": {"type":"boolean"},
+                    "transmission-capacities": {"type":"string"},
+                    "asset-type": {"type":"string"},
+                    "link-style": {"type":"string"},
+                    "link-width": {"type":"number"},
+                    "colorr": {"type":"number"},
+                    "colorg": {"type":"number"},
+                    "colorb": {"type":"number"},
+                    "display-comments": {"type":"boolean"},
+                    "filter-synthesis": {"type":"string"},
+                    "filter-year-by-year": {"type":"string"}
+                }
+            }
+        }
+    }
+}

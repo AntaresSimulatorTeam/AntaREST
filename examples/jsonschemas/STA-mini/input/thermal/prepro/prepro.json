@@ -1,0 +1,15 @@
+{
+    "type": "object",
+    "definitions": {
+        "prepro": {
+            "type": "object",
+            "rte-metadata": {
+                "strategy": "S4"
+            },
+            "properties": {},
+            "additionalProperties": {
+                "$ref": "area/area.json#/definitions/area"
+            }
+        }
+    }
+}

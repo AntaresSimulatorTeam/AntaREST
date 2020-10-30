@@ -3,6 +3,7 @@ from typing import Any
 from flask import Flask, jsonify, request, Response, send_file
 
 from api_iso_antares.custom_exceptions import HtmlException
+from api_iso_antares.engine import SwaggerEngine
 from api_iso_antares.web.request_handler import (
     RequestHandler,
     RequestHandlerParameters,
@@ -37,12 +38,6 @@ def create_routes(application: Flask) -> None:
             return e.message, e.html_code_error
         return jsonify(output), 200
 
-    @application.after_request
-    def after_request(response: Response) -> Response:
-        header = response.headers
-        header["Access-Control-Allow-Origin"] = "*"
-        return response
-
     @application.route(
         "/file/<path:path>",
         methods=["GET"],
@@ -54,6 +49,22 @@ def create_routes(application: Flask) -> None:
             return send_file(str(request_handler.path_to_studies / path))
         except FileNotFoundError:
             return f"{path} not found", 404
+
+    @application.route(
+        "/swagger",
+        methods=["GET"],
+    )
+    def swagger() -> Any:
+        global request_handler
+        jsm = request_handler.get_jsm()
+        swg_doc = SwaggerEngine.parse(jsm=jsm)
+        return jsonify(swg_doc), 200
+
+    @application.after_request
+    def after_request(response: Response) -> Response:
+        header = response.headers
+        header["Access-Control-Allow-Origin"] = "*"
+        return response
 
 
 def create_server(req: RequestHandler) -> Flask:

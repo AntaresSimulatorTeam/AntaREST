@@ -195,11 +195,11 @@ class NodeFactory:
         node_class: Type[INode] = ObjectNode
         strategy = jsm.get_strategy()
 
-        if strategy in ["S1", "S3", "S7"]:
+        if strategy in ["S1", "S3"]:
             return MixFolderNode
         elif strategy in ["S2"]:
             return IniFileNode
-        elif strategy in ["S4", "S6", "S9", "S10"]:
+        elif strategy in ["S4", "S6", "S9", "S10", "S7"]:
             return OnlyListNode
         elif strategy in ["S8"]:
             return OutputFolderNode
