@@ -28,6 +28,20 @@ class JsonSchema:
         data = self.data["additionalProperties"]
         return JsonSchema(data)
 
+    def get_additional_property_name(self) -> str:
+        name = self.get_metadata_element("additional_property_name")
+        return cast(str, name)
+
+    def has_additional_properties(self) -> bool:
+        return "additionalProperties" in self.data
+
+    def has_defined_additional_properties(self) -> bool:
+        has_defined_additional_properties = (
+            self.has_additional_properties()
+            and isinstance(self.data["additionalProperties"], dict)
+        )
+        return has_defined_additional_properties
+
     def get_metadata(self) -> Optional[JSON]:
         return self.data.get("rte-metadata", None)
 
@@ -54,4 +68,4 @@ class JsonSchema:
         return self.get_type() == "object"
 
     def is_value(self) -> bool:
-        return self.get_type() in ["string", "number", "boolean"]
+        return self.get_type() in ["string", "number", "boolean", "integer"]
