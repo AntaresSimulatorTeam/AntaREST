@@ -15,7 +15,7 @@ def test_generation_swagger_documentation(
     swg_doc = SwaggerEngine.parse(jsm)
 
     # TODO: remove those two lines
-    yaml_swg = SwaggerEngine.json_to_yaml(swg_doc)
-    (project_path / "swagger.yaml").write_text(yaml_swg)
+    # yaml_swg = SwaggerEngine.json_to_yaml(swg_doc)
+    # (project_path / "swagger.yaml").write_text(yaml_swg)
 
     SwaggerValidator.validate(swg_doc)
