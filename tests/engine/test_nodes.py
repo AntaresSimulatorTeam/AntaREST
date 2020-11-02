@@ -13,6 +13,7 @@ from api_iso_antares.engine.nodes import (
     OnlyListNode,
     OutputFolderNode,
     OutputLinksNode,
+    InputLinksNode,
 )
 from api_iso_antares.jsonschema import JsonSchema
 
@@ -68,8 +69,8 @@ def test_mix_file_with_zones_list(project_path: Path) -> None:
 
     exp_data = {
         "bindingconstraints": content,
-        "northern mesh.txt": content,
-        "southern mesh.txt": content,
+        "northern mesh": content,
+        "southern mesh": content,
     }
 
     filenames = ["bindingconstraints.ini"]
@@ -347,6 +348,53 @@ def test_set_of_output_link(project_path: Path):
     factory_mock.build.return_value = node_mock
 
     node = OutputLinksNode(
+        path=path,
+        jsm=JsonSchema(jsm),
+        ini_reader=Mock(),
+        parent=None,
+        node_factory=factory_mock,
+    )
+
+    data = node.get_content()
+
+    assert data == exp_data
+
+
+@pytest.mark.unit_test
+def test_set_of_input_link(project_path: Path):
+    path = project_path / "tests/engine/resources/s14/links"
+
+    jsm = {
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "rte-metadata": {"strategy": "S14"},
+        "type": "object",
+        "properties": {},
+        "additionalProperties": {
+            "type": "object",
+            "properties": {
+                "properties": {
+                    "type": "number",
+                    "rte-metadata": {"filename": "properties.ini"},
+                }
+            },
+            "additionalProperties": {"type": "number"},
+        },
+    }
+
+    exp_data = {
+        "de": {"fr": content, "properties": content},
+        "es": {"fr": content, "properties": content},
+        "fr": {"it": content, "properties": content},
+        "it": {"properties": content},
+    }
+
+    node_mock = Mock()
+    node_mock.get_content.return_value = content
+    node_mock.get_filename.return_value = "properties.ini"
+    factory_mock = Mock()
+    factory_mock.build.return_value = node_mock
+
+    node = InputLinksNode(
         path=path,
         jsm=JsonSchema(jsm),
         ini_reader=Mock(),

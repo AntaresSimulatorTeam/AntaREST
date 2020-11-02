@@ -90,7 +90,7 @@ class MixFolderNode(INode):
         output = {key: child.get_content() for key, child in children.items()}
 
         for path, child in self.parse_additional_properties(filenames).items():
-            output[path.name] = child.get_content()
+            output[path.stem] = child.get_content()
 
         return output
 
@@ -192,6 +192,21 @@ class OutputLinksNode(INode):
         return output
 
 
+class InputLinksNode(INode):
+    def _build_content(self) -> SUB_JSON:
+        children: JSON = dict()
+        for area in self._path.iterdir():
+            children[area.name] = MixFolderNode(
+                area,
+                jsm=self._jsm.get_additional_properties(),
+                ini_reader=self._ini_reader,
+                parent=self,
+                node_factory=self._node_factory,
+            ).get_content()
+
+        return children
+
+
 class NodeFactory:
     def __init__(self, readers: Dict[str, Any]) -> None:
         self.readers = readers
@@ -227,6 +242,8 @@ class NodeFactory:
             return OutputFolderNode
         elif strategy in ["S15"]:
             return OutputLinksNode
+        elif strategy in ["S14"]:
+            return InputLinksNode
 
         if path.is_file():
             if path.suffix in [".txt", ".log"]:

@@ -195,11 +195,10 @@ def test_sta_mini_study_antares(
             "/metadata/STA-mini/input/links/fr/properties/it/hurdles-cost",
             True,
         ),
-        # TODO: not working yet
-        # (
-        #     "/metadata/STA-mini/input/links/fr/it",
-        #     str(Path("file/STA-mini/input/links/fr/it.txt")),
-        # ),
+        (
+            "/metadata/STA-mini/input/links/fr/it",
+            str(Path("file/STA-mini/input/links/fr/it.txt")),
+        ),
         (
             "/metadata/STA-mini/input/load/prepro/fr/k",
             str(Path("file/STA-mini/input/load/prepro/fr/k.txt")),
