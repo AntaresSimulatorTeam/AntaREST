@@ -190,7 +190,7 @@ class SwaggerPath(ISwaggerElement):
         if operation.get_verb() == SwaggerOperation.OperationVerbs.get:
             self.get = operation
         else:
-            NotImplementedError(
+            raise NotImplementedError(
                 f"The verb {operation.get_verb() } is not implemented yet."
             )
 
