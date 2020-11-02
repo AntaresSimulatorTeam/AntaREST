@@ -1,5 +1,7 @@
 import abc
 import enum
+import re
+from collections import Counter, defaultdict
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
@@ -133,6 +135,9 @@ class SwaggerOperation(ISwaggerElement):
     def add_tag(self, tag: str) -> None:
         self.tags.append(tag)
 
+    def get_verb(self) -> "SwaggerOperation.OperationVerbs":
+        return self._verb
+
 
 class SwaggerParameter(ISwaggerElement):
     class ParametersIn(enum.Enum):
@@ -157,6 +162,8 @@ class SwaggerParameter(ISwaggerElement):
         self.required = required
         self.schema = {"type": schema_type.name}
 
+        self._original_name = name
+
     def is_path_parameter(self) -> bool:
         return self.in_ == SwaggerParameter.ParametersIn.path.name
 
@@ -167,22 +174,32 @@ class SwaggerPath(ISwaggerElement):
         self.get: Optional[SwaggerOperation] = None
         self._url = url
 
+        self._build_path_parameters()
+
     def get_url(self) -> str:
         return self._url
+
+    def set_url(self, url: str) -> None:
+        self._url = url
 
     def get_parent_url(self) -> str:
         splitted_url = self.get_url().split("/")
         return "/".join(splitted_url[:-1])
 
     def add_operation(self, operation: SwaggerOperation) -> None:
-        if operation._verb == SwaggerOperation.OperationVerbs.get:
+        if operation.get_verb() == SwaggerOperation.OperationVerbs.get:
             self.get = operation
+        else:
+            NotImplementedError(
+                f"The verb {operation.get_verb() } is not implemented yet."
+            )
 
     def add_parameter(self, parameter: SwaggerParameter) -> None:
         self.parameters.append(parameter)
 
     def add_parameters(self, parameters: List[SwaggerParameter]) -> None:
-        self.parameters += parameters
+        for param in parameters:
+            self.add_parameter(param)
 
     def get_path_parameters(self) -> List[SwaggerParameter]:
         path_parameters = []
@@ -190,6 +207,41 @@ class SwaggerPath(ISwaggerElement):
             if parameter.is_path_parameter():
                 path_parameters.append(parameter)
         return path_parameters
+
+    def _build_path_parameters(self) -> None:
+
+        pattern_path_parameter = r"({[^{}]*})"
+        url = self.get_url()
+        splitted_url = re.split(pattern_path_parameter, url)
+
+        matches = re.findall(pattern_path_parameter, url)
+        match_counter = Counter(matches)
+        match_counter_bis: Dict[str, int] = defaultdict(int)
+
+        def is_path_parameter(index: int) -> bool:
+            return bool(index % 2)
+
+        new_url = ""
+        for idx, sub_url in enumerate(splitted_url):
+
+            if is_path_parameter(idx):
+
+                parameter_name = sub_url[1:-1]
+                if match_counter[sub_url] > 1:
+                    parameter_name += str(match_counter_bis[sub_url])
+                    match_counter_bis[sub_url] += 1
+                    sub_url = "{" + parameter_name + "}"
+
+                self.add_parameter(
+                    SwaggerParameter(
+                        name=parameter_name,
+                        where=SwaggerParameter.ParametersIn.path,
+                    )
+                )
+
+            new_url += sub_url
+
+        self.set_url(new_url)
 
 
 class SwaggerTag(ISwaggerElement):
@@ -213,25 +265,13 @@ class Swagger(ISwaggerElement):
         self.servers = [{"url": "http://0.0.0.0:8080"}]
 
         self._global_parameters: List[SwaggerParameter] = []
+        self._paths: List[SwaggerPath] = list()
 
     def add_tag(self, tag: SwaggerTag) -> None:
         self.tags.append(tag)
 
     def add_path(self, path: SwaggerPath) -> None:
-        previous_path_parameters = self.get_previous_path_parameters(path)
-        path.add_parameters(previous_path_parameters)
-        self.paths[path.get_url()] = path
-
-    def get_previous_path_parameters(
-        self, path: SwaggerPath
-    ) -> List[SwaggerParameter]:
-        url_parent = path.get_parent_url()
-        previous_path_parameters = []
-        for prev_url, prev_path in self.paths.items():
-            if url_parent == prev_url:
-                previous_path_parameters = prev_path.get_path_parameters()
-                break
-        return previous_path_parameters
+        self._paths.append(path)
 
     def get_global_parameters(self) -> List[SwaggerParameter]:
         return self._global_parameters
@@ -241,9 +281,14 @@ class Swagger(ISwaggerElement):
 
     def _add_global_parameters_to_paths(self) -> None:
         for parameter in self.get_global_parameters():
-            for _, path in self.paths.items():
+            for path in self._paths:
                 path.add_parameter(parameter)
 
     def json(self) -> JSON:
         self._add_global_parameters_to_paths()
+        self._build_paths()
         return super().json()
+
+    def _build_paths(self) -> None:
+        for path in self._paths:
+            self.paths[path.get_url()] = path

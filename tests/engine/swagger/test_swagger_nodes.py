@@ -1,16 +1,25 @@
 from unittest.mock import Mock
+import pytest
 
-from api_iso_antares.engine.swagger.nodes import PathNode, RootNode
+from api_iso_antares.engine.swagger.nodes import (
+    PathNode,
+    RootNode,
+)
 
 
+@pytest.mark.unit_test
 def test_path_node() -> None:
 
     parent = Mock()
     parent.get_url.return_value = "/ex1/ex2"
 
+    jsm = Mock()
+    jsm.has_properties.return_value = False
+    jsm.has_defined_additional_properties.return_value = False
+
     node = PathNode(
         key="ex3",
-        jsm=Mock(),
+        jsm=jsm,
         node_factory=Mock(),
         parent=parent,
     )
@@ -21,6 +30,7 @@ def test_path_node() -> None:
     assert data_path["get"]["tags"] == ["ex3"]
 
 
+@pytest.mark.unit_test
 def test_root_node() -> None:
 
     jsm = Mock()
@@ -29,8 +39,6 @@ def test_root_node() -> None:
     root = RootNode(jsm=jsm)
 
     assert root.get_url() == "/metadata/{study}"
-
-    root.build_content()
 
     data = root.get_content()
     assert data["openapi"] == "3.0.0"

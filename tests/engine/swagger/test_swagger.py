@@ -72,7 +72,7 @@ def test_swagger_path() -> None:
 
     verb = SwaggerOperation.OperationVerbs.get
     operation = Mock()
-    operation._verb = verb
+    operation.get_verb.return_value = verb
     path.add_operation(operation)
     assert path.get is operation
 
@@ -101,12 +101,9 @@ def test_swagger() -> None:
 
     path = SwaggerPath(url="/{toto}")
 
-    parameter1 = Mock()
-    parameter1.is_path_parameter.return_value = True
-
     parameter2 = Mock()
     parameter2.is_path_parameter.return_value = False
-    path.add_parameters([parameter1, parameter2])
+    path.add_parameter(parameter2)
 
     swagger.add_path(path)
 

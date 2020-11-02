@@ -1,5 +1,5 @@
 import abc
-from typing import Type
+from typing import Any, Dict, Optional, Tuple, Type
 
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine.swagger.swagger import (
@@ -63,18 +63,9 @@ class RootNode(INode):
 
         study_path = SwaggerPath(url=self._root_url)
 
-        study_path.add_parameter(
-            SwaggerParameter(
-                name="study",
-                where=SwaggerParameter.ParametersIn.path,
-                description="Study name",
-            )
-        )
-
         study_path.add_operation(
             SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
         )
-
         for key in self._jsm.get_properties():
             self._swagger.add_tag(SwaggerTag(key))
 
@@ -114,7 +105,10 @@ class PathNode(INode):
         self._swagger.add_path(path)
 
     def _build_children(self) -> None:
+        self._build_children_property_based()
+        self._build_children_additional_property_based()
 
+    def _build_children_property_based(self) -> None:
         if self._jsm.has_properties():
 
             properties = self._jsm.get_properties()
@@ -125,7 +119,16 @@ class PathNode(INode):
                     parent=self,
                 )
 
+    def _build_children_additional_property_based(self) -> None:
+        if self._jsm.has_defined_additional_properties():
+
+            jsm = self._jsm.get_additional_properties()
+            key = "{" + self._jsm.get_additional_property_name() + "}"
+
+            self._node_factory.build(key, jsm=jsm, parent=self)
+
     def _get_path(self) -> SwaggerPath:
+
         swagger_path = SwaggerPath(url=self.get_url())
 
         operation_get = SwaggerOperation(
