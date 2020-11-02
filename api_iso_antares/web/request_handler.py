@@ -73,7 +73,7 @@ class RequestHandler:
             raise StudyNotFoundError(f"{study_name} not found")
 
     def get_studies(self) -> JSON:
-        studies = {"studies": []}
+        studies: JSON = {"studies": []}
         studies_list = []
 
         for path in self.path_to_studies.rglob("*"):
