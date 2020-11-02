@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Any, cast, Dict, List, Optional, Type, Tuple
 
-from api_iso_antares.antares_io.reader import IniReader
+from api_iso_antares.antares_io.reader import IniReader, SetsIniReader
 from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.jsonschema import JsonSchema
 
@@ -125,6 +125,12 @@ class IniFileNode(INode):
         return self._ini_reader.read(path)
 
 
+class SetsIniFileNode(INode):
+    def _build_content(self) -> SUB_JSON:
+        path = self._path
+        return SetsIniReader.read(path)
+
+
 class UrlFileNode(INode):
     def _build_content(self) -> SUB_JSON:
         path = self._path
@@ -240,6 +246,8 @@ class NodeFactory:
             return OnlyListNode
         elif strategy in ["S12"]:
             return OutputFolderNode
+        elif strategy in ["S13"]:
+            return SetsIniFileNode
         elif strategy in ["S15"]:
             return OutputLinksNode
         elif strategy in ["S14"]:

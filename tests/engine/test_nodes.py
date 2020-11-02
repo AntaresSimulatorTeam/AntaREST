@@ -14,6 +14,7 @@ from api_iso_antares.engine.nodes import (
     OutputFolderNode,
     OutputLinksNode,
     InputLinksNode,
+    SetsIniFileNode,
 )
 from api_iso_antares.jsonschema import JsonSchema
 
@@ -405,3 +406,26 @@ def test_set_of_input_link(project_path: Path):
     data = node.get_content()
 
     assert data == exp_data
+
+
+@pytest.mark.unit_test
+def test_sets_ini(project_path: Path):
+    path = project_path / "tests/engine/resources/s13/sets.ini"
+
+    exp = {
+        "all areas": {
+            "caption": "All areas",
+            "comments": "Spatial aggregates on all areas",
+            "apply-filter": "add-all",
+        },
+        "north&west": {"caption": "NORTH&WEST", "+": ["north", "west"]},
+    }
+
+    node = SetsIniFileNode(
+        path=path,
+        jsm=Mock(),
+        ini_reader=Mock(),
+        parent=None,
+        node_factory=Mock(),
+    )
+    assert node.get_content() == exp
