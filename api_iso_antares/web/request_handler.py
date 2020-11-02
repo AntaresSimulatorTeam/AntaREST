@@ -3,6 +3,7 @@ from typing import Any
 
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_exceptions import HtmlException
+from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.filesystem.engine import (
     FileSystemEngine,
@@ -70,6 +71,18 @@ class RequestHandler:
         dirs = [str(folder.name) for folder in dirs_files if folder.is_dir()]
         if study_name not in dirs:
             raise StudyNotFoundError(f"{study_name} not found")
+
+    def get_studies(self) -> JSON:
+        studies = {"studies": []}
+        studies_list = []
+
+        for path in self.path_to_studies.rglob("*"):
+            if path.name == "study.antares" and path.is_file():
+                studies_list.append(path.parent.name)
+
+        studies["studies"] = sorted(studies_list)
+
+        return studies
 
     def get_jsm(self) -> JsonSchema:
         return self.jsm_validator.jsm

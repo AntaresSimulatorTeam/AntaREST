@@ -47,4 +47,4 @@ if __name__ == "__main__":
     )
     application = create_server(request_handler)
 
-    application.run(debug=False, host="0.0.0.0", port=8080)
+    application.run(debug=True, host="0.0.0.0", port=8080)

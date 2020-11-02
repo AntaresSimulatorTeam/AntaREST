@@ -60,6 +60,14 @@ def create_routes(application: Flask) -> None:
         swg_doc = SwaggerEngine.parse(jsm=jsm)
         return jsonify(swg_doc), 200
 
+    @application.route(
+        "/studies",
+        methods=["GET"],
+    )
+    def studies() -> Any:
+        global request_handler
+        return jsonify(request_handler.get_studies()), 200
+
     @application.after_request
     def after_request(response: Response) -> Response:
         header = response.headers
