@@ -3,9 +3,11 @@
     "definitions": {
         "properties": {
             "type": "object",
-            "rte-metadata": {"filename": "properties.ini"},
+            "rte-metadata": {"filename": "properties.ini","additional_property_name":  "area"},
             "properties": {},
-            "additionalProperties": {"type": "object",
+            "additionalProperties": {
+
+                "type": "object",
                 "properties": {
                     "hurdles-cost": {"type":"boolean"},
                     "loop-flow": {"type":"boolean"},

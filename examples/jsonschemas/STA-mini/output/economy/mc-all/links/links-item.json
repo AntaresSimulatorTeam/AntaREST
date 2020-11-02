@@ -2,7 +2,7 @@
     "definitions": {
         "links-item": {
             "type": "object",
-            "rte-metadata": {"strategy":  "S9"},
+            "rte-metadata": {"strategy":  "S9", "additional_property_name":  "matrix"},
             "properties": {},
             "additionalProperties": {
                 "type": "string"

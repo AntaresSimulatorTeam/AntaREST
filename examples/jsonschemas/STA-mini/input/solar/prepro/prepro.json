@@ -4,7 +4,8 @@
         "prepro": {
             "type": "object",
             "rte-metadata": {
-                "strategy": "S1"
+                "strategy": "S1",
+                "additional_property_name":  "area"
             },
             "properties": {
                 "correlation": {
@@ -12,6 +13,7 @@
                 }
             },
             "additionalProperties": {
+
                 "$ref": "area/area.json#/definitions/area"
             }
         }

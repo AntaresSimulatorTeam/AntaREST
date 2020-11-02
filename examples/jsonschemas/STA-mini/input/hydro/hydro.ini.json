@@ -8,6 +8,7 @@
             },
             "properties": {
                 "initialize reservoir date": {
+                    "rte-metadata": {"additional_property_name":  "area"},
                     "type": "object",
                     "properties": {},
                     "additionalProperties": {
@@ -15,6 +16,7 @@
                     }
                 },
                 "leeway low": {
+                    "rte-metadata": {"additional_property_name":  "area"},
                     "type": "object",
                     "properties": {},
                     "additionalProperties": {
@@ -22,6 +24,7 @@
                     }
                 },
                 "leeway up": {
+                    "rte-metadata": {"additional_property_name":  "area"},
                     "type": "object",
                     "properties": {},
                     "additionalProperties": {
@@ -29,18 +32,12 @@
                     }
                 },
                 "pumping efficiency": {
+                    "rte-metadata": {"additional_property_name":  "area"},
                     "type": "object",
                     "properties": {},
                     "additionalProperties": {
                         "type": "number"
                     }
-                }
-            },
-            "additionalProperties": {
-                "type": "object",
-                "properties": {},
-                "additionalProperties": {
-                    "type": "number"
                 }
             }
         }

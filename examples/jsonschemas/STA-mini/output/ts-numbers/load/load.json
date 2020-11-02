@@ -2,8 +2,7 @@
     "definitions": {
         "load": {
             "type": "object",
-            "rte-metadata": {"strategy":  "S4"},
-            "properties": {},
+            "rte-metadata": {"strategy":  "S4", "additional_property_name":  "matrix"},
             "additionalProperties": {
                 "type": "string"
             }

@@ -194,8 +194,7 @@
                             "title": "The readonly schema",
                             "description": "An explanation about the purpose of this instance."
                         }
-                    },
-                    "additionalProperties": true
+                    }
                 },
                 "input": {
                     "$id": "#/properties/settings/properties/parameters.ini/properties/input",
@@ -212,8 +211,7 @@
                             "title": "The import schema",
                             "description": "An explanation about the purpose of this instance."
                         }
-                    },
-                    "additionalProperties": true
+                    }
                 },
                 "output": {
                     "$id": "#/properties/settings/properties/parameters.ini/properties/output",
@@ -244,8 +242,7 @@
                             "title": "The archives schema",
                             "description": "An explanation about the purpose of this instance."
                         }
-                    },
-                    "additionalProperties": true
+                    }
                 },
                 "optimization": {
                     "$id": "#/properties/settings/properties/parameters.ini/properties/optimization",
@@ -339,8 +336,7 @@
                             "title": "The include-exportmps schema",
                             "description": "An explanation about the purpose of this instance."
                         }
-                    },
-                    "additionalProperties": true
+                    }
                 },
                 "other preferences": {
                     "$id": "#/properties/settings/properties/parameters.ini/properties/other%20preferences",
@@ -399,8 +395,7 @@
                             "title": "The day-ahead-reserve-management schema",
                             "description": "An explanation about the purpose of this instance."
                         }
-                    },
-                    "additionalProperties": true
+                    }
                 },
                 "advanced parameters": {
                     "$id": "#/properties/settings/properties/parameters.ini/properties/advanced%20parameters",
@@ -424,8 +419,7 @@
                             "title": "The adequacy-block-size schema",
                             "description": "An explanation about the purpose of this instance."
                         }
-                    },
-                    "additionalProperties": true
+                    }
                 },
                 "seeds - Mersenne Twister": {
                     "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister",
@@ -512,11 +506,9 @@
                             "title": "The seed-initial-reservoir-levels schema",
                             "description": "An explanation about the purpose of this instance."
                         }
-                    },
-                    "additionalProperties": true
+                    }
                 }
-            },
-            "additionalProperties": true
+            }
         }
     }
 }
