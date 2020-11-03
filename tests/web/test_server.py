@@ -94,7 +94,14 @@ def test_create_study(
     path_study.mkdir()
     (path_study / "study.antares").touch()
 
-    request_handler = request_handler_builder(path_studies=path_studies)
+    study_parser = Mock()
+    reader = Mock()
+    reader.read.return_value = {"antares": {"caption": None}}
+    study_parser.get_reader.return_value = reader
+
+    request_handler = request_handler_builder(
+        path_studies=path_studies, study_parser=study_parser
+    )
 
     app = create_server(request_handler)
     client = app.test_client()
