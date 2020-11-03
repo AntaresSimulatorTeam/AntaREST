@@ -1,6 +1,5 @@
-import http
 from typing import Any
-
+from http import HTTPStatus
 from flask import Flask, jsonify, request, Response, send_file
 
 from api_iso_antares.custom_exceptions import HtmlException
@@ -8,6 +7,7 @@ from api_iso_antares.engine import SwaggerEngine
 from api_iso_antares.web.request_handler import (
     RequestHandler,
     RequestHandlerParameters,
+    StudyAlreadyExistError,
 )
 
 request_handler: RequestHandler
@@ -62,8 +62,8 @@ def create_routes(application: Flask) -> None:
         return jsonify(swg_doc), 200
 
     @application.route(
-        "/studies/<string:name>",
-        methods=["POST"],
+        "/studies",
+        methods=["GET"],
     )
     def post_studies() -> Any:
         global request_handler
@@ -71,13 +71,21 @@ def create_routes(application: Flask) -> None:
         return jsonify(available_studies), 200
 
     @application.route(
-        "/studies",
-        methods=["GET"],
+        "/studies/<string:name>",
+        methods=["POST"],
     )
     def get_studies(name: str) -> Any:
         global request_handler
 
-        return "", 201
+        try:
+            request_handler.create_study(name)
+            content = "/metadata/" + name
+            code = HTTPStatus.CREATED
+        except StudyAlreadyExistError as e:
+            content = e.message
+            code = e.html_code_error
+
+        return content, code
 
     @application.after_request
     def after_request(response: Response) -> Response:
