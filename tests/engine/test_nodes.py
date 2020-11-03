@@ -7,16 +7,16 @@ import pytest
 from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_types import JSON
-from api_iso_antares.engine.nodes import (
-    MixFolderNode,
+from api_iso_antares.engine.filesystem.nodes import (
     IniFileNode,
+    MixFolderNode,
     OnlyListNode,
     OutputFolderNode,
     OutputLinksNode,
     InputLinksNode,
     SetsIniFileNode,
 )
-from api_iso_antares.jsonschema import JsonSchema
+from api_iso_antares.jsm import JsonSchema
 
 content = 42
 
