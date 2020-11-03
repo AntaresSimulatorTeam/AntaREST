@@ -1,0 +1,10 @@
+{
+    "definitions": {
+        "adequacy": {
+            "type": "object",
+            "properties": {
+                "mc-all": {"$ref":  "mc-all/mc-all.json#/definitions/mc-all"}
+            }
+        }
+    }
+}

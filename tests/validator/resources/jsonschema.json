@@ -37,8 +37,9 @@
                 "properties": {
                     "file3.ini": {"$ref": "file.json#/definitions/file.ini"},
                     "areas": {
-                        "type": "array",
-                        "items": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": {
                             "type": "object",
                             "properties": {
                                 "name": {"type": "string"},
