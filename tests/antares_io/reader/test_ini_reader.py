@@ -17,8 +17,8 @@ def test_read(tmp_path: str) -> None:
     key_str = value1
 
     [part2]
-    key_bool = true
-    key_bool2 = false
+    key_bool = True
+    key_bool2 = False
     """
 
     path.write_text(ini_content)
