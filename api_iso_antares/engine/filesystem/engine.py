@@ -11,7 +11,7 @@ class FileSystemEngine:
         self,
         jsm: JsonSchema,
         readers: Dict[str, Any],
-        writers: Dict[str, Any],
+        writers: Dict[str, Any] = {},
     ) -> None:
         self.jsm = jsm
         self.node_factory = NodeFactory(readers=readers)
