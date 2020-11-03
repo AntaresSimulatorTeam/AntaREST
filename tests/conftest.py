@@ -1,13 +1,35 @@
 # -*- coding: utf-8 -*-
 import sys
 from pathlib import Path
+from typing import Callable
+from unittest.mock import Mock
 
 import pytest
+
+from api_iso_antares.web import RequestHandler
 
 project_dir: Path = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_dir))
 
 from api_iso_antares.custom_types import JSON
+
+
+@pytest.fixture
+def request_handler_builder() -> Callable:
+    def build_request_handler(
+        study_parser=Mock(),
+        url_engine=Mock(),
+        path_studies=Mock(),
+        jsm_validator=Mock(),
+    ) -> RequestHandler:
+        return RequestHandler(
+            study_parser=study_parser,
+            url_engine=url_engine,
+            path_studies=path_studies,
+            jsm_validator=jsm_validator,
+        )
+
+    return build_request_handler
 
 
 @pytest.fixture
