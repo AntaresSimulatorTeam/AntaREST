@@ -1,3 +1,4 @@
+import http
 from typing import Any
 
 from flask import Flask, jsonify, request, Response, send_file
@@ -61,13 +62,22 @@ def create_routes(application: Flask) -> None:
         return jsonify(swg_doc), 200
 
     @application.route(
-        "/studies",
-        methods=["GET"],
+        "/studies/<string:name>",
+        methods=["POST"],
     )
-    def studies() -> Any:
+    def post_studies() -> Any:
         global request_handler
         available_studies = request_handler.get_studies()
         return jsonify(available_studies), 200
+
+    @application.route(
+        "/studies",
+        methods=["GET"],
+    )
+    def get_studies(name: str) -> Any:
+        global request_handler
+
+        return "", 201
 
     @application.after_request
     def after_request(response: Response) -> Response:
