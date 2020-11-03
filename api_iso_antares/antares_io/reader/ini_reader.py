@@ -9,6 +9,7 @@ from api_iso_antares.custom_types import ELEMENT, JSON
 class IniReader:
     @staticmethod
     def _parse_bool(value: str) -> Optional[bool]:
+        value = value.lower()
         return bool(value == "true") if value in ["true", "false"] else None
 
     @staticmethod
