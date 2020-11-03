@@ -28,6 +28,7 @@ def test_get(tmp_path: str) -> None:
     path_study = path_to_studies / "study2.py"
     path_study.mkdir()
     (path_study / "settings").mkdir()
+    (path_study / "study.antares").touch()
 
     data = {"toto": 42}
     expected_data = {"titi": 43}
@@ -71,11 +72,11 @@ def test_assert_study_exist(tmp_path: str) -> None:
     # Create folders
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
-    (tmp / "myfile").touch()
+    (tmp / "study.antares").touch()
     path_study2 = tmp / "study2.py"
     path_study2.mkdir()
     (path_study2 / "settings").mkdir()
-
+    (path_study2 / "study.antares").touch()
     # Input
     study_name = "study2.py"
     path_to_studies = Path(tmp_path)
@@ -116,59 +117,37 @@ def test_assert_study_not_exist(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
-def test_find_study(tmp_path: str) -> None:
+def test_find_studies(tmp_path: str) -> None:
     # Create folders
-    tmp = Path(tmp_path)
-    (tmp / "studies_folder").mkdir()
-    path_study1 = tmp / "study1"
+    path_studies = Path(tmp_path) / "studies"
+    path_studies.mkdir()
+
+    path_study1 = path_studies / "study1"
     path_study1.mkdir()
-    (path_study1 / "settings").mkdir()
     (path_study1 / "study.antares").touch()
 
-    # Input
-    study_name = "study1"
-    path_to_studies = Path(tmp_path)
-
-    # Test & Verify
-    request_handler = RequestHandler(
-        study_parser=Mock(),
-        url_engine=Mock(),
-        path_studies=path_to_studies,
-        jsm_validator=Mock(),
-    )
-    expected = {"studies": [study_name]}
-    assert expected == request_handler.get_studies()
-
-
-@pytest.mark.unit_test
-def test_find_studies_at_different_levels(tmp_path: str) -> None:
-    # Create folders
-    tmp = Path(tmp_path)
-    (tmp / "studies_folder").mkdir()
-    path_study1 = tmp / "study1"
-    path_study1.mkdir()
-    (path_study1 / "settings").mkdir()
-    (path_study1 / "study.antares").touch()
-    path_study2_grandparent = tmp / "folder1"
-    path_study2_grandparent.mkdir()
-    path_study2_parent = path_study2_grandparent / "very_interesting_dir"
-    path_study2_parent.mkdir()
-    (path_study2_parent / "study.antares").mkdir()
-    path_study2 = path_study2_parent / "study2"
+    path_study2 = path_studies / "study2"
     path_study2.mkdir()
-    (path_study2 / "settings").mkdir()
     (path_study2 / "study.antares").touch()
 
+    path_not_study = path_studies / "not_a_study"
+    path_not_study.mkdir()
+    (path_not_study / "lambda.txt").touch()
+
+    path_lambda = path_studies / "folder1"
+    path_lambda.mkdir()
+    path_study_misplaced = path_lambda / "study_misplaced"
+    path_study_misplaced.mkdir()
+    (path_study_misplaced / "study.antares").touch()
     # Input
     study_names = ["study1", "study2"]
-    path_to_studies = Path(tmp_path)
 
     # Test & Verify
     request_handler = RequestHandler(
         study_parser=Mock(),
         url_engine=Mock(),
-        path_studies=path_to_studies,
+        path_studies=path_studies,
         jsm_validator=Mock(),
     )
-    expected = {"studies": study_names}
-    assert expected == request_handler.get_studies()
+
+    assert study_names == request_handler.get_studies()

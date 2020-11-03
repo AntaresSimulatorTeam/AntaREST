@@ -25,11 +25,10 @@ def _construct_parameters(
 def create_routes(application: Flask) -> None:
     @application.route(
         "/metadata/<path:path>",
-        methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+        methods=["GET"],
     )
     def metadata(path: str) -> Any:
         global request_handler
-
         parameters = _construct_parameters(request.args)
 
         try:
@@ -46,7 +45,8 @@ def create_routes(application: Flask) -> None:
         global request_handler
 
         try:
-            return send_file(str(request_handler.path_to_studies / path))
+            file_path = str(request_handler.path_to_studies / path)
+            return send_file(file_path)
         except FileNotFoundError:
             return f"{path} not found", 404
 
@@ -66,7 +66,8 @@ def create_routes(application: Flask) -> None:
     )
     def studies() -> Any:
         global request_handler
-        return jsonify(request_handler.get_studies()), 200
+        available_studies = request_handler.get_studies()
+        return jsonify(available_studies), 200
 
     @application.after_request
     def after_request(response: Response) -> Response:

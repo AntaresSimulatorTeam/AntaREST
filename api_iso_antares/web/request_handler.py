@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any
+from typing import Any, List
 
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_exceptions import HtmlException
@@ -67,22 +67,16 @@ class RequestHandler:
         return self.url_engine.apply(route_cut, data, parameters.depth)
 
     def _assert_study_exist(self, study_name: str) -> None:
-        dirs_files = self.path_to_studies.glob(pattern="*")
-        dirs = [str(folder.name) for folder in dirs_files if folder.is_dir()]
-        if study_name not in dirs:
+        studies = self.get_studies()
+        if study_name not in studies:
             raise StudyNotFoundError(f"{study_name} not found")
 
-    def get_studies(self) -> JSON:
-        studies: JSON = {"studies": []}
+    def get_studies(self) -> List[str]:
         studies_list = []
-
-        for path in self.path_to_studies.rglob("*"):
-            if path.name == "study.antares" and path.is_file():
-                studies_list.append(path.parent.name)
-
-        studies["studies"] = sorted(studies_list)
-
-        return studies
+        for path in self.path_to_studies.iterdir():
+            if (path / "study.antares").is_file():
+                studies_list.append(path.name)
+        return sorted(studies_list)
 
     def get_jsm(self) -> JsonSchema:
         return self.jsm_validator.jsm
