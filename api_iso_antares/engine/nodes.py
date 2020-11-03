@@ -95,30 +95,6 @@ class MixFolderNode(INode):
         return output
 
 
-class ArrayNode(INode):
-    def _build_content(self) -> SUB_JSON:
-        output: List[SUB_JSON] = list()
-
-        for key in self._get_children():
-            child_node = self._node_factory.build(
-                key=key,
-                root_path=self._path,
-                jsm=self._jsm.get_child(),
-                parent=self,
-            )
-
-            # TODO: True now... False later. A child of an array node will not always be a Dict
-
-            child_content: JSON = cast(JSON, child_node.get_content())
-            child_content["$id"] = key
-            output.append(child_content)
-
-        return output
-
-    def _get_children(self) -> List[str]:
-        return [path.name for path in sorted(self._path.iterdir())]
-
-
 class IniFileNode(INode):
     def _build_content(self) -> SUB_JSON:
         path = self._path
@@ -248,10 +224,10 @@ class NodeFactory:
             return OutputFolderNode
         elif strategy in ["S13"]:
             return SetsIniFileNode
-        elif strategy in ["S15"]:
-            return OutputLinksNode
         elif strategy in ["S14"]:
             return InputLinksNode
+        elif strategy in ["S15"]:
+            return OutputLinksNode
 
         if path.is_file():
             if path.suffix in [".txt", ".log"]:
@@ -262,9 +238,7 @@ class NodeFactory:
             ]:
                 node_class = IniFileNode
         else:
-            if jsm.is_array():
-                node_class = ArrayNode
-            elif jsm.is_object():
+            if jsm.is_object():
                 node_class = ObjectNode
 
         return node_class

@@ -113,8 +113,10 @@ def lite_jsonschema() -> JSON:
                         },
                     },
                     "areas": {
-                        "type": "array",
-                        "items": {
+                        "type": "object",
+                        "properties": {},
+                        "rte-metadata": {"strategy": "S4"},
+                        "additionalProperties": {
                             "type": "object",
                             "properties": {
                                 "$id": {"type": "string"},
@@ -161,29 +163,26 @@ def lite_jsondata() -> JSON:
         },
         "folder3": {
             "file3.ini": file_content,
-            "areas": [
-                {
-                    "$id": "area1",
+            "areas": {
+                "area1": {
                     "matrice1.txt": str(
                         Path("file/root1/folder3/areas/area1/matrice1.txt")
                     ),
                     "file4.ini": file_content,
                 },
-                {
-                    "$id": "area2",
+                "area2": {
                     "matrice1.txt": str(
                         Path("file/root1/folder3/areas/area2/matrice1.txt")
                     ),
                     "file4.ini": file_content,
                 },
-                {
-                    "$id": "area3",
+                "area3": {
                     "matrice1.txt": str(
                         Path("file/root1/folder3/areas/area3/matrice1.txt")
                     ),
                     "file4.ini": file_content,
                 },
-            ],
+            },
         },
     }
 
