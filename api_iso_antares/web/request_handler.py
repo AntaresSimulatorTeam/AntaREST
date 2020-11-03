@@ -80,6 +80,10 @@ class RequestHandler:
         if not self.is_study_exist(study_name):
             raise StudyNotFoundError(f"{study_name} not found")
 
+    def _assert_study_not_exist(self, study_name: str) -> None:
+        if self.is_study_exist(study_name):
+            raise StudyAlreadyExistError
+
     def is_study_exist(self, study_name: str) -> bool:
         return study_name in self.get_studies()
 
@@ -95,8 +99,7 @@ class RequestHandler:
 
     def create_study(self, name: str) -> None:
 
-        if self.is_study_exist(name):
-            raise StudyAlreadyExistError
+        self._assert_study_not_exist(name)
 
         root_package = api_iso_antares.ROOT_DIR
         empty_study_zip = root_package / "resources/empty-study.zip"
