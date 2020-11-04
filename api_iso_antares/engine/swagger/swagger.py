@@ -1,7 +1,7 @@
 import abc
 import enum
 import re
-from collections import Counter, defaultdict
+from collections import Counter
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from api_iso_antares.custom_types import JSON, SUB_JSON

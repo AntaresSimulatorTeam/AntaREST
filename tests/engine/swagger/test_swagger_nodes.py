@@ -1,4 +1,5 @@
 from unittest.mock import Mock
+
 import pytest
 
 from api_iso_antares.engine.swagger.nodes import (

@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Type
 
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine.swagger.swagger import (
