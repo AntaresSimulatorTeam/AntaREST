@@ -148,8 +148,7 @@ class PathNode(INode):
 
 class EmptyNode(INode):
     def _build(self) -> None:
-        # Nothing should end up here if Swagger is complete.
-        pass
+        raise NotImplementedError("The jsonschema format is not implemented.")
 
 
 class NodeFactory:

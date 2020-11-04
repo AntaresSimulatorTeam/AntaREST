@@ -2,8 +2,13 @@
   "type": "object",
   "definitions": {
     "series": {
-      "type": "array",
-      "items": {
+      "type": "object",
+      "properties": {},
+      "rte-metadata": {
+        "strategy":  "S4",
+        "additional_property_name": "area"
+      },
+      "additionalProperties": {
         "type": "object",
         "properties": {
           "mod.txt": {"type":  "string"},
