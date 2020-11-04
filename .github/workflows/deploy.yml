@@ -28,10 +28,13 @@ jobs:
         run: pyinstaller -F api_iso_antares/main.py -n server
       - name: Check binary
         if: matrix.os != 'windows-latest'
-        run: ./server -v
+        run: |
+          cd dist
+          chmod +x server
+          ./server -v
       - name: Check binary Windows
         if: matrix.os == 'windows-latest'
-        run: server.exe -v
+        run: dist/server.exe -v
       - name: Archive server binary
         uses: actions/upload-artifact@v2
         with:
