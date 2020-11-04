@@ -2,11 +2,14 @@
     "definitions": {
         "links": {
             "type": "object",
-            "rte-metadata": {"strategy":  "S1", "additional_property_name":  "link"},
+            "rte-metadata": {"strategy":  "S15", "additional_property_name":  "link"},
             "properties": {},
             "additionalProperties": {
-
-                "$ref": "links-item.json#/definitions/links-item"
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {
+                    "$ref": "links-item.json#/definitions/links-item"
+                }
             }
         }
     }

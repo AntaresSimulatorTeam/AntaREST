@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys
 from pathlib import Path
+from typing import Callable
+from unittest.mock import Mock
 
 import pytest
 
@@ -8,6 +10,25 @@ project_dir: Path = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_dir))
 
 from api_iso_antares.custom_types import JSON
+from api_iso_antares.web import RequestHandler
+
+
+@pytest.fixture
+def request_handler_builder() -> Callable:
+    def build_request_handler(
+        study_parser=Mock(),
+        url_engine=Mock(),
+        path_studies=Mock(),
+        jsm_validator=Mock(),
+    ) -> RequestHandler:
+        return RequestHandler(
+            study_parser=study_parser,
+            url_engine=url_engine,
+            path_studies=path_studies,
+            jsm_validator=jsm_validator,
+        )
+
+    return build_request_handler
 
 
 @pytest.fixture
@@ -113,8 +134,10 @@ def lite_jsonschema() -> JSON:
                         },
                     },
                     "areas": {
-                        "type": "array",
-                        "items": {
+                        "type": "object",
+                        "properties": {},
+                        "rte-metadata": {"strategy": "S4"},
+                        "additionalProperties": {
                             "type": "object",
                             "properties": {
                                 "$id": {"type": "string"},
@@ -161,29 +184,26 @@ def lite_jsondata() -> JSON:
         },
         "folder3": {
             "file3.ini": file_content,
-            "areas": [
-                {
-                    "$id": "area1",
+            "areas": {
+                "area1": {
                     "matrice1.txt": str(
                         Path("file/root1/folder3/areas/area1/matrice1.txt")
                     ),
                     "file4.ini": file_content,
                 },
-                {
-                    "$id": "area2",
+                "area2": {
                     "matrice1.txt": str(
                         Path("file/root1/folder3/areas/area2/matrice1.txt")
                     ),
                     "file4.ini": file_content,
                 },
-                {
-                    "$id": "area3",
+                "area3": {
                     "matrice1.txt": str(
                         Path("file/root1/folder3/areas/area3/matrice1.txt")
                     ),
                     "file4.ini": file_content,
                 },
-            ],
+            },
         },
     }
 

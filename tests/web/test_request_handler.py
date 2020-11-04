@@ -1,8 +1,12 @@
 from pathlib import Path
+from typing import Callable
 from unittest.mock import Mock
 
 import pytest
 
+from api_iso_antares.antares_io.reader import IniReader
+from api_iso_antares.antares_io.writer.ini_writer import IniWriter
+from api_iso_antares.engine import FileSystemEngine
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
@@ -28,6 +32,7 @@ def test_get(tmp_path: str) -> None:
     path_study = path_to_studies / "study2.py"
     path_study.mkdir()
     (path_study / "settings").mkdir()
+    (path_study / "study.antares").touch()
 
     data = {"toto": 42}
     expected_data = {"titi": 43}
@@ -71,11 +76,11 @@ def test_assert_study_exist(tmp_path: str) -> None:
     # Create folders
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
-    (tmp / "myfile").touch()
+    (tmp / "study.antares").touch()
     path_study2 = tmp / "study2.py"
     path_study2.mkdir()
     (path_study2 / "settings").mkdir()
-
+    (path_study2 / "study.antares").touch()
     # Input
     study_name = "study2.py"
     path_to_studies = Path(tmp_path)
@@ -113,3 +118,71 @@ def test_assert_study_not_exist(tmp_path: str) -> None:
     )
     with pytest.raises(StudyNotFoundError):
         request_handler._assert_study_exist(study_name)
+
+
+@pytest.mark.unit_test
+def test_find_studies(
+    tmp_path: str, request_handler_builder: Callable
+) -> None:
+    # Create folders
+    path_studies = Path(tmp_path) / "studies"
+    path_studies.mkdir()
+
+    path_study1 = path_studies / "study1"
+    path_study1.mkdir()
+    (path_study1 / "study.antares").touch()
+
+    path_study2 = path_studies / "study2"
+    path_study2.mkdir()
+    (path_study2 / "study.antares").touch()
+
+    path_not_study = path_studies / "not_a_study"
+    path_not_study.mkdir()
+    (path_not_study / "lambda.txt").touch()
+
+    path_lambda = path_studies / "folder1"
+    path_lambda.mkdir()
+    path_study_misplaced = path_lambda / "study_misplaced"
+    path_study_misplaced.mkdir()
+    (path_study_misplaced / "study.antares").touch()
+    # Input
+    study_names = ["study1", "study2"]
+
+    # Test & Verify
+    request_handler = request_handler_builder(path_studies=path_studies)
+
+    assert study_names == request_handler.get_studies()
+
+
+@pytest.mark.unit_test
+def test_create_study(
+    tmp_path: str, request_handler_builder: Callable
+) -> None:
+
+    path_studies = Path(tmp_path)
+
+    ini_reader = IniReader()
+    readers = {"default": ini_reader}
+    ini_writer = IniWriter()
+    writers = {"default": ini_writer}
+
+    study_parser = FileSystemEngine(
+        jsm=Mock(), readers=readers, writers=writers
+    )
+
+    request_handler = request_handler_builder(
+        path_studies=path_studies, study_parser=study_parser
+    )
+
+    study_name = "study1"
+    request_handler.create_study(study_name)
+
+    path_study = path_studies / study_name
+    assert path_study.exists()
+
+    path_study_antares_infos = path_study / "study.antares"
+    assert path_study_antares_infos.is_file()
+
+    study_antares_infos = ini_reader.read(path_study_antares_infos)
+    assert study_antares_infos["antares"]["caption"] == study_name
+    assert isinstance(study_antares_infos["antares"]["lastsave"], int)

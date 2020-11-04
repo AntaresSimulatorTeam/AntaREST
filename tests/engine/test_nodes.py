@@ -12,6 +12,9 @@ from api_iso_antares.engine.filesystem.nodes import (
     MixFolderNode,
     OnlyListNode,
     OutputFolderNode,
+    OutputLinksNode,
+    InputLinksNode,
+    SetsIniFileNode,
 )
 from api_iso_antares.jsm import JsonSchema
 
@@ -67,8 +70,8 @@ def test_mix_file_with_zones_list(project_path: Path) -> None:
 
     exp_data = {
         "bindingconstraints": content,
-        "northern mesh.txt": content,
-        "southern mesh.txt": content,
+        "northern mesh": content,
+        "southern mesh": content,
     }
 
     filenames = ["bindingconstraints.ini"]
@@ -135,11 +138,11 @@ def test_mix_keys_in_ini_file(project_path: str):
 
 @pytest.mark.unit_test
 def test_output_folder(project_path):
-    path = project_path / "tests/engine/resources/s8/output"
+    path = project_path / "tests/engine/resources/s12/output"
 
     jsm = {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "rte-metadata": {"strategy": "S8"},
+        "rte-metadata": {"strategy": "S12"},
         "type": "object",
         "properties": {},
         "additionalProperties": {
@@ -316,3 +319,113 @@ def only_list_node(path: Path, jsm: JSON, exp_data: JSON):
     data = node.get_content()
 
     assert data == exp_data
+
+
+@pytest.mark.unit_test
+def test_set_of_output_link(project_path: Path):
+    path = project_path / "tests/engine/resources/s15/links"
+
+    jsm = {
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "rte-metadata": {"strategy": "S15"},
+        "type": "object",
+        "properties": {},
+        "additionalProperties": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {"type": "number"},
+        },
+    }
+
+    exp_data = {
+        "de": {"fr": content, "it": content},
+        "es": {"fr": content},
+        "fr": {"it": content},
+    }
+
+    node_mock = Mock()
+    node_mock.get_content.return_value = content
+    factory_mock = Mock()
+    factory_mock.build.return_value = node_mock
+
+    node = OutputLinksNode(
+        path=path,
+        jsm=JsonSchema(jsm),
+        ini_reader=Mock(),
+        parent=None,
+        node_factory=factory_mock,
+    )
+
+    data = node.get_content()
+
+    assert data == exp_data
+
+
+@pytest.mark.unit_test
+def test_set_of_input_link(project_path: Path):
+    path = project_path / "tests/engine/resources/s14/links"
+
+    jsm = {
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "rte-metadata": {"strategy": "S14"},
+        "type": "object",
+        "properties": {},
+        "additionalProperties": {
+            "type": "object",
+            "properties": {
+                "properties": {
+                    "type": "number",
+                    "rte-metadata": {"filename": "properties.ini"},
+                }
+            },
+            "additionalProperties": {"type": "number"},
+        },
+    }
+
+    exp_data = {
+        "de": {"fr": content, "properties": content},
+        "es": {"fr": content, "properties": content},
+        "fr": {"it": content, "properties": content},
+        "it": {"properties": content},
+    }
+
+    node_mock = Mock()
+    node_mock.get_content.return_value = content
+    node_mock.get_filename.return_value = "properties.ini"
+    factory_mock = Mock()
+    factory_mock.build.return_value = node_mock
+
+    node = InputLinksNode(
+        path=path,
+        jsm=JsonSchema(jsm),
+        ini_reader=Mock(),
+        parent=None,
+        node_factory=factory_mock,
+    )
+
+    data = node.get_content()
+
+    assert data == exp_data
+
+
+@pytest.mark.unit_test
+def test_sets_ini(project_path: Path):
+    path = project_path / "tests/engine/resources/s13/sets.ini"
+
+    exp = {
+        "all areas": {
+            "caption": "All areas",
+            "comments": "Spatial aggregates on all areas",
+            "apply-filter": "add-all",
+        },
+        "north&west": {"caption": "NORTH&WEST", "+": ["north", "west"]},
+    }
+
+    node = SetsIniFileNode(
+        path=path,
+        jsm=Mock(),
+        ini_reader=Mock(),
+        parent=None,
+        node_factory=Mock(),
+    )
+    assert node.get_content() == exp

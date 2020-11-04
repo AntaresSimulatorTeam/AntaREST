@@ -141,6 +141,7 @@ def test_sta_mini_study_antares(
             "/metadata/STA-mini/input/areas/list",
             str(Path("file/STA-mini/input/areas/list.txt")),
         ),
+        ("/metadata/STA-mini/input/areas/sets/all areas/output", False),
         (
             "/metadata/STA-mini/input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
             0,
@@ -195,11 +196,10 @@ def test_sta_mini_study_antares(
             "/metadata/STA-mini/input/links/fr/properties/it/hurdles-cost",
             True,
         ),
-        # TODO: not working yet
-        # (
-        #     "/metadata/STA-mini/input/links/fr/it",
-        #     str(Path("file/STA-mini/input/links/fr/it.txt")),
-        # ),
+        (
+            "/metadata/STA-mini/input/links/fr/it",
+            str(Path("file/STA-mini/input/links/fr/it.txt")),
+        ),
         (
             "/metadata/STA-mini/input/load/prepro/fr/k",
             str(Path("file/STA-mini/input/load/prepro/fr/k.txt")),
@@ -328,9 +328,9 @@ def test_sta_mini_input(
                 )
             ),
         ),
-        ("/metadata/STA-mini/output/1/economy/mc-all/links/de - fr", {}),
+        ("/metadata/STA-mini/output/1/economy/mc-all/links/de/fr", {}),
         (
-            "/metadata/STA-mini/output/1/economy/mc-ind/00001/links/de - fr/values-hourly",
+            "/metadata/STA-mini/output/1/economy/mc-ind/00001/links/de/fr/values-hourly",
             str(
                 Path(
                     "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/links/de - fr/values-hourly.txt"
@@ -350,6 +350,14 @@ def test_sta_mini_input(
             str(
                 Path(
                     "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual.txt"
+                )
+            ),
+        ),
+        (
+            "/metadata/STA-mini/output/4/adequacy/mc-all/areas/de/id-daily",
+            str(
+                Path(
+                    "file/STA-mini/output/20201014-1430adq/adequacy/mc-all/areas/de/id-daily.txt"
                 )
             ),
         ),

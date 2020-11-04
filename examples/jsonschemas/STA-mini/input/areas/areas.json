@@ -10,7 +10,8 @@
             "properties": {
                 "list": {
                     "$ref": "list.txt.json#/definitions/list"
-                }
+                },
+                "sets": {"$ref":  "sets.ini.json#/definitions/sets.ini"}
             },
             "additionalProperties": {
 

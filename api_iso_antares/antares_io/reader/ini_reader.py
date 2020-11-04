@@ -1,6 +1,7 @@
 import configparser
+import re
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 from api_iso_antares.custom_types import ELEMENT, JSON
 
@@ -8,6 +9,7 @@ from api_iso_antares.custom_types import ELEMENT, JSON
 class IniReader:
     @staticmethod
     def _parse_bool(value: str) -> Optional[bool]:
+        value = value.lower()
         return bool(value == "true") if value in ["true", "false"] else None
 
     @staticmethod
@@ -25,7 +27,7 @@ class IniReader:
             return None
 
     @staticmethod
-    def _parse_value(value: str) -> ELEMENT:
+    def parse_value(value: str) -> ELEMENT:
         parsed: Union[str, int, float, bool, None] = IniReader._parse_bool(
             value
         )
@@ -38,7 +40,7 @@ class IniReader:
     @staticmethod
     def _parse_json(json: configparser.SectionProxy) -> JSON:
         return {
-            key: IniReader._parse_value(value) for key, value in json.items()
+            key: IniReader.parse_value(value) for key, value in json.items()
         }
 
     @staticmethod
@@ -56,3 +58,32 @@ class IniReader:
 class IniConfigParser(configparser.ConfigParser):
     def optionxform(self, optionstr: str) -> str:
         return optionstr
+
+
+class SetsIniReader:
+    @staticmethod
+    def fetch_cleaned_lines(path: Path) -> List[str]:
+        return [l for l in path.read_text().split("\n") if l != ""]
+
+    @staticmethod
+    def read(path: Path) -> JSON:
+        data: JSON = dict()
+        curr_part = ""
+        lines = SetsIniReader.fetch_cleaned_lines(path)
+
+        for line in lines:
+            regex = re.search("^\[(.*)\]$", line)
+            if regex:
+                curr_part = regex.group(1)
+                data[curr_part] = dict()
+            else:
+                key, string = line.split(" = ")
+                value = IniReader.parse_value(string)
+                if key not in data[curr_part]:
+                    data[curr_part][key] = value
+                else:
+                    if not isinstance(data[curr_part][key], list):
+                        data[curr_part][key] = [data[curr_part][key]]
+                    data[curr_part][key].append(value)
+
+        return data

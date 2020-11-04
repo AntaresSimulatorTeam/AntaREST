@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Any, cast, Dict, List, Optional, Tuple, Type
 
-from api_iso_antares.antares_io.reader import IniReader
+from api_iso_antares.antares_io.reader import IniReader, SetsIniReader
 from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.jsm import JsonSchema
 
@@ -90,39 +90,21 @@ class MixFolderNode(INode):
         output = {key: child.get_content() for key, child in children.items()}
 
         for path, child in self.parse_additional_properties(filenames).items():
-            output[path.name] = child.get_content()
+            output[path.stem] = child.get_content()
 
         return output
-
-
-class ArrayNode(INode):
-    def _build_content(self) -> SUB_JSON:
-        output: List[SUB_JSON] = list()
-
-        for key in self._get_children():
-            child_node = self._node_factory.build(
-                key=key,
-                root_path=self._path,
-                jsm=self._jsm.get_child(),
-                parent=self,
-            )
-
-            # TODO: True now... False later. A child of an array node will not always be a Dict
-
-            child_content: JSON = cast(JSON, child_node.get_content())
-            child_content["$id"] = key
-            output.append(child_content)
-
-        return output
-
-    def _get_children(self) -> List[str]:
-        return [path.name for path in sorted(self._path.iterdir())]
 
 
 class IniFileNode(INode):
     def _build_content(self) -> SUB_JSON:
         path = self._path
         return self._ini_reader.read(path)
+
+
+class SetsIniFileNode(INode):
+    def _build_content(self) -> SUB_JSON:
+        path = self._path
+        return SetsIniReader.read(path)
 
 
 class UrlFileNode(INode):
@@ -170,6 +152,43 @@ class OutputFolderNode(INode):
         return output
 
 
+class OutputLinksNode(INode):
+    @staticmethod
+    def _parse_folder_name(path: Path) -> List[str]:
+        return path.name.split(" - ")
+
+    def _build_content(self) -> SUB_JSON:
+        output: JSON = dict()
+
+        for dir in self._path.iterdir():
+            src, dest = dir.name.split(" - ")
+            if src not in output:
+                output[src] = dict()
+            output[src][dest] = self._node_factory.build(
+                key=dir.name,
+                root_path=self._path,
+                jsm=self._jsm.get_additional_properties().get_additional_properties(),
+                parent=self,
+            ).get_content()
+
+        return output
+
+
+class InputLinksNode(INode):
+    def _build_content(self) -> SUB_JSON:
+        children: JSON = dict()
+        for area in self._path.iterdir():
+            children[area.name] = MixFolderNode(
+                area,
+                jsm=self._jsm.get_additional_properties(),
+                ini_reader=self._ini_reader,
+                parent=self,
+                node_factory=self._node_factory,
+            ).get_content()
+
+        return children
+
+
 class NodeFactory:
     def __init__(self, readers: Dict[str, Any]) -> None:
         self.readers = readers
@@ -201,8 +220,14 @@ class NodeFactory:
             return IniFileNode
         elif strategy in ["S4", "S6", "S9", "S10", "S7"]:
             return OnlyListNode
-        elif strategy in ["S8"]:
+        elif strategy in ["S12"]:
             return OutputFolderNode
+        elif strategy in ["S13"]:
+            return SetsIniFileNode
+        elif strategy in ["S14"]:
+            return InputLinksNode
+        elif strategy in ["S15"]:
+            return OutputLinksNode
 
         if path.is_file():
             if path.suffix in [".txt", ".log"]:
@@ -213,9 +238,7 @@ class NodeFactory:
             ]:
                 node_class = IniFileNode
         else:
-            if jsm.is_array():
-                node_class = ArrayNode
-            elif jsm.is_object():
+            if jsm.is_object():
                 node_class = ObjectNode
 
         return node_class
