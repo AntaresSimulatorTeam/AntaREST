@@ -59,7 +59,7 @@ def test_swagger_operation() -> None:
 def test_swagger_parameter() -> None:
 
     param_in = SwaggerParameter.ParametersIn.path
-    parameter = SwaggerParameter(name="ex1", where=param_in)
+    parameter = SwaggerParameter(name="ex1", in_=param_in)
 
     assert parameter.in_ == param_in.name
     assert parameter.schema == {"type": "string"}
@@ -90,6 +90,22 @@ def test_swagger_path() -> None:
     path.add_parameter(parameter)
     sub_parameters = path.get_path_parameters()
     assert len(sub_parameters) == 1
+
+
+@pytest.mark.unit_test
+def test_swagger_path_same_named_parameters() -> None:
+    url = "/toto/{tata}/{titi}/{tata}"
+    path = SwaggerPath(url=url)
+
+    expected_url = "/toto/{tata0}/{titi}/{tata1}"
+
+    assert path.get_url() == expected_url
+
+    params = path.get_path_parameters()
+    params_name = [param.name for param in params]
+
+    assert "tata0" in params_name
+    assert "tata1" in params_name
 
 
 @pytest.mark.unit_test

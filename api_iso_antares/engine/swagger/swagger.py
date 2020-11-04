@@ -209,39 +209,35 @@ class SwaggerPath(ISwaggerElement):
         return path_parameters
 
     def _build_path_parameters(self) -> None:
+        def build_path_param_name(
+            match: Tuple[str, str], idx: int, on: int
+        ) -> str:
+            return match[0] if on == 1 else "{" + match[1] + str(idx) + "}"
 
-        pattern_path_parameter = r"({[^{}]*})"
         url = self.get_url()
-        splitted_url = re.split(pattern_path_parameter, url)
+        pattern_path_param = r"({([^{}]*)})"
 
-        matches = re.findall(pattern_path_parameter, url)
-        match_counter = Counter(matches)
-        match_counter_bis: Dict[str, int] = defaultdict(int)
+        matches_path_param = re.findall(pattern_path_param, url)
+        counter_path_param = Counter(matches_path_param)
 
-        def is_path_parameter(index: int) -> bool:
-            return bool(index % 2)
+        for match_param_name, nb_occurrences in counter_path_param.items():
 
-        new_url = ""
-        for idx, sub_url in enumerate(splitted_url):
+            for occurrence in range(nb_occurrences):
 
-            if is_path_parameter(idx):
+                new_param_name = build_path_param_name(
+                    match_param_name, occurrence, nb_occurrences
+                )
 
-                parameter_name = sub_url[1:-1]
-                if match_counter[sub_url] > 1:
-                    parameter_name += str(match_counter_bis[sub_url])
-                    match_counter_bis[sub_url] += 1
-                    sub_url = "{" + parameter_name + "}"
+                url = url.replace(match_param_name[0], new_param_name, 1)
 
                 self.add_parameter(
                     SwaggerParameter(
-                        name=parameter_name,
-                        where=SwaggerParameter.ParametersIn.path,
+                        name=new_param_name[1:-1],
+                        in_=SwaggerParameter.ParametersIn.path,
                     )
                 )
 
-            new_url += sub_url
-
-        self.set_url(new_url)
+        self.set_url(url)
 
 
 class SwaggerTag(ISwaggerElement):
