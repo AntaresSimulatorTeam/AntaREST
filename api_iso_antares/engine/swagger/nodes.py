@@ -146,11 +146,6 @@ class PathNode(INode):
         return self.get_url().split("/")[3]
 
 
-class EmptyNode(INode):
-    def _build(self) -> None:
-        raise NotImplementedError("The jsonschema format is not implemented.")
-
-
 class NodeFactory:
     def build(
         self,
@@ -158,8 +153,9 @@ class NodeFactory:
         jsm: JsonSchema,
         parent: INode,
     ) -> INode:
+
         node_class = NodeFactory.get_node_class_by_strategy(jsm)
-        return node_class(
+        node_class(
             key=key,
             jsm=jsm,
             node_factory=self,
@@ -167,10 +163,18 @@ class NodeFactory:
         )
 
     @staticmethod
-    def get_node_class_by_strategy(jsm: JsonSchema) -> Type[INode]:
-        node_class: Type[INode] = EmptyNode
+    def is_buildable_node(jsm: JsonSchema) -> bool:
+        return not jsm.is_array()
 
-        if jsm.is_object() or jsm.is_value():
+    @staticmethod
+    def get_node_class_by_strategy(jsm: JsonSchema) -> Type[INode]:
+
+        node_class: Type[INode]
+        if jsm.is_object() or jsm.is_value() or jsm.is_array():
             node_class = PathNode
+        else:
+            raise NotImplementedError(
+                "The jsonschema format is not implemented."
+            )
 
         return node_class
