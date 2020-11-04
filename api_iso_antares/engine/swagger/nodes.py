@@ -75,7 +75,7 @@ class RootNode(INode):
 
         depth_parameter = SwaggerParameter(
             name="depth",
-            where=SwaggerParameter.ParametersIn.query,
+            in_=SwaggerParameter.ParametersIn.query,
             schema_type=SwaggerParameter.SchemaType.integer,
             required=False,
         )
@@ -123,9 +123,12 @@ class PathNode(INode):
         if self._jsm.has_defined_additional_properties():
 
             jsm = self._jsm.get_additional_properties()
-            key = "{" + self._jsm.get_additional_property_name() + "}"
+            key = self._get_additional_property_name()
 
             self._node_factory.build(key, jsm=jsm, parent=self)
+
+    def _get_additional_property_name(self) -> str:
+        return "{" + self._jsm.get_additional_property_name() + "}"
 
     def _get_path(self) -> SwaggerPath:
 

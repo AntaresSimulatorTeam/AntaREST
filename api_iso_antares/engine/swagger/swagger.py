@@ -151,13 +151,13 @@ class SwaggerParameter(ISwaggerElement):
     def __init__(
         self,
         name: str,
-        where: ParametersIn,
+        in_: ParametersIn,
         description: str = "",
         required: bool = True,
         schema_type: SchemaType = SchemaType.string,
     ) -> None:
         self.name = name
-        self.in_ = where.name
+        self.in_ = in_.name
         self.description = description
         self.required = required
         self.schema = {"type": schema_type.name}
