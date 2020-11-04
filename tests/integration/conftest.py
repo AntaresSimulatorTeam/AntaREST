@@ -26,6 +26,8 @@ def request_handler(
 
     path_studies = Path(tmp_path) / "studies"
 
+    path_resources = project_path / "resources"
+
     with ZipFile(path_zip_STA) as zip_output:
         zip_output.extractall(path=path_studies)
 
@@ -39,6 +41,7 @@ def request_handler(
         study_parser=study_reader,
         url_engine=UrlEngine(jsm=jsm),
         path_studies=path_studies,
+        path_resources=path_resources,
         jsm_validator=jsm_validator,
     )
 

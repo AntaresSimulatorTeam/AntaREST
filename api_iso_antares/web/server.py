@@ -7,6 +7,7 @@ from api_iso_antares.engine import SwaggerEngine
 from api_iso_antares.web.request_handler import (
     RequestHandler,
     RequestHandlerParameters,
+    StudyAlreadyExistError,
 )
 
 request_handler: RequestHandler
@@ -64,7 +65,7 @@ def create_routes(application: Flask) -> None:
         "/studies",
         methods=["GET"],
     )
-    def studies() -> Any:
+    def get_studies() -> Any:
         global request_handler
         available_studies = request_handler.get_studies()
         return jsonify(available_studies), 200
@@ -73,7 +74,7 @@ def create_routes(application: Flask) -> None:
         "/studies/<string:name>",
         methods=["POST"],
     )
-    def get_studies(name: str) -> Any:
+    def post_studies(name: str) -> Any:
         global request_handler
 
         try:

@@ -58,11 +58,13 @@ class RequestHandler:
         study_parser: FileSystemEngine,
         url_engine: UrlEngine,
         path_studies: Path,
+        path_resources: Path,
         jsm_validator: JsmValidator,
     ):
         self.study_parser = study_parser
         self.url_engine = url_engine
         self.path_to_studies = path_studies
+        self.path_resources = path_resources
         self.jsm_validator = jsm_validator
 
     def get(self, route: str, parameters: RequestHandlerParameters) -> Any:
@@ -101,8 +103,7 @@ class RequestHandler:
 
         self._assert_study_not_exist(name)
 
-        root_package = api_iso_antares.ROOT_DIR
-        empty_study_zip = root_package / "resources/empty-study.zip"
+        empty_study_zip = self.path_resources / "empty-study.zip"
 
         path_study = self.path_to_studies / name
         path_study.mkdir()
