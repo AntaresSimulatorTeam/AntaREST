@@ -2,7 +2,7 @@
     "definitions": {
         "wind": {
             "type": "object",
-            "rte-metadata": {"strategy":  "S4"},
+            "rte-metadata": {"strategy":  "S4", "additional_property_name":  "matrix"},
             "properties": {},
             "additionalProperties": {
                 "type": "string"

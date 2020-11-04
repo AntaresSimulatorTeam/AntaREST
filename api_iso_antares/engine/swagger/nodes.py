@@ -26,11 +26,13 @@ class INode(abc.ABC):
         self._parent = parent
         self._swagger: Swagger = self._parent._swagger
 
+        self._build()
+
     def get_url(self) -> str:
         return self._parent.get_url() + "/" + self._key
 
     @abc.abstractmethod
-    def build_content(self) -> None:
+    def _build(self) -> None:
         pass
 
 
@@ -44,69 +46,92 @@ class RootNode(INode):
         self._node_factory = NodeFactory()
         self._swagger = Swagger()
         self._root_url: str = "/metadata/{study}"
+        self._build()
 
     def get_url(self) -> str:
         return self._root_url
 
-    def build_swagger(self) -> None:
+    def get_content(self) -> JSON:
+        return self._swagger.json()
+
+    def _build(self) -> None:
+        self._build_study_path()
+        self._build_global_parameters()
+        self._build_children()
+
+    def _build_study_path(self) -> None:
 
         study_path = SwaggerPath(url=self._root_url)
-        study_path.add_parameter(
-            SwaggerParameter(
-                name="study",
-                where=SwaggerParameter.ParametersIn.path,
-                description="Study name",
-            )
-        )
+
         study_path.add_operation(
             SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
         )
-
         for key in self._jsm.get_properties():
             self._swagger.add_tag(SwaggerTag(key))
 
         self._swagger.add_path(study_path)
 
-    def build_content(self) -> None:
-        self.build_swagger()
+    def _build_global_parameters(self) -> None:
+
+        depth_parameter = SwaggerParameter(
+            name="depth",
+            in_=SwaggerParameter.ParametersIn.query,
+            schema_type=SwaggerParameter.SchemaType.integer,
+            required=False,
+        )
+
+        self._swagger.add_global_parameters(depth_parameter)
+
+    def _build_children(self) -> None:
 
         properties = self._jsm.get_properties()
 
         for key in properties:
 
-            child_node = self._node_factory.build(
+            self._node_factory.build(
                 key=key,
                 jsm=self._jsm.get_child(key),
                 parent=self,
             )
-
-            child_node.build_content()
-
-    def get_content(self) -> JSON:
-        self.build_content()
-        return self._swagger.json()
 
 
 class PathNode(INode):
-    def build_content(self) -> None:
+    def _build(self) -> None:
+        self._build_path()
+        self._build_children()
 
-        self.build_swagger()
+    def _build_path(self) -> None:
+        path = self._get_path()
+        self._swagger.add_path(path)
 
-        properties = self._jsm.get_properties()
+    def _build_children(self) -> None:
+        self._build_children_property_based()
+        self._build_children_additional_property_based()
 
-        for key in properties:
-            child_node = self._node_factory.build(
-                key=key,
-                jsm=self._jsm.get_child(key),
-                parent=self,
-            )
+    def _build_children_property_based(self) -> None:
+        if self._jsm.has_properties():
 
-            child_node.build_content()
+            properties = self._jsm.get_properties()
+            for key in properties:
+                self._node_factory.build(
+                    key=key,
+                    jsm=self._jsm.get_child(key),
+                    parent=self,
+                )
 
-    def build_swagger(self) -> None:
-        self._swagger.add_path(self.get_path())
+    def _build_children_additional_property_based(self) -> None:
+        if self._jsm.has_defined_additional_properties():
 
-    def get_path(self) -> SwaggerPath:
+            jsm = self._jsm.get_additional_properties()
+            key = self._get_additional_property_name()
+
+            self._node_factory.build(key, jsm=jsm, parent=self)
+
+    def _get_additional_property_name(self) -> str:
+        return "{" + self._jsm.get_additional_property_name() + "}"
+
+    def _get_path(self) -> SwaggerPath:
+
         swagger_path = SwaggerPath(url=self.get_url())
 
         operation_get = SwaggerOperation(
@@ -121,20 +146,17 @@ class PathNode(INode):
         return self.get_url().split("/")[3]
 
 
-class EmptyNode(INode):
-    def build_content(self) -> None:
-        pass
-
-
 class NodeFactory:
     def build(
         self,
         key: str,
         jsm: JsonSchema,
         parent: INode,
-    ) -> INode:
+    ) -> None:
+
         node_class = NodeFactory.get_node_class_by_strategy(jsm)
-        return node_class(
+
+        node_class(
             key=key,
             jsm=jsm,
             node_factory=self,
@@ -142,7 +164,18 @@ class NodeFactory:
         )
 
     @staticmethod
+    def is_buildable_node(jsm: JsonSchema) -> bool:
+        return not jsm.is_array()
+
+    @staticmethod
     def get_node_class_by_strategy(jsm: JsonSchema) -> Type[INode]:
-        if jsm.is_object():
-            return PathNode
-        return EmptyNode
+
+        node_class: Type[INode]
+        if jsm.is_object() or jsm.is_value() or jsm.is_array():
+            node_class = PathNode
+        else:
+            raise NotImplementedError(
+                "The jsonschema format is not implemented."
+            )
+
+        return node_class

@@ -4,13 +4,18 @@
         "settings": {
             "type": "object",
             "rte-metadata": {
-                "filename": "settings.ini"
+                "filename": "settings.ini",
+                "additional_property_name":  "settings"
             },
             "properties": {},
             "additionalProperties": {
+                "rte-metadata": {"additional_property_name":  "setting"},
                 "type": "object",
                 "properties": {},
-                "additionalProperties": {"type": "string"}
+                "additionalProperties": {
+
+                    "type": "string"
+                }
             }
         }
     }

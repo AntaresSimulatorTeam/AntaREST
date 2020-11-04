@@ -3,9 +3,10 @@
     "definitions": {
         "output": {
             "type": "object",
-            "rte-metadata": {"strategy":  "S12"},
+            "rte-metadata": {"strategy":  "S12", "additional_property_name":  "simulation"},
             "properties": {},
             "additionalProperties": {
+
                 "type": "object",
                 "properties": {
                     "date": {"type":  "string"},

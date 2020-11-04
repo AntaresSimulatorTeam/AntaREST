@@ -4,10 +4,12 @@
         "list": {
             "type": "object",
             "rte-metadata": {
-                "filename": "list.ini"
+                "filename": "list.ini",
+                "additional_property_name":  "property"
             },
             "properties": {},
             "additionalProperties": {
+
                 "type": "object",
                 "properties": {
                     "name": {

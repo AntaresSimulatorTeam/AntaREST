@@ -12,8 +12,7 @@
                     "type": "string",
                     "rte-metadata": {"filename": "modulation.txt"}
                 }
-            },
-            "additionalProperties": {}
+            }
         }
     }
 }

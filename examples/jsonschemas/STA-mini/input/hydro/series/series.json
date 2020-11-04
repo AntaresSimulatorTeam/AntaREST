@@ -4,7 +4,10 @@
     "series": {
       "type": "object",
       "properties": {},
-      "rte-metadata": {"strategy":  "S4"},
+      "rte-metadata": {
+        "strategy":  "S4",
+        "additional_property_name": "area"
+      },
       "additionalProperties": {
         "type": "object",
         "properties": {

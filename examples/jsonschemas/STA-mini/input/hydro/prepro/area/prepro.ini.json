@@ -8,14 +8,14 @@
             },
             "properties": {
                 "prepro": {
+                    "rte-metadata": {"additional_property_name":  "property"},
                     "type": "object",
                     "properties": {},
                     "additionalProperties": {
                         "type": "number"
                     }
                 }
-            },
-            "additionalProperties": {}
+            }
         }
     }
 }

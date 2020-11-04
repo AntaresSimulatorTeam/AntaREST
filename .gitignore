@@ -133,3 +133,7 @@ dmypy.json
 
 # Study examples
 *-gitignore/
+
+html/
+
+.mutmut-cache

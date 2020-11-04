@@ -13,6 +13,9 @@ class JsonSchema:
             key for key in self.data["properties"].keys() if not (key == "$id")
         ]
 
+    def has_properties(self) -> bool:
+        return "properties" in self.data
+
     def get_child(self, key: Optional[str] = None) -> "JsonSchema":
         data: JSON
         if key is None:
@@ -24,6 +27,20 @@ class JsonSchema:
     def get_additional_properties(self) -> "JsonSchema":
         data = self.data["additionalProperties"]
         return JsonSchema(data)
+
+    def get_additional_property_name(self) -> str:
+        name = self.get_metadata_element("additional_property_name")
+        return cast(str, name)
+
+    def has_additional_properties(self) -> bool:
+        return "additionalProperties" in self.data
+
+    def has_defined_additional_properties(self) -> bool:
+        has_defined_additional_properties = (
+            self.has_additional_properties()
+            and isinstance(self.data["additionalProperties"], dict)
+        )
+        return has_defined_additional_properties
 
     def get_metadata(self) -> Optional[JSON]:
         return self.data.get("rte-metadata", None)
@@ -49,3 +66,6 @@ class JsonSchema:
 
     def is_object(self) -> bool:
         return self.get_type() == "object"
+
+    def is_value(self) -> bool:
+        return self.get_type() in ["string", "number", "boolean", "integer"]

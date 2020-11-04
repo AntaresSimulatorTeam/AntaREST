@@ -2,9 +2,10 @@
     "definitions": {
         "mc-ind": {
             "type": "object",
-            "rte-metadata": {"strategy":  "S10"},
+            "rte-metadata": {"strategy":  "S10", "additional_property_name":  "scenario"},
             "properties": {},
             "additionalProperties": {
+
                 "$ref":  "scenario/scenario.json#/definitions/scenario"
             }
         }

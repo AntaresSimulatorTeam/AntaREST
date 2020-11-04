@@ -3,12 +3,15 @@
     "definitions": {
         "area": {
             "type": "object",
+            "rte-metadata": {"stategy": "S3", "additional_property_name":  "matrix"},
             "properties": {
                 "properties": {
                     "$ref": "properties.ini.json#/definitions/properties"
                 }
             },
-            "additionalProperties": {"type": "string"}
+            "additionalProperties": {
+                "type": "string"
+            }
         }
     }
 }

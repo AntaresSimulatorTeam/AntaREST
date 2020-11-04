@@ -4,10 +4,12 @@
         "links": {
             "type": "object",
             "rte-metadata": {
-                "strategy": "S14"
+                "strategy": "S14",
+                "additional_property_name":  "area"
             },
             "properties": {},
             "additionalProperties": {
+
                 "$ref": "area/area.json#/definitions/area"
             }
         }
