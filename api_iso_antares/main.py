@@ -1,4 +1,6 @@
 import argparse
+import os
+import sys
 from pathlib import Path
 
 from api_iso_antares import __version__
@@ -41,7 +43,15 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main():
+def get_local_path() -> Path:
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        return Path(sys._MEIPASS)  # type: ignore
+    except Exception:
+        return Path(os.path.abspath("."))
+
+
+def main() -> None:
     arguments: argparse.Namespace = parse_arguments()
 
     if arguments.version:
@@ -58,7 +68,7 @@ def main():
         study_parser=study_parser,
         url_engine=UrlEngine(jsm=jsm),
         path_studies=Path(arguments.studies_path),
-        path_resources=Path("resources"),
+        path_resources=get_local_path() / "resources",
         jsm_validator=JsmValidator(jsm=jsm),
     )
     application = create_server(request_handler)

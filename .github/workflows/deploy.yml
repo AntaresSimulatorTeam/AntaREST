@@ -25,16 +25,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
       - name: Generate binary
-        run: pyinstaller -F api_iso_antares/main.py -n server --add-data resources/empty-study.zip:resources/empty-study.zip
-      - name: Check binary
         if: matrix.os != 'windows-latest'
         run: |
-          cd dist
-          chmod +x server
-          ./server -v
-      - name: Check binary Windows
+          pyinstaller -F api_iso_antares/main.py -n server --add-data resources/empty-study.zip:resources/empty-study.zip
+          dist/server -v
+      - name: Generate binary Windows
         if: matrix.os == 'windows-latest'
-        run: dist/server.exe -v
+        run: |
+          pyinstaller -F api_iso_antares/main.py -n server --add-data resources\empty-study.zip;resources\empty-study.zip
+          dist/server.exe -v
       - name: Archive server binary
         uses: actions/upload-artifact@v2
         with:
