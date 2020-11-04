@@ -110,12 +110,15 @@ class RequestHandler:
         with ZipFile(empty_study_zip) as zip_output:
             zip_output.extractall(path=path_study)
 
+        self._update_antares_info(path_study)
+
+    def _update_antares_info(self, path_study: Path) -> None:
+
         path_study_antares_infos = path_study / "study.antares"
 
         reader = self.study_parser.get_reader()
         data = reader.read(path_study_antares_infos)
-
-        data["antares"]["caption"] = name
+        data["antares"]["caption"] = path_study.name
         current_time = int(time.time())
         data["antares"]["created"] = current_time
         data["antares"]["lastsave"] = current_time

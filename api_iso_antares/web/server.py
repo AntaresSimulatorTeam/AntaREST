@@ -80,7 +80,7 @@ def create_routes(application: Flask) -> None:
         try:
             request_handler.create_study(name)
             content = "/metadata/" + name
-            code = HTTPStatus.CREATED
+            code = HTTPStatus.CREATED.value
         except StudyAlreadyExistError as e:
             content = e.message
             code = e.html_code_error
