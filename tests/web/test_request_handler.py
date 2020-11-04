@@ -1,8 +1,12 @@
 from pathlib import Path
+from typing import Callable
 from unittest.mock import Mock
 
 import pytest
 
+from api_iso_antares.antares_io.reader import IniReader
+from api_iso_antares.antares_io.writer.ini_writer import IniWriter
+from api_iso_antares.engine import FileSystemEngine
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
@@ -117,7 +121,9 @@ def test_assert_study_not_exist(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
-def test_find_studies(tmp_path: str) -> None:
+def test_find_studies(
+    tmp_path: str, request_handler_builder: Callable
+) -> None:
     # Create folders
     path_studies = Path(tmp_path) / "studies"
     path_studies.mkdir()
@@ -143,11 +149,40 @@ def test_find_studies(tmp_path: str) -> None:
     study_names = ["study1", "study2"]
 
     # Test & Verify
-    request_handler = RequestHandler(
-        study_parser=Mock(),
-        url_engine=Mock(),
-        path_studies=path_studies,
-        jsm_validator=Mock(),
-    )
+    request_handler = request_handler_builder(path_studies=path_studies)
 
     assert study_names == request_handler.get_studies()
+
+
+@pytest.mark.unit_test
+def test_create_study(
+    tmp_path: str, request_handler_builder: Callable
+) -> None:
+
+    path_studies = Path(tmp_path)
+
+    ini_reader = IniReader()
+    readers = {"default": ini_reader}
+    ini_writer = IniWriter()
+    writers = {"default": ini_writer}
+
+    study_parser = FileSystemEngine(
+        jsm=Mock(), readers=readers, writers=writers
+    )
+
+    request_handler = request_handler_builder(
+        path_studies=path_studies, study_parser=study_parser
+    )
+
+    study_name = "study1"
+    request_handler.create_study(study_name)
+
+    path_study = path_studies / study_name
+    assert path_study.exists()
+
+    path_study_antares_infos = path_study / "study.antares"
+    assert path_study_antares_infos.is_file()
+
+    study_antares_infos = ini_reader.read(path_study_antares_infos)
+    assert study_antares_infos["antares"]["caption"] == study_name
+    assert isinstance(study_antares_infos["antares"]["lastsave"], int)

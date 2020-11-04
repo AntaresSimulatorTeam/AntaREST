@@ -50,10 +50,10 @@ def main():
     jsm = JsmReader.read(Path(arguments.jsm_path))
 
     readers = {"default": IniReader()}
-    study_reader = FileSystemEngine(jsm=jsm, readers=readers)
+    study_parser = FileSystemEngine(jsm=jsm, readers=readers)
 
     request_handler = RequestHandler(
-        study_parser=study_reader,
+        study_parser=study_parser,
         url_engine=UrlEngine(jsm=jsm),
         path_studies=Path(arguments.studies_path),
         jsm_validator=JsmValidator(jsm=jsm),

@@ -1,5 +1,5 @@
 from typing import Any
-
+from http import HTTPStatus
 from flask import Flask, jsonify, request, Response, send_file
 
 from api_iso_antares.custom_exceptions import HtmlException
@@ -68,6 +68,23 @@ def create_routes(application: Flask) -> None:
         global request_handler
         available_studies = request_handler.get_studies()
         return jsonify(available_studies), 200
+
+    @application.route(
+        "/studies/<string:name>",
+        methods=["POST"],
+    )
+    def get_studies(name: str) -> Any:
+        global request_handler
+
+        try:
+            request_handler.create_study(name)
+            content = "/metadata/" + name
+            code = HTTPStatus.CREATED.value
+        except StudyAlreadyExistError as e:
+            content = e.message
+            code = e.html_code_error
+
+        return content, code
 
     @application.route("/health", methods=["GET"])
     def health() -> Any:

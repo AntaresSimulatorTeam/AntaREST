@@ -1,5 +1,7 @@
 from pathlib import Path
+from typing import Callable
 from unittest.mock import Mock
+from http import HTTPStatus
 
 import pytest
 
@@ -65,17 +67,13 @@ def test_server_with_parameters() -> None:
 
 
 @pytest.mark.unit_test
-def test_matrix(tmp_path: str) -> None:
+def test_matrix(tmp_path: str, request_handler_builder: Callable) -> None:
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
     (tmp / "study1" / "matrix").write_text("toto")
 
-    request_handler = RequestHandler(
-        study_parser=Mock(),
-        url_engine=Mock(),
-        path_studies=Path(tmp_path),
-        jsm_validator=Mock(),
-    )
+    request_handler = request_handler_builder(path_studies=tmp)
+
     app = create_server(request_handler)
     client = app.test_client()
     result_right = client.get("/file/study1/matrix")
@@ -84,3 +82,34 @@ def test_matrix(tmp_path: str) -> None:
 
     result_wrong = client.get("/file/study1/WRONG_MATRIX")
     assert result_wrong.status_code == 404
+
+
+@pytest.mark.unit_test
+def test_create_study(
+    tmp_path: str, request_handler_builder: Callable
+) -> None:
+
+    path_studies = Path(tmp_path)
+    path_study = path_studies / "study1"
+    path_study.mkdir()
+    (path_study / "study.antares").touch()
+
+    study_parser = Mock()
+    reader = Mock()
+    reader.read.return_value = {"antares": {"caption": None}}
+    study_parser.get_reader.return_value = reader
+
+    request_handler = request_handler_builder(
+        path_studies=path_studies, study_parser=study_parser
+    )
+
+    app = create_server(request_handler)
+    client = app.test_client()
+
+    result_wrong = client.post("/studies/study1")
+
+    assert result_wrong.status_code == HTTPStatus.CONFLICT.value
+
+    result_right = client.post("/studies/study2")
+
+    assert result_right.status_code == HTTPStatus.CREATED.value
