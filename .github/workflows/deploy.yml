@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - 'master'
-      - 'pyinstaller'
+      - 'issue-88-Improve_binary_pyinstaller'
 
 jobs:
   binary:
@@ -25,7 +25,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
       - name: Generate binary
-        run: pyinstaller -F api_iso_antares/main.py -n server-${{ matrix.os }}
+        run: pyinstaller -F api_iso_antares/main.py -n server
+      - name: Check binary
+        if: {{ matrix.os }} != windows-latest
+        run: ./server -v
+      - name: Check binary
+        if: { { matrix.os } } == windows-latest
+        run: server.exe -v
       - name: Archive server binary
         uses: actions/upload-artifact@v2
         with:

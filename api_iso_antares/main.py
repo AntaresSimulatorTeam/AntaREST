@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 
+from api_iso_antares import __version__
 from api_iso_antares.antares_io.reader import (
     IniReader,
     JsmReader,
@@ -28,11 +29,23 @@ def parse_arguments() -> argparse.Namespace:
         dest="studies_path",
         help="Path to the studies directory",
     )
+    parser.add_argument(
+        "-v",
+        "--version",
+        dest="version",
+        help="Server version",
+        action="store_true",
+        required=False,
+    )
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
     arguments: argparse.Namespace = parse_arguments()
+
+    if arguments.version:
+        print(__version__)
+        return
 
     jsm = JsmReader.read(Path(arguments.jsm_path))
 
@@ -48,3 +61,7 @@ if __name__ == "__main__":
     application = create_server(request_handler)
 
     application.run(debug=False, host="0.0.0.0", port=8080)
+
+
+if __name__ == "__main__":
+    main()

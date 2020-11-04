@@ -69,6 +69,10 @@ def create_routes(application: Flask) -> None:
         available_studies = request_handler.get_studies()
         return jsonify(available_studies), 200
 
+    @application.route("/health", methods=["GET"])
+    def health() -> Any:
+        return jsonify({"status": "available"}), 200
+
     @application.after_request
     def after_request(response: Response) -> Response:
         header = response.headers
