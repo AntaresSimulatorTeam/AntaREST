@@ -6,6 +6,7 @@ from api_iso_antares.engine.swagger.nodes import (
     PathNode,
     RootNode,
 )
+from api_iso_antares.jsm import JsonSchema
 
 
 @pytest.mark.unit_test
@@ -44,3 +45,22 @@ def test_root_node() -> None:
     data = root.get_content()
     assert data["openapi"] == "3.0.0"
     assert data["paths"]["/metadata/{study}"]["get"]["responses"] is not None
+
+
+@pytest.mark.unit_test
+def test_array_node() -> None:
+
+    jsm = {
+        "type": "object",
+        "properties": {
+            "key_array": {"type": "array", "items": {"type": "string"}}
+        },
+    }
+
+    root_node = RootNode(jsm=JsonSchema(jsm))
+
+    print(root_node.get_content()["paths"])
+
+    paths = root_node.get_content()["paths"]
+
+    assert "/metadata/{study}/key_array" in paths.keys()
