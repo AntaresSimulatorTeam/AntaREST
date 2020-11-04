@@ -162,8 +162,6 @@ class SwaggerParameter(ISwaggerElement):
         self.required = required
         self.schema = {"type": schema_type.name}
 
-        self._original_name = name
-
     def is_path_parameter(self) -> bool:
         return self.in_ == SwaggerParameter.ParametersIn.path.name
 
