@@ -152,9 +152,10 @@ class NodeFactory:
         key: str,
         jsm: JsonSchema,
         parent: INode,
-    ) -> INode:
+    ) -> None:
 
         node_class = NodeFactory.get_node_class_by_strategy(jsm)
+
         node_class(
             key=key,
             jsm=jsm,
