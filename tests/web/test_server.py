@@ -22,7 +22,7 @@ def test_server() -> None:
 
     app = create_server(mock_handler)
     client = app.test_client()
-    client.get("/metadata/study1/settings/general/params")
+    client.get("/studies/study1/settings/general/params")
 
     mock_handler.get.assert_called_once_with(
         "study1/settings/general/params", parameters
@@ -36,10 +36,10 @@ def test_404() -> None:
 
     app = create_server(mock_handler)
     client = app.test_client()
-    result = client.get("/metadata/study1/settings/general/params")
+    result = client.get("/studies/study1/settings/general/params")
     assert result.status_code == 404
 
-    result = client.get("/metadata/WRONG_STUDY")
+    result = client.get("/studies/WRONG_STUDY")
     assert result.status_code == 404
 
 
@@ -51,14 +51,14 @@ def test_server_with_parameters() -> None:
 
     app = create_server(mock_handler)
     client = app.test_client()
-    result = client.get("/metadata/study1?depth=4")
+    result = client.get("/studies/study1?depth=4")
 
     parameters = RequestHandlerParameters(depth=4)
 
     assert result.status_code == 200
     mock_handler.get.assert_called_once_with("study1", parameters)
 
-    result = client.get("/metadata/study2?depth=WRONG_TYPE")
+    result = client.get("/studies/study2?depth=WRONG_TYPE")
 
     excepted_parameters = RequestHandlerParameters()
 

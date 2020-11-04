@@ -45,7 +45,7 @@ class RootNode(INode):
         self._jsm = jsm
         self._node_factory = NodeFactory()
         self._swagger = Swagger()
-        self._root_url: str = "/metadata/{study}"
+        self._root_url: str = "/studies/{study}"
         self._build()
 
     def get_url(self) -> str:
@@ -55,20 +55,35 @@ class RootNode(INode):
         return self._swagger.json()
 
     def _build(self) -> None:
-        self._build_study_path()
         self._build_global_parameters()
         self._build_children()
+        self._build_paths_not_in_jsm()
 
-    def _build_study_path(self) -> None:
+    def _build_paths_not_in_jsm(self) -> None:
+        self._build_studies_list_path()
+        self._build_studies_path()
 
+    def _build_studies_path(self) -> None:
         study_path = SwaggerPath(url=self._root_url)
 
         study_path.add_operation(
             SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
         )
+        study_path.add_operation(
+            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.post)
+        )
         for key in self._jsm.get_properties():
             self._swagger.add_tag(SwaggerTag(key))
 
+        self._swagger.add_path(study_path)
+
+    def _build_studies_list_path(self) -> None:
+        studies_url = "/studies/list"
+        study_path = SwaggerPath(url=studies_url)
+
+        study_path.add_operation(
+            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
+        )
         self._swagger.add_path(study_path)
 
     def _build_global_parameters(self) -> None:

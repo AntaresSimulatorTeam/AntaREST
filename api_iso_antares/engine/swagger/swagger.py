@@ -112,6 +112,7 @@ class SwaggerResponse(ISwaggerElement):
 class SwaggerOperation(ISwaggerElement):
     class OperationVerbs(enum.Enum):
         get = enum.auto()
+        post = enum.auto()
 
     def __init__(
         self,
@@ -170,6 +171,7 @@ class SwaggerPath(ISwaggerElement):
     def __init__(self, url: str) -> None:
         self.parameters: List[SwaggerParameter] = []
         self.get: Optional[SwaggerOperation] = None
+        self.post: Optional[SwaggerOperation] = None
         self._url = url
 
         self._build_path_parameters()
@@ -187,6 +189,8 @@ class SwaggerPath(ISwaggerElement):
     def add_operation(self, operation: SwaggerOperation) -> None:
         if operation.get_verb() == SwaggerOperation.OperationVerbs.get:
             self.get = operation
+        elif operation.get_verb() == SwaggerOperation.OperationVerbs.post:
+            self.post = operation
         else:
             raise NotImplementedError(
                 f"The verb {operation.get_verb() } is not implemented yet."

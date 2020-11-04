@@ -25,10 +25,10 @@ def _construct_parameters(
 
 def create_routes(application: Flask) -> None:
     @application.route(
-        "/metadata/<path:path>",
+        "/studies/<path:path>",
         methods=["GET"],
     )
-    def metadata(path: str) -> Any:
+    def studies(path: str) -> Any:
         global request_handler
         parameters = _construct_parameters(request.args)
 
@@ -62,7 +62,7 @@ def create_routes(application: Flask) -> None:
         return jsonify(swg_doc), 200
 
     @application.route(
-        "/studies",
+        "/studies/list",
         methods=["GET"],
     )
     def post_studies() -> Any:
@@ -79,7 +79,7 @@ def create_routes(application: Flask) -> None:
 
         try:
             request_handler.create_study(name)
-            content = "/metadata/" + name
+            content = "/studies/" + name
             code = HTTPStatus.CREATED.value
         except StudyAlreadyExistError as e:
             content = e.message
