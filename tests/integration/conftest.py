@@ -2,6 +2,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
+from unittest.mock import Mock
 
 from api_iso_antares.antares_io.reader import IniReader, JsmReader
 from api_iso_antares.antares_io.validator import JsmValidator
@@ -33,7 +34,8 @@ def request_handler(
     jsm_validator = JsmValidator(jsm=jsm)
 
     readers = {"default": IniReader()}
-    study_reader = FileSystemEngine(jsm=jsm, readers=readers)
+    writers = {"default": Mock()}
+    study_reader = FileSystemEngine(jsm=jsm, readers=readers, writers=writers)
 
     request_handler = RequestHandler(
         study_parser=study_reader,
