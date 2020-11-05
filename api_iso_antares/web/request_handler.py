@@ -125,3 +125,6 @@ class RequestHandler:
 
         writer = self.study_parser.get_writer()
         writer.write(data, path_study_antares_infos)
+
+    def copy_study(self, src: str, dest: str) -> None:
+        pass

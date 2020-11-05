@@ -24,7 +24,9 @@ def test_generation_swagger_documentation(
     url_studies = "/studies/list"
     url_study = "/studies/{study}"
     url_create_study = "/studies/{study}"
+    url_copy_study = "/studies/{study}/copy"
 
     assert url_studies in urls
     assert url_study in urls
     assert url_create_study in urls
+    assert url_copy_study in urls

@@ -113,3 +113,39 @@ def test_create_study(
     result_right = client.post("/studies/study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
+
+
+@pytest.mark.unit_test
+def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
+    path_studies = Path(tmp_path)
+    path_study = path_studies / "study1"
+    path_study.mkdir()
+    (path_study / "study.antares").touch()
+    path_study = path_studies / "study2"
+    path_study.mkdir()
+    (path_study / "study.antares").touch()
+
+    request_handler = request_handler_builder(path_studies=path_studies)
+
+    app = create_server(request_handler)
+    client = app.test_client()
+
+    result = client.post("/studies/study1/copy")
+
+    assert result.status_code == HTTPStatus.BAD_REQUEST.value
+    assert result.data == b"Copy operation need a dest query parameter."
+
+    result = client.post("/studies/study1/copy?dest=study2")
+
+    assert result.status_code == HTTPStatus.CONFLICT.value
+    assert result.data == b"A simulation already exist with the name study2."
+
+    result = client.post("/studies/study3/copy?dest=study4")
+
+    assert result.status_code == HTTPStatus.BAD_REQUEST.value
+    assert result.data == b"Study study3 does not exist."
+
+    result = client.post("/studies/study1/copy?dest=study3")
+
+    assert result.status_code == HTTPStatus.CREATED.value
+    assert result.data == b"/studies/study3"
