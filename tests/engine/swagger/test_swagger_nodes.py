@@ -40,11 +40,11 @@ def test_root_node() -> None:
 
     root = RootNode(jsm=jsm)
 
-    assert root.get_url() == "/metadata/{study}"
+    assert root.get_url() == "/studies/{study}"
 
     data = root.get_content()
     assert data["openapi"] == "3.0.0"
-    assert data["paths"]["/metadata/{study}"]["get"]["responses"] is not None
+    assert data["paths"]["/studies/{study}"]["get"]["responses"] is not None
 
 
 @pytest.mark.unit_test
@@ -63,4 +63,4 @@ def test_array_node() -> None:
 
     paths = root_node.get_content()["paths"]
 
-    assert "/metadata/{study}/key_array" in paths.keys()
+    assert "/studies/{study}/key_array" in paths.keys()
