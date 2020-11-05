@@ -1,3 +1,4 @@
+import re
 from typing import Any
 from http import HTTPStatus
 from flask import Flask, jsonify, request, Response, send_file
@@ -111,6 +112,12 @@ def create_routes(application: Flask) -> None:
     )
     def create_study(name: str) -> Any:
         global request_handler
+
+        if not re.match("^[a-zA-Z0-9-_]*$", name):
+            return (
+                "Study name can only contain alphanumeric characters with '-' or '_'",
+                403,
+            )
 
         try:
             request_handler.create_study(name)
