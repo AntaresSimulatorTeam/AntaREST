@@ -19,12 +19,14 @@ def request_handler_builder() -> Callable:
         study_parser=Mock(),
         url_engine=Mock(),
         path_studies=Mock(),
+        path_resources=Mock(),
         jsm_validator=Mock(),
     ) -> RequestHandler:
         return RequestHandler(
             study_parser=study_parser,
             url_engine=url_engine,
             path_studies=path_studies,
+            path_resources=path_resources,
             jsm_validator=jsm_validator,
         )
 

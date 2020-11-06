@@ -86,7 +86,7 @@ def test_matrix(tmp_path: str, request_handler_builder: Callable) -> None:
 
 @pytest.mark.unit_test
 def test_create_study(
-    tmp_path: str, request_handler_builder: Callable
+    tmp_path: str, request_handler_builder: Callable, project_path
 ) -> None:
 
     path_studies = Path(tmp_path)
@@ -100,7 +100,9 @@ def test_create_study(
     study_parser.get_reader.return_value = reader
 
     request_handler = request_handler_builder(
-        path_studies=path_studies, study_parser=study_parser
+        path_studies=path_studies,
+        study_parser=study_parser,
+        path_resources=project_path / "resources",
     )
 
     app = create_server(request_handler)

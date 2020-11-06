@@ -66,7 +66,7 @@ def create_routes(application: Flask) -> None:
         "/studies/list",
         methods=["GET"],
     )
-    def list_studies() -> Any:
+    def get_studies() -> Any:
         global request_handler
         available_studies = request_handler.get_studies()
         return jsonify(available_studies), 200
@@ -110,7 +110,7 @@ def create_routes(application: Flask) -> None:
         "/studies/<string:name>",
         methods=["POST"],
     )
-    def create_study(name: str) -> Any:
+    def post_studies(name: str) -> Any:
         global request_handler
 
         if not re.match("^[a-zA-Z0-9-_]*$", name):
@@ -128,6 +128,10 @@ def create_routes(application: Flask) -> None:
             code = e.html_code_error
 
         return jsonify(content), code
+
+    @application.route("/health", methods=["GET"])
+    def health() -> Any:
+        return jsonify({"status": "available"}), 200
 
     @application.after_request
     def after_request(response: Response) -> Response:
