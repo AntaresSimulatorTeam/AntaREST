@@ -1,10 +1,10 @@
+import copy
 import time
 from pathlib import Path
 from typing import Any, List
 from http import HTTPStatus
 from zipfile import ZipFile
 
-import api_iso_antares
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.engine import UrlEngine
@@ -128,4 +128,18 @@ class RequestHandler:
         writer.write(data, path_study_antares_infos)
 
     def copy_study(self, src: str, dest: str) -> None:
-        pass
+
+        self._assert_study_exist(src)
+        self._assert_study_not_exist(dest)
+
+        path_source = self.path_to_studies / src
+        src_data = self.study_parser.parse(path_source)
+
+        path_destination = self.path_to_studies / dest
+        dest_data = copy.deepcopy(src_data)
+        dest_data["output"] = None
+
+        self.study_parser.write(path_destination, dest_data)
+
+        path_destination = self.path_to_studies / dest
+        self._update_antares_info(path_destination)
