@@ -137,7 +137,7 @@ def test_mix_keys_in_ini_file(project_path: str):
 
 
 @pytest.mark.unit_test
-def test_output_folder(project_path):
+def test_output_folder(project_path: Path) -> None:
     path = project_path / "tests/engine/resources/s12/output"
 
     jsm = {
