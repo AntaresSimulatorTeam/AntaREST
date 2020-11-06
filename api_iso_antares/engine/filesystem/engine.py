@@ -25,6 +25,9 @@ class FileSystemEngine:
         )
         return cast(JSON, root_node.get_content())
 
+    def write(self, path: Path, data: JSON) -> None:
+        pass
+
     def get_reader(self, reader: str = "default") -> Any:
         return self.node_factory.readers[reader]
 
