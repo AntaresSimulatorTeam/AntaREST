@@ -7,7 +7,6 @@ import pytest
 
 from api_iso_antares.engine.url_engine import UrlNotMatchJsonDataError
 from api_iso_antares.web.request_handler import (
-    RequestHandler,
     RequestHandlerParameters,
 )
 from api_iso_antares.web.server import create_server
