@@ -18,10 +18,12 @@ def test_read_filesystem(
     file_content = {"section": {"params": 123}}
     ini_reader = Mock()
     ini_reader.read.return_value = file_content
+    ini_writer = Mock()
 
     readers = {"default": ini_reader}
+    writers = {"default": ini_writer}
     jsm = JsonSchema(lite_jsonschema)
-    folder_reader = FileSystemEngine(jsm=jsm, readers=readers)
+    folder_reader = FileSystemEngine(jsm=jsm, readers=readers, writers=writers)
 
     res = folder_reader.parse(lite_path)
 
