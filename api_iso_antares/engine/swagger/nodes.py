@@ -119,7 +119,7 @@ class RootNode(INode):
             required=False,
         )
 
-        self._swagger.add_global_parameter(depth_parameter)
+        self._swagger.add_global_parameters(depth_parameter)
 
     def _build_children(self) -> None:
 

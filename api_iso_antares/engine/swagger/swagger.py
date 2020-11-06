@@ -274,7 +274,7 @@ class Swagger(ISwaggerElement):
     def get_global_parameters(self) -> List[SwaggerParameter]:
         return self._global_parameters
 
-    def add_global_parameter(self, parameter: SwaggerParameter) -> None:
+    def add_global_parameters(self, parameter: SwaggerParameter) -> None:
         self._global_parameters.append(parameter)
 
     def _add_global_parameters_to_paths(self) -> None:
