@@ -1,3 +1,4 @@
+from io import BytesIO
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
@@ -115,3 +116,25 @@ def test_create_study(
     result_right = client.post("/studies/study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
+
+
+@pytest.mark.unit_test
+def test_server_health() -> None:
+    app = create_server(Mock())
+    client = app.test_client()
+    result = client.get("/health")
+    assert result.data == b'{"status":"available"}\n'
+
+
+@pytest.mark.unit_test
+def test_server_with_parameters() -> None:
+
+    mock_handler = Mock()
+    mock_handler.export.return_value = BytesIO(b"Hello")
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+    result = client.get("/export/files/name")
+
+    assert result.data == b"Hello"
+    mock_handler.export.assert_called_once_with("name")

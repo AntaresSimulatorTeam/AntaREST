@@ -34,6 +34,7 @@ def test_request(tmp_path: str) -> None:
     request_handler = RequestHandler(
         study_parser=study_reader,
         url_engine=UrlEngine(jsm={}),
+        exporter=Mock(),
         path_studies=studies_path,
         path_resources=project_dir / "resources",
         jsm_validator=jsm_validator,
