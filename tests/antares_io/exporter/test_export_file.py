@@ -15,8 +15,7 @@ def test_export_file(tmp_path: Path):
 
     data = Exporter().export_file(root)
     zipf = ZipFile(data)
-    assert [
-        "folder/file.txt",
-        "folder/test/",
-        "folder/test/file.txt",
-    ] == zipf.namelist()
+
+    assert "folder/file.txt" in zipf.namelist()
+    assert "folder/test/" in zipf.namelist()
+    assert "folder/test/file.txt" in zipf.namelist()
