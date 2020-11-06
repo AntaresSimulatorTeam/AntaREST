@@ -33,6 +33,7 @@ def test_request(tmp_path: str) -> None:
         study_parser=study_reader,
         url_engine=UrlEngine(jsm={}),
         path_studies=studies_path,
+        path_resources=project_dir / "resources",
         jsm_validator=jsm_validator,
     )
 
