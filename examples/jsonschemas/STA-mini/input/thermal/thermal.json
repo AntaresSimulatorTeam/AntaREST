@@ -12,6 +12,9 @@
                 },
                 "clusters": {
                     "$ref": "clusters/clusters.json#/definitions/clusters"
+                },
+                "areas": {
+                    "$ref": "areas.ini.json#/definitions/areas"
                 }
             }
         }

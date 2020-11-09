@@ -2,6 +2,8 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+import random
+import string
 
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine.filesystem.engine import (
@@ -33,7 +35,7 @@ def test_read_filesystem(
 
 @pytest.mark.unit_test
 def test_write_filesystem(
-    tmp_path: str, lite_path: Path, lite_jsonschema: JSON, lite_jsondata: JSON
+    tmpdir_factory, lite_path: Path, lite_jsonschema: JSON, lite_jsondata: JSON
 ) -> None:
 
     file_content = {"section": {"params": 123}}
@@ -47,7 +49,12 @@ def test_write_filesystem(
 
     folder_reader = FileSystemEngine(jsm=jsm, readers=readers, writers=writers)
 
-    writed_path = Path(tmp_path)
-    folder_reader.write(writed_path, lite_jsondata)
+    unique_path = Path(
+        tmpdir_factory.getbasetemp()
+        / "".join(random.choices(string.ascii_uppercase + string.digits, k=30))
+    )
+    unique_path.mkdir()
+    write_path = unique_path / "root1"
+    folder_reader.write(write_path, lite_jsondata)
 
-    assert folder_reader.parse(lite_path) == folder_reader.parse(writed_path)
+    assert folder_reader.parse(lite_path) == folder_reader.parse(write_path)

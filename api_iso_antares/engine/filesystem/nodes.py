@@ -216,7 +216,7 @@ class NodeFactory:
 
         if strategy in ["S1", "S3"]:
             return MixFolderNode
-        elif strategy in ["S2"]:
+        elif strategy in ["S2", "S16"]:
             return IniFileNode
         elif strategy in ["S4", "S6", "S9", "S10", "S7"]:
             return OnlyListNode
@@ -240,7 +240,6 @@ class NodeFactory:
         else:
             if jsm.is_object():
                 node_class = ObjectNode
-
         return node_class
 
     @staticmethod

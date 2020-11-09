@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from http import HTTPStatus
 
 import pytest
 
@@ -63,7 +64,6 @@ def test_sta_mini_settings(
 def test_sta_mini_layers_layers(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
-
     assert_url_content(
         request_handler=request_handler,
         url=url,
@@ -406,3 +406,15 @@ def test_sta_mini_output(
         url=url,
         expected_output=expected_output,
     )
+
+
+@pytest.mark.integration_test
+def test_sta_mini_copy(request_handler: RequestHandler) -> None:
+    dest_folder = "yolo"
+
+    app = create_server(request_handler)
+    client = app.test_client()
+    result = client.post(f"/studies/STA-mini/copy?dest={dest_folder}")
+
+    assert result.status_code == HTTPStatus.CREATED.value
+    assert result.data == b"/studies/yolo"

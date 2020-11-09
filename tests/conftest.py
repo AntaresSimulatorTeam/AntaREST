@@ -98,6 +98,7 @@ def lite_jsonschema() -> JSON:
                 "properties": {
                     "file2.ini": {
                         "type": "object",
+                        "rte-metadata": {"filename": "file2.ini"},
                         "title": "The file3.ini schema",
                         "required": ["section"],
                         "properties": {
@@ -118,6 +119,7 @@ def lite_jsonschema() -> JSON:
                         "$id": "#/properties/folder1/properties/matrice1.txt",
                         "type": "string",
                         "title": "The matrice1.txt schema",
+                        "rte-metadata": {"filename": "matrice1.txt"},
                     },
                     "folder2": {
                         "$id": "#/properties/folder1/properties/folder2",
@@ -129,6 +131,7 @@ def lite_jsonschema() -> JSON:
                                 "$id": "#/properties/folder1/properties/folder2/properties/matrice2.txt",
                                 "type": "string",
                                 "title": "The matrice2.txt schema",
+                                "rte-metadata": {"filename": "matrice2.txt"},
                             }
                         },
                     },
@@ -142,6 +145,7 @@ def lite_jsonschema() -> JSON:
                     "file3.ini": {
                         "type": "object",
                         "title": "The file3.ini schema",
+                        "rte-metadata": {"filename": "file3.ini"},
                         "required": ["section"],
                         "properties": {
                             "section": {
@@ -167,10 +171,14 @@ def lite_jsonschema() -> JSON:
                                 "$id": {"type": "string"},
                                 "matrice1.txt": {
                                     "type": "string",
+                                    "rte-metadata": {
+                                        "filename": "matrice1.txt"
+                                    },
                                 },
                                 "file4.ini": {
                                     "type": "object",
                                     "required": ["section"],
+                                    "rte-metadata": {"filename": "file4.ini"},
                                     "properties": {
                                         "section": {
                                             "type": "object",

@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, cast, Dict
 
+from api_iso_antares.antares_io.writer.ini_writer import IniWriter
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine.filesystem.nodes import NodeFactory
 from api_iso_antares.jsm import JsonSchema
@@ -26,7 +27,37 @@ class FileSystemEngine:
         return cast(JSON, root_node.get_content())
 
     def write(self, path: Path, data: JSON) -> None:
-        pass
+        path.mkdir()
+        self.r_write(path, data, self.jsm)
+
+    def r_write(self, path: Path, data: JSON, jsm: JsonSchema) -> None:
+        if not data:
+            return
+
+        children = data.keys()
+        for child in children:
+            if jsm.has_additional_properties():
+                if child not in jsm.get_properties():
+                    sub_jsm = jsm.get_additional_properties()
+                else:
+                    sub_jsm = jsm.get_child(child)
+            else:
+                sub_jsm = jsm.get_child(child)
+
+            if sub_jsm.is_file():
+                if sub_jsm.get_filename():
+                    filename = path / sub_jsm.get_filename()
+                else:
+                    filename = path / Path(
+                        str(child) + sub_jsm.get_metadata_element("is_file")
+                    )
+                filename.touch()
+                if filename.suffix in [".ini", ".antares"]:
+                    IniWriter.write(data=data[child], path=filename)
+
+            else:
+                (path / child).mkdir()
+                self.r_write(path / child, data[child], sub_jsm)
 
     def get_reader(self, reader: str = "default") -> Any:
         return self.node_factory.readers[reader]

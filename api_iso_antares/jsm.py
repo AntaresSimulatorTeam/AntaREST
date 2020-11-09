@@ -67,5 +67,13 @@ class JsonSchema:
     def is_object(self) -> bool:
         return self.get_type() == "object"
 
+    def is_file(self) -> bool:
+        if self.get_metadata():
+            if self.get_metadata().get("filename") or self.get_metadata().get(
+                "is_file"
+            ):
+                return True
+        return False
+
     def is_value(self) -> bool:
         return self.get_type() in ["string", "number", "boolean", "integer"]

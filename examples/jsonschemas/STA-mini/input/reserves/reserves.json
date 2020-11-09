@@ -9,7 +9,10 @@
             },
             "properties": {},
             "additionalProperties": {
-                "type": "string"
+                "type": "string",
+                "rte-metadata": {
+                    "is_file": ".txt"
+                }
             }
         }
     }

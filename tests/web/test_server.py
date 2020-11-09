@@ -145,8 +145,3 @@ def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
 
     assert result.status_code == HTTPStatus.BAD_REQUEST.value
     assert result.data == b"Study study3 does not exist."
-
-    result = client.post("/studies/study1/copy?dest=study3")
-
-    assert result.status_code == HTTPStatus.CREATED.value
-    assert result.data == b"/studies/study3"
