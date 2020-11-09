@@ -46,14 +46,22 @@ class FileSystemEngine:
 
             if sub_jsm.is_file():
                 if sub_jsm.get_filename():
-                    filename = path / sub_jsm.get_filename()
+                    filename = Path(
+                        "/".join([str(path), str(sub_jsm.get_filename())])
+                    )
                 else:
-                    filename = path / Path(
-                        str(child) + sub_jsm.get_metadata_element("is_file")
+                    filename = Path(
+                        "/".join(
+                            [
+                                str(path),
+                                str(child)
+                                + str(sub_jsm.get_metadata_element("is_file")),
+                            ]
+                        )
                     )
                 filename.touch()
                 if filename.suffix in [".ini", ".antares"]:
-                    IniWriter.write(data=data[child], path=filename)
+                    IniWriter().write(data=data[child], path=filename)
 
             else:
                 (path / child).mkdir()
