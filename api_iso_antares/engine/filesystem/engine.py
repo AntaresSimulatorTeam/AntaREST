@@ -63,9 +63,11 @@ class FileSystemEngine:
 
     @staticmethod
     def get_jsm_child(child: str, jsm: "JsonSchema") -> "JsonSchema":
-        if jsm.has_additional_properties():
-            if child not in jsm.get_properties():
-                return jsm.get_additional_properties()
+        if (
+            jsm.has_additional_properties()
+            and child not in jsm.get_properties()
+        ):
+            return jsm.get_additional_properties()
         return jsm.get_child(child)
 
     def get_reader(self, reader: str = "default") -> Any:

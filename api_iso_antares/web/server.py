@@ -78,7 +78,7 @@ def create_routes(application: Flask) -> None:
     def copy_study(name: str) -> Any:
         global request_handler
 
-        source_name = name
+        source_name = str(escape(name))
         destination_name = str(escape(str(request.args.get("dest"))))
 
         if request.args.get("dest") is None:
