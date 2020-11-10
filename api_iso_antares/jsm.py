@@ -70,7 +70,7 @@ class JsonSchema:
     def is_file(self) -> bool:
         if self.get_metadata():
             metadata: JSON = cast(JSON, self.get_metadata())
-            if metadata.get("filename") or metadata.get("is_file"):
+            if metadata.get("filename") or metadata.get("file_ext"):
                 return True
         return False
 

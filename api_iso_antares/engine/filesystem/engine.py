@@ -33,39 +33,40 @@ class FileSystemEngine:
     def r_write(self, path: Path, data: JSON, jsm: JsonSchema) -> None:
         if not data:
             return
-
         children = data.keys()
-        for child in children:
-            if jsm.has_additional_properties():
-                if child not in jsm.get_properties():
-                    sub_jsm = jsm.get_additional_properties()
-                else:
-                    sub_jsm = jsm.get_child(child)
-            else:
-                sub_jsm = jsm.get_child(child)
 
+        for child in children:
+            sub_jsm = self.get_jsm_child(child, jsm)
             if sub_jsm.is_file():
-                if sub_jsm.get_filename():
-                    filename = Path(
-                        "/".join([str(path), str(sub_jsm.get_filename())])
-                    )
-                else:
-                    filename = Path(
-                        "/".join(
-                            [
-                                str(path),
-                                str(child)
-                                + str(sub_jsm.get_metadata_element("is_file")),
-                            ]
-                        )
-                    )
+                filename = self.build_filepath(path, child, sub_jsm)
                 filename.touch()
                 if filename.suffix in [".ini", ".antares"]:
                     IniWriter().write(data=data[child], path=filename)
-
             else:
                 (path / child).mkdir()
                 self.r_write(path / child, data[child], sub_jsm)
+
+    @staticmethod
+    def build_filepath(path: Path, file_stem: str, jsm: JsonSchema) -> Path:
+        if jsm.get_filename():
+            filename = Path("/".join([str(path), str(jsm.get_filename())]))
+        else:
+            filename = Path(
+                "/".join(
+                    [
+                        str(path),
+                        file_stem + str(jsm.get_metadata_element("file_ext")),
+                    ]
+                )
+            )
+        return filename
+
+    @staticmethod
+    def get_jsm_child(child: str, jsm: "JsonSchema") -> "JsonSchema":
+        if jsm.has_additional_properties():
+            if child not in jsm.get_properties():
+                return jsm.get_additional_properties()
+        return jsm.get_child(child)
 
     def get_reader(self, reader: str = "default") -> Any:
         return self.node_factory.readers[reader]

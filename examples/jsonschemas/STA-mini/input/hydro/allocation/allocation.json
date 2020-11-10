@@ -12,7 +12,7 @@
                 "type": "object",
                 "rte-metadata": {
                     "strategy": "S16",
-                    "is_file": ".ini"
+                    "file_ext": ".ini"
                 },
                 "properties": {
                     "[allocation": {

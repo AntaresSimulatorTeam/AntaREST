@@ -8,7 +8,7 @@
             "additionalProperties": {
                 "type": "string",
                 "rte-metadata": {
-                    "is_file": ".txt"
+                    "file_ext": ".txt"
                 }
             }
         }
