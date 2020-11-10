@@ -82,24 +82,20 @@ def create_routes(application: Flask) -> None:
         destination_name = str(escape(str(request.args.get("dest"))))
 
         if request.args.get("dest") is None:
-            print("yolo")
             content = "Copy operation need a dest query parameter."
             code = HTTPStatus.BAD_REQUEST.value
 
         elif request_handler.is_study_exist(destination_name):
-            print("yolo2")
             content = (
                 f"A simulation already exist with the name {destination_name}."
             )
             code = HTTPStatus.CONFLICT.value
 
         elif not request_handler.is_study_exist(source_name):
-            print("yolo3")
             content = f"Study {source_name} does not exist."
             code = HTTPStatus.BAD_REQUEST.value
 
         else:
-            print("yolo4")
             request_handler.copy_study(src=source_name, dest=destination_name)
             content = "/studies/" + destination_name
             code = HTTPStatus.CREATED.value

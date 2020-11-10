@@ -40,7 +40,7 @@ class FileSystemEngine:
             if sub_jsm.is_file():
                 filename = self.build_filepath(path, child, sub_jsm)
                 filename.touch()
-                if filename.suffix in [".ini", ".antares"]:
+                if filename.suffix in [".ini", ".antares", ".dat"]:
                     IniWriter().write(data=data[child], path=filename)
             else:
                 (path / child).mkdir()
