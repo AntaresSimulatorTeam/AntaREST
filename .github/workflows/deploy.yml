@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - 'master'
-      - 'pyinstaller'
+      - 'issue-99-Wrong_matrix_url_in_response_in_windows_system'
 
 jobs:
   binary:
