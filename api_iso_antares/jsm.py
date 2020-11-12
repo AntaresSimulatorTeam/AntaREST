@@ -18,10 +18,16 @@ class JsonSchema:
 
     def get_child(self, key: Optional[str] = None) -> "JsonSchema":
         data: JSON
-        if key is None:
-            data = self.data["items"]
+        if (
+            self.has_additional_properties()
+            and key not in self.get_properties()
+        ):
+            return self.get_additional_properties()
         else:
-            data = self.data["properties"][key]
+            if key is None:
+                data = self.data["items"]
+            else:
+                data = self.data["properties"][key]
         return JsonSchema(data)
 
     def get_additional_properties(self) -> "JsonSchema":

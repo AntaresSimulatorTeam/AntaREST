@@ -36,7 +36,7 @@ class FileSystemEngine:
         children = data.keys()
 
         for child in children:
-            sub_jsm = self.get_jsm_child(child, jsm)
+            sub_jsm = jsm.get_child(key=child)
             if sub_jsm.is_file():
                 filename = self.build_filepath(path, child, sub_jsm)
                 filename.touch()
@@ -60,15 +60,6 @@ class FileSystemEngine:
                 )
             )
         return filename
-
-    @staticmethod
-    def get_jsm_child(child: str, jsm: "JsonSchema") -> "JsonSchema":
-        if (
-            jsm.has_additional_properties()
-            and child not in jsm.get_properties()
-        ):
-            return jsm.get_additional_properties()
-        return jsm.get_child(child)
 
     def get_reader(self, reader: str = "default") -> Any:
         return self.node_factory.readers[reader]
