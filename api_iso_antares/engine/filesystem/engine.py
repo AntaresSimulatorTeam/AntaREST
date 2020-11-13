@@ -124,6 +124,8 @@ class FileSystemWriter:
             raise NotImplementedError(
                 "A writer for this file is not implemented: "
                 + str(element.get_path())
+                + "with data: "
+                + element.get_data()
             )
 
     @staticmethod
