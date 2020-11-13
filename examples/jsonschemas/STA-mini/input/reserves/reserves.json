@@ -11,7 +11,7 @@
             "additionalProperties": {
                 "type": "string",
                 "rte-metadata": {
-                    "file_ext": ".txt"
+                    "file_extension": ".txt"
                 }
             }
         }
