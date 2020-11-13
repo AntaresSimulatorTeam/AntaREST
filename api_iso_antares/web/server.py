@@ -29,7 +29,7 @@ def create_routes(application: Flask) -> None:
         "/studies/<path:path>",
         methods=["GET"],
     )
-    def get_study_content(path: str) -> Any:
+    def get_study(path: str) -> Any:
         global request_handler
         parameters = _construct_parameters(request.args)
 
