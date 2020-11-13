@@ -4,6 +4,7 @@ from http import HTTPStatus
 
 import pytest
 
+from api_iso_antares.custom_types import JSON
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.request_handler import RequestHandlerParameters
 from api_iso_antares.web.server import create_server
@@ -410,11 +411,49 @@ def test_sta_mini_output(
 
 @pytest.mark.integration_test
 def test_sta_mini_copy(request_handler: RequestHandler) -> None:
-    dest_folder = "yolo"
+
+    source_folder = "STA-mini"
+    destination_folder = "copy_STA-mini"
 
     app = create_server(request_handler)
     client = app.test_client()
-    result = client.post(f"/studies/STA-mini/copy?dest={dest_folder}")
+    result = client.post(
+        f"/studies/{source_folder}/copy?dest={destination_folder}"
+    )
 
     assert result.status_code == HTTPStatus.CREATED.value
-    assert result.data == b"/studies/yolo"
+    assert result.data == b"/studies/copy_STA-mini"
+
+    parameters = RequestHandlerParameters(depth=None)
+    data_source = request_handler.get(source_folder, parameters)
+    data_destination = request_handler.get(destination_folder, parameters)
+
+    link_url_source = data_source["input"]["links"]["de"]["fr"]
+    assert link_url_source == "file/STA-mini/input/links/de/fr.txt"
+
+    link_url_destination = data_destination["input"]["links"]["de"]["fr"]
+    assert link_url_destination == "file/copy_STA-mini/input/links/de/fr.txt"
+
+    result_source = client.get(link_url_source)
+    matrix_source = result_source.data
+    result_destination = client.get(link_url_destination)
+    matrix_destination = result_destination.data
+
+    assert matrix_source == matrix_destination
+
+    def replace_study_name(data: JSON) -> None:
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(value, str) and value.startswith("file/"):
+                    data[key] = value.replace(
+                        destination_folder, source_folder
+                    )
+                else:
+                    replace_study_name(value)
+
+    replace_study_name(data_destination)
+    data_source["output"] = {}
+    data_source["study"] = {}
+    data_destination["study"] = {}
+
+    assert data_source == data_destination
