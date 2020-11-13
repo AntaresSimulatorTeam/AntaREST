@@ -110,8 +110,11 @@ class SetsIniFileNode(INode):
 class UrlFileNode(INode):
     def _build_content(self) -> SUB_JSON:
         path = self._path
-        relative_path = str(path).replace(str(self.get_root_path().parent), "")
-        return f"file{relative_path}"
+        parts = path.parts
+        # remove all path before study folder
+        root = len(self.get_root_path().parts) - 1
+        relative_path = "/".join(parts[root:])
+        return f"file/{relative_path}"
 
 
 class OnlyListNode(INode):

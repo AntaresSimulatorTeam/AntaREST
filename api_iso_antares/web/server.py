@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Any
 from http import HTTPStatus
@@ -47,8 +48,8 @@ def create_routes(application: Flask) -> None:
         global request_handler
 
         try:
-            file_path = str(request_handler.path_to_studies / path)
-            return send_file(file_path)
+            file_path = request_handler.path_to_studies / path
+            return send_file(file_path.absolute())
         except FileNotFoundError:
             return f"{path} not found", 404
 

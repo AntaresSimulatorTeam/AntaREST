@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - 'master'
-      - 'issue-88-Improve_binary_pyinstaller'
+
 
 jobs:
   binary:
