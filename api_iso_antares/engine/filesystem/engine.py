@@ -125,7 +125,7 @@ class FileSystemWriter:
                 "A writer for this file is not implemented: "
                 + str(element.get_path())
                 + "with data: "
-                + element.get_data()
+                + str(element.get_data())
             )
 
     @staticmethod
