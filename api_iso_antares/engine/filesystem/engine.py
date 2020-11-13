@@ -122,7 +122,8 @@ class FileSystemWriter:
             self.get_writer("matrix").write(matrix_path, element.get_path())
         else:
             raise NotImplementedError(
-                "A writer for this file is not implemented."
+                "A writer for this file is not implemented: "
+                + str(element.get_path())
             )
 
     @staticmethod
