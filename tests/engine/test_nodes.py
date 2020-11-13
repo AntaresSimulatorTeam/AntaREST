@@ -15,6 +15,7 @@ from api_iso_antares.engine.filesystem.nodes import (
     OutputLinksNode,
     InputLinksNode,
     SetsIniFileNode,
+    UrlFileNode,
 )
 from api_iso_antares.jsm import JsonSchema
 
@@ -429,3 +430,20 @@ def test_sets_ini(project_path: Path):
         node_factory=Mock(),
     )
     assert node.get_content() == exp
+
+
+@pytest.mark.unit_test
+def test_text_file(project_path: Path):
+
+    parent = Mock()
+    parent.get_root_path.return_value = Path("/my/ugly/root")
+
+    node = UrlFileNode(
+        path=Path("/my/ugly/root/my/beautiful/path"),
+        jsm=Mock(),
+        ini_reader=Mock(),
+        parent=parent,
+        node_factory=Mock(),
+    )
+
+    assert node.get_content() == "file/root/my/beautiful/path"
