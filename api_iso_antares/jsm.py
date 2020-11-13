@@ -61,8 +61,16 @@ class JsonSchema:
     def get_filename(self) -> Optional[str]:
         return cast(str, self.get_metadata_element("filename"))
 
+    def get_filename_extension(self) -> Optional[str]:
+        return cast(str, self.get_metadata_element("file_extension"))
+
     def get_strategy(self) -> Optional[str]:
         return cast(Optional[str], self.get_metadata_element("strategy"))
+
+    def is_file(self) -> bool:
+        filename = self.get_filename()
+        extension = self.get_filename_extension()
+        return (filename is not None) or (extension is not None)
 
     def get_type(self) -> str:
         return cast(str, self.data["type"])
@@ -72,13 +80,6 @@ class JsonSchema:
 
     def is_object(self) -> bool:
         return self.get_type() == "object"
-
-    def is_file(self) -> bool:
-        if self.get_metadata():
-            metadata: JSON = cast(JSON, self.get_metadata())
-            if metadata.get("filename") or metadata.get("file_ext"):
-                return True
-        return False
 
     def is_value(self) -> bool:
         return self.get_type() in ["string", "number", "boolean", "integer"]
