@@ -1,10 +1,62 @@
 from pathlib import Path
-from typing import Any, cast, Dict
+from typing import Any, cast, Dict, Generator, Iterator, Tuple
 
-from api_iso_antares.antares_io.writer.ini_writer import IniWriter
-from api_iso_antares.custom_types import JSON
+from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.engine.filesystem.nodes import NodeFactory
 from api_iso_antares.jsm import JsonSchema
+
+
+class FileSystemElement:
+    def __init__(self, path: Path, data: SUB_JSON, jsm: JsonSchema):
+        self._path = path
+        self._data = data
+        self._jsm = jsm
+
+    def get_path(self) -> Path:
+        return self._path
+
+    def get_data(self) -> SUB_JSON:
+        return self._data
+
+    def get_jsm(self) -> JsonSchema:
+        return self._jsm
+
+    def is_file(self) -> bool:
+        return self.get_jsm().is_file()
+
+    def mkdir(self) -> None:
+        self._path.mkdir()
+
+    def is_ini_file(self) -> bool:
+        return self.get_path().suffix in [".ini", ".antares", ".dat"]
+
+    def is_matrix_url(self) -> bool:
+        url = cast(str, self.get_data())
+        return url.startswith("file/")
+
+    def get_children(self) -> Iterator["FileSystemElement"]:
+
+        if self.has_children():
+            sub_items = cast(Dict[str, SUB_JSON], self.get_data())
+            for sub_name, sub_data in sub_items.items():
+                sub_jsm = self.get_jsm().get_child(key=sub_name)
+                sub_path = self._build_filepath(sub_name, sub_jsm)
+                yield FileSystemElement(
+                    path=sub_path, data=sub_data, jsm=sub_jsm
+                )
+
+    def has_children(self) -> bool:
+        return self.is_dir() and isinstance(self.get_data(), dict)
+
+    def is_dir(self) -> bool:
+        return self.get_path().is_dir()
+
+    def _build_filepath(self, child_name: str, child_jsm: JsonSchema) -> Path:
+
+        filename = child_jsm.get_filename() or child_name
+        extension = child_jsm.get_filename_extension() or ""
+
+        return self.get_path() / (filename + extension)
 
 
 class FileSystemEngine:
@@ -16,7 +68,10 @@ class FileSystemEngine:
     ) -> None:
         self.jsm = jsm
         self.node_factory = NodeFactory(readers=readers)
-        self.writers = writers
+        self.writer = FileSystemWriter(writers)
+
+    def get_reader(self, reader: str = "default") -> Any:
+        return self.node_factory.readers[reader]
 
     def parse(self, path: Path) -> JSON:
         root_node = self.node_factory.build(
@@ -27,42 +82,53 @@ class FileSystemEngine:
         return cast(JSON, root_node.get_content())
 
     def write(self, path: Path, data: JSON) -> None:
-        path.mkdir()
-        self.r_write(path, data, self.jsm)
+        element = FileSystemElement(path, data, self.jsm)
+        self.writer.write(element, root_path=path)
 
-    def r_write(self, path: Path, data: JSON, jsm: JsonSchema) -> None:
-        if not data:
-            return
-        children = data.keys()
+
+class FileSystemWriter:
+    def __init__(self, writers: Dict[str, Any]) -> None:
+        self.writers = writers
+
+    def get_writer(self, writer: str = "default") -> Any:
+        return self.writers[writer]
+
+    def write(self, element: FileSystemElement, root_path: Path) -> None:
+        self.write_element(element, root_path)
+
+        children = element.get_children()
 
         for child in children:
-            sub_jsm = jsm.get_child(key=child)
-            if sub_jsm.is_file():
-                filename = self.build_filepath(path, child, sub_jsm)
-                filename.touch()
-                if filename.suffix in [".ini", ".antares", ".dat"]:
-                    IniWriter().write(data=data[child], path=filename)
-            else:
-                (path / child).mkdir()
-                self.r_write(path / child, data[child], sub_jsm)
+            self.write(child, root_path)
+
+    def write_element(
+        self, element: FileSystemElement, root_path: Path
+    ) -> None:
+        if element.is_file():
+            self.write_file(element, root_path)
+        else:
+            element.mkdir()
+
+    def write_file(self, element: FileSystemElement, root_path: Path) -> None:
+        if element.is_ini_file():
+            self.get_writer().write(
+                data=element.get_data(), path=element.get_path()
+            )
+        elif element.is_matrix_url():
+            url = cast(str, element.get_data())
+            matrix_path = FileSystemWriter.url_in_filepath(
+                url=url, root_path=root_path
+            )
+            self.get_writer("matrix").write(matrix_path, element.get_path())
+        else:
+            raise NotImplementedError(
+                "A writer for this file is not implemented."
+            )
 
     @staticmethod
-    def build_filepath(path: Path, file_stem: str, jsm: JsonSchema) -> Path:
-        if jsm.get_filename():
-            filename = Path("/".join([str(path), str(jsm.get_filename())]))
-        else:
-            filename = Path(
-                "/".join(
-                    [
-                        str(path),
-                        file_stem + str(jsm.get_metadata_element("file_ext")),
-                    ]
-                )
-            )
-        return filename
-
-    def get_reader(self, reader: str = "default") -> Any:
-        return self.node_factory.readers[reader]
-
-    def get_writer(self, reader: str = "default") -> Any:
-        return self.writers[reader]
+    def url_in_filepath(url: str, root_path: Path) -> Path:
+        filesystem_parts = url.split("/")[1:]
+        filepath = Path(root_path.parent)
+        for part in filesystem_parts:
+            filepath /= part
+        return filepath
