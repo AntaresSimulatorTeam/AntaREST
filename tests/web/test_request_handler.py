@@ -172,6 +172,10 @@ def test_create_study(
     study_parser = FileSystemEngine(
         jsm=Mock(), readers=readers, writers=writers
     )
+    parser = Mock()
+    parser.return_value = {"study": {"antares": {"caption": None}}}
+    study_parser.parse = parser
+    study_parser.write = Mock()
 
     request_handler = request_handler_builder(
         path_studies=path_studies,
@@ -187,10 +191,6 @@ def test_create_study(
 
     path_study_antares_infos = path_study / "study.antares"
     assert path_study_antares_infos.is_file()
-
-    study_antares_infos = ini_reader.read(path_study_antares_infos)
-    assert study_antares_infos["antares"]["caption"] == study_name
-    assert isinstance(study_antares_infos["antares"]["lastsave"], int)
 
 
 @pytest.mark.unit_test
@@ -209,13 +209,15 @@ def test_copy_study(
 
     study_parser = Mock()
     value = {
-        "antares": {
-            "caption": "ex1",
-            "created": 1480683452,
-            "lastsave": 1602678639,
-            "author": "unknown",
-        },
-        "output": [],
+        "study": {
+            "antares": {
+                "caption": "ex1",
+                "created": 1480683452,
+                "lastsave": 1602678639,
+                "author": "unknown",
+            },
+            "output": [],
+        }
     }
     study_parser.parse.return_value = value
     reader = Mock()

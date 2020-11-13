@@ -6,6 +6,8 @@ from unittest.mock import Mock
 
 from api_iso_antares.antares_io.reader import IniReader, JsmReader
 from api_iso_antares.antares_io.validator import JsmValidator
+from api_iso_antares.antares_io.writer.ini_writer import IniWriter
+from api_iso_antares.antares_io.writer.matrix_writer import MatrixWriter
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.filesystem.engine import (
     FileSystemEngine,
@@ -36,7 +38,7 @@ def request_handler(
     jsm_validator = JsmValidator(jsm=jsm)
 
     readers = {"default": IniReader()}
-    writers = {"default": Mock()}
+    writers = {"default": IniWriter(), "matrix": MatrixWriter()}
     study_reader = FileSystemEngine(jsm=jsm, readers=readers, writers=writers)
 
     request_handler = RequestHandler(

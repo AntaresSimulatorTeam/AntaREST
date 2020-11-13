@@ -94,9 +94,7 @@ def test_create_study(
     (path_study / "study.antares").touch()
 
     study_parser = Mock()
-    reader = Mock()
-    reader.read.return_value = {"antares": {"caption": None}}
-    study_parser.get_reader.return_value = reader
+    study_parser.parse.return_value = {"study": {"antares": {"caption": None}}}
 
     request_handler = request_handler_builder(
         path_studies=path_studies,
@@ -126,7 +124,12 @@ def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
     path_study.mkdir()
     (path_study / "study.antares").touch()
 
-    request_handler = request_handler_builder(path_studies=path_studies)
+    study_parser = Mock()
+    study_parser.parse.return_value = {"study": {"antares": {"caption": None}}}
+
+    request_handler = request_handler_builder(
+        path_studies=path_studies, study_parser=study_parser
+    )
 
     app = create_server(request_handler)
     client = app.test_client()
@@ -145,3 +148,9 @@ def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
 
     assert result.status_code == HTTPStatus.BAD_REQUEST.value
     assert result.data == b"Study study3 does not exist."
+
+    result = client.post("/studies/study1/copy?dest=study3")
+
+    request_handler.copy_study("study1", "study3")
+    assert result.status_code == HTTPStatus.CREATED.value
+    assert result.data == b"/studies/study3"
