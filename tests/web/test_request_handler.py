@@ -15,7 +15,7 @@ from api_iso_antares.web.request_handler import (
 
 
 @pytest.mark.unit_test
-def test_get(tmp_path: str) -> None:
+def test_get(tmp_path: str, project_path) -> None:
 
     """
     path_to_studies
@@ -51,6 +51,7 @@ def test_get(tmp_path: str) -> None:
         study_parser=study_reader_mock,
         url_engine=url_engine_mock,
         path_studies=path_to_studies,
+        path_resources=project_path / "resources",
         jsm_validator=jsm_validator_mock,
     )
 
@@ -72,7 +73,7 @@ def test_get(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
-def test_assert_study_exist(tmp_path: str) -> None:
+def test_assert_study_exist(tmp_path: str, project_path) -> None:
     # Create folders
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
@@ -90,13 +91,14 @@ def test_assert_study_exist(tmp_path: str) -> None:
         study_parser=Mock(),
         url_engine=Mock(),
         path_studies=path_to_studies,
+        path_resources=project_path / "resources",
         jsm_validator=Mock(),
     )
     request_handler._assert_study_exist(study_name)
 
 
 @pytest.mark.unit_test
-def test_assert_study_not_exist(tmp_path: str) -> None:
+def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     # Create folders
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
@@ -114,6 +116,7 @@ def test_assert_study_not_exist(tmp_path: str) -> None:
         study_parser=Mock(),
         url_engine=Mock(),
         path_studies=path_to_studies,
+        path_resources=project_path / "resources",
         jsm_validator=Mock(),
     )
     with pytest.raises(StudyNotFoundError):
@@ -156,7 +159,7 @@ def test_find_studies(
 
 @pytest.mark.unit_test
 def test_create_study(
-    tmp_path: str, request_handler_builder: Callable
+    tmp_path: str, request_handler_builder: Callable, project_path
 ) -> None:
 
     path_studies = Path(tmp_path)
@@ -171,7 +174,9 @@ def test_create_study(
     )
 
     request_handler = request_handler_builder(
-        path_studies=path_studies, study_parser=study_parser
+        path_studies=path_studies,
+        study_parser=study_parser,
+        path_resources=project_path / "resources",
     )
 
     study_name = "study1"

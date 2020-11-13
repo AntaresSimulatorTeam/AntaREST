@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
+from unittest.mock import Mock
 
 from api_iso_antares.antares_io.reader import IniReader, JsmReader
 from api_iso_antares.antares_io.validator import JsmValidator
@@ -26,13 +27,15 @@ def test_request(tmp_path: str) -> None:
     jsm_validator = JsmValidator(jsm=jsm)
 
     readers = {"default": IniReader()}
-    study_reader = FileSystemEngine(jsm=jsm, readers=readers)
+    writers = {"default": Mock()}
+    study_reader = FileSystemEngine(jsm=jsm, readers=readers, writers=writers)
 
     studies_path = project_dir / "examples/studies"
     request_handler = RequestHandler(
         study_parser=study_reader,
         url_engine=UrlEngine(jsm={}),
         path_studies=studies_path,
+        path_resources=project_dir / "resources",
         jsm_validator=jsm_validator,
     )
 

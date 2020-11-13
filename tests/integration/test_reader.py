@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from unittest.mock import Mock
 
 from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.antares_io.validator import JsmValidator
@@ -18,8 +19,9 @@ def test_reader_folder(
 
     jsm = JsonSchema(lite_jsonschema)
     readers = {"default": IniReader()}
+    writers = {"default": Mock()}
 
-    study_reader = FileSystemEngine(jsm=jsm, readers=readers)
+    study_reader = FileSystemEngine(jsm=jsm, readers=readers, writers=writers)
     res = study_reader.parse(lite_path)
 
     jsm_validator = JsmValidator(jsm=jsm)
