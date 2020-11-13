@@ -66,7 +66,7 @@ def test_get_array_items(lite_jsondata: JSON) -> None:
 
     url_engine = UrlEngine(jsm={})
 
-    expected = str(Path("file/root1/folder3/areas/area1/matrice1.txt"))
+    expected = "file/root1/folder3/areas/area1/matrice1.txt"
 
     assert (
         url_engine.apply(Path("folder3/areas/area1/matrice1.txt"), data)
