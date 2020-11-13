@@ -14,6 +14,28 @@ from api_iso_antares.web import RequestHandler
 
 
 @pytest.fixture
+def ini_cleaner() -> Callable[[str], str]:
+    def cleaner(txt: str) -> str:
+        txt_splitted = txt.split("\n")
+        txt_splitted_clean = map(lambda line: line.strip(), txt_splitted)
+        txt_splitted_filtered = filter(lambda line: line, txt_splitted_clean)
+        return "\n".join(txt_splitted_filtered)
+
+    return cleaner
+
+
+@pytest.fixture
+def clean_ini_writer(
+    ini_cleaner: Callable[[str], str]
+) -> Callable[[str], str]:
+    def write_clean_ini(path: Path, txt: str) -> None:
+        clean_ini = ini_cleaner(txt)
+        path.write_text(clean_ini)
+
+    return write_clean_ini
+
+
+@pytest.fixture
 def request_handler_builder() -> Callable:
     def build_request_handler(
         study_parser=Mock(),
@@ -76,6 +98,7 @@ def lite_jsonschema() -> JSON:
                 "properties": {
                     "file2.ini": {
                         "type": "object",
+                        "rte-metadata": {"filename": "file2.ini"},
                         "title": "The file3.ini schema",
                         "required": ["section"],
                         "properties": {
@@ -96,6 +119,7 @@ def lite_jsonschema() -> JSON:
                         "$id": "#/properties/folder1/properties/matrice1.txt",
                         "type": "string",
                         "title": "The matrice1.txt schema",
+                        "rte-metadata": {"filename": "matrice1.txt"},
                     },
                     "folder2": {
                         "$id": "#/properties/folder1/properties/folder2",
@@ -107,6 +131,7 @@ def lite_jsonschema() -> JSON:
                                 "$id": "#/properties/folder1/properties/folder2/properties/matrice2.txt",
                                 "type": "string",
                                 "title": "The matrice2.txt schema",
+                                "rte-metadata": {"filename": "matrice2.txt"},
                             }
                         },
                     },
@@ -120,6 +145,7 @@ def lite_jsonschema() -> JSON:
                     "file3.ini": {
                         "type": "object",
                         "title": "The file3.ini schema",
+                        "rte-metadata": {"filename": "file3.ini"},
                         "required": ["section"],
                         "properties": {
                             "section": {
@@ -145,10 +171,14 @@ def lite_jsonschema() -> JSON:
                                 "$id": {"type": "string"},
                                 "matrice1.txt": {
                                     "type": "string",
+                                    "rte-metadata": {
+                                        "filename": "matrice1.txt"
+                                    },
                                 },
                                 "file4.ini": {
                                     "type": "object",
                                     "required": ["section"],
+                                    "rte-metadata": {"filename": "file4.ini"},
                                     "properties": {
                                         "section": {
                                             "type": "object",

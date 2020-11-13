@@ -1,12 +1,13 @@
+import copy
 import time
 from pathlib import Path
 from typing import Any, List
 from http import HTTPStatus
 from zipfile import ZipFile
 
-import api_iso_antares
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_exceptions import HtmlException
+from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.filesystem.engine import (
     FileSystemEngine,
@@ -72,11 +73,16 @@ class RequestHandler:
         study_name = path_route.parts[0]
         self._assert_study_exist(study_name)
 
-        data = self.study_parser.parse(self.path_to_studies / study_name)
-        self.jsm_validator.validate(data)
+        study_data = self.parse_study(study_name)
 
         route_cut = path_route.relative_to(Path(study_name))
-        return self.url_engine.apply(route_cut, data, parameters.depth)
+        return self.url_engine.apply(route_cut, study_data, parameters.depth)
+
+    def parse_study(self, name: str) -> JSON:
+        study_path = self.get_study_path(name)
+        data = self.study_parser.parse(study_path)
+        self.jsm_validator.validate(data)
+        return data
 
     def _assert_study_exist(self, study_name: str) -> None:
         if not self.is_study_exist(study_name):
@@ -99,30 +105,47 @@ class RequestHandler:
     def get_jsm(self) -> JsonSchema:
         return self.jsm_validator.jsm
 
+    def get_study_path(self, name: str) -> Path:
+        return self.path_to_studies / name
+
     def create_study(self, name: str) -> None:
 
         self._assert_study_not_exist(name)
 
         empty_study_zip = self.path_resources / "empty-study.zip"
 
-        path_study = self.path_to_studies / name
+        path_study = self.get_study_path(name)
         path_study.mkdir()
 
         with ZipFile(empty_study_zip) as zip_output:
             zip_output.extractall(path=path_study)
 
-        self._update_antares_info(path_study)
+        study_data = self.parse_study(name)
+        RequestHandler._update_antares_info(name, study_data)
+        self.study_parser.write(path_study, study_data)
 
-    def _update_antares_info(self, path_study: Path) -> None:
+    def copy_study(self, src: str, dest: str) -> None:
 
-        path_study_antares_infos = path_study / "study.antares"
+        self._assert_study_exist(src)
+        self._assert_study_not_exist(dest)
 
-        reader = self.study_parser.get_reader()
-        data = reader.read(path_study_antares_infos)
-        data["antares"]["caption"] = path_study.name
+        path_source = self.get_study_path(src)
+        data_source = self.study_parser.parse(path_source)
+
+        path_destination = self.get_study_path(dest)
+        data_destination = copy.deepcopy(data_source)
+
+        RequestHandler._update_antares_info(dest, data_destination)
+        data_destination["output"] = None
+
+        self.study_parser.write(path_destination, data_destination)
+
+    @staticmethod
+    def _update_antares_info(study_name: str, study_data: JSON) -> None:
+
+        info_antares = study_data["study"]["antares"]
+
+        info_antares["caption"] = study_name
         current_time = int(time.time())
-        data["antares"]["created"] = current_time
-        data["antares"]["lastsave"] = current_time
-
-        writer = self.study_parser.get_writer()
-        writer.write(data, path_study_antares_infos)
+        info_antares["created"] = current_time
+        info_antares["lastsave"] = current_time

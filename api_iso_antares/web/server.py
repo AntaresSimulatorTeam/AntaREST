@@ -2,7 +2,7 @@ import os
 import re
 from typing import Any
 from http import HTTPStatus
-from flask import Flask, jsonify, request, Response, send_file
+from flask import Flask, jsonify, request, Response, send_file, escape
 
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.engine import SwaggerEngine
@@ -30,7 +30,7 @@ def create_routes(application: Flask) -> None:
         "/studies/<path:path>",
         methods=["GET"],
     )
-    def studies(path: str) -> Any:
+    def get_study(path: str) -> Any:
         global request_handler
         parameters = _construct_parameters(request.args)
 
@@ -44,7 +44,7 @@ def create_routes(application: Flask) -> None:
         "/file/<path:path>",
         methods=["GET"],
     )
-    def data(path: str) -> Any:
+    def get_file(path: str) -> Any:
         global request_handler
 
         try:
@@ -73,6 +73,37 @@ def create_routes(application: Flask) -> None:
         return jsonify(available_studies), 200
 
     @application.route(
+        "/studies/<string:name>/copy",
+        methods=["POST"],
+    )
+    def copy_study(name: str) -> Any:
+        global request_handler
+
+        source_name = str(escape(name))
+        destination_name = str(escape(str(request.args.get("dest"))))
+
+        if request.args.get("dest") is None:
+            content = "Copy operation need a dest query parameter."
+            code = HTTPStatus.BAD_REQUEST.value
+
+        elif request_handler.is_study_exist(destination_name):
+            content = (
+                f"A simulation already exist with the name {destination_name}."
+            )
+            code = HTTPStatus.CONFLICT.value
+
+        elif not request_handler.is_study_exist(source_name):
+            content = f"Study {source_name} does not exist."
+            code = HTTPStatus.BAD_REQUEST.value
+
+        else:
+            request_handler.copy_study(src=source_name, dest=destination_name)
+            content = "/studies/" + destination_name
+            code = HTTPStatus.CREATED.value
+
+        return content, code
+
+    @application.route(
         "/studies/<string:name>",
         methods=["POST"],
     )
@@ -93,7 +124,7 @@ def create_routes(application: Flask) -> None:
             content = e.message
             code = e.html_code_error
 
-        return content, code
+        return jsonify(content), code
 
     @application.route("/health", methods=["GET"])
     def health() -> Any:
