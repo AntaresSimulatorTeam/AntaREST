@@ -7,7 +7,7 @@ from zipfile import ZipFile
 
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_exceptions import HtmlException
-from api_iso_antares.custom_types import JSON
+from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.filesystem.engine import (
     FileSystemEngine,
@@ -68,7 +68,9 @@ class RequestHandler:
         self.path_resources = path_resources
         self.jsm_validator = jsm_validator
 
-    def get(self, route: str, parameters: RequestHandlerParameters) -> Any:
+    def get(
+        self, route: str, parameters: RequestHandlerParameters
+    ) -> SUB_JSON:
         path_route = Path(route)
         study_name = path_route.parts[0]
         self._assert_study_exist(study_name)
@@ -109,7 +111,7 @@ class RequestHandler:
             studies[name] = self.get_study_informations(name)
         return studies
 
-    def get_study_informations(self, study_name: str) -> JSON:
+    def get_study_informations(self, study_name: str) -> SUB_JSON:
         url = study_name + "/study"
         return self.get(url, RequestHandlerParameters(depth=2))
 
