@@ -50,6 +50,7 @@ def test_get(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_parser=study_reader_mock,
         url_engine=url_engine_mock,
+        exporter=Mock(),
         path_studies=path_to_studies,
         path_resources=project_path / "resources",
         jsm_validator=jsm_validator_mock,
@@ -90,6 +91,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_parser=Mock(),
         url_engine=Mock(),
+        exporter=Mock(),
         path_studies=path_to_studies,
         path_resources=project_path / "resources",
         jsm_validator=Mock(),
@@ -115,6 +117,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_parser=Mock(),
         url_engine=Mock(),
+        exporter=Mock(),
         path_studies=path_to_studies,
         path_resources=project_path / "resources",
         jsm_validator=Mock(),
@@ -180,6 +183,7 @@ def test_create_study(
     request_handler = request_handler_builder(
         path_studies=path_studies,
         study_parser=study_parser,
+        exporter=Mock(),
         path_resources=project_path / "resources",
     )
 
@@ -235,3 +239,52 @@ def test_copy_study(
 
     study_parser.parse.assert_called_once_with(path_study)
     study_parser.write.assert_called()
+
+
+@pytest.mark.unit_test
+def test_export_file(tmp_path: Path):
+    name = "my-study"
+    (tmp_path / name).mkdir()
+
+    exporter = Mock()
+    exporter.export_file.return_value = b"Hello"
+
+    request_handler = RequestHandler(
+        study_parser=Mock(),
+        url_engine=Mock(),
+        exporter=exporter,
+        path_studies=tmp_path,
+        path_resources=Mock(),
+        jsm_validator=Mock(),
+    )
+
+    # Test wrong study
+    with pytest.raises(StudyNotFoundError):
+        request_handler.export("WRONG")
+
+    # Test good study
+    assert b"Hello" == request_handler.export(name)
+    exporter.export_file.assert_called_once_with(tmp_path / name)
+
+
+def test_export_compact_file(tmp_path: Path):
+    name = "my-study"
+    (tmp_path / name).mkdir()
+
+    exporter = Mock()
+    exporter.export_compact.return_value = b"Hello"
+    parser = Mock()
+    parser.parse.return_value = 42
+
+    request_handler = RequestHandler(
+        study_parser=parser,
+        url_engine=Mock(),
+        exporter=exporter,
+        path_studies=tmp_path,
+        path_resources=Mock(),
+        jsm_validator=Mock(),
+    )
+
+    # Test good study
+    assert b"Hello" == request_handler.export(name, compact=True)
+    exporter.export_compact.assert_called_once_with(tmp_path / name, 42)

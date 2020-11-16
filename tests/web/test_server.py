@@ -1,4 +1,5 @@
 import json
+from io import BytesIO
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
@@ -189,3 +190,39 @@ def test_list_studies(
     }
 
     assert studies == expected_studies
+
+
+@pytest.mark.unit_test
+def test_server_health() -> None:
+    app = create_server(Mock())
+    client = app.test_client()
+    result = client.get("/health")
+    assert result.data == b'{"status":"available"}\n'
+
+
+@pytest.mark.unit_test
+def test_export_files() -> None:
+
+    mock_handler = Mock()
+    mock_handler.export.return_value = BytesIO(b"Hello")
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+    result = client.get("/exportation/name")
+
+    assert result.data == b"Hello"
+    mock_handler.export.assert_called_once_with("name", False)
+
+
+@pytest.mark.unit_test
+def test_export_compact() -> None:
+
+    mock_handler = Mock()
+    mock_handler.export.return_value = BytesIO(b"Hello")
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+    result = client.get("/exportation/name?compact")
+
+    assert result.data == b"Hello"
+    mock_handler.export.assert_called_once_with("name", True)

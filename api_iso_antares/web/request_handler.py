@@ -1,10 +1,13 @@
 import copy
 import time
+from io import BytesIO
 from pathlib import Path
 from typing import Any, List
 from http import HTTPStatus
-from zipfile import ZipFile
+from zipfile import ZipFile, ZIP_DEFLATED
 
+import api_iso_antares
+from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.custom_types import JSON, SUB_JSON
@@ -58,12 +61,14 @@ class RequestHandler:
         self,
         study_parser: FileSystemEngine,
         url_engine: UrlEngine,
+        exporter: Exporter,
         path_studies: Path,
         path_resources: Path,
         jsm_validator: JsmValidator,
     ):
         self.study_parser = study_parser
         self.url_engine = url_engine
+        self.exporter = exporter
         self.path_to_studies = path_studies
         self.path_resources = path_resources
         self.jsm_validator = jsm_validator
@@ -162,3 +167,14 @@ class RequestHandler:
         current_time = int(time.time())
         info_antares["created"] = current_time
         info_antares["lastsave"] = current_time
+
+    def export(self, name: str, compact: bool = False) -> BytesIO:
+        path_study = self.path_to_studies / name
+        if not path_study.exists():
+            raise StudyNotFoundError(name)
+        if compact:
+            data = self.study_parser.parse(self.path_to_studies / name)
+            self.jsm_validator.validate(data)
+            return self.exporter.export_compact(path_study, data)
+        else:
+            return self.exporter.export_file(path_study)

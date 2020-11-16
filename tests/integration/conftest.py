@@ -4,6 +4,7 @@ from zipfile import ZipFile
 import pytest
 from unittest.mock import Mock
 
+from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.antares_io.reader import IniReader, JsmReader
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.antares_io.writer.ini_writer import IniWriter
@@ -44,6 +45,7 @@ def request_handler(
     request_handler = RequestHandler(
         study_parser=study_reader,
         url_engine=UrlEngine(jsm=jsm),
+        exporter=Exporter(),
         path_studies=path_studies,
         path_resources=path_resources,
         jsm_validator=jsm_validator,

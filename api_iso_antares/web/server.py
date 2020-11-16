@@ -130,6 +130,23 @@ def create_routes(application: Flask) -> None:
     def health() -> Any:
         return jsonify({"status": "available"}), 200
 
+    @application.route("/exportation/<string:name>", methods=["GET"])
+    def export_file(name: str) -> Any:
+        global request_handler
+
+        compact = "compact" in request.args
+
+        try:
+            content = request_handler.export(name, compact)
+            return send_file(
+                content,
+                mimetype="application/zip",
+                as_attachment=True,
+                attachment_filename=f"{name}{'-compact' if compact else ''}.zip",
+            )
+        except HtmlException as e:
+            return e.message, e.html_code_error
+
     @application.after_request
     def after_request(response: Response) -> Response:
         header = response.headers

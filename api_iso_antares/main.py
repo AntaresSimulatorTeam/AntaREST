@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from api_iso_antares import __version__
+from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.antares_io.reader import (
     IniReader,
     JsmReader,
@@ -67,6 +68,7 @@ def main() -> None:
     request_handler = RequestHandler(
         study_parser=study_parser,
         url_engine=UrlEngine(jsm=jsm),
+        exporter=Exporter(),
         path_studies=Path(arguments.studies_path),
         path_resources=get_local_path() / "resources",
         jsm_validator=JsmValidator(jsm=jsm),
