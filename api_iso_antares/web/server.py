@@ -1,7 +1,8 @@
+import os
 import re
 from typing import Any
 from http import HTTPStatus
-from flask import Flask, jsonify, request, Response, send_file
+from flask import Flask, jsonify, request, Response, send_file, escape
 
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.engine import SwaggerEngine
@@ -26,29 +27,15 @@ def _construct_parameters(
 
 def create_routes(application: Flask) -> None:
     @application.route(
-        "/studies/<path:path>",
-        methods=["GET"],
-    )
-    def studies(path: str) -> Any:
-        global request_handler
-        parameters = _construct_parameters(request.args)
-
-        try:
-            output = request_handler.get(path, parameters)
-        except HtmlException as e:
-            return e.message, e.html_code_error
-        return jsonify(output), 200
-
-    @application.route(
         "/file/<path:path>",
         methods=["GET"],
     )
-    def data(path: str) -> Any:
+    def get_file(path: str) -> Any:
         global request_handler
 
         try:
-            file_path = str(request_handler.path_to_studies / path)
-            return send_file(file_path)
+            file_path = request_handler.path_to_studies / path
+            return send_file(file_path.absolute())
         except FileNotFoundError:
             return f"{path} not found", 404
 
@@ -63,13 +50,58 @@ def create_routes(application: Flask) -> None:
         return jsonify(swg_doc), 200
 
     @application.route(
-        "/studies/list",
+        "/studies",
         methods=["GET"],
     )
     def get_studies() -> Any:
         global request_handler
-        available_studies = request_handler.get_studies()
-        return jsonify(available_studies), 200
+        available_studies = request_handler.get_studies_informations()
+        return jsonify(available_studies), HTTPStatus.OK.value
+
+    @application.route(
+        "/studies/<path:path>",
+        methods=["GET"],
+    )
+    def get_study(path: str) -> Any:
+        global request_handler
+        parameters = _construct_parameters(request.args)
+
+        try:
+            output = request_handler.get(path, parameters)
+        except HtmlException as e:
+            return e.message, e.html_code_error
+        return jsonify(output), 200
+
+    @application.route(
+        "/studies/<string:name>/copy",
+        methods=["POST"],
+    )
+    def copy_study(name: str) -> Any:
+        global request_handler
+
+        source_name = str(escape(name))
+        destination_name = str(escape(str(request.args.get("dest"))))
+
+        if request.args.get("dest") is None:
+            content = "Copy operation need a dest query parameter."
+            code = HTTPStatus.BAD_REQUEST.value
+
+        elif request_handler.is_study_exist(destination_name):
+            content = (
+                f"A simulation already exist with the name {destination_name}."
+            )
+            code = HTTPStatus.CONFLICT.value
+
+        elif not request_handler.is_study_exist(source_name):
+            content = f"Study {source_name} does not exist."
+            code = HTTPStatus.BAD_REQUEST.value
+
+        else:
+            request_handler.copy_study(src=source_name, dest=destination_name)
+            content = "/studies/" + destination_name
+            code = HTTPStatus.CREATED.value
+
+        return content, code
 
     @application.route(
         "/studies/<string:name>",
@@ -92,7 +124,7 @@ def create_routes(application: Flask) -> None:
             content = e.message
             code = e.html_code_error
 
-        return content, code
+        return jsonify(content), code
 
     @application.route("/health", methods=["GET"])
     def health() -> Any:

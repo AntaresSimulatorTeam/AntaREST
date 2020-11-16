@@ -91,7 +91,6 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_parser=Mock(),
         url_engine=Mock(),
-        exporter=Mock(),
         path_studies=path_to_studies,
         path_resources=project_path / "resources",
         jsm_validator=Mock(),
@@ -117,7 +116,6 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_parser=Mock(),
         url_engine=Mock(),
-        exporter=Mock(),
         path_studies=path_to_studies,
         path_resources=project_path / "resources",
         jsm_validator=Mock(),
@@ -175,6 +173,10 @@ def test_create_study(
     study_parser = FileSystemEngine(
         jsm=Mock(), readers=readers, writers=writers
     )
+    parser = Mock()
+    parser.return_value = {"study": {"antares": {"caption": None}}}
+    study_parser.parse = parser
+    study_parser.write = Mock()
 
     request_handler = request_handler_builder(
         path_studies=path_studies,
@@ -192,9 +194,49 @@ def test_create_study(
     path_study_antares_infos = path_study / "study.antares"
     assert path_study_antares_infos.is_file()
 
-    study_antares_infos = ini_reader.read(path_study_antares_infos)
-    assert study_antares_infos["antares"]["caption"] == study_name
-    assert isinstance(study_antares_infos["antares"]["lastsave"], int)
+
+@pytest.mark.unit_test
+def test_copy_study(
+    tmp_path: str,
+    clean_ini_writer: Callable,
+    request_handler_builder: Callable,
+) -> None:
+
+    path_studies = Path(tmp_path)
+    source_name = "study1"
+    path_study = path_studies / source_name
+    path_study.mkdir()
+    path_study_info = path_study / "study.antares"
+    path_study_info.touch()
+
+    study_parser = Mock()
+    value = {
+        "study": {
+            "antares": {
+                "caption": "ex1",
+                "created": 1480683452,
+                "lastsave": 1602678639,
+                "author": "unknown",
+            },
+            "output": [],
+        }
+    }
+    study_parser.parse.return_value = value
+    reader = Mock()
+    reader.read.return_value = value
+    study_parser.get_reader.return_value = reader
+    writer = Mock()
+    study_parser.get_writer.return_value = writer
+
+    request_handler = request_handler_builder(
+        study_parser=study_parser, path_studies=path_studies
+    )
+
+    destination_name = "study2"
+    request_handler.copy_study(source_name, destination_name)
+
+    study_parser.parse.assert_called_once_with(path_study)
+    study_parser.write.assert_called()
 
 
 @pytest.mark.unit_test

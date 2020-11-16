@@ -110,8 +110,11 @@ class SetsIniFileNode(INode):
 class UrlFileNode(INode):
     def _build_content(self) -> SUB_JSON:
         path = self._path
-        relative_path = str(path).replace(str(self.get_root_path().parent), "")
-        return f"file{relative_path}"
+        parts = path.parts
+        # remove all path before study folder
+        root = len(self.get_root_path().parts) - 1
+        relative_path = "/".join(parts[root:])
+        return f"file/{relative_path}"
 
 
 class OnlyListNode(INode):
@@ -136,16 +139,16 @@ class OutputFolderNode(INode):
         jsm = self._jsm.get_additional_properties()
 
         directories = sorted(self._path.iterdir())
-        for i, dir in enumerate(directories):
+        for i, directory in enumerate(directories):
             index = str(i + 1)
-            output[index] = OutputFolderNode._parse_output(dir.name)
-            for child in dir.iterdir():
+            output[index] = OutputFolderNode._parse_output(directory.name)
+            for child in directory.iterdir():
                 if (
                     child.stem in jsm.get_properties()
                 ):  # TODO remove when jsonschema complet
                     output[index][child.stem] = self._node_factory.build(
                         key=child.name,
-                        root_path=dir,
+                        root_path=directory,
                         jsm=jsm.get_child(child.stem),
                         parent=self,
                     ).get_content()
@@ -216,7 +219,7 @@ class NodeFactory:
 
         if strategy in ["S1", "S3"]:
             return MixFolderNode
-        elif strategy in ["S2"]:
+        elif strategy in ["S2", "S16"]:
             return IniFileNode
         elif strategy in ["S4", "S6", "S9", "S10", "S7"]:
             return OnlyListNode
@@ -230,17 +233,13 @@ class NodeFactory:
             return OutputLinksNode
 
         if path.is_file():
-            if path.suffix in [".txt", ".log"]:
+            if path.suffix in [".txt", ".log", ".ico"]:
                 node_class = UrlFileNode
-            elif path.suffix in [
-                ".ini",
-                ".antares",
-            ]:
+            elif path.suffix in [".ini", ".antares", ".dat"]:
                 node_class = IniFileNode
         else:
             if jsm.is_object():
                 node_class = ObjectNode
-
         return node_class
 
     @staticmethod

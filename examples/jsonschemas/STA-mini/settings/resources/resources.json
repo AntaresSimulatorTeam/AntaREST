@@ -1,0 +1,16 @@
+{
+    "type": "object",
+    "definitions": {
+        "resources": {
+            "type": "object",
+            "properties": {
+                "study": {
+                    "rte-metadata": {
+                        "filename":  "study.ico"
+                    },
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

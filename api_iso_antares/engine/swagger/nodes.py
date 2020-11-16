@@ -58,12 +58,34 @@ class RootNode(INode):
         self._build_global_parameters()
         self._build_children()
         self._build_paths_not_in_jsm()
+        self._add_tags()
 
     def _build_paths_not_in_jsm(self) -> None:
         self._build_studies_list_path()
-        self._build_studies_path()
+        self._build_study_path()
+        self.build_copy_study_path()
 
-    def _build_studies_path(self) -> None:
+    def build_copy_study_path(self) -> None:
+        url = self._root_url + "/copy"
+
+        copy_study_path = SwaggerPath(url=url)
+
+        copy_study_path.add_operation(
+            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.post)
+        )
+
+        dest_parameter = SwaggerParameter(
+            name="dest",
+            in_=SwaggerParameter.ParametersIn.query,
+            schema_type=SwaggerParameter.SchemaType.string,
+            required=True,
+        )
+
+        copy_study_path.add_parameter(dest_parameter)
+
+        self._swagger.add_path(copy_study_path)
+
+    def _build_study_path(self) -> None:
         study_path = SwaggerPath(url=self._root_url)
 
         study_path.add_operation(
@@ -72,10 +94,12 @@ class RootNode(INode):
         study_path.add_operation(
             SwaggerOperation(verb=SwaggerOperation.OperationVerbs.post)
         )
-        for key in self._jsm.get_properties():
-            self._swagger.add_tag(SwaggerTag(key))
 
         self._swagger.add_path(study_path)
+
+    def _add_tags(self) -> None:
+        for key in self._jsm.get_properties():
+            self._swagger.add_tag(SwaggerTag(key))
 
     def _build_studies_list_path(self) -> None:
         studies_url = "/studies/list"

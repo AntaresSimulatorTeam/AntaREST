@@ -7,9 +7,21 @@
                 "generaldata": {
                     "$ref": "generaldata.ini.json#/definitions/generaldata"
                 },
+                "scenariobuilder": {
+                    "$ref": "scenariobuilder.dat.json#definitions/scenariobuilder"
+                },
+                "comments": {
+                    "rte-metadata": {
+                        "filename":  "comments.txt"
+                    },
+                    "type": "string"
+                },
                 "simulations": {
                     "type": "object",
                     "properties": {}
+                },
+                "resources": {
+                    "$ref": "resources/resources.json#/definitions/resources"
                 }
             }
         }

@@ -18,10 +18,16 @@ class JsonSchema:
 
     def get_child(self, key: Optional[str] = None) -> "JsonSchema":
         data: JSON
-        if key is None:
-            data = self.data["items"]
+        if (
+            self.has_additional_properties()
+            and key not in self.get_properties()
+        ):
+            return self.get_additional_properties()
         else:
-            data = self.data["properties"][key]
+            if key is None:
+                data = self.data["items"]
+            else:
+                data = self.data["properties"][key]
         return JsonSchema(data)
 
     def get_additional_properties(self) -> "JsonSchema":
@@ -55,8 +61,16 @@ class JsonSchema:
     def get_filename(self) -> Optional[str]:
         return cast(str, self.get_metadata_element("filename"))
 
+    def get_filename_extension(self) -> Optional[str]:
+        return cast(str, self.get_metadata_element("file_extension"))
+
     def get_strategy(self) -> Optional[str]:
         return cast(Optional[str], self.get_metadata_element("strategy"))
+
+    def is_file(self) -> bool:
+        filename = self.get_filename()
+        extension = self.get_filename_extension()
+        return (filename is not None) or (extension is not None)
 
     def get_type(self) -> str:
         return cast(str, self.data["type"])

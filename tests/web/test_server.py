@@ -1,4 +1,3 @@
-from io import BytesIO
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
@@ -8,7 +7,6 @@ import pytest
 
 from api_iso_antares.engine.url_engine import UrlNotMatchJsonDataError
 from api_iso_antares.web.request_handler import (
-    RequestHandler,
     RequestHandlerParameters,
 )
 from api_iso_antares.web.server import create_server
@@ -96,9 +94,7 @@ def test_create_study(
     (path_study / "study.antares").touch()
 
     study_parser = Mock()
-    reader = Mock()
-    reader.read.return_value = {"antares": {"caption": None}}
-    study_parser.get_reader.return_value = reader
+    study_parser.parse.return_value = {"study": {"antares": {"caption": None}}}
 
     request_handler = request_handler_builder(
         path_studies=path_studies,
@@ -116,6 +112,82 @@ def test_create_study(
     result_right = client.post("/studies/study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
+
+
+@pytest.mark.unit_test
+def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
+    path_studies = Path(tmp_path)
+    path_study = path_studies / "study1"
+    path_study.mkdir()
+    (path_study / "study.antares").touch()
+    path_study = path_studies / "study2"
+    path_study.mkdir()
+    (path_study / "study.antares").touch()
+
+    study_parser = Mock()
+    study_parser.parse.return_value = {"study": {"antares": {"caption": None}}}
+
+    request_handler = request_handler_builder(
+        path_studies=path_studies, study_parser=study_parser
+    )
+
+    app = create_server(request_handler)
+    client = app.test_client()
+
+    result = client.post("/studies/study1/copy")
+
+    assert result.status_code == HTTPStatus.BAD_REQUEST.value
+    assert result.data == b"Copy operation need a dest query parameter."
+
+    result = client.post("/studies/study1/copy?dest=study2")
+
+    assert result.status_code == HTTPStatus.CONFLICT.value
+    assert result.data == b"A simulation already exist with the name study2."
+
+    result = client.post("/studies/study3/copy?dest=study4")
+
+    assert result.status_code == HTTPStatus.BAD_REQUEST.value
+    assert result.data == b"Study study3 does not exist."
+
+    result = client.post("/studies/study1/copy?dest=study3")
+
+    request_handler.copy_study("study1", "study3")
+    assert result.status_code == HTTPStatus.CREATED.value
+    assert result.data == b"/studies/study3"
+
+
+@pytest.mark.unit_test
+def test_list_studies(
+    tmp_path: str, request_handler_builder: Callable
+) -> None:
+
+    path_studies = Path(tmp_path)
+    path_study = path_studies / "study1"
+    path_study.mkdir()
+    (path_study / "study.antares").touch()
+    path_study = path_studies / "study2"
+    path_study.mkdir()
+    (path_study / "study.antares").touch()
+
+    url_engine = Mock()
+    url_engine.apply.return_value = {"antares": {"caption": ""}}
+
+    request_handler = request_handler_builder(
+        path_studies=path_studies,
+        url_engine=url_engine,
+    )
+
+    app = create_server(request_handler)
+    client = app.test_client()
+    result = client.get("/studies")
+    studies = json.loads(result.data)
+
+    expected_studies = {
+        "study1": {"antares": {"caption": ""}},
+        "study2": {"antares": {"caption": ""}},
+    }
+
+    assert studies == expected_studies
 
 
 @pytest.mark.unit_test

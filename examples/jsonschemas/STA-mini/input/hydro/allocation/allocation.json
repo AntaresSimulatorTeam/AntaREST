@@ -10,6 +10,10 @@
             "properties": {},
             "additionalProperties": {
                 "type": "object",
+                "rte-metadata": {
+                    "strategy": "S16",
+                    "file_extension": ".ini"
+                },
                 "properties": {
                     "[allocation": {
                         "rte-metadata": {"additional_property_name":  "area"},

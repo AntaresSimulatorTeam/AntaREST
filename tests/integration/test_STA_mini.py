@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
+from http import HTTPStatus
 
 import pytest
 
+from api_iso_antares.custom_types import JSON
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.request_handler import RequestHandlerParameters
 from api_iso_antares.web.server import create_server
@@ -63,7 +65,6 @@ def test_sta_mini_settings(
 def test_sta_mini_layers_layers(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
-
     assert_url_content(
         request_handler=request_handler,
         url=url,
@@ -130,11 +131,11 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/hydro/series/de/mod.txt",
-            str(Path("file/STA-mini/input/hydro/series/de/mod.txt")),
+            "file/STA-mini/input/hydro/series/de/mod.txt",
         ),
         (
             "/studies/STA-mini/input/areas/list",
-            str(Path("file/STA-mini/input/areas/list.txt")),
+            "file/STA-mini/input/areas/list.txt",
         ),
         ("/studies/STA-mini/input/areas/sets/all areas/output", False),
         (
@@ -145,19 +146,11 @@ def test_sta_mini_study_antares(
         ("/studies/STA-mini/input/hydro/allocation/de/[allocation/de", 1),
         (
             "/studies/STA-mini/input/hydro/common/capacity/reservoir_fr",
-            str(
-                Path(
-                    "file/STA-mini/input/hydro/common/capacity/reservoir_fr.txt"
-                )
-            ),
+            "file/STA-mini/input/hydro/common/capacity/reservoir_fr.txt",
         ),
         (
             "/studies/STA-mini/input/thermal/series/fr/05_nuclear/series",
-            str(
-                Path(
-                    "file/STA-mini/input//thermal/series/fr/05_nuclear/series.txt"
-                )
-            ),
+            "file/STA-mini/input/thermal/series/fr/05_nuclear/series.txt",
         ),
         (
             "/studies/STA-mini/input/hydro/prepro/correlation/general/mode",
@@ -169,7 +162,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/hydro/prepro/fr/energy",
-            str(Path("file/STA-mini/input/hydro/prepro/fr/energy.txt")),
+            "file/STA-mini/input/hydro/prepro/fr/energy.txt",
         ),
         (
             "/studies/STA-mini/input/hydro/hydro/inter-monthly-breakdown/fr",
@@ -177,11 +170,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/thermal/prepro/fr/05_nuclear/modulation",
-            str(
-                Path(
-                    "file/STA-mini/input/thermal/prepro/fr/05_nuclear/modulation.txt"
-                )
-            ),
+            "file/STA-mini/input/thermal/prepro/fr/05_nuclear/modulation.txt",
         ),
         (
             "/studies/STA-mini/input/thermal/clusters/fr/list/05_nuclear/marginal-cost",
@@ -193,39 +182,39 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/links/fr/it",
-            str(Path("file/STA-mini/input/links/fr/it.txt")),
+            "file/STA-mini/input/links/fr/it.txt",
         ),
         (
             "/studies/STA-mini/input/load/prepro/fr/k",
-            str(Path("file/STA-mini/input/load/prepro/fr/k.txt")),
+            "file/STA-mini/input/load/prepro/fr/k.txt",
         ),
         (
             "/studies/STA-mini/input/load/series/load_fr",
-            str(Path("file/STA-mini/input/load/series/load_fr.txt")),
+            "file/STA-mini/input/load/series/load_fr.txt",
         ),
         (
             "/studies/STA-mini/input/misc-gen/miscgen-fr",
-            str(Path("file/STA-mini/input/misc-gen/miscgen-fr.txt")),
+            "file/STA-mini/input/misc-gen/miscgen-fr.txt",
         ),
         (
             "/studies/STA-mini/input/reserves/fr",
-            str(Path("file/STA-mini/input/reserves/fr.txt")),
+            "file/STA-mini/input/reserves/fr.txt",
         ),
         (
             "/studies/STA-mini/input/solar/prepro/fr/k",
-            str(Path("file/STA-mini/input/solar/prepro/fr/k.txt")),
+            "file/STA-mini/input/solar/prepro/fr/k.txt",
         ),
         (
             "/studies/STA-mini/input/solar/series/solar_fr",
-            str(Path("file/STA-mini/input/solar/series/solar_fr.txt")),
+            "file/STA-mini/input/solar/series/solar_fr.txt",
         ),
         (
             "/studies/STA-mini/input/wind/prepro/fr/k",
-            str(Path("file/STA-mini/input/wind/prepro/fr/k.txt")),
+            "file/STA-mini/input/wind/prepro/fr/k.txt",
         ),
         (
             "/studies/STA-mini/input/wind/series/wind_fr",
-            str(Path("file/STA-mini/input/wind/series/wind_fr.txt")),
+            "file/STA-mini/input/wind/series/wind_fr.txt",
         ),
     ],
 )
@@ -245,59 +234,31 @@ def test_sta_mini_input(
     [
         (
             "/studies/STA-mini/output/3/annualSystemCost",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1427eco/annualSystemCost.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1427eco/annualSystemCost.txt",
         ),
         (
             "/studies/STA-mini/output/1/checkIntegrity",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/checkIntegrity.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/checkIntegrity.txt",
         ),
         (
             "/studies/STA-mini/output/4/simulation-comments",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1430adq/simulation-comments.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1430adq/simulation-comments.txt",
         ),
         (
             "/studies/STA-mini/output/2/simulation",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1425eco-goodbye/simulation.log"
-                )
-            ),
+            "file/STA-mini/output/20201014-1425eco-goodbye/simulation.log",
         ),
         (
             "/studies/STA-mini/output/1/about-the-study/areas",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/about-the-study/areas.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/about-the-study/areas.txt",
         ),
         (
             "/studies/STA-mini/output/2/about-the-study/comments",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1425eco-goodbye/about-the-study/comments.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1425eco-goodbye/about-the-study/comments.txt",
         ),
         (
             "/studies/STA-mini/output/3/about-the-study/links",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1427eco/about-the-study/links.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1427eco/about-the-study/links.txt",
         ),
         (
             "/studies/STA-mini/output/4/about-the-study/parameters/general/horizon",
@@ -309,92 +270,48 @@ def test_sta_mini_input(
         ),
         (
             "/studies/STA-mini/output/1/economy/mc-all/areas/de/id-daily",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/areas/de/id-daily.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/areas/de/id-daily.txt",
         ),
         (
             "/studies/STA-mini/output/1/economy/mc-all/grid/areas",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/grid/areas.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/grid/areas.txt",
         ),
         ("/studies/STA-mini/output/1/economy/mc-all/links/de/fr", {}),
         (
             "/studies/STA-mini/output/1/economy/mc-ind/00001/links/de/fr/values-hourly",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/links/de - fr/values-hourly.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/links/de - fr/values-hourly.txt",
         ),
         (
             "/studies/STA-mini/output/1/economy/mc-ind/00001/areas/de/details-annual",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual.txt",
         ),
         (
             "/studies/STA-mini/output/1/economy/mc-ind/00001/areas/de/details-annual",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual.txt",
         ),
         (
             "/studies/STA-mini/output/4/adequacy/mc-all/areas/de/id-daily",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1430adq/adequacy/mc-all/areas/de/id-daily.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1430adq/adequacy/mc-all/areas/de/id-daily.txt",
         ),
         (
             "/studies/STA-mini/output/1/ts-numbers/hydro/de",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/de.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/de.txt",
         ),
         (
             "/studies/STA-mini/output/1/ts-numbers/load/de",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/load/de.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/load/de.txt",
         ),
         (
             "/studies/STA-mini/output/1/ts-numbers/solar/de",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/solar/de.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/solar/de.txt",
         ),
         (
             "/studies/STA-mini/output/1/ts-numbers/wind/de",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/wind/de.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/wind/de.txt",
         ),
         (
             "/studies/STA-mini/output/1/ts-numbers/thermal/de/07_gas",
-            str(
-                Path(
-                    "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/thermal/de/07_gas.txt"
-                )
-            ),
+            "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/thermal/de/07_gas.txt",
         ),
     ],
 )
@@ -402,6 +319,77 @@ def test_sta_mini_output(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
     assert_with_errors(
+        request_handler=request_handler,
+        url=url,
+        expected_output=expected_output,
+    )
+
+
+@pytest.mark.integration_test
+def test_sta_mini_copy(request_handler: RequestHandler) -> None:
+
+    source_folder = "STA-mini"
+    destination_folder = "copy_STA-mini"
+
+    app = create_server(request_handler)
+    client = app.test_client()
+    result = client.post(
+        f"/studies/{source_folder}/copy?dest={destination_folder}"
+    )
+
+    assert result.status_code == HTTPStatus.CREATED.value
+    assert result.data == b"/studies/copy_STA-mini"
+
+    parameters = RequestHandlerParameters(depth=None)
+    data_source = request_handler.get(source_folder, parameters)
+    data_destination = request_handler.get(destination_folder, parameters)
+
+    link_url_source = data_source["input"]["links"]["de"]["fr"]
+    assert link_url_source == "file/STA-mini/input/links/de/fr.txt"
+
+    link_url_destination = data_destination["input"]["links"]["de"]["fr"]
+    assert link_url_destination == "file/copy_STA-mini/input/links/de/fr.txt"
+
+    result_source = client.get(link_url_source)
+    matrix_source = result_source.data
+    result_destination = client.get(link_url_destination)
+    matrix_destination = result_destination.data
+
+    assert matrix_source == matrix_destination
+
+    def replace_study_name(data: JSON) -> None:
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(value, str) and value.startswith("file/"):
+                    data[key] = value.replace(
+                        destination_folder, source_folder
+                    )
+                else:
+                    replace_study_name(value)
+
+    replace_study_name(data_destination)
+    data_source["output"] = {}
+    data_source["study"] = {}
+    data_destination["study"] = {}
+
+    assert data_source == data_destination
+
+
+@pytest.mark.integration_test
+def test_sta_mini_list_studies(request_handler: RequestHandler) -> None:
+    expected_output = {
+        "STA-mini": {
+            "antares": {
+                "author": "Andrea SGATTONI",
+                "caption": "STA-mini",
+                "created": 1480683452,
+                "lastsave": 1602678639,
+                "version": 700,
+            }
+        }
+    }
+    url = "/studies"
+    assert_url_content(
         request_handler=request_handler,
         url=url,
         expected_output=expected_output,
