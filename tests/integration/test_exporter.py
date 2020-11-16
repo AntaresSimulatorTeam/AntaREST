@@ -25,8 +25,8 @@ def test_exporter_file(project_path):
         jsm_validator=Mock(),
     )
 
-    data = assert_url_content(handler, url="/export/files/sub-study")
+    data = assert_url_content(handler, url="/exportation/sub-study")
     assert len(data) > 0
 
-    data = assert_url_content(handler, url="/export/compact/sub-study")
+    data = assert_url_content(handler, url="/exportation/sub-study?compact")
     assert len(data) > 0

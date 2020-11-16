@@ -134,10 +134,10 @@ def test_export_files() -> None:
 
     app = create_server(mock_handler)
     client = app.test_client()
-    result = client.get("/export/files/name")
+    result = client.get("/exportation/name")
 
     assert result.data == b"Hello"
-    mock_handler.export.assert_called_once_with("name")
+    mock_handler.export.assert_called_once_with("name", False)
 
 
 @pytest.mark.unit_test
@@ -148,7 +148,7 @@ def test_export_compact() -> None:
 
     app = create_server(mock_handler)
     client = app.test_client()
-    result = client.get("/export/compact/name")
+    result = client.get("/exportation/name?compact")
 
     assert result.data == b"Hello"
-    mock_handler.export.assert_called_once_with("name", compact=True)
+    mock_handler.export.assert_called_once_with("name", True)
