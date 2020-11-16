@@ -373,3 +373,24 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
     data_destination["study"] = {}
 
     assert data_source == data_destination
+
+
+@pytest.mark.integration_test
+def test_sta_mini_list_studies(request_handler: RequestHandler) -> None:
+    expected_output = {
+        "STA-mini": {
+            "antares": {
+                "author": "Andrea SGATTONI",
+                "caption": "STA-mini",
+                "created": 1480683452,
+                "lastsave": 1602678639,
+                "version": 700,
+            }
+        }
+    }
+    url = "/studies"
+    assert_url_content(
+        request_handler=request_handler,
+        url=url,
+        expected_output=expected_output,
+    )

@@ -170,14 +170,22 @@ def test_list_studies(
     path_study.mkdir()
     (path_study / "study.antares").touch()
 
-    request_handler = request_handler_builder(path_studies=path_studies)
+    url_engine = Mock()
+    url_engine.apply.return_value = {"antares": {"caption": ""}}
+
+    request_handler = request_handler_builder(
+        path_studies=path_studies,
+        url_engine=url_engine,
+    )
 
     app = create_server(request_handler)
     client = app.test_client()
-
-    expected_studies = ["study1", "study2"]
     result = client.get("/studies")
-
     studies = json.loads(result.data)
+
+    expected_studies = {
+        "study1": {"antares": {"caption": ""}},
+        "study2": {"antares": {"caption": ""}},
+    }
 
     assert studies == expected_studies
