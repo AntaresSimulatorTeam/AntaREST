@@ -55,7 +55,7 @@ def create_routes(application: Flask) -> None:
     )
     def get_studies() -> Any:
         global request_handler
-        available_studies = request_handler.get_studies()
+        available_studies = request_handler.get_studies_informations()
         return jsonify(available_studies), HTTPStatus.OK.value
 
     @application.route(

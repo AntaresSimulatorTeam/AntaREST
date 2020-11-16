@@ -154,7 +154,7 @@ def test_find_studies(
     # Test & Verify
     request_handler = request_handler_builder(path_studies=path_studies)
 
-    assert study_names == request_handler.get_studies()
+    assert study_names == request_handler.get_study_names()
 
 
 @pytest.mark.unit_test
