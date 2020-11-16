@@ -99,7 +99,7 @@ def create_routes(application: Flask) -> None:
         return jsonify({"status": "available"}), 200
 
     @application.route("/export/files/<string:name>", methods=["GET"])
-    def export(name: str) -> Any:
+    def export_file(name: str) -> Any:
         global request_handler
 
         try:
@@ -109,6 +109,21 @@ def create_routes(application: Flask) -> None:
                 mimetype="application/zip",
                 as_attachment=True,
                 attachment_filename=f"{name}.zip",
+            )
+        except HtmlException as e:
+            return e.message, e.html_code_error
+
+    @application.route("/export/compact/<string:name>", methods=["GET"])
+    def export_compact(name: str) -> Any:
+        global request_handler
+
+        try:
+            content = request_handler.export(name, compact=True)
+            return send_file(
+                content,
+                mimetype="application/zip",
+                as_attachment=True,
+                attachment_filename=f"{name}-compact.zip",
             )
         except HtmlException as e:
             return e.message, e.html_code_error

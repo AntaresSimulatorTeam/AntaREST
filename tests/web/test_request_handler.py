@@ -221,3 +221,26 @@ def test_export_file(tmp_path: Path):
     # Test good study
     assert b"Hello" == request_handler.export(name)
     exporter.export_file.assert_called_once_with(tmp_path / name)
+
+
+def test_export_compact_file(tmp_path: Path):
+    name = "my-study"
+    (tmp_path / name).mkdir()
+
+    exporter = Mock()
+    exporter.export_compact.return_value = b"Hello"
+    parser = Mock()
+    parser.parse.return_value = 42
+
+    request_handler = RequestHandler(
+        study_parser=parser,
+        url_engine=Mock(),
+        exporter=exporter,
+        path_studies=tmp_path,
+        path_resources=Mock(),
+        jsm_validator=Mock(),
+    )
+
+    # Test good study
+    assert b"Hello" == request_handler.export(name, compact=True)
+    exporter.export_compact.assert_called_once_with(tmp_path / name, 42)

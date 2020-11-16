@@ -132,8 +132,13 @@ class RequestHandler:
         writer = self.study_parser.get_writer()
         writer.write(data, path_study_antares_infos)
 
-    def export(self, name: str) -> BytesIO:
+    def export(self, name: str, compact: bool = False) -> BytesIO:
         path_study = self.path_to_studies / name
         if not path_study.exists():
             raise StudyNotFoundError(name)
-        return self.exporter.export_file(path_study)
+        if compact:
+            data = self.study_parser.parse(self.path_to_studies / name)
+            self.jsm_validator.validate(data)
+            return self.exporter.export_compact(path_study, data)
+        else:
+            return self.exporter.export_file(path_study)

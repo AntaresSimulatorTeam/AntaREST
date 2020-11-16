@@ -127,7 +127,7 @@ def test_server_health() -> None:
 
 
 @pytest.mark.unit_test
-def test_server_with_parameters() -> None:
+def test_export_files() -> None:
 
     mock_handler = Mock()
     mock_handler.export.return_value = BytesIO(b"Hello")
@@ -138,3 +138,17 @@ def test_server_with_parameters() -> None:
 
     assert result.data == b"Hello"
     mock_handler.export.assert_called_once_with("name")
+
+
+@pytest.mark.unit_test
+def test_export_compact() -> None:
+
+    mock_handler = Mock()
+    mock_handler.export.return_value = BytesIO(b"Hello")
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+    result = client.get("/export/compact/name")
+
+    assert result.data == b"Hello"
+    mock_handler.export.assert_called_once_with("name", compact=True)
