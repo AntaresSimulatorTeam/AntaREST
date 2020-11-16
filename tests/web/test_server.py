@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
@@ -154,3 +155,29 @@ def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
     request_handler.copy_study("study1", "study3")
     assert result.status_code == HTTPStatus.CREATED.value
     assert result.data == b"/studies/study3"
+
+
+@pytest.mark.unit_test
+def test_list_studies(
+    tmp_path: str, request_handler_builder: Callable
+) -> None:
+
+    path_studies = Path(tmp_path)
+    path_study = path_studies / "study1"
+    path_study.mkdir()
+    (path_study / "study.antares").touch()
+    path_study = path_studies / "study2"
+    path_study.mkdir()
+    (path_study / "study.antares").touch()
+
+    request_handler = request_handler_builder(path_studies=path_studies)
+
+    app = create_server(request_handler)
+    client = app.test_client()
+
+    expected_studies = ["study1", "study2"]
+    result = client.get("/studies")
+
+    studies = json.loads(result.data)
+
+    assert studies == expected_studies

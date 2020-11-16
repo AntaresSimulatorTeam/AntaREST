@@ -27,20 +27,6 @@ def _construct_parameters(
 
 def create_routes(application: Flask) -> None:
     @application.route(
-        "/studies/<path:path>",
-        methods=["GET"],
-    )
-    def get_study(path: str) -> Any:
-        global request_handler
-        parameters = _construct_parameters(request.args)
-
-        try:
-            output = request_handler.get(path, parameters)
-        except HtmlException as e:
-            return e.message, e.html_code_error
-        return jsonify(output), 200
-
-    @application.route(
         "/file/<path:path>",
         methods=["GET"],
     )
@@ -64,13 +50,27 @@ def create_routes(application: Flask) -> None:
         return jsonify(swg_doc), 200
 
     @application.route(
-        "/studies/list",
+        "/studies",
         methods=["GET"],
     )
     def get_studies() -> Any:
         global request_handler
         available_studies = request_handler.get_studies()
-        return jsonify(available_studies), 200
+        return jsonify(available_studies), HTTPStatus.OK.value
+
+    @application.route(
+        "/studies/<path:path>",
+        methods=["GET"],
+    )
+    def get_study(path: str) -> Any:
+        global request_handler
+        parameters = _construct_parameters(request.args)
+
+        try:
+            output = request_handler.get(path, parameters)
+        except HtmlException as e:
+            return e.message, e.html_code_error
+        return jsonify(output), 200
 
     @application.route(
         "/studies/<string:name>/copy",
