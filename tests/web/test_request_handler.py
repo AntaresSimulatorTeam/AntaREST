@@ -91,6 +91,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_parser=Mock(),
         url_engine=Mock(),
+        exporter=Mock(),
         path_studies=path_to_studies,
         path_resources=project_path / "resources",
         jsm_validator=Mock(),
@@ -116,6 +117,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_parser=Mock(),
         url_engine=Mock(),
+        exporter=Mock(),
         path_studies=path_to_studies,
         path_resources=project_path / "resources",
         jsm_validator=Mock(),
@@ -155,7 +157,7 @@ def test_find_studies(
     # Test & Verify
     request_handler = request_handler_builder(path_studies=path_studies)
 
-    assert study_names == request_handler.get_studies()
+    assert study_names == request_handler.get_study_names()
 
 
 @pytest.mark.unit_test
