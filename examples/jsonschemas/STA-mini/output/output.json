@@ -4,22 +4,22 @@
         "output": {
             "type": "object",
             "rte-metadata": {"strategy":  "S12", "additional_property_name":  "simulation"},
-            "properties": {},
-            "additionalProperties": {
-
-                "type": "object",
-                "properties": {
-                    "date": {"type":  "string"},
-                    "type": {"type":  "string"},
-                    "name": {"type":  "string"},
-                    "annualSystemCost": {"type": "string"},
-                    "checkIntegrity": {"type": "string"},
-                    "simulation-comments": {"type": "string"},
-                    "simulation": {"type": "string"},
-                    "about-the-study":{"$ref" : "about-the-study/about-the-study.json#/definitions/about-the-study"},
-                    "economy": {"$ref":  "economy/economy.json#/definitions/economy"},
-                    "adequacy": {"$ref":  "adequacy/adequacy.json#/definitions/adequacy"},
-                    "ts-numbers": {"$ref":  "ts-numbers/ts-numbers.json#/definitions/ts-numbers"}
+            "patternProperties": {
+                "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)": {
+                    "type": "object",
+                    "properties": {
+                        "date": {"type":  "string"},
+                        "type": {"type":  "string"},
+                        "name": {"type":  "string"},
+                        "annualSystemCost": {"type": "string"},
+                        "checkIntegrity": {"type": "string"},
+                        "simulation-comments": {"type": "string"},
+                        "simulation": {"type": "string"},
+                        "about-the-study":{"$ref" : "about-the-study/about-the-study.json#/definitions/about-the-study"},
+                        "economy": {"$ref":  "economy/economy.json#/definitions/economy"},
+                        "adequacy": {"$ref":  "adequacy/adequacy.json#/definitions/adequacy"},
+                        "ts-numbers": {"$ref":  "ts-numbers/ts-numbers.json#/definitions/ts-numbers"}
+                    }
                 }
             }
         }
