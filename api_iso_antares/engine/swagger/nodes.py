@@ -77,8 +77,6 @@ class RootNode(INode):
         dest_parameter = SwaggerParameter(
             name="dest",
             in_=SwaggerParameter.ParametersIn.query,
-            schema_type=SwaggerParameter.SchemaType.string,
-            required=True,
         )
 
         copy_study_path.add_parameter(dest_parameter)
@@ -144,8 +142,16 @@ class PathNode(INode):
         self._swagger.add_path(path)
 
     def _build_children(self) -> None:
-        self._build_children_property_based()
-        self._build_children_additional_property_based()
+
+        if "/studies/{study}/output" == self.get_url():
+            print()
+
+        if not self._is_leaf():
+            self._build_children_property_based()
+            self._build_children_additional_property_based()
+
+    def _is_leaf(self) -> bool:
+        return self._jsm.is_swagger_leaf()
 
     def _build_children_property_based(self) -> None:
         if self._jsm.has_properties():

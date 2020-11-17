@@ -53,14 +53,20 @@ class JsonSchema:
         return cast(str, name)
 
     def has_additional_properties(self) -> bool:
-        return "additionalProperties" in self.data
+        return (
+            "additionalProperties" in self.data
+            or "patternProperties" in self.data
+        )
 
     def has_defined_additional_properties(self) -> bool:
-        has_defined_additional_properties = (
-            self.has_additional_properties()
-            and isinstance(self.data["additionalProperties"], dict)
-        )
-        return has_defined_additional_properties
+
+        has_additional_properties = self.has_additional_properties()
+
+        additional_properties = None
+        if has_additional_properties:
+            additional_properties = self.get_additional_properties()
+
+        return additional_properties is not None
 
     def get_metadata(self) -> Optional[JSON]:
         return self.data.get("rte-metadata", None)
@@ -80,6 +86,9 @@ class JsonSchema:
 
     def get_strategy(self) -> Optional[str]:
         return cast(Optional[str], self.get_metadata_element("strategy"))
+
+    def is_swagger_leaf(self) -> bool:
+        return cast(bool, self.get_metadata_element("swagger_stop")) or False
 
     def is_file(self) -> bool:
         filename = self.get_filename()
