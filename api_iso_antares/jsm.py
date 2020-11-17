@@ -31,8 +31,22 @@ class JsonSchema:
         return JsonSchema(data)
 
     def get_additional_properties(self) -> "JsonSchema":
-        data = self.data["additionalProperties"]
+
+        if "additionalProperties" in self.data:
+            data = self.data["additionalProperties"]
+        elif "patternProperties" in self.data:
+            patterns = list(self.data["patternProperties"].values())
+            data = patterns[0]
+        else:
+            raise KeyError("additionalProperties or patternProperties")
         return JsonSchema(data)
+
+    def get_pattern_properties(self) -> Optional[str]:
+        pattern = None
+        if "patternProperties" in self.data:
+            patterns = list(self.data["patternProperties"].keys())
+            pattern = patterns[0]
+        return pattern
 
     def get_additional_property_name(self) -> str:
         name = self.get_metadata_element("additional_property_name")

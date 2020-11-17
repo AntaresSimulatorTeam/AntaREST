@@ -1,7 +1,7 @@
 import abc
 import re
 from pathlib import Path
-from typing import Any, cast, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from api_iso_antares.antares_io.reader import IniReader, SetsIniReader
 from api_iso_antares.custom_types import JSON, SUB_JSON
@@ -138,14 +138,14 @@ class OutputFolderNode(INode):
         output = dict()
         jsm = self._jsm.get_additional_properties()
 
-        directories = sorted(self._path.iterdir())
+        directories = self._get_child_directories()
         for i, directory in enumerate(directories):
             index = str(i + 1)
             output[index] = OutputFolderNode._parse_output(directory.name)
             for child in directory.iterdir():
                 if (
                     child.stem in jsm.get_properties()
-                ):  # TODO remove when jsonschema complet
+                ):  # TODO remove when jsonschema fully made
                     output[index][child.stem] = self._node_factory.build(
                         key=child.name,
                         root_path=directory,
@@ -153,6 +153,16 @@ class OutputFolderNode(INode):
                         parent=self,
                     ).get_content()
         return output
+
+    def _get_child_directories(self) -> List[Path]:
+        pattern = self._jsm.get_pattern_properties()
+        if pattern is not None:
+            directories = filter(
+                lambda path: re.match(pattern, path.name), self._path.iterdir()
+            )
+        else:
+            directories = self._path.iterdir()
+        return sorted(directories)
 
 
 class OutputLinksNode(INode):
@@ -163,14 +173,18 @@ class OutputLinksNode(INode):
     def _build_content(self) -> SUB_JSON:
         output: JSON = dict()
 
-        for dir in self._path.iterdir():
-            src, dest = dir.name.split(" - ")
+        for folder in self._path.iterdir():
+            src, dest = folder.name.split(" - ")
             if src not in output:
                 output[src] = dict()
+
+            jsm_link_one = self._jsm.get_additional_properties()
+            jsm_link_two = jsm_link_one.get_additional_properties()
+
             output[src][dest] = self._node_factory.build(
-                key=dir.name,
+                key=folder.name,
                 root_path=self._path,
-                jsm=self._jsm.get_additional_properties().get_additional_properties(),
+                jsm=jsm_link_two,
                 parent=self,
             ).get_content()
 
