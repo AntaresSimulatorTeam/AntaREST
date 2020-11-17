@@ -4,7 +4,8 @@
         "ui": {
             "type": "object",
             "rte-metadata": {
-                "filename": "ui.ini"
+                "filename": "ui.ini",
+                "swagger_stop": true
             },
             "properties": {
                 "ui": {

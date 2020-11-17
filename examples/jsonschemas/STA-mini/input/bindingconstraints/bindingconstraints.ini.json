@@ -4,7 +4,8 @@
         "bindingconstraints": {
             "type": "object",
             "rte-metadata": {
-                "filename": "bindingconstraints.ini"
+                "filename": "bindingconstraints.ini",
+                "swagger_stop": true
             },
             "properties": {}
         }

@@ -14,7 +14,6 @@
                 "sets": {"$ref":  "sets.ini.json#/definitions/sets.ini"}
             },
             "additionalProperties": {
-
                 "$ref": "area/area.json#/definitions/area"
             }
         }

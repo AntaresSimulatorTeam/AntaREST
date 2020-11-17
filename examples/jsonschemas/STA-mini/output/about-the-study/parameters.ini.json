@@ -4,15 +4,12 @@
         "parameters": {
             "type": "object",
             "rte-metadata": {
-                "filename": "parameters.ini"
+                "filename": "parameters.ini",
+                "swagger_stop": true
             },
-            "required": [
-
-            ],
             "properties": {
                 "general": {
                     "type": "object",
-                    "required": [],
                     "properties": {
                         "mode": {
                             "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/mode",

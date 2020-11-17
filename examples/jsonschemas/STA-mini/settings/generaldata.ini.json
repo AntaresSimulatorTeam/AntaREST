@@ -4,7 +4,8 @@
         "generaldata": {
             "type": "object",
             "rte-metadata": {
-                "filename": "generaldata.ini"
+                "filename": "generaldata.ini",
+                "swagger_stop": true
             },
             "required": [
             ],

@@ -4,7 +4,9 @@
         "hydro": {
             "type": "object",
             "rte-metadata": {
-                "filename": "hydro.ini"
+                "filename": "hydro.ini",
+                "swagger_stop": true
+
             },
             "properties": {
                 "initialize reservoir date": {

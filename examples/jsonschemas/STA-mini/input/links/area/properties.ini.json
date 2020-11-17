@@ -3,10 +3,14 @@
     "definitions": {
         "properties": {
             "type": "object",
-            "rte-metadata": {"filename": "properties.ini","additional_property_name":  "area"},
-            "properties": {},
+            "rte-metadata": {
+                "filename": "properties.ini",
+                "additional_property_name":  "area"
+            },
             "additionalProperties": {
-
+                "rte-metadata": {
+                    "swagger_stop": true
+                },
                 "type": "object",
                 "properties": {
                     "hurdles-cost": {"type":"boolean"},
