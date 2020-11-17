@@ -9,7 +9,7 @@
                     "type": "object",
                     "properties": {
                         "date": {"type":  "string"},
-                        "type": {"type":  "string"},
+                        "mode": {"type":  "string"},
                         "name": {"type":  "string"},
                         "annualSystemCost": {"type": "string"},
                         "checkIntegrity": {"type": "string"},
