@@ -2,7 +2,6 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
-from unittest.mock import Mock
 
 from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.antares_io.reader import IniReader, JsmReader
@@ -19,6 +18,11 @@ from api_iso_antares.web import RequestHandler
 @pytest.fixture
 def path_jsm(project_path: Path) -> Path:
     return project_path / "examples/jsonschemas/STA-mini/jsonschema.json"
+
+
+@pytest.fixture
+def sta_mini_path(tmp_path: str) -> Path:
+    return Path(tmp_path) / "studies" / "STA-mini"
 
 
 @pytest.fixture

@@ -394,3 +394,20 @@ def test_sta_mini_list_studies(request_handler: RequestHandler) -> None:
         url=url,
         expected_output=expected_output,
     )
+
+
+@pytest.mark.integration_test
+def test_sta_mini_with_wrong_output_folder(
+    request_handler: RequestHandler, sta_mini_path: Path
+) -> None:
+
+    (sta_mini_path / "output" / "maps").mkdir()
+
+    url = "/studies/STA-mini/desktop/.shellclassinfo/infotip"
+    expected_output = "Antares Study7.0: STA-mini"
+
+    assert_with_errors(
+        request_handler=request_handler,
+        url=url,
+        expected_output=expected_output,
+    )
