@@ -100,7 +100,7 @@ class RootNode(INode):
             self._swagger.add_tag(SwaggerTag(key))
 
     def _build_studies_list_path(self) -> None:
-        studies_url = "/studies/list"
+        studies_url = "/studies"
         study_path = SwaggerPath(url=studies_url)
 
         study_path.add_operation(
