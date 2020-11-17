@@ -25,7 +25,8 @@ class FileSystemElement:
         return self.get_jsm().is_file()
 
     def mkdir(self) -> None:
-        self._path.mkdir()
+        if not self._path.exists():
+            self._path.mkdir()
 
     def is_ini_file(self) -> bool:
         return self.get_path().suffix in [".ini", ".antares", ".dat"]

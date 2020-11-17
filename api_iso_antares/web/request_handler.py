@@ -85,10 +85,11 @@ class RequestHandler:
         route_cut = path_route.relative_to(Path(study_name))
         return self.url_engine.apply(route_cut, study_data, parameters.depth)
 
-    def parse_study(self, name: str) -> JSON:
+    def parse_study(self, name: str, do_validate: bool = True) -> JSON:
         study_path = self.get_study_path(name)
         data = self.study_parser.parse(study_path)
-        self.jsm_validator.validate(data)
+        if do_validate:
+            self.jsm_validator.validate(data)
         return data
 
     def _assert_study_exist(self, study_name: str) -> None:
@@ -138,7 +139,7 @@ class RequestHandler:
         with ZipFile(empty_study_zip) as zip_output:
             zip_output.extractall(path=path_study)
 
-        study_data = self.parse_study(name)
+        study_data = self.parse_study(name, do_validate=False)
         RequestHandler._update_antares_info(name, study_data)
         self.study_parser.write(path_study, study_data)
 
