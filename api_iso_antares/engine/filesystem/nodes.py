@@ -130,7 +130,7 @@ class OutputFolderNode(INode):
         regex: Any = re.search("^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", name)
         return {
             "date": regex.group(1),
-            "type": modes[regex.group(2)],
+            "mode": modes[regex.group(2)],
             "name": regex.group(3),
         }
 

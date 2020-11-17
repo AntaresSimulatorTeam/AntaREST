@@ -158,13 +158,13 @@ def test_output_folder(project_path: Path) -> None:
     exp_data = {
         "1": {
             "date": "19450623-0565",
-            "type": "adequacy",
+            "mode": "adequacy",
             "name": "",
             "hello": content,
         },
         "2": {
             "date": "20201009-1221",
-            "type": "economy",
+            "mode": "economy",
             "name": "hello-world",
             "hello": content,
             "world": content,
