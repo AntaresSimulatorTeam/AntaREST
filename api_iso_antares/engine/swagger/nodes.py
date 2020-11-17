@@ -63,9 +63,10 @@ class RootNode(INode):
     def _build_paths_not_in_jsm(self) -> None:
         self._build_studies_list_path()
         self._build_study_path()
-        self.build_copy_study_path()
+        self._build_copy_study_path()
+        self._build_export_path()
 
-    def build_copy_study_path(self) -> None:
+    def _build_copy_study_path(self) -> None:
         url = self._root_url + "/copy"
 
         copy_study_path = SwaggerPath(url=url)
@@ -95,10 +96,6 @@ class RootNode(INode):
 
         self._swagger.add_path(study_path)
 
-    def _add_tags(self) -> None:
-        for key in self._jsm.get_properties():
-            self._swagger.add_tag(SwaggerTag(key))
-
     def _build_studies_list_path(self) -> None:
         studies_url = "/studies"
         study_path = SwaggerPath(url=studies_url)
@@ -107,6 +104,28 @@ class RootNode(INode):
             SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
         )
         self._swagger.add_path(study_path)
+
+    def _build_export_path(self) -> None:
+        studies_url = "/studies/{study}/export"
+        export_path = SwaggerPath(url=studies_url)
+
+        export_path.add_operation(
+            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
+        )
+
+        compact_parameter = SwaggerParameter(
+            name="compact",
+            in_=SwaggerParameter.ParametersIn.query,
+            required=False,
+        )
+
+        export_path.add_parameter(compact_parameter)
+
+        self._swagger.add_path(export_path)
+
+    def _add_tags(self) -> None:
+        for key in self._jsm.get_properties():
+            self._swagger.add_tag(SwaggerTag(key))
 
     def _build_global_parameters(self) -> None:
 

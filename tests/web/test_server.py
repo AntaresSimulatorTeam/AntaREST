@@ -208,7 +208,7 @@ def test_export_files() -> None:
 
     app = create_server(mock_handler)
     client = app.test_client()
-    result = client.get("/exportation/name")
+    result = client.get("/studies/name/export")
 
     assert result.data == b"Hello"
     mock_handler.export.assert_called_once_with("name", False)
@@ -222,7 +222,7 @@ def test_export_compact() -> None:
 
     app = create_server(mock_handler)
     client = app.test_client()
-    result = client.get("/exportation/name?compact")
+    result = client.get("/studies/name/export?compact")
 
     assert result.data == b"Hello"
     mock_handler.export.assert_called_once_with("name", True)

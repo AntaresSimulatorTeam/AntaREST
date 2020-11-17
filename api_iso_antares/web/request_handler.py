@@ -171,8 +171,9 @@ class RequestHandler:
 
     def export(self, name: str, compact: bool = False) -> BytesIO:
         path_study = self.path_to_studies / name
-        if not path_study.exists():
-            raise StudyNotFoundError(name)
+
+        self._assert_study_exist(name)
+
         if compact:
             data = self.study_parser.parse(self.path_to_studies / name)
             self.jsm_validator.validate(data)

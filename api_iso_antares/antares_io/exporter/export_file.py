@@ -16,12 +16,16 @@ class Exporter:
         zipf = ZipFile(data, "w", ZIP_DEFLATED)
 
         root = path_study.name + os.sep
+
+        current_dir = os.getcwd()
         os.chdir(path_study)
 
         for path in glob.glob("**", recursive=True):
             zipf.write(path, root + path)
 
         zipf.close()
+
+        os.chdir(current_dir)
         data.seek(0)
         return data
 
