@@ -11,6 +11,7 @@ from api_iso_antares.antares_io.reader import (
 )
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.antares_io.writer.ini_writer import IniWriter
+from api_iso_antares.antares_io.writer.matrix_writer import MatrixWriter
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.filesystem.engine import (
     FileSystemEngine,
@@ -62,7 +63,7 @@ def main() -> None:
     jsm = JsmReader.read(Path(arguments.jsm_path))
 
     readers = {"default": IniReader()}
-    writers = {"default": IniWriter()}
+    writers = {"default": IniWriter(), "matrix": MatrixWriter()}
     study_parser = FileSystemEngine(jsm=jsm, readers=readers, writers=writers)
 
     request_handler = RequestHandler(
