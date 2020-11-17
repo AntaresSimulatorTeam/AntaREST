@@ -21,7 +21,7 @@ def test_generation_swagger_documentation(
     SwaggerValidator.validate(swg_doc)
 
     urls = swg_doc.get("paths").keys()
-    url_studies = "/studies/list"
+    url_studies = "/studies"
     url_study = "/studies/{study}"
     url_create_study = "/studies/{study}"
     url_copy_study = "/studies/{study}/copy"
