@@ -59,8 +59,28 @@ def test_array_node() -> None:
 
     root_node = RootNode(jsm=JsonSchema(jsm))
 
-    print(root_node.get_content()["paths"])
-
     paths = root_node.get_content()["paths"]
 
     assert "/studies/{study}/key_array" in paths.keys()
+
+
+@pytest.mark.unit_test
+def test_keyword_swagger_cut() -> None:
+
+    jsm = {
+        "type": "object",
+        "properties": {
+            "key1": {
+                "rte-metadata": {"swagger_stop": True},
+                "type": "object",
+                "properties": {"key2": {"type": "string"}},
+            }
+        },
+    }
+
+    root_node = RootNode(jsm=JsonSchema(jsm))
+
+    paths = root_node.get_content()["paths"]
+
+    assert "/studies/{study}/key1" in paths.keys()
+    assert "/studies/{study}/key1/key2" not in paths.keys()
