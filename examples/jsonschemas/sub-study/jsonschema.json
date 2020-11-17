@@ -78,7 +78,7 @@
                                 },
                                 "horizon": {
                                     "$id": "#/properties/settings/properties/generaldata.ini/properties/general/properties/horizon",
-                                    "type": "string",
+                                    "type": "integer",
                                     "title": "The horizon schema",
                                     "description": "An explanation about the purpose of this instance."
                                 },
