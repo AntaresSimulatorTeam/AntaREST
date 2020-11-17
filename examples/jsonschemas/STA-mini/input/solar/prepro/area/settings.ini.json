@@ -5,7 +5,8 @@
             "type": "object",
             "rte-metadata": {
                 "filename": "settings.ini",
-                "additional_property_name":  "settings"
+                "additional_property_name":  "settings",
+                "swagger_stop": true
             },
             "properties": {},
             "additionalProperties": {

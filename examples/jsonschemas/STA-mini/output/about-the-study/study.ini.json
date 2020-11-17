@@ -4,7 +4,8 @@
         "study": {
             "type": "object",
             "rte-metadata": {
-                "filename": "study.ini"
+                "filename": "study.ini",
+                "swagger_stop": true
             },
             "properties": {
                 "antares": {

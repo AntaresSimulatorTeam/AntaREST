@@ -4,7 +4,8 @@
         "layers": {
             "type": "object",
             "rte-metadata": {
-                "filename": "layers.ini"
+                "filename": "layers.ini",
+                "swagger_stop": true
             },
             "properties": {
                 "layers": {

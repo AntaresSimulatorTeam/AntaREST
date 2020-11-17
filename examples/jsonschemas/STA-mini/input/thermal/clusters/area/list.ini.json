@@ -5,9 +5,9 @@
             "type": "object",
             "rte-metadata": {
                 "filename": "list.ini",
-                "additional_property_name":  "property"
+                "additional_property_name":  "property",
+                "swagger_stop": true
             },
-            "properties": {},
             "additionalProperties": {
 
                 "type": "object",

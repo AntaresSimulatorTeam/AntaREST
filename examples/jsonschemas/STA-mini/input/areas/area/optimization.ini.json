@@ -4,7 +4,8 @@
         "optimization": {
             "type": "object",
             "rte-metadata": {
-                "filename": "optimization.ini"
+                "filename": "optimization.ini",
+                "swagger_stop": true
             },
             "properties": {
                 "nodal optimization": {

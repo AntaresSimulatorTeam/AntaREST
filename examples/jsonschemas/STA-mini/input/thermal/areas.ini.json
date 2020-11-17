@@ -4,7 +4,8 @@
         "areas": {
             "type": "object",
             "rte-metadata": {
-                "filename": "areas.ini"
+                "filename": "areas.ini",
+                "swagger_stop": true
             },
             "properties": {
                 "unserverdenergycost": {

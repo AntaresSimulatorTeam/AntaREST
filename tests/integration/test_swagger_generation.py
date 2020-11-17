@@ -15,8 +15,8 @@ def test_generation_swagger_documentation(
     swg_doc = SwaggerEngine.parse(jsm)
 
     # TODO: remove those two lines
-    # yaml_swg = SwaggerEngine.json_to_yaml(swg_doc)
-    # (project_path / "swagger.yaml").write_text(yaml_swg)
+    yaml_swg = SwaggerEngine.json_to_yaml(swg_doc)
+    (project_path / "swagger.yaml").write_text(yaml_swg)
 
     SwaggerValidator.validate(swg_doc)
 
@@ -26,7 +26,10 @@ def test_generation_swagger_documentation(
     url_create_study = "/studies/{study}"
     url_copy_study = "/studies/{study}/copy"
 
+    long_url = "/studies/{study}/output/{simulation}/about-the-study/parameters/general"
+
     assert url_studies in urls
     assert url_study in urls
     assert url_create_study in urls
     assert url_copy_study in urls
+    assert long_url not in urls
