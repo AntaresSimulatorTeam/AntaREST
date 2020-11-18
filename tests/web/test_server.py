@@ -11,7 +11,11 @@ from api_iso_antares.engine.url_engine import UrlNotMatchJsonDataError
 from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
 )
-from api_iso_antares.web.server import create_server
+from api_iso_antares.web.server import (
+    _assert_study_name,
+    BadStudyNameError,
+    create_server,
+)
 
 
 @pytest.mark.unit_test
@@ -115,9 +119,14 @@ def test_create_study(
 
     assert result_right.status_code == HTTPStatus.CREATED.value
 
+    result_wrong = client.post("/studies/%BAD_STUDY_NAME%")
+
+    assert result_wrong.status_code == HTTPStatus.BAD_REQUEST.value
+
 
 @pytest.mark.unit_test
 def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
+
     path_studies = Path(tmp_path)
     path_study = path_studies / "study1"
     path_study.mkdir()
@@ -135,6 +144,14 @@ def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
 
     app = create_server(request_handler)
     client = app.test_client()
+
+    result = client.post("/studies/%%%%/copy?dest=study")
+
+    assert result.status_code == HTTPStatus.BAD_REQUEST.value
+    assert (
+        result.data
+        == b"Study name can only contain alphanumeric characters with '-' or '_'"
+    )
 
     result = client.post("/studies/study1/copy")
 
@@ -213,6 +230,9 @@ def test_export_files() -> None:
     assert result.data == b"Hello"
     mock_handler.export.assert_called_once_with("name", False)
 
+    result_wrong = client.get("/studies/%BAD_STUDY_NAME%/export")
+    assert result_wrong.status_code == HTTPStatus.BAD_REQUEST.value
+
 
 @pytest.mark.unit_test
 def test_export_compact() -> None:
@@ -226,3 +246,10 @@ def test_export_compact() -> None:
 
     assert result.data == b"Hello"
     mock_handler.export.assert_called_once_with("name", True)
+
+
+@pytest.mark.unit_test
+def test_bad_study_name() -> None:
+
+    with pytest.raises(BadStudyNameError):
+        _assert_study_name("<toto")

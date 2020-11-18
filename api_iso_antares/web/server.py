@@ -1,4 +1,3 @@
-import os
 import re
 from typing import Any
 from http import HTTPStatus
@@ -13,6 +12,24 @@ from api_iso_antares.web.request_handler import (
 )
 
 request_handler: RequestHandler
+
+
+class BadStudyNameError(HtmlException):
+    def __init__(self) -> None:
+        super().__init__(
+            "Study name can only contain alphanumeric characters with '-' or '_'",
+            HTTPStatus.BAD_REQUEST.value,
+        )
+
+
+def _assert_study_name(name: str) -> None:
+    if not re.match("^[a-zA-Z0-9-_]*$", name):
+        raise BadStudyNameError
+
+
+def sanitize_study_name(name: str) -> str:
+    _assert_study_name(name)
+    return escape(name)
 
 
 def _construct_parameters(
@@ -79,14 +96,21 @@ def create_routes(application: Flask) -> None:
     def copy_study(name: str) -> Any:
         global request_handler
 
-        source_name = str(escape(name))
-        destination_name = str(escape(str(request.args.get("dest"))))
+        source_name = name
+        destination_name = request.args.get("dest")
 
-        if request.args.get("dest") is None:
+        if destination_name is None:
             content = "Copy operation need a dest query parameter."
             code = HTTPStatus.BAD_REQUEST.value
+            return content, code
 
-        elif request_handler.is_study_exist(destination_name):
+        try:
+            source_name = sanitize_study_name(source_name)
+            destination_name = sanitize_study_name(destination_name)
+        except BadStudyNameError as e:
+            return e.message, e.html_code_error
+
+        if request_handler.is_study_exist(destination_name):
             content = (
                 f"A simulation already exist with the name {destination_name}."
             )
@@ -97,7 +121,7 @@ def create_routes(application: Flask) -> None:
             code = HTTPStatus.BAD_REQUEST.value
 
         else:
-            request_handler.copy_study(src=source_name, dest=destination_name)
+            request_handler.copy_study(src=name, dest=destination_name)
             content = "/studies/" + destination_name
             code = HTTPStatus.CREATED.value
 
@@ -110,11 +134,10 @@ def create_routes(application: Flask) -> None:
     def post_studies(name: str) -> Any:
         global request_handler
 
-        if not re.match("^[a-zA-Z0-9-_]*$", name):
-            return (
-                "Study name can only contain alphanumeric characters with '-' or '_'",
-                403,
-            )
+        try:
+            name = sanitize_study_name(name)
+        except BadStudyNameError as e:
+            return e.message, e.html_code_error
 
         try:
             request_handler.create_study(name)
@@ -134,18 +157,23 @@ def create_routes(application: Flask) -> None:
     def export_file(name: str) -> Any:
         global request_handler
 
+        try:
+            name = sanitize_study_name(name)
+        except BadStudyNameError as e:
+            return e.message, e.html_code_error
+
         compact = "compact" in request.args
 
-        # try:
-        content = request_handler.export(name, compact)
-        return send_file(
-            content,
-            mimetype="application/zip",
-            as_attachment=True,
-            attachment_filename=f"{name}{'-compact' if compact else ''}.zip",
-        )
-        # except HtmlException as e:
-        #     return e.message, e.html_code_error
+        try:
+            content = request_handler.export(name, compact)
+            return send_file(
+                content,
+                mimetype="application/zip",
+                as_attachment=True,
+                attachment_filename=f"{name}{'-compact' if compact else ''}.zip",
+            )
+        except HtmlException as e:
+            return e.message, e.html_code_error
 
     @application.after_request
     def after_request(response: Response) -> Response:

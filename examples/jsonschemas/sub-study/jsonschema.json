@@ -77,10 +77,11 @@
                                     "description": "An explanation about the purpose of this instance."
                                 },
                                 "horizon": {
-                                    "$id": "#/properties/settings/properties/generaldata.ini/properties/general/properties/horizon",
-                                    "type": "integer",
-                                    "title": "The horizon schema",
-                                    "description": "An explanation about the purpose of this instance."
+                                    "anyOf": [
+                                        {"type": "integer"},
+                                        {"type": "string"},
+                                        {"type": "null"}
+                                    ]
                                 },
                                 "nbyears": {
                                     "$id": "#/properties/settings/properties/generaldata.ini/properties/general/properties/nbyears",

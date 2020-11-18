@@ -23,7 +23,11 @@
                         },
                         "horizon": {
                             "$id": "#/properties/settings/properties/generaldata.ini/properties/general/properties/horizon",
-                            "type": "integer",
+                            "anyOf": [
+                                {"type": "integer"},
+                                {"type": "string"},
+                                {"type": "null"}
+                            ],
                             "title": "The horizon schema",
                             "description": "An explanation about the purpose of this instance."
                         },
