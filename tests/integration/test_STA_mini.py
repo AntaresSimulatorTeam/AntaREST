@@ -313,6 +313,10 @@ def test_sta_mini_input(
             "/studies/STA-mini/output/1/ts-numbers/thermal/de/07_gas",
             "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/thermal/de/07_gas.txt",
         ),
+        (
+            "/studies/STA-mini/output/1/info/general/version",
+            700,
+        ),
     ],
 )
 def test_sta_mini_output(
