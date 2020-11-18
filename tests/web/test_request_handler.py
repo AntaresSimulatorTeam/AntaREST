@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
@@ -244,7 +245,9 @@ def test_copy_study(
 @pytest.mark.unit_test
 def test_export_file(tmp_path: Path):
     name = "my-study"
-    (tmp_path / name).mkdir()
+    study_path = tmp_path / name
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
 
     exporter = Mock()
     exporter.export_file.return_value = b"Hello"
@@ -264,12 +267,14 @@ def test_export_file(tmp_path: Path):
 
     # Test good study
     assert b"Hello" == request_handler.export(name)
-    exporter.export_file.assert_called_once_with(tmp_path / name)
+    exporter.export_file.assert_called_once_with(study_path)
 
 
 def test_export_compact_file(tmp_path: Path):
     name = "my-study"
-    (tmp_path / name).mkdir()
+    study_path = tmp_path / name
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
 
     exporter = Mock()
     exporter.export_compact.return_value = b"Hello"
@@ -285,6 +290,5 @@ def test_export_compact_file(tmp_path: Path):
         jsm_validator=Mock(),
     )
 
-    # Test good study
     assert b"Hello" == request_handler.export(name, compact=True)
-    exporter.export_compact.assert_called_once_with(tmp_path / name, 42)
+    exporter.export_compact.assert_called_once_with(study_path, 42)
