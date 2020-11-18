@@ -76,7 +76,7 @@ def test_get(tmp_path: str, project_path) -> None:
 
 @pytest.mark.unit_test
 def test_assert_study_exist(tmp_path: str, project_path) -> None:
-    # Create folders
+
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
     (tmp / "study.antares").touch()
@@ -270,6 +270,7 @@ def test_export_file(tmp_path: Path):
     exporter.export_file.assert_called_once_with(study_path)
 
 
+@pytest.mark.unit_test
 def test_export_compact_file(tmp_path: Path):
     name = "my-study"
     study_path = tmp_path / name

@@ -118,6 +118,7 @@ def test_create_study(
 
 @pytest.mark.unit_test
 def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
+
     path_studies = Path(tmp_path)
     path_study = path_studies / "study1"
     path_study.mkdir()
