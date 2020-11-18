@@ -1,7 +1,7 @@
 import re
 from typing import Any
 from http import HTTPStatus
-from flask import Flask, jsonify, request, Response, send_file
+from flask import Flask, jsonify, request, Response, send_file, escape
 
 from api_iso_antares.custom_exceptions import HtmlException
 from api_iso_antares.engine import SwaggerEngine
@@ -25,6 +25,11 @@ class BadStudyNameError(HtmlException):
 def _assert_study_name(name: str) -> None:
     if not re.match("^[a-zA-Z0-9-_]*$", name):
         raise BadStudyNameError
+
+
+def sanitize_study_name(name: str) -> str:
+    _assert_study_name(name)
+    return escape(name)
 
 
 def _construct_parameters(
@@ -100,8 +105,8 @@ def create_routes(application: Flask) -> None:
             return content, code
 
         try:
-            _assert_study_name(source_name)
-            _assert_study_name(destination_name)
+            source_name = sanitize_study_name(source_name)
+            destination_name = sanitize_study_name(destination_name)
         except BadStudyNameError as e:
             return e.message, e.html_code_error
 
@@ -129,11 +134,10 @@ def create_routes(application: Flask) -> None:
     def post_studies(name: str) -> Any:
         global request_handler
 
-        if not re.match("^[a-zA-Z0-9-_]*$", name):
-            return (
-                "Study name can only contain alphanumeric characters with '-' or '_'",
-                403,
-            )
+        try:
+            name = sanitize_study_name(name)
+        except BadStudyNameError as e:
+            return e.message, e.html_code_error
 
         try:
             request_handler.create_study(name)
@@ -152,6 +156,11 @@ def create_routes(application: Flask) -> None:
     @application.route("/studies/<string:name>/export", methods=["GET"])
     def export_file(name: str) -> Any:
         global request_handler
+
+        try:
+            name = sanitize_study_name(name)
+        except BadStudyNameError as e:
+            return e.message, e.html_code_error
 
         compact = "compact" in request.args
 
