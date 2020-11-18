@@ -22,7 +22,7 @@ class BadStudyNameError(HtmlException):
         )
 
 
-def _assert_study_name(name: str):
+def _assert_study_name(name: str) -> None:
     if not re.match("^[a-zA-Z0-9-_]*$", name):
         raise BadStudyNameError
 
