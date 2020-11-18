@@ -1,4 +1,5 @@
 import copy
+import shutil
 import time
 from io import BytesIO
 from pathlib import Path
@@ -180,3 +181,8 @@ class RequestHandler:
             return self.exporter.export_compact(path_study, data)
         else:
             return self.exporter.export_file(path_study)
+
+    def delete_study(self, name: str) -> None:
+        self._assert_study_exist(name)
+        study_path = self.get_study_path(name)
+        shutil.rmtree(study_path)
