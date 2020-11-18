@@ -293,3 +293,20 @@ def test_export_compact_file(tmp_path: Path):
 
     assert b"Hello" == request_handler.export(name, compact=True)
     exporter.export_compact.assert_called_once_with(study_path, 42)
+
+
+@pytest.mark.unit_test
+def test_delete_study(
+    tmp_path: Path, request_handler_builder: Callable
+) -> None:
+
+    name = "my-study"
+    study_path = tmp_path / name
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+
+    request_handler = request_handler_builder(path_studies=tmp_path)
+
+    request_handler.delete_study(name)
+
+    assert not study_path.exists()

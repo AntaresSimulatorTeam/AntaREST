@@ -175,6 +175,25 @@ def create_routes(application: Flask) -> None:
         except HtmlException as e:
             return e.message, e.html_code_error
 
+    @application.route("/studies/<string:name>", methods=["DELETE"])
+    def delete_study(name: str) -> Any:
+        global request_handler
+
+        try:
+            name = sanitize_study_name(name)
+        except BadStudyNameError as e:
+            return e.message, e.html_code_error
+
+        if not request_handler.is_study_exist(name):
+            content = f"Study {name} does not exist."
+            code = HTTPStatus.BAD_REQUEST.value
+        else:
+            request_handler.delete_study(name)
+            content = ""
+            code = HTTPStatus.NO_CONTENT.value
+
+        return content, code
+
     @application.after_request
     def after_request(response: Response) -> Response:
         header = response.headers

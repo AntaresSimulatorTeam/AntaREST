@@ -253,3 +253,15 @@ def test_bad_study_name() -> None:
 
     with pytest.raises(BadStudyNameError):
         _assert_study_name("<toto")
+
+
+@pytest.mark.unit_test
+def test_delete_study() -> None:
+
+    mock_handler = Mock()
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+    client.delete("/studies/name")
+
+    mock_handler.delete_study.assert_called_once_with("name")

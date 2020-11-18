@@ -93,6 +93,9 @@ class RootNode(INode):
         study_path.add_operation(
             SwaggerOperation(verb=SwaggerOperation.OperationVerbs.post)
         )
+        study_path.add_operation(
+            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.delete)
+        )
 
         self._swagger.add_path(study_path)
 
