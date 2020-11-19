@@ -97,7 +97,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
         path_resources=project_path / "resources",
         jsm_validator=Mock(),
     )
-    request_handler._assert_study_exist(study_name)
+    request_handler.assert_study_exist(study_name)
 
 
 @pytest.mark.unit_test
@@ -124,7 +124,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         jsm_validator=Mock(),
     )
     with pytest.raises(StudyNotFoundError):
-        request_handler._assert_study_exist(study_name)
+        request_handler.assert_study_exist(study_name)
 
 
 @pytest.mark.unit_test

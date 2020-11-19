@@ -161,11 +161,11 @@ def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
     result = client.post("/studies/study1/copy?dest=study2")
 
     assert result.status_code == HTTPStatus.CONFLICT.value
-    assert result.data == b"A simulation already exist with the name study2."
+    assert result.data == b"A study already exist with the name study2."
 
     result = client.post("/studies/study3/copy?dest=study4")
 
-    assert result.status_code == HTTPStatus.BAD_REQUEST.value
+    assert result.status_code == HTTPStatus.NOT_FOUND.value
     assert result.data == b"Study study3 does not exist."
 
     result = client.post("/studies/study1/copy?dest=study3")

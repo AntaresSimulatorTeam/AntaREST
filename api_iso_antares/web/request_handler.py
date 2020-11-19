@@ -21,14 +21,12 @@ from api_iso_antares.jsm import JsonSchema
 
 class StudyNotFoundError(HtmlException):
     def __init__(self, message: str) -> None:
-        super().__init__(message, 404)
+        super().__init__(message, HTTPStatus.NOT_FOUND)
 
 
 class StudyAlreadyExistError(HtmlException):
-    def __init__(self) -> None:
-        super().__init__(
-            "A study already exists with this name.", HTTPStatus.CONFLICT
-        )
+    def __init__(self, message) -> None:
+        super().__init__(message, HTTPStatus.CONFLICT)
 
 
 class RequestHandlerParameters:
@@ -79,7 +77,7 @@ class RequestHandler:
     ) -> SUB_JSON:
         path_route = Path(route)
         study_name = path_route.parts[0]
-        self._assert_study_exist(study_name)
+        self.assert_study_exist(study_name)
 
         study_data = self.parse_study(study_name)
 
@@ -93,13 +91,15 @@ class RequestHandler:
             self.jsm_validator.validate(data)
         return data
 
-    def _assert_study_exist(self, study_name: str) -> None:
+    def assert_study_exist(self, study_name: str) -> None:
         if not self.is_study_exist(study_name):
-            raise StudyNotFoundError(f"{study_name} not found")
+            raise StudyNotFoundError(f"Study {study_name} does not exist.")
 
-    def _assert_study_not_exist(self, study_name: str) -> None:
+    def assert_study_not_exist(self, study_name: str) -> None:
         if self.is_study_exist(study_name):
-            raise StudyAlreadyExistError
+            raise StudyAlreadyExistError(
+                f"A study already exist with the name {study_name}."
+            )
 
     def is_study_exist(self, study_name: str) -> bool:
         return study_name in self.get_study_names()
@@ -130,7 +130,7 @@ class RequestHandler:
 
     def create_study(self, name: str) -> None:
 
-        self._assert_study_not_exist(name)
+        self.assert_study_not_exist(name)
 
         empty_study_zip = self.path_resources / "empty-study.zip"
 
@@ -146,8 +146,8 @@ class RequestHandler:
 
     def copy_study(self, src: str, dest: str) -> None:
 
-        self._assert_study_exist(src)
-        self._assert_study_not_exist(dest)
+        self.assert_study_exist(src)
+        self.assert_study_not_exist(dest)
 
         path_source = self.get_study_path(src)
         data_source = self.study_parser.parse(path_source)
@@ -173,7 +173,7 @@ class RequestHandler:
     def export(self, name: str, compact: bool = False) -> BytesIO:
         path_study = self.path_to_studies / name
 
-        self._assert_study_exist(name)
+        self.assert_study_exist(name)
 
         if compact:
             data = self.study_parser.parse(self.path_to_studies / name)
@@ -183,6 +183,6 @@ class RequestHandler:
             return self.exporter.export_file(path_study)
 
     def delete_study(self, name: str) -> None:
-        self._assert_study_exist(name)
+        self.assert_study_exist(name)
         study_path = self.get_study_path(name)
         shutil.rmtree(study_path)
