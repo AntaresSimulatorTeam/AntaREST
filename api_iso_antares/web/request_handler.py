@@ -25,7 +25,7 @@ class StudyNotFoundError(HtmlException):
 
 
 class StudyAlreadyExistError(HtmlException):
-    def __init__(self, message) -> None:
+    def __init__(self, message: str) -> None:
         super().__init__(message, HTTPStatus.CONFLICT)
 
 

@@ -10,7 +10,7 @@ class HtmlException(Exception):
 
 def stop_and_return_on_html_exception(
     func: Callable[..., Tuple[Any, int]]
-) -> Callable:
+) -> Callable[..., Any]:
     @wraps(func)
     def catch_and_return_html_exception(*args: str, **kwargs: Any) -> Any:
         try:
