@@ -7,6 +7,7 @@ from api_iso_antares.engine.swagger.swagger import (
     SwaggerOperation,
     SwaggerParameter,
     SwaggerPath,
+    SwaggerRequestBody,
     SwaggerTag,
 )
 from api_iso_antares.jsm import JsonSchema
@@ -61,7 +62,7 @@ class RootNode(INode):
         self._add_tags()
 
     def _build_paths_not_in_jsm(self) -> None:
-        self._build_studies_list_path()
+        self._build_studies_root()
         self._build_study_path()
         self._build_copy_study_path()
         self._build_export_path()
@@ -99,14 +100,34 @@ class RootNode(INode):
 
         self._swagger.add_path(study_path)
 
-    def _build_studies_list_path(self) -> None:
+    def _build_studies_root(self) -> None:
         studies_url = "/studies"
         study_path = SwaggerPath(url=studies_url)
+        self._build_studies_list_path(study_path)
+        self._build_import_study_path(study_path)
+        self._swagger.add_path(study_path)
 
+    @staticmethod
+    def _build_import_study_path(study_path: SwaggerPath) -> None:
+
+        operation = SwaggerOperation(verb=SwaggerOperation.OperationVerbs.post)
+
+        content = {
+            "application/octet-stream": {
+                "schema": {"type": "string", "format": "string"}
+            }
+        }
+        request_body = SwaggerRequestBody(content=content, required=True)
+
+        operation.set_request_body(request_body)
+
+        study_path.add_operation(operation)
+
+    @staticmethod
+    def _build_studies_list_path(study_path: SwaggerPath) -> None:
         study_path.add_operation(
             SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
         )
-        self._swagger.add_path(study_path)
 
     def _build_export_path(self) -> None:
         studies_url = "/studies/{study}/export"

@@ -109,6 +109,12 @@ class SwaggerResponse(ISwaggerElement):
         return responses
 
 
+class SwaggerRequestBody(ISwaggerElement):
+    def __init__(self, content: Dict[str, Any], required: bool = True) -> None:
+        self.content = content
+        self.required = required
+
+
 class SwaggerOperation(ISwaggerElement):
     class OperationVerbs(enum.Enum):
         get = enum.auto()
@@ -128,6 +134,7 @@ class SwaggerOperation(ISwaggerElement):
 
         self.tags: List[str] = []
         self.responses: Dict[str, Dict[str, Any]] = {}
+        self.requestBody: Optional[SwaggerRequestBody] = None
         self._build_responses()
 
     def _build_responses(self) -> None:
@@ -139,6 +146,9 @@ class SwaggerOperation(ISwaggerElement):
 
     def get_verb(self) -> "SwaggerOperation.OperationVerbs":
         return self._verb
+
+    def set_request_body(self, request_body: SwaggerRequestBody) -> None:
+        self.requestBody = request_body
 
 
 class SwaggerParameter(ISwaggerElement):
