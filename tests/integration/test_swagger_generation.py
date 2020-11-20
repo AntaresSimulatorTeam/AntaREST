@@ -38,3 +38,6 @@ def test_generation_swagger_documentation(
     study_path = paths.get("/studies/{study}")
 
     assert "delete" in study_path
+
+    studies_path = paths.get("/studies")
+    assert "post" in study_path
