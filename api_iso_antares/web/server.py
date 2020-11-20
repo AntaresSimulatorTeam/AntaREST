@@ -1,7 +1,9 @@
+import io
 import re
-from typing import Any
 from http import HTTPStatus
-from flask import Flask, jsonify, request, Response, send_file, escape
+from typing import Any
+
+from flask import escape, Flask, jsonify, request, Response, send_file
 
 from api_iso_antares.custom_exceptions import (
     HtmlException,
@@ -45,14 +47,28 @@ def _construct_parameters(
 
 
 def create_study_routes(application: Flask) -> None:
-    @application.route(
-        "/studies",
-        methods=["GET"],
-    )
+    @application.route("/studies", methods=["GET"])
     def get_studies() -> Any:
         global request_handler
         available_studies = request_handler.get_studies_informations()
         return jsonify(available_studies), HTTPStatus.OK.value
+
+    @application.route("/studies", methods=["POST"])
+    def import_study() -> Any:
+        global request_handler
+
+        if not request.data:
+            content = "No data provided."
+            code = HTTPStatus.BAD_REQUEST.value
+            return content, code
+
+        zip_binary = io.BytesIO(request.data)
+
+        uuid = request_handler.import_study(zip_binary)
+        content = "/studies/" + uuid
+        code = HTTPStatus.CREATED.value
+
+        return jsonify(content), code
 
     @application.route(
         "/studies/<path:path>",
@@ -116,7 +132,7 @@ def create_study_routes(application: Flask) -> None:
         name = sanitize_study_name(name)
         compact = "compact" in request.args
 
-        content = request_handler.export(name, compact)
+        content = request_handler.export_study(name, compact)
 
         return send_file(
             content,
