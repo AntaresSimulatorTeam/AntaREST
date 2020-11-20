@@ -1,4 +1,3 @@
-import json
 from unittest.mock import Mock
 
 from api_iso_antares.antares_io.exporter.export_file import Exporter
