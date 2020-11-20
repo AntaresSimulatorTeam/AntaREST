@@ -5,7 +5,7 @@ import re
 import uuid
 from io import BytesIO
 from pathlib import Path
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from api_iso_antares.custom_types import JSON
 

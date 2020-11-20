@@ -1,7 +1,7 @@
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
-from unittest.mock import Mock
 
 from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.antares_io.validator import JsmValidator

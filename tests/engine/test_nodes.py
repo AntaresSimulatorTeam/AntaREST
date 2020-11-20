@@ -9,11 +9,11 @@ from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine.filesystem.nodes import (
     IniFileNode,
+    InputLinksNode,
     MixFolderNode,
     OnlyListNode,
     OutputFolderNode,
     OutputLinksNode,
-    InputLinksNode,
     SetsIniFileNode,
     UrlFileNode,
 )

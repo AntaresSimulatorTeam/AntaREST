@@ -1,6 +1,8 @@
+import io
 import json
-from pathlib import Path
+import shutil
 from http import HTTPStatus
+from pathlib import Path
 
 import pytest
 
@@ -415,3 +417,21 @@ def test_sta_mini_with_wrong_output_folder(
         url=url,
         expected_output=expected_output,
     )
+
+
+@pytest.mark.integration_test
+def test_sta_mini_import(
+    tmp_path: Path, request_handler: RequestHandler
+) -> None:
+
+    path_study = request_handler.get_study_path("STA-mini")
+    sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
+    sta_mini_zip_path = Path(sta_mini_zip_filepath)
+
+    app = create_server(request_handler)
+    client = app.test_client()
+
+    study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
+    result = client.post("/studies", data=study_data)
+
+    assert result.status_code == HTTPStatus.CREATED.value

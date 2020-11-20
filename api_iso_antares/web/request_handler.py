@@ -1,13 +1,14 @@
 import copy
 import shutil
+import tempfile
 import time
+from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Any, List
-from http import HTTPStatus
-from zipfile import ZipFile, ZIP_DEFLATED
+from typing import Any, IO, List
+from uuid import uuid4
+from zipfile import BadZipFile, ZipFile
 
-import api_iso_antares
 from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_exceptions import HtmlException
@@ -21,14 +22,22 @@ from api_iso_antares.jsm import JsonSchema
 
 class StudyNotFoundError(HtmlException):
     def __init__(self, message: str) -> None:
-        super().__init__(message, 404)
+        super().__init__(message, HTTPStatus.NOT_FOUND)
 
 
 class StudyAlreadyExistError(HtmlException):
-    def __init__(self) -> None:
-        super().__init__(
-            "A study already exists with this name.", HTTPStatus.CONFLICT
-        )
+    def __init__(self, message: str) -> None:
+        super().__init__(message, HTTPStatus.CONFLICT)
+
+
+class StudyValidationError(HtmlException):
+    def __init__(self, message: str) -> None:
+        super().__init__(message, HTTPStatus.UNPROCESSABLE_ENTITY)
+
+
+class BadZipBinary(HtmlException):
+    def __init__(self, message: str) -> None:
+        super().__init__(message, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
 
 
 class RequestHandlerParameters:
@@ -79,7 +88,7 @@ class RequestHandler:
     ) -> SUB_JSON:
         path_route = Path(route)
         study_name = path_route.parts[0]
-        self._assert_study_exist(study_name)
+        self.assert_study_exist(study_name)
 
         study_data = self.parse_study(study_name)
 
@@ -88,18 +97,26 @@ class RequestHandler:
 
     def parse_study(self, name: str, do_validate: bool = True) -> JSON:
         study_path = self.get_study_path(name)
-        data = self.study_parser.parse(study_path)
+        return self.parse_folder(study_path, do_validate)
+
+    def parse_folder(self, path: Path, do_validate: bool = True) -> JSON:
+        data = self.study_parser.parse(path)
         if do_validate:
-            self.jsm_validator.validate(data)
+            try:
+                self.jsm_validator.validate(data)
+            except Exception as e:
+                raise StudyValidationError(str(e))
         return data
 
-    def _assert_study_exist(self, study_name: str) -> None:
+    def assert_study_exist(self, study_name: str) -> None:
         if not self.is_study_exist(study_name):
-            raise StudyNotFoundError(f"{study_name} not found")
+            raise StudyNotFoundError(f"Study {study_name} does not exist.")
 
-    def _assert_study_not_exist(self, study_name: str) -> None:
+    def assert_study_not_exist(self, study_name: str) -> None:
         if self.is_study_exist(study_name):
-            raise StudyAlreadyExistError
+            raise StudyAlreadyExistError(
+                f"A study already exist with the name {study_name}."
+            )
 
     def is_study_exist(self, study_name: str) -> bool:
         return study_name in self.get_study_names()
@@ -130,7 +147,7 @@ class RequestHandler:
 
     def create_study(self, name: str) -> None:
 
-        self._assert_study_not_exist(name)
+        self.assert_study_not_exist(name)
 
         empty_study_zip = self.path_resources / "empty-study.zip"
 
@@ -146,8 +163,8 @@ class RequestHandler:
 
     def copy_study(self, src: str, dest: str) -> None:
 
-        self._assert_study_exist(src)
-        self._assert_study_not_exist(dest)
+        self.assert_study_exist(src)
+        self.assert_study_not_exist(dest)
 
         path_source = self.get_study_path(src)
         data_source = self.study_parser.parse(path_source)
@@ -170,10 +187,10 @@ class RequestHandler:
         info_antares["created"] = current_time
         info_antares["lastsave"] = current_time
 
-    def export(self, name: str, compact: bool = False) -> BytesIO:
+    def export_study(self, name: str, compact: bool = False) -> BytesIO:
         path_study = self.path_to_studies / name
 
-        self._assert_study_exist(name)
+        self.assert_study_exist(name)
 
         if compact:
             data = self.study_parser.parse(self.path_to_studies / name)
@@ -183,6 +200,47 @@ class RequestHandler:
             return self.exporter.export_file(path_study)
 
     def delete_study(self, name: str) -> None:
-        self._assert_study_exist(name)
+        self.assert_study_exist(name)
         study_path = self.get_study_path(name)
         shutil.rmtree(study_path)
+
+    def import_study(self, stream: IO[bytes]) -> str:
+
+        uuid = RequestHandler.generate_uuid()
+
+        with tempfile.TemporaryDirectory() as tmp_directory:
+
+            tmp_path_study = Path(tmp_directory) / uuid
+            tmp_path_study.mkdir()
+
+            RequestHandler.extract_zip(stream, tmp_path_study)
+
+            study = self.parse_folder(tmp_path_study)
+            RequestHandler.check_antares_version(study)
+
+            shutil.move(str(tmp_path_study), str(self.path_to_studies))
+
+        return uuid
+
+    @staticmethod
+    def check_antares_version(study: JSON) -> None:
+
+        version = study["study"]["antares"]["version"]
+        major_version = int(version / 100)
+
+        if major_version < 7:
+            raise StudyValidationError(
+                "The API do not handle study with antares version inferior to 7"
+            )
+
+    @staticmethod
+    def generate_uuid() -> str:
+        return str(uuid4())
+
+    @staticmethod
+    def extract_zip(stream: IO[bytes], dst: Path) -> None:
+        try:
+            with ZipFile(stream) as zip_output:
+                zip_output.extractall(path=dst)
+        except BadZipFile:
+            raise BadZipBinary("Only zip file are allowed.")
