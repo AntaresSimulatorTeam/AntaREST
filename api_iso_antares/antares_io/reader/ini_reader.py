@@ -1,7 +1,7 @@
 import configparser
 import re
 from pathlib import Path
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
 from api_iso_antares.custom_types import ELEMENT, JSON
 
