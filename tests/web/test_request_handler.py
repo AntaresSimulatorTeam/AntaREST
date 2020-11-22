@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
@@ -12,6 +11,7 @@ from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
     StudyNotFoundError,
+    IncorrectPathError,
 )
 
 
@@ -310,3 +310,26 @@ def test_delete_study(
     request_handler.delete_study(name)
 
     assert not study_path.exists()
+
+
+@pytest.mark.unit_test
+def test_upload_matrix(
+    tmp_path: Path, request_handler_builder: Callable
+) -> None:
+
+    name = "my-study"
+    study_path = tmp_path / name
+    study_path.mkdir()
+
+    request_handler = request_handler_builder(path_studies=tmp_path)
+
+    with pytest.raises(IncorrectPathError):
+        request_handler.upload_matrix(str(study_path / "test"), b"")
+
+    first_level_dest_path = study_path / "test.txt"
+    request_handler.upload_matrix(str(first_level_dest_path), b"")
+    assert first_level_dest_path.is_file()
+
+    second_level_dest_path = study_path / "test/test.txt"
+    request_handler.upload_matrix(str(second_level_dest_path), b"")
+    assert second_level_dest_path.is_file()

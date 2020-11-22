@@ -31,6 +31,11 @@ class StudyAlreadyExistError(HtmlException):
         )
 
 
+class IncorrectPathError(HtmlException):
+    def __init__(self, message: str) -> None:
+        super().__init__(message, 404)
+
+
 class RequestHandlerParameters:
     def __init__(self, depth: int = 3) -> None:
         self.depth = depth
@@ -103,6 +108,13 @@ class RequestHandler:
 
     def is_study_exist(self, study_name: str) -> bool:
         return study_name in self.get_study_names()
+
+    @staticmethod
+    def _is_path_a_matrix(path: Path) -> bool:
+        if path.suffix not in [".txt"]:
+            raise IncorrectPathError(
+                f"{str(path)} is not a valid destination path for a matrix"
+            )
 
     def get_study_names(self) -> List[str]:
         studies_list = []
@@ -186,3 +198,10 @@ class RequestHandler:
         self._assert_study_exist(name)
         study_path = self.get_study_path(name)
         shutil.rmtree(study_path)
+
+    def upload_matrix(self, path: str, data: bytes) -> None:
+        self._is_path_a_matrix(path=Path(path))
+        full_path = self.path_to_studies / path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(full_path, "wb+") as matrix:
+            matrix.write(data)

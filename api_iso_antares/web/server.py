@@ -77,16 +77,20 @@ def create_routes(application: Flask) -> None:
 
     @application.route(
         "/studies/<path:path>",
-        methods=["GET"],
+        methods=["GET", "POST"],
     )
     def get_study(path: str) -> Any:
         global request_handler
         parameters = _construct_parameters(request.args)
 
-        try:
-            output = request_handler.get(path, parameters)
-        except HtmlException as e:
-            return e.message, e.html_code_error
+        if request.method == "POST":
+            request_handler.upload_matrix(path, request.data)
+            output = path
+        else:
+            try:
+                output = request_handler.get(path, parameters)
+            except HtmlException as e:
+                return e.message, e.html_code_error
         return jsonify(output), 200
 
     @application.route(
