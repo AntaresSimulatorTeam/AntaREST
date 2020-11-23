@@ -87,16 +87,16 @@ class RequestHandler:
         self, route: str, parameters: RequestHandlerParameters
     ) -> SUB_JSON:
         path_route = Path(route)
-        study_name = path_route.parts[0]
-        self.assert_study_exist(study_name)
+        uuid = path_route.parts[0]
+        self.assert_study_exist(uuid)
 
-        study_data = self.parse_study(study_name)
+        study_data = self.parse_study(uuid)
 
-        route_cut = path_route.relative_to(Path(study_name))
+        route_cut = path_route.relative_to(Path(uuid))
         return self.url_engine.apply(route_cut, study_data, parameters.depth)
 
-    def parse_study(self, name: str, do_validate: bool = True) -> JSON:
-        study_path = self.get_study_path(name)
+    def parse_study(self, uuid: str, do_validate: bool = True) -> JSON:
+        study_path = self.get_study_path(uuid)
         return self.parse_folder(study_path, do_validate)
 
     def parse_folder(self, path: Path, do_validate: bool = True) -> JSON:
@@ -108,20 +108,22 @@ class RequestHandler:
                 raise StudyValidationError(str(e))
         return data
 
-    def assert_study_exist(self, study_name: str) -> None:
-        if not self.is_study_exist(study_name):
-            raise StudyNotFoundError(f"Study {study_name} does not exist.")
-
-    def assert_study_not_exist(self, study_name: str) -> None:
-        if self.is_study_exist(study_name):
-            raise StudyAlreadyExistError(
-                f"A study already exist with the name {study_name}."
+    def assert_study_exist(self, uuid: str) -> None:
+        if not self.is_study_exist(uuid):
+            raise StudyNotFoundError(
+                f"Study with the uuid {uuid} does not exist."
             )
 
-    def is_study_exist(self, study_name: str) -> bool:
-        return study_name in self.get_study_names()
+    def assert_study_not_exist(self, uuid: str) -> None:
+        if self.is_study_exist(uuid):
+            raise StudyAlreadyExistError(
+                f"A study already exist with the uuid {uuid}."
+            )
 
-    def get_study_names(self) -> List[str]:
+    def is_study_exist(self, uuid: str) -> bool:
+        return uuid in self.get_study_uuids()
+
+    def get_study_uuids(self) -> List[str]:
         studies_list = []
         for path in self.path_to_studies.iterdir():
             if (path / "study.antares").is_file():
@@ -130,52 +132,56 @@ class RequestHandler:
 
     def get_studies_informations(self) -> JSON:
         studies = {}
-        study_names = self.get_study_names()
-        for name in study_names:
-            studies[name] = self.get_study_informations(name)
+        study_uuids = self.get_study_uuids()
+        for uuid in study_uuids:
+            studies[uuid] = self.get_study_informations(uuid)
         return studies
 
-    def get_study_informations(self, study_name: str) -> SUB_JSON:
-        url = study_name + "/study"
+    def get_study_informations(self, uuid: str) -> SUB_JSON:
+        url = uuid + "/study"
         return self.get(url, RequestHandlerParameters(depth=2))
 
     def get_jsm(self) -> JsonSchema:
         return self.jsm_validator.jsm
 
-    def get_study_path(self, name: str) -> Path:
-        return self.path_to_studies / name
+    def get_study_path(self, uuid: str) -> Path:
+        return self.path_to_studies / uuid
 
-    def create_study(self, name: str) -> None:
-
-        self.assert_study_not_exist(name)
+    def create_study(self, study_name: str) -> str:
 
         empty_study_zip = self.path_resources / "empty-study.zip"
 
-        path_study = self.get_study_path(name)
+        uuid = RequestHandler.generate_uuid()
+
+        path_study = self.get_study_path(uuid)
         path_study.mkdir()
 
         with ZipFile(empty_study_zip) as zip_output:
             zip_output.extractall(path=path_study)
 
-        study_data = self.parse_study(name, do_validate=False)
-        RequestHandler._update_antares_info(name, study_data)
+        study_data = self.parse_study(uuid, do_validate=False)
+        RequestHandler._update_antares_info(study_name, study_data)
         self.study_parser.write(path_study, study_data)
 
-    def copy_study(self, src: str, dest: str) -> None:
+        return uuid
 
-        self.assert_study_exist(src)
-        self.assert_study_not_exist(dest)
+    def copy_study(self, src_uuid: str, dest_study_name: str) -> str:
 
-        path_source = self.get_study_path(src)
+        self.assert_study_exist(src_uuid)
+
+        path_source = self.get_study_path(src_uuid)
         data_source = self.study_parser.parse(path_source)
 
-        path_destination = self.get_study_path(dest)
+        uuid = RequestHandler.generate_uuid()
+        path_destination = self.get_study_path(uuid)
         data_destination = copy.deepcopy(data_source)
 
-        RequestHandler._update_antares_info(dest, data_destination)
+        RequestHandler._update_antares_info(dest_study_name, data_destination)
         data_destination["output"] = None
 
         self.study_parser.write(path_destination, data_destination)
+
+        return uuid
 
     @staticmethod
     def _update_antares_info(study_name: str, study_data: JSON) -> None:
