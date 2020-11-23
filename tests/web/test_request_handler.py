@@ -161,7 +161,7 @@ def test_find_studies(
     # Test & Verify
     request_handler = request_handler_builder(path_studies=path_studies)
 
-    assert study_names == request_handler.get_study_names()
+    assert study_names == request_handler.get_study_uuids()
 
 
 @pytest.mark.unit_test
@@ -192,9 +192,9 @@ def test_create_study(
     )
 
     study_name = "study1"
-    request_handler.create_study(study_name)
+    uuid = request_handler.create_study(study_name)
 
-    path_study = path_studies / study_name
+    path_study = path_studies / uuid
     assert path_study.exists()
 
     path_study_antares_infos = path_study / "study.antares"
