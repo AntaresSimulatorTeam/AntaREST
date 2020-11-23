@@ -1,9 +1,10 @@
 import re
-from typing import Any
+from typing import Any, Union
 from http import HTTPStatus
 from flask import Flask, jsonify, request, Response, send_file, escape
 
 from api_iso_antares.custom_exceptions import HtmlException
+from api_iso_antares.custom_types import SUB_JSON
 from api_iso_antares.engine import SwaggerEngine
 from api_iso_antares.web.request_handler import (
     RequestHandler,
@@ -82,6 +83,8 @@ def create_routes(application: Flask) -> None:
     def get_study(path: str) -> Any:
         global request_handler
         parameters = _construct_parameters(request.args)
+
+        output: Union[str, SUB_JSON]
 
         if request.method == "POST":
             request_handler.upload_matrix(path, request.data)

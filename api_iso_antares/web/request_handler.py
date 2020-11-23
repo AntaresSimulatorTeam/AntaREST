@@ -110,7 +110,7 @@ class RequestHandler:
         return study_name in self.get_study_names()
 
     @staticmethod
-    def _is_path_a_matrix(path: Path) -> bool:
+    def _is_path_a_matrix(path: Path) -> None:
         if path.suffix not in [".txt"]:
             raise IncorrectPathError(
                 f"{str(path)} is not a valid destination path for a matrix"
