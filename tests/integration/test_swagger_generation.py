@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -15,8 +16,8 @@ def test_generation_swagger_documentation(
     swg_doc = SwaggerEngine.parse(jsm)
 
     # TODO: remove those two lines
-    # yaml_swg = SwaggerEngine.json_to_yaml(swg_doc)
-    # (project_path / "swagger.yaml").write_text(yaml_swg)
+    path_swagger = project_path / "swagger.json"
+    json.dump(swg_doc, path_swagger.open("w"), indent=2)
 
     SwaggerValidator.validate(swg_doc)
 

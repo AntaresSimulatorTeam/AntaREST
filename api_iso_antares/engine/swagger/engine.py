@@ -16,11 +16,3 @@ class SwaggerEngine:
     def _build(jsm: JsonSchema) -> JSON:
         root_node = RootNode(jsm=jsm)
         return root_node.get_content()
-
-    @staticmethod
-    def json_to_yaml(data: JSON) -> str:
-        return cast(str, yaml.dump(data, default_flow_style=False))
-
-    @staticmethod
-    def yaml_to_json(data: str) -> JSON:
-        return cast(JSON, yaml.load(data, Loader=yaml.FullLoader))
