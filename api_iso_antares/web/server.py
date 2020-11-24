@@ -5,7 +5,7 @@ from typing import Any
 
 from flask import escape, Flask, jsonify, request, Response, send_file
 
-from api_iso_antares.custom_exceptions import (
+from api_iso_antares.web.html_exception import (
     HtmlException,
     stop_and_return_on_html_exception,
 )

@@ -9,9 +9,12 @@ from unittest.mock import Mock
 
 import pytest
 
-from api_iso_antares.engine.url_engine import UrlNotMatchJsonDataError
 from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
+)
+from api_iso_antares.web.html_exception import (
+    IncorrectPathError,
+    UrlNotMatchJsonDataError,
 )
 from api_iso_antares.web.server import (
     _assert_uuid,
@@ -123,7 +126,7 @@ def test_post_study(
 
 
 @pytest.mark.unit_test
-def test_post_study_zipped(
+def test_import_study_zipped(
     tmp_path: Path, request_handler_builder: Callable, project_path
 ) -> None:
 

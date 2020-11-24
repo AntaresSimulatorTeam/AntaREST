@@ -2,7 +2,6 @@ import copy
 import shutil
 import tempfile
 import time
-from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
 from typing import Any, IO, List
@@ -11,38 +10,20 @@ from zipfile import BadZipFile, ZipFile
 
 from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.antares_io.validator import JsmValidator
-from api_iso_antares.custom_exceptions import HtmlException
+from api_iso_antares.web.html_exception import (
+    BadZipBinary,
+    IncorrectPathError,
+    StudyAlreadyExistError,
+    StudyNotFoundError,
+    StudyValidationError,
+    UrlNotMatchJsonDataError,
+)
 from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.filesystem.engine import (
     FileSystemEngine,
 )
 from api_iso_antares.jsm import JsonSchema
-
-
-class StudyNotFoundError(HtmlException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message, HTTPStatus.NOT_FOUND)
-
-
-class StudyAlreadyExistError(HtmlException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message, HTTPStatus.CONFLICT)
-
-
-class StudyValidationError(HtmlException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message, HTTPStatus.UNPROCESSABLE_ENTITY)
-
-
-class BadZipBinary(HtmlException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
-
-
-class IncorrectPathError(HtmlException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message, 404)
 
 
 class RequestHandlerParameters:
