@@ -150,30 +150,6 @@ class SwaggerOperation(ISwaggerElement):
     def set_request_body(self, request_body: SwaggerRequestBody) -> None:
         self.requestBody = request_body
 
-    @staticmethod
-    def get_default(verb: OperationVerbs) -> "SwaggerOperation":
-
-        operation: "SwaggerOperation"
-        if verb == SwaggerOperation.OperationVerbs.post:
-            operation = SwaggerOperation(
-                verb=SwaggerOperation.OperationVerbs.post
-            )
-
-            content = {
-                "application/octet-stream": {
-                    "schema": {"type": "string", "format": "string"}
-                }
-            }
-            request_body = SwaggerRequestBody(content=content)
-
-            operation.set_request_body(request_body)
-        else:
-            raise NotImplementedError(
-                f"Verb default {verb} is not implemented."
-            )
-
-        return operation
-
 
 class SwaggerParameter(ISwaggerElement):
     class ParametersIn(enum.Enum):
@@ -328,3 +304,59 @@ class Swagger(ISwaggerElement):
     def _build_paths(self) -> None:
         for path in self._paths:
             self.paths[path.get_url()] = path
+
+
+class SwaggerPathBuilder:
+    @staticmethod
+    def build(
+        url: str,
+        operations: List[SwaggerOperation] = [],
+        parameters: List[SwaggerParameter] = [],
+    ) -> SwaggerPath:
+
+        path = SwaggerPath(url=url)
+        for operation in operations:
+            path.add_operation(operation)
+        path.add_parameters(parameters)
+
+        return path
+
+
+class SwaggerParameterBuilder:
+    @staticmethod
+    def build_query(name: str, required: bool = True) -> SwaggerParameter:
+        return SwaggerParameter(
+            name=name,
+            in_=SwaggerParameter.ParametersIn.query,
+            required=required,
+        )
+
+
+class SwaggerOperationBuilder:
+    @staticmethod
+    def post() -> SwaggerOperation:
+        return SwaggerOperation(SwaggerOperation.OperationVerbs.post)
+
+    @staticmethod
+    def get() -> SwaggerOperation:
+        return SwaggerOperation(SwaggerOperation.OperationVerbs.get)
+
+    @staticmethod
+    def delete() -> SwaggerOperation:
+        return SwaggerOperation(SwaggerOperation.OperationVerbs.delete)
+
+    @staticmethod
+    def post_with_binary_data() -> SwaggerOperation:
+
+        operation = SwaggerOperationBuilder.post()
+
+        content = {
+            "application/octet-stream": {
+                "schema": {"type": "string", "format": "string"}
+            }
+        }
+        request_body = SwaggerRequestBody(content=content)
+
+        operation.set_request_body(request_body)
+
+        return operation

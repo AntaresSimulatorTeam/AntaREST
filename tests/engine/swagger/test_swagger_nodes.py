@@ -12,23 +12,17 @@ from api_iso_antares.jsm import JsonSchema
 @pytest.mark.unit_test
 def test_path_node() -> None:
 
-    parent = Mock()
-    parent.get_url.return_value = "/ex1/ex2"
-
     jsm = Mock()
     jsm.has_properties.return_value = False
     jsm.has_defined_additional_properties.return_value = False
 
     node = PathNode(
-        key="ex3",
+        url="/ex1/ex2/ex3",
         jsm=jsm,
-        node_factory=Mock(),
-        parent=parent,
+        swagger=Mock(),
     )
 
-    assert node.get_url() == "/ex1/ex2/ex3"
-
-    data_path = node._get_path().json()
+    data_path = node._get_swagger_path().json()
     assert data_path["get"]["tags"] == ["ex3"]
 
 
@@ -40,7 +34,7 @@ def test_root_node() -> None:
 
     root = RootNode(jsm=jsm)
 
-    assert root.get_url() == "/studies/{uuid}"
+    assert root.url == "/studies/{uuid}"
 
     data = root.get_content()
     assert data["openapi"] == "3.0.0"

@@ -133,6 +133,8 @@ class RequestHandler:
         for path in self.path_to_studies.iterdir():
             if (path / "study.antares").is_file():
                 studies_list.append(path.name)
+
+        # sorting needed for test
         return sorted(studies_list)
 
     def get_studies_informations(self) -> JSON:

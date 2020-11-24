@@ -117,6 +117,8 @@ class FileSystemWriter:
             )
         elif element.is_matrix_url():
             url = cast(str, element.get_data())
+
+            # TODO: why root_path ?
             matrix_path = FileSystemWriter.url_in_filepath(
                 url=url, root_path=root_path
             )
