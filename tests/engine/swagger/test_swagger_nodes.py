@@ -28,7 +28,7 @@ def test_path_node() -> None:
 
     assert node.get_url() == "/ex1/ex2/ex3"
 
-    data_path = node._get_path().json()
+    data_path = node._get_swagger_path().json()
     assert data_path["get"]["tags"] == ["ex3"]
 
 

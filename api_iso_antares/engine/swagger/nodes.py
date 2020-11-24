@@ -62,13 +62,24 @@ class RootNode:
         self.swagger.add_global_parameters(depth_parameter)
 
     def _build_paths_not_in_jsm(self) -> None:
-        self._build_studies_root()
         self._build_study_path()
+        self._build_studies_path()
         self._build_copy_study_path()
         self._build_export_path()
         self._build_files_path()
 
-    def _build_studies_root(self) -> None:
+    def _build_study_path(self) -> None:
+
+        url = self.url
+        operations = [
+            SwaggerOperationBuilder.post(),
+            SwaggerOperationBuilder.get(),
+            SwaggerOperationBuilder.delete(),
+        ]
+
+        self.build_and_add_path(url=url, operations=operations)
+
+    def _build_studies_path(self) -> None:
 
         url = "/studies"
         operations = [
@@ -86,17 +97,6 @@ class RootNode:
         self.build_and_add_path(
             url=url, operations=operations, parameters=parameters
         )
-
-    def _build_study_path(self) -> None:
-
-        url = self.url
-        operations = [
-            SwaggerOperationBuilder.post(),
-            SwaggerOperationBuilder.get(),
-            SwaggerOperationBuilder.delete(),
-        ]
-
-        self.build_and_add_path(url=url, operations=operations)
 
     def _build_export_path(self) -> None:
 
@@ -142,18 +142,17 @@ class PathNode:
         self._build()
 
     def _build(self) -> None:
-        self._build_path()
+
+        path = self._get_swagger_path()
+        self.swagger.add_path(path)
+
         if not self._is_leaf():
             self._build_children()
 
     def _is_leaf(self) -> bool:
         return self.jsm.is_swagger_leaf()
 
-    def _build_path(self) -> None:
-        path = self._get_path()
-        self.swagger.add_path(path)
-
-    def _get_path(self) -> SwaggerPath:
+    def _get_swagger_path(self) -> SwaggerPath:
 
         operation = SwaggerOperationBuilder.get()
         operation.add_tag(self._get_tag())
