@@ -79,7 +79,26 @@ class RequestHandler:
         study_data = self.parse_study(uuid)
 
         route_cut = path_route.relative_to(Path(uuid))
-        return self.url_engine.apply(route_cut, study_data, parameters.depth)
+
+        data = self.get_data(parameters, route_cut, study_data)
+
+        return data
+
+    def get_data(
+        self,
+        parameters: RequestHandlerParameters,
+        route_cut: Path,
+        study_data: JSON,
+    ):
+        try:
+            data = self.url_engine.apply(
+                route_cut, study_data, parameters.depth
+            )
+        except KeyError:
+            raise UrlNotMatchJsonDataError(
+                f"Key {route_cut} not in the study."
+            )
+        return data
 
     def parse_study(self, uuid: str, do_validate: bool = True) -> JSON:
         study_path = self.get_study_path(uuid)
@@ -109,12 +128,6 @@ class RequestHandler:
     def is_study_exist(self, uuid: str) -> bool:
         return uuid in self.get_study_uuids()
 
-    @staticmethod
-    def _is_path_a_matrix(path: Path) -> None:
-        if path.suffix not in [".txt"]:
-            raise IncorrectPathError(
-                f"{str(path)} is not a valid destination path for a matrix"
-            )
     def get_study_uuids(self) -> List[str]:
         studies_list = []
         for path in self.path_to_studies.iterdir():
@@ -175,16 +188,6 @@ class RequestHandler:
 
         return uuid
 
-    @staticmethod
-    def _update_antares_info(study_name: str, study_data: JSON) -> None:
-
-        info_antares = study_data["study"]["antares"]
-
-        info_antares["caption"] = study_name
-        current_time = int(time.time())
-        info_antares["created"] = current_time
-        info_antares["lastsave"] = current_time
-
     def export_study(self, name: str, compact: bool = False) -> BytesIO:
         path_study = self.path_to_studies / name
 
@@ -203,11 +206,16 @@ class RequestHandler:
         shutil.rmtree(study_path)
 
     def upload_matrix(self, path: str, data: bytes) -> None:
-        self._is_path_a_matrix(path=Path(path))
-        full_path = self.path_to_studies / path
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(full_path, "wb+") as matrix:
-            matrix.write(data)
+
+        relative_path_matrix = Path(path)
+        uuid = relative_path_matrix.parts[0]
+
+        self.assert_study_exist(uuid)
+        RequestHandler.assert_path_can_be_matrix(relative_path_matrix)
+
+        path_matrix = self.path_to_studies / relative_path_matrix
+
+        path_matrix.write_bytes(data)
 
     def import_study(self, stream: IO[bytes]) -> str:
 
@@ -249,3 +257,20 @@ class RequestHandler:
                 zip_output.extractall(path=dst)
         except BadZipFile:
             raise BadZipBinary("Only zip file are allowed.")
+
+    @staticmethod
+    def assert_path_can_be_matrix(path: Path) -> None:
+        if path.suffix != ".txt":
+            raise IncorrectPathError(
+                f"{path} is not a valid path for a matrix (use txt extension)."
+            )
+
+    @staticmethod
+    def _update_antares_info(study_name: str, study_data: JSON) -> None:
+
+        info_antares = study_data["study"]["antares"]
+
+        info_antares["caption"] = study_name
+        current_time = int(time.time())
+        info_antares["created"] = current_time
+        info_antares["lastsave"] = current_time
