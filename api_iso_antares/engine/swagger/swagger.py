@@ -312,7 +312,7 @@ class SwaggerPathBuilder:
         url: str,
         operations: List[SwaggerOperation] = [],
         parameters: List[SwaggerParameter] = [],
-    ):
+    ) -> SwaggerPath:
 
         path = SwaggerPath(url=url)
         for operation in operations:

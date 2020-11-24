@@ -137,7 +137,7 @@ class PathNode:
     def __init__(self, url: str, jsm: JsonSchema, swagger: Swagger) -> None:
         self.url = url
         self.jsm = jsm
-        self.swagger: swagger = swagger
+        self.swagger = swagger
 
         self._build()
 
