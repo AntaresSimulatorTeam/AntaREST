@@ -89,7 +89,7 @@ class RequestHandler:
         parameters: RequestHandlerParameters,
         route_cut: Path,
         study_data: JSON,
-    ):
+    ) -> SUB_JSON:
         try:
             data = self.url_engine.apply(
                 route_cut, study_data, parameters.depth
