@@ -1,6 +1,8 @@
+import io
 import json
-from pathlib import Path
+import shutil
 from http import HTTPStatus
+from pathlib import Path
 
 import pytest
 
@@ -333,16 +335,17 @@ def test_sta_mini_output(
 def test_sta_mini_copy(request_handler: RequestHandler) -> None:
 
     source_folder = "STA-mini"
-    destination_folder = "copy_STA-mini"
+    destination_study_name = "copy-STA-mini"
 
     app = create_server(request_handler)
     client = app.test_client()
     result = client.post(
-        f"/studies/{source_folder}/copy?dest={destination_folder}"
+        f"/studies/{source_folder}/copy?dest={destination_study_name}"
     )
 
     assert result.status_code == HTTPStatus.CREATED.value
-    assert result.data == b"/studies/copy_STA-mini"
+    url_destination = result.data.decode("utf-8")
+    destination_folder = url_destination.split("/")[2]
 
     parameters = RequestHandlerParameters(depth=None)
     data_source = request_handler.get(source_folder, parameters)
@@ -352,7 +355,10 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
     assert link_url_source == "file/STA-mini/input/links/de/fr.txt"
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
-    assert link_url_destination == "file/copy_STA-mini/input/links/de/fr.txt"
+    assert (
+        link_url_destination
+        == f"file/{destination_folder}/input/links/de/fr.txt"
+    )
 
     result_source = client.get(link_url_source)
     matrix_source = result_source.data
@@ -415,3 +421,21 @@ def test_sta_mini_with_wrong_output_folder(
         url=url,
         expected_output=expected_output,
     )
+
+
+@pytest.mark.integration_test
+def test_sta_mini_import(
+    tmp_path: Path, request_handler: RequestHandler
+) -> None:
+
+    path_study = request_handler.get_study_path("STA-mini")
+    sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
+    sta_mini_zip_path = Path(sta_mini_zip_filepath)
+
+    app = create_server(request_handler)
+    client = app.test_client()
+
+    study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
+    result = client.post("/studies", data=study_data)
+
+    assert result.status_code == HTTPStatus.CREATED.value

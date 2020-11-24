@@ -25,11 +25,9 @@
                         "author": {
                             "type": "string"
                         }
-                    },
-                    "required": []
+                    }
                 }
-            },
-            "required": []
+            }
         }
     }
 }

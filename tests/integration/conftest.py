@@ -26,17 +26,20 @@ def sta_mini_path(tmp_path: str) -> Path:
 
 
 @pytest.fixture
-def request_handler(
-    tmp_path: str, project_path: Path, path_jsm: Path
-) -> RequestHandler:
+def sta_mini_zip_path(project_path: Path) -> Path:
+    return project_path / "examples/studies/STA-mini.zip"
 
-    path_zip_STA = project_path / "examples/studies/STA-mini.zip"
+
+@pytest.fixture
+def request_handler(
+    tmp_path: str, project_path: Path, path_jsm: Path, sta_mini_zip_path: Path
+) -> RequestHandler:
 
     path_studies = Path(tmp_path) / "studies"
 
     path_resources = project_path / "resources"
 
-    with ZipFile(path_zip_STA) as zip_output:
+    with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
     jsm = JsmReader.read(path_jsm)

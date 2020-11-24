@@ -1,13 +1,14 @@
 import copy
 import shutil
+import tempfile
 import time
+from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Any, List
-from http import HTTPStatus
-from zipfile import ZipFile, ZIP_DEFLATED
+from typing import Any, IO, List
+from uuid import uuid4
+from zipfile import BadZipFile, ZipFile
 
-import api_iso_antares
 from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_exceptions import HtmlException
@@ -21,14 +22,22 @@ from api_iso_antares.jsm import JsonSchema
 
 class StudyNotFoundError(HtmlException):
     def __init__(self, message: str) -> None:
-        super().__init__(message, 404)
+        super().__init__(message, HTTPStatus.NOT_FOUND)
 
 
 class StudyAlreadyExistError(HtmlException):
-    def __init__(self) -> None:
-        super().__init__(
-            "A study already exists with this name.", HTTPStatus.CONFLICT
-        )
+    def __init__(self, message: str) -> None:
+        super().__init__(message, HTTPStatus.CONFLICT)
+
+
+class StudyValidationError(HtmlException):
+    def __init__(self, message: str) -> None:
+        super().__init__(message, HTTPStatus.UNPROCESSABLE_ENTITY)
+
+
+class BadZipBinary(HtmlException):
+    def __init__(self, message: str) -> None:
+        super().__init__(message, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
 
 
 class IncorrectPathError(HtmlException):
@@ -83,31 +92,41 @@ class RequestHandler:
         self, route: str, parameters: RequestHandlerParameters
     ) -> SUB_JSON:
         path_route = Path(route)
-        study_name = path_route.parts[0]
-        self._assert_study_exist(study_name)
+        uuid = path_route.parts[0]
+        self.assert_study_exist(uuid)
 
-        study_data = self.parse_study(study_name)
+        study_data = self.parse_study(uuid)
 
-        route_cut = path_route.relative_to(Path(study_name))
+        route_cut = path_route.relative_to(Path(uuid))
         return self.url_engine.apply(route_cut, study_data, parameters.depth)
 
-    def parse_study(self, name: str, do_validate: bool = True) -> JSON:
-        study_path = self.get_study_path(name)
-        data = self.study_parser.parse(study_path)
+    def parse_study(self, uuid: str, do_validate: bool = True) -> JSON:
+        study_path = self.get_study_path(uuid)
+        return self.parse_folder(study_path, do_validate)
+
+    def parse_folder(self, path: Path, do_validate: bool = True) -> JSON:
+        data = self.study_parser.parse(path)
         if do_validate:
-            self.jsm_validator.validate(data)
+            try:
+                self.jsm_validator.validate(data)
+            except Exception as e:
+                raise StudyValidationError(str(e))
         return data
 
-    def _assert_study_exist(self, study_name: str) -> None:
-        if not self.is_study_exist(study_name):
-            raise StudyNotFoundError(f"{study_name} not found")
+    def assert_study_exist(self, uuid: str) -> None:
+        if not self.is_study_exist(uuid):
+            raise StudyNotFoundError(
+                f"Study with the uuid {uuid} does not exist."
+            )
 
-    def _assert_study_not_exist(self, study_name: str) -> None:
-        if self.is_study_exist(study_name):
-            raise StudyAlreadyExistError
+    def assert_study_not_exist(self, uuid: str) -> None:
+        if self.is_study_exist(uuid):
+            raise StudyAlreadyExistError(
+                f"A study already exist with the uuid {uuid}."
+            )
 
-    def is_study_exist(self, study_name: str) -> bool:
-        return study_name in self.get_study_names()
+    def is_study_exist(self, uuid: str) -> bool:
+        return uuid in self.get_study_uuids()
 
     @staticmethod
     def _is_path_a_matrix(path: Path) -> None:
@@ -115,8 +134,7 @@ class RequestHandler:
             raise IncorrectPathError(
                 f"{str(path)} is not a valid destination path for a matrix"
             )
-
-    def get_study_names(self) -> List[str]:
+    def get_study_uuids(self) -> List[str]:
         studies_list = []
         for path in self.path_to_studies.iterdir():
             if (path / "study.antares").is_file():
@@ -125,52 +143,56 @@ class RequestHandler:
 
     def get_studies_informations(self) -> JSON:
         studies = {}
-        study_names = self.get_study_names()
-        for name in study_names:
-            studies[name] = self.get_study_informations(name)
+        study_uuids = self.get_study_uuids()
+        for uuid in study_uuids:
+            studies[uuid] = self.get_study_informations(uuid)
         return studies
 
-    def get_study_informations(self, study_name: str) -> SUB_JSON:
-        url = study_name + "/study"
+    def get_study_informations(self, uuid: str) -> SUB_JSON:
+        url = uuid + "/study"
         return self.get(url, RequestHandlerParameters(depth=2))
 
     def get_jsm(self) -> JsonSchema:
         return self.jsm_validator.jsm
 
-    def get_study_path(self, name: str) -> Path:
-        return self.path_to_studies / name
+    def get_study_path(self, uuid: str) -> Path:
+        return self.path_to_studies / uuid
 
-    def create_study(self, name: str) -> None:
-
-        self._assert_study_not_exist(name)
+    def create_study(self, study_name: str) -> str:
 
         empty_study_zip = self.path_resources / "empty-study.zip"
 
-        path_study = self.get_study_path(name)
+        uuid = RequestHandler.generate_uuid()
+
+        path_study = self.get_study_path(uuid)
         path_study.mkdir()
 
         with ZipFile(empty_study_zip) as zip_output:
             zip_output.extractall(path=path_study)
 
-        study_data = self.parse_study(name, do_validate=False)
-        RequestHandler._update_antares_info(name, study_data)
+        study_data = self.parse_study(uuid, do_validate=False)
+        RequestHandler._update_antares_info(study_name, study_data)
         self.study_parser.write(path_study, study_data)
 
-    def copy_study(self, src: str, dest: str) -> None:
+        return uuid
 
-        self._assert_study_exist(src)
-        self._assert_study_not_exist(dest)
+    def copy_study(self, src_uuid: str, dest_study_name: str) -> str:
 
-        path_source = self.get_study_path(src)
+        self.assert_study_exist(src_uuid)
+
+        path_source = self.get_study_path(src_uuid)
         data_source = self.study_parser.parse(path_source)
 
-        path_destination = self.get_study_path(dest)
+        uuid = RequestHandler.generate_uuid()
+        path_destination = self.get_study_path(uuid)
         data_destination = copy.deepcopy(data_source)
 
-        RequestHandler._update_antares_info(dest, data_destination)
+        RequestHandler._update_antares_info(dest_study_name, data_destination)
         data_destination["output"] = None
 
         self.study_parser.write(path_destination, data_destination)
+
+        return uuid
 
     @staticmethod
     def _update_antares_info(study_name: str, study_data: JSON) -> None:
@@ -182,10 +204,10 @@ class RequestHandler:
         info_antares["created"] = current_time
         info_antares["lastsave"] = current_time
 
-    def export(self, name: str, compact: bool = False) -> BytesIO:
+    def export_study(self, name: str, compact: bool = False) -> BytesIO:
         path_study = self.path_to_studies / name
 
-        self._assert_study_exist(name)
+        self.assert_study_exist(name)
 
         if compact:
             data = self.study_parser.parse(self.path_to_studies / name)
@@ -195,7 +217,7 @@ class RequestHandler:
             return self.exporter.export_file(path_study)
 
     def delete_study(self, name: str) -> None:
-        self._assert_study_exist(name)
+        self.assert_study_exist(name)
         study_path = self.get_study_path(name)
         shutil.rmtree(study_path)
 
@@ -205,3 +227,44 @@ class RequestHandler:
         full_path.parent.mkdir(parents=True, exist_ok=True)
         with open(full_path, "wb+") as matrix:
             matrix.write(data)
+
+    def import_study(self, stream: IO[bytes]) -> str:
+
+        uuid = RequestHandler.generate_uuid()
+
+        with tempfile.TemporaryDirectory() as tmp_directory:
+
+            tmp_path_study = Path(tmp_directory) / uuid
+            tmp_path_study.mkdir()
+
+            RequestHandler.extract_zip(stream, tmp_path_study)
+
+            study = self.parse_folder(tmp_path_study)
+            RequestHandler.check_antares_version(study)
+
+            shutil.move(str(tmp_path_study), str(self.path_to_studies))
+
+        return uuid
+
+    @staticmethod
+    def check_antares_version(study: JSON) -> None:
+
+        version = study["study"]["antares"]["version"]
+        major_version = int(version / 100)
+
+        if major_version < 7:
+            raise StudyValidationError(
+                "The API do not handle study with antares version inferior to 7"
+            )
+
+    @staticmethod
+    def generate_uuid() -> str:
+        return str(uuid4())
+
+    @staticmethod
+    def extract_zip(stream: IO[bytes], dst: Path) -> None:
+        try:
+            with ZipFile(stream) as zip_output:
+                zip_output.extractall(path=dst)
+        except BadZipFile:
+            raise BadZipBinary("Only zip file are allowed.")

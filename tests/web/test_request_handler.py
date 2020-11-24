@@ -1,3 +1,5 @@
+import io
+import shutil
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
@@ -9,8 +11,10 @@ from api_iso_antares.antares_io.writer.ini_writer import IniWriter
 from api_iso_antares.engine import FileSystemEngine
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.request_handler import (
+    BadZipBinary,
     RequestHandlerParameters,
     StudyNotFoundError,
+    StudyValidationError,
     IncorrectPathError,
 )
 
@@ -97,7 +101,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
         path_resources=project_path / "resources",
         jsm_validator=Mock(),
     )
-    request_handler._assert_study_exist(study_name)
+    request_handler.assert_study_exist(study_name)
 
 
 @pytest.mark.unit_test
@@ -124,7 +128,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         jsm_validator=Mock(),
     )
     with pytest.raises(StudyNotFoundError):
-        request_handler._assert_study_exist(study_name)
+        request_handler.assert_study_exist(study_name)
 
 
 @pytest.mark.unit_test
@@ -158,7 +162,7 @@ def test_find_studies(
     # Test & Verify
     request_handler = request_handler_builder(path_studies=path_studies)
 
-    assert study_names == request_handler.get_study_names()
+    assert study_names == request_handler.get_study_uuids()
 
 
 @pytest.mark.unit_test
@@ -189,9 +193,9 @@ def test_create_study(
     )
 
     study_name = "study1"
-    request_handler.create_study(study_name)
+    uuid = request_handler.create_study(study_name)
 
-    path_study = path_studies / study_name
+    path_study = path_studies / uuid
     assert path_study.exists()
 
     path_study_antares_infos = path_study / "study.antares"
@@ -263,10 +267,10 @@ def test_export_file(tmp_path: Path):
 
     # Test wrong study
     with pytest.raises(StudyNotFoundError):
-        request_handler.export("WRONG")
+        request_handler.export_study("WRONG")
 
     # Test good study
-    assert b"Hello" == request_handler.export(name)
+    assert b"Hello" == request_handler.export_study(name)
     exporter.export_file.assert_called_once_with(study_path)
 
 
@@ -291,7 +295,7 @@ def test_export_compact_file(tmp_path: Path):
         jsm_validator=Mock(),
     )
 
-    assert b"Hello" == request_handler.export(name, compact=True)
+    assert b"Hello" == request_handler.export_study(name, compact=True)
     exporter.export_compact.assert_called_once_with(study_path, 42)
 
 
@@ -333,3 +337,66 @@ def test_upload_matrix(
     second_level_dest_path = study_path / "test/test.txt"
     request_handler.upload_matrix(str(second_level_dest_path), b"")
     assert second_level_dest_path.is_file()
+
+
+@pytest.mark.unit_test
+def test_import_study(
+    tmp_path: Path, request_handler_builder: Callable
+) -> None:
+
+    name = "my-study"
+    study_path = tmp_path / name
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+
+    request_handler = request_handler_builder(path_studies=tmp_path)
+
+    request_handler.parse_folder = Mock()
+    request_handler.parse_folder.return_value = {
+        "study": {"antares": {"version": 700}}
+    }
+
+    filepath_zip = shutil.make_archive(study_path, "zip", study_path)
+    shutil.rmtree(study_path)
+
+    path_zip = Path(filepath_zip)
+
+    with path_zip.open("rb") as input_file:
+        uuid = request_handler.import_study(input_file)
+
+    request_handler.assert_study_exist(uuid)
+    request_handler.assert_study_not_exist(name)
+
+    with pytest.raises(BadZipBinary):
+        request_handler.import_study(io.BytesIO(b""))
+
+
+@pytest.mark.unit_test
+def test_parse_study(
+    tmp_path: Path, request_handler_builder: Callable
+) -> None:
+
+    study_name = "study1"
+
+    jsm_validator = Mock()
+    jsm_validator.validate = Mock(side_effect=StudyValidationError(""))
+
+    request_handler = request_handler_builder(
+        path_studies=tmp_path, jsm_validator=jsm_validator
+    )
+
+    with pytest.raises(StudyValidationError):
+        request_handler.parse_study(study_name)
+
+
+@pytest.mark.unit_test
+def test_check_antares_version(
+    tmp_path: Path, request_handler_builder: Callable
+) -> None:
+
+    right_study = {"study": {"antares": {"version": 700}}}
+    RequestHandler.check_antares_version(right_study)
+
+    wrong_study = {"study": {"antares": {"version": 600}}}
+    with pytest.raises(StudyValidationError):
+        RequestHandler.check_antares_version(wrong_study)

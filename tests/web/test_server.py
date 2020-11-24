@@ -1,9 +1,11 @@
+import io
 import json
+import shutil
+from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
-from http import HTTPStatus
 
 import pytest
 
@@ -12,8 +14,8 @@ from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
 )
 from api_iso_antares.web.server import (
-    _assert_study_name,
-    BadStudyNameError,
+    _assert_uuid,
+    BadUUIDError,
     create_server,
 )
 
@@ -90,7 +92,7 @@ def test_matrix(tmp_path: str, request_handler_builder: Callable) -> None:
 
 
 @pytest.mark.unit_test
-def test_create_study(
+def test_post_study(
     tmp_path: str, request_handler_builder: Callable, project_path
 ) -> None:
 
@@ -111,10 +113,6 @@ def test_create_study(
     app = create_server(request_handler)
     client = app.test_client()
 
-    result_wrong = client.post("/studies/study1")
-
-    assert result_wrong.status_code == HTTPStatus.CONFLICT.value
-
     result_right = client.post("/studies/study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
@@ -125,9 +123,42 @@ def test_create_study(
 
 
 @pytest.mark.unit_test
-def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
+def test_post_study_zipped(
+    tmp_path: Path, request_handler_builder: Callable, project_path
+) -> None:
 
-    path_studies = Path(tmp_path)
+    tmp_path /= "tmp"
+    tmp_path.mkdir()
+    study_name = "study1"
+    path_study = tmp_path / study_name
+    path_study.mkdir()
+    path_file = path_study / "study.antares"
+    path_file.write_text("[antares]")
+
+    shutil.make_archive(path_study, "zip", path_study)
+    path_zip = tmp_path / "study1.zip"
+
+    mock_request_handler = Mock()
+    mock_request_handler.import_study.return_value = study_name
+    app = create_server(mock_request_handler)
+    client = app.test_client()
+
+    result = client.post("/studies")
+
+    assert result.status_code == HTTPStatus.BAD_REQUEST.value
+
+    study_data = io.BytesIO(path_zip.read_bytes())
+    result = client.post("/studies", data=study_data)
+
+    assert json.loads(result.data) == "/studies/" + study_name
+    assert result.status_code == HTTPStatus.CREATED.value
+    mock_request_handler.import_study.assert_called_once()
+
+
+@pytest.mark.unit_test
+def test_copy_study(tmp_path: Path, request_handler_builder: Callable) -> None:
+
+    path_studies = tmp_path
     path_study = path_studies / "study1"
     path_study.mkdir()
     (path_study / "study.antares").touch()
@@ -148,31 +179,19 @@ def test_copy_study(tmp_path: str, request_handler_builder: Callable) -> None:
     result = client.post("/studies/%%%%/copy?dest=study")
 
     assert result.status_code == HTTPStatus.BAD_REQUEST.value
-    assert (
-        result.data
-        == b"Study name can only contain alphanumeric characters with '-' or '_'"
-    )
 
     result = client.post("/studies/study1/copy")
 
     assert result.status_code == HTTPStatus.BAD_REQUEST.value
-    assert result.data == b"Copy operation need a dest query parameter."
-
-    result = client.post("/studies/study1/copy?dest=study2")
-
-    assert result.status_code == HTTPStatus.CONFLICT.value
-    assert result.data == b"A simulation already exist with the name study2."
 
     result = client.post("/studies/study3/copy?dest=study4")
 
-    assert result.status_code == HTTPStatus.BAD_REQUEST.value
-    assert result.data == b"Study study3 does not exist."
+    assert result.status_code == HTTPStatus.NOT_FOUND.value
 
     result = client.post("/studies/study1/copy?dest=study3")
 
     request_handler.copy_study("study1", "study3")
     assert result.status_code == HTTPStatus.CREATED.value
-    assert result.data == b"/studies/study3"
 
 
 @pytest.mark.unit_test
@@ -221,14 +240,14 @@ def test_server_health() -> None:
 def test_export_files() -> None:
 
     mock_handler = Mock()
-    mock_handler.export.return_value = BytesIO(b"Hello")
+    mock_handler.export_study.return_value = BytesIO(b"Hello")
 
     app = create_server(mock_handler)
     client = app.test_client()
     result = client.get("/studies/name/export")
 
     assert result.data == b"Hello"
-    mock_handler.export.assert_called_once_with("name", False)
+    mock_handler.export_study.assert_called_once_with("name", False)
 
     result_wrong = client.get("/studies/%BAD_STUDY_NAME%/export")
     assert result_wrong.status_code == HTTPStatus.BAD_REQUEST.value
@@ -238,21 +257,20 @@ def test_export_files() -> None:
 def test_export_compact() -> None:
 
     mock_handler = Mock()
-    mock_handler.export.return_value = BytesIO(b"Hello")
+    mock_handler.export_study.return_value = BytesIO(b"Hello")
 
     app = create_server(mock_handler)
     client = app.test_client()
     result = client.get("/studies/name/export?compact")
 
     assert result.data == b"Hello"
-    mock_handler.export.assert_called_once_with("name", True)
+    mock_handler.export_study.assert_called_once_with("name", True)
 
 
 @pytest.mark.unit_test
-def test_bad_study_name() -> None:
-
-    with pytest.raises(BadStudyNameError):
-        _assert_study_name("<toto")
+def test_bad_uuid() -> None:
+    with pytest.raises(BadUUIDError):
+        _assert_uuid("<toto")
 
 
 @pytest.mark.unit_test
