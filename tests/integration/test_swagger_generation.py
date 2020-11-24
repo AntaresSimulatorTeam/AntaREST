@@ -41,3 +41,7 @@ def test_generation_swagger_documentation(
 
     studies_path = paths.get("/studies")
     assert "post" in studies_path
+
+    get_file_path = paths.get("/file/{path}")
+    assert "get" in get_file_path
+    assert "post" in get_file_path
