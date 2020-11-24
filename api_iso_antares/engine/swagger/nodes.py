@@ -1,9 +1,14 @@
+from typing import List
+
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine.swagger.swagger import (
     Swagger,
     SwaggerOperation,
+    SwaggerOperationBuilder,
     SwaggerParameter,
+    SwaggerParameterBuilder,
     SwaggerPath,
+    SwaggerPathBuilder,
     SwaggerTag,
 )
 from api_iso_antares.jsm import JsonSchema
@@ -24,107 +29,22 @@ class RootNode:
     def get_content(self) -> JSON:
         return self.swagger.json()
 
+    def build_and_add_path(
+        self,
+        url: str,
+        operations: List[SwaggerOperation] = [],
+        parameters: List[SwaggerParameter] = [],
+    ) -> None:
+        swagger_path = SwaggerPathBuilder.build(
+            url=url, operations=operations, parameters=parameters
+        )
+        self.swagger.add_path(swagger_path)
+
     def _build(self) -> None:
+        self._add_tags()
         self._build_global_parameters()
         self._build_paths_from_jsm()
         self._build_paths_not_in_jsm()
-        self._add_tags()
-
-    def _build_paths_not_in_jsm(self) -> None:
-        self._build_studies_root()
-        self._build_study_path()
-        self._build_copy_study_path()
-        self._build_export_path()
-        self._build_files_path()
-
-    def _build_studies_root(self) -> None:
-        studies_url = "/studies"
-        study_path = SwaggerPath(url=studies_url)
-        self._build_studies_list_path(study_path)
-        self._build_import_study_path(study_path)
-        self.swagger.add_path(study_path)
-
-    def _build_copy_study_path(self) -> None:
-        url = self.url + "/copy"
-
-        copy_study_path = SwaggerPath(url=url)
-
-        copy_study_path.add_operation(
-            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.post)
-        )
-
-        dest_parameter = SwaggerParameter(
-            name="dest",
-            in_=SwaggerParameter.ParametersIn.query,
-        )
-
-        copy_study_path.add_parameter(dest_parameter)
-
-        self.swagger.add_path(copy_study_path)
-
-    def _build_study_path(self) -> None:
-        study_path = SwaggerPath(url=self.url)
-
-        study_path.add_operation(
-            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
-        )
-        study_path.add_operation(
-            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.post)
-        )
-        study_path.add_operation(
-            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.delete)
-        )
-
-        self.swagger.add_path(study_path)
-
-    @staticmethod
-    def _build_import_study_path(study_path: SwaggerPath) -> None:
-
-        post_operation = SwaggerOperation.get_default(
-            SwaggerOperation.OperationVerbs.post
-        )
-
-        study_path.add_operation(post_operation)
-
-    @staticmethod
-    def _build_studies_list_path(study_path: SwaggerPath) -> None:
-        study_path.add_operation(
-            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
-        )
-
-    def _build_export_path(self) -> None:
-        studies_url = "/studies/{uuid}/export"
-        export_path = SwaggerPath(url=studies_url)
-
-        export_path.add_operation(
-            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
-        )
-
-        compact_parameter = SwaggerParameter(
-            name="compact",
-            in_=SwaggerParameter.ParametersIn.query,
-            required=False,
-        )
-
-        export_path.add_parameter(compact_parameter)
-
-        self.swagger.add_path(export_path)
-
-    def _build_files_path(self) -> None:
-
-        file_url = "/file/{path}"
-        get_file_path = SwaggerPath(url=file_url)
-
-        get_file_path.add_operation(
-            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
-        )
-
-        post_operation = SwaggerOperation.get_default(
-            SwaggerOperation.OperationVerbs.post
-        )
-        get_file_path.add_operation(post_operation)
-
-        self.swagger.add_path(get_file_path)
 
     def _add_tags(self) -> None:
         for key in self.jsm.get_properties():
@@ -140,6 +60,65 @@ class RootNode:
         )
 
         self.swagger.add_global_parameters(depth_parameter)
+
+    def _build_paths_not_in_jsm(self) -> None:
+        self._build_studies_root()
+        self._build_study_path()
+        self._build_copy_study_path()
+        self._build_export_path()
+        self._build_files_path()
+
+    def _build_studies_root(self) -> None:
+
+        url = "/studies"
+        operations = [
+            SwaggerOperationBuilder.get(),
+            SwaggerOperationBuilder.post_with_binary_data(),
+        ]
+
+        self.build_and_add_path(url=url, operations=operations)
+
+    def _build_copy_study_path(self) -> None:
+        url = self.url + "/copy"
+        operations = [SwaggerOperationBuilder.post()]
+        parameters = [SwaggerParameterBuilder.build_query("dest")]
+
+        self.build_and_add_path(
+            url=url, operations=operations, parameters=parameters
+        )
+
+    def _build_study_path(self) -> None:
+
+        url = self.url
+        operations = [
+            SwaggerOperationBuilder.post(),
+            SwaggerOperationBuilder.get(),
+            SwaggerOperationBuilder.delete(),
+        ]
+
+        self.build_and_add_path(url=url, operations=operations)
+
+    def _build_export_path(self) -> None:
+
+        url = "/studies/{uuid}/export"
+        operations = [SwaggerOperationBuilder.get()]
+        parameters = [
+            SwaggerParameterBuilder.build_query(name="compact", required=False)
+        ]
+
+        self.build_and_add_path(
+            url=url, operations=operations, parameters=parameters
+        )
+
+    def _build_files_path(self) -> None:
+
+        url = "/file/{path}"
+        operations = [
+            SwaggerOperationBuilder.get(),
+            SwaggerOperationBuilder.post_with_binary_data(),
+        ]
+
+        self.build_and_add_path(url=url, operations=operations)
 
     def _build_paths_from_jsm(self) -> None:
 
@@ -164,7 +143,11 @@ class PathNode:
 
     def _build(self) -> None:
         self._build_path()
-        self._build_children()
+        if not self._is_leaf():
+            self._build_children()
+
+    def _is_leaf(self) -> bool:
+        return self.jsm.is_swagger_leaf()
 
     def _build_path(self) -> None:
         path = self._get_path()
@@ -172,24 +155,20 @@ class PathNode:
 
     def _get_path(self) -> SwaggerPath:
 
-        swagger_path = SwaggerPath(url=self.url)
+        operation = SwaggerOperationBuilder.get()
+        operation.add_tag(self._get_tag())
+        operations = [operation]
 
-        operation_get = SwaggerOperation(
-            verb=SwaggerOperation.OperationVerbs.get
+        swagger_path = SwaggerPathBuilder.build(
+            url=self.url,
+            operations=operations,
         )
-        operation_get.add_tag(self._get_tag())
-        swagger_path.add_operation(operation_get)
 
         return swagger_path
 
     def _build_children(self) -> None:
-
-        if not self._is_leaf():
-            self._build_children_property_based()
-            self._build_children_additional_property_based()
-
-    def _is_leaf(self) -> bool:
-        return self.jsm.is_swagger_leaf()
+        self._build_children_property_based()
+        self._build_children_additional_property_based()
 
     def _build_children_property_based(self) -> None:
         if self.jsm.has_properties():
