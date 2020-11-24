@@ -66,6 +66,7 @@ class RootNode(INode):
         self._build_study_path()
         self._build_copy_study_path()
         self._build_export_path()
+        self._build_files_path()
 
     def _build_copy_study_path(self) -> None:
         url = self._root_url + "/copy"
@@ -110,18 +111,11 @@ class RootNode(INode):
     @staticmethod
     def _build_import_study_path(study_path: SwaggerPath) -> None:
 
-        operation = SwaggerOperation(verb=SwaggerOperation.OperationVerbs.post)
+        post_operation = SwaggerOperation.get_default(
+            SwaggerOperation.OperationVerbs.post
+        )
 
-        content = {
-            "application/octet-stream": {
-                "schema": {"type": "string", "format": "string"}
-            }
-        }
-        request_body = SwaggerRequestBody(content=content, required=True)
-
-        operation.set_request_body(request_body)
-
-        study_path.add_operation(operation)
+        study_path.add_operation(post_operation)
 
     @staticmethod
     def _build_studies_list_path(study_path: SwaggerPath) -> None:
@@ -146,6 +140,22 @@ class RootNode(INode):
         export_path.add_parameter(compact_parameter)
 
         self._swagger.add_path(export_path)
+
+    def _build_files_path(self) -> None:
+
+        file_url = "/file/{path}"
+        get_file_path = SwaggerPath(url=file_url)
+
+        get_file_path.add_operation(
+            SwaggerOperation(verb=SwaggerOperation.OperationVerbs.get)
+        )
+
+        post_operation = SwaggerOperation.get_default(
+            SwaggerOperation.OperationVerbs.post
+        )
+        get_file_path.add_operation(post_operation)
+
+        self._swagger.add_path(get_file_path)
 
     def _add_tags(self) -> None:
         for key in self._jsm.get_properties():

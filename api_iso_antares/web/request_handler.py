@@ -2,7 +2,6 @@ import copy
 import shutil
 import tempfile
 import time
-from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
 from typing import Any, IO, List
@@ -11,33 +10,20 @@ from zipfile import BadZipFile, ZipFile
 
 from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.antares_io.validator import JsmValidator
-from api_iso_antares.custom_exceptions import HtmlException
+from api_iso_antares.web.html_exception import (
+    BadZipBinary,
+    IncorrectPathError,
+    StudyAlreadyExistError,
+    StudyNotFoundError,
+    StudyValidationError,
+    UrlNotMatchJsonDataError,
+)
 from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.filesystem.engine import (
     FileSystemEngine,
 )
 from api_iso_antares.jsm import JsonSchema
-
-
-class StudyNotFoundError(HtmlException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message, HTTPStatus.NOT_FOUND)
-
-
-class StudyAlreadyExistError(HtmlException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message, HTTPStatus.CONFLICT)
-
-
-class StudyValidationError(HtmlException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message, HTTPStatus.UNPROCESSABLE_ENTITY)
-
-
-class BadZipBinary(HtmlException):
-    def __init__(self, message: str) -> None:
-        super().__init__(message, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
 
 
 class RequestHandlerParameters:
@@ -93,7 +79,26 @@ class RequestHandler:
         study_data = self.parse_study(uuid)
 
         route_cut = path_route.relative_to(Path(uuid))
-        return self.url_engine.apply(route_cut, study_data, parameters.depth)
+
+        data = self.get_data(parameters, route_cut, study_data)
+
+        return data
+
+    def get_data(
+        self,
+        parameters: RequestHandlerParameters,
+        route_cut: Path,
+        study_data: JSON,
+    ) -> SUB_JSON:
+        try:
+            data = self.url_engine.apply(
+                route_cut, study_data, parameters.depth
+            )
+        except KeyError:
+            raise UrlNotMatchJsonDataError(
+                f"Key {route_cut} not in the study."
+            )
+        return data
 
     def parse_study(self, uuid: str, do_validate: bool = True) -> JSON:
         study_path = self.get_study_path(uuid)
@@ -183,16 +188,6 @@ class RequestHandler:
 
         return uuid
 
-    @staticmethod
-    def _update_antares_info(study_name: str, study_data: JSON) -> None:
-
-        info_antares = study_data["study"]["antares"]
-
-        info_antares["caption"] = study_name
-        current_time = int(time.time())
-        info_antares["created"] = current_time
-        info_antares["lastsave"] = current_time
-
     def export_study(self, name: str, compact: bool = False) -> BytesIO:
         path_study = self.path_to_studies / name
 
@@ -209,6 +204,18 @@ class RequestHandler:
         self.assert_study_exist(name)
         study_path = self.get_study_path(name)
         shutil.rmtree(study_path)
+
+    def upload_matrix(self, path: str, data: bytes) -> None:
+
+        relative_path_matrix = Path(path)
+        uuid = relative_path_matrix.parts[0]
+
+        self.assert_study_exist(uuid)
+        RequestHandler.assert_path_can_be_matrix(relative_path_matrix)
+
+        path_matrix = self.path_to_studies / relative_path_matrix
+
+        path_matrix.write_bytes(data)
 
     def import_study(self, stream: IO[bytes]) -> str:
 
@@ -250,3 +257,20 @@ class RequestHandler:
                 zip_output.extractall(path=dst)
         except BadZipFile:
             raise BadZipBinary("Only zip file are allowed.")
+
+    @staticmethod
+    def assert_path_can_be_matrix(path: Path) -> None:
+        if path.suffix != ".txt":
+            raise IncorrectPathError(
+                f"{path} is not a valid path for a matrix (use txt extension)."
+            )
+
+    @staticmethod
+    def _update_antares_info(study_name: str, study_data: JSON) -> None:
+
+        info_antares = study_data["study"]["antares"]
+
+        info_antares["caption"] = study_name
+        current_time = int(time.time())
+        info_antares["created"] = current_time
+        info_antares["lastsave"] = current_time

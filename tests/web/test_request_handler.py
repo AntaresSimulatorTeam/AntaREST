@@ -11,8 +11,11 @@ from api_iso_antares.antares_io.writer.ini_writer import IniWriter
 from api_iso_antares.engine import FileSystemEngine
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.request_handler import (
-    BadZipBinary,
     RequestHandlerParameters,
+)
+from api_iso_antares.web.html_exception import (
+    BadZipBinary,
+    IncorrectPathError,
     StudyNotFoundError,
     StudyValidationError,
 )
@@ -313,6 +316,35 @@ def test_delete_study(
     request_handler.delete_study(name)
 
     assert not study_path.exists()
+
+
+@pytest.mark.unit_test
+def test_upload_matrix(
+    tmp_path: Path, request_handler_builder: Callable
+) -> None:
+
+    study_uuid = "my-study"
+    study_path = tmp_path / study_uuid
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+
+    request_handler = request_handler_builder(path_studies=tmp_path)
+
+    study_url = "WRONG-STUDY-NAME/"
+    matrix_path = ""
+    with pytest.raises(StudyNotFoundError):
+        request_handler.upload_matrix(study_url + matrix_path, b"")
+
+    study_url = study_uuid + "/"
+    matrix_path = "WRONG_MATRIX_PATH"
+    with pytest.raises(IncorrectPathError):
+        request_handler.upload_matrix(study_url + matrix_path, b"")
+
+    study_url = study_uuid + "/"
+    matrix_path = "matrix.txt"
+    data = b"hello"
+    request_handler.upload_matrix(study_url + matrix_path, data)
+    assert (study_path / matrix_path).read_bytes() == data
 
 
 @pytest.mark.unit_test

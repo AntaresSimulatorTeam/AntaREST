@@ -5,7 +5,7 @@ from typing import Any
 
 from flask import escape, Flask, jsonify, request, Response, send_file
 
-from api_iso_antares.custom_exceptions import (
+from api_iso_antares.web.html_exception import (
     HtmlException,
     stop_and_return_on_html_exception,
 )
@@ -81,8 +81,8 @@ def create_study_routes(application: Flask) -> None:
     @stop_and_return_on_html_exception
     def get_study(path: str) -> Any:
         global request_handler
-        parameters = _construct_parameters(request.args)
 
+        parameters = _construct_parameters(request.args)
         output = request_handler.get(path, parameters)
 
         return jsonify(output), 200
@@ -177,7 +177,21 @@ def create_non_business_routes(application: Flask) -> None:
             file_path = request_handler.path_to_studies / path
             return send_file(file_path.absolute())
         except FileNotFoundError:
-            return f"{path} not found", 404
+            return f"{path} not found", HTTPStatus.NOT_FOUND.value
+
+    @application.route(
+        "/file/<path:path>",
+        methods=["POST"],
+    )
+    @stop_and_return_on_html_exception
+    def post_file(path: str) -> Any:
+        global request_handler
+
+        request_handler.upload_matrix(path, request.data)
+        output = b""
+        code = HTTPStatus.NO_CONTENT.value
+
+        return output, code
 
     @application.route(
         "/swagger",

@@ -9,9 +9,12 @@ from unittest.mock import Mock
 
 import pytest
 
-from api_iso_antares.engine.url_engine import UrlNotMatchJsonDataError
 from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
+)
+from api_iso_antares.web.html_exception import (
+    IncorrectPathError,
+    UrlNotMatchJsonDataError,
 )
 from api_iso_antares.web.server import (
     _assert_uuid,
@@ -123,7 +126,7 @@ def test_post_study(
 
 
 @pytest.mark.unit_test
-def test_post_study_zipped(
+def test_import_study_zipped(
     tmp_path: Path, request_handler_builder: Callable, project_path
 ) -> None:
 
@@ -283,3 +286,34 @@ def test_delete_study() -> None:
     client.delete("/studies/name")
 
     mock_handler.delete_study.assert_called_once_with("name")
+
+
+@pytest.mark.unit_test
+def test_import_matrix() -> None:
+    mock_handler = Mock()
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+
+    data = b"hello"
+    path = "path/to/matrix.txt"
+    result = client.post("/file/" + path, data=data)
+
+    mock_handler.upload_matrix.assert_called_once_with(path, data)
+    assert result.status_code == HTTPStatus.NO_CONTENT.value
+
+
+@pytest.mark.unit_test
+def test_import_matrix_with_wrong_path() -> None:
+
+    mock_handler = Mock()
+    mock_handler.upload_matrix = Mock(side_effect=IncorrectPathError(""))
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+
+    data = b"hello"
+    path = "path/to/matrix.txt"
+    result = client.post("/file/" + path, data=data)
+
+    assert result.status_code == HTTPStatus.NOT_FOUND.value
