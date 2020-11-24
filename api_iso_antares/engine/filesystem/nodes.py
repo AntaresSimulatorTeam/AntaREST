@@ -46,6 +46,8 @@ class INode(abc.ABC):
             file = self._path / (
                 self._jsm.get_child(key).get_filename() or key
             )
+
+            # TODO: try to refacto not_cheking (remove ?)
             if not_checking or file.exists():
                 child_node = self._node_factory.build(
                     key=key,

@@ -32,12 +32,8 @@ class UrlEngine:
             search_element = [
                 element for element in json_data if element["$id"] == key
             ]
-            # if not search_element:
-            #     raise UrlNotMatchJsonDataError(f"Key {key} not in data.")
             new_jsondata = search_element[0]
         else:
-            # if key not in json_data:
-            #     raise UrlNotMatchJsonDataError(f"Key {key} not in data.")
             new_jsondata = json_data[key]
 
         return UrlEngine._apply_recursive(path[1:], new_jsondata, depth)
