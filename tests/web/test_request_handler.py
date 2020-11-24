@@ -323,22 +323,28 @@ def test_upload_matrix(
     tmp_path: Path, request_handler_builder: Callable
 ) -> None:
 
-    name = "my-study"
-    study_path = tmp_path / name
+    study_uuid = "my-study"
+    study_path = tmp_path / study_uuid
     study_path.mkdir()
+    (study_path / "study.antares").touch()
 
     request_handler = request_handler_builder(path_studies=tmp_path)
 
+    study_url = "WRONG-STUDY-NAME/"
+    matrix_path = ""
+    with pytest.raises(StudyNotFoundError):
+        request_handler.upload_matrix(study_url + matrix_path, b"")
+
+    study_url = study_uuid + "/"
+    matrix_path = "WRONG_MATRIX_PATH"
     with pytest.raises(IncorrectPathError):
-        request_handler.upload_matrix(str(study_path / "test"), b"")
+        request_handler.upload_matrix(study_url + matrix_path, b"")
 
-    first_level_dest_path = study_path / "test.txt"
-    request_handler.upload_matrix(str(first_level_dest_path), b"")
-    assert first_level_dest_path.is_file()
-
-    second_level_dest_path = study_path / "test/test.txt"
-    request_handler.upload_matrix(str(second_level_dest_path), b"")
-    assert second_level_dest_path.is_file()
+    study_url = study_uuid + "/"
+    matrix_path = "matrix.txt"
+    data = b"hello"
+    request_handler.upload_matrix(study_url + matrix_path, data)
+    assert (study_path / matrix_path).read_bytes() == data
 
 
 @pytest.mark.unit_test

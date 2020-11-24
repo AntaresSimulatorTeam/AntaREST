@@ -286,3 +286,34 @@ def test_delete_study() -> None:
     client.delete("/studies/name")
 
     mock_handler.delete_study.assert_called_once_with("name")
+
+
+@pytest.mark.unit_test
+def test_import_matrix() -> None:
+    mock_handler = Mock()
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+
+    data = b"hello"
+    path = "path/to/matrix.txt"
+    result = client.post("/file/" + path, data=data)
+
+    mock_handler.upload_matrix.assert_called_once_with(path, data)
+    assert result.status_code == HTTPStatus.NO_CONTENT.value
+
+
+@pytest.mark.unit_test
+def test_import_matrix_with_wrong_path() -> None:
+
+    mock_handler = Mock()
+    mock_handler.upload_matrix = Mock(side_effect=IncorrectPathError(""))
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+
+    data = b"hello"
+    path = "path/to/matrix.txt"
+    result = client.post("/file/" + path, data=data)
+
+    assert result.status_code == HTTPStatus.NOT_FOUND.value
