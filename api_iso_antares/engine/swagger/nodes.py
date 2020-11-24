@@ -46,7 +46,7 @@ class RootNode(INode):
         self._jsm = jsm
         self._node_factory = NodeFactory()
         self._swagger = Swagger()
-        self._root_url: str = "/studies/{study}"
+        self._root_url: str = "/studies/{uuid}"
         self._build()
 
     def get_url(self) -> str:
@@ -130,7 +130,7 @@ class RootNode(INode):
         )
 
     def _build_export_path(self) -> None:
-        studies_url = "/studies/{study}/export"
+        studies_url = "/studies/{uuid}/export"
         export_path = SwaggerPath(url=studies_url)
 
         export_path.add_operation(
@@ -185,9 +185,6 @@ class PathNode(INode):
         self._swagger.add_path(path)
 
     def _build_children(self) -> None:
-
-        if "/studies/{study}/output" == self.get_url():
-            print()
 
         if not self._is_leaf():
             self._build_children_property_based()

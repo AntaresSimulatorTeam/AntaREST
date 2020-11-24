@@ -14,8 +14,8 @@ from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
 )
 from api_iso_antares.web.server import (
-    _assert_study_name,
-    BadStudyNameError,
+    _assert_uuid,
+    BadUUIDError,
     create_server,
 )
 
@@ -113,10 +113,6 @@ def test_post_study(
     app = create_server(request_handler)
     client = app.test_client()
 
-    result_wrong = client.post("/studies/study1")
-
-    assert result_wrong.status_code == HTTPStatus.CONFLICT.value
-
     result_right = client.post("/studies/study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
@@ -183,31 +179,19 @@ def test_copy_study(tmp_path: Path, request_handler_builder: Callable) -> None:
     result = client.post("/studies/%%%%/copy?dest=study")
 
     assert result.status_code == HTTPStatus.BAD_REQUEST.value
-    assert (
-        result.data
-        == b"Study name can only contain alphanumeric characters with '-' or '_'"
-    )
 
     result = client.post("/studies/study1/copy")
 
     assert result.status_code == HTTPStatus.BAD_REQUEST.value
-    assert result.data == b"Copy operation need a dest query parameter."
-
-    result = client.post("/studies/study1/copy?dest=study2")
-
-    assert result.status_code == HTTPStatus.CONFLICT.value
-    assert result.data == b"A study already exist with the name study2."
 
     result = client.post("/studies/study3/copy?dest=study4")
 
     assert result.status_code == HTTPStatus.NOT_FOUND.value
-    assert result.data == b"Study study3 does not exist."
 
     result = client.post("/studies/study1/copy?dest=study3")
 
     request_handler.copy_study("study1", "study3")
     assert result.status_code == HTTPStatus.CREATED.value
-    assert result.data == b"/studies/study3"
 
 
 @pytest.mark.unit_test
@@ -284,10 +268,9 @@ def test_export_compact() -> None:
 
 
 @pytest.mark.unit_test
-def test_bad_study_name() -> None:
-
-    with pytest.raises(BadStudyNameError):
-        _assert_study_name("<toto")
+def test_bad_uuid() -> None:
+    with pytest.raises(BadUUIDError):
+        _assert_uuid("<toto")
 
 
 @pytest.mark.unit_test

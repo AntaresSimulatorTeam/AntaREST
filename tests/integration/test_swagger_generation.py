@@ -22,11 +22,11 @@ def test_generation_swagger_documentation(
 
     urls = swg_doc.get("paths").keys()
     url_studies = "/studies"
-    url_study = "/studies/{study}"
-    url_create_study = "/studies/{study}"
-    url_copy_study = "/studies/{study}/copy"
+    url_study = "/studies/{uuid}"
+    url_create_study = "/studies/{uuid}"
+    url_copy_study = "/studies/{uuid}/copy"
 
-    long_url = "/studies/{study}/output/{simulation}/about-the-study/parameters/general"
+    long_url = "/studies/{uuid}/output/{simulation}/about-the-study/parameters/general"
 
     assert url_studies in urls
     assert url_study in urls
@@ -35,9 +35,9 @@ def test_generation_swagger_documentation(
     assert long_url not in urls
 
     paths = swg_doc.get("paths")
-    study_path = paths.get("/studies/{study}")
+    study_path = paths.get("/studies/{uuid}")
 
     assert "delete" in study_path
 
     studies_path = paths.get("/studies")
-    assert "post" in study_path
+    assert "post" in studies_path
