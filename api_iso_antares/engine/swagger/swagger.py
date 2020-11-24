@@ -150,6 +150,30 @@ class SwaggerOperation(ISwaggerElement):
     def set_request_body(self, request_body: SwaggerRequestBody) -> None:
         self.requestBody = request_body
 
+    @staticmethod
+    def get_default(verb: OperationVerbs) -> "SwaggerOperation":
+
+        operation: "SwaggerOperation"
+        if verb == SwaggerOperation.OperationVerbs.post:
+            operation = SwaggerOperation(
+                verb=SwaggerOperation.OperationVerbs.post
+            )
+
+            content = {
+                "application/octet-stream": {
+                    "schema": {"type": "string", "format": "string"}
+                }
+            }
+            request_body = SwaggerRequestBody(content=content)
+
+            operation.set_request_body(request_body)
+        else:
+            raise NotImplementedError(
+                f"Verb default {verb} is not implemented."
+            )
+
+        return operation
+
 
 class SwaggerParameter(ISwaggerElement):
     class ParametersIn(enum.Enum):
