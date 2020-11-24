@@ -1,7 +1,3 @@
-from typing import cast
-
-import yaml
-
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine.swagger.nodes import RootNode
 from api_iso_antares.jsm import JsonSchema
