@@ -91,7 +91,7 @@ def get_flask_application_by_arguments() -> Flask:
     return application
 
 
-def get_flask_application_by_environnement_variables() -> Flask:
+def get_flask_application_by_environment_variables() -> Flask:
     jsm_path = Path(os.environ.get("API_ANTARES_JSM_PATH"))
     studies_path = Path(os.environ.get("API_ANTARES_STUDIES_PATH"))
 
