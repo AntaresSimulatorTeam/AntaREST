@@ -83,7 +83,7 @@ def create_study_routes(application: Flask) -> None:
         global request_handler
         parameters = _construct_parameters(request.args)
 
-        output = request_handler.get(path, parameters)
+        output, _ = request_handler.get(path, parameters)
 
         return jsonify(output), 200
 

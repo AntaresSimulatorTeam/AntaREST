@@ -12,6 +12,7 @@ import pytest
 from api_iso_antares.engine.url_engine import UrlNotMatchJsonDataError
 from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
+    Benchmark,
 )
 from api_iso_antares.web.server import (
     _assert_uuid,
@@ -54,7 +55,7 @@ def test_404() -> None:
 def test_server_with_parameters() -> None:
 
     mock_handler = Mock()
-    mock_handler.get.return_value = {}
+    mock_handler.get.return_value = {}, Benchmark()
 
     app = create_server(mock_handler)
     client = app.test_client()

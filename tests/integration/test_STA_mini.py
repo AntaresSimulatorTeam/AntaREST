@@ -26,10 +26,10 @@ def assert_with_errors(
 ) -> None:
     url = url[len("/studies/") :]
     print(url)
-    assert (
-        request_handler.get(route=url, parameters=RequestHandlerParameters())
-        == expected_output
+    data, _ = request_handler.get(
+        route=url, parameters=RequestHandlerParameters()
     )
+    assert data == expected_output
 
 
 @pytest.mark.integration_test
@@ -348,8 +348,8 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
     destination_folder = url_destination.split("/")[2]
 
     parameters = RequestHandlerParameters(depth=None)
-    data_source = request_handler.get(source_folder, parameters)
-    data_destination = request_handler.get(destination_folder, parameters)
+    data_source, _ = request_handler.get(source_folder, parameters)
+    data_destination, _ = request_handler.get(destination_folder, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
     assert link_url_source == "file/STA-mini/input/links/de/fr.txt"

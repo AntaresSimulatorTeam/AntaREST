@@ -5,7 +5,7 @@ import time
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Any, IO, List
+from typing import Any, IO, List, Tuple, Callable
 from uuid import uuid4
 from zipfile import BadZipFile, ZipFile
 
@@ -66,6 +66,16 @@ class RequestHandlerParameters:
         return self.__str__()
 
 
+class Benchmark:
+    def __init__(self) -> None:
+        self.parse = 0.0
+        self.write = 0.0
+        self.url = 0.0
+
+    def __str__(self) -> str:
+        return f"parse={self.parse}, url={self.url}"
+
+
 class RequestHandler:
     def __init__(
         self,
@@ -85,15 +95,23 @@ class RequestHandler:
 
     def get(
         self, route: str, parameters: RequestHandlerParameters
-    ) -> SUB_JSON:
+    ) -> Tuple[SUB_JSON, Benchmark]:
+        bench = Benchmark()
+
         path_route = Path(route)
         uuid = path_route.parts[0]
         self.assert_study_exist(uuid)
 
+        bench.parse = time.time()
         study_data = self.parse_study(uuid)
+        bench.parse = time.time() - bench.parse
 
+        bench.url = time.time()
         route_cut = path_route.relative_to(Path(uuid))
-        return self.url_engine.apply(route_cut, study_data, parameters.depth)
+        data = self.url_engine.apply(route_cut, study_data, parameters.depth)
+        bench.url = time.time() - bench.url
+
+        return data, bench
 
     def parse_study(self, uuid: str, do_validate: bool = True) -> JSON:
         study_path = self.get_study_path(uuid)
@@ -139,7 +157,8 @@ class RequestHandler:
 
     def get_study_informations(self, uuid: str) -> SUB_JSON:
         url = uuid + "/study"
-        return self.get(url, RequestHandlerParameters(depth=2))
+        data, _ = self.get(url, RequestHandlerParameters(depth=2))
+        return data
 
     def get_jsm(self) -> JsonSchema:
         return self.jsm_validator.jsm
