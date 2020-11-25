@@ -1,4 +1,4 @@
-from typing import cast, List, Optional
+from typing import cast, List, Optional, Any
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
 
@@ -7,7 +7,7 @@ class JsonSchema:
     def __init__(self, data: JSON) -> None:
         self.data = data
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, dict):
             return self.data == other
         elif isinstance(other, JsonSchema):

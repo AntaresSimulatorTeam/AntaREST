@@ -6,11 +6,11 @@ from unittest.mock import Mock
 
 import pytest
 
-from api_iso_antares.jsm import JsonSchema
 
 project_dir: Path = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_dir))
 
+from api_iso_antares.jsm import JsonSchema
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.web import RequestHandler
 

@@ -33,7 +33,8 @@ class UrlEngine:
     def output_links_strategy(
         jsm: JsonSchema, part: str, path: Path, url: str
     ) -> Tuple[JsonSchema, Path]:
-        second_node = re.search(re.escape(part) + r"/([^/]+)", url).group(1)
+        regex = re.search(re.escape(part) + r"/([^/]+)", url)
+        second_node = regex.group(1) if regex else None
         path = path / f"{part} - {second_node}"
         return jsm.get_child(), path
 
