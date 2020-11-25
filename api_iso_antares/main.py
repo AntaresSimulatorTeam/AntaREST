@@ -3,6 +3,8 @@ import os
 import sys
 from pathlib import Path
 
+from flask import Flask
+
 from api_iso_antares import __version__
 from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.antares_io.reader import (
@@ -53,14 +55,9 @@ def get_local_path() -> Path:
         return Path(os.path.abspath("."))
 
 
-def main() -> None:
-    arguments: argparse.Namespace = parse_arguments()
+def _get_flask_application(jsm_path: Path, studies_path: Path) -> Flask:
 
-    if arguments.version:
-        print(__version__)
-        return
-
-    jsm = JsmReader.read(Path(arguments.jsm_path))
+    jsm = JsmReader.read(jsm_path)
 
     readers = {"default": IniReader()}
     writers = {"default": IniWriter(), "matrix": MatrixWriter()}
@@ -70,14 +67,40 @@ def main() -> None:
         study_parser=study_parser,
         url_engine=UrlEngine(jsm=jsm),
         exporter=Exporter(),
-        path_studies=Path(arguments.studies_path),
+        path_studies=studies_path,
         path_resources=get_local_path() / "resources",
         jsm_validator=JsmValidator(jsm=jsm),
     )
     application = create_server(request_handler)
 
-    application.run(debug=False, host="0.0.0.0", port=8080)
+    return application
+
+
+def get_flask_application_by_arguments() -> Flask:
+    arguments: argparse.Namespace = parse_arguments()
+
+    if arguments.version:
+        print(__version__)
+        return
+
+    jsm_path = Path(arguments.jsm_path)
+    studies_path = Path(arguments.studies_path)
+
+    application = _get_flask_application(jsm_path, studies_path)
+
+    return application
+
+
+def get_flask_application_by_environnement_variables() -> Flask:
+    jsm_path = Path(os.environ.get("API_ANTARES_JSM_PATH"))
+    studies_path = Path(os.environ.get("API_ANTARES_STUDIES_PATH"))
+
+    application = _get_flask_application(jsm_path, studies_path)
+
+    return application
 
 
 if __name__ == "__main__":
-    main()
+
+    flask_app = get_flask_application_by_arguments()
+    flask_app.run(debug=False, host="0.0.0.0", port=8080)
