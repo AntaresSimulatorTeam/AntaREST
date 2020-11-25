@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 from pathlib import Path
 from typing import Optional, Tuple
@@ -9,6 +10,41 @@ from api_iso_antares.jsm import JsonSchema
 class UrlEngine:
     def __init__(self, jsm: JsonSchema) -> None:
         self.jsm = jsm
+
+    @staticmethod
+    def default_strategy(
+        jsm: JsonSchema, part: str, path: Path
+    ) -> Tuple[JsonSchema, Path]:
+        jsm = jsm.get_child(key=part)
+        path = path / part
+        return jsm, path
+
+    @staticmethod
+    def output_strategy(
+        jsm: JsonSchema, part: str, path: Path
+    ) -> Tuple[JsonSchema, Path]:
+        if part != "output":
+            path = sorted(path.iterdir())[int(part) - 1]
+            jsm = jsm.get_child()
+
+        return jsm, path
+
+    @staticmethod
+    def output_links_strategy(
+        jsm: JsonSchema, part: str, path: Path, url: str
+    ) -> Tuple[JsonSchema, Path]:
+        second_node = re.search(re.escape(part) + r"/([^/]+)", url).group(1)
+        path = path / f"{part} - {second_node}"
+        return jsm.get_child(), path
+
+    def resolve(self, url: str, path: Path) -> Tuple[JsonSchema, Path]:
+        jsm = deepcopy(self.jsm)
+        for part in url.split("/"):
+            if jsm.get_strategy() in ["S12"]:
+                jsm, path = self.output_strategy(jsm, part, path)
+            else:
+                jsm, path = self.default_strategy(jsm, part, path)
+        return jsm, path
 
     def apply(
         self, path: Path, json_data: JSON, depth: Optional[int] = None

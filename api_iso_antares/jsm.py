@@ -7,6 +7,14 @@ class JsonSchema:
     def __init__(self, data: JSON) -> None:
         self.data = data
 
+    def __eq__(self, other):
+        if isinstance(other, dict):
+            return self.data == other
+        elif isinstance(other, JsonSchema):
+            return self.data == other.data
+        else:
+            return False
+
     def get_properties(self) -> List[str]:
 
         return [
@@ -24,10 +32,7 @@ class JsonSchema:
         ):
             return self.get_additional_properties()
         else:
-            if key is None:
-                data = self.data["items"]
-            else:
-                data = self.data["properties"][key]
+            data = self.data["properties"][key]
         return JsonSchema(data)
 
     def get_additional_properties(self) -> "JsonSchema":

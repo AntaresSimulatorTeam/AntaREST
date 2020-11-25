@@ -1,74 +1,64 @@
 from pathlib import Path
 
-import pytest
-
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine import UrlEngine
-from api_iso_antares.web.html_exception import UrlNotMatchJsonDataError
+from api_iso_antares.jsm import JsonSchema
+from tests.conftest import get_strategy
+
+content = 42
 
 
-@pytest.mark.unit_test
-def test_get_right_settings(test_json_data: JSON) -> None:
-    path = Path("part1/key_int")
-    url_engine = UrlEngine(jsm={})
+def test_default_strategy(lite_jsonschema: JSON, lite_path: Path):
+    expected_sub_jsm = lite_jsonschema["properties"]["folder3"]
+    expected_sub_path = lite_path / "folder3"
+    jsm = JsonSchema(lite_jsonschema)
 
-    assert url_engine.apply(path, test_json_data) == 1
-
-
-@pytest.mark.unit_test
-def test_get_wrong_path(test_json_data: JSON) -> None:
-    path = Path("WRONG/PATH")
-    url_engine = UrlEngine(jsm={})
-
-    with pytest.raises(KeyError):
-        url_engine.apply(path, test_json_data, depth=-1)
-
-
-@pytest.mark.unit_test
-def test_get_right_settings_with_depth() -> None:
-    data = {
-        "level0": {
-            "value1": 43,
-            "level1": {
-                "value2": 3.14,
-                "level2": {
-                    "value3": True,
-                    "level3": {"value4": "hello, world", "level4": {}},
-                },
-            },
-        }
-    }
-
-    url_engine = UrlEngine(jsm={})
-
-    expected_enough_depth = {
-        "value1": 43,
-        "level1": {"value2": 3.14, "level2": None},
-    }
-    assert url_engine.apply(Path("level0/"), data, 2) == expected_enough_depth
-
-    expected_not_enough_depth = data["level0"]
-    assert (
-        url_engine.apply(Path("level0/"), data, 10)
-        == expected_not_enough_depth
+    sub_jsm, sub_path = UrlEngine.default_strategy(
+        jsm=jsm, part="folder3", path=lite_path
     )
 
-    expected_deeper_depth = {"value4": "hello, world", "level4": None}
-    assert (
-        url_engine.apply(Path("level0/level1/level2/level3"), data, 1)
-        == expected_deeper_depth
+    assert sub_jsm == expected_sub_jsm
+    assert sub_path == expected_sub_path
+
+
+def test_output_strategy(project_path: Path):
+    jsm, expected_json_data, path = get_strategy(project_path, "S12")
+
+    expected_sub_jsm = jsm
+    expected_sub_path = path
+
+    url = "output/"
+
+    sub_jsm, sub_path = UrlEngine.output_strategy(
+        jsm=jsm, part="output", path=path
     )
 
+    assert sub_jsm == expected_sub_jsm
+    assert sub_path == expected_sub_path
 
-@pytest.mark.unit_test
-def test_get_array_items(lite_jsondata: JSON) -> None:
-    data = lite_jsondata
 
-    url_engine = UrlEngine(jsm={})
+def test_output_strategy_with_id(project_path: Path):
+    jsm, expected_json_data, path = get_strategy(project_path, "S12")
 
-    expected = "file/root1/folder3/areas/area1/matrice1.txt"
+    expected_sub_jsm = jsm.get_child()
+    expected_sub_path = path / "20201009-1221eco-hello-world"
 
-    assert (
-        url_engine.apply(Path("folder3/areas/area1/matrice1.txt"), data)
-        == expected
+    sub_jsm, sub_path = UrlEngine.output_strategy(jsm=jsm, part="2", path=path)
+
+    assert sub_jsm == expected_sub_jsm
+    assert sub_path == expected_sub_path
+
+
+def test_output_link_strategy(project_path: Path):
+    jsm, expected_json_data, path = get_strategy(project_path, "S12")
+    url = "es/fr"
+
+    expected_sub_jsm = jsm.get_child()
+    expected_sub_path = path / "es - fr"
+
+    sub_jsm, sub_path = UrlEngine.output_links_strategy(
+        jsm=jsm, part="es", path=path, url=url
     )
+
+    assert sub_jsm == expected_sub_jsm
+    assert sub_path == expected_sub_path

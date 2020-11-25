@@ -6,6 +6,8 @@ from unittest.mock import Mock
 
 import pytest
 
+from api_iso_antares.jsm import JsonSchema
+
 project_dir: Path = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_dir))
 
@@ -293,3 +295,58 @@ def lite_path(tmp_path: Path) -> Path:
     create_area(path, "area3")
 
     return path_folder
+
+
+def get_strategy(project_path: Path, strategy: str):
+    content = 42
+    if strategy == "S12":
+        path = project_path / "tests/engine/resources/s12/output"
+        jsm_dict = {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "rte-metadata": {"strategy": "S12"},
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "hello": {"type": "string"},
+                    "world": {"type": "string"},
+                },
+            },
+        }
+        json_data = {
+            "1": {
+                "date": "19450623-0565",
+                "mode": "adequacy",
+                "name": "",
+                "hello": content,
+            },
+            "2": {
+                "date": "20201009-1221",
+                "mode": "economy",
+                "name": "hello-world",
+                "hello": content,
+                "world": content,
+            },
+        }
+    elif strategy == "S15":
+        path = project_path / "tests/engine/resources/s15/links"
+
+        jsm_dict = {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "rte-metadata": {"strategy": "S15"},
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {"type": "number"},
+            },
+        }
+
+        json_data = {
+            "de": {"fr": content, "it": content},
+            "es": {"fr": content},
+            "fr": {"it": content},
+        }
+    return JsonSchema(jsm_dict), json_data, path
