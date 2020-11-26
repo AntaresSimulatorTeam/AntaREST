@@ -41,6 +41,14 @@
                         "type": "number"
                     }
                 }
+            },
+            "additionalProperties": {
+                "rte-metadata": {"additional_property_name":  "area"},
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {
+                    "type": "number"
+                }
             }
         }
     }

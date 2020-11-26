@@ -257,6 +257,8 @@ class NodeFactory:
 
     @staticmethod
     def _build_path(path: Path, jsm: JsonSchema, key: str) -> Path:
+        if path.is_file():
+            return path
         file_or_directory_name: Optional[str] = jsm.get_filename()
         if file_or_directory_name is None:
             file_or_directory_name = key

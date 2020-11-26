@@ -73,10 +73,10 @@ def test_output_link_strategy(project_path: Path):
 @pytest.mark.unit_test
 def test_resolve(lite_jsonschema: JSON, lite_path: Path):
 
-    url = "folder1/file2.ini"
+    url = "folder1/file2"
 
     jsm = JsonSchema(lite_jsonschema)
-    expected_sub_jsm = jsm.get_child("folder1").get_child("file2.ini")
+    expected_sub_jsm = jsm.get_child("folder1").get_child("file2")
 
     expected_sub_path = lite_path / "folder1/file2.ini"
 
@@ -91,12 +91,12 @@ def test_resolve(lite_jsonschema: JSON, lite_path: Path):
 @pytest.mark.unit_test
 def test_resolve_in_ini(lite_jsonschema: JSON, lite_path: Path):
 
-    url = "folder1/file2.ini/section/params"
+    url = "folder1/file2/section/params"
 
     jsm = JsonSchema(lite_jsonschema)
     expected_sub_jsm = (
         jsm.get_child("folder1")
-        .get_child("file2.ini")
+        .get_child("file2")
         .get_child("section")
         .get_child("params")
     )
@@ -109,3 +109,4 @@ def test_resolve_in_ini(lite_jsonschema: JSON, lite_path: Path):
     assert sub_jsm == expected_sub_jsm
     assert sub_path == expected_sub_path
     assert keys == "section/params"
+

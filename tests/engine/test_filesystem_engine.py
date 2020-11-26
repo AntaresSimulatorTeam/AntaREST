@@ -72,6 +72,29 @@ def test_read_sub_study(
 
 
 @pytest.mark.unit_test
+def test_read_sub_study_inside_ini(
+    lite_path: Path,
+    lite_jsonschema: JSON,
+    lite_jsondata: JSON,
+    ini_cleaner: Callable,
+) -> None:
+    # Input
+    path = lite_path / "folder1/file2.ini"
+    jsm = JsonSchema(lite_jsonschema)\
+        .get_child("folder1")\
+        .get_child("file2")\
+        .get_child("section")\
+        .get_child("params")
+
+    fs_engine = get_mocked_filesystem_engine(ini_cleaner)
+
+    res = fs_engine.parse(deep_path=path, study_path=lite_path, jsm=jsm, keys="section/params")
+    ini_reader = fs_engine.get_reader()
+
+    assert res == lite_jsondata["folder1"]["file2"]["section"]["params"]
+
+
+@pytest.mark.unit_test
 def test_write_filesystem(
     tmp_path,
     lite_path: Path,

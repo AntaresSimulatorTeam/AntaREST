@@ -11,13 +11,13 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "mod.txt": {
+          "mod": {
             "rte-metadata": {
                 "filename": "mod.txt"
             },
             "type":  "string"
           },
-          "ror.txt": {
+          "ror": {
             "rte-metadata": {
                 "filename": "ror.txt"
             },

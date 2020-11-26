@@ -98,9 +98,9 @@ def lite_jsonschema() -> JSON:
                 "$id": "#/properties/folder1",
                 "type": "object",
                 "title": "The folder1 schema",
-                "required": ["file2.ini", "matrice1.txt", "folder2"],
+                "required": ["file2", "matrice1.txt", "folder2"],
                 "properties": {
-                    "file2.ini": {
+                    "file2": {
                         "type": "object",
                         "rte-metadata": {"filename": "file2.ini"},
                         "title": "The file3.ini schema",
@@ -210,7 +210,7 @@ def lite_jsondata() -> JSON:
     return {
         "key_file1": file_content,
         "folder1": {
-            "file2.ini": file_content,
+            "file2": file_content,
             "matrice1.txt": "file/root1/folder1/matrice1.txt",
             "folder2": {
                 "matrice2.txt": "file/root1/folder1/folder2/matrice2.txt"

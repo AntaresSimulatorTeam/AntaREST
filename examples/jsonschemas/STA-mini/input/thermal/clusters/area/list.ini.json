@@ -8,6 +8,7 @@
                 "additional_property_name":  "property",
                 "swagger_stop": true
             },
+            "properties": {},
             "additionalProperties": {
 
                 "type": "object",

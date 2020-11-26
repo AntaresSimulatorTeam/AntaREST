@@ -64,6 +64,9 @@ class UrlEngine:
                     jsm, key = self.default_strategy(jsm, part, key)
                 else:
                     jsm, path = self.default_strategy(jsm, part, path)
+            if jsm.is_file():
+                suffix = jsm.get_filename_extension() if jsm.get_filename_extension() else "." + jsm.get_filename().split('.')[-1]
+                path = Path(str(path) + suffix)
         return jsm, path, "/".join(key.parts)
 
     def apply(

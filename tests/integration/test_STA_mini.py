@@ -132,7 +132,7 @@ def test_sta_mini_study_antares(
             {},
         ),
         (
-            "/studies/STA-mini/input/hydro/series/de/mod.txt",
+            "/studies/STA-mini/input/hydro/series/de/mod",
             "file/STA-mini/input/hydro/series/de/mod.txt",
         ),
         (

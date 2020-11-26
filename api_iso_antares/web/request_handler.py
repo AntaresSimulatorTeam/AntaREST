@@ -79,10 +79,10 @@ class RequestHandler:
         self.assert_study_exist(uuid)
 
         # TODO use get_data to catch url error
-        sub_jsm, deep_path, key = self.url_engine.resolve(
+        sub_jsm, deep_path, keys = self.url_engine.resolve(
             url=url, path=study_path
         )
-        sub_study = self.study_parser.parse(deep_path, study_path, sub_jsm)
+        sub_study = self.study_parser.parse(deep_path=deep_path, study_path=study_path, jsm=sub_jsm, keys=keys)
 
         # study_data = self.parse_study(uuid)
         #
