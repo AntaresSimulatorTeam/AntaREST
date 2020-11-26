@@ -1,6 +1,9 @@
+# Reference: https://github.com/benoitc/gunicorn/blob/master/examples/example_config.py
+
 import multiprocessing
 
 bind = "0.0.0.0:5000"
+
 """
 Gunicorn relies on the operating system to provide all of the load balancing
 when handling requests. Generally we recommend (2 x $num_cores) + 1
@@ -10,5 +13,14 @@ one worker will be reading or writing from the socket
 while the other worker is processing a request.
 https://docs.gunicorn.org/en/stable/design.html#how-many-workers
 """
+
 workers = multiprocessing.cpu_count() * 2 + 1
-# timeout = 120
+
+timeout = 3 * 60  # 3 minutes
+keepalive = 24 * 60 * 60  # 1 day
+
+capture_output = True
+
+loglevel = "info"
+errorlog = "-"
+accesslog = "-"

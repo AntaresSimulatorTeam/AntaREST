@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+from typing import Tuple
 
 from flask import Flask
 
@@ -23,6 +24,7 @@ from api_iso_antares.web.server import create_server
 
 
 def parse_arguments() -> argparse.Namespace:
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-j",
@@ -47,6 +49,17 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def get_arguments() -> Tuple[Path, Path, bool]:
+
+    arguments = parse_arguments()
+
+    jsm = Path(arguments.jsm_path)
+    studies = Path(arguments.studies_path)
+    display_version = arguments.version or False
+
+    return jsm, studies, display_version
+
+
 def get_local_path() -> Path:
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
@@ -55,7 +68,7 @@ def get_local_path() -> Path:
         return Path(os.path.abspath("."))
 
 
-def _get_flask_application(jsm_path: Path, studies_path: Path) -> Flask:
+def get_flask_application(jsm_path: Path, studies_path: Path) -> Flask:
 
     jsm = JsmReader.read(jsm_path)
 
@@ -76,31 +89,13 @@ def _get_flask_application(jsm_path: Path, studies_path: Path) -> Flask:
     return application
 
 
-def get_flask_application_by_arguments() -> Flask:
-    arguments: argparse.Namespace = parse_arguments()
-
-    if arguments.version:
-        print(__version__)
-        return
-
-    jsm_path = Path(arguments.jsm_path)
-    studies_path = Path(arguments.studies_path)
-
-    application = _get_flask_application(jsm_path, studies_path)
-
-    return application
-
-
-def get_flask_application_by_environment_variables() -> Flask:
-    jsm_path = Path(os.environ.get("API_ANTARES_JSM_PATH"))
-    studies_path = Path(os.environ.get("API_ANTARES_STUDIES_PATH"))
-
-    application = _get_flask_application(jsm_path, studies_path)
-
-    return application
-
-
 if __name__ == "__main__":
 
-    flask_app = get_flask_application_by_arguments()
+    jsm_path, studies_path, display_version = get_arguments()
+
+    if display_version:
+        print(__version__)
+        exit()
+
+    flask_app = get_flask_application(jsm_path, studies_path)
     flask_app.run(debug=False, host="0.0.0.0", port=8080)
