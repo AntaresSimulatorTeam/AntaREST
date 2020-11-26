@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import cast, Optional, Tuple
 
 from flask import Flask
 
@@ -96,5 +96,8 @@ if __name__ == "__main__":
         print(__version__)
         sys.exit()
 
-    flask_app = get_flask_application(studies_path)
-    flask_app.run(debug=False, host="0.0.0.0", port=8080)
+    if studies_path is not None:
+        flask_app = get_flask_application(studies_path)
+        flask_app.run(debug=False, host="0.0.0.0", port=8080)
+    else:
+        raise argparse.ArgumentError("Please provide the path for studies.")
