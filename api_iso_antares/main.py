@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import Tuple
+from typing import cast, Optional, Tuple
 
 from flask import Flask
 
@@ -27,12 +27,6 @@ def parse_arguments() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-j",
-        "--json-schema",
-        dest="jsm_path",
-        help="Path to the Json Schema file",
-    )
-    parser.add_argument(
         "-s",
         "--studies",
         dest="studies_path",
@@ -49,15 +43,18 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_arguments() -> Tuple[Path, Path, bool]:
+def get_arguments() -> Tuple[Optional[Path], bool]:
 
     arguments = parse_arguments()
 
-    jsm = Path(arguments.jsm_path)
-    studies = Path(arguments.studies_path)
+    arg_studies_path = arguments.studies_path
+    studies_path = None
+    if arg_studies_path is not None:
+        studies_path = Path(arguments.studies_path)
+
     display_version = arguments.version or False
 
-    return jsm, studies, display_version
+    return studies_path, display_version
 
 
 def get_local_path() -> Path:
@@ -68,8 +65,10 @@ def get_local_path() -> Path:
         return Path(os.path.abspath("."))
 
 
-def get_flask_application(jsm_path: Path, studies_path: Path) -> Flask:
+def get_flask_application(studies_path: Path) -> Flask:
 
+    path_resources = get_local_path() / "resources"
+    jsm_path = Path(path_resources / "jsonschema/jsonschema.json")
     jsm = JsmReader.read(jsm_path)
 
     readers = {"default": IniReader()}
@@ -81,7 +80,7 @@ def get_flask_application(jsm_path: Path, studies_path: Path) -> Flask:
         url_engine=UrlEngine(jsm=jsm),
         exporter=Exporter(),
         path_studies=studies_path,
-        path_resources=get_local_path() / "resources",
+        path_resources=path_resources,
         jsm_validator=JsmValidator(jsm=jsm),
     )
     application = create_server(request_handler)
@@ -91,11 +90,14 @@ def get_flask_application(jsm_path: Path, studies_path: Path) -> Flask:
 
 if __name__ == "__main__":
 
-    jsm_path, studies_path, display_version = get_arguments()
+    studies_path, display_version = get_arguments()
 
     if display_version:
         print(__version__)
-        exit()
+        sys.exit()
 
-    flask_app = get_flask_application(jsm_path, studies_path)
-    flask_app.run(debug=False, host="0.0.0.0", port=8080)
+    if studies_path is not None:
+        flask_app = get_flask_application(studies_path)
+        flask_app.run(debug=False, host="0.0.0.0", port=8080)
+    else:
+        raise argparse.ArgumentError("Please provide the path for studies.")

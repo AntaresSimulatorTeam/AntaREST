@@ -14,12 +14,9 @@ def get_env_var(env_var_name: str) -> str:
     return env_var
 
 
-env_var_jsm_path = get_env_var("API_ANTARES_JSM_PATH")
-jsm_path = Path(env_var_jsm_path)
-
 env_var_studies_path = get_env_var("API_ANTARES_STUDIES_PATH")
 studies_path = Path(env_var_studies_path)
 
-app = get_flask_application(jsm_path, studies_path)
+app = get_flask_application(studies_path)
 
 app.config["DEBUG"] = False
