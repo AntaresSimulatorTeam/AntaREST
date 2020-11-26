@@ -63,27 +63,39 @@ class FileSystemElement:
 class FileSystemEngine:
     def __init__(
         self,
-        jsm: JsonSchema,
         readers: Dict[str, Any],
         writers: Dict[str, Any],
     ) -> None:
-        self.jsm = jsm
         self.node_factory = NodeFactory(readers=readers)
         self.writer = FileSystemWriter(writers)
 
     def get_reader(self, reader: str = "default") -> Any:
         return self.node_factory.readers[reader]
 
-    def parse(self, path: Path) -> JSON:
-        root_node = self.node_factory.build(
-            key="",
-            root_path=path,
-            jsm=self.jsm,
-        )
-        return cast(JSON, root_node.get_content())
+    @staticmethod
+    def is_inside_ini(path: Path, jsm: JsonSchema):
+        return "/#" in str(path)
 
-    def write(self, path: Path, data: JSON) -> None:
-        element = FileSystemElement(path, data, self.jsm)
+    @staticmethod
+    def read_sub_ini(path: Path, jsm: JsonSchema):
+        ini_path, ini_inside = str(path.absolute()).split("/#/")
+        # TODO 1, retrouver extension SI manquante
+
+        # TODO
+
+    def parse(self, path: Path, jsm: JsonSchema) -> JSON:
+        if FileSystemEngine.is_inside_ini(path, jsm):
+            data = FileSystemEngine.read_sub_ini(path, jsm)
+        else:
+            data = self.node_factory.build(
+                key="",
+                root_path=path,
+                jsm=jsm,
+            ).get_content()
+        return cast(JSON, data)
+
+    def write(self, path: Path, data: JSON, jsm: JsonSchema) -> None:
+        element = FileSystemElement(path, data, jsm)
         self.writer.write(element, root_path=path)
 
 

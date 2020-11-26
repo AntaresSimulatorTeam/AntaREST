@@ -100,6 +100,16 @@ class JsonSchema:
         extension = self.get_filename_extension()
         return (filename is not None) or (extension is not None)
 
+    def is_ini_file(self) -> bool:
+        name = self.get_filename()
+        ext = self.get_filename_extension()
+        if name:
+            return name.split(".")[-1] in ["ini", "antares", "dat"]
+        elif ext:
+            return ext in [".ini", ".antares", ".dat"]
+        else:
+            return False
+
     def get_type(self) -> str:
         return cast(str, self.data["type"])
 

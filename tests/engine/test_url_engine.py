@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine import UrlEngine
 from api_iso_antares.jsm import JsonSchema
@@ -8,6 +10,7 @@ from tests.conftest import get_strategy
 content = 42
 
 
+@pytest.mark.unit_test
 def test_default_strategy(lite_jsonschema: JSON, lite_path: Path):
     expected_sub_jsm = lite_jsonschema["properties"]["folder3"]
     expected_sub_path = lite_path / "folder3"
@@ -21,6 +24,7 @@ def test_default_strategy(lite_jsonschema: JSON, lite_path: Path):
     assert sub_path == expected_sub_path
 
 
+@pytest.mark.unit_test
 def test_output_strategy(project_path: Path):
     jsm, expected_json_data, path = get_strategy(project_path, "S12")
 
@@ -37,6 +41,7 @@ def test_output_strategy(project_path: Path):
     assert sub_path == expected_sub_path
 
 
+@pytest.mark.unit_test
 def test_output_strategy_with_id(project_path: Path):
     jsm, expected_json_data, path = get_strategy(project_path, "S12")
 
@@ -49,6 +54,7 @@ def test_output_strategy_with_id(project_path: Path):
     assert sub_path == expected_sub_path
 
 
+@pytest.mark.unit_test
 def test_output_link_strategy(project_path: Path):
     jsm, expected_json_data, path = get_strategy(project_path, "S12")
     url = "es/fr"

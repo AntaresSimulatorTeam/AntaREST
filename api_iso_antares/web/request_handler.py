@@ -72,17 +72,21 @@ class RequestHandler:
     def get(
         self, route: str, parameters: RequestHandlerParameters
     ) -> SUB_JSON:
-        path_route = Path(route)
-        uuid = path_route.parts[0]
+        route_parts = route.split("/")
+        uuid = route_parts[0]
+        url = "/".join(route_parts[1:])
+        study_path = self.path_to_studies / uuid
         self.assert_study_exist(uuid)
 
-        study_data = self.parse_study(uuid)
+        sub_jsm, sub_path = self.url_engine.resolve(url=url, path=study_path)
+        sub_study = self.study_parser.parse(path=sub_path, jsm=sub_jsm)
+        # study_data = self.parse_study(uuid)
+        #
+        # route_cut = path_route.relative_to(Path(uuid))
+        #
+        # data = self.get_data(parameters, route_cut, study_data)
 
-        route_cut = path_route.relative_to(Path(uuid))
-
-        data = self.get_data(parameters, route_cut, study_data)
-
-        return data
+        return sub_study
 
     def get_data(
         self,
@@ -100,12 +104,16 @@ class RequestHandler:
             )
         return data
 
-    def parse_study(self, uuid: str, do_validate: bool = True) -> JSON:
+    def parse_study(
+        self, uuid: str, sub_jsm: JsonSchema, do_validate: bool = True
+    ) -> JSON:
         study_path = self.get_study_path(uuid)
-        return self.parse_folder(study_path, do_validate)
+        return self.parse_folder(study_path, sub_jsm, do_validate)
 
-    def parse_folder(self, path: Path, do_validate: bool = True) -> JSON:
-        data = self.study_parser.parse(path)
+    def parse_folder(
+        self, path: Path, sub_jsm: JsonSchema, do_validate: bool = True
+    ) -> JSON:
+        data = self.study_parser.parse(path, jsm=sub_jsm)
         if do_validate:
             try:
                 self.jsm_validator.validate(data)

@@ -11,9 +11,7 @@ from api_iso_antares.engine.filesystem.engine import (
 from api_iso_antares.jsm import JsonSchema
 
 
-def get_mocked_filesystem_engine(
-    jsm: JSON, ini_cleaner: Callable
-) -> FileSystemEngine:
+def get_mocked_filesystem_engine(ini_cleaner: Callable) -> FileSystemEngine:
 
     file_content = {"section": {"params": 123}}
 
@@ -29,9 +27,7 @@ def get_mocked_filesystem_engine(
     readers = {"default": ini_reader}
     writers = {"default": ini_writer, "matrix": matrix_writer}
 
-    filesystem_engine = FileSystemEngine(
-        jsm=JsonSchema(jsm), readers=readers, writers=writers
-    )
+    filesystem_engine = FileSystemEngine(readers=readers, writers=writers)
 
     return filesystem_engine
 
@@ -44,13 +40,42 @@ def test_read_filesystem(
     ini_cleaner: Callable,
 ) -> None:
 
-    folder_reader = get_mocked_filesystem_engine(lite_jsonschema, ini_cleaner)
+    folder_reader = get_mocked_filesystem_engine(ini_cleaner)
 
-    res = folder_reader.parse(lite_path)
+    res = folder_reader.parse(lite_path, jsm=JsonSchema(lite_jsonschema))
     ini_reader = folder_reader.get_reader()
 
     assert res == lite_jsondata
     assert ini_reader.read.call_count == 6
+
+
+@pytest.mark.unit_test
+def test_read_sub_ini(
+    lite_path: Path,
+    lite_jsonschema: JSON,
+    lite_jsondata: JSON,
+    ini_cleaner: Callable,
+) -> None:
+    # Input
+    path = lite_path / "folder1/file2.ini/#/section/params"
+    jsm = (
+        JsonSchema(lite_jsonschema)
+        .get_child("folder1")
+        .get_child("file2.ini")
+        .get_child("section")
+        .get_child("params")
+    )
+
+    # Expected
+    exp_reader_path = lite_path / "folder1/file2.ini"
+
+    fs_engine = get_mocked_filesystem_engine(ini_cleaner)
+
+    res = fs_engine.parse(path, jsm=jsm)
+    ini_reader = fs_engine.get_reader()
+
+    assert res == 123
+    assert ini_reader.assert_called_once_with(exp_reader_path)
 
 
 @pytest.mark.unit_test
@@ -62,9 +87,7 @@ def test_write_filesystem(
     ini_cleaner: Callable,
 ) -> None:
 
-    filesystem_engine = get_mocked_filesystem_engine(
-        lite_jsonschema, ini_cleaner
-    )
+    filesystem_engine = get_mocked_filesystem_engine(ini_cleaner)
 
     study_name_destination = "copy_of_lite_study"
     write_path = Path(tmp_path) / study_name_destination

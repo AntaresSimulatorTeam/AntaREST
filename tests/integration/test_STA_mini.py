@@ -43,7 +43,7 @@ def assert_with_errors(
 def test_sta_mini_settings(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
-    assert_url_content(
+    assert_with_errors(
         request_handler=request_handler,
         url=url,
         expected_output=expected_output,

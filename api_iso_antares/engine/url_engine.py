@@ -39,12 +39,29 @@ class UrlEngine:
         return jsm.get_child(), path
 
     def resolve(self, url: str, path: Path) -> Tuple[JsonSchema, Path]:
+        """
+        Go to JSM & path level by url request.
+
+        Args:
+            url: url given by user
+            path: root study path
+
+        Returns: If url target a file, path and jsm are on file level.
+        If url targets inside ini file : path goes to ini data level,
+        jsm remains at file ini level
+
+        """
         jsm = deepcopy(self.jsm)
         for part in url.split("/"):
+            if jsm.is_ini_file() and "#/" not in str(path):
+                path = path / "#/"
             if jsm.get_strategy() in ["S12"]:
                 jsm, path = self.output_strategy(jsm, part, path)
             else:
-                jsm, path = self.default_strategy(jsm, part, path)
+                if "#/" in str(path):
+                    _, path = self.default_strategy(jsm, part, path)
+                else:
+                    jsm, path = self.default_strategy(jsm, part, path)
         return jsm, path
 
     def apply(
