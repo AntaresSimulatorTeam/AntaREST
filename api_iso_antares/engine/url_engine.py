@@ -38,7 +38,7 @@ class UrlEngine:
         path = path / f"{part} - {second_node}"
         return jsm.get_child(), path
 
-    def resolve(self, url: str, path: Path) -> Tuple[JsonSchema, Path]:
+    def resolve(self, url: str, path: Path) -> Tuple[JsonSchema, Path, str]:
         """
         Go to JSM & path level by url request.
 
@@ -52,17 +52,19 @@ class UrlEngine:
 
         """
         jsm = deepcopy(self.jsm)
+        key = Path("")
+        is_inside_ini = False
         for part in url.split("/"):
-            if jsm.is_ini_file() and "#/" not in str(path):
-                path = path / "#/"
+            if jsm.is_ini_file():
+                is_inside_ini = True
             if jsm.get_strategy() in ["S12"]:
                 jsm, path = self.output_strategy(jsm, part, path)
             else:
-                if "#/" in str(path):
-                    _, path = self.default_strategy(jsm, part, path)
+                if is_inside_ini:
+                    jsm, key = self.default_strategy(jsm, part, key)
                 else:
                     jsm, path = self.default_strategy(jsm, part, path)
-        return jsm, path
+        return jsm, path, "/".join(key.parts)
 
     def apply(
         self, path: Path, json_data: JSON, depth: Optional[int] = None

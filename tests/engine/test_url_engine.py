@@ -68,3 +68,44 @@ def test_output_link_strategy(project_path: Path):
 
     assert sub_jsm == expected_sub_jsm
     assert sub_path == expected_sub_path
+
+
+@pytest.mark.unit_test
+def test_resolve(lite_jsonschema: JSON, lite_path: Path):
+
+    url = "folder1/file2.ini"
+
+    jsm = JsonSchema(lite_jsonschema)
+    expected_sub_jsm = jsm.get_child("folder1").get_child("file2.ini")
+
+    expected_sub_path = lite_path / "folder1/file2.ini"
+
+    engine = UrlEngine(jsm=jsm)
+    sub_jsm, sub_path, keys = engine.resolve(url=url, path=lite_path)
+
+    assert sub_jsm == expected_sub_jsm
+    assert sub_path == expected_sub_path
+    assert keys == ""
+
+
+@pytest.mark.unit_test
+def test_resolve_in_ini(lite_jsonschema: JSON, lite_path: Path):
+
+    url = "folder1/file2.ini/section/params"
+
+    jsm = JsonSchema(lite_jsonschema)
+    expected_sub_jsm = (
+        jsm.get_child("folder1")
+        .get_child("file2.ini")
+        .get_child("section")
+        .get_child("params")
+    )
+
+    expected_sub_path = lite_path / "folder1/file2.ini"
+
+    engine = UrlEngine(jsm=jsm)
+    sub_jsm, sub_path, keys = engine.resolve(url=url, path=lite_path)
+
+    assert sub_jsm == expected_sub_jsm
+    assert sub_path == expected_sub_path
+    assert keys == "section/params"

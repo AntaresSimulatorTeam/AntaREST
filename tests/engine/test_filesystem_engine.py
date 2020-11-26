@@ -50,32 +50,25 @@ def test_read_filesystem(
 
 
 @pytest.mark.unit_test
-def test_read_sub_ini(
+def test_read_sub_study(
     lite_path: Path,
     lite_jsonschema: JSON,
     lite_jsondata: JSON,
     ini_cleaner: Callable,
 ) -> None:
     # Input
-    path = lite_path / "folder1/file2.ini/#/section/params"
-    jsm = (
-        JsonSchema(lite_jsonschema)
-        .get_child("folder1")
-        .get_child("file2.ini")
-        .get_child("section")
-        .get_child("params")
-    )
+    path = lite_path / "folder1/folder2"
+    jsm = JsonSchema(lite_jsonschema).get_child("folder1").get_child("folder2")
 
     # Expected
-    exp_reader_path = lite_path / "folder1/file2.ini"
+    exp_reader_path = lite_path / "folder1/folder2"
 
     fs_engine = get_mocked_filesystem_engine(ini_cleaner)
 
-    res = fs_engine.parse(path, jsm=jsm)
+    res = fs_engine.parse(deep_path=path, study_path=lite_path, jsm=jsm)
     ini_reader = fs_engine.get_reader()
 
-    assert res == 123
-    assert ini_reader.assert_called_once_with(exp_reader_path)
+    assert res == lite_jsondata["folder1"]["folder2"]
 
 
 @pytest.mark.unit_test

@@ -15,6 +15,12 @@ class JsonSchema:
         else:
             return False
 
+    def __str__(self):
+        return str(self.data)
+
+    def __repr__(self):
+        return self.__str__()
+
     def get_properties(self) -> List[str]:
 
         return [

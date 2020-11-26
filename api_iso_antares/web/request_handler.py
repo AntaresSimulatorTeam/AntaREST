@@ -78,8 +78,12 @@ class RequestHandler:
         study_path = self.path_to_studies / uuid
         self.assert_study_exist(uuid)
 
-        sub_jsm, sub_path = self.url_engine.resolve(url=url, path=study_path)
-        sub_study = self.study_parser.parse(path=sub_path, jsm=sub_jsm)
+        # TODO use get_data to catch url error
+        sub_jsm, deep_path, key = self.url_engine.resolve(
+            url=url, path=study_path
+        )
+        sub_study = self.study_parser.parse(deep_path, study_path, sub_jsm)
+
         # study_data = self.parse_study(uuid)
         #
         # route_cut = path_route.relative_to(Path(uuid))

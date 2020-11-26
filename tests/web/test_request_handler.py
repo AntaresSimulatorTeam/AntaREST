@@ -179,9 +179,7 @@ def test_create_study(
     ini_writer = IniWriter()
     writers = {"default": ini_writer}
 
-    study_parser = FileSystemEngine(
-        jsm=Mock(), readers=readers, writers=writers
-    )
+    study_parser = FileSystemEngine(readers=readers, writers=writers)
     parser = Mock()
     parser.return_value = {"study": {"antares": {"caption": None}}}
     study_parser.parse = parser

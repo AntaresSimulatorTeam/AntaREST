@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, cast, Dict, Iterator
+from typing import Any, cast, Dict, Iterator, Optional
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.engine.filesystem.nodes import NodeFactory
@@ -72,26 +72,19 @@ class FileSystemEngine:
     def get_reader(self, reader: str = "default") -> Any:
         return self.node_factory.readers[reader]
 
-    @staticmethod
-    def is_inside_ini(path: Path, jsm: JsonSchema):
-        return "/#" in str(path)
-
-    @staticmethod
-    def read_sub_ini(path: Path, jsm: JsonSchema):
-        ini_path, ini_inside = str(path.absolute()).split("/#/")
-        # TODO 1, retrouver extension SI manquante
-
-        # TODO
-
-    def parse(self, path: Path, jsm: JsonSchema) -> JSON:
-        if FileSystemEngine.is_inside_ini(path, jsm):
-            data = FileSystemEngine.read_sub_ini(path, jsm)
-        else:
-            data = self.node_factory.build(
-                key="",
-                root_path=path,
-                jsm=jsm,
-            ).get_content()
+    def parse(
+        self,
+        deep_path: Path,
+        jsm: JsonSchema,
+        study_path: Optional[Path] = None,
+    ) -> JSON:
+        study_path = study_path or deep_path
+        data = self.node_factory.build(
+            key="",
+            deep_path=deep_path,
+            study_path=study_path,
+            jsm=jsm,
+        ).get_content()
         return cast(JSON, data)
 
     def write(self, path: Path, data: JSON, jsm: JsonSchema) -> None:

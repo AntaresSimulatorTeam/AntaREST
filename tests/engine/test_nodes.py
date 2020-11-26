@@ -89,10 +89,9 @@ def mix_folder(path: Path, jsm: JSON, exp_data: JSON, filenames: List[str]):
     factory.build.return_value = node_mock
 
     node = MixFolderNode(
-        path=path,
+        deep_path=path,
         jsm=JsonSchema(jsm),
         ini_reader=Mock(),
-        parent=None,
         node_factory=factory,
     )
     json_data = node.get_content()
@@ -123,10 +122,9 @@ def test_mix_keys_in_ini_file(project_path: str):
     }
 
     node = IniFileNode(
-        path=path,
+        deep_path=path,
         jsm=JsonSchema(jsm),
         ini_reader=IniReader(),
-        parent=None,
         node_factory=Mock(),
     )
     json_data = node.get_content()
@@ -148,10 +146,9 @@ def test_output_folder(project_path: Path) -> None:
     factory_mock.build.return_value = node_mock
 
     node = OutputFolderNode(
-        path=path,
+        deep_path=path,
         jsm=jsm,
         ini_reader=Mock(),
-        parent=None,
         node_factory=factory_mock,
     )
 
@@ -281,10 +278,9 @@ def only_list_node(path: Path, jsm: JSON, exp_data: JSON):
     factory_mock.build.return_value = node_mock
 
     node = OnlyListNode(
-        path=path,
+        deep_path=path,
         jsm=JsonSchema(jsm),
         ini_reader=Mock(),
-        parent=None,
         node_factory=factory_mock,
     )
 
@@ -303,10 +299,9 @@ def test_set_of_output_link(project_path: Path):
     factory_mock.build.return_value = node_mock
 
     node = OutputLinksNode(
-        path=path,
+        deep_path=path,
         jsm=jsm,
         ini_reader=Mock(),
-        parent=None,
         node_factory=factory_mock,
     )
 
@@ -350,10 +345,9 @@ def test_set_of_input_link(project_path: Path):
     factory_mock.build.return_value = node_mock
 
     node = InputLinksNode(
-        path=path,
+        deep_path=path,
         jsm=JsonSchema(jsm),
         ini_reader=Mock(),
-        parent=None,
         node_factory=factory_mock,
     )
 
@@ -376,10 +370,9 @@ def test_sets_ini(project_path: Path):
     }
 
     node = SetsIniFileNode(
-        path=path,
+        deep_path=path,
         jsm=Mock(),
         ini_reader=Mock(),
-        parent=None,
         node_factory=Mock(),
     )
     assert node.get_content() == exp
@@ -388,15 +381,12 @@ def test_sets_ini(project_path: Path):
 @pytest.mark.unit_test
 def test_text_file(project_path: Path):
 
-    parent = Mock()
-    parent.get_root_path.return_value = Path("/my/ugly/root")
-
     node = UrlFileNode(
-        path=Path("/my/ugly/root/my/beautiful/path"),
+        deep_path=Path("/my/ugly/root/my/beautiful/path"),
         jsm=Mock(),
         ini_reader=Mock(),
-        parent=parent,
         node_factory=Mock(),
+        study_path=Path("/my/ugly/root"),
     )
 
     assert node.get_content() == "file/root/my/beautiful/path"
