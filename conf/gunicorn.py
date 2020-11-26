@@ -16,7 +16,7 @@ https://docs.gunicorn.org/en/stable/design.html#how-many-workers
 """
 
 workers = os.getenv("GUNICORN_WORKERS")
-if workers == "ALL_AVAILABLE":
+if workers == "ALL_AVAILABLE" or workers is None:
     workers = multiprocessing.cpu_count() * 2 + 1
 
 timeout = 3 * 60  # 3 minutes
