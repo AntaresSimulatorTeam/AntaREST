@@ -10,14 +10,14 @@ from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.antares_io.writer.ini_writer import IniWriter
 from api_iso_antares.engine import FileSystemEngine
 from api_iso_antares.web import RequestHandler
-from api_iso_antares.web.request_handler import (
-    RequestHandlerParameters,
-)
 from api_iso_antares.web.html_exception import (
     BadZipBinary,
     IncorrectPathError,
     StudyNotFoundError,
     StudyValidationError,
+)
+from api_iso_antares.web.request_handler import (
+    RequestHandlerParameters,
 )
 
 

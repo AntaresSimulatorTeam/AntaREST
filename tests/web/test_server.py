@@ -9,12 +9,12 @@ from unittest.mock import Mock
 
 import pytest
 
-from api_iso_antares.web.request_handler import (
-    RequestHandlerParameters,
-)
 from api_iso_antares.web.html_exception import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
+)
+from api_iso_antares.web.request_handler import (
+    RequestHandlerParameters,
 )
 from api_iso_antares.web.server import (
     _assert_uuid,

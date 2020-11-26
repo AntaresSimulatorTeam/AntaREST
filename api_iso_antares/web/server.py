@@ -5,11 +5,11 @@ from typing import Any
 
 from flask import escape, Flask, jsonify, request, Response, send_file
 
+from api_iso_antares.engine import SwaggerEngine
 from api_iso_antares.web.html_exception import (
     HtmlException,
     stop_and_return_on_html_exception,
 )
-from api_iso_antares.engine import SwaggerEngine
 from api_iso_antares.web.request_handler import (
     RequestHandler,
     RequestHandlerParameters,

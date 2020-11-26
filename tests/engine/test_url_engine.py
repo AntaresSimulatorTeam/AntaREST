@@ -4,7 +4,6 @@ import pytest
 
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine import UrlEngine
-from api_iso_antares.web.html_exception import UrlNotMatchJsonDataError
 
 
 @pytest.mark.unit_test
