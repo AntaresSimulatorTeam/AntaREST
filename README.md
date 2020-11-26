@@ -44,6 +44,13 @@ docker build --tag api-iso-antares -f docker/Dockerfile .
 
 ### Using builded binary with pyinstaller
 
+```shell script
+dist/server -s $STUDIES_ABSOLUTE_PATH         # Linux based system
+dist\server.exe -s %STUDIES_ABSOLUTE_PATH%    # Windows system
+```
+
+* $STUDIES_ABSOLUTE_PATH is the path of the ANTARES studies folders you wish to manipulate
+
 ### Using docker image
 
 ```shell script
