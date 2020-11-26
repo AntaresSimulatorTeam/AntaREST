@@ -7,9 +7,9 @@
                 "$id": "#/properties/folder1",
                 "type": "object",
                 "title": "The folder1 schema",
-                "required": ["file2.ini", "matrice1.txt", "folder2"],
+                "required": ["file2", "matrice1.txt", "folder2"],
                 "properties": {
-                    "file2.ini": {"$ref": "file.json#/definitions/file.ini"},
+                    "file2": {"$ref": "file.json#/definitions/file.ini"},
                     "matrice1.txt": {
                         "$id": "#/properties/folder1/properties/matrice1.txt",
                         "type": "string",

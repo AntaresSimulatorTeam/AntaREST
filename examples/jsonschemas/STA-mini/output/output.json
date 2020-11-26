@@ -3,7 +3,8 @@
     "definitions": {
         "output": {
             "type": "object",
-            "rte-metadata": {"strategy":  "S12", "additional_property_name":  "simulation"},
+            "rte-metadata": {"strategy":  "S12", "additional_property_name": "simulation"},
+            "properties": {},
             "patternProperties": {
                 "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)": {
                     "type": "object",
@@ -11,10 +12,30 @@
                         "date": {"type":  "string"},
                         "mode": {"type":  "string"},
                         "name": {"type":  "string"},
-                        "annualSystemCost": {"type": "string"},
-                        "checkIntegrity": {"type": "string"},
-                        "simulation-comments": {"type": "string"},
-                        "simulation": {"type": "string"},
+                        "annualSystemCost": {
+                            "rte-metadata": {
+                                "filename": "annualSystemCost.txt"
+                            },
+                            "type": "string"
+                        },
+                        "checkIntegrity": {
+                            "rte-metadata": {
+                                "filename": "checkIntegrity.txt"
+                            },
+                            "type": "string"
+                        },
+                        "simulation-comments": {
+                            "rte-metadata": {
+                                "filename": "simulation-comments.txt"
+                            },
+                            "type": "string"
+                        },
+                        "simulation": {
+                            "rte-metadata": {
+                                "filename": "simulation.log"
+                            },
+                            "type": "string"
+                        },
                         "about-the-study":{"$ref" : "about-the-study/about-the-study.json#/definitions/about-the-study"},
                         "economy": {"$ref":  "economy/economy.json#/definitions/economy"},
                         "adequacy": {"$ref":  "adequacy/adequacy.json#/definitions/adequacy"},

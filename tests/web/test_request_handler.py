@@ -392,7 +392,7 @@ def test_parse_study(
     )
 
     with pytest.raises(StudyValidationError):
-        request_handler.parse_study(study_name)
+        request_handler.parse_study(study_name, sub_jsm=Mock())
 
 
 @pytest.mark.unit_test
