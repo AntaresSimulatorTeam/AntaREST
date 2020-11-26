@@ -11,14 +11,16 @@
                 "unserverdenergycost": {
                     "rte-metadata": {"additional_property_name":  "area"},
                     "type": "object",
-                    "properties": {},
                     "additionalProperties": {
                         "type": "number"
                     }
                 },
                 "spilledenergycost": {
+                    "rte-metadata": {"additional_property_name":  "area"},
                     "type": "object",
-                    "properties": {}
+                    "additionalProperties": {
+                        "type": "number"
+                    }
                 }
             }
         }
