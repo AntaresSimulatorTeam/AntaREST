@@ -79,14 +79,14 @@ def test_sta_mini_layers_layers(
     "url, expected_output",
     [
         (
-            "/studies/STA-mini/desktop/.shellclassinfo/iconfile",
+            "/studies/STA-mini/Desktop/.shellclassinfo/iconfile",
             "settings/resources/study.ico",
         ),
         (
-            "/studies/STA-mini/desktop/.shellclassinfo/infotip",
+            "/studies/STA-mini/Desktop/.shellclassinfo/infotip",
             "Antares Study7.0: STA-mini",
         ),
-        ("/studies/STA-mini/desktop/.shellclassinfo/iconindex", 0),
+        ("/studies/STA-mini/Desktop/.shellclassinfo/iconindex", 0),
     ],
 )
 def test_sta_mini_desktop(
@@ -334,13 +334,13 @@ def test_sta_mini_output(
 @pytest.mark.integration_test
 def test_sta_mini_copy(request_handler: RequestHandler) -> None:
 
-    source_folder = "STA-mini"
+    source_study_name = "STA-mini"
     destination_study_name = "copy-STA-mini"
 
     app = create_server(request_handler)
     client = app.test_client()
     result = client.post(
-        f"/studies/{source_folder}/copy?dest={destination_study_name}"
+        f"/studies/{source_study_name}/copy?dest={destination_study_name}"
     )
 
     assert result.status_code == HTTPStatus.CREATED.value
@@ -348,7 +348,7 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
     destination_folder = url_destination.split("/")[2]
 
     parameters = RequestHandlerParameters(depth=None)
-    data_source = request_handler.get(source_folder, parameters)
+    data_source = request_handler.get(source_study_name, parameters)
     data_destination = request_handler.get(destination_folder, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
@@ -372,7 +372,7 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
             for key, value in data.items():
                 if isinstance(value, str) and value.startswith("file/"):
                     data[key] = value.replace(
-                        destination_folder, source_folder
+                        destination_folder, source_study_name
                     )
                 else:
                     replace_study_name(value)
@@ -413,7 +413,7 @@ def test_sta_mini_with_wrong_output_folder(
 
     (sta_mini_path / "output" / "maps").mkdir()
 
-    url = "/studies/STA-mini/desktop/.shellclassinfo/infotip"
+    url = "/studies/STA-mini/Desktop/.shellclassinfo/infotip"
     expected_output = "Antares Study7.0: STA-mini"
 
     assert_with_errors(

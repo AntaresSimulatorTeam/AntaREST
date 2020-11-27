@@ -88,7 +88,7 @@ class FileSystemEngine:
         ).get_content()
         if keys:
             for key in keys.split("/"):
-                data = data.get(key)
+                data = data.get(key)  # type: ignore
         return cast(JSON, data)
 
     def write(self, path: Path, data: JSON, jsm: JsonSchema) -> None:

@@ -4,8 +4,8 @@
     "required": ["study"],
     "type": "object",
     "properties": {
-        "desktop": {
-            "$ref": "Desktop.ini.json#/definitions/desktop"
+        "Desktop": {
+            "$ref": "Desktop.ini.json#/definitions/Desktop"
         },
         "study": {
             "$ref": "study.antares.json#/definitions/study"

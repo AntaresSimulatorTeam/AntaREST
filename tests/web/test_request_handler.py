@@ -181,6 +181,10 @@ def test_create_study(
 
     path_studies = Path(tmp_path)
 
+    jsm = JsonSchema(data={"type": "number"})
+    validator = Mock()
+    validator.jsm = jsm
+
     url_engine = Mock()
     url_engine.resolve.return_value = (None, None, None)
 
@@ -194,6 +198,7 @@ def test_create_study(
         url_engine=url_engine,
         exporter=Mock(),
         path_resources=project_path / "resources",
+        jsm_validator=validator,
     )
 
     study_name = "study1"
@@ -206,7 +211,7 @@ def test_create_study(
     assert path_study_antares_infos.is_file()
 
     url_engine.resolve.assert_called_once_with(url="", path=path_study)
-    study_parser.write.assert_called_once_with(path_study, data)
+    study_parser.write.assert_called_once_with(path_study, data, jsm)
 
 
 @pytest.mark.unit_test

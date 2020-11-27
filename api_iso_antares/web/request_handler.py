@@ -69,9 +69,7 @@ class RequestHandler:
         self.path_resources = path_resources
         self.jsm_validator = jsm_validator
 
-    def get(
-        self, route: str, parameters: RequestHandlerParameters
-    ) -> SUB_JSON:
+    def get(self, route: str, parameters: RequestHandlerParameters) -> JSON:
         route_parts = route.split("/")
         uuid = route_parts[0]
         url = "/".join(route_parts[1:])
@@ -176,7 +174,7 @@ class RequestHandler:
 
         study_data = self.get(uuid, parameters=RequestHandlerParameters())
         RequestHandler._update_antares_info(study_name, study_data)
-        self.study_parser.write(path_study, study_data)
+        self.study_parser.write(path_study, study_data, self.get_jsm())
 
         return uuid
 
@@ -206,7 +204,9 @@ class RequestHandler:
         self.assert_study_exist(name)
 
         if compact:
-            data = self.study_parser.parse(self.path_to_studies / name)
+            data = self.study_parser.parse(
+                self.path_to_studies / name, self.get_jsm()
+            )
             self.jsm_validator.validate(data)
             return self.exporter.export_compact(path_study, data)
         else:
@@ -234,14 +234,12 @@ class RequestHandler:
         uuid = RequestHandler.generate_uuid()
 
         with tempfile.TemporaryDirectory() as tmp_directory:
+            # TODO: validation
 
             tmp_path_study = Path(tmp_directory) / uuid
             tmp_path_study.mkdir()
 
             RequestHandler.extract_zip(stream, tmp_path_study)
-
-            study = self.parse_folder(tmp_path_study)
-            RequestHandler.check_antares_version(study)
 
             shutil.move(str(tmp_path_study), str(self.path_to_studies))
 
