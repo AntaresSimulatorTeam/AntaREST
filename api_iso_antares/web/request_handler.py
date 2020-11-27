@@ -116,7 +116,7 @@ class RequestHandler:
         study_path = self.get_study_path(uuid)
         return self.parse_folder(study_path, sub_jsm, do_validate)
 
-    def parse_folder(
+    def assert_validate(
         self, path: Path, sub_jsm: JsonSchema, do_validate: bool = True
     ) -> JSON:
         data = self.study_parser.parse(path, jsm=sub_jsm)
@@ -191,7 +191,7 @@ class RequestHandler:
         self.assert_study_exist(src_uuid)
 
         path_source = self.get_study_path(src_uuid)
-        data_source = self.study_parser.parse(path_source)
+        data_source = self.study_parser.parse(path_source, self.get_jsm())
 
         uuid = RequestHandler.generate_uuid()
         path_destination = self.get_study_path(uuid)
@@ -200,7 +200,9 @@ class RequestHandler:
         RequestHandler._update_antares_info(dest_study_name, data_destination)
         data_destination["output"] = None
 
-        self.study_parser.write(path_destination, data_destination)
+        self.study_parser.write(
+            path_destination, data_destination, self.get_jsm()
+        )
 
         return uuid
 

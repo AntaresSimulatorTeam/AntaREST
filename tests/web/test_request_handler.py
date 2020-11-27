@@ -9,6 +9,7 @@ import pytest
 from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.antares_io.writer.ini_writer import IniWriter
 from api_iso_antares.engine import FileSystemEngine
+from api_iso_antares.jsm import JsonSchema
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
@@ -41,15 +42,20 @@ def test_get(tmp_path: str, project_path) -> None:
     (path_study / "settings").mkdir()
     (path_study / "study.antares").touch()
 
-    data = {"toto": 42}
-    expected_data = {"titi": 43}
-    sub_route = "settings/blabla"
+    data = {"titi": 43}
+    sub_route = "settings"
+
+    jsm = JsonSchema(
+        data={"type": "object", "properties": {"titi": {"type": "number"}}}
+    )
+
+    path = path_study / "settings"
+    key = "titi"
+    url_engine_mock = Mock()
+    url_engine_mock.resolve.return_value = (jsm, path, key)
 
     study_reader_mock = Mock()
     study_reader_mock.parse.return_value = data
-
-    url_engine_mock = Mock()
-    url_engine_mock.apply.return_value = expected_data
 
     jsm_validator_mock = Mock()
     jsm_validator_mock.validate.return_value = None
@@ -69,14 +75,15 @@ def test_get(tmp_path: str, project_path) -> None:
         route=f"study2.py/{sub_route}", parameters=parameters
     )
 
-    assert output == expected_data
+    assert output == data
 
     study_reader_mock.parse.assert_called_once_with(
-        path_to_studies / "study2.py"
+        deep_path=path, study_path=path_study, jsm=jsm, keys=key
     )
-    jsm_validator_mock.validate.assert_called_once_with(data)
-    url_engine_mock.apply.assert_called_once_with(
-        Path(sub_route), data, parameters.depth
+    # TODO remove before fly
+    # jsm_validator_mock.validate.assert_called_once_with(data)
+    url_engine_mock.resolve.assert_called_once_with(
+        url="settings", path=path_study
     )
 
 
