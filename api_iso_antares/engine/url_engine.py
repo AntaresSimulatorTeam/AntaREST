@@ -52,6 +52,8 @@ class UrlEngine:
 
         """
         jsm = deepcopy(self.jsm)
+        if not url:
+            return jsm, path, ""
         key = Path("")
         is_inside_ini = False
         parts = iter(url.split("/"))
@@ -72,9 +74,9 @@ class UrlEngine:
                 suffix = (
                     jsm.get_filename_extension()
                     if jsm.get_filename_extension()
-                    else "." + jsm.get_filename().split(".")[-1]
+                    else "." + str(jsm.get_filename()).split(".")[-1]
                 )
-                path = Path(str(path) + suffix)
+                path = Path(str(path) + str(suffix))
         return jsm, path, "/".join(key.parts)
 
     def apply(

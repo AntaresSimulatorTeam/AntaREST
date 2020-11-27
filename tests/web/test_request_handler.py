@@ -181,22 +181,24 @@ def test_create_study(
 
     path_studies = Path(tmp_path)
 
-    ini_reader = IniReader()
-    readers = {"default": ini_reader}
-    ini_writer = IniWriter()
-    writers = {"default": ini_writer}
+    jsm = JsonSchema(data={"type": "number"})
+    validator = Mock()
+    validator.jsm = jsm
 
-    study_parser = FileSystemEngine(readers=readers, writers=writers)
-    parser = Mock()
-    parser.return_value = {"study": {"antares": {"caption": None}}}
-    study_parser.parse = parser
-    study_parser.write = Mock()
+    url_engine = Mock()
+    url_engine.resolve.return_value = (None, None, None)
+
+    study_parser = Mock()
+    data = {"study": {"antares": {"caption": None}}}
+    study_parser.parse.return_value = data
 
     request_handler = request_handler_builder(
         path_studies=path_studies,
         study_parser=study_parser,
+        url_engine=url_engine,
         exporter=Mock(),
         path_resources=project_path / "resources",
+        jsm_validator=validator,
     )
 
     study_name = "study1"
@@ -207,6 +209,9 @@ def test_create_study(
 
     path_study_antares_infos = path_study / "study.antares"
     assert path_study_antares_infos.is_file()
+
+    url_engine.resolve.assert_called_once_with(url="", path=path_study)
+    study_parser.write.assert_called_once_with(path_study, data, jsm)
 
 
 @pytest.mark.unit_test
@@ -223,7 +228,6 @@ def test_copy_study(
     path_study_info = path_study / "study.antares"
     path_study_info.touch()
 
-    study_parser = Mock()
     value = {
         "study": {
             "antares": {
@@ -235,21 +239,31 @@ def test_copy_study(
             "output": [],
         }
     }
+
+    study_parser = Mock()
     study_parser.parse.return_value = value
+
     reader = Mock()
     reader.read.return_value = value
     study_parser.get_reader.return_value = reader
+
     writer = Mock()
     study_parser.get_writer.return_value = writer
 
+    jsm = JsonSchema(data={"type": "number"})
+    validator = Mock()
+    validator.jsm = jsm
+
     request_handler = request_handler_builder(
-        study_parser=study_parser, path_studies=path_studies
+        study_parser=study_parser,
+        path_studies=path_studies,
+        jsm_validator=validator,
     )
 
     destination_name = "study2"
     request_handler.copy_study(source_name, destination_name)
 
-    study_parser.parse.assert_called_once_with(path_study)
+    study_parser.parse.assert_called_once_with(path_study, jsm)
     study_parser.write.assert_called()
 
 
@@ -382,24 +396,6 @@ def test_import_study(
 
     with pytest.raises(BadZipBinary):
         request_handler.import_study(io.BytesIO(b""))
-
-
-@pytest.mark.unit_test
-def test_parse_study(
-    tmp_path: Path, request_handler_builder: Callable
-) -> None:
-
-    study_name = "study1"
-
-    jsm_validator = Mock()
-    jsm_validator.validate = Mock(side_effect=StudyValidationError(""))
-
-    request_handler = request_handler_builder(
-        path_studies=tmp_path, jsm_validator=jsm_validator
-    )
-
-    with pytest.raises(StudyValidationError):
-        request_handler.parse_study(study_name, sub_jsm=Mock())
 
 
 @pytest.mark.unit_test
