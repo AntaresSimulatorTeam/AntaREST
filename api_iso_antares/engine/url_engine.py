@@ -1,7 +1,7 @@
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.jsm import JsonSchema
@@ -36,7 +36,7 @@ class UrlEngine:
         regex = re.search(re.escape(part) + r"/([^/]+)", url)
         second_node = regex.group(1) if regex else None
         path = path / f"{part} - {second_node}"
-        return jsm.get_child(), path
+        return jsm.get_child().get_child(), path
 
     def resolve(self, url: str, path: Path) -> Tuple[JsonSchema, Path, str]:
         """
@@ -54,18 +54,26 @@ class UrlEngine:
         jsm = deepcopy(self.jsm)
         key = Path("")
         is_inside_ini = False
-        for part in url.split("/"):
+        parts = iter(url.split("/"))
+        for part in parts:
             if jsm.is_ini_file():
                 is_inside_ini = True
             if jsm.get_strategy() in ["S12"]:
                 jsm, path = self.output_strategy(jsm, part, path)
+            elif jsm.get_strategy() in ["S15"]:
+                jsm, path = self.output_links_strategy(jsm, part, path, url)
+                parts.__next__()
             else:
                 if is_inside_ini:
                     jsm, key = self.default_strategy(jsm, part, key)
                 else:
                     jsm, path = self.default_strategy(jsm, part, path)
             if jsm.is_file():
-                suffix = jsm.get_filename_extension() if jsm.get_filename_extension() else "." + jsm.get_filename().split('.')[-1]
+                suffix = (
+                    jsm.get_filename_extension()
+                    if jsm.get_filename_extension()
+                    else "." + jsm.get_filename().split(".")[-1]
+                )
                 path = Path(str(path) + suffix)
         return jsm, path, "/".join(key.parts)
 

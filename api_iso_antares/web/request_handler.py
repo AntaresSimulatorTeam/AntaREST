@@ -82,7 +82,9 @@ class RequestHandler:
         sub_jsm, deep_path, keys = self.url_engine.resolve(
             url=url, path=study_path
         )
-        sub_study = self.study_parser.parse(deep_path=deep_path, study_path=study_path, jsm=sub_jsm, keys=keys)
+        sub_study = self.study_parser.parse(
+            deep_path=deep_path, study_path=study_path, jsm=sub_jsm, keys=keys
+        )
 
         # study_data = self.parse_study(uuid)
         #

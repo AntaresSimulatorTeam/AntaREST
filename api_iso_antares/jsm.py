@@ -109,10 +109,11 @@ class JsonSchema:
     def is_ini_file(self) -> bool:
         name = self.get_filename()
         ext = self.get_filename_extension()
+        extensions = ["ini", "antares", "dat", "antares-output"]
         if name:
-            return name.split(".")[-1] in ["ini", "antares", "dat"]
+            return name.split(".")[-1] in extensions
         elif ext:
-            return ext in [".ini", ".antares", ".dat"]
+            return ext in [f".{ext}" for ext in extensions]
         else:
             return False
 

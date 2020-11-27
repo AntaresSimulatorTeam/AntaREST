@@ -77,7 +77,7 @@ class FileSystemEngine:
         deep_path: Path,
         jsm: JsonSchema,
         study_path: Optional[Path] = None,
-        keys: Optional[str] = None
+        keys: Optional[str] = None,
     ) -> JSON:
         study_path = study_path or deep_path
         data = self.node_factory.build(
@@ -87,7 +87,7 @@ class FileSystemEngine:
             jsm=jsm,
         ).get_content()
         if keys:
-            for key in keys.split('/'):
+            for key in keys.split("/"):
                 data = data.get(key)
         return cast(JSON, data)
 

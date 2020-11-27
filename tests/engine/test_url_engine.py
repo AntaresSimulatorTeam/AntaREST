@@ -56,10 +56,10 @@ def test_output_strategy_with_id(project_path: Path):
 
 @pytest.mark.unit_test
 def test_output_link_strategy(project_path: Path):
-    jsm, expected_json_data, path = get_strategy(project_path, "S12")
+    jsm, expected_json_data, path = get_strategy(project_path, "S15")
     url = "es/fr"
 
-    expected_sub_jsm = jsm.get_child()
+    expected_sub_jsm = jsm.get_child().get_child()
     expected_sub_path = path / "es - fr"
 
     sub_jsm, sub_path = UrlEngine.output_links_strategy(
@@ -109,4 +109,3 @@ def test_resolve_in_ini(lite_jsonschema: JSON, lite_path: Path):
     assert sub_jsm == expected_sub_jsm
     assert sub_path == expected_sub_path
     assert keys == "section/params"
-

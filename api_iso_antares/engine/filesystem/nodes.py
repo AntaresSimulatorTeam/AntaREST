@@ -248,7 +248,12 @@ class NodeFactory:
         if path.is_file():
             if path.suffix in [".txt", ".log", ".ico"]:
                 node_class = UrlFileNode
-            elif path.suffix in [".ini", ".antares", ".dat"]:
+            elif path.suffix in [
+                ".ini",
+                ".antares",
+                ".dat",
+                ".antares-output",
+            ]:
                 node_class = IniFileNode
         else:
             if jsm.is_object():
