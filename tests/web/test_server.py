@@ -95,7 +95,7 @@ def test_matrix(tmp_path: str, request_handler_builder: Callable) -> None:
 
 
 @pytest.mark.unit_test
-def test_post_study(
+def test_create_study(
     tmp_path: str, request_handler_builder: Callable, project_path
 ) -> None:
 
@@ -104,14 +104,8 @@ def test_post_study(
     path_study.mkdir()
     (path_study / "study.antares").touch()
 
-    study_parser = Mock()
-    study_parser.parse.return_value = {"study": {"antares": {"caption": None}}}
-
-    request_handler = request_handler_builder(
-        path_studies=path_studies,
-        study_parser=study_parser,
-        path_resources=project_path / "resources",
-    )
+    request_handler = Mock()
+    request_handler.create_study.return_value = "my-uuid"
 
     app = create_server(request_handler)
     client = app.test_client()
@@ -119,9 +113,10 @@ def test_post_study(
     result_right = client.post("/studies/study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
+    assert json.loads(result_right.data) == "/studies/my-uuid"
+    request_handler.create_study.assert_called_once_with("study2")
 
     result_wrong = client.post("/studies/%BAD_STUDY_NAME%")
-
     assert result_wrong.status_code == HTTPStatus.BAD_REQUEST.value
 
 
@@ -202,33 +197,19 @@ def test_list_studies(
     tmp_path: str, request_handler_builder: Callable
 ) -> None:
 
-    path_studies = Path(tmp_path)
-    path_study = path_studies / "study1"
-    path_study.mkdir()
-    (path_study / "study.antares").touch()
-    path_study = path_studies / "study2"
-    path_study.mkdir()
-    (path_study / "study.antares").touch()
-
-    url_engine = Mock()
-    url_engine.apply.return_value = {"antares": {"caption": ""}}
-
-    request_handler = request_handler_builder(
-        path_studies=path_studies,
-        url_engine=url_engine,
-    )
-
-    app = create_server(request_handler)
-    client = app.test_client()
-    result = client.get("/studies")
-    studies = json.loads(result.data)
-
-    expected_studies = {
+    studies = {
         "study1": {"antares": {"caption": ""}},
         "study2": {"antares": {"caption": ""}},
     }
 
-    assert studies == expected_studies
+    request_handler = Mock()
+    request_handler.get_studies_informations.return_value = studies
+
+    app = create_server(request_handler)
+    client = app.test_client()
+    result = client.get("/studies")
+
+    assert json.loads(result.data) == studies
 
 
 @pytest.mark.unit_test
