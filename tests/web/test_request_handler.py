@@ -8,6 +8,7 @@ import pytest
 
 from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.antares_io.writer.ini_writer import IniWriter
+from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine import FileSystemEngine
 from api_iso_antares.jsm import JsonSchema
 from api_iso_antares.web import RequestHandler
@@ -254,16 +255,21 @@ def test_copy_study(
     validator = Mock()
     validator.jsm = jsm
 
+    url_engine = Mock()
+    url_engine.resolve.return_value = None, None, None
     request_handler = request_handler_builder(
         study_parser=study_parser,
         path_studies=path_studies,
         jsm_validator=validator,
+        url_engine=url_engine,
     )
 
     destination_name = "study2"
     request_handler.copy_study(source_name, destination_name)
 
-    study_parser.parse.assert_called_once_with(path_study, jsm)
+    study_parser.parse.assert_called_once_with(
+        deep_path=None, jsm=None, keys=None, study_path=path_study
+    )
     study_parser.write.assert_called()
 
 

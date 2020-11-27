@@ -155,21 +155,8 @@ def test_import_study_zipped(
 
 @pytest.mark.unit_test
 def test_copy_study(tmp_path: Path, request_handler_builder: Callable) -> None:
-
-    path_studies = tmp_path
-    path_study = path_studies / "study1"
-    path_study.mkdir()
-    (path_study / "study.antares").touch()
-    path_study = path_studies / "study2"
-    path_study.mkdir()
-    (path_study / "study.antares").touch()
-
-    study_parser = Mock()
-    study_parser.parse.return_value = {"study": {"antares": {"caption": None}}}
-
-    request_handler = request_handler_builder(
-        path_studies=path_studies, study_parser=study_parser
-    )
+    request_handler = Mock()
+    request_handler.copy_study.return_value = "/studies/study_copied"
 
     app = create_server(request_handler)
     client = app.test_client()
@@ -182,13 +169,11 @@ def test_copy_study(tmp_path: Path, request_handler_builder: Callable) -> None:
 
     assert result.status_code == HTTPStatus.BAD_REQUEST.value
 
-    result = client.post("/studies/study3/copy?dest=study4")
+    result = client.post("/studies/existing_study/copy?dest=study_copied")
 
-    assert result.status_code == HTTPStatus.NOT_FOUND.value
-
-    result = client.post("/studies/study1/copy?dest=study3")
-
-    request_handler.copy_study("study1", "study3")
+    request_handler.copy_study.assert_called_with(
+        "existing_study", "study_copied"
+    )
     assert result.status_code == HTTPStatus.CREATED.value
 
 

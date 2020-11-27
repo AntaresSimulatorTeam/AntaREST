@@ -84,6 +84,8 @@ class RequestHandler:
             deep_path=deep_path, study_path=study_path, jsm=sub_jsm, keys=keys
         )
 
+        self.jsm_validator.validate(jsondata=sub_study, sub_jsm=sub_jsm)
+
         # study_data = self.parse_study(uuid)
         #
         # route_cut = path_route.relative_to(Path(uuid))
@@ -108,30 +110,19 @@ class RequestHandler:
             )
         return data
 
-    def assert_validate(
-        self, path: Path, sub_jsm: JsonSchema, do_validate: bool = True
-    ) -> JSON:
-        data = self.study_parser.parse(path, jsm=sub_jsm)
-        if do_validate:
-            try:
-                self.jsm_validator.validate(data)
-            except Exception as e:
-                raise StudyValidationError(str(e))
-        return data
-
     def assert_study_exist(self, uuid: str) -> None:
-        if not self.is_study_exist(uuid):
+        if not self.is_study_existing(uuid):
             raise StudyNotFoundError(
                 f"Study with the uuid {uuid} does not exist."
             )
 
     def assert_study_not_exist(self, uuid: str) -> None:
-        if self.is_study_exist(uuid):
+        if self.is_study_existing(uuid):
             raise StudyAlreadyExistError(
                 f"A study already exist with the uuid {uuid}."
             )
 
-    def is_study_exist(self, uuid: str) -> bool:
+    def is_study_existing(self, uuid: str) -> bool:
         return uuid in self.get_study_uuids()
 
     def get_study_uuids(self) -> List[str]:
@@ -172,9 +163,13 @@ class RequestHandler:
         with ZipFile(empty_study_zip) as zip_output:
             zip_output.extractall(path=path_study)
 
-        study_data = self.get(uuid, parameters=RequestHandlerParameters())
+        study_data = self.get(
+            uuid, parameters=RequestHandlerParameters(depth=10)
+        )
         RequestHandler._update_antares_info(study_name, study_data)
-        self.study_parser.write(path_study, study_data, self.get_jsm())
+        self.study_parser.write(
+            path_study, study_data, self.get_jsm()
+        )  # TODO: write only study.antares
 
         return uuid
 
@@ -182,8 +177,7 @@ class RequestHandler:
 
         self.assert_study_exist(src_uuid)
 
-        path_source = self.get_study_path(src_uuid)
-        data_source = self.study_parser.parse(path_source, self.get_jsm())
+        data_source = self.get(src_uuid, RequestHandlerParameters(depth=9999))
 
         uuid = RequestHandler.generate_uuid()
         path_destination = self.get_study_path(uuid)
