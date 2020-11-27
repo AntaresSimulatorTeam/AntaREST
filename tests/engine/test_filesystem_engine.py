@@ -99,7 +99,7 @@ def test_read_sub_study_inside_ini(
 
 
 @pytest.mark.unit_test
-def notest_write_filesystem(
+def test_write_filesystem(
     tmp_path,
     lite_path: Path,
     lite_jsonschema: JSON,
@@ -108,25 +108,10 @@ def notest_write_filesystem(
 ) -> None:
 
     filesystem_engine = get_mocked_filesystem_engine(ini_cleaner)
+    jsm = JsonSchema(lite_jsonschema)
+    write_path = Path(tmp_path) / "root1"
+    filesystem_engine.write(write_path, lite_jsondata, jsm)
 
-    study_name_destination = "copy_of_lite_study"
-    write_path = Path(tmp_path) / study_name_destination
-    filesystem_engine.write(write_path, lite_jsondata)
+    data_copied = filesystem_engine.parse(write_path, jsm)
 
-    study_name_source = lite_path.parts[-1]
-    data_source = filesystem_engine.parse(lite_path)
-    data_destination = filesystem_engine.parse(write_path)
-
-    def replace_study_name(data: JSON) -> None:
-        if isinstance(data, dict):
-            for key, value in data.items():
-                if isinstance(value, str) and value.startswith("file/"):
-                    data[key] = value.replace(
-                        study_name_destination, study_name_source
-                    )
-                else:
-                    replace_study_name(value)
-
-    replace_study_name(data_destination)
-
-    assert data_destination == data_source
+    assert lite_jsondata == data_copied

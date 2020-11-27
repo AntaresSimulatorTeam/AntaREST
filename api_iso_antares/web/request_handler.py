@@ -110,12 +110,6 @@ class RequestHandler:
             )
         return data
 
-    def parse_study(
-        self, uuid: str, sub_jsm: JsonSchema, do_validate: bool = True
-    ) -> JSON:
-        study_path = self.get_study_path(uuid)
-        return self.parse_folder(study_path, sub_jsm, do_validate)
-
     def assert_validate(
         self, path: Path, sub_jsm: JsonSchema, do_validate: bool = True
     ) -> JSON:
@@ -180,7 +174,7 @@ class RequestHandler:
         with ZipFile(empty_study_zip) as zip_output:
             zip_output.extractall(path=path_study)
 
-        study_data = self.parse_study(uuid, do_validate=False)
+        study_data = self.get(uuid, parameters=RequestHandlerParameters())
         RequestHandler._update_antares_info(study_name, study_data)
         self.study_parser.write(path_study, study_data)
 
@@ -285,7 +279,7 @@ class RequestHandler:
 
     @staticmethod
     def _update_antares_info(study_name: str, study_data: JSON) -> None:
-
+        # TODO return value rather than change implicitly
         info_antares = study_data["study"]["antares"]
 
         info_antares["caption"] = study_name
