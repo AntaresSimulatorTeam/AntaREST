@@ -156,7 +156,7 @@ def test_import_study_zipped(
 @pytest.mark.unit_test
 def test_copy_study(tmp_path: Path, request_handler_builder: Callable) -> None:
     request_handler = Mock()
-    request_handler.copy_study.return_value = "/studies/study_copied"
+    request_handler.copy_study.return_value = "/studies/study-copied"
 
     app = create_server(request_handler)
     client = app.test_client()
@@ -169,10 +169,10 @@ def test_copy_study(tmp_path: Path, request_handler_builder: Callable) -> None:
 
     assert result.status_code == HTTPStatus.BAD_REQUEST.value
 
-    result = client.post("/studies/existing_study/copy?dest=study_copied")
+    result = client.post("/studies/existing-study/copy?dest=study-copied")
 
     request_handler.copy_study.assert_called_with(
-        "existing_study", "study_copied"
+        src_uuid="existing-study", dest_study_name="study-copied"
     )
     assert result.status_code == HTTPStatus.CREATED.value
 
