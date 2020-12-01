@@ -228,7 +228,7 @@ class RequestHandler:
             tmp_path_study = Path(tmp_directory) / "tmp_study"
             RequestHandler.extract_zip(stream, tmp_path_study)
 
-            def find_study_folder(path: Path):
+            def find_study_folder(path: Path) -> Path:
 
                 children_path = list(path.iterdir())
 
