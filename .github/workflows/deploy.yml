@@ -27,11 +27,13 @@ jobs:
       - name: Generate binary Unix
         if: matrix.os != 'windows-latest'
         run: |
+          git log -1 HEAD --format=%H > ./resources/commit_id
           pyinstaller -F api_iso_antares/main.py -n server --add-data resources:resources
           dist/server -v
       - name: Generate binary Windows
         if: matrix.os == 'windows-latest'
         run: |
+          git log -1 HEAD --format=%H > .\resources\commit_id
           pyinstaller -F api_iso_antares\main.py -n server --add-data ".\resources;.\resources"
           dist\server.exe -v
       - name: Archive server binary
