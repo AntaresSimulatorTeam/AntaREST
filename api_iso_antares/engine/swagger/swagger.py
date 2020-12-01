@@ -274,7 +274,11 @@ class Swagger(ISwaggerElement):
         self.tags: List[SwaggerTag] = []
         self.paths: Dict[str, SwaggerPath] = dict()
         # TODO: add set_servers / Tech debt for the demo
-        self.servers = [{"url": "http://0.0.0.0:8080"}]
+        self.servers = [
+            {"url": "http://0.0.0.0:8080"},
+            {"url": "http://0.0.0.0:5000"},
+            {"url": "http://0.0.0.0:80"},
+        ]
 
         self._global_parameters: List[SwaggerParameter] = []
         self._paths: List[SwaggerPath] = list()
