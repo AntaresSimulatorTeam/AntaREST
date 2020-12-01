@@ -352,8 +352,12 @@ def test_import_study(
     tmp_path: Path, request_handler_builder: Callable
 ) -> None:
 
+    nested_folder = "nested_folder"
+    nested_path = tmp_path / nested_folder
+    nested_path.mkdir()
+
     name = "my-study"
-    study_path = tmp_path / name
+    study_path = nested_path / name
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
@@ -364,8 +368,8 @@ def test_import_study(
         "study": {"antares": {"version": 700}}
     }
 
-    filepath_zip = shutil.make_archive(study_path, "zip", study_path)
-    shutil.rmtree(study_path)
+    filepath_zip = shutil.make_archive(nested_path, "zip", nested_path)
+    shutil.rmtree(nested_path)
 
     path_zip = Path(filepath_zip)
 
