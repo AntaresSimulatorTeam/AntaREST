@@ -225,15 +225,25 @@ class RequestHandler:
 
         with tempfile.TemporaryDirectory() as tmp_directory:
 
-            tmp_path_study = Path(tmp_directory) / uuid
-            tmp_path_study.mkdir()
-
+            tmp_path_study = Path(tmp_directory) / "tmp_study"
             RequestHandler.extract_zip(stream, tmp_path_study)
+
+            def find_study_folder(path: Path):
+
+                children_path = list(path.iterdir())
+
+                if len(children_path) == 1 and children_path[0].is_dir():
+                    return find_study_folder(children_path[0])
+                else:
+                    return path
+
+            tmp_path_study = find_study_folder(tmp_path_study)
 
             study = self.parse_folder(tmp_path_study)
             RequestHandler.check_antares_version(study)
 
-            shutil.move(str(tmp_path_study), str(self.path_to_studies))
+            path_study = self.path_to_studies / uuid
+            shutil.move(str(tmp_path_study), str(path_study))
 
         return uuid
 
