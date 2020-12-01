@@ -1,6 +1,7 @@
 import io
 import re
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any, Optional
 import subprocess
 
@@ -52,18 +53,18 @@ def _construct_parameters(
     return request_parameters
 
 
-def get_commit_id() -> Optional[str]:
+def get_commit_id(path_resources: Path) -> Optional[str]:
 
     commit_id = None
 
-    path_commit_id = request_handler.path_resources / "commit_id"
+    path_commit_id = path_resources / "commit_id"
     if path_commit_id.exists():
         commit_id = path_commit_id.read_text()[:-1]
     else:
         command = "git log -1 HEAD --format=%H"
         process = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
         if process.returncode == 0:
-            commit_id = process.stdout
+            commit_id = process.stdout.decode("utf-8")
 
     if commit_id is not None:
 
@@ -237,7 +238,7 @@ def create_non_business_routes(application: Flask) -> None:
         global request_handler
 
         version_data = {"version": __version__}
-        commit_id = get_commit_id()
+        commit_id = get_commit_id(request_handler.path_resources)
         if commit_id is not None:
             version_data["gitcommit"] = commit_id
 
