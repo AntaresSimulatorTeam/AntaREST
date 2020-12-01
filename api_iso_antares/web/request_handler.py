@@ -222,8 +222,21 @@ class RequestHandler:
         self.assert_study_exist(uuid)
         sub_jsm, deep_path, keys = self.resolve(url=url, study_path=study_path)
 
+        if keys:
+            data = self.study_parser.parse(
+                deep_path=deep_path, jsm=sub_jsm, study_path=study_path
+            )
+            parts = keys.split("/")
+            if len(parts) == 1:
+                data[parts[0]] = new
+            elif len(parts) == 2:
+                data[parts[0]][parts[1]] = new
+        else:
+            data = new
+
         # Write data
-        self.study_parser.write(path=deep_path, data=new, jsm=sub_jsm)
+        # TODO writing fail when edit inside .ini because deep_path and data are on file level but jsm goes deeeper in .ini structure.
+        self.study_parser.write(path=deep_path, data=data, jsm=sub_jsm)
         return new
 
     @staticmethod
