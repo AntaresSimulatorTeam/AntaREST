@@ -1,4 +1,5 @@
 import io
+import json
 import re
 from http import HTTPStatus
 from typing import Any
@@ -159,6 +160,21 @@ def create_study_routes(application: Flask) -> None:
         uuid_sanitized = sanitize_uuid(uuid)
 
         request_handler.delete_study(uuid_sanitized)
+        content = ""
+        code = HTTPStatus.NO_CONTENT.value
+
+        return content, code
+
+    @application.route("/studies/<path:path>", methods=["POST"])
+    @stop_and_return_on_html_exception
+    def edit_study(path: str) -> Any:
+        global request_handler
+
+        new = json.loads(request.data)
+        if not new:
+            raise HtmlException("empty body not authorized", 400)
+
+        request_handler.edit_study(path, new)
         content = ""
         code = HTTPStatus.NO_CONTENT.value
 

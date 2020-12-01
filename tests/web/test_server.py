@@ -283,3 +283,34 @@ def test_import_matrix_with_wrong_path() -> None:
     result = client.post("/file/" + path, data=data)
 
     assert result.status_code == HTTPStatus.NOT_FOUND.value
+
+
+@pytest.mark.unit_test
+def test_edit_study() -> None:
+    mock_handler = Mock()
+    mock_handler.edit_study.return_value = {}
+
+    data = json.dumps({"Hello": "World"})
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+    client.post("/studies/my-uuid/url/to/change", data=data)
+
+    mock_handler.edit_study.assert_called_once_with(
+        "my-uuid/url/to/change", {"Hello": "World"}
+    )
+
+
+@pytest.mark.unit_test
+def test_edit_study_fail() -> None:
+    mock_handler = Mock()
+
+    data = json.dumps({})
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+    res = client.post("/studies/my-uuid/url/to/change", data=data)
+
+    assert res.status_code == 400
+
+    mock_handler.edit_study.assert_not_called()
