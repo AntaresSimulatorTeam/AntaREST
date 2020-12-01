@@ -175,6 +175,10 @@ def test_sta_mini_study_antares(
             "file/STA-mini/input/thermal/prepro/fr/05_nuclear/modulation.txt",
         ),
         (
+            "/studies/STA-mini/input/thermal/areas/unserverdenergycost/de",
+            3000.0,
+        ),
+        (
             "/studies/STA-mini/input/thermal/clusters/fr/list/05_nuclear/marginal-cost",
             50,
         ),
