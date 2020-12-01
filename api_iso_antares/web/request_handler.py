@@ -4,7 +4,7 @@ import tempfile
 import time
 from io import BytesIO
 from pathlib import Path
-from typing import Any, IO, List
+from typing import Any, IO, List, Tuple
 from uuid import uuid4
 from zipfile import BadZipFile, ZipFile
 
@@ -70,45 +70,25 @@ class RequestHandler:
         self.jsm_validator = jsm_validator
 
     def get(self, route: str, parameters: RequestHandlerParameters) -> JSON:
-        route_parts = route.split("/")
-        uuid = route_parts[0]
-        url = "/".join(route_parts[1:])
-        study_path = self.path_to_studies / uuid
+        uuid, url, study_path = self._extract_info_from_url(route)
         self.assert_study_exist(uuid)
 
-        # TODO use get_data to catch url error
-        sub_jsm, deep_path, keys = self.url_engine.resolve(
-            url=url, path=study_path
-        )
+        sub_jsm, deep_path, keys = self.resolve(url=url, study_path=study_path)
         sub_study = self.study_parser.parse(
             deep_path=deep_path, study_path=study_path, jsm=sub_jsm, keys=keys
         )
 
         self.jsm_validator.validate(jsondata=sub_study, sub_jsm=sub_jsm)
 
-        # study_data = self.parse_study(uuid)
-        #
-        # route_cut = path_route.relative_to(Path(uuid))
-        #
-        # data = self.get_data(parameters, route_cut, study_data)
-
         return sub_study
 
-    def get_data(
-        self,
-        parameters: RequestHandlerParameters,
-        route_cut: Path,
-        study_data: JSON,
-    ) -> SUB_JSON:
+    def resolve(
+        self, url: str, study_path: Path
+    ) -> Tuple[JsonSchema, Path, str]:
         try:
-            data = self.url_engine.apply(
-                route_cut, study_data, parameters.depth
-            )
+            return self.url_engine.resolve(url=url, path=study_path)
         except KeyError:
-            raise UrlNotMatchJsonDataError(
-                f"Key {route_cut} not in the study."
-            )
-        return data
+            raise UrlNotMatchJsonDataError(f"Key {url} not in the study.")
 
     def assert_study_exist(self, uuid: str) -> None:
         if not self.is_study_existing(uuid):
@@ -226,18 +206,25 @@ class RequestHandler:
     def import_study(self, stream: IO[bytes]) -> str:
 
         uuid = RequestHandler.generate_uuid()
-
-        with tempfile.TemporaryDirectory() as tmp_directory:
-            # TODO: validation
-
-            tmp_path_study = Path(tmp_directory) / uuid
-            tmp_path_study.mkdir()
-
-            RequestHandler.extract_zip(stream, tmp_path_study)
-
-            shutil.move(str(tmp_path_study), str(self.path_to_studies))
+        path_study = Path(self.path_to_studies) / uuid
+        path_study.mkdir()
+        RequestHandler.extract_zip(stream, path_study)
+        data = self.get(uuid, parameters=RequestHandlerParameters(depth=-1))
+        if data is None:
+            self.delete_study(uuid)
+            return ""  # TODO return exception
 
         return uuid
+
+    def edit_study(self, route: str, new: JSON) -> JSON:
+        # Get data
+        uuid, url, study_path = self._extract_info_from_url(route)
+        self.assert_study_exist(uuid)
+        sub_jsm, deep_path, keys = self.resolve(url=url, study_path=study_path)
+
+        # Write data
+        self.study_parser.write(path=deep_path, data=new, jsm=sub_jsm)
+        return new
 
     @staticmethod
     def check_antares_version(study: JSON) -> None:
@@ -278,3 +265,11 @@ class RequestHandler:
         current_time = int(time.time())
         info_antares["created"] = current_time
         info_antares["lastsave"] = current_time
+
+    def _extract_info_from_url(self, route: str) -> Tuple[str, str, Path]:
+        route_parts = route.split("/")
+        uuid = route_parts[0]
+        url = "/".join(route_parts[1:])
+        study_path = self.path_to_studies / uuid
+
+        return uuid, url, study_path

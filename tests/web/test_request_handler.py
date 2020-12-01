@@ -384,6 +384,8 @@ def test_import_study(
 
     request_handler = request_handler_builder(path_studies=tmp_path)
 
+    request_handler.url_engine.resolve.return_value = (None, None, None)
+
     request_handler.parse_folder = Mock()
     request_handler.parse_folder.return_value = {
         "study": {"antares": {"version": 700}}
@@ -415,3 +417,25 @@ def test_check_antares_version(
     wrong_study = {"study": {"antares": {"version": 600}}}
     with pytest.raises(StudyValidationError):
         RequestHandler.check_antares_version(wrong_study)
+
+
+@pytest.mark.unit_test
+def test_edit_study(tmp_path: Path, request_handler_builder: Callable) -> None:
+    # Mock
+    (tmp_path / "my-uuid").mkdir()
+    (tmp_path / "my-uuid/study.antares").touch()
+
+    request_handler = request_handler_builder(path_studies=tmp_path)
+    request_handler.url_engine.resolve.return_value = (None, None, None)
+
+    # Input
+    url = "my-uuid/url/to/change"
+    new = {"Hello": "World"}
+
+    res = request_handler.edit_study(url, new)
+
+    assert new == res
+    request_handler.url_engine.resolve.assert_called_once_with(
+        url="url/to/change", path=tmp_path / "my-uuid"
+    )
+    request_handler.study_parser.write(path=None, data=None, jsm=None)
