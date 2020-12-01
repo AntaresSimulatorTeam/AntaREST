@@ -1,7 +1,8 @@
 import io
 import re
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Optional
+import subprocess
 
 from flask import escape, Flask, jsonify, request, Response, send_file
 
@@ -49,6 +50,29 @@ def _construct_parameters(
         "depth", request_parameters.depth, type=int
     )
     return request_parameters
+
+
+def get_commit_id() -> Optional[str]:
+
+    commit_id = None
+
+    path_commit_id = request_handler.path_resources / "commit_id"
+    if path_commit_id.exists():
+        commit_id = path_commit_id.read_text()[:-1]
+    else:
+        command = "git log -1 HEAD --format=%H"
+        process = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
+        if process.returncode == 0:
+            commit_id = process.stdout
+
+    if commit_id is not None:
+
+        def remove_carriage_return(value: str) -> str:
+            return value[:-1]
+
+        commit_id = remove_carriage_return(commit_id)
+
+    return commit_id
 
 
 def create_study_routes(application: Flask) -> None:
@@ -213,9 +237,9 @@ def create_non_business_routes(application: Flask) -> None:
         global request_handler
 
         version_data = {"version": __version__}
-        path_commit_id = request_handler.path_resources / "commit_id"
-        if path_commit_id.exists():
-            version_data["gitcommit"] = path_commit_id.read_text()[:-1]
+        commit_id = get_commit_id()
+        if commit_id is not None:
+            version_data["gitcommit"] = commit_id
 
         return jsonify(version_data), HTTPStatus.OK.value
 
