@@ -5,6 +5,7 @@ from typing import Any
 
 from flask import escape, Flask, jsonify, request, Response, send_file
 
+from api_iso_antares import __version__
 from api_iso_antares.engine import SwaggerEngine
 from api_iso_antares.web.html_exception import (
     HtmlException,
@@ -206,6 +207,17 @@ def create_non_business_routes(application: Flask) -> None:
     @application.route("/health", methods=["GET"])
     def health() -> Any:
         return jsonify({"status": "available"}), 200
+
+    @application.route("/version", methods=["GET"])
+    def version() -> Any:
+        global request_handler
+
+        version_data = {"version": __version__}
+        path_commit_id = request_handler.path_resources / "commit_id"
+        if path_commit_id.exists():
+            version_data["gitcommit"] = path_commit_id.read_text()[:-1]
+
+        return jsonify(version_data), HTTPStatus.OK.value
 
     @application.after_request
     def after_request(response: Response) -> Response:
