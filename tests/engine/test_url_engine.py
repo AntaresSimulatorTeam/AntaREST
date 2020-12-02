@@ -71,10 +71,16 @@ def test_output_link_strategy(project_path: Path):
 
 
 @pytest.mark.unit_test
-def test_resolve(lite_jsonschema: JSON, lite_path: Path):
-
-    url = "folder1/file2"
-
+@pytest.mark.parametrize(
+    "url,expected_keys",
+    [
+        ("folder1/file2", ""),
+        ("folder1/file2/section/params", "section/params"),
+    ],
+)
+def test_resolve(
+    lite_jsonschema: JSON, lite_path: Path, url: str, expected_keys: str
+):
     jsm = JsonSchema(lite_jsonschema)
     expected_sub_jsm = jsm.get_child("folder1").get_child("file2")
 
@@ -85,22 +91,4 @@ def test_resolve(lite_jsonschema: JSON, lite_path: Path):
 
     assert sub_jsm == expected_sub_jsm
     assert sub_path == expected_sub_path
-    assert keys == ""
-
-
-@pytest.mark.unit_test
-def test_resolve_in_ini(lite_jsonschema: JSON, lite_path: Path):
-
-    url = "folder1/file2/section/params"
-
-    jsm = JsonSchema(lite_jsonschema)
-    expected_sub_jsm = jsm.get_child("folder1").get_child("file2")
-
-    expected_sub_path = lite_path / "folder1/file2.ini"
-
-    engine = UrlEngine(jsm=jsm)
-    sub_jsm, sub_path, keys = engine.resolve(url=url, path=lite_path)
-
-    assert sub_jsm == expected_sub_jsm
-    assert sub_path == expected_sub_path
-    assert keys == "section/params"
+    assert keys == expected_keys

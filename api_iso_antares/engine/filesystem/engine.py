@@ -29,7 +29,12 @@ class FileSystemElement:
             self._path.mkdir()
 
     def is_ini_file(self) -> bool:
-        return self.get_path().suffix in [".ini", ".antares", ".dat"]
+        return self.get_path().suffix in [
+            ".ini",
+            ".antares",
+            ".dat",
+            ".antares-output",
+        ]
 
     def is_matrix_url(self) -> bool:
         url = cast(str, self.get_data())
