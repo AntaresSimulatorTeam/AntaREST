@@ -55,7 +55,7 @@ class FileSystemElement:
     def _build_filepath(self, child_name: str, child_jsm: JsonSchema) -> Path:
 
         filename = child_jsm.get_filename() or child_name
-        extension = child_jsm.get_filename_extension() or ""
+        extension = child_jsm.get_file_extension() or ""
 
         return self.get_path() / (filename + extension)
 
@@ -88,7 +88,7 @@ class FileSystemEngine:
         ).get_content()
         if keys:
             for key in keys.split("/"):
-                data = data.get(key)  # type: ignore
+                data = data[key]  # type: ignore
         return cast(JSON, data)
 
     def write(self, path: Path, data: JSON, jsm: JsonSchema) -> None:

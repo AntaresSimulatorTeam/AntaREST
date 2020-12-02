@@ -92,8 +92,16 @@ class JsonSchema:
     def get_filename(self) -> Optional[str]:
         return cast(str, self.get_metadata_element("filename"))
 
-    def get_filename_extension(self) -> Optional[str]:
+    def get_file_extension(self) -> Optional[str]:
         return cast(str, self.get_metadata_element("file_extension"))
+
+    def get_filename_extension(self) -> Optional[str]:
+        suffix = (
+            self.get_file_extension()
+            if self.get_file_extension()
+            else "." + str(self.get_filename()).split(".")[-1]
+        )
+        return suffix
 
     def get_strategy(self) -> Optional[str]:
         return cast(Optional[str], self.get_metadata_element("strategy"))
@@ -103,12 +111,12 @@ class JsonSchema:
 
     def is_file(self) -> bool:
         filename = self.get_filename()
-        extension = self.get_filename_extension()
+        extension = self.get_file_extension()
         return (filename is not None) or (extension is not None)
 
     def is_ini_file(self) -> bool:
         name = self.get_filename()
-        ext = self.get_filename_extension()
+        ext = self.get_file_extension()
         extensions = ["ini", "antares", "dat", "antares-output"]
         if name:
             return name.split(".")[-1] in extensions

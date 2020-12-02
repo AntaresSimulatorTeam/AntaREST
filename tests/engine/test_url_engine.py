@@ -94,12 +94,7 @@ def test_resolve_in_ini(lite_jsonschema: JSON, lite_path: Path):
     url = "folder1/file2/section/params"
 
     jsm = JsonSchema(lite_jsonschema)
-    expected_sub_jsm = (
-        jsm.get_child("folder1")
-        .get_child("file2")
-        .get_child("section")
-        .get_child("params")
-    )
+    expected_sub_jsm = jsm.get_child("folder1").get_child("file2")
 
     expected_sub_path = lite_path / "folder1/file2.ini"
 

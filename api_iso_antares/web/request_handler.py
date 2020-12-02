@@ -78,6 +78,10 @@ class RequestHandler:
             deep_path=deep_path, study_path=study_path, jsm=sub_jsm, keys=keys
         )
 
+        if keys:
+            for key in keys.split("/"):
+                sub_jsm = sub_jsm.get_child(key=key)
+
         self.jsm_validator.validate(jsondata=sub_study, sub_jsm=sub_jsm)
 
         return sub_study
@@ -87,7 +91,7 @@ class RequestHandler:
     ) -> Tuple[JsonSchema, Path, str]:
         try:
             return self.url_engine.resolve(url=url, path=study_path)
-        except KeyError:
+        except KeyError as e:
             raise UrlNotMatchJsonDataError(f"Key {url} not in the study.")
 
     def assert_study_exist(self, uuid: str) -> None:
@@ -157,7 +161,7 @@ class RequestHandler:
 
         self.assert_study_exist(src_uuid)
 
-        data_source = self.get(src_uuid, RequestHandlerParameters(depth=9999))
+        data_source = self.get(src_uuid, RequestHandlerParameters(depth=-1))
 
         uuid = RequestHandler.generate_uuid()
         path_destination = self.get_study_path(uuid)

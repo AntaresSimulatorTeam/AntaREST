@@ -55,28 +55,21 @@ class UrlEngine:
         if not url:
             return jsm, path, ""
         key = Path("")
-        is_inside_ini = False
         parts = iter(url.split("/"))
-        for part in parts:
-            if jsm.is_ini_file():
-                is_inside_ini = True
+        for i, part in enumerate(parts):
             if jsm.get_strategy() in ["S12"]:
                 jsm, path = self.output_strategy(jsm, part, path)
             elif jsm.get_strategy() in ["S15"]:
                 jsm, path = self.output_links_strategy(jsm, part, path, url)
                 parts.__next__()
             else:
-                if is_inside_ini:
-                    jsm, key = self.default_strategy(jsm, part, key)
-                else:
-                    jsm, path = self.default_strategy(jsm, part, path)
+                jsm, path = self.default_strategy(jsm, part, path)
+            if jsm.is_ini_file():
+                path = Path(str(path) + str(jsm.get_filename_extension()))
+                keys = "/".join(url.split("/")[i + 1 :])
+                return jsm, path, keys
             if jsm.is_file():
-                suffix = (
-                    jsm.get_filename_extension()
-                    if jsm.get_filename_extension()
-                    else "." + str(jsm.get_filename()).split(".")[-1]
-                )
-                path = Path(str(path) + str(suffix))
+                path = Path(str(path) + str(jsm.get_filename_extension()))
         return jsm, path, "/".join(key.parts)
 
     def apply(
