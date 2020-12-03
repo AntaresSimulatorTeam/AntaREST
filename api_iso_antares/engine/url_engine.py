@@ -1,6 +1,7 @@
+import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.jsm import JsonSchema
@@ -9,6 +10,67 @@ from api_iso_antares.jsm import JsonSchema
 class UrlEngine:
     def __init__(self, jsm: JsonSchema) -> None:
         self.jsm = jsm
+
+    @staticmethod
+    def default_strategy(
+        jsm: JsonSchema, part: str, path: Path
+    ) -> Tuple[JsonSchema, Path]:
+        jsm = jsm.get_child(key=part)
+        path = path / part
+        return jsm, path
+
+    @staticmethod
+    def output_strategy(
+        jsm: JsonSchema, part: str, path: Path
+    ) -> Tuple[JsonSchema, Path]:
+        if part != "output":
+            path = sorted(path.iterdir())[int(part) - 1]
+            jsm = jsm.get_child()
+
+        return jsm, path
+
+    @staticmethod
+    def output_links_strategy(
+        jsm: JsonSchema, part: str, path: Path, url: str
+    ) -> Tuple[JsonSchema, Path]:
+        regex = re.search(re.escape(part) + r"/([^/]+)", url)
+        second_node = regex.group(1) if regex else None
+        path = path / f"{part} - {second_node}"
+        return jsm.get_child().get_child(), path
+
+    def resolve(self, url: str, path: Path) -> Tuple[JsonSchema, Path, str]:
+        """
+        Go to JSM & path level by url request.
+
+        Args:
+            url: url given by user
+            path: root study path
+
+        Returns: If url target a file, path and jsm are on file level.
+        If url targets inside ini file : path goes to ini data level,
+        jsm remains at file ini level
+
+        """
+        jsm = deepcopy(self.jsm)
+        if not url:
+            return jsm, path, ""
+        key = Path("")
+        parts = iter(url.split("/"))
+        for i, part in enumerate(parts):
+            if jsm.get_strategy() in ["S12"]:
+                jsm, path = self.output_strategy(jsm, part, path)
+            elif jsm.get_strategy() in ["S15"]:
+                jsm, path = self.output_links_strategy(jsm, part, path, url)
+                parts.__next__()
+            else:
+                jsm, path = self.default_strategy(jsm, part, path)
+            if jsm.is_ini_file():
+                path = Path(str(path) + str(jsm.get_filename_extension()))
+                keys = "/".join(url.split("/")[i + 1 :])
+                return jsm, path, keys
+            if jsm.is_file():
+                path = Path(str(path) + str(jsm.get_filename_extension()))
+        return jsm, path, "/".join(key.parts)
 
     def apply(
         self, path: Path, json_data: JSON, depth: Optional[int] = None

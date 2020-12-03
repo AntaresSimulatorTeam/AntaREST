@@ -20,8 +20,9 @@
             "additionalProperties": {
                 "rte-metadata": {"additional_property_name":  "type"},
                 "type": "object",
+                "properties": {},
                 "additionalProperties": {
-                    "type": "number"
+                    "type": "string"
                 }
             }
         }

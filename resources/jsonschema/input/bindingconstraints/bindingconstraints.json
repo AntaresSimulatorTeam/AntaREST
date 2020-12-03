@@ -3,16 +3,9 @@
     "definitions": {
         "bindingconstraints": {
             "type": "object",
-            "rte-metadata": {"strategy": "S1", "additional_property_name":  "matrix"},
             "properties": {
                 "bindingconstraints": {
                     "$ref": "bindingconstraints.ini.json#/definitions/bindingconstraints"
-                }
-            },
-            "additionalProperties": {
-                "type": "string",
-                "rte-metadata": {
-                    "file_extension": ".txt"
                 }
             }
         }

@@ -5,7 +5,9 @@
             "rte-metadata": {"strategy":  "S9", "additional_property_name":  "matrix"},
             "properties": {},
             "additionalProperties": {
-                    "type": "string"
+                "properties": {},
+                "rte-metadata": {"file_extension" :  ".txt"},
+                "type": "string"
             }
         }
     }

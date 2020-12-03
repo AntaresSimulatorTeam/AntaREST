@@ -96,7 +96,7 @@ def test_matrix(tmp_path: str, request_handler_builder: Callable) -> None:
 
 
 @pytest.mark.unit_test
-def test_post_study(
+def test_create_study(
     tmp_path: str, request_handler_builder: Callable, project_path
 ) -> None:
 
@@ -105,14 +105,8 @@ def test_post_study(
     path_study.mkdir()
     (path_study / "study.antares").touch()
 
-    study_parser = Mock()
-    study_parser.parse.return_value = {"study": {"antares": {"caption": None}}}
-
-    request_handler = request_handler_builder(
-        path_studies=path_studies,
-        study_parser=study_parser,
-        path_resources=project_path / "resources",
-    )
+    request_handler = Mock()
+    request_handler.create_study.return_value = "my-uuid"
 
     app = create_server(request_handler)
     client = app.test_client()
@@ -120,9 +114,10 @@ def test_post_study(
     result_right = client.post("/studies/study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
+    assert json.loads(result_right.data) == "/studies/my-uuid"
+    request_handler.create_study.assert_called_once_with("study2")
 
     result_wrong = client.post("/studies/%BAD_STUDY_NAME%")
-
     assert result_wrong.status_code == HTTPStatus.BAD_REQUEST.value
 
 
@@ -161,21 +156,8 @@ def test_import_study_zipped(
 
 @pytest.mark.unit_test
 def test_copy_study(tmp_path: Path, request_handler_builder: Callable) -> None:
-
-    path_studies = tmp_path
-    path_study = path_studies / "study1"
-    path_study.mkdir()
-    (path_study / "study.antares").touch()
-    path_study = path_studies / "study2"
-    path_study.mkdir()
-    (path_study / "study.antares").touch()
-
-    study_parser = Mock()
-    study_parser.parse.return_value = {"study": {"antares": {"caption": None}}}
-
-    request_handler = request_handler_builder(
-        path_studies=path_studies, study_parser=study_parser
-    )
+    request_handler = Mock()
+    request_handler.copy_study.return_value = "/studies/study-copied"
 
     app = create_server(request_handler)
     client = app.test_client()
@@ -188,13 +170,11 @@ def test_copy_study(tmp_path: Path, request_handler_builder: Callable) -> None:
 
     assert result.status_code == HTTPStatus.BAD_REQUEST.value
 
-    result = client.post("/studies/study3/copy?dest=study4")
+    result = client.post("/studies/existing-study/copy?dest=study-copied")
 
-    assert result.status_code == HTTPStatus.NOT_FOUND.value
-
-    result = client.post("/studies/study1/copy?dest=study3")
-
-    request_handler.copy_study("study1", "study3")
+    request_handler.copy_study.assert_called_with(
+        src_uuid="existing-study", dest_study_name="study-copied"
+    )
     assert result.status_code == HTTPStatus.CREATED.value
 
 
@@ -203,33 +183,19 @@ def test_list_studies(
     tmp_path: str, request_handler_builder: Callable
 ) -> None:
 
-    path_studies = Path(tmp_path)
-    path_study = path_studies / "study1"
-    path_study.mkdir()
-    (path_study / "study.antares").touch()
-    path_study = path_studies / "study2"
-    path_study.mkdir()
-    (path_study / "study.antares").touch()
-
-    url_engine = Mock()
-    url_engine.apply.return_value = {"antares": {"caption": ""}}
-
-    request_handler = request_handler_builder(
-        path_studies=path_studies,
-        url_engine=url_engine,
-    )
-
-    app = create_server(request_handler)
-    client = app.test_client()
-    result = client.get("/studies")
-    studies = json.loads(result.data)
-
-    expected_studies = {
+    studies = {
         "study1": {"antares": {"caption": ""}},
         "study2": {"antares": {"caption": ""}},
     }
 
-    assert studies == expected_studies
+    request_handler = Mock()
+    request_handler.get_studies_informations.return_value = studies
+
+    app = create_server(request_handler)
+    client = app.test_client()
+    result = client.get("/studies")
+
+    assert json.loads(result.data) == studies
 
 
 @pytest.mark.unit_test
@@ -318,6 +284,37 @@ def test_import_matrix_with_wrong_path() -> None:
     result = client.post("/file/" + path, data=data)
 
     assert result.status_code == HTTPStatus.NOT_FOUND.value
+
+
+@pytest.mark.unit_test
+def test_edit_study() -> None:
+    mock_handler = Mock()
+    mock_handler.edit_study.return_value = {}
+
+    data = json.dumps({"Hello": "World"})
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+    client.post("/studies/my-uuid/url/to/change", data=data)
+
+    mock_handler.edit_study.assert_called_once_with(
+        "my-uuid/url/to/change", {"Hello": "World"}
+    )
+
+
+@pytest.mark.unit_test
+def test_edit_study_fail() -> None:
+    mock_handler = Mock()
+
+    data = json.dumps({})
+
+    app = create_server(mock_handler)
+    client = app.test_client()
+    res = client.post("/studies/my-uuid/url/to/change", data=data)
+
+    assert res.status_code == 400
+
+    mock_handler.edit_study.assert_not_called()
 
 
 @pytest.mark.unit_test

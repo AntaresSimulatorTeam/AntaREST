@@ -11,28 +11,23 @@ from api_iso_antares.jsm import JsonSchema
 class INode(abc.ABC):
     def __init__(
         self,
-        path: Path,
+        deep_path: Path,
         jsm: JsonSchema,
         ini_reader: IniReader,
-        parent: Optional["INode"],
         node_factory: "NodeFactory",
+        study_path: Optional[Path] = None,
     ) -> None:
-        self._path = path
+        self._deep_path = deep_path
+        self.study_path = study_path or deep_path
         self._jsm = jsm
         self._ini_reader = ini_reader
-        self._parent = parent
         self._node_factory = node_factory
 
     def get_filename(self) -> str:
-        return self._path.name
+        return self._deep_path.name
 
     def get_content(self) -> SUB_JSON:
         return self._build_content()
-
-    def get_root_path(self) -> Path:
-        if self._parent is None:
-            return self._path
-        return self._parent.get_root_path()
 
     def parse_properties(
         self, not_checking: bool = False
@@ -43,7 +38,7 @@ class INode(abc.ABC):
         filenames: List[str] = []
 
         for key in properties:
-            file = self._path / (
+            file = self._deep_path / (
                 self._jsm.get_child(key).get_filename() or key
             )
 
@@ -51,9 +46,9 @@ class INode(abc.ABC):
             if not_checking or file.exists():
                 child_node = self._node_factory.build(
                     key=key,
-                    root_path=self._path,
+                    deep_path=self._deep_path,
+                    study_path=self.study_path,
                     jsm=self._jsm.get_child(key),
-                    parent=self,
                 )
                 output[key] = child_node
                 filenames.append(child_node.get_filename())
@@ -65,13 +60,13 @@ class INode(abc.ABC):
     ) -> Dict[Path, "INode"]:
         avoid_filenames = avoid_filenames or list()
         children: Dict[Path, "INode"] = dict()
-        for folder in self._path.iterdir():
+        for folder in self._deep_path.iterdir():
             if folder.name not in avoid_filenames:
                 children[folder] = self._node_factory.build(
                     key=folder.name,
-                    root_path=self._path,
+                    deep_path=self._deep_path,
+                    study_path=self.study_path,
                     jsm=self._jsm.get_additional_properties(),
-                    parent=self,
                 )
         return children
 
@@ -99,22 +94,22 @@ class MixFolderNode(INode):
 
 class IniFileNode(INode):
     def _build_content(self) -> SUB_JSON:
-        path = self._path
+        path = self._deep_path
         return self._ini_reader.read(path)
 
 
 class SetsIniFileNode(INode):
     def _build_content(self) -> SUB_JSON:
-        path = self._path
+        path = self._deep_path
         return SetsIniReader.read(path)
 
 
 class UrlFileNode(INode):
     def _build_content(self) -> SUB_JSON:
-        path = self._path
+        path = self._deep_path
         parts = path.parts
         # remove all path before study folder
-        root = len(self.get_root_path().parts) - 1
+        root = len(self.study_path.parts) - 1
         relative_path = "/".join(parts[root:])
         return f"file/{relative_path}"
 
@@ -150,9 +145,9 @@ class OutputFolderNode(INode):
                 ):  # TODO remove when jsonschema fully made
                     output[index][child.stem] = self._node_factory.build(
                         key=child.name,
-                        root_path=directory,
+                        deep_path=directory,
+                        study_path=self.study_path,
                         jsm=jsm.get_child(child.stem),
-                        parent=self,
                     ).get_content()
         return output
 
@@ -160,10 +155,11 @@ class OutputFolderNode(INode):
         pattern = self._jsm.get_pattern_properties()
         if pattern is not None:
             directories = filter(
-                lambda path: re.match(pattern, path.name), self._path.iterdir()
+                lambda path: re.match(pattern, path.name),
+                self._deep_path.iterdir(),
             )
         else:
-            directories = self._path.iterdir()
+            directories = self._deep_path.iterdir()
         return sorted(directories)
 
 
@@ -175,7 +171,7 @@ class OutputLinksNode(INode):
     def _build_content(self) -> SUB_JSON:
         output: JSON = dict()
 
-        for folder in self._path.iterdir():
+        for folder in self._deep_path.iterdir():
             src, dest = folder.name.split(" - ")
             if src not in output:
                 output[src] = dict()
@@ -185,9 +181,9 @@ class OutputLinksNode(INode):
 
             output[src][dest] = self._node_factory.build(
                 key=folder.name,
-                root_path=self._path,
+                deep_path=self._deep_path,
+                study_path=self.study_path,
                 jsm=jsm_link_two,
-                parent=self,
             ).get_content()
 
         return output
@@ -196,12 +192,12 @@ class OutputLinksNode(INode):
 class InputLinksNode(INode):
     def _build_content(self) -> SUB_JSON:
         children: JSON = dict()
-        for area in self._path.iterdir():
+        for area in self._deep_path.iterdir():
             children[area.name] = MixFolderNode(
                 area,
+                study_path=self.study_path,
                 jsm=self._jsm.get_additional_properties(),
                 ini_reader=self._ini_reader,
-                parent=self,
                 node_factory=self._node_factory,
             ).get_content()
 
@@ -215,14 +211,15 @@ class NodeFactory:
     def build(
         self,
         key: str,
-        root_path: Path,
+        deep_path: Path,
         jsm: JsonSchema,
-        parent: Optional[INode] = None,
+        study_path: Optional[Path] = None,
     ) -> INode:
-        path = NodeFactory._build_path(root_path, jsm, key)
-        node_class = NodeFactory.get_node_class_by_strategy(jsm, path)
+        study_path = study_path or deep_path
+        deep_path = NodeFactory._build_path(deep_path, jsm, key)
+        node_class = NodeFactory.get_node_class_by_strategy(jsm, deep_path)
         reader = self.get_reader("default")
-        return node_class(path, jsm, reader, parent, self)
+        return node_class(deep_path, jsm, reader, self, study_path)
 
     def get_reader(self, key: str) -> Any:
         return self.readers[key]
@@ -251,7 +248,12 @@ class NodeFactory:
         if path.is_file():
             if path.suffix in [".txt", ".log", ".ico"]:
                 node_class = UrlFileNode
-            elif path.suffix in [".ini", ".antares", ".dat"]:
+            elif path.suffix in [
+                ".ini",
+                ".antares",
+                ".dat",
+                ".antares-output",
+            ]:
                 node_class = IniFileNode
         else:
             if jsm.is_object():
@@ -260,6 +262,8 @@ class NodeFactory:
 
     @staticmethod
     def _build_path(path: Path, jsm: JsonSchema, key: str) -> Path:
+        if path.is_file():
+            return path
         file_or_directory_name: Optional[str] = jsm.get_filename()
         if file_or_directory_name is None:
             file_or_directory_name = key

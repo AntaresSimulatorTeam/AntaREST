@@ -21,8 +21,8 @@ def test_reader_folder(
     readers = {"default": IniReader()}
     writers = {"default": Mock()}
 
-    study_reader = FileSystemEngine(jsm=jsm, readers=readers, writers=writers)
-    res = study_reader.parse(lite_path)
+    study_reader = FileSystemEngine(readers=readers, writers=writers)
+    res = study_reader.parse(deep_path=lite_path, jsm=jsm)
 
     jsm_validator = JsmValidator(jsm=jsm)
     jsm_validator.validate(res)

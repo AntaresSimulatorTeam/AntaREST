@@ -18,6 +18,7 @@ from api_iso_antares.engine.filesystem.nodes import (
     UrlFileNode,
 )
 from api_iso_antares.jsm import JsonSchema
+from tests.conftest import get_strategy
 
 content = 42
 
@@ -88,10 +89,9 @@ def mix_folder(path: Path, jsm: JSON, exp_data: JSON, filenames: List[str]):
     factory.build.return_value = node_mock
 
     node = MixFolderNode(
-        path=path,
+        deep_path=path,
         jsm=JsonSchema(jsm),
         ini_reader=Mock(),
-        parent=None,
         node_factory=factory,
     )
     json_data = node.get_content()
@@ -122,10 +122,9 @@ def test_mix_keys_in_ini_file(project_path: str):
     }
 
     node = IniFileNode(
-        path=path,
+        deep_path=path,
         jsm=JsonSchema(jsm),
         ini_reader=IniReader(),
-        parent=None,
         node_factory=Mock(),
     )
     json_data = node.get_content()
@@ -139,37 +138,7 @@ def test_mix_keys_in_ini_file(project_path: str):
 
 @pytest.mark.unit_test
 def test_output_folder(project_path: Path) -> None:
-    path = project_path / "tests/engine/resources/s12/output"
-
-    jsm = {
-        "$schema": "http://json-schema.org/draft-07/schema",
-        "rte-metadata": {"strategy": "S12"},
-        "type": "object",
-        "properties": {},
-        "additionalProperties": {
-            "type": "object",
-            "properties": {
-                "hello": {"type": "string"},
-                "world": {"type": "string"},
-            },
-        },
-    }
-
-    exp_data = {
-        "1": {
-            "date": "19450623-0565",
-            "mode": "adequacy",
-            "name": "",
-            "hello": content,
-        },
-        "2": {
-            "date": "20201009-1221",
-            "mode": "economy",
-            "name": "hello-world",
-            "hello": content,
-            "world": content,
-        },
-    }
+    jsm, exp_data, path = get_strategy(project_path, "S12")
 
     node_mock = Mock()
     node_mock.get_content.return_value = content
@@ -177,10 +146,9 @@ def test_output_folder(project_path: Path) -> None:
     factory_mock.build.return_value = node_mock
 
     node = OutputFolderNode(
-        path=path,
-        jsm=JsonSchema(jsm),
+        deep_path=path,
+        jsm=jsm,
         ini_reader=Mock(),
-        parent=None,
         node_factory=factory_mock,
     )
 
@@ -310,10 +278,9 @@ def only_list_node(path: Path, jsm: JSON, exp_data: JSON):
     factory_mock.build.return_value = node_mock
 
     node = OnlyListNode(
-        path=path,
+        deep_path=path,
         jsm=JsonSchema(jsm),
         ini_reader=Mock(),
-        parent=None,
         node_factory=factory_mock,
     )
 
@@ -324,25 +291,7 @@ def only_list_node(path: Path, jsm: JSON, exp_data: JSON):
 
 @pytest.mark.unit_test
 def test_set_of_output_link(project_path: Path):
-    path = project_path / "tests/engine/resources/s15/links"
-
-    jsm = {
-        "$schema": "http://json-schema.org/draft-07/schema",
-        "rte-metadata": {"strategy": "S15"},
-        "type": "object",
-        "properties": {},
-        "additionalProperties": {
-            "type": "object",
-            "properties": {},
-            "additionalProperties": {"type": "number"},
-        },
-    }
-
-    exp_data = {
-        "de": {"fr": content, "it": content},
-        "es": {"fr": content},
-        "fr": {"it": content},
-    }
+    jsm, exp_data, path = get_strategy(project_path, "S15")
 
     node_mock = Mock()
     node_mock.get_content.return_value = content
@@ -350,10 +299,9 @@ def test_set_of_output_link(project_path: Path):
     factory_mock.build.return_value = node_mock
 
     node = OutputLinksNode(
-        path=path,
-        jsm=JsonSchema(jsm),
+        deep_path=path,
+        jsm=jsm,
         ini_reader=Mock(),
-        parent=None,
         node_factory=factory_mock,
     )
 
@@ -397,10 +345,9 @@ def test_set_of_input_link(project_path: Path):
     factory_mock.build.return_value = node_mock
 
     node = InputLinksNode(
-        path=path,
+        deep_path=path,
         jsm=JsonSchema(jsm),
         ini_reader=Mock(),
-        parent=None,
         node_factory=factory_mock,
     )
 
@@ -423,10 +370,9 @@ def test_sets_ini(project_path: Path):
     }
 
     node = SetsIniFileNode(
-        path=path,
+        deep_path=path,
         jsm=Mock(),
         ini_reader=Mock(),
-        parent=None,
         node_factory=Mock(),
     )
     assert node.get_content() == exp
@@ -435,15 +381,12 @@ def test_sets_ini(project_path: Path):
 @pytest.mark.unit_test
 def test_text_file(project_path: Path):
 
-    parent = Mock()
-    parent.get_root_path.return_value = Path("/my/ugly/root")
-
     node = UrlFileNode(
-        path=Path("/my/ugly/root/my/beautiful/path"),
+        deep_path=Path("/my/ugly/root/my/beautiful/path"),
         jsm=Mock(),
         ini_reader=Mock(),
-        parent=parent,
         node_factory=Mock(),
+        study_path=Path("/my/ugly/root"),
     )
 
     assert node.get_content() == "file/root/my/beautiful/path"

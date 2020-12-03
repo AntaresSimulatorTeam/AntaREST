@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, cast, Dict, Iterator
+from typing import Any, cast, Dict, Iterator, Optional
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.engine.filesystem.nodes import NodeFactory
@@ -29,7 +29,12 @@ class FileSystemElement:
             self._path.mkdir()
 
     def is_ini_file(self) -> bool:
-        return self.get_path().suffix in [".ini", ".antares", ".dat"]
+        return self.get_path().suffix in [
+            ".ini",
+            ".antares",
+            ".dat",
+            ".antares-output",
+        ]
 
     def is_matrix_url(self) -> bool:
         url = cast(str, self.get_data())
@@ -55,7 +60,7 @@ class FileSystemElement:
     def _build_filepath(self, child_name: str, child_jsm: JsonSchema) -> Path:
 
         filename = child_jsm.get_filename() or child_name
-        extension = child_jsm.get_filename_extension() or ""
+        extension = child_jsm.get_file_extension() or ""
 
         return self.get_path() / (filename + extension)
 
@@ -63,27 +68,36 @@ class FileSystemElement:
 class FileSystemEngine:
     def __init__(
         self,
-        jsm: JsonSchema,
         readers: Dict[str, Any],
         writers: Dict[str, Any],
     ) -> None:
-        self.jsm = jsm
         self.node_factory = NodeFactory(readers=readers)
         self.writer = FileSystemWriter(writers)
 
     def get_reader(self, reader: str = "default") -> Any:
         return self.node_factory.readers[reader]
 
-    def parse(self, path: Path) -> JSON:
-        root_node = self.node_factory.build(
+    def parse(
+        self,
+        deep_path: Path,
+        jsm: JsonSchema,
+        study_path: Optional[Path] = None,
+        keys: Optional[str] = None,
+    ) -> JSON:
+        study_path = study_path or deep_path
+        data = self.node_factory.build(
             key="",
-            root_path=path,
-            jsm=self.jsm,
-        )
-        return cast(JSON, root_node.get_content())
+            deep_path=deep_path,
+            study_path=study_path,
+            jsm=jsm,
+        ).get_content()
+        if keys:
+            for key in keys.split("/"):
+                data = data[key]  # type: ignore
+        return cast(JSON, data)
 
-    def write(self, path: Path, data: JSON) -> None:
-        element = FileSystemElement(path, data, self.jsm)
+    def write(self, path: Path, data: JSON, jsm: JsonSchema) -> None:
+        element = FileSystemElement(path, data, jsm)
         self.writer.write(element, root_path=path)
 
 

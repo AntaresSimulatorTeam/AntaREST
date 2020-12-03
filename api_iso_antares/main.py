@@ -73,7 +73,7 @@ def get_flask_application(studies_path: Path) -> Flask:
 
     readers = {"default": IniReader()}
     writers = {"default": IniWriter(), "matrix": MatrixWriter()}
-    study_parser = FileSystemEngine(jsm=jsm, readers=readers, writers=writers)
+    study_parser = FileSystemEngine(readers=readers, writers=writers)
 
     request_handler = RequestHandler(
         study_parser=study_parser,

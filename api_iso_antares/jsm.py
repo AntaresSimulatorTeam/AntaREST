@@ -1,4 +1,4 @@
-from typing import cast, List, Optional
+from typing import cast, List, Optional, Any
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
 
@@ -6,6 +6,20 @@ from api_iso_antares.custom_types import JSON, SUB_JSON
 class JsonSchema:
     def __init__(self, data: JSON) -> None:
         self.data = data
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, dict):
+            return self.data == other
+        elif isinstance(other, JsonSchema):
+            return self.data == other.data
+        else:
+            return False
+
+    def __str__(self) -> str:
+        return str(self.data)
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def get_properties(self) -> List[str]:
 
@@ -24,10 +38,7 @@ class JsonSchema:
         ):
             return self.get_additional_properties()
         else:
-            if key is None:
-                data = self.data["items"]
-            else:
-                data = self.data["properties"][key]
+            data = self.data["properties"][key]
         return JsonSchema(data)
 
     def get_additional_properties(self) -> "JsonSchema":
@@ -81,8 +92,16 @@ class JsonSchema:
     def get_filename(self) -> Optional[str]:
         return cast(str, self.get_metadata_element("filename"))
 
-    def get_filename_extension(self) -> Optional[str]:
+    def get_file_extension(self) -> Optional[str]:
         return cast(str, self.get_metadata_element("file_extension"))
+
+    def get_filename_extension(self) -> Optional[str]:
+        suffix = (
+            self.get_file_extension()
+            if self.get_file_extension()
+            else "." + str(self.get_filename()).split(".")[-1]
+        )
+        return suffix
 
     def get_strategy(self) -> Optional[str]:
         return cast(Optional[str], self.get_metadata_element("strategy"))
@@ -92,8 +111,19 @@ class JsonSchema:
 
     def is_file(self) -> bool:
         filename = self.get_filename()
-        extension = self.get_filename_extension()
+        extension = self.get_file_extension()
         return (filename is not None) or (extension is not None)
+
+    def is_ini_file(self) -> bool:
+        name = self.get_filename()
+        ext = self.get_file_extension()
+        extensions = ["ini", "antares", "dat", "antares-output"]
+        if name:
+            return name.split(".")[-1] in extensions
+        elif ext:
+            return ext in [f".{ext}" for ext in extensions]
+        else:
+            return False
 
     def get_type(self) -> str:
         return cast(str, self.data["type"])

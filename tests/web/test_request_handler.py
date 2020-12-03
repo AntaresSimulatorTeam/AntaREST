@@ -8,7 +8,9 @@ import pytest
 
 from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.antares_io.writer.ini_writer import IniWriter
+from api_iso_antares.custom_types import JSON
 from api_iso_antares.engine import FileSystemEngine
+from api_iso_antares.jsm import JsonSchema
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.html_exception import (
     BadZipBinary,
@@ -41,15 +43,20 @@ def test_get(tmp_path: str, project_path) -> None:
     (path_study / "settings").mkdir()
     (path_study / "study.antares").touch()
 
-    data = {"toto": 42}
-    expected_data = {"titi": 43}
-    sub_route = "settings/blabla"
+    data = {"titi": 43}
+    sub_route = "settings"
+
+    jsm = JsonSchema(
+        data={"type": "object", "properties": {"titi": {"type": "number"}}}
+    )
+
+    path = path_study / "settings"
+    key = "titi"
+    url_engine_mock = Mock()
+    url_engine_mock.resolve.return_value = (jsm, path, key)
 
     study_reader_mock = Mock()
     study_reader_mock.parse.return_value = data
-
-    url_engine_mock = Mock()
-    url_engine_mock.apply.return_value = expected_data
 
     jsm_validator_mock = Mock()
     jsm_validator_mock.validate.return_value = None
@@ -69,14 +76,15 @@ def test_get(tmp_path: str, project_path) -> None:
         route=f"study2.py/{sub_route}", parameters=parameters
     )
 
-    assert output == expected_data
+    assert output == data
 
     study_reader_mock.parse.assert_called_once_with(
-        path_to_studies / "study2.py"
+        deep_path=path, study_path=path_study, jsm=jsm, keys=key
     )
-    jsm_validator_mock.validate.assert_called_once_with(data)
-    url_engine_mock.apply.assert_called_once_with(
-        Path(sub_route), data, parameters.depth
+    # TODO remove before fly
+    # jsm_validator_mock.validate.assert_called_once_with(data)
+    url_engine_mock.resolve.assert_called_once_with(
+        url="settings", path=path_study
     )
 
 
@@ -174,24 +182,24 @@ def test_create_study(
 
     path_studies = Path(tmp_path)
 
-    ini_reader = IniReader()
-    readers = {"default": ini_reader}
-    ini_writer = IniWriter()
-    writers = {"default": ini_writer}
+    jsm = JsonSchema(data={"type": "number"})
+    validator = Mock()
+    validator.jsm = jsm
 
-    study_parser = FileSystemEngine(
-        jsm=Mock(), readers=readers, writers=writers
-    )
-    parser = Mock()
-    parser.return_value = {"study": {"antares": {"caption": None}}}
-    study_parser.parse = parser
-    study_parser.write = Mock()
+    url_engine = Mock()
+    url_engine.resolve.return_value = (None, None, None)
+
+    study_parser = Mock()
+    data = {"study": {"antares": {"caption": None}}}
+    study_parser.parse.return_value = data
 
     request_handler = request_handler_builder(
         path_studies=path_studies,
         study_parser=study_parser,
+        url_engine=url_engine,
         exporter=Mock(),
         path_resources=project_path / "resources",
+        jsm_validator=validator,
     )
 
     study_name = "study1"
@@ -202,6 +210,9 @@ def test_create_study(
 
     path_study_antares_infos = path_study / "study.antares"
     assert path_study_antares_infos.is_file()
+
+    url_engine.resolve.assert_called_once_with(url="", path=path_study)
+    study_parser.write.assert_called_once_with(path_study, data, jsm)
 
 
 @pytest.mark.unit_test
@@ -218,7 +229,6 @@ def test_copy_study(
     path_study_info = path_study / "study.antares"
     path_study_info.touch()
 
-    study_parser = Mock()
     value = {
         "study": {
             "antares": {
@@ -230,21 +240,36 @@ def test_copy_study(
             "output": [],
         }
     }
+
+    study_parser = Mock()
     study_parser.parse.return_value = value
+
     reader = Mock()
     reader.read.return_value = value
     study_parser.get_reader.return_value = reader
+
     writer = Mock()
     study_parser.get_writer.return_value = writer
 
+    jsm = JsonSchema(data={"type": "number"})
+    validator = Mock()
+    validator.jsm = jsm
+
+    url_engine = Mock()
+    url_engine.resolve.return_value = None, None, None
     request_handler = request_handler_builder(
-        study_parser=study_parser, path_studies=path_studies
+        study_parser=study_parser,
+        path_studies=path_studies,
+        jsm_validator=validator,
+        url_engine=url_engine,
     )
 
     destination_name = "study2"
     request_handler.copy_study(source_name, destination_name)
 
-    study_parser.parse.assert_called_once_with(path_study)
+    study_parser.parse.assert_called_once_with(
+        deep_path=None, jsm=None, keys=None, study_path=path_study
+    )
     study_parser.write.assert_called()
 
 
@@ -352,24 +377,22 @@ def test_import_study(
     tmp_path: Path, request_handler_builder: Callable
 ) -> None:
 
-    nested_folder = "nested_folder"
-    nested_path = tmp_path / nested_folder
-    nested_path.mkdir()
-
     name = "my-study"
-    study_path = nested_path / name
+    study_path = tmp_path / name
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
     request_handler = request_handler_builder(path_studies=tmp_path)
+
+    request_handler.url_engine.resolve.return_value = (None, None, None)
 
     request_handler.parse_folder = Mock()
     request_handler.parse_folder.return_value = {
         "study": {"antares": {"version": 700}}
     }
 
-    filepath_zip = shutil.make_archive(nested_path, "zip", nested_path)
-    shutil.rmtree(nested_path)
+    filepath_zip = shutil.make_archive(study_path, "zip", study_path)
+    shutil.rmtree(study_path)
 
     path_zip = Path(filepath_zip)
 
@@ -384,24 +407,6 @@ def test_import_study(
 
 
 @pytest.mark.unit_test
-def test_parse_study(
-    tmp_path: Path, request_handler_builder: Callable
-) -> None:
-
-    study_name = "study1"
-
-    jsm_validator = Mock()
-    jsm_validator.validate = Mock(side_effect=StudyValidationError(""))
-
-    request_handler = request_handler_builder(
-        path_studies=tmp_path, jsm_validator=jsm_validator
-    )
-
-    with pytest.raises(StudyValidationError):
-        request_handler.parse_study(study_name)
-
-
-@pytest.mark.unit_test
 def test_check_antares_version(
     tmp_path: Path, request_handler_builder: Callable
 ) -> None:
@@ -412,3 +417,25 @@ def test_check_antares_version(
     wrong_study = {"study": {"antares": {"version": 600}}}
     with pytest.raises(StudyValidationError):
         RequestHandler.check_antares_version(wrong_study)
+
+
+@pytest.mark.unit_test
+def test_edit_study(tmp_path: Path, request_handler_builder: Callable) -> None:
+    # Mock
+    (tmp_path / "my-uuid").mkdir()
+    (tmp_path / "my-uuid/study.antares").touch()
+
+    request_handler = request_handler_builder(path_studies=tmp_path)
+    request_handler.url_engine.resolve.return_value = (None, None, None)
+
+    # Input
+    url = "my-uuid/url/to/change"
+    new = {"Hello": "World"}
+
+    res = request_handler.edit_study(url, new)
+
+    assert new == res
+    request_handler.url_engine.resolve.assert_called_once_with(
+        url="url/to/change", path=tmp_path / "my-uuid"
+    )
+    request_handler.study_parser.write(path=None, data=None, jsm=None)

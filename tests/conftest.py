@@ -6,9 +6,11 @@ from unittest.mock import Mock
 
 import pytest
 
+
 project_dir: Path = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_dir))
 
+from api_iso_antares.jsm import JsonSchema
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.web import RequestHandler
 
@@ -96,9 +98,9 @@ def lite_jsonschema() -> JSON:
                 "$id": "#/properties/folder1",
                 "type": "object",
                 "title": "The folder1 schema",
-                "required": ["file2.ini", "matrice1.txt", "folder2"],
+                "required": ["file2", "matrice1.txt", "folder2"],
                 "properties": {
-                    "file2.ini": {
+                    "file2": {
                         "type": "object",
                         "rte-metadata": {"filename": "file2.ini"},
                         "title": "The file3.ini schema",
@@ -208,7 +210,7 @@ def lite_jsondata() -> JSON:
     return {
         "key_file1": file_content,
         "folder1": {
-            "file2.ini": file_content,
+            "file2": file_content,
             "matrice1.txt": "file/root1/folder1/matrice1.txt",
             "folder2": {
                 "matrice2.txt": "file/root1/folder1/folder2/matrice2.txt"
@@ -293,3 +295,58 @@ def lite_path(tmp_path: Path) -> Path:
     create_area(path, "area3")
 
     return path_folder
+
+
+def get_strategy(project_path: Path, strategy: str):
+    content = 42
+    if strategy == "S12":
+        path = project_path / "tests/engine/resources/s12/output"
+        jsm_dict = {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "rte-metadata": {"strategy": "S12"},
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "hello": {"type": "string"},
+                    "world": {"type": "string"},
+                },
+            },
+        }
+        json_data = {
+            "1": {
+                "date": "19450623-0565",
+                "mode": "adequacy",
+                "name": "",
+                "hello": content,
+            },
+            "2": {
+                "date": "20201009-1221",
+                "mode": "economy",
+                "name": "hello-world",
+                "hello": content,
+                "world": content,
+            },
+        }
+    elif strategy == "S15":
+        path = project_path / "tests/engine/resources/s15/links"
+
+        jsm_dict = {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "rte-metadata": {"strategy": "S15"},
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": {"type": "number"},
+            },
+        }
+
+        json_data = {
+            "de": {"fr": content, "it": content},
+            "es": {"fr": content},
+            "fr": {"it": content},
+        }
+    return JsonSchema(jsm_dict), json_data, path

@@ -47,7 +47,7 @@ def request_handler(
 
     readers = {"default": IniReader()}
     writers = {"default": IniWriter(), "matrix": MatrixWriter()}
-    study_reader = FileSystemEngine(jsm=jsm, readers=readers, writers=writers)
+    study_reader = FileSystemEngine(readers=readers, writers=writers)
 
     request_handler = RequestHandler(
         study_parser=study_reader,
