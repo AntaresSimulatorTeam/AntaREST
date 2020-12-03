@@ -2,6 +2,9 @@ import argparse
 import os
 import sys
 from pathlib import Path
+from typing import cast, Optional, Tuple
+
+from flask import Flask
 
 from api_iso_antares import __version__
 from api_iso_antares.antares_io.exporter.export_file import Exporter
@@ -21,13 +24,8 @@ from api_iso_antares.web.server import create_server
 
 
 def parse_arguments() -> argparse.Namespace:
+
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-j",
-        "--json-schema",
-        dest="jsm_path",
-        help="Path to the Json Schema file",
-    )
     parser.add_argument(
         "-s",
         "--studies",
@@ -45,6 +43,20 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def get_arguments() -> Tuple[Optional[Path], bool]:
+
+    arguments = parse_arguments()
+
+    arg_studies_path = arguments.studies_path
+    studies_path = None
+    if arg_studies_path is not None:
+        studies_path = Path(arguments.studies_path)
+
+    display_version = arguments.version or False
+
+    return studies_path, display_version
+
+
 def get_local_path() -> Path:
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
@@ -53,14 +65,11 @@ def get_local_path() -> Path:
         return Path(os.path.abspath("."))
 
 
-def main() -> None:
-    arguments: argparse.Namespace = parse_arguments()
+def get_flask_application(studies_path: Path) -> Flask:
 
-    if arguments.version:
-        print(__version__)
-        return
-
-    jsm = JsmReader.read(Path(arguments.jsm_path))
+    path_resources = get_local_path() / "resources"
+    jsm_path = Path(path_resources / "jsonschema/jsonschema.json")
+    jsm = JsmReader.read(jsm_path)
 
     readers = {"default": IniReader()}
     writers = {"default": IniWriter(), "matrix": MatrixWriter()}
@@ -70,14 +79,25 @@ def main() -> None:
         study_parser=study_parser,
         url_engine=UrlEngine(jsm=jsm),
         exporter=Exporter(),
-        path_studies=Path(arguments.studies_path),
-        path_resources=get_local_path() / "resources",
+        path_studies=studies_path,
+        path_resources=path_resources,
         jsm_validator=JsmValidator(jsm=jsm),
     )
     application = create_server(request_handler)
 
-    application.run(debug=False, host="0.0.0.0", port=8080)
+    return application
 
 
 if __name__ == "__main__":
-    main()
+
+    studies_path, display_version = get_arguments()
+
+    if display_version:
+        print(__version__)
+        sys.exit()
+
+    if studies_path is not None:
+        flask_app = get_flask_application(studies_path)
+        flask_app.run(debug=False, host="0.0.0.0", port=8080)
+    else:
+        raise argparse.ArgumentError("Please provide the path for studies.")

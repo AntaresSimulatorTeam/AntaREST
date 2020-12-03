@@ -5,7 +5,7 @@
             "type": "object",
             "rte-metadata": {
                 "filename": "correlation.ini",
-                "additional_property_name":  "area"
+                "additional_property_name":  "month"
             },
             "properties": {
                 "general": {
@@ -18,11 +18,11 @@
                 }
             },
             "additionalProperties": {
-                "rte-metadata": {"additional_property_name":  "type"},
+                "rte-metadata": {"additional_property_name":  "property"},
                 "type": "object",
                 "properties": {},
                 "additionalProperties": {
-                    "type": "string"
+                    "type": "number"
                 }
             }
         }

@@ -17,7 +17,7 @@ from api_iso_antares.web import RequestHandler
 
 @pytest.fixture
 def path_jsm(project_path: Path) -> Path:
-    return project_path / "examples/jsonschemas/STA-mini/jsonschema.json"
+    return project_path / "resources/jsonschema/jsonschema.json"
 
 
 @pytest.fixture

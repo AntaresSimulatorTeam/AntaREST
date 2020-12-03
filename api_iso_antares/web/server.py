@@ -2,15 +2,18 @@ import io
 import json
 import re
 from http import HTTPStatus
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional
+import subprocess
 
 from flask import escape, Flask, jsonify, request, Response, send_file
 
+from api_iso_antares import __version__
+from api_iso_antares.engine import SwaggerEngine
 from api_iso_antares.web.html_exception import (
     HtmlException,
     stop_and_return_on_html_exception,
 )
-from api_iso_antares.engine import SwaggerEngine
 from api_iso_antares.web.request_handler import (
     RequestHandler,
     RequestHandlerParameters,
@@ -49,6 +52,29 @@ def _construct_parameters(
         "depth", request_parameters.depth, type=int
     )
     return request_parameters
+
+
+def get_commit_id(path_resources: Path) -> Optional[str]:
+
+    commit_id = None
+
+    path_commit_id = path_resources / "commit_id"
+    if path_commit_id.exists():
+        commit_id = path_commit_id.read_text()[:-1]
+    else:
+        command = "git log -1 HEAD --format=%H"
+        process = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
+        if process.returncode == 0:
+            commit_id = process.stdout.decode("utf-8")
+
+    if commit_id is not None:
+
+        def remove_carriage_return(value: str) -> str:
+            return value[:-1]
+
+        commit_id = remove_carriage_return(commit_id)
+
+    return commit_id
 
 
 def create_study_routes(application: Flask) -> None:
@@ -222,6 +248,17 @@ def create_non_business_routes(application: Flask) -> None:
     @application.route("/health", methods=["GET"])
     def health() -> Any:
         return jsonify({"status": "available"}), 200
+
+    @application.route("/version", methods=["GET"])
+    def version() -> Any:
+        global request_handler
+
+        version_data = {"version": __version__}
+        commit_id = get_commit_id(request_handler.path_resources)
+        if commit_id is not None:
+            version_data["gitcommit"] = commit_id
+
+        return jsonify(version_data), HTTPStatus.OK.value
 
     @application.after_request
     def after_request(response: Response) -> Response:

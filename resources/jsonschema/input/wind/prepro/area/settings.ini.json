@@ -14,8 +14,7 @@
                 "type": "object",
                 "properties": {},
                 "additionalProperties": {
-
-                    "type": "string"
+                    "type": "number"
                 }
             }
         }
