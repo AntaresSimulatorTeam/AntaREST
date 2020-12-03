@@ -22,7 +22,8 @@
                 "type": "object",
                 "properties": {},
                 "additionalProperties": {
-                    "type": "number"
+
+                    "type": "string"
                 }
             }
         }
