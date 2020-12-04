@@ -18,6 +18,12 @@ from api_iso_antares.domain.study.root.study import Study
             "settings/resources/study",
             "file/STA-mini/settings/resources/study.icon",
         ),
+        (
+            "settings/comments",
+            "file/STA-mini/settings/comments.txt",
+        ),
+        ("settings/generaldata/general/horizon", 2030),
+        ("settings/scenariobuilder/Default Ruleset/l,fr,0", 1),
     ],
 )
 def test_it(project_path: Path, tmp_path: Path, url: str, exp: SUB_JSON):

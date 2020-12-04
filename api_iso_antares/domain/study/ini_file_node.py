@@ -29,16 +29,18 @@ class IniFileNode(INode, ABC):
                 raise ValueError(
                     f"section {section} not in {self.__class__.__name__}"
                 )
-            sub_data = data[section]
-            for param, typing in params.items():
-                if param not in sub_data:
-                    raise ValueError(
-                        f"param {param} of section {section} not in {self.__class__.__name__}"
-                    )
-                if not isinstance(sub_data[param], typing):
-                    raise ValueError(
-                        f"param {param} of section {section} in {self.__class__.__name__} not good type"
-                    )
+            self._validate_param(section, params, data[section])
+
+    def _validate_param(self, section: str, params: Any, data: JSON):
+        for param, typing in params.items():
+            if param not in data:
+                raise ValueError(
+                    f"param {param} of section {section} not in {self.__class__.__name__}"
+                )
+            if not isinstance(data[param], typing):
+                raise ValueError(
+                    f"param {param} of section {section} in {self.__class__.__name__} not good type"
+                )
 
 
 class IniConfigParser(configparser.ConfigParser):
