@@ -1,14 +1,21 @@
-from api_iso_antares.custom_types import JSON
-from api_iso_antares.domain.study.inode import TREE
+from typing import Optional, List
+
+from api_iso_antares.domain.study.inode import TREE, INode
 from api_iso_antares.domain.study.default_node import DefaultNode
 
 
-class TestSubNode(DefaultNode):
-    def __init__(self, return_value):
-        self.return_value = return_value
+class TestSubNode(INode[int]):
+    def __init__(self, value: int):
+        self.value = value
 
-    def to_json(self) -> JSON:
-        return self.return_value
+    def get(self, url: Optional[List[str]] = None) -> int:
+        return self.value
+
+    def save(self, data: int, url: Optional[List[str]] = None) -> None:
+        self.value = data
+
+    def validate(self, data: int) -> None:
+        pass
 
 
 class TestDefaultNode(DefaultNode):
