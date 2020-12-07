@@ -31,6 +31,9 @@ class Config:
     def get_thermals(self, area: str) -> List[str]:
         return self.areas[area].thermals
 
+    def get_links(self, area: str) -> List[str]:
+        return self.areas[area].links
+
     def _parse_areas(self) -> Dict[str, Area]:
         areas = (
             (self.root_path / "input/areas/list.txt").read_text().split("\n")

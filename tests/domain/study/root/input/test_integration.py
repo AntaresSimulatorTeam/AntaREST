@@ -40,6 +40,8 @@ from tests.domain.study.utils import extract_sta
             "file/STA-mini/input/hydro/series/es/mod.txt",
         ),
         ("input/hydro/hydro/leeway low/de", 1.0),
+        ("input/links/de/fr", "file/STA-mini/input/links/de/fr.txt"),
+        ("input/links/de/properties/fr/loop-flow", 0),
     ],
 )
 def test_get_input_it(
@@ -48,6 +50,8 @@ def test_get_input_it(
     path = extract_sta(project_path, tmp_path)
     study = Study(config=Config(path))
 
+    if isinstance(exp, str) and "files/" in exp:
+        exp = str(Path(exp))
     assert study.get(url.split("/")) == exp
 
 
