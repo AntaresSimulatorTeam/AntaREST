@@ -10,9 +10,9 @@ from api_iso_antares.domain.study.inode import INode
 
 
 class IniFileNode(INode[SUB_JSON]):
-    def __init__(self, config: Config, types: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Config, types: Dict[str, Any]):
         self.path = config.path
-        self.types = types or dict()
+        self.types = types
         self.reader = IniReader()
         self.writer = IniWriter()
 
