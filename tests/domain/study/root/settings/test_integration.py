@@ -6,6 +6,7 @@ import pytest
 from api_iso_antares.custom_types import SUB_JSON
 from api_iso_antares.domain.study.config import Config
 from api_iso_antares.domain.study.root.study import Study
+from tests.domain.study.utils import extract_sta
 
 
 @pytest.mark.integration_test
@@ -29,11 +30,8 @@ from api_iso_antares.domain.study.root.study import Study
 def test_get_settings_it(
     project_path: Path, tmp_path: Path, url: str, exp: SUB_JSON
 ):
-    path_studies = tmp_path / "studies"
-    with ZipFile(project_path / "examples/studies/STA-mini.zip") as zip_output:
-        zip_output.extractall(path=path_studies)
-
-    study = Study(config=Config(path_studies / "STA-mini"))
+    path = extract_sta(project_path, tmp_path)
+    study = Study(config=Config(path))
 
     assert study.get(url.split("/")) == exp
 
@@ -48,14 +46,11 @@ def test_get_settings_it(
         ("settings/scenariobuilder/Default Ruleset/l,fr,0", 42),
     ],
 )
-def test_get_settings_it(
+def test_save_settings_it(
     project_path: Path, tmp_path: Path, url: str, exp: SUB_JSON
 ):
-    path_studies = tmp_path / "studies"
-    with ZipFile(project_path / "examples/studies/STA-mini.zip") as zip_output:
-        zip_output.extractall(path=path_studies)
-
-    study = Study(config=Config(path_studies / "STA-mini"))
+    path = extract_sta(project_path, tmp_path)
+    study = Study(config=Config(path))
 
     study.save(exp, url.split("/"))
     assert study.get(url.split("/")) == exp

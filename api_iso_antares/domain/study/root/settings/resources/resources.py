@@ -9,8 +9,6 @@ from api_iso_antares.domain.study.root.settings.resources.study_icon import (
 
 
 class Resources(DefaultNode):
-    def __init__(self, config: Config, children: Optional[TREE] = None):
-        DefaultNode.__init__(self)
-        self.children = children or {
-            "study": StudyIcon(config.next_file("study.icon"))
-        }
+    def __init__(self, config: Config):
+        children = {"study": StudyIcon(config.next_file("study.icon"))}
+        DefaultNode.__init__(self, children)

@@ -15,9 +15,8 @@ from api_iso_antares.domain.study.root.settings.scenariobuilder import (
 
 
 class Settings(DefaultNode):
-    def __init__(self, config: Config, children: Optional[TREE] = None):
-        DefaultNode.__init__(self)
-        self.children = children or {
+    def __init__(self, config: Config):
+        children = {
             "resources": Resources(config.next_file("resources")),
             "comments": Comments(config.next_file("comments.txt")),
             "generaldata": GeneralData(config.next_file("generaldata.ini")),
@@ -25,3 +24,4 @@ class Settings(DefaultNode):
                 config.next_file("scenariobuilder.dat")
             ),
         }
+        DefaultNode.__init__(self, children)

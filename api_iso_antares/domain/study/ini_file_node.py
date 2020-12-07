@@ -2,8 +2,9 @@ import configparser
 from pathlib import Path
 from typing import List, Optional, Union, cast, Type, Dict, Any
 
+from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.antares_io.writer.ini_writer import IniWriter
-from api_iso_antares.custom_types import JSON, ELEMENT, SUB_JSON
+from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.domain.study.config import Config
 from api_iso_antares.domain.study.inode import INode
 
@@ -12,12 +13,12 @@ class IniFileNode(INode[SUB_JSON]):
     def __init__(self, config: Config, types: Optional[Dict[str, Any]] = None):
         self.path = config.path
         self.types = types or dict()
-        self.parser = IniConfigParser()
+        self.reader = IniReader()
         self.writer = IniWriter()
 
     def get(self, url: Optional[List[str]] = None) -> SUB_JSON:
         url = url or []
-        json = self.parser.parse(self.path)
+        json = self.reader.read(self.path)
         self.validate(json)
         for key in url:
             json = json[key]
@@ -25,7 +26,7 @@ class IniFileNode(INode[SUB_JSON]):
 
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
         url = url or []
-        json = self.parser.parse(self.path)
+        json = self.reader.read(self.path)
         if len(url) == 2:
             json[url[0]][url[1]] = data
         elif len(url) == 1:
@@ -53,60 +54,3 @@ class IniFileNode(INode[SUB_JSON]):
                 raise ValueError(
                     f"param {param} of section {section} in {self.__class__.__name__} not good type"
                 )
-
-
-class IniConfigParser(configparser.ConfigParser):
-    def optionxform(self, optionstr: str) -> str:
-        return optionstr
-
-    @staticmethod
-    def _parse_bool(value: str) -> Optional[bool]:
-        value = value.lower()
-        return bool(value == "true") if value in ["true", "false"] else None
-
-    @staticmethod
-    def _parse_int(value: str) -> Optional[int]:
-        try:
-            return int(value)
-        except ValueError:
-            return None
-
-    @staticmethod
-    def _parse_float(value: str) -> Optional[float]:
-        try:
-            return float(value)
-        except ValueError:
-            return None
-
-    @staticmethod
-    def parse_value(value: str) -> ELEMENT:
-        parsed: Union[
-            str, int, float, bool, None
-        ] = IniConfigParser._parse_bool(value)
-        parsed = (
-            parsed if parsed is not None else IniConfigParser._parse_int(value)
-        )
-        parsed = (
-            parsed
-            if parsed is not None
-            else IniConfigParser._parse_float(value)
-        )
-        return parsed if parsed is not None else value
-
-    @staticmethod
-    def _parse_json(json: configparser.SectionProxy) -> JSON:
-        return {
-            key: IniConfigParser.parse_value(value)
-            for key, value in json.items()
-        }
-
-    def parse(self, path: Path) -> JSON:
-        IniConfigParser.read(self, path)
-        config = IniConfigParser()
-        config.read(path)
-
-        return {
-            key: IniConfigParser._parse_json(config[key])
-            for key in config
-            if key != "DEFAULT"
-        }

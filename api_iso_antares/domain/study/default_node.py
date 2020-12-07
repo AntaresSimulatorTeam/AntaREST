@@ -5,8 +5,8 @@ from api_iso_antares.domain.study.inode import INode, TREE
 
 
 class DefaultNode(INode[JSON]):
-    def __init__(self) -> None:
-        self.children: TREE = dict()
+    def __init__(self, children: TREE) -> None:
+        self.children: TREE = children
 
     def get(self, url: Optional[List[str]] = None) -> JSON:
         if url:
