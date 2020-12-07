@@ -3,13 +3,13 @@ from typing import Dict, List
 import pytest
 
 from api_iso_antares.custom_types import JSON
-from api_iso_antares.domain.study.default_node import DefaultNode
+from api_iso_antares.domain.study.folder_node import FolderNode
 from api_iso_antares.domain.study.inode import INode
-from tests.domain.study.utils import TestDefaultNode, TestSubNode
+from tests.domain.study.utils import TestFolderNode, TestSubNode
 
 
 def build_tree() -> INode:
-    return TestDefaultNode(
+    return TestFolderNode(
         children={
             "input": TestSubNode(value=100),
             "output": TestSubNode(value=200),

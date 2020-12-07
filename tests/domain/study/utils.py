@@ -3,7 +3,7 @@ from typing import Optional, List
 from zipfile import ZipFile
 
 from api_iso_antares.domain.study.inode import TREE, INode
-from api_iso_antares.domain.study.default_node import DefaultNode
+from api_iso_antares.domain.study.folder_node import FolderNode
 
 
 class TestSubNode(INode[int]):
@@ -20,7 +20,7 @@ class TestSubNode(INode[int]):
         pass
 
 
-class TestDefaultNode(DefaultNode):
+class TestFolderNode(FolderNode):
     def __init__(self, children: TREE):
         self.children = children
 

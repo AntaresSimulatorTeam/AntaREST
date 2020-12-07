@@ -20,4 +20,4 @@ class INode(ABC, Generic[T]):
         pass
 
 
-TREE = Dict[str, INode[Union[JSON, SUB_JSON]]]
+TREE = Dict[str, INode[Any]]

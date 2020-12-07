@@ -17,7 +17,7 @@ class Config:
     ):
         self.root_path = study_path
         self.path = study_path
-        self.areas = areas or self._parse_areas()
+        self.areas = areas if areas is not None else self._parse_areas()
 
     def next_file(self, name: str) -> "Config":
         copy = deepcopy(self)

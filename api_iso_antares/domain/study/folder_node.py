@@ -4,7 +4,7 @@ from api_iso_antares.custom_types import JSON
 from api_iso_antares.domain.study.inode import INode, TREE
 
 
-class DefaultNode(INode[JSON]):
+class FolderNode(INode[JSON]):
     def __init__(self, children: TREE) -> None:
         self.children: TREE = children
 

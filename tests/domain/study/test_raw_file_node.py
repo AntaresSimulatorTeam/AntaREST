@@ -5,7 +5,7 @@ from api_iso_antares.domain.study.raw_file_node import RawFileNode
 
 
 def test_get(tmp_path: Path):
-    config = Config(study_path=tmp_path / "my-study")
+    config = Config(study_path=tmp_path / "my-study", areas=dict())
     config = config.next_file("a").next_file("b").next_file("c")
 
     node = RawFileNode(config=config)
@@ -14,7 +14,7 @@ def test_get(tmp_path: Path):
 
 def test_save(tmp_path: Path):
     path = tmp_path / "my-file"
-    config = Config(study_path=path)
+    config = Config(study_path=path, areas=dict())
     node = RawFileNode(config=config)
 
     node.save("Hello, World")

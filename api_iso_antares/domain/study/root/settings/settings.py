@@ -2,7 +2,7 @@ from typing import Optional
 
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.domain.study.config import Config
-from api_iso_antares.domain.study.default_node import DefaultNode
+from api_iso_antares.domain.study.folder_node import FolderNode
 from api_iso_antares.domain.study.inode import TREE
 from api_iso_antares.domain.study.root.settings.comments import Comments
 from api_iso_antares.domain.study.root.settings.generaldata import GeneralData
@@ -14,7 +14,7 @@ from api_iso_antares.domain.study.root.settings.scenariobuilder import (
 )
 
 
-class Settings(DefaultNode):
+class Settings(FolderNode):
     def __init__(self, config: Config):
         children = {
             "resources": Resources(config.next_file("resources")),
@@ -24,4 +24,4 @@ class Settings(DefaultNode):
                 config.next_file("scenariobuilder.dat")
             ),
         }
-        DefaultNode.__init__(self, children)
+        FolderNode.__init__(self, children)
