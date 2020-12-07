@@ -25,6 +25,21 @@ from tests.domain.study.utils import extract_sta
             "input/hydro/common/capacity/reservoir_es",
             "file/STA-mini/input/hydro/common/capacity/reservoir_es.txt",
         ),
+        (
+            "input/hydro/prepro/it/energy",
+            "file/STA-mini/input/hydro/prepro/it/energy.txt",
+        ),
+        ("input/hydro/prepro/it/prepro/prepro/intermonthly-correlation", 0.5),
+        ("input/hydro/prepro/correlation/general/mode", "annual"),
+        (
+            "input/hydro/series/es/ror",
+            "file/STA-mini/input/hydro/series/es/ror.txt",
+        ),
+        (
+            "input/hydro/series/es/mod",
+            "file/STA-mini/input/hydro/series/es/mod.txt",
+        ),
+        ("input/hydro/hydro/leeway low/de", 1.0),
     ],
 )
 def test_get_input_it(
@@ -45,6 +60,13 @@ def test_get_input_it(
             "input/areas/de/optimization/filtering/filter-synthesis",
             "Hello, World",
         ),
+        (
+            "input/bindingconstraints/bindingconstraints",
+            {"Hello": {"World": 42}},
+        ),
+        ("input/hydro/allocation/fr/[allocation/fr", 42),
+        ("input/hydro/prepro/it/prepro/prepro/intermonthly-correlation", 42.0),
+        ("input/hydro/prepro/correlation/general/mode", "Hello World"),
     ],
 )
 def test_save_settings_it(
