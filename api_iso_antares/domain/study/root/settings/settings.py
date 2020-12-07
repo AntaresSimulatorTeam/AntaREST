@@ -16,7 +16,7 @@ from api_iso_antares.domain.study.root.settings.scenariobuilder import (
 
 class Settings(FolderNode):
     def __init__(self, config: Config):
-        children = {
+        children: TREE = {
             "resources": Resources(config.next_file("resources")),
             "comments": Comments(config.next_file("comments.txt")),
             "generaldata": GeneralData(config.next_file("generaldata.ini")),

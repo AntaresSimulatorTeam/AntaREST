@@ -33,9 +33,6 @@ def test_get_settings_it(
     path = extract_sta(project_path, tmp_path)
     study = Study(config=Config(path))
 
-    if isinstance(exp, str) and "files/" in exp:
-        exp = str(Path(exp))
-
     assert study.get(url.split("/")) == exp
 
 

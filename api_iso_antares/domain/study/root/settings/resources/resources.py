@@ -10,5 +10,5 @@ from api_iso_antares.domain.study.root.settings.resources.study_icon import (
 
 class Resources(FolderNode):
     def __init__(self, config: Config):
-        children = {"study": StudyIcon(config.next_file("study.icon"))}
+        children: TREE = {"study": StudyIcon(config.next_file("study.icon"))}
         FolderNode.__init__(self, children)

@@ -2,13 +2,14 @@ from pathlib import Path
 
 from api_iso_antares.domain.study.config import Config
 from api_iso_antares.domain.study.folder_node import FolderNode
+from api_iso_antares.domain.study.inode import TREE
 from api_iso_antares.domain.study.root.logs.logs_item import LogsItem
 
 
 class Logs(FolderNode):
     def __init__(self, config: Config):
         # TODO force simulations list
-        children = {
+        children: TREE = {
             Logs.keep_name(file): LogsItem(config.next_file(file.name))
             for file in config.path.iterdir()
         }

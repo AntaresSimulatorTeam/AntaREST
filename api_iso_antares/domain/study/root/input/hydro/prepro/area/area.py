@@ -1,5 +1,6 @@
 from api_iso_antares.domain.study.config import Config
 from api_iso_antares.domain.study.folder_node import FolderNode
+from api_iso_antares.domain.study.inode import TREE
 from api_iso_antares.domain.study.root.input.hydro.prepro.area.energy import (
     InputHydroPreproAreaEnergy,
 )
@@ -10,7 +11,7 @@ from api_iso_antares.domain.study.root.input.hydro.prepro.area.prepro import (
 
 class InputHydroPreproArea(FolderNode):
     def __init__(self, config: Config):
-        children = {
+        children: TREE = {
             "energy": InputHydroPreproAreaEnergy(
                 config.next_file("energy.txt")
             ),

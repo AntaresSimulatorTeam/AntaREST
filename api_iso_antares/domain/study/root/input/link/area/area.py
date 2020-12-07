@@ -10,7 +10,7 @@ from api_iso_antares.domain.study.root.input.link.area.properties import (
 
 class InputLinkArea(FolderNode):
     def __init__(self, config: Config, area: str):
-        children = {
+        children: TREE = {
             l: InputLinkAreaLink(config.next_file(f"{l}.txt"))
             for l in config.get_links(area)
         }

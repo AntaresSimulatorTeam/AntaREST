@@ -41,7 +41,25 @@ from tests.domain.study.utils import extract_sta
         ),
         ("input/hydro/hydro/leeway low/de", 1.0),
         ("input/links/de/fr", "file/STA-mini/input/links/de/fr.txt"),
-        ("input/links/de/properties/fr/loop-flow", 0),
+        ("input/links/de/properties/fr/loop-flow", False),
+        ("input/load/prepro/it/k", "file/STA-mini/input/load/prepro/it/k.txt"),
+        (
+            "input/load/prepro/it/data",
+            "file/STA-mini/input/load/prepro/it/data.txt",
+        ),
+        (
+            "input/load/prepro/it/conversation",
+            "file/STA-mini/input/load/prepro/it/conversation.txt",
+        ),
+        (
+            "input/load/prepro/it/translation",
+            "file/STA-mini/input/load/prepro/it/translation.txt",
+        ),
+        ("input/load/prepro/correlation/general/mode", "annual"),
+        (
+            "input/load/series/load_fr",
+            "file/STA-mini/input/load/series/load_fr.txt",
+        ),
     ],
 )
 def test_get_input_it(
@@ -50,8 +68,6 @@ def test_get_input_it(
     path = extract_sta(project_path, tmp_path)
     study = Study(config=Config(path))
 
-    if isinstance(exp, str) and "files/" in exp:
-        exp = str(Path(exp))
     assert study.get(url.split("/")) == exp
 
 
@@ -71,6 +87,9 @@ def test_get_input_it(
         ("input/hydro/allocation/fr/[allocation/fr", 42),
         ("input/hydro/prepro/it/prepro/prepro/intermonthly-correlation", 42.0),
         ("input/hydro/prepro/correlation/general/mode", "Hello World"),
+        ("input/hydro/hydro/leeway low/de", 42),
+        ("input/links/de/properties/fr/loop-flow", True),
+        ("input/load/prepro/correlation/general/mode", "Hello World"),
     ],
 )
 def test_save_settings_it(

@@ -12,8 +12,8 @@ class RawFileNode(INode[str]):
     def get(self, url: Optional[List[str]] = None) -> str:
         self._assert_url(url)
 
-        file_path = str(self.config.path.absolute())
-        root_path = str(self.config.root_path.parent.absolute())
+        file_path = "/".join(self.config.path.absolute().parts)
+        root_path = "/".join(self.config.root_path.parent.absolute().parts)
         file_relative = file_path.replace(root_path, "")
         return f"file{file_relative}"
 

@@ -1,5 +1,6 @@
 from api_iso_antares.domain.study.config import Config
 from api_iso_antares.domain.study.folder_node import FolderNode
+from api_iso_antares.domain.study.inode import TREE
 from api_iso_antares.domain.study.root.input.hydro.allocation.allocation import (
     InputHydroAllocation,
 )
@@ -19,7 +20,7 @@ from api_iso_antares.domain.study.root.input.hydro.series.series import (
 
 class InputHydro(FolderNode):
     def __init__(self, config: Config):
-        children = {
+        children: TREE = {
             "allocation": InputHydroAllocation(config.next_file("allocation")),
             "common": InputHydroCommon(config.next_file("common")),
             "prepro": InputHydroPrepro(config.next_file("prepro")),
