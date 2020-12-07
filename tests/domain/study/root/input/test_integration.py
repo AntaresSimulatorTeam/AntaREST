@@ -19,6 +19,12 @@ from tests.domain.study.utils import extract_sta
             "daily, monthly",
         ),
         ("input/areas/list", "file/STA-mini/input/areas/list.txt"),
+        ("input/bindingconstraints/bindingconstraints", {}),
+        ("input/hydro/allocation/fr/[allocation/fr", 1),
+        (
+            "input/hydro/common/capacity/reservoir_es",
+            "file/STA-mini/input/hydro/common/capacity/reservoir_es.txt",
+        ),
     ],
 )
 def test_get_input_it(

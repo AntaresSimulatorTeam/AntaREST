@@ -4,6 +4,7 @@ from api_iso_antares.domain.study.root.input.areas.areas import InputAreas
 from api_iso_antares.domain.study.root.input.bindingconstraints.bindingcontraints import (
     BindingConstraints,
 )
+from api_iso_antares.domain.study.root.input.hydro.hydro import InputHydro
 
 
 class Input(FolderNode):
@@ -13,5 +14,6 @@ class Input(FolderNode):
             "bindingconstraints": BindingConstraints(
                 config.next_file("bindingconstraints")
             ),
+            "hydro": InputHydro(config.next_file("hydro")),
         }
         FolderNode.__init__(self, children)
