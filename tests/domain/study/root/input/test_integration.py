@@ -60,6 +60,41 @@ from tests.domain.study.utils import extract_sta
             "input/load/series/load_fr",
             "file/STA-mini/input/load/series/load_fr.txt",
         ),
+        (
+            "input/misc-gen/miscgen-it",
+            "file/STA-mini/input/misc-gen/miscgen-it.txt",
+        ),
+        ("input/reserves/es", "file/STA-mini/input/reserves/es.txt"),
+        (
+            "input/solar/prepro/de/k",
+            "file/STA-mini/input/solar/prepro/de/k.txt",
+        ),
+        (
+            "input/solar/series/solar_de",
+            "file/STA-mini/input/solar/series/solar_de.txt",
+        ),
+        (
+            "input/wind/prepro/de/k",
+            "file/STA-mini/input/wind/prepro/de/k.txt",
+        ),
+        (
+            "input/wind/series/wind_de",
+            "file/STA-mini/input/wind/series/wind_de.txt",
+        ),
+        ("input/thermal/clusters/de/list/01_solar/unitcount", 1),
+        ("input/thermal/area/unserverdenergycost/es", 3000),
+        (
+            "input/thermal/prepro/es/06_coal/data",
+            "file/STA-mini/input/thermal/prepro/es/06_coal/data.txt",
+        ),
+        (
+            "input/thermal/prepro/es/06_coal/modulation",
+            "file/STA-mini/input/thermal/prepro/es/06_coal/modulation.txt",
+        ),
+        (
+            "input/thermal/series/it/07_gas/series",
+            "file/STA-mini/input/thermal/series/it/07_gas/series.txt",
+        ),
     ],
 )
 def test_get_input_it(
@@ -90,6 +125,8 @@ def test_get_input_it(
         ("input/hydro/hydro/leeway low/de", 42),
         ("input/links/de/properties/fr/loop-flow", True),
         ("input/load/prepro/correlation/general/mode", "Hello World"),
+        ("input/thermal/clusters/de/list/01_solar/unitcount", 42),
+        ("input/thermal/area/unserverdenergycost/es", 42.0),
     ],
 )
 def test_save_settings_it(
