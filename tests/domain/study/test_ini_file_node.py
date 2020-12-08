@@ -35,7 +35,7 @@ def test_get(tmp_path: str) -> None:
         "part1": {"key_int": 1, "key_str": "value1", "key_float": 2.1},
         "part2": {"key_bool": True, "key_bool2": False},
     }
-    node = IniFileNode(Config(path, areas=dict()), types=types)
+    node = IniFileNode(Config(path, areas=dict(), outputs=dict()), types=types)
     assert node.get([]) == expected_json
     assert node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
     assert node.get(["part2", "key_bool"])
@@ -61,7 +61,7 @@ key_float = 3.14
 
     types = {"part1": {"key_int": int, "key_float": float, "key_str": str}}
 
-    node = IniFileNode(Config(path, areas=dict()), types=types)
+    node = IniFileNode(Config(path, areas=dict(), outputs=dict()), types=types)
     data = {
         "part1": {"key_int": 10, "key_str": "value10", "key_float": 2.1},
     }

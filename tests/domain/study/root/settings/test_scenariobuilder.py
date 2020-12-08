@@ -79,9 +79,14 @@ def test_get(tmp_path: Path):
     ]
 
     areas = {
-        n: Area(links=[], thermals=thermals) for n in ["de", "fr", "es", "it"]
+        n: Area(
+            links=[], thermals=thermals, filters_year=[], filters_synthesis=[]
+        )
+        for n in ["de", "fr", "es", "it"]
     }
 
-    node = ScenarioBuilder(Config(study_path=path, areas=areas))
+    node = ScenarioBuilder(
+        Config(study_path=path, areas=areas, outputs=dict())
+    )
 
     assert node.get(["Default Ruleset", "t,it,0,09_hydro_pump"]) == 1
