@@ -1,6 +1,7 @@
+import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 
 from api_iso_antares.antares_io.reader import IniReader
 
@@ -11,13 +12,30 @@ class Area:
         self.thermals = thermals
 
 
+class Simulation:
+    def __init__(self, name: str, date: str, mode: str):
+        self.name = name
+        self.date = date
+        self.mode = mode
+
+    def get_file(self) -> str:
+        modes = {"economy": "eco", "adequacy": "adq"}
+        return f"{self.date}{modes[self.mode]}-{self.name}"
+
+
 class Config:
     def __init__(
-        self, study_path: Path, areas: Optional[Dict[str, Area]] = None
+        self,
+        study_path: Path,
+        areas: Optional[Dict[str, Area]] = None,
+        outputs: Optional[Dict[int, Simulation]] = None,
     ):
         self.root_path = study_path
         self.path = study_path
         self.areas = areas if areas is not None else self._parse_areas()
+        self.outputs = (
+            outputs if outputs is not None else self._parse_outputs()
+        )
 
     def next_file(self, name: str) -> "Config":
         copy = deepcopy(self)
@@ -57,3 +75,18 @@ class Config:
             self.root_path / f"input/links/{area}/properties.ini"
         )
         return list(properties_ini.keys())
+
+    def _parse_outputs(self) -> Dict[int, Simulation]:
+        files = sorted((self.root_path / "output").iterdir())
+        return {
+            i: self._parse_output_name(f.name) for i, f in enumerate(files)
+        }
+
+    def _parse_output_name(self, name: str) -> Simulation:
+        modes = {"eco": "economy", "adq": "adequacy"}
+        regex: Any = re.search("^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", name)
+        return Simulation(
+            date=regex.group(1),
+            mode=modes[regex.group(2)],
+            name=regex.group(3),
+        )

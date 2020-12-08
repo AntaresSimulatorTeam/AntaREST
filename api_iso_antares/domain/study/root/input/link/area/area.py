@@ -1,5 +1,6 @@
 from api_iso_antares.domain.study.config import Config
 from api_iso_antares.domain.study.folder_node import FolderNode
+from api_iso_antares.domain.study.inode import TREE
 from api_iso_antares.domain.study.root.input.link.area.link import (
     InputLinkAreaLink,
 )
