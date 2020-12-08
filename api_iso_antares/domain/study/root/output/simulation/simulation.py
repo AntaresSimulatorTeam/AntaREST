@@ -4,6 +4,9 @@ from api_iso_antares.domain.study.inode import TREE
 from api_iso_antares.domain.study.root.output.simulation.about.about import (
     OutputSimulationAbout,
 )
+from api_iso_antares.domain.study.root.output.simulation.economy.economy import (
+    OutputSimulationEconomy,
+)
 
 
 class OutputSimulation(FolderNode):
@@ -13,4 +16,9 @@ class OutputSimulation(FolderNode):
                 config.next_file("about-the-study")
             ),
         }
+        if simulation.mode == "economy":
+            children["economy"] = OutputSimulationEconomy(
+                config.next_file("economy")
+            )
+
         FolderNode.__init__(self, children)

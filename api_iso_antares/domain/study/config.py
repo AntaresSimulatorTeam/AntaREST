@@ -4,12 +4,80 @@ from pathlib import Path
 from typing import Dict, Optional, List, Any
 
 from api_iso_antares.antares_io.reader import IniReader
+from api_iso_antares.custom_types import JSON
+
+
+class Link:
+    def __init__(self, filters_synthesis: List[str], filters_year: List[str]):
+        self.filters_synthesis = filters_synthesis
+        self.filters_year = filters_year
+
+    @staticmethod
+    def from_fs(properties: JSON) -> "Link":
+        return Link(
+            filters_year=Link._split(properties["filter-year-by-year"]),
+            filters_synthesis=Link._split(properties["filter-synthesis"]),
+        )
+
+    @staticmethod
+    def _split(line: str) -> List[str]:
+        return [
+            token.strip() for token in line.split(",") if token.strip() == ""
+        ]
 
 
 class Area:
-    def __init__(self, links: List[str], thermals: List[str]):
+    def __init__(
+        self,
+        links: Dict[str, Link],
+        thermals: List[str],
+        filters_synthesis: List[str],
+        filters_year: List[str],
+    ):
         self.links = links
         self.thermals = thermals
+        self.filters_synthesis = filters_synthesis
+        self.filters_year = filters_year
+
+    @staticmethod
+    def from_fs(root: Path, area: str):
+        return Area(
+            links=Area._parse_links(root, area),
+            thermals=Area._parse_thermal(root, area),
+            filters_synthesis=Area._parse_filters_synthesis(root, area),
+            filters_year=Area._parse_filters_year(root, area),
+        )
+
+    @staticmethod
+    def _parse_thermal(root: Path, area: str) -> List[str]:
+        list_ini = IniReader().read(
+            root / f"input/thermal/clusters/{area}/list.ini"
+        )
+        return list(list_ini.keys())
+
+    @staticmethod
+    def _parse_links(root: Path, area: str) -> Dict[str, Link]:
+        properties_ini = IniReader().read(
+            root / f"input/links/{area}/properties.ini"
+        )
+        return {
+            link: Link.from_fs(properties_ini[link])
+            for link in list(properties_ini.keys())
+        }
+
+    @staticmethod
+    def _parse_filters_synthesis(root: Path, area: str) -> List[str]:
+        filters: str = IniReader().read(
+            root / f"input/areas/{area}/optimization.ini"
+        )["filtering"]["filter-synthesis"]
+        return [f.strip() for f in filters.split(",")]
+
+    @staticmethod
+    def _parse_filters_year(root: Path, area: str) -> List[str]:
+        filters: str = IniReader().read(
+            root / f"input/areas/{area}/optimization.ini"
+        )["filtering"]["filter-year-by-year"]
+        return [f.strip() for f in filters.split(",")]
 
 
 class Simulation:
@@ -21,6 +89,18 @@ class Simulation:
     def get_file(self) -> str:
         modes = {"economy": "eco", "adequacy": "adq"}
         return f"{self.date}{modes[self.mode]}-{self.name}"
+
+    @staticmethod
+    def from_fs(path: Path) -> "Simulation":
+        modes = {"eco": "economy", "adq": "adequacy"}
+        regex: Any = re.search(
+            "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", path.name
+        )
+        return Simulation(
+            date=regex.group(1),
+            mode=modes[regex.group(2)],
+            name=regex.group(3),
+        )
 
 
 class Config:
@@ -50,43 +130,29 @@ class Config:
         return self.areas[area].thermals
 
     def get_links(self, area: str) -> List[str]:
-        return self.areas[area].links
+        return list(self.areas[area].links.keys())
+
+    def get_filters_synthesis(
+        self, area: str, link: Optional[str] = None
+    ) -> List[str]:
+        if link:
+            return self.areas[area].links[link].filters_synthesis
+        return self.areas[area].filters_synthesis
+
+    def get_filters_year(
+        self, area: str, link: Optional[str] = None
+    ) -> List[str]:
+        if link:
+            return self.areas[area].links[link].filters_year
+        return self.areas[area].filters_year
 
     def _parse_areas(self) -> Dict[str, Area]:
         areas = (
             (self.root_path / "input/areas/list.txt").read_text().split("\n")
         )
         areas = [a.lower() for a in areas if a != ""]
-        return {
-            a: Area(
-                links=self._parse_links(a), thermals=self._parse_thermal(a)
-            )
-            for a in areas
-        }
-
-    def _parse_thermal(self, area: str) -> List[str]:
-        list_ini = IniReader().read(
-            self.root_path / f"input/thermal/clusters/{area}/list.ini"
-        )
-        return list(list_ini.keys())
-
-    def _parse_links(self, area: str) -> List[str]:
-        properties_ini = IniReader().read(
-            self.root_path / f"input/links/{area}/properties.ini"
-        )
-        return list(properties_ini.keys())
+        return {a: Area.from_fs(self.root_path, a) for a in areas}
 
     def _parse_outputs(self) -> Dict[int, Simulation]:
         files = sorted((self.root_path / "output").iterdir())
-        return {
-            i: self._parse_output_name(f.name) for i, f in enumerate(files)
-        }
-
-    def _parse_output_name(self, name: str) -> Simulation:
-        modes = {"eco": "economy", "adq": "adequacy"}
-        regex: Any = re.search("^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", name)
-        return Simulation(
-            date=regex.group(1),
-            mode=modes[regex.group(2)],
-            name=regex.group(3),
-        )
+        return {i: Simulation.from_fs(f) for i, f in enumerate(files)}

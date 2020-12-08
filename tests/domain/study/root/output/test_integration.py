@@ -31,6 +31,26 @@ from tests.domain.study.utils import extract_sta
         ),
         ("output/0/about-the-study/study/antares/author", "Andrea SGATTONI"),
         ("output/0/about-the-study/parameters/general/horizon", 2030),
+        (
+            "output/0/economy/mc-all/areas/de/id-daily",
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/areas/de/id-daily.txt",
+        ),
+        (
+            "output/0/economy/mc-all/grid/areas",
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/grid/areas.txt",
+        ),
+        (
+            "output/0/economy/mc-all/grid/digest",
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/grid/digest.txt",
+        ),
+        (
+            "output/0/economy/mc-all/grid/thermals",
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/grid/thermals.txt",
+        ),
+        (
+            "output/0/economy/mc-all/grid/links",
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/grid/links.txt",
+        ),
     ],
 )
 def test_get_output_it(
