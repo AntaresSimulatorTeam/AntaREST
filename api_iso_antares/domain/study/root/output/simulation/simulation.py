@@ -18,7 +18,7 @@ class OutputSimulation(FolderNode):
         }
         if simulation.mode == "economy":
             children["economy"] = OutputSimulationEconomy(
-                config.next_file("economy")
+                config.next_file("economy"), simulation
             )
 
         FolderNode.__init__(self, children)

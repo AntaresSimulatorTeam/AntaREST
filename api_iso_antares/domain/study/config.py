@@ -15,14 +15,14 @@ class Link:
     @staticmethod
     def from_fs(properties: JSON) -> "Link":
         return Link(
-            filters_year=Link._split(properties["filter-year-by-year"]),
-            filters_synthesis=Link._split(properties["filter-synthesis"]),
+            filters_year=Link.split(properties["filter-year-by-year"]),
+            filters_synthesis=Link.split(properties["filter-synthesis"]),
         )
 
     @staticmethod
-    def _split(line: str) -> List[str]:
+    def split(line: str) -> List[str]:
         return [
-            token.strip() for token in line.split(",") if token.strip() == ""
+            token.strip() for token in line.split(",") if token.strip() != ""
         ]
 
 
@@ -77,14 +77,15 @@ class Area:
         filters: str = IniReader().read(
             root / f"input/areas/{area}/optimization.ini"
         )["filtering"]["filter-year-by-year"]
-        return [f.strip() for f in filters.split(",")]
+        return Link.split(filters)
 
 
 class Simulation:
-    def __init__(self, name: str, date: str, mode: str):
+    def __init__(self, name: str, date: str, mode: str, nbyears: int):
         self.name = name
         self.date = date
         self.mode = mode
+        self.nbyears = nbyears
 
     def get_file(self) -> str:
         modes = {"economy": "eco", "adequacy": "adq"}
@@ -100,7 +101,15 @@ class Simulation:
             date=regex.group(1),
             mode=modes[regex.group(2)],
             name=regex.group(3),
+            nbyears=Simulation._parse_nbyears(path),
         )
+
+    @staticmethod
+    def _parse_nbyears(path: Path) -> int:
+        nbyears: int = IniReader().read(
+            path / "about-the-study/parameters.ini"
+        )["general"]["nbyears"]
+        return nbyears
 
 
 class Config:

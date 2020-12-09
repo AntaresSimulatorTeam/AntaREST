@@ -51,6 +51,14 @@ from tests.domain.study.utils import extract_sta
             "output/0/economy/mc-all/grid/links",
             "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/grid/links.txt",
         ),
+        (
+            "output/0/economy/mc-ind/1/areas/de/values-hourly",
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/values-hourly.txt",
+        ),
+        (
+            "output/0/economy/mc-ind/1/links/de/fr/values-hourly",
+            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/links/de - fr/values-hourly.txt",
+        ),
     ],
 )
 def test_get_output_it(
