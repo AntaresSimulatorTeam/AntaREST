@@ -12,4 +12,4 @@ class InputReserves(FolderNode):
             a: InputReservesArea(config.next_file(f"{a}.txt"))
             for a in config.area_names
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

@@ -13,7 +13,7 @@ class Link:
         self.filters_year = filters_year
 
     @staticmethod
-    def from_fs(properties: JSON) -> "Link":
+    def from_json(properties: JSON) -> "Link":
         return Link(
             filters_year=Link.split(properties["filter-year-by-year"]),
             filters_synthesis=Link.split(properties["filter-synthesis"]),
@@ -60,8 +60,9 @@ class Area:
         properties_ini = IniReader().read(
             root / f"input/links/{area}/properties.ini"
         )
+        print(list(properties_ini.keys()))
         return {
-            link: Link.from_fs(properties_ini[link])
+            link: Link.from_json(properties_ini[link])
             for link in list(properties_ini.keys())
         }
 
@@ -122,10 +123,8 @@ class Config:
     ):
         self.root_path = study_path
         self.path = study_path
-        self.areas = areas if areas is not None else self._parse_areas()
-        self.outputs = (
-            outputs if outputs is not None else self._parse_outputs()
-        )
+        self.areas = areas
+        self.outputs = outputs
 
     def next_file(self, name: str) -> "Config":
         copy = deepcopy(self)
@@ -156,13 +155,21 @@ class Config:
             return self.areas[area].links[link].filters_year
         return self.areas[area].filters_year
 
-    def _parse_areas(self) -> Dict[str, Area]:
-        areas = (
-            (self.root_path / "input/areas/list.txt").read_text().split("\n")
+    @staticmethod
+    def from_path(study_path: Path):
+        return Config(
+            study_path=study_path,
+            areas=Config._parse_areas(study_path),
+            outputs=Config._parse_outputs(study_path),
         )
-        areas = [a.lower() for a in areas if a != ""]
-        return {a: Area.from_fs(self.root_path, a) for a in areas}
 
-    def _parse_outputs(self) -> Dict[int, Simulation]:
-        files = sorted((self.root_path / "output").iterdir())
+    @staticmethod
+    def _parse_areas(root: Path) -> Dict[str, Area]:
+        areas = (root / "input/areas/list.txt").read_text().split("\n")
+        areas = [a.lower() for a in areas if a != ""]
+        return {a: Area.from_fs(root, a) for a in areas}
+
+    @staticmethod
+    def _parse_outputs(root: Path) -> Dict[int, Simulation]:
+        files = sorted((root / "output").iterdir())
         return {i: Simulation.from_fs(f) for i, f in enumerate(files)}

@@ -17,4 +17,4 @@ class InputSolarPrepro(FolderNode):
         children["correlation"] = InputSolarPreproCorrelation(
             config.next_file("correlation.ini")
         )
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

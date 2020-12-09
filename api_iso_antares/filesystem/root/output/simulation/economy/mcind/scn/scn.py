@@ -19,4 +19,4 @@ class OutputSimulationEconomyMcIndScn(FolderNode):
                 config.next_file("links")
             ),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

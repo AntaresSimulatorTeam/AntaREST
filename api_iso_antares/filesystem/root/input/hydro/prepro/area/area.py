@@ -19,4 +19,4 @@ class InputHydroPreproArea(FolderNode):
                 config.next_file("prepro.ini")
             ),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

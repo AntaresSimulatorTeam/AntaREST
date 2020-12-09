@@ -1,17 +1,22 @@
 from typing import Dict, List
+from unittest.mock import Mock
 
 import pytest
 
+from api_iso_antares.filesystem.folder_node import FolderNode
 from api_iso_antares.filesystem.inode import INode
-from tests.filesystem.utils import TestFolderNode, TestSubNode
+from tests.filesystem.utils import TestSubNode
 
 
 def build_tree() -> INode:
-    return TestFolderNode(
+    config = Mock()
+    config.path.exist.return_value = True
+    return FolderNode(
+        config=config,
         children={
             "input": TestSubNode(value=100),
             "output": TestSubNode(value=200),
-        }
+        },
     )
 
 

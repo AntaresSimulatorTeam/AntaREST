@@ -11,4 +11,4 @@ class InputHydroCommon(FolderNode):
         children: TREE = {
             "capacity": InputHydroCommonCapacity(config.next_file("capacity"))
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

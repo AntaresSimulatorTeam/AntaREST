@@ -28,4 +28,4 @@ class OutputSimulation(FolderNode):
                 config.next_file("adequacy"), simulation
             )
 
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

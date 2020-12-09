@@ -15,4 +15,4 @@ class InputAreasItem(FolderNode):
                 config.next_file("optimization.ini")
             ),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

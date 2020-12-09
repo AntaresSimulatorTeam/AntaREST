@@ -15,9 +15,14 @@ def test_get(tmp_path: Path):
 
 
 def test_save(tmp_path: Path):
-    path = tmp_path / "my-file"
-    config = Config(study_path=path, areas=dict(), outputs=dict())
+    (tmp_path / "studyA").mkdir()
+    (tmp_path / "studyA/my-file").write_text("Hello, World")
+    (tmp_path / "studyB").mkdir()
+
+    config = Config(
+        study_path=tmp_path / "studyB", areas=dict(), outputs=dict()
+    ).next_file("my-file")
     node = RawFileNode(config=config)
 
-    node.save("Hello, World")
-    assert path.read_text() == "Hello, World"
+    node.save("file/studyA/my-file")
+    assert (tmp_path / "studyB/my-file").read_text() == "Hello, World"

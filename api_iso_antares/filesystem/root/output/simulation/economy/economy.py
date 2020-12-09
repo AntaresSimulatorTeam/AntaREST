@@ -17,4 +17,4 @@ class OutputSimulationEconomy(FolderNode):
                 config.next_file("mc-ind"), simulation
             ),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

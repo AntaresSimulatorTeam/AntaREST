@@ -27,4 +27,4 @@ class InputHydro(FolderNode):
             "series": InputHydroSeries(config.next_file("series")),
             "hydro": InputHydroIni(config.next_file("hydro.ini")),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

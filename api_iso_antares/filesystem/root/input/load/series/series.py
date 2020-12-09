@@ -11,4 +11,4 @@ class InputLoadSeries(FolderNode):
             f"load_{a}": InputLoadSeriesArea(config.next_file(f"load_{a}.txt"))
             for a in config.area_names
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

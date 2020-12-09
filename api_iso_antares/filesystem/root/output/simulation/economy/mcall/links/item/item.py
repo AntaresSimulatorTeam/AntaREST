@@ -14,4 +14,4 @@ class OutputSimulationEconomyMcAllLinksItem(FolderNode):
             )
             for timing in config.get_filters_synthesis(area, link)
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

@@ -14,4 +14,4 @@ class OutputSimulationEconomyMcIndScnLinksItem(FolderNode):
             )
             for timing in config.get_filters_year(area, link)
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

@@ -21,8 +21,8 @@ from api_iso_antares.filesystem.root.input.load.prepro.area.translation import (
 class InputLoadPreproArea(FolderNode):
     def __init__(self, config: Config):
         children: TREE = {
-            "conversation": InputLoadPreproAreaConversation(
-                config.next_file("conversation.txt")
+            "conversion": InputLoadPreproAreaConversation(
+                config.next_file("conversion.txt")
             ),
             "data": InputLoadPreproAreaData(config.next_file("data.txt")),
             "k": InputLoadPreproAreaK(config.next_file("k.txt")),
@@ -33,4 +33,4 @@ class InputLoadPreproArea(FolderNode):
                 config.next_file("settings.ini")
             ),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

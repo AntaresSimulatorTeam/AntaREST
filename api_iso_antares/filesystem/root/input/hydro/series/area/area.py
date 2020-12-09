@@ -14,4 +14,4 @@ class InputHydroSeriesArea(FolderNode):
             "mod": InputHydroSeriesAreaMod(config.next_file("mod.txt")),
             "ror": InputHydroSeriesAreaRor(config.next_file("ror.txt")),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

@@ -12,7 +12,7 @@ class _OutputSimulationEconomyMcAllLinksBis(FolderNode):
         for link in config.get_links(area):
             name = f"{area} - {link}"
             children[link] = Item(config.next_file(name), area, link)
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)
 
 
 class OutputSimulationEconomyMcAllLinks(FolderNode):
@@ -24,4 +24,4 @@ class OutputSimulationEconomyMcAllLinks(FolderNode):
                 config, area
             )
 
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

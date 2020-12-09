@@ -48,8 +48,8 @@ from tests.filesystem.utils import extract_sta
             "file/STA-mini/input/load/prepro/it/data.txt",
         ),
         (
-            "input/load/prepro/it/conversation",
-            "file/STA-mini/input/load/prepro/it/conversation.txt",
+            "input/load/prepro/it/conversion",
+            "file/STA-mini/input/load/prepro/it/conversion.txt",
         ),
         (
             "input/load/prepro/it/translation",
@@ -101,7 +101,7 @@ def test_get_input_it(
     project_path: Path, tmp_path: Path, url: str, exp: SUB_JSON
 ) -> None:
     path = extract_sta(project_path, tmp_path)
-    study = Study(config=Config(path))
+    study = Study(config=Config.from_path(path))
 
     assert study.get(url.split("/")) == exp
 
@@ -126,14 +126,14 @@ def test_get_input_it(
         ("input/links/de/properties/fr/loop-flow", True),
         ("input/load/prepro/correlation/general/mode", "Hello World"),
         ("input/thermal/clusters/de/list/01_solar/unitcount", 42),
-        ("input/thermal/area/unserverdenergycost/es", 42.0),
+        ("input/thermal/areas/unserverdenergycost/es", 42.0),
     ],
 )
 def test_save_settings_it(
     project_path: Path, tmp_path: Path, url: str, exp: SUB_JSON
 ) -> None:
     path = extract_sta(project_path, tmp_path)
-    study = Study(config=Config(path))
+    study = Study(config=Config.from_path(path))
 
     study.save(exp, url.split("/"))
     assert study.get(url.split("/")) == exp

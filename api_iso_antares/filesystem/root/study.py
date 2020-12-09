@@ -19,8 +19,8 @@ class Study(FolderNode):
             "study": StudyAntares(config.next_file("study.antares")),
             "settings": Settings(config.next_file("settings")),
             "layers": Layers(config.next_file("layers")),
-            "logs": Logs(config.next_file("logs")),
+            # TODO "logs": Logs(config.next_file("logs")),
             "input": Input(config.next_file("input")),
             "output": Output(config.next_file("output")),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

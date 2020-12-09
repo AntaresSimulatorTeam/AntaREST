@@ -12,4 +12,4 @@ class InputHydroAllocation(FolderNode):
             a: InputHydroAllocationArea(config.next_file(f"{a}.ini"), area=a)
             for a in config.area_names
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

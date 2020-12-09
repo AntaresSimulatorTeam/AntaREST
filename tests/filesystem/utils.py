@@ -20,11 +20,6 @@ class TestSubNode(INode[int]):
         pass
 
 
-class TestFolderNode(FolderNode):
-    def __init__(self, children: TREE):
-        self.children = children
-
-
 def extract_sta(project_path: Path, tmp_path: Path) -> Path:
     with ZipFile(project_path / "examples/studies/STA-mini.zip") as zip_output:
         zip_output.extractall(path=tmp_path / "studies")

@@ -21,8 +21,8 @@ from api_iso_antares.filesystem.root.input.solar.prepro.area.translation import 
 class InputSolarPreproArea(FolderNode):
     def __init__(self, config: Config):
         children: TREE = {
-            "conversation": InputSolarPreproAreaConversation(
-                config.next_file("conversation.txt")
+            "conversion": InputSolarPreproAreaConversation(
+                config.next_file("conversion.txt")
             ),
             "data": InputSolarPreproAreaData(config.next_file("data.txt")),
             "k": InputSolarPreproAreaK(config.next_file("k.txt")),
@@ -33,4 +33,4 @@ class InputSolarPreproArea(FolderNode):
                 config.next_file("settings.ini")
             ),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

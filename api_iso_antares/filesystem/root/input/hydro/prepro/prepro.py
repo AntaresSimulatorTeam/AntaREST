@@ -18,4 +18,4 @@ class InputHydroPrepro(FolderNode):
         children["correlation"] = InputHydroPreproCorrelation(
             config.next_file("correlation.ini")
         )
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

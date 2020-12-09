@@ -37,4 +37,4 @@ class Input(FolderNode):
             "thermal": InputThermal(config.next_file("thermal")),
             "wind": InputWind(config.next_file("wind")),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

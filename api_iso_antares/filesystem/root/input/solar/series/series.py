@@ -13,4 +13,4 @@ class InputSolarSeries(FolderNode):
             )
             for a in config.area_names
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

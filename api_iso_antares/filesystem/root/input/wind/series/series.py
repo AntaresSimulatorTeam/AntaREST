@@ -11,4 +11,4 @@ class InputWindSeries(FolderNode):
             f"wind_{a}": InputWindSeriesArea(config.next_file(f"wind_{a}.txt"))
             for a in config.area_names
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

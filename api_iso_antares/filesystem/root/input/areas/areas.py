@@ -15,4 +15,4 @@ class InputAreas(FolderNode):
         }
         children["list"] = InputAreasList(config.next_file("list.txt"))
         children["sets"] = InputAreasSets(config.next_file("sets.ini"))
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

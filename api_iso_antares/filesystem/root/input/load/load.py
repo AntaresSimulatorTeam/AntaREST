@@ -14,4 +14,4 @@ class InputLoad(FolderNode):
             "prepro": InputLoadPrepro(config.next_file("prepro")),
             "series": InputLoadSeries(config.next_file("series")),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

@@ -14,4 +14,4 @@ class OutputSimulationEconomyMcInd(FolderNode):
             )
             for scn in range(1, simulation.nbyears + 1)
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

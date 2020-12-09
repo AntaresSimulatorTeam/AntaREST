@@ -65,7 +65,7 @@ def test_get_output_it(
     project_path: Path, tmp_path: Path, url: str, exp: SUB_JSON
 ) -> None:
     path = extract_sta(project_path, tmp_path)
-    study = Study(config=Config(path))
+    study = Study(config=Config.from_path(path))
 
     assert study.get(url.split("/")) == exp
 
@@ -82,7 +82,7 @@ def test_save_output_it(
     project_path: Path, tmp_path: Path, url: str, exp: SUB_JSON
 ) -> None:
     path = extract_sta(project_path, tmp_path)
-    study = Study(config=Config(path))
+    study = Study(config=Config.from_path(path))
 
     study.save(exp, url.split("/"))
     assert study.get(url.split("/")) == exp

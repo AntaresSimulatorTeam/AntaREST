@@ -19,4 +19,4 @@ class InputThermalPreproAreaThermal(FolderNode):
                 config.next_file("modulation.txt")
             ),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

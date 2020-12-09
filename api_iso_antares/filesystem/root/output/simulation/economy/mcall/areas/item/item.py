@@ -29,4 +29,4 @@ class OutputSimulationEconomyMcAllAreasItem(FolderNode):
                 config.next_file(f"values-{timing}.txt")
             )
 
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

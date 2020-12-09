@@ -349,6 +349,7 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
 
     assert result.status_code == HTTPStatus.CREATED.value
     url_destination = result.data.decode("utf-8")
+
     destination_folder = url_destination.split("/")[2]
 
     parameters = RequestHandlerParameters(depth=None)

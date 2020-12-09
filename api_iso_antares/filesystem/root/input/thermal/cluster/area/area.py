@@ -13,4 +13,4 @@ class InputThermalClustersArea(FolderNode):
                 config.next_file("list.ini"), area
             )
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

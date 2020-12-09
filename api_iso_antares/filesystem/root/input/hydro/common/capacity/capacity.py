@@ -11,7 +11,7 @@ class InputHydroCommonCapacity(FolderNode):
         children: TREE = dict()
         for area in config.area_names:
             for file in [
-                "creditmodulation",
+                "creditmodulations",
                 "inflowPattern",
                 "maxpower",
                 "reservoir",
@@ -21,4 +21,4 @@ class InputHydroCommonCapacity(FolderNode):
                 children[name] = InputHydroCommonCapacityItem(
                     config.next_file(f"{name}.txt")
                 )
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

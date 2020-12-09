@@ -12,4 +12,4 @@ class InputThermalPreproArea(FolderNode):
             ther: InputThermalPreproAreaThermal(config.next_file(ther))
             for ther in config.get_thermals(area)
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

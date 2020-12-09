@@ -6,4 +6,4 @@ from api_iso_antares.filesystem.inode import TREE
 class SettingsSimulations(FolderNode):
     def __init__(self, config: Config):
         children: TREE = {}
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

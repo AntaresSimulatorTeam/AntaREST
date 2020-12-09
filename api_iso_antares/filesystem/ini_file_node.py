@@ -32,7 +32,7 @@ class IniFileNode(INode[SUB_JSON]):
 
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
         url = url or []
-        json = self.reader.read(self.path)
+        json = self.reader.read(self.path) if self.path.exists() else {}
         if len(url) == 2:
             json[url[0]][url[1]] = data
         elif len(url) == 1:

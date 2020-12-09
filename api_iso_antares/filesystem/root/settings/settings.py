@@ -30,4 +30,4 @@ class Settings(FolderNode):
                 config.next_file("scenariobuilder.dat")
             ),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

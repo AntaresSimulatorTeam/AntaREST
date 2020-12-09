@@ -1,15 +1,17 @@
 from typing import List, Dict, Optional, Tuple
 
 from api_iso_antares.custom_types import JSON
+from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.inode import INode, TREE
 
 
 class FolderNode(INode[JSON]):
-    def __init__(self, children: TREE) -> None:
+    def __init__(self, config: Config, children: TREE) -> None:
         self.children: TREE = children
+        self.config = config
 
     def get(self, url: Optional[List[str]] = None) -> JSON:
-        if url:
+        if url and url != [""]:
             name, sub_url = self.extract_child(url)
             return self.children[name].get(sub_url)
         else:
@@ -24,6 +26,8 @@ class FolderNode(INode[JSON]):
             return self.children[name].save(data, sub_url)
         else:
             self.validate(data)
+            if not self.config.path.exists():
+                self.config.path.mkdir()
             for key in data:
                 self.children[key].save(data[key])
 

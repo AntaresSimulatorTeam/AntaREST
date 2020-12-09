@@ -14,4 +14,4 @@ class InputWind(FolderNode):
             "prepro": InputWindPrepro(config.next_file("prepro")),
             "series": InputWindSeries(config.next_file("series")),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

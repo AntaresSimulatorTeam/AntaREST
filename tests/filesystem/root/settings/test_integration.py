@@ -17,7 +17,7 @@ from tests.filesystem.utils import extract_sta
         ("study/antares/author", "Andrea SGATTONI"),
         (
             "settings/resources/study",
-            "file/STA-mini/settings/resources/study.icon",
+            "file/STA-mini/settings/resources/study.ico",
         ),
         (
             "settings/comments",
@@ -31,7 +31,7 @@ def test_get_settings_it(
     project_path: Path, tmp_path: Path, url: str, exp: SUB_JSON
 ):
     path = extract_sta(project_path, tmp_path)
-    study = Study(config=Config(path))
+    study = Study(config=Config.from_path(path))
 
     assert study.get(url.split("/")) == exp
 
@@ -50,7 +50,7 @@ def test_save_settings_it(
     project_path: Path, tmp_path: Path, url: str, exp: SUB_JSON
 ):
     path = extract_sta(project_path, tmp_path)
-    study = Study(config=Config(path))
+    study = Study(config=Config.from_path(path))
 
     study.save(exp, url.split("/"))
     assert study.get(url.split("/")) == exp

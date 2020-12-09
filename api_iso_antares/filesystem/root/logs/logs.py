@@ -13,7 +13,7 @@ class Logs(FolderNode):
             Logs.keep_name(file): LogsItem(config.next_file(file.name))
             for file in config.path.iterdir()
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)
 
     @staticmethod
     def keep_name(file: Path):

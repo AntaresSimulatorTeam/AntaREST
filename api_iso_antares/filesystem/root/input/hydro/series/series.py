@@ -12,4 +12,4 @@ class InputHydroSeries(FolderNode):
             a: InputHydroSeriesArea(config.next_file(a))
             for a in config.area_names
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

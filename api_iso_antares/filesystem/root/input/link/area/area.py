@@ -19,4 +19,4 @@ class InputLinkArea(FolderNode):
             config.next_file("properties.ini"), area=area
         )
 
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

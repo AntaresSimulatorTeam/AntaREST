@@ -12,4 +12,4 @@ class Output(FolderNode):
             str(i + 1): OutputSimulation(config.next_file(s.get_file()), s)
             for i, s in config.outputs.items()
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

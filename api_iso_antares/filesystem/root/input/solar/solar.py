@@ -14,4 +14,4 @@ class InputSolar(FolderNode):
             "prepro": InputSolarPrepro(config.next_file("prepro")),
             "series": InputSolarSeries(config.next_file("series")),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

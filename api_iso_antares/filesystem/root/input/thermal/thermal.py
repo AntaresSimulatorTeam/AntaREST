@@ -23,4 +23,4 @@ class InputThermal(FolderNode):
             "series": InputThermalSeries(config.next_file("series")),
             "areas": InputThermalAreasIni(config.next_file("areas.ini")),
         }
-        FolderNode.__init__(self, children)
+        FolderNode.__init__(self, config, children)

@@ -1,3 +1,4 @@
+import shutil
 from typing import List, Optional
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
@@ -19,7 +20,9 @@ class RawFileNode(INode[str]):
 
     def save(self, data: str, url: Optional[List[str]] = None) -> None:
         self._assert_url(url)
-        self.config.path.write_text(data)
+
+        path = self.config.root_path.parent / data[len("file/") :]
+        shutil.copyfile(path, self.config.path)
 
     def validate(self, data: str) -> None:
         pass  # no validation
