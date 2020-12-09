@@ -12,12 +12,18 @@ from api_iso_antares.filesystem.root.settings.resources.resources import (
 from api_iso_antares.filesystem.root.settings.scenariobuilder import (
     ScenarioBuilder,
 )
+from api_iso_antares.filesystem.root.settings.simulations.simulations import (
+    SettingsSimulations,
+)
 
 
 class Settings(FolderNode):
     def __init__(self, config: Config):
         children: TREE = {
             "resources": Resources(config.next_file("resources")),
+            "simulations": SettingsSimulations(
+                config.next_file("simulations")
+            ),
             "comments": Comments(config.next_file("comments.txt")),
             "generaldata": GeneralData(config.next_file("generaldata.ini")),
             "scenariobuilder": ScenarioBuilder(

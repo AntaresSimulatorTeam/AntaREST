@@ -13,7 +13,7 @@ from tests.filesystem.utils import extract_sta
 @pytest.mark.parametrize(
     "url, exp",
     [
-        ("desktop/.shellclassinfo/iconindex", 0),
+        ("Desktop/.shellclassinfo/iconindex", 0),
         ("study/antares/author", "Andrea SGATTONI"),
         (
             "settings/resources/study",
@@ -40,7 +40,7 @@ def test_get_settings_it(
 @pytest.mark.parametrize(
     "url, exp",
     [
-        ("desktop/.shellclassinfo/iconindex", 10),
+        ("Desktop/.shellclassinfo/iconindex", 10),
         ("study/antares/author", "John"),
         ("settings/generaldata/general/horizon", 1984),
         ("settings/scenariobuilder/Default Ruleset/l,fr,0", 42),

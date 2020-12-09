@@ -7,6 +7,9 @@ from api_iso_antares.filesystem.root.output.simulation.economy.mcall.areas.areas
 from api_iso_antares.filesystem.root.output.simulation.economy.mcall.grid.grid import (
     OutputSimulationEconomyMcAllGrid,
 )
+from api_iso_antares.filesystem.root.output.simulation.economy.mcall.links.links import (
+    OutputSimulationEconomyMcAllLinks,
+)
 
 
 class OutputSimulationEconomyMcAll(FolderNode):
@@ -16,5 +19,8 @@ class OutputSimulationEconomyMcAll(FolderNode):
                 config.next_file("areas")
             ),
             "grid": OutputSimulationEconomyMcAllGrid(config.next_file("grid")),
+            "links": OutputSimulationEconomyMcAllLinks(
+                config.next_file("links")
+            ),
         }
         FolderNode.__init__(self, children)

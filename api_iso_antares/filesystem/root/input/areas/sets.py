@@ -15,6 +15,5 @@ class InputAreasSets(IniFileNode):
     """
 
     def __init__(self, config: Config):
-        # TODO implemented pattern strategy with injection inside IniFileMode for reader and writer.
         # TODO Implements writer sets.ini
-        IniFileNode.__init__(self, config, types={})
+        IniFileNode.__init__(self, config, types={}, reader=SetsIniReader())

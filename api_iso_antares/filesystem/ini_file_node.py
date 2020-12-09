@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List, Optional, Union, cast, Type, Dict, Any
 
 from api_iso_antares.antares_io.reader import IniReader
+from api_iso_antares.antares_io.reader.ini_reader import IReader
 from api_iso_antares.antares_io.writer.ini_writer import IniWriter
 from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.filesystem.config import Config
@@ -10,10 +11,15 @@ from api_iso_antares.filesystem.inode import INode
 
 
 class IniFileNode(INode[SUB_JSON]):
-    def __init__(self, config: Config, types: Dict[str, Any]):
+    def __init__(
+        self,
+        config: Config,
+        types: Dict[str, Any],
+        reader: Optional[IReader] = None,
+    ):
         self.path = config.path
         self.types = types
-        self.reader = IniReader()
+        self.reader = reader or IniReader()
         self.writer = IniWriter()
 
     def get(self, url: Optional[List[str]] = None) -> SUB_JSON:

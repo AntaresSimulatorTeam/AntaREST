@@ -15,6 +15,8 @@ from api_iso_antares.engine import UrlEngine
 from api_iso_antares.engine.filesystem.engine import (
     FileSystemEngine,
 )
+from api_iso_antares.filesystem.config import Config
+from api_iso_antares.filesystem.root.study import Study
 from api_iso_antares.jsm import JsonSchema
 from api_iso_antares.web.html_exception import (
     BadZipBinary,
@@ -73,26 +75,8 @@ class RequestHandler:
         uuid, url, study_path = self._extract_info_from_url(route)
         self.assert_study_exist(uuid)
 
-        sub_jsm, deep_path, keys = self.resolve(url=url, study_path=study_path)
-        sub_study = self.study_parser.parse(
-            deep_path=deep_path, study_path=study_path, jsm=sub_jsm, keys=keys
-        )
-
-        if keys:
-            for key in keys.split("/"):
-                sub_jsm = sub_jsm.get_child(key=key)
-
-        self.jsm_validator.validate(jsondata=sub_study, sub_jsm=sub_jsm)
-
-        return sub_study
-
-    def resolve(
-        self, url: str, study_path: Path
-    ) -> Tuple[JsonSchema, Path, str]:
-        try:
-            return self.url_engine.resolve(url=url, path=study_path)
-        except KeyError as e:
-            raise UrlNotMatchJsonDataError(f"Key {url} not in the study.")
+        config = Config(study_path=study_path)
+        return Study(config).get(url.split("/"))
 
     def assert_study_exist(self, uuid: str) -> None:
         if not self.is_study_existing(uuid):
@@ -224,23 +208,9 @@ class RequestHandler:
         # Get data
         uuid, url, study_path = self._extract_info_from_url(route)
         self.assert_study_exist(uuid)
-        sub_jsm, deep_path, keys = self.resolve(url=url, study_path=study_path)
-
-        if keys:
-            data = self.study_parser.parse(
-                deep_path=deep_path, jsm=sub_jsm, study_path=study_path
-            )
-            parts = keys.split("/")
-            if len(parts) == 1:
-                data[parts[0]] = new
-            elif len(parts) == 2:
-                data[parts[0]][parts[1]] = new
-        else:
-            data = new
-
-        # Write data
-        # TODO writing fail when edit inside .ini because deep_path and data are on file level but jsm goes deeeper in .ini structure.
-        self.study_parser.write(path=deep_path, data=data, jsm=sub_jsm)
+        config = Config(study_path=study_path)
+        study = Study(config)
+        study.save(new, url.split("/"))
         return new
 
     @staticmethod

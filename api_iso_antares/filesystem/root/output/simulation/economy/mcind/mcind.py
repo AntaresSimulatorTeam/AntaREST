@@ -9,7 +9,7 @@ from api_iso_antares.filesystem.root.output.simulation.economy.mcind.scn.scn imp
 class OutputSimulationEconomyMcInd(FolderNode):
     def __init__(self, config: Config, simulation: Simulation):
         children: TREE = {
-            str(scn): OutputSimulationEconomyMcIndScn(
+            str("{:05d}".format(scn)): OutputSimulationEconomyMcIndScn(
                 config.next_file("{:05d}".format(scn))
             )
             for scn in range(1, simulation.nbyears + 1)

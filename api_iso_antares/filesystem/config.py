@@ -89,7 +89,8 @@ class Simulation:
 
     def get_file(self) -> str:
         modes = {"economy": "eco", "adequacy": "adq"}
-        return f"{self.date}{modes[self.mode]}-{self.name}"
+        dash = "-" if self.name else ""
+        return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
     @staticmethod
     def from_fs(path: Path) -> "Simulation":

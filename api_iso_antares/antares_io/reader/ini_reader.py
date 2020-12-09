@@ -1,12 +1,19 @@
 import configparser
 import re
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional, Union
 
 from api_iso_antares.custom_types import ELEMENT, JSON
 
 
-class IniReader:
+class IReader(ABC):
+    @abstractmethod
+    def read(self, path: Path) -> JSON:
+        pass
+
+
+class IniReader(IReader):
     @staticmethod
     def _parse_bool(value: str) -> Optional[bool]:
         value = value.lower()
@@ -43,8 +50,7 @@ class IniReader:
             key: IniReader.parse_value(value) for key, value in json.items()
         }
 
-    @staticmethod
-    def read(path: Path) -> JSON:
+    def read(self, path: Path) -> JSON:
         config = IniConfigParser()
         config.read(path)
 
@@ -60,13 +66,12 @@ class IniConfigParser(configparser.ConfigParser):
         return optionstr
 
 
-class SetsIniReader:
+class SetsIniReader(IReader):
     @staticmethod
     def fetch_cleaned_lines(path: Path) -> List[str]:
         return [l for l in path.read_text().split("\n") if l != ""]
 
-    @staticmethod
-    def read(path: Path) -> JSON:
+    def read(self, path: Path) -> JSON:
         data: JSON = dict()
         curr_part = ""
         lines = SetsIniReader.fetch_cleaned_lines(path)

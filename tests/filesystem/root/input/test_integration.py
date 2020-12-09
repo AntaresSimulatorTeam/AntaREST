@@ -82,7 +82,7 @@ from tests.filesystem.utils import extract_sta
             "file/STA-mini/input/wind/series/wind_de.txt",
         ),
         ("input/thermal/clusters/de/list/01_solar/unitcount", 1),
-        ("input/thermal/area/unserverdenergycost/es", 3000),
+        ("input/thermal/areas/unserverdenergycost/es", 3000),
         (
             "input/thermal/prepro/es/06_coal/data",
             "file/STA-mini/input/thermal/prepro/es/06_coal/data.txt",

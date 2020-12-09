@@ -92,7 +92,7 @@ def test_sta_mini_layers_layers(
 def test_sta_mini_desktop(
     request_handler: RequestHandler, url: str, expected_output: str
 ):
-    assert_url_content(
+    assert_with_errors(
         request_handler=request_handler,
         url=url,
         expected_output=expected_output,

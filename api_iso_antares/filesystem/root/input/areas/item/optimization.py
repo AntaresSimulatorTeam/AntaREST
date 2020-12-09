@@ -25,8 +25,8 @@ class InputAreasOptimization(IniFileNode):
                 "non-dispatchable-power": bool,
                 "dispatchable-hydro-power": bool,
                 "other-dispatchable-power": bool,
-                "spread-unsupplied-energy-cost": float,
-                "spread-spilled-energy-cost": float,
+                "spread-unsupplied-energy-cost": (int, float),
+                "spread-spilled-energy-cost": (int, float),
             },
             "filtering": {"filter-synthesis": str, "filter-year-by-year": str},
         }

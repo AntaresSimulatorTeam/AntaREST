@@ -21,4 +21,11 @@ class OutputSimulation(FolderNode):
                 config.next_file("economy"), simulation
             )
 
+        elif (
+            simulation.mode == "adequacy"
+        ):  # TODO don't reuse OutputSimulationEconomy
+            children["adequacy"] = OutputSimulationEconomy(
+                config.next_file("adequacy"), simulation
+            )
+
         FolderNode.__init__(self, children)
