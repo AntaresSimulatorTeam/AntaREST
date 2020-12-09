@@ -200,7 +200,8 @@ class RequestHandler:
         uuid, url, study_path = self._extract_info_from_url(route)
         self.assert_study_exist(uuid)
 
-        self.study_factory.create_from_fs(study_path).save(new, url.split("/"))
+        _, study = self.study_factory.create_from_fs(study_path)
+        study.save(new, url.split("/"))
         return new
 
     @staticmethod
