@@ -101,7 +101,7 @@ class IniFileNode(INode):
 class SetsIniFileNode(INode):
     def _build_content(self) -> SUB_JSON:
         path = self._deep_path
-        return SetsIniReader.read(path)
+        return SetsIniReader().read(path)
 
 
 class UrlFileNode(INode):

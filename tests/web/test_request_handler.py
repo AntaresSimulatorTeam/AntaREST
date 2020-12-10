@@ -6,10 +6,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from api_iso_antares.antares_io.reader import IniReader
-from api_iso_antares.antares_io.writer.ini_writer import IniWriter
-from api_iso_antares.custom_types import JSON
-from api_iso_antares.engine import FileSystemEngine
 from api_iso_antares.jsm import JsonSchema
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.html_exception import (
@@ -46,28 +42,19 @@ def test_get(tmp_path: str, project_path) -> None:
     data = {"titi": 43}
     sub_route = "settings"
 
-    jsm = JsonSchema(
-        data={"type": "object", "properties": {"titi": {"type": "number"}}}
-    )
-
     path = path_study / "settings"
     key = "titi"
-    url_engine_mock = Mock()
-    url_engine_mock.resolve.return_value = (jsm, path, key)
 
-    study_reader_mock = Mock()
-    study_reader_mock.parse.return_value = data
-
-    jsm_validator_mock = Mock()
-    jsm_validator_mock.validate.return_value = None
+    study = Mock()
+    study.get.return_value = data
+    study_factory = Mock()
+    study_factory.create_from_fs.return_value = (None, study)
 
     request_handler = RequestHandler(
-        study_parser=study_reader_mock,
-        url_engine=url_engine_mock,
+        study_factory=study_factory,
         exporter=Mock(),
         path_studies=path_to_studies,
         path_resources=project_path / "resources",
-        jsm_validator=jsm_validator_mock,
     )
 
     parameters = RequestHandlerParameters(depth=2)
@@ -78,14 +65,7 @@ def test_get(tmp_path: str, project_path) -> None:
 
     assert output == data
 
-    study_reader_mock.parse.assert_called_once_with(
-        deep_path=path, study_path=path_study, jsm=jsm, keys=key
-    )
-    # TODO remove before fly
-    # jsm_validator_mock.validate.assert_called_once_with(data)
-    url_engine_mock.resolve.assert_called_once_with(
-        url="settings", path=path_study
-    )
+    study.get.assert_called_once_with(["settings"])
 
 
 @pytest.mark.unit_test
@@ -104,12 +84,10 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
 
     # Test & Verify
     request_handler = RequestHandler(
-        study_parser=Mock(),
-        url_engine=Mock(),
+        study_factory=Mock(),
         exporter=Mock(),
         path_studies=path_to_studies,
         path_resources=project_path / "resources",
-        jsm_validator=Mock(),
     )
     request_handler.assert_study_exist(study_name)
 
@@ -130,12 +108,10 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
     # Test & Verify
     request_handler = RequestHandler(
-        study_parser=Mock(),
-        url_engine=Mock(),
+        study_factory=Mock(),
         exporter=Mock(),
         path_studies=path_to_studies,
         path_resources=project_path / "resources",
-        jsm_validator=Mock(),
     )
     with pytest.raises(StudyNotFoundError):
         request_handler.assert_study_exist(study_name)
@@ -182,24 +158,18 @@ def test_create_study(
 
     path_studies = Path(tmp_path)
 
-    jsm = JsonSchema(data={"type": "number"})
-    validator = Mock()
-    validator.jsm = jsm
-
-    url_engine = Mock()
-    url_engine.resolve.return_value = (None, None, None)
-
-    study_parser = Mock()
+    study = Mock()
     data = {"study": {"antares": {"caption": None}}}
-    study_parser.parse.return_value = data
+    study.get.return_value = data
+
+    study_factory = Mock()
+    study_factory.create_from_fs.return_value = (None, study)
 
     request_handler = request_handler_builder(
         path_studies=path_studies,
-        study_parser=study_parser,
-        url_engine=url_engine,
+        study_factory=study_factory,
         exporter=Mock(),
         path_resources=project_path / "resources",
-        jsm_validator=validator,
     )
 
     study_name = "study1"
@@ -210,9 +180,6 @@ def test_create_study(
 
     path_study_antares_infos = path_study / "study.antares"
     assert path_study_antares_infos.is_file()
-
-    url_engine.resolve.assert_called_once_with(url="", path=path_study)
-    study_parser.write.assert_called_once_with(path_study, data, jsm)
 
 
 @pytest.mark.unit_test
@@ -241,40 +208,29 @@ def test_copy_study(
         }
     }
 
-    study_parser = Mock()
-    study_parser.parse.return_value = value
+    study = Mock()
+    study.get.return_value = value
+    study_factory = Mock()
 
-    reader = Mock()
-    reader.read.return_value = value
-    study_parser.get_reader.return_value = reader
-
-    writer = Mock()
-    study_parser.get_writer.return_value = writer
-
-    jsm = JsonSchema(data={"type": "number"})
-    validator = Mock()
-    validator.jsm = jsm
+    config = Mock()
+    study_factory.create_from_fs.return_value = config, study
+    study_factory.create_from_config.return_value = study
 
     url_engine = Mock()
     url_engine.resolve.return_value = None, None, None
     request_handler = request_handler_builder(
-        study_parser=study_parser,
+        study_factory=study_factory,
         path_studies=path_studies,
-        jsm_validator=validator,
-        url_engine=url_engine,
     )
 
     destination_name = "study2"
     request_handler.copy_study(source_name, destination_name)
 
-    study_parser.parse.assert_called_once_with(
-        deep_path=None, jsm=None, keys=None, study_path=path_study
-    )
-    study_parser.write.assert_called()
+    study.get.assert_called_once_with()
 
 
 @pytest.mark.unit_test
-def test_export_file(tmp_path: Path):
+def test_export_file(tmp_path: Path, request_handler_builder: Callable):
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -283,13 +239,9 @@ def test_export_file(tmp_path: Path):
     exporter = Mock()
     exporter.export_file.return_value = b"Hello"
 
-    request_handler = RequestHandler(
-        study_parser=Mock(),
-        url_engine=Mock(),
+    request_handler = request_handler_builder(
         exporter=exporter,
         path_studies=tmp_path,
-        path_resources=Mock(),
-        jsm_validator=Mock(),
     )
 
     # Test wrong study
@@ -302,7 +254,7 @@ def test_export_file(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_export_compact_file(tmp_path: Path):
+def test_export_compact_file(tmp_path: Path, request_handler_builder):
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -310,16 +262,15 @@ def test_export_compact_file(tmp_path: Path):
 
     exporter = Mock()
     exporter.export_compact.return_value = b"Hello"
-    parser = Mock()
-    parser.parse.return_value = 42
+    study = Mock()
+    study.get.return_value = 42
+    factory = Mock()
+    factory.create_from_fs.return_value = None, study
 
-    request_handler = RequestHandler(
-        study_parser=parser,
-        url_engine=Mock(),
+    request_handler = request_handler_builder(
+        study_factory=factory,
         exporter=exporter,
         path_studies=tmp_path,
-        path_resources=Mock(),
-        jsm_validator=Mock(),
     )
 
     assert b"Hello" == request_handler.export_study(name, compact=True)
@@ -382,16 +333,18 @@ def test_import_study(
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
-    request_handler = request_handler_builder(path_studies=tmp_path)
+    study = Mock()
+    study.get.return_value = {"study": {"antares": {"version": 700}}}
+    study_factory = Mock()
+    study_factory.create_from_fs.return_value = None, study
 
-    request_handler.url_engine.resolve.return_value = (None, None, None)
+    request_handler = request_handler_builder(
+        study_factory=study_factory, path_studies=tmp_path
+    )
 
-    request_handler.parse_folder = Mock()
-    request_handler.parse_folder.return_value = {
-        "study": {"antares": {"version": 700}}
-    }
-
-    filepath_zip = shutil.make_archive(study_path, "zip", study_path)
+    filepath_zip = shutil.make_archive(
+        str(study_path.absolute()), "zip", study_path
+    )
     shutil.rmtree(study_path)
 
     path_zip = Path(filepath_zip)
@@ -425,8 +378,13 @@ def test_edit_study(tmp_path: Path, request_handler_builder: Callable) -> None:
     (tmp_path / "my-uuid").mkdir()
     (tmp_path / "my-uuid/study.antares").touch()
 
-    request_handler = request_handler_builder(path_studies=tmp_path)
-    request_handler.url_engine.resolve.return_value = (None, None, None)
+    study = Mock()
+    study_factory = Mock()
+    study_factory.create_from_fs.return_value = None, study
+
+    request_handler = request_handler_builder(
+        study_factory=study_factory, path_studies=tmp_path
+    )
 
     # Input
     url = "my-uuid/url/to/change"
@@ -435,7 +393,4 @@ def test_edit_study(tmp_path: Path, request_handler_builder: Callable) -> None:
     res = request_handler.edit_study(url, new)
 
     assert new == res
-    request_handler.url_engine.resolve.assert_called_once_with(
-        url="url/to/change", path=tmp_path / "my-uuid"
-    )
-    request_handler.study_parser.write(path=None, data=None, jsm=None)
+    study.save.assert_called_once_with(new, ["url", "to", "change"])

@@ -124,11 +124,10 @@ class RequestHandler:
         study_data = self.get(
             uuid, parameters=RequestHandlerParameters(depth=10)
         )
-        updated_data = RequestHandler._update_antares_info(
-            study_name, study_data
-        )
+        RequestHandler._update_antares_info(study_name, study_data)
 
-        Study(Config(path_study)).save(updated_data, ["study"])
+        _, study = self.study_factory.create_from_fs(path_study)
+        study.save(study_data)
 
         return uuid
 
@@ -158,9 +157,10 @@ class RequestHandler:
         self.assert_study_exist(name)
 
         if compact:
-            data = self.study_factory.create_from_fs(
+            _, study = self.study_factory.create_from_fs(
                 path=self.path_to_studies / name
-            ).get()
+            )
+            data = study.get()
             return self.exporter.export_compact(path_study, data)
         else:
             return self.exporter.export_file(path_study)

@@ -16,12 +16,10 @@ def test_exporter_file(project_path):
     studies = project_path / "examples/studies"
 
     handler = RequestHandler(
-        study_parser=Mock(),
-        url_engine=Mock(),
+        study_factory=Mock(),
         exporter=Exporter(),
         path_studies=studies,
         path_resources=Mock(),
-        jsm_validator=Mock(),
     )
 
     data = assert_url_content(handler, url="/exportation/sub-study")
