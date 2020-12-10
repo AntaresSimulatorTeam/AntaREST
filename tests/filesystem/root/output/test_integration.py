@@ -59,6 +59,43 @@ from tests.filesystem.utils import extract_sta
             "output/1/economy/mc-ind/00001/links/de/fr/values-hourly",
             "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/links/de - fr/values-hourly.txt",
         ),
+        (
+            "output/1/ts-numbers/hydro/fr",
+            "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/fr.txt",
+        ),
+        (
+            "output/1/ts-numbers/load/fr",
+            "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/load/fr.txt",
+        ),
+        (
+            "output/1/ts-numbers/solar/fr",
+            "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/solar/fr.txt",
+        ),
+        (
+            "output/1/ts-numbers/wind/fr",
+            "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/wind/fr.txt",
+        ),
+        (
+            "output/1/ts-numbers/thermal/fr/01_solar",
+            "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/thermal/fr/01_solar.txt",
+        ),
+        (
+            "output/1/annualSystemCost",
+            "file/STA-mini/output/20201014-1422eco-hello/annualSystemCost.txt",
+        ),
+        (
+            "output/1/checkIntegrity",
+            "file/STA-mini/output/20201014-1422eco-hello/checkIntegrity.txt",
+        ),
+        (
+            "output/1/simulation-comments",
+            "file/STA-mini/output/20201014-1422eco-hello/simulation-comments.txt",
+        ),
+        (
+            "output/1/simulation",
+            "file/STA-mini/output/20201014-1422eco-hello/simulation.log",
+        ),
+        ("output/1/info/general/mode", "Economy"),
     ],
 )
 def test_get_output_it(
@@ -76,6 +113,7 @@ def test_get_output_it(
     [
         ("output/1/about-the-study/study/antares/author", "Néo"),
         ("output/1/about-the-study/parameters/general/horizon", 42),
+        ("output/1/info/general/mode", "Hello, world!"),
     ],
 )
 def test_save_output_it(

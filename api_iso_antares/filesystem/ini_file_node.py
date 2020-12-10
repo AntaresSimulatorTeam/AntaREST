@@ -58,5 +58,5 @@ class IniFileNode(INode[SUB_JSON]):
                 )
             if not isinstance(data[param], typing):
                 raise ValueError(
-                    f"param {param} of section {section} in {self.__class__.__name__} not good type"
+                    f"param {param} of section {section} in {self.__class__.__name__} bad type"
                 )
