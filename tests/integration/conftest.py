@@ -4,14 +4,6 @@ from zipfile import ZipFile
 import pytest
 
 from api_iso_antares.antares_io.exporter.export_file import Exporter
-from api_iso_antares.antares_io.reader import IniReader, JsmReader
-from api_iso_antares.antares_io.validator import JsmValidator
-from api_iso_antares.antares_io.writer.ini_writer import IniWriter
-from api_iso_antares.antares_io.writer.matrix_writer import MatrixWriter
-from api_iso_antares.engine import UrlEngine
-from api_iso_antares.engine.filesystem.engine import (
-    FileSystemEngine,
-)
 from api_iso_antares.filesystem.factory import StudyFactory
 from api_iso_antares.web import RequestHandler
 

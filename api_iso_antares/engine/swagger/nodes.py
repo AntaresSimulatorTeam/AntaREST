@@ -11,13 +11,12 @@ from api_iso_antares.engine.swagger.swagger import (
     SwaggerPathBuilder,
     SwaggerTag,
 )
-from api_iso_antares.jsm import JsonSchema
 
 
 class RootNode:
     def __init__(
         self,
-        jsm: JsonSchema,
+        jsm,
     ) -> None:
 
         self.jsm = jsm
@@ -134,7 +133,7 @@ class RootNode:
 
 
 class PathNode:
-    def __init__(self, url: str, jsm: JsonSchema, swagger: Swagger) -> None:
+    def __init__(self, url: str, jsm, swagger: Swagger) -> None:
         self.url = url
         self.jsm = jsm
         self.swagger = swagger

@@ -6,7 +6,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from api_iso_antares.jsm import JsonSchema
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.html_exception import (
     BadZipBinary,

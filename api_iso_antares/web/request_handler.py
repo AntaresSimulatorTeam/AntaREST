@@ -11,10 +11,7 @@ from zipfile import BadZipFile, ZipFile
 from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.custom_types import JSON, SUB_JSON
 
-from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.factory import StudyFactory
-from api_iso_antares.filesystem.root.study import Study
-from api_iso_antares.jsm import JsonSchema
 from api_iso_antares.web.html_exception import (
     BadZipBinary,
     IncorrectPathError,
