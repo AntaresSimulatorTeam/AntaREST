@@ -8,17 +8,9 @@ from flask import Flask
 
 from api_iso_antares import __version__
 from api_iso_antares.antares_io.exporter.export_file import Exporter
-from api_iso_antares.antares_io.reader import (
-    IniReader,
-    JsmReader,
-)
-from api_iso_antares.antares_io.validator import JsmValidator
-from api_iso_antares.antares_io.writer.ini_writer import IniWriter
-from api_iso_antares.antares_io.writer.matrix_writer import MatrixWriter
-from api_iso_antares.engine import UrlEngine
-from api_iso_antares.engine.filesystem.engine import (
-    FileSystemEngine,
-)
+
+from api_iso_antares.filesystem.factory import StudyFactory
+
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.server import create_server
 
@@ -68,20 +60,12 @@ def get_local_path() -> Path:
 def get_flask_application(studies_path: Path) -> Flask:
 
     path_resources = get_local_path() / "resources"
-    jsm_path = Path(path_resources / "jsonschema/jsonschema.json")
-    jsm = JsmReader.read(jsm_path)
-
-    readers = {"default": IniReader()}
-    writers = {"default": IniWriter(), "matrix": MatrixWriter()}
-    study_parser = FileSystemEngine(readers=readers, writers=writers)
 
     request_handler = RequestHandler(
-        study_parser=study_parser,
-        url_engine=UrlEngine(jsm=jsm),
+        study_factory=StudyFactory(),
         exporter=Exporter(),
         path_studies=studies_path,
         path_resources=path_resources,
-        jsm_validator=JsmValidator(jsm=jsm),
     )
     application = create_server(request_handler)
 

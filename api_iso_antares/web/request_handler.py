@@ -9,13 +9,9 @@ from uuid import uuid4
 from zipfile import BadZipFile, ZipFile
 
 from api_iso_antares.antares_io.exporter.export_file import Exporter
-from api_iso_antares.antares_io.validator import JsmValidator
 from api_iso_antares.custom_types import JSON, SUB_JSON
-from api_iso_antares.engine import UrlEngine
-from api_iso_antares.engine.filesystem.engine import (
-    FileSystemEngine,
-)
-from api_iso_antares.jsm import JsonSchema
+
+from api_iso_antares.filesystem.factory import StudyFactory
 from api_iso_antares.web.html_exception import (
     BadZipBinary,
     IncorrectPathError,
@@ -55,44 +51,22 @@ class RequestHandlerParameters:
 class RequestHandler:
     def __init__(
         self,
-        study_parser: FileSystemEngine,
-        url_engine: UrlEngine,
+        study_factory: StudyFactory,
         exporter: Exporter,
         path_studies: Path,
         path_resources: Path,
-        jsm_validator: JsmValidator,
     ):
-        self.study_parser = study_parser
-        self.url_engine = url_engine
+        self.study_factory = study_factory
         self.exporter = exporter
         self.path_to_studies = path_studies
         self.path_resources = path_resources
-        self.jsm_validator = jsm_validator
 
     def get(self, route: str, parameters: RequestHandlerParameters) -> JSON:
         uuid, url, study_path = self._extract_info_from_url(route)
         self.assert_study_exist(uuid)
 
-        sub_jsm, deep_path, keys = self.resolve(url=url, study_path=study_path)
-        sub_study = self.study_parser.parse(
-            deep_path=deep_path, study_path=study_path, jsm=sub_jsm, keys=keys
-        )
-
-        if keys:
-            for key in keys.split("/"):
-                sub_jsm = sub_jsm.get_child(key=key)
-
-        self.jsm_validator.validate(jsondata=sub_study, sub_jsm=sub_jsm)
-
-        return sub_study
-
-    def resolve(
-        self, url: str, study_path: Path
-    ) -> Tuple[JsonSchema, Path, str]:
-        try:
-            return self.url_engine.resolve(url=url, path=study_path)
-        except KeyError as e:
-            raise UrlNotMatchJsonDataError(f"Key {url} not in the study.")
+        _, study = self.study_factory.create_from_fs(study_path)
+        return study.get(url.split("/"))
 
     def assert_study_exist(self, uuid: str) -> None:
         if not self.is_study_existing(uuid):
@@ -129,9 +103,6 @@ class RequestHandler:
         url = uuid + "/study"
         return self.get(url, RequestHandlerParameters(depth=2))
 
-    def get_jsm(self) -> JsonSchema:
-        return self.jsm_validator.jsm
-
     def get_study_path(self, uuid: str) -> Path:
         return self.path_to_studies / uuid
 
@@ -151,28 +122,29 @@ class RequestHandler:
             uuid, parameters=RequestHandlerParameters(depth=10)
         )
         RequestHandler._update_antares_info(study_name, study_data)
-        self.study_parser.write(
-            path_study, study_data, self.get_jsm()
-        )  # TODO: write only study.antares
+
+        _, study = self.study_factory.create_from_fs(path_study)
+        study.save(study_data)
 
         return uuid
 
     def copy_study(self, src_uuid: str, dest_study_name: str) -> str:
 
-        self.assert_study_exist(src_uuid)
+        uuid, url, study_path = self._extract_info_from_url(src_uuid)
+        self.assert_study_exist(uuid)
 
-        data_source = self.get(src_uuid, RequestHandlerParameters(depth=-1))
+        config, study = self.study_factory.create_from_fs(study_path)
+        data_source = study.get()
 
         uuid = RequestHandler.generate_uuid()
-        path_destination = self.get_study_path(uuid)
+        config.path = self.get_study_path(uuid)
         data_destination = copy.deepcopy(data_source)
 
         RequestHandler._update_antares_info(dest_study_name, data_destination)
-        data_destination["output"] = None
+        data_destination["output"] = {}
+        config.outputs = {}
 
-        self.study_parser.write(
-            path_destination, data_destination, self.get_jsm()
-        )
+        self.study_factory.create_from_config(config).save(data_destination)
 
         return uuid
 
@@ -182,10 +154,10 @@ class RequestHandler:
         self.assert_study_exist(name)
 
         if compact:
-            data = self.study_parser.parse(
-                self.path_to_studies / name, self.get_jsm()
+            _, study = self.study_factory.create_from_fs(
+                path=self.path_to_studies / name
             )
-            self.jsm_validator.validate(data)
+            data = study.get()
             return self.exporter.export_compact(path_study, data)
         else:
             return self.exporter.export_file(path_study)
@@ -224,23 +196,9 @@ class RequestHandler:
         # Get data
         uuid, url, study_path = self._extract_info_from_url(route)
         self.assert_study_exist(uuid)
-        sub_jsm, deep_path, keys = self.resolve(url=url, study_path=study_path)
 
-        if keys:
-            data = self.study_parser.parse(
-                deep_path=deep_path, jsm=sub_jsm, study_path=study_path
-            )
-            parts = keys.split("/")
-            if len(parts) == 1:
-                data[parts[0]] = new
-            elif len(parts) == 2:
-                data[parts[0]][parts[1]] = new
-        else:
-            data = new
-
-        # Write data
-        # TODO writing fail when edit inside .ini because deep_path and data are on file level but jsm goes deeeper in .ini structure.
-        self.study_parser.write(path=deep_path, data=data, jsm=sub_jsm)
+        _, study = self.study_factory.create_from_fs(study_path)
+        study.save(new, url.split("/"))
         return new
 
     @staticmethod

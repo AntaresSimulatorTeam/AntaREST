@@ -100,6 +100,7 @@ def test_sta_mini_layers_layers(
             {
                 "iconfile": "This is a test",
                 "iconindex": 42,
+                "infotip": "Hello",
             },
         ),
         ("/studies/STA-mini/Desktop/.shellclassinfo/iconindex", 42),

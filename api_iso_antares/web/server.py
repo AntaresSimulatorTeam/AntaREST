@@ -9,7 +9,6 @@ import subprocess
 from flask import escape, Flask, jsonify, request, Response, send_file
 
 from api_iso_antares import __version__
-from api_iso_antares.engine import SwaggerEngine
 from api_iso_antares.web.html_exception import (
     HtmlException,
     stop_and_return_on_html_exception,
@@ -242,7 +241,7 @@ def create_non_business_routes(application: Flask) -> None:
     def swagger() -> Any:
         global request_handler
         jsm = request_handler.get_jsm()
-        swg_doc = SwaggerEngine.parse(jsm=jsm)
+        swg_doc = {}
         return jsonify(swg_doc), 200
 
     @application.route("/health", methods=["GET"])

@@ -1,8 +1,0 @@
-DE	area	de	monthly
-	VARIABLES	BEGIN	END
-	27	1	1
-
-DE	monthly		01_solar	02_wind_on	03_wind_off	04_res	05_nuclear	06_coal	07_gas	08_non-res	09_hydro_pump	01_solar	02_wind_on	03_wind_off	04_res	05_nuclear	06_coal	07_gas	08_non-res	09_hydro_pump	01_solar	02_wind_on	03_wind_off	04_res	05_nuclear	06_coal	07_gas	08_non-res	09_hydro_pump
-			MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NP Cost - Euro	NODU	NODU	NODU	NODU	NODU	NODU	NODU	NODU	NODU
-	index	month	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP	EXP
-	1	JAN	315000	275000	235000	195000	155000	115000	75000	35000	2800	0	0	0	0	0	0	0	0	0	167	147	127	107	87	67	47	27	7

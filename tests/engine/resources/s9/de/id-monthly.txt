@@ -1,8 +1,0 @@
-DE	area	id	monthly
-	VARIABLES	BEGIN	END
-	58	1	1
-
-DE	monthly		OP. COST	OP. COST	MRG. PRICE	MRG. PRICE	BALANCE	BALANCE	LOAD	LOAD	H. ROR	H. ROR	WIND	WIND	SOLAR	SOLAR	NUCLEAR	NUCLEAR	LIGNITE	LIGNITE	COAL	COAL	GAS	GAS	OIL	OIL	MIX. FUEL	MIX. FUEL	MISC. DTG	MISC. DTG	H. STOR	H. STOR	H. PUMP	H. PUMP	H. LEV	H. LEV	H. INFL	H. INFL	H. OVFL	H. OVFL	H. VAL	H. VAL	H. COST	H. COST	UNSP. ENRG	UNSP. ENRG	SPIL. ENRG	SPIL. ENRG	LOLD	LOLD	AVL DTG	AVL DTG	DTG MRG	DTG MRG	MAX MRG	MAX MRG	NP COST	NP COST	NODU	NODU
-			Euro	Euro	Euro	Euro	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	MWh	%	%	MWh	MWh	%	%	Euro/MWh	Euro/MWh	Euro	Euro	MWh	MWh	MWh	MWh	Hours	Hours	MWh	MWh	MWh	MWh	MWh	MWh	Euro	Euro	 	 
-	index	month	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max	min	max
-	1	JAN	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	N/A	N/A	1	1	N/A	N/A	N/A	N/A	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1
