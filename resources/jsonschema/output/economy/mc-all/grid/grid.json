@@ -1,0 +1,13 @@
+{
+    "definitions": {
+        "grid": {
+            "type": "object",
+            "properties": {
+                "areas": {"type":  "string", "rte-metadata":  {"filename":  "areas.txt"}},
+                "digest": {"type":  "string", "rte-metadata":  {"filename":  "digest.txt"}},
+                "links": {"type":  "string", "rte-metadata":  {"filename":  "links.txt"}},
+                "thermal": {"type":  "string", "rte-metadata":  {"filename":  "thermal.txt"}}
+            }
+        }
+    }
+}

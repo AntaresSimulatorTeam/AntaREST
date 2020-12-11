@@ -1,0 +1,61 @@
+{
+    "type": "object",
+    "definitions": {
+        "ui": {
+            "type": "object",
+            "rte-metadata": {
+                "filename": "ui.ini",
+                "swagger_stop": true
+            },
+            "properties": {
+                "ui": {
+                    "type": "object",
+                    "properties": {
+                        "x": {
+                            "type": "number"
+                        },
+                        "y": {
+                            "type": "number"
+                        },
+                        "color_r": {
+                            "type": "number"
+                        },
+                        "color_g": {
+                            "type": "number"
+                        },
+                        "color_b": {
+                            "type": "number"
+                        },
+                        "layers": {
+                            "type": "number"
+                        }
+                    }
+                },
+                "layerX": {
+                    "type": "object",
+                    "properties": {
+                        "0": {
+                            "type": "number"
+                        }
+                    }
+                },
+                "layerY": {
+                    "type": "object",
+                    "properties": {
+                        "0": {
+                            "type": "number"
+                        }
+                    }
+                },
+                "layerColor": {
+                    "type": "object",
+                    "properties": {
+                        "0": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

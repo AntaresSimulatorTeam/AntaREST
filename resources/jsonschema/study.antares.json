@@ -1,0 +1,33 @@
+{
+    "type": "object",
+    "definitions": {
+        "study": {
+            "type": "object",
+            "rte-metadata": {
+                "filename": "study.antares"
+            },
+            "properties": {
+                "antares": {
+                    "type": "object",
+                    "properties": {
+                        "version": {
+                            "type": "integer"
+                        },
+                        "caption": {
+                            "type": "string"
+                        },
+                        "created": {
+                            "type": "integer"
+                        },
+                        "lastsave": {
+                            "type": "integer"
+                        },
+                        "author": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

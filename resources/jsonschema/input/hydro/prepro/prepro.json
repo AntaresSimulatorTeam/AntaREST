@@ -1,0 +1,21 @@
+{
+    "type": "object",
+    "definitions": {
+        "prepro": {
+            "type": "object",
+            "rte-metadata": {
+                "strategy": "S1",
+                "additional_property_name":  "area"
+            },
+            "properties": {
+                "correlation": {
+                    "$ref": "correlation.ini.json#/definitions/correlation"
+                }
+            },
+            "additionalProperties": {
+
+                "$ref": "area/area.json#/definitions/area"
+            }
+        }
+    }
+}

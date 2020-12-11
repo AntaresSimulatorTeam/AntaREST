@@ -128,5 +128,12 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-
+# IDE Pycharm
 .idea/
+
+# Study examples
+*-gitignore/
+
+html/
+
+.mutmut-cache

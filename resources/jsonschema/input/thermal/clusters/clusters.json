@@ -1,0 +1,17 @@
+{
+    "type": "object",
+    "definitions": {
+        "clusters": {
+            "type": "object",
+            "rte-metadata": {
+                "strategy": "S4",
+                "additional_property_name":  "area"
+            },
+            "properties": {},
+            "additionalProperties": {
+
+                "$ref": "area/area.json#/definitions/area"
+            }
+        }
+    }
+}

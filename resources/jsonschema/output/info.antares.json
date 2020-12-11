@@ -1,0 +1,24 @@
+{
+    "type": "object",
+    "definitions": {
+        "info": {
+            "type": "object",
+            "rte-metadata": {
+                "filename": "info.antares-output", "strategy":  "S2"
+            },
+            "properties": {
+                "general": {
+                    "type": "object",
+                    "properties": {
+                        "version": {"type": "integer"},
+                        "name": {"type": "string"},
+                        "mode": {"type": "string"},
+                        "date": {"type": "string"},
+                        "title": {"type": "string"},
+                        "timestamp": {"type": "integer"}
+                    }
+                }
+            }
+        }
+    }
+}

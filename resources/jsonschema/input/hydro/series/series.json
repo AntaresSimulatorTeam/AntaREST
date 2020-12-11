@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "definitions": {
+    "series": {
+      "type": "object",
+      "properties": {},
+      "rte-metadata": {
+        "strategy":  "S4",
+        "additional_property_name": "area"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "mod": {
+            "rte-metadata": {
+                "filename": "mod.txt"
+            },
+            "type":  "string"
+          },
+          "ror": {
+            "rte-metadata": {
+                "filename": "ror.txt"
+            },
+            "type":  "string"
+          }
+        }
+      }
+    }
+  }
+}

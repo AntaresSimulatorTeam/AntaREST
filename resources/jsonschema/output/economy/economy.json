@@ -1,0 +1,11 @@
+{
+    "definitions": {
+        "economy": {
+            "type": "object",
+            "properties": {
+                "mc-all": {"$ref":  "mc-all/mc-all.json#/definitions/mc-all"},
+                "mc-ind": {"$ref":  "mc-ind/mc-ind.json#/definitions/mc-ind"}
+            }
+        }
+    }
+}

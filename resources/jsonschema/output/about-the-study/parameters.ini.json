@@ -1,0 +1,511 @@
+{
+    "type": "object",
+    "definitions": {
+        "parameters": {
+            "type": "object",
+            "rte-metadata": {
+                "filename": "parameters.ini",
+                "swagger_stop": true
+            },
+            "properties": {
+                "general": {
+                    "type": "object",
+                    "properties": {
+                        "mode": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/mode",
+                            "type": "string",
+                            "title": "The mode schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "horizon": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/horizon",
+                            "type": "integer",
+                            "title": "The horizon schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "nbyears": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/nbyears",
+                            "type": "integer",
+                            "title": "The nbyears schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "simulation.start": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/simulation.start",
+                            "type": "integer",
+                            "title": "The simulation.start schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "simulation.end": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/simulation.end",
+                            "type": "integer",
+                            "title": "The simulation.end schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "january.1st": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/january.1st",
+                            "type": "string",
+                            "title": "The january.1st schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "first-month-in-year": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/first-month-in-year",
+                            "type": "string",
+                            "title": "The first-month-in-year schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "first.weekday": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/first.weekday",
+                            "type": "string",
+                            "title": "The first.weekday schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "leapyear": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/leapyear",
+                            "type": "boolean",
+                            "title": "The leapyear schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "year-by-year": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/year-by-year",
+                            "type": "boolean",
+                            "title": "The year-by-year schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "derated": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/derated",
+                            "type": "boolean",
+                            "title": "The derated schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "custom-ts-numbers": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/custom-ts-numbers",
+                            "type": "boolean",
+                            "title": "The custom-ts-numbers schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "user-playlist": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/user-playlist",
+                            "type": "boolean",
+                            "title": "The user-playlist schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "filtering": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/filtering",
+                            "type": "boolean",
+                            "title": "The filtering schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "active-rules-scenario": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/active-rules-scenario",
+                            "type": "string",
+                            "title": "The active-rules-scenario schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "generate": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/generate",
+                            "type": "string",
+                            "title": "The generate schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "nbtimeseriesload": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/nbtimeseriesload",
+                            "type": "integer",
+                            "title": "The nbtimeseriesload schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "nbtimeserieshydro": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/nbtimeserieshydro",
+                            "type": "integer",
+                            "title": "The nbtimeserieshydro schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "nbtimeserieswind": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/nbtimeserieswind",
+                            "type": "integer",
+                            "title": "The nbtimeserieswind schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "nbtimeseriesthermal": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/nbtimeseriesthermal",
+                            "type": "integer",
+                            "title": "The nbtimeseriesthermal schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "nbtimeseriessolar": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/nbtimeseriessolar",
+                            "type": "integer",
+                            "title": "The nbtimeseriessolar schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "refreshtimeseries": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/refreshtimeseries",
+                            "type": "string",
+                            "title": "The refreshtimeseries schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "intra-modal": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/intra-modal",
+                            "type": "string",
+                            "title": "The intra-modal schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "inter-modal": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/inter-modal",
+                            "type": "string",
+                            "title": "The inter-modal schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "refreshintervalload": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/refreshintervalload",
+                            "type": "integer",
+                            "title": "The refreshintervalload schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "refreshintervalhydro": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/refreshintervalhydro",
+                            "type": "integer",
+                            "title": "The refreshintervalhydro schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "refreshintervalwind": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/refreshintervalwind",
+                            "type": "integer",
+                            "title": "The refreshintervalwind schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "refreshintervalthermal": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/refreshintervalthermal",
+                            "type": "integer",
+                            "title": "The refreshintervalthermal schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "refreshintervalsolar": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/refreshintervalsolar",
+                            "type": "integer",
+                            "title": "The refreshintervalsolar schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "readonly": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/general/properties/readonly",
+                            "type": "boolean",
+                            "title": "The readonly schema",
+                            "description": "An explanation about the purpose of this instance."
+                        }
+                    }
+                },
+                "input": {
+                    "$id": "#/properties/settings/properties/parameters.ini/properties/input",
+                    "type": "object",
+                    "title": "The input schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "required": [
+                        "import"
+                    ],
+                    "properties": {
+                        "import": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/input/properties/import",
+                            "type": "string",
+                            "title": "The import schema",
+                            "description": "An explanation about the purpose of this instance."
+                        }
+                    }
+                },
+                "output": {
+                    "$id": "#/properties/settings/properties/parameters.ini/properties/output",
+                    "type": "object",
+                    "title": "The output schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "required": [
+                        "synthesis",
+                        "storenewset",
+                        "archives"
+                    ],
+                    "properties": {
+                        "synthesis": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/output/properties/synthesis",
+                            "type": "boolean",
+                            "title": "The synthesis schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "storenewset": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/output/properties/storenewset",
+                            "type": "boolean",
+                            "title": "The storenewset schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "archives": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/output/properties/archives",
+                            "type": "string",
+                            "title": "The archives schema",
+                            "description": "An explanation about the purpose of this instance."
+                        }
+                    }
+                },
+                "optimization": {
+                    "$id": "#/properties/settings/properties/parameters.ini/properties/optimization",
+                    "type": "object",
+                    "title": "The optimization schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "required": [
+                        "simplex-range",
+                        "transmission-capacities",
+                        "link-type",
+                        "include-constraints",
+                        "include-hurdlecosts",
+                        "include-tc-minstablepower",
+                        "include-tc-min-ud-time",
+                        "include-dayahead",
+                        "include-strategicreserve",
+                        "include-spinningreserve",
+                        "include-primaryreserve",
+                        "include-exportmps"
+                    ],
+                    "properties": {
+                        "simplex-range": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/simplex-range",
+                            "type": "string",
+                            "title": "The simplex-range schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "transmission-capacities": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/transmission-capacities",
+                            "type": "boolean",
+                            "title": "The transmission-capacities schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "link-type": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/link-type",
+                            "type": "string",
+                            "title": "The link-type schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "include-constraints": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/include-constraints",
+                            "type": "boolean",
+                            "title": "The include-constraints schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "include-hurdlecosts": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/include-hurdlecosts",
+                            "type": "boolean",
+                            "title": "The include-hurdlecosts schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "include-tc-minstablepower": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/include-tc-minstablepower",
+                            "type": "boolean",
+                            "title": "The include-tc-minstablepower schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "include-tc-min-ud-time": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/include-tc-min-ud-time",
+                            "type": "boolean",
+                            "title": "The include-tc-min-ud-time schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "include-dayahead": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/include-dayahead",
+                            "type": "boolean",
+                            "title": "The include-dayahead schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "include-strategicreserve": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/include-strategicreserve",
+                            "type": "boolean",
+                            "title": "The include-strategicreserve schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "include-spinningreserve": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/include-spinningreserve",
+                            "type": "boolean",
+                            "title": "The include-spinningreserve schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "include-primaryreserve": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/include-primaryreserve",
+                            "type": "boolean",
+                            "title": "The include-primaryreserve schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "include-exportmps": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/optimization/properties/include-exportmps",
+                            "type": "boolean",
+                            "title": "The include-exportmps schema",
+                            "description": "An explanation about the purpose of this instance."
+                        }
+                    }
+                },
+                "other preferences": {
+                    "$id": "#/properties/settings/properties/parameters.ini/properties/other%20preferences",
+                    "type": "object",
+                    "title": "The other preferences schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "required": [
+                        "initial-reservoir-levels",
+                        "power-fluctuations",
+                        "shedding-strategy",
+                        "shedding-policy",
+                        "unit-commitment-mode",
+                        "number-of-cores-mode",
+                        "day-ahead-reserve-management"
+                    ],
+                    "properties": {
+                        "initial-reservoir-levels": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/other%20preferences/properties/initial-reservoir-levels",
+                            "type": "string",
+                            "title": "The initial-reservoir-levels schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "power-fluctuations": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/other%20preferences/properties/power-fluctuations",
+                            "type": "string",
+                            "title": "The power-fluctuations schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "shedding-strategy": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/other%20preferences/properties/shedding-strategy",
+                            "type": "string",
+                            "title": "The shedding-strategy schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "shedding-policy": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/other%20preferences/properties/shedding-policy",
+                            "type": "string",
+                            "title": "The shedding-policy schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "unit-commitment-mode": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/other%20preferences/properties/unit-commitment-mode",
+                            "type": "string",
+                            "title": "The unit-commitment-mode schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "number-of-cores-mode": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/other%20preferences/properties/number-of-cores-mode",
+                            "type": "string",
+                            "title": "The number-of-cores-mode schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "day-ahead-reserve-management": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/other%20preferences/properties/day-ahead-reserve-management",
+                            "type": "string",
+                            "title": "The day-ahead-reserve-management schema",
+                            "description": "An explanation about the purpose of this instance."
+                        }
+                    }
+                },
+                "advanced parameters": {
+                    "$id": "#/properties/settings/properties/parameters.ini/properties/advanced%20parameters",
+                    "type": "object",
+                    "title": "The advanced parameters schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "required": [
+                        "accuracy-on-correlation",
+                        "adequacy-block-size"
+                    ],
+                    "properties": {
+                        "accuracy-on-correlation": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/advanced%20parameters/properties/accuracy-on-correlation",
+                            "type": "string",
+                            "title": "The accuracy-on-correlation schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "adequacy-block-size": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/advanced%20parameters/properties/adequacy-block-size",
+                            "type": "integer",
+                            "title": "The adequacy-block-size schema",
+                            "description": "An explanation about the purpose of this instance."
+                        }
+                    }
+                },
+                "seeds - Mersenne Twister": {
+                    "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister",
+                    "type": "object",
+                    "title": "The seeds - Mersenne Twister schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "required": [
+                        "seed-tsgen-wind",
+                        "seed-tsgen-load",
+                        "seed-tsgen-hydro",
+                        "seed-tsgen-thermal",
+                        "seed-tsgen-solar",
+                        "seed-tsnumbers",
+                        "seed-unsupplied-energy-costs",
+                        "seed-spilled-energy-costs",
+                        "seed-thermal-costs",
+                        "seed-hydro-costs",
+                        "seed-initial-reservoir-levels"
+                    ],
+                    "properties": {
+                        "seed-tsgen-wind": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister/properties/seed-tsgen-wind",
+                            "type": "integer",
+                            "title": "The seed-tsgen-wind schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "seed-tsgen-load": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister/properties/seed-tsgen-load",
+                            "type": "integer",
+                            "title": "The seed-tsgen-load schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "seed-tsgen-hydro": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister/properties/seed-tsgen-hydro",
+                            "type": "integer",
+                            "title": "The seed-tsgen-hydro schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "seed-tsgen-thermal": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister/properties/seed-tsgen-thermal",
+                            "type": "integer",
+                            "title": "The seed-tsgen-thermal schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "seed-tsgen-solar": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister/properties/seed-tsgen-solar",
+                            "type": "integer",
+                            "title": "The seed-tsgen-solar schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "seed-tsnumbers": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister/properties/seed-tsnumbers",
+                            "type": "integer",
+                            "title": "The seed-tsnumbers schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "seed-unsupplied-energy-costs": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister/properties/seed-unsupplied-energy-costs",
+                            "type": "integer",
+                            "title": "The seed-unsupplied-energy-costs schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "seed-spilled-energy-costs": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister/properties/seed-spilled-energy-costs",
+                            "type": "integer",
+                            "title": "The seed-spilled-energy-costs schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "seed-thermal-costs": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister/properties/seed-thermal-costs",
+                            "type": "integer",
+                            "title": "The seed-thermal-costs schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "seed-hydro-costs": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister/properties/seed-hydro-costs",
+                            "type": "integer",
+                            "title": "The seed-hydro-costs schema",
+                            "description": "An explanation about the purpose of this instance."
+                        },
+                        "seed-initial-reservoir-levels": {
+                            "$id": "#/properties/settings/properties/parameters.ini/properties/seeds%20-%20Mersenne%20Twister/properties/seed-initial-reservoir-levels",
+                            "type": "integer",
+                            "title": "The seed-initial-reservoir-levels schema",
+                            "description": "An explanation about the purpose of this instance."
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

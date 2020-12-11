@@ -1,0 +1,29 @@
+{
+    "type": "object",
+    "definitions": {
+        "Desktop": {
+            "type": "object",
+            "rte-metadata": {
+                "filename": "Desktop.ini"
+            },
+            "properties": {
+                ".shellclassinfo": {
+                    "type": "object",
+                    "properties": {
+                        "iconfile": {
+                            "type": "string"
+                        },
+                        "iconindex": {
+                            "type": "integer"
+                        },
+                        "infotip": {
+                            "type": "string"
+                        }
+                    },
+                    "required": []
+                }
+            },
+            "required": []
+        }
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "type": "object",
+    "definitions": {
+        "area": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "$ref": "list.ini.json#/definitions/list"
+                }
+            }
+        }
+    }
+}

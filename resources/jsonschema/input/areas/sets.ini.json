@@ -1,0 +1,23 @@
+{
+    "definitions": {
+        "sets.ini": {
+            "type": "object",
+            "rte-metadata": {
+                "filename":  "sets.ini",
+                "strategy":  "S13",
+                "additional_property_name":  "area"
+            },
+            "properties": {},
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "caption": {"type": "string"},
+                    "comments": {"type": "string"},
+                    "apply-filter": {"type": "string"},
+                    "output": {"type":  "boolean"},
+                    "+": {"type":  "array", "items":  {"type": "string"}}
+                }
+            }
+        }
+    }
+}
