@@ -71,7 +71,7 @@ class Area:
         filters: str = IniReader().read(
             root / f"input/areas/{area}/optimization.ini"
         )["filtering"]["filter-synthesis"]
-        return [f.strip() for f in filters.split(",")]
+        return Link.split(filters)
 
     @staticmethod
     def _parse_filters_year(root: Path, area: str) -> List[str]:

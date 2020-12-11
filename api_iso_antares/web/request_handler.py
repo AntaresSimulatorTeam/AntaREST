@@ -1,4 +1,5 @@
 import copy
+import json
 import shutil
 import time
 from io import BytesIO
@@ -153,7 +154,7 @@ class RequestHandler:
         self.assert_study_exist(name)
 
         if compact:
-            _, study = self.study_factory.create_from_fs(
+            config, study = self.study_factory.create_from_fs(
                 path=self.path_to_studies / name
             )
             data = study.get()
@@ -184,6 +185,15 @@ class RequestHandler:
         path_study = Path(self.path_to_studies) / uuid
         path_study.mkdir()
         RequestHandler.extract_zip(stream, path_study)
+
+        data_file = path_study / "data.json"
+        if data_file.is_file() and (path_study / "res").is_dir():
+            with open(data_file) as file:
+                data = json.load(file)
+                self.edit_study("/", data)
+            shutil.rmtree(path_study / "res")
+            shutil.rmtree(data_file)
+
         data = self.get(uuid, parameters=RequestHandlerParameters(depth=-1))
         if data is None:
             self.delete_study(uuid)

@@ -26,8 +26,8 @@ class OutputSimulationEconomyMcAllGrid(FolderNode):
             "links": OutputSimulationEconomyMcAllGridLinks(
                 config.next_file("links.txt")
             ),
-            "thermals": OutputSimulationEconomyMcAllGridThermals(
-                config.next_file("thermals.txt")
+            "thermal": OutputSimulationEconomyMcAllGridThermals(
+                config.next_file("thermal.txt")
             ),
         }
         FolderNode.__init__(self, config, children)
