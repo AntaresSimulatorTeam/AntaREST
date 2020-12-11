@@ -1,4 +1,3 @@
-from typing import Dict, List
 from unittest.mock import Mock
 
 import pytest
@@ -54,3 +53,16 @@ def test_save():
 
     tree.save({"input": 205})
     assert tree.get(["input"]) == 205
+
+
+@pytest.mark.unit_test
+def test_filter():
+    tree = build_tree()
+
+    expected_json = {
+        "input": 100,
+        "output": 200,
+    }
+
+    assert tree.get(["input,output", "value"]) == expected_json
+    assert tree.get(["*", "value"]) == expected_json

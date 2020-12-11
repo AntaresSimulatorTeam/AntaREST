@@ -1,6 +1,5 @@
 import copy
 import shutil
-import tempfile
 import time
 from io import BytesIO
 from pathlib import Path
@@ -10,7 +9,6 @@ from zipfile import BadZipFile, ZipFile
 
 from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.custom_types import JSON, SUB_JSON
-
 from api_iso_antares.filesystem.factory import StudyFactory
 from api_iso_antares.web.html_exception import (
     BadZipBinary,
@@ -18,7 +16,6 @@ from api_iso_antares.web.html_exception import (
     StudyAlreadyExistError,
     StudyNotFoundError,
     StudyValidationError,
-    UrlNotMatchJsonDataError,
 )
 
 
@@ -66,7 +63,9 @@ class RequestHandler:
         self.assert_study_exist(uuid)
 
         _, study = self.study_factory.create_from_fs(study_path)
-        return study.get(url.split("/"), depth=parameters.depth)
+        url = [item for item in url.split("/") if item]
+
+        return study.get(url, depth=parameters.depth)
 
     def assert_study_exist(self, uuid: str) -> None:
         if not self.is_study_existing(uuid):

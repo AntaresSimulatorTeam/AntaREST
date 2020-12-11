@@ -444,3 +444,35 @@ def test_sta_mini_import(
     result = client.post("/studies", data=study_data)
 
     assert result.status_code == HTTPStatus.CREATED.value
+
+
+@pytest.mark.integration_test
+@pytest.mark.parametrize(
+    "url, expected_output",
+    [
+        (
+            "/studies/STA-mini/output/1/ts-numbers/hydro/de,fr/",
+            {
+                "de": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/de.txt",
+                "fr": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/fr.txt",
+            },
+        ),
+        (
+            "/studies/STA-mini/output/1/ts-numbers/hydro/*/",
+            {
+                "de": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/de.txt",
+                "fr": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/fr.txt",
+                "it": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/it.txt",
+                "es": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/es.txt",
+            },
+        ),
+    ],
+)
+def test_sta_mini_filter(
+    request_handler: RequestHandler, url: str, expected_output: dict
+):
+    assert_with_errors(
+        request_handler=request_handler,
+        url=url,
+        expected_output=expected_output,
+    )
