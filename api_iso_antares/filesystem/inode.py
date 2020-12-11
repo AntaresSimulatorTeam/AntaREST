@@ -8,7 +8,7 @@ T = TypeVar("T")
 
 class INode(ABC, Generic[T]):
     @abstractmethod
-    def get(self, url: Optional[List[str]] = None) -> T:
+    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> T:
         pass
 
     @abstractmethod

@@ -10,7 +10,7 @@ class RawFileNode(INode[str]):
     def __init__(self, config: Config):
         self.config = config
 
-    def get(self, url: Optional[List[str]] = None) -> str:
+    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> str:
         self._assert_url(url)
 
         file_path = "/".join(self.config.path.absolute().parts)

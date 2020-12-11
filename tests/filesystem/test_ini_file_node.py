@@ -1,15 +1,15 @@
 from pathlib import Path
+from typing import Tuple
 
 import pytest
 
+from api_iso_antares.custom_types import JSON
 from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.ini_file_node import IniFileNode
 
 
-@pytest.mark.unit_test
-def test_get(tmp_path: str) -> None:
+def build_dataset(tmp_path: str) -> Tuple[Path, JSON]:
     path = Path(tmp_path) / "test.ini"
-
     ini_content = """
         [part1]
         key_int = 1
@@ -20,7 +20,6 @@ def test_get(tmp_path: str) -> None:
         key_bool = True
         key_bool2 = False
     """
-
     types = {
         "part1": {"key_int": int, "key_float": float, "key_str": str},
         "part2": {
@@ -28,8 +27,13 @@ def test_get(tmp_path: str) -> None:
             "key_bool2": bool,
         },
     }
-
     path.write_text(ini_content)
+    return path, types
+
+
+@pytest.mark.unit_test
+def test_get(tmp_path: str) -> None:
+    path, types = build_dataset(tmp_path)
 
     expected_json = {
         "part1": {"key_int": 1, "key_str": "value1", "key_float": 2.1},
@@ -42,7 +46,19 @@ def test_get(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
-def test_read(tmp_path: str) -> None:
+def test_get_depth(tmp_path: str) -> None:
+    path, types = build_dataset(tmp_path)
+
+    expected_json = {
+        "part1": {},
+        "part2": {},
+    }
+    node = IniFileNode(Config(path, areas=dict(), outputs=dict()), types=types)
+    assert node.get(depth=1) == expected_json
+
+
+@pytest.mark.unit_test
+def test_save(tmp_path: str) -> None:
     path = Path(tmp_path) / "test.ini"
 
     ini_content = """[part1]

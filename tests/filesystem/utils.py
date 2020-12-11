@@ -10,7 +10,7 @@ class TestSubNode(INode[int]):
     def __init__(self, value: int):
         self.value = value
 
-    def get(self, url: Optional[List[str]] = None) -> int:
+    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> int:
         return self.value
 
     def save(self, data: int, url: Optional[List[str]] = None) -> None:

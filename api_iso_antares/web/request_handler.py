@@ -66,7 +66,7 @@ class RequestHandler:
         self.assert_study_exist(uuid)
 
         _, study = self.study_factory.create_from_fs(study_path)
-        return study.get(url.split("/"))
+        return study.get(url.split("/"), depth=parameters.depth)
 
     def assert_study_exist(self, uuid: str) -> None:
         if not self.is_study_existing(uuid):

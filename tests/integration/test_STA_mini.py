@@ -352,7 +352,7 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
 
     destination_folder = url_destination.split("/")[2]
 
-    parameters = RequestHandlerParameters(depth=None)
+    parameters = RequestHandlerParameters(depth=-1)
     data_source = request_handler.get(source_study_name, parameters)
     data_destination = request_handler.get(destination_folder, parameters)
 

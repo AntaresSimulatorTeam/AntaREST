@@ -27,8 +27,22 @@ def test_get():
     res = tree.get(["input"])
     assert res == 100
 
-    res = tree.get([])
+    res = tree.get()
     assert res == {"input": 100, "output": 200}
+
+
+@pytest.mark.unit_test
+def test_get_depth():
+    config = Mock()
+    config.path.exist.return_value = True
+    tree = FolderNode(
+        config=config,
+        children={"childA": build_tree(), "childB": build_tree()},
+    )
+
+    expected = {"childA": {}, "childB": {}}
+
+    assert tree.get(depth=1) == expected
 
 
 @pytest.mark.unit_test

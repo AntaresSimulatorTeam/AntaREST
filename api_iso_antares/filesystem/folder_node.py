@@ -10,12 +10,17 @@ class FolderNode(INode[JSON]):
         self.children: TREE = children
         self.config = config
 
-    def get(self, url: Optional[List[str]] = None) -> JSON:
+    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> JSON:
         if url and url != [""]:
             name, sub_url = self.extract_child(url)
-            return self.children[name].get(sub_url)
+            return self.children[name].get(sub_url, depth=depth)
         else:
-            json = {name: node.get() for name, node in self.children.items()}
+            if depth == 0:
+                return {}
+            json = {
+                name: node.get(depth=depth - 1)
+                for name, node in self.children.items()
+            }
             self.validate(json)
             return json
 
