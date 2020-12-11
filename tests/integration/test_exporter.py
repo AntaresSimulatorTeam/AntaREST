@@ -15,6 +15,10 @@ def assert_url_content(request_handler: RequestHandler, url: str) -> bytes:
     return res.data
 
 
+def assert_data(data: bytes):
+    assert len(data) > 0 and b"<!DOCTYPE HTML PUBLIC" not in data
+
+
 def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
 
     path_studies = tmp_path / "studies"
@@ -29,9 +33,8 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         path_resources=Mock(),
     )
 
-    # data = assert_url_content(handler, url="/studies/STA-mini/export")
-    # assert len(data) > 0
+    data = assert_url_content(handler, url="/studies/STA-mini/export")
+    assert_data(data)
 
-    # data = assert_url_content(handler, url="/studies/STA-mini/export?compact")
-    data = handler.export_study("STA-mini", compact=True)
-    assert len(data) > 0
+    data = assert_url_content(handler, url="/studies/STA-mini/export?compact")
+    assert_data(data)

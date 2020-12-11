@@ -4,6 +4,9 @@ from api_iso_antares.filesystem.inode import TREE
 from api_iso_antares.filesystem.root.output.simulation.about.about import (
     OutputSimulationAbout,
 )
+from api_iso_antares.filesystem.root.output.simulation.adequacy.adequacy import (
+    OutputSimulationAdequacy,
+)
 from api_iso_antares.filesystem.root.output.simulation.annualSystemCost import (
     OutputSimulationAnnualSystemCost,
 )
@@ -57,10 +60,8 @@ class OutputSimulation(FolderNode):
                 config.next_file("economy"), simulation
             )
 
-        elif (
-            simulation.mode == "adequacy"
-        ):  # TODO don't reuse OutputSimulationEconomy
-            children["adequacy"] = OutputSimulationEconomy(
+        elif simulation.mode == "adequacy":
+            children["adequacy"] = OutputSimulationAdequacy(
                 config.next_file("adequacy"), simulation
             )
 

@@ -13,8 +13,10 @@ class OutputSimulationEconomy(FolderNode):
     def __init__(self, config: Config, simulation: Simulation):
         children: TREE = {
             "mc-all": OutputSimulationEconomyMcAll(config.next_file("mc-all")),
-            "mc-ind": OutputSimulationEconomyMcInd(
-                config.next_file("mc-ind"), simulation
-            ),
         }
+        # TODO remove check from filesystem use config only
+        if (config.path / "mc-ind").exists():
+            children["mc-ind"] = OutputSimulationEconomyMcInd(
+                config.next_file("mc-ind"), simulation
+            )
         FolderNode.__init__(self, config, children)
