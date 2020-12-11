@@ -40,7 +40,7 @@ class Area:
         self.filters_year = filters_year
 
     @staticmethod
-    def from_fs(root: Path, area: str):
+    def from_fs(root: Path, area: str) -> "Area":
         return Area(
             links=Area._parse_links(root, area),
             thermals=Area._parse_thermal(root, area),
@@ -156,7 +156,7 @@ class Config:
         return self.areas[area].filters_year
 
     @staticmethod
-    def from_path(study_path: Path):
+    def from_path(study_path: Path) -> "Config":
         return Config(
             study_path=study_path,
             areas=Config._parse_areas(study_path),

@@ -22,12 +22,20 @@ class IniFileNode(INode[SUB_JSON]):
         self.reader = reader or IniReader()
         self.writer = IniWriter()
 
-    def get(self, url: Optional[List[str]] = None) -> SUB_JSON:
+    def get(
+        self, url: Optional[List[str]] = None, depth: int = -1
+    ) -> SUB_JSON:
+        if depth == 0:
+            return {}
         url = url or []
         json = self.reader.read(self.path)
         self.validate(json)
-        for key in url:
-            json = json[key]
+        if len(url) == 2:
+            json = json[url[0]][url[1]]
+        elif len(url) == 1:
+            json = json[url[0]]
+        else:
+            json = {k: {} for k in json} if depth == 1 else json
         return cast(SUB_JSON, json)
 
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
