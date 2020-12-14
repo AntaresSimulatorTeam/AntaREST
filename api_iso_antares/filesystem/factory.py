@@ -15,4 +15,5 @@ class StudyFactory:
         return Study(config)
 
     def create_from_json(self, path: Path, json: JSON) -> Tuple[Config, Study]:
-        pass  # TODO
+        config = Config.from_json(json, path)
+        return config, Study(config)

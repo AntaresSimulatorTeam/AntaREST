@@ -22,7 +22,10 @@ class RawFileNode(INode[str]):
     def save(self, data: str, url: Optional[List[str]] = None) -> None:
         self._assert_url(url)
 
-        path = self.config.root_path.parent / data[len("file/") :]
+        if "file/" in data:
+            path = self.config.root_path.parent / data[len("file/") :]
+        else:
+            path = self.config.root_path / "res" / data
         shutil.copyfile(path, self.config.path)
 
     def validate(self, data: str) -> None:

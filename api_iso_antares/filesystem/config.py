@@ -1,7 +1,7 @@
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, List, Any, Tuple
 
 from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.custom_types import JSON
@@ -69,11 +69,21 @@ class Area(DTO):
 
 
 class Simulation(DTO):
-    def __init__(self, name: str, date: str, mode: str, nbyears: int):
+    def __init__(
+        self,
+        name: str,
+        date: str,
+        mode: str,
+        nbyears: int,
+        synthesis: bool,
+        by_year: bool,
+    ):
         self.name = name
         self.date = date
         self.mode = mode
         self.nbyears = nbyears
+        self.synthesis = synthesis
+        self.by_year = by_year
 
     def get_file(self) -> str:
         modes = {"economy": "eco", "adequacy": "adq"}
@@ -90,8 +100,8 @@ class Config(DTO):
     ):
         self.root_path = study_path
         self.path = study_path
-        self.areas = areas
-        self.outputs = outputs
+        self.areas = areas or dict()
+        self.outputs = outputs or dict()
 
     def next_file(self, name: str) -> "Config":
         copy = deepcopy(self)
@@ -150,7 +160,7 @@ class ConfigPathBuilder:
     def _parse_outputs(root: Path) -> Dict[int, Simulation]:
         files = sorted((root / "output").iterdir())
         return {
-            i: ConfigPathBuilder.parse_simulation(f)
+            i + 1: ConfigPathBuilder.parse_simulation(f)
             for i, f in enumerate(files)
         }
 
@@ -160,19 +170,24 @@ class ConfigPathBuilder:
         regex: Any = re.search(
             "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", path.name
         )
+        nbyears, by_year, synthesis = ConfigPathBuilder._parse_parameters(path)
         return Simulation(
             date=regex.group(1),
             mode=modes[regex.group(2)],
             name=regex.group(3),
-            nbyears=ConfigPathBuilder._parse_nbyears(path),
+            nbyears=nbyears,
+            by_year=by_year,
+            synthesis=synthesis,
         )
 
     @staticmethod
-    def _parse_nbyears(path: Path) -> int:
-        nbyears: int = IniReader().read(
-            path / "about-the-study/parameters.ini"
-        )["general"]["nbyears"]
-        return nbyears
+    def _parse_parameters(path: Path) -> Tuple[int, bool, bool]:
+        par: JSON = IniReader().read(path / "about-the-study/parameters.ini")
+        return (
+            par["general"]["nbyears"],
+            par["general"]["year-by-year"],
+            par["output"]["synthesis"],
+        )
 
     @staticmethod
     def parse_area(root: Path, area: str) -> "Area":
@@ -197,7 +212,6 @@ class ConfigPathBuilder:
         properties_ini = IniReader().read(
             root / f"input/links/{area}/properties.ini"
         )
-        print(list(properties_ini.keys()))
         return {
             link: Link.from_json(properties_ini[link])
             for link in list(properties_ini.keys())
@@ -231,18 +245,21 @@ class ConfigJsonBuilder:
     def _parse_areas(json: JSON) -> Dict[str, Area]:
         areas = list(json["input"]["areas"])
         areas = [a for a in areas if a not in ["sets", "list"]]
-        return {a: ConfigJsonBuilder.parse_area(json, a) for a in areas}
+        return {a: ConfigJsonBuilder._parse_area(json, a) for a in areas}
 
     @staticmethod
     def _parse_outputs(json: JSON) -> Dict[int, Simulation]:
         outputs = json["output"]
         return {
-            int(i): ConfigJsonBuilder.parse_simulation(s)
+            int(i): ConfigJsonBuilder._parse_simulation(s)
             for i, s in outputs.items()
         }
 
     @staticmethod
-    def parse_simulation(json: JSON) -> "Simulation":
+    def _parse_simulation(json: JSON) -> "Simulation":
+        nbyears, by_year, synthesis = ConfigJsonBuilder._parse_parameters(
+            json["about-the-study"]["parameters"]
+        )
         info = json["info"]["general"]
         return Simulation(
             date=info["date"]
@@ -251,13 +268,21 @@ class ConfigJsonBuilder:
             .replace(" ", ""),
             mode=info["mode"].lower(),
             name=info["name"],
-            nbyears=json["about-the-study"]["parameters"]["general"][
-                "nbyears"
-            ],
+            nbyears=nbyears,
+            by_year=by_year,
+            synthesis=synthesis,
         )
 
     @staticmethod
-    def parse_area(json: JSON, area: str) -> "Area":
+    def _parse_parameters(json: JSON):
+        return (
+            json["general"]["nbyears"],
+            json["general"]["year-by-year"],
+            json["output"]["synthesis"],
+        )
+
+    @staticmethod
+    def _parse_area(json: JSON, area: str) -> "Area":
         return Area(
             links=ConfigJsonBuilder._parse_links(json, area),
             thermals=ConfigJsonBuilder._parse_thermal(json, area),
@@ -277,22 +302,26 @@ class ConfigJsonBuilder:
         properties_ini = json["input"]["links"][area]["properties"]
         return {
             link: Link(
-                filters_synthesis=properties_ini[link]["filter-synthesis"],
-                filters_year=properties_ini[link]["filter-year-by-year"],
+                filters_synthesis=Link.split(
+                    properties_ini[link]["filter-synthesis"]
+                ),
+                filters_year=Link.split(
+                    properties_ini[link]["filter-year-by-year"]
+                ),
             )
             for link in list(properties_ini.keys())
         }
 
     @staticmethod
     def _parse_filters_synthesis(json: JSON, area: str) -> List[str]:
-        filters: List[str] = json["input"]["areas"][area]["optimization"][
+        filters: str = json["input"]["areas"][area]["optimization"][
             "filtering"
         ]["filter-synthesis"]
-        return filters
+        return Link.split(filters)
 
     @staticmethod
     def _parse_filters_year(json: JSON, area: str) -> List[str]:
-        filters: List[str] = json["input"]["areas"][area]["optimization"][
+        filters: str = json["input"]["areas"][area]["optimization"][
             "filtering"
         ]["filter-year-by-year"]
-        return filters
+        return Link.split(filters)

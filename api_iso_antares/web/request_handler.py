@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 import shutil
 import time
 from io import BytesIO
@@ -195,7 +196,7 @@ class RequestHandler:
                 )
                 study.save(data)
             shutil.rmtree(path_study / "res")
-            shutil.rmtree(data_file)
+            os.remove(data_file)
 
         data = self.get(uuid, parameters=RequestHandlerParameters(depth=-1))
         if data is None:

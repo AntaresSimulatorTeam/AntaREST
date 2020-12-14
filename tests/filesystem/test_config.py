@@ -48,17 +48,37 @@ config = Config(
         ),
     },
     outputs={
-        0: Simulation(
-            name="hello", date="20201014-1422", mode="economy", nbyears=1
-        ),
         1: Simulation(
-            name="goodbye", date="20201014-1425", mode="economy", nbyears=2
+            name="hello",
+            date="20201014-1422",
+            mode="economy",
+            nbyears=1,
+            by_year=True,
+            synthesis=True,
         ),
         2: Simulation(
-            name="", date="20201014-1427", mode="economy", nbyears=1
+            name="goodbye",
+            date="20201014-1425",
+            mode="economy",
+            nbyears=2,
+            by_year=True,
+            synthesis=True,
         ),
         3: Simulation(
-            name="", date="20201014-1430", mode="adequacy", nbyears=1
+            name="",
+            date="20201014-1427",
+            mode="economy",
+            nbyears=1,
+            by_year=False,
+            synthesis=True,
+        ),
+        4: Simulation(
+            name="",
+            date="20201014-1430",
+            mode="adequacy",
+            nbyears=1,
+            by_year=False,
+            synthesis=True,
         ),
     },
 )
@@ -84,40 +104,32 @@ def test_build_json() -> None:
                 "de": {
                     "optimization": {
                         "filtering": {
-                            "filter-synthesis": ["daily", "monthly"],
-                            "filter-year-by-year": [
-                                "hourly",
-                                "weekly",
-                                "annual",
-                            ],
+                            "filter-synthesis": "daily, monthly",
+                            "filter-year-by-year": "hourly , weekly , annual",
                         }
                     }
                 },
                 "es": {
                     "optimization": {
                         "filtering": {
-                            "filter-synthesis": ["daily", "monthly"],
-                            "filter-year-by-year": [
-                                "hourly",
-                                "weekly",
-                                "annual",
-                            ],
+                            "filter-synthesis": "daily, monthly",
+                            "filter-year-by-year": "hourly , weekly , annual",
                         }
                     }
                 },
                 "fr": {
                     "optimization": {
                         "filtering": {
-                            "filter-synthesis": [],
-                            "filter-year-by-year": ["hourly"],
+                            "filter-synthesis": "",
+                            "filter-year-by-year": "hourly",
                         }
                     }
                 },
                 "it": {
                     "optimization": {
                         "filtering": {
-                            "filter-synthesis": [],
-                            "filter-year-by-year": ["hourly"],
+                            "filter-synthesis": "",
+                            "filter-year-by-year": "hourly",
                         }
                     }
                 },
@@ -134,24 +146,24 @@ def test_build_json() -> None:
                 "de": {
                     "properties": {
                         "fr": {
-                            "filter-synthesis": [],
-                            "filter-year-by-year": link_year,
+                            "filter-synthesis": "",
+                            "filter-year-by-year": "hourly",
                         }
                     }
                 },
                 "es": {
                     "properties": {
                         "fr": {
-                            "filter-synthesis": [],
-                            "filter-year-by-year": link_year,
+                            "filter-synthesis": "",
+                            "filter-year-by-year": "hourly",
                         }
                     }
                 },
                 "fr": {
                     "properties": {
                         "it": {
-                            "filter-synthesis": [],
-                            "filter-year-by-year": link_year,
+                            "filter-synthesis": "",
+                            "filter-year-by-year": "hourly",
                         }
                     }
                 },
@@ -159,7 +171,7 @@ def test_build_json() -> None:
             },
         },
         "output": {
-            0: {
+            1: {
                 "info": {
                     "general": {
                         "date": "2020.10.14 - 14:22",
@@ -167,9 +179,14 @@ def test_build_json() -> None:
                         "name": "hello",
                     },
                 },
-                "about-the-study": {"parameters": {"general": {"nbyears": 1}}},
+                "about-the-study": {
+                    "parameters": {
+                        "general": {"nbyears": 1, "year-by-year": True},
+                        "output": {"synthesis": True},
+                    }
+                },
             },
-            1: {
+            2: {
                 "info": {
                     "general": {
                         "date": "2020.10.14 - 14:25",
@@ -177,9 +194,14 @@ def test_build_json() -> None:
                         "name": "goodbye",
                     }
                 },
-                "about-the-study": {"parameters": {"general": {"nbyears": 2}}},
+                "about-the-study": {
+                    "parameters": {
+                        "general": {"nbyears": 2, "year-by-year": True},
+                        "output": {"synthesis": True},
+                    }
+                },
             },
-            2: {
+            3: {
                 "info": {
                     "general": {
                         "date": "2020.10.14 - 14:27",
@@ -187,17 +209,29 @@ def test_build_json() -> None:
                         "name": "",
                     }
                 },
-                "about-the-study": {"parameters": {"general": {"nbyears": 1}}},
+                "about-the-study": {
+                    "parameters": {
+                        "general": {"nbyears": 1, "year-by-year": False},
+                        "output": {"synthesis": True},
+                    }
+                },
             },
-            3: {
+            4: {
                 "info": {
                     "general": {
                         "date": "2020.10.14 - 14:30",
                         "mode": "Adequacy",
                         "name": "",
+                        "by_year": False,
+                        "synthesis": True,
                     }
                 },
-                "about-the-study": {"parameters": {"general": {"nbyears": 1}}},
+                "about-the-study": {
+                    "parameters": {
+                        "general": {"nbyears": 1, "year-by-year": False},
+                        "output": {"synthesis": True},
+                    }
+                },
             },
         },
     }

@@ -451,16 +451,13 @@ def test_sta_mini_import_compact(
     tmp_path: Path, request_handler: RequestHandler
 ) -> None:
 
-    path_study = request_handler.get_study_path("STA-mini")
     zip_study_stream = request_handler.export_study("STA-mini", compact=True)
 
-    # app = create_server(request_handler)
-    # client = app.test_client()
-    # result = client.post("/studies", data=study_data)
+    app = create_server(request_handler)
+    client = app.test_client()
+    result = client.post("/studies", data=zip_study_stream)
 
-    request_handler.import_study(zip_study_stream)
-
-    # assert result.status_code == HTTPStatus.CREATED.value
+    assert result.status_code == HTTPStatus.CREATED.value
 
 
 @pytest.mark.integration_test

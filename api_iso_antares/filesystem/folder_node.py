@@ -55,7 +55,10 @@ class FolderNode(INode[JSON]):
 
     def validate(self, data: JSON) -> None:
         for key in data:
-            assert key in self.children
+            if key not in self.children:
+                raise ValueError(
+                    f"key={key} not in {list(self.children.keys())} for {self.__class__.__name__}"
+                )
 
     def extract_child(self, url: List[str]) -> Tuple[List[str], List[str]]:
         names, sub_url = url[0].split(","), url[1:]
