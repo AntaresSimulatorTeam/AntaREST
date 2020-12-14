@@ -7,7 +7,35 @@ from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.custom_types import JSON
 
 
-class Link:
+class DTO:
+    """
+    Implement basic method for DTO objects
+    """
+
+    def __hash__(self) -> int:
+        return hash(tuple(sorted(self.__dict__.items())))
+
+    def __eq__(self, other: Any) -> bool:
+        return (
+            isinstance(other, type(self)) and self.__dict__ == other.__dict__
+        )
+
+    def __str__(self) -> str:
+        return "{}({})".format(
+            type(self).__name__,
+            ", ".join(
+                [
+                    "{}={}".format(k, str(self.__dict__[k]))
+                    for k in sorted(self.__dict__)
+                ]
+            ),
+        )
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class Link(DTO):
     def __init__(self, filters_synthesis: List[str], filters_year: List[str]):
         self.filters_synthesis = filters_synthesis
         self.filters_year = filters_year
@@ -26,7 +54,7 @@ class Link:
         ]
 
 
-class Area:
+class Area(DTO):
     def __init__(
         self,
         links: Dict[str, Link],
@@ -39,49 +67,8 @@ class Area:
         self.filters_synthesis = filters_synthesis
         self.filters_year = filters_year
 
-    @staticmethod
-    def from_fs(root: Path, area: str) -> "Area":
-        return Area(
-            links=Area._parse_links(root, area),
-            thermals=Area._parse_thermal(root, area),
-            filters_synthesis=Area._parse_filters_synthesis(root, area),
-            filters_year=Area._parse_filters_year(root, area),
-        )
 
-    @staticmethod
-    def _parse_thermal(root: Path, area: str) -> List[str]:
-        list_ini = IniReader().read(
-            root / f"input/thermal/clusters/{area}/list.ini"
-        )
-        return list(list_ini.keys())
-
-    @staticmethod
-    def _parse_links(root: Path, area: str) -> Dict[str, Link]:
-        properties_ini = IniReader().read(
-            root / f"input/links/{area}/properties.ini"
-        )
-        print(list(properties_ini.keys()))
-        return {
-            link: Link.from_json(properties_ini[link])
-            for link in list(properties_ini.keys())
-        }
-
-    @staticmethod
-    def _parse_filters_synthesis(root: Path, area: str) -> List[str]:
-        filters: str = IniReader().read(
-            root / f"input/areas/{area}/optimization.ini"
-        )["filtering"]["filter-synthesis"]
-        return Link.split(filters)
-
-    @staticmethod
-    def _parse_filters_year(root: Path, area: str) -> List[str]:
-        filters: str = IniReader().read(
-            root / f"input/areas/{area}/optimization.ini"
-        )["filtering"]["filter-year-by-year"]
-        return Link.split(filters)
-
-
-class Simulation:
+class Simulation(DTO):
     def __init__(self, name: str, date: str, mode: str, nbyears: int):
         self.name = name
         self.date = date
@@ -93,28 +80,8 @@ class Simulation:
         dash = "-" if self.name else ""
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
-    @staticmethod
-    def from_fs(path: Path) -> "Simulation":
-        modes = {"eco": "economy", "adq": "adequacy"}
-        regex: Any = re.search(
-            "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", path.name
-        )
-        return Simulation(
-            date=regex.group(1),
-            mode=modes[regex.group(2)],
-            name=regex.group(3),
-            nbyears=Simulation._parse_nbyears(path),
-        )
 
-    @staticmethod
-    def _parse_nbyears(path: Path) -> int:
-        nbyears: int = IniReader().read(
-            path / "about-the-study/parameters.ini"
-        )["general"]["nbyears"]
-        return nbyears
-
-
-class Config:
+class Config(DTO):
     def __init__(
         self,
         study_path: Path,
@@ -157,19 +124,175 @@ class Config:
 
     @staticmethod
     def from_path(study_path: Path) -> "Config":
+        return ConfigPathBuilder.build(study_path)
+
+    @staticmethod
+    def from_json(json: JSON, study_path: Path) -> "Config":
+        return ConfigJsonBuilder.build(study_path, json)
+
+
+class ConfigPathBuilder:
+    @staticmethod
+    def build(study_path: Path) -> "Config":
         return Config(
             study_path=study_path,
-            areas=Config._parse_areas(study_path),
-            outputs=Config._parse_outputs(study_path),
+            areas=ConfigPathBuilder._parse_areas(study_path),
+            outputs=ConfigPathBuilder._parse_outputs(study_path),
         )
 
     @staticmethod
     def _parse_areas(root: Path) -> Dict[str, Area]:
         areas = (root / "input/areas/list.txt").read_text().split("\n")
         areas = [a.lower() for a in areas if a != ""]
-        return {a: Area.from_fs(root, a) for a in areas}
+        return {a: ConfigPathBuilder.parse_area(root, a) for a in areas}
 
     @staticmethod
     def _parse_outputs(root: Path) -> Dict[int, Simulation]:
         files = sorted((root / "output").iterdir())
-        return {i: Simulation.from_fs(f) for i, f in enumerate(files)}
+        return {
+            i: ConfigPathBuilder.parse_simulation(f)
+            for i, f in enumerate(files)
+        }
+
+    @staticmethod
+    def parse_simulation(path: Path) -> "Simulation":
+        modes = {"eco": "economy", "adq": "adequacy"}
+        regex: Any = re.search(
+            "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", path.name
+        )
+        return Simulation(
+            date=regex.group(1),
+            mode=modes[regex.group(2)],
+            name=regex.group(3),
+            nbyears=ConfigPathBuilder._parse_nbyears(path),
+        )
+
+    @staticmethod
+    def _parse_nbyears(path: Path) -> int:
+        nbyears: int = IniReader().read(
+            path / "about-the-study/parameters.ini"
+        )["general"]["nbyears"]
+        return nbyears
+
+    @staticmethod
+    def parse_area(root: Path, area: str) -> "Area":
+        return Area(
+            links=ConfigPathBuilder._parse_links(root, area),
+            thermals=ConfigPathBuilder._parse_thermal(root, area),
+            filters_synthesis=ConfigPathBuilder._parse_filters_synthesis(
+                root, area
+            ),
+            filters_year=ConfigPathBuilder._parse_filters_year(root, area),
+        )
+
+    @staticmethod
+    def _parse_thermal(root: Path, area: str) -> List[str]:
+        list_ini = IniReader().read(
+            root / f"input/thermal/clusters/{area}/list.ini"
+        )
+        return list(list_ini.keys())
+
+    @staticmethod
+    def _parse_links(root: Path, area: str) -> Dict[str, Link]:
+        properties_ini = IniReader().read(
+            root / f"input/links/{area}/properties.ini"
+        )
+        print(list(properties_ini.keys()))
+        return {
+            link: Link.from_json(properties_ini[link])
+            for link in list(properties_ini.keys())
+        }
+
+    @staticmethod
+    def _parse_filters_synthesis(root: Path, area: str) -> List[str]:
+        filters: str = IniReader().read(
+            root / f"input/areas/{area}/optimization.ini"
+        )["filtering"]["filter-synthesis"]
+        return Link.split(filters)
+
+    @staticmethod
+    def _parse_filters_year(root: Path, area: str) -> List[str]:
+        filters: str = IniReader().read(
+            root / f"input/areas/{area}/optimization.ini"
+        )["filtering"]["filter-year-by-year"]
+        return Link.split(filters)
+
+
+class ConfigJsonBuilder:
+    @staticmethod
+    def build(study_path: Path, json: JSON) -> "Config":
+        return Config(
+            study_path=study_path,
+            areas=ConfigJsonBuilder._parse_areas(json),
+            outputs=ConfigJsonBuilder._parse_outputs(json),
+        )
+
+    @staticmethod
+    def _parse_areas(json: JSON) -> Dict[str, Area]:
+        areas = list(json["input"]["areas"])
+        areas = [a for a in areas if a not in ["sets", "list"]]
+        return {a: ConfigJsonBuilder.parse_area(json, a) for a in areas}
+
+    @staticmethod
+    def _parse_outputs(json: JSON) -> Dict[int, Simulation]:
+        outputs = json["output"]
+        return {
+            int(i): ConfigJsonBuilder.parse_simulation(s)
+            for i, s in outputs.items()
+        }
+
+    @staticmethod
+    def parse_simulation(json: JSON) -> "Simulation":
+        info = json["info"]["general"]
+        return Simulation(
+            date=info["date"]
+            .replace(".", "")
+            .replace(":", "")
+            .replace(" ", ""),
+            mode=info["mode"].lower(),
+            name=info["name"],
+            nbyears=json["about-the-study"]["parameters"]["general"][
+                "nbyears"
+            ],
+        )
+
+    @staticmethod
+    def parse_area(json: JSON, area: str) -> "Area":
+        return Area(
+            links=ConfigJsonBuilder._parse_links(json, area),
+            thermals=ConfigJsonBuilder._parse_thermal(json, area),
+            filters_synthesis=ConfigJsonBuilder._parse_filters_synthesis(
+                json, area
+            ),
+            filters_year=ConfigJsonBuilder._parse_filters_year(json, area),
+        )
+
+    @staticmethod
+    def _parse_thermal(json: JSON, area: str) -> List[str]:
+        list_ini = json["input"]["thermal"]["clusters"][area]["list"]
+        return list(list_ini.keys())
+
+    @staticmethod
+    def _parse_links(json: JSON, area: str) -> Dict[str, Link]:
+        properties_ini = json["input"]["links"][area]["properties"]
+        return {
+            link: Link(
+                filters_synthesis=properties_ini[link]["filter-synthesis"],
+                filters_year=properties_ini[link]["filter-year-by-year"],
+            )
+            for link in list(properties_ini.keys())
+        }
+
+    @staticmethod
+    def _parse_filters_synthesis(json: JSON, area: str) -> List[str]:
+        filters: List[str] = json["input"]["areas"][area]["optimization"][
+            "filtering"
+        ]["filter-synthesis"]
+        return filters
+
+    @staticmethod
+    def _parse_filters_year(json: JSON, area: str) -> List[str]:
+        filters: List[str] = json["input"]["areas"][area]["optimization"][
+            "filtering"
+        ]["filter-year-by-year"]
+        return filters
