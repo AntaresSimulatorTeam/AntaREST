@@ -67,7 +67,9 @@ class RequestHandler:
         _, study = self.study_factory.create_from_fs(study_path)
         url = [item for item in url.split("/") if item]
 
-        return study.get(url, depth=parameters.depth)
+        data = study.get(url, depth=parameters.depth)
+        del study
+        return data
 
     def assert_study_exist(self, uuid: str) -> None:
         if not self.is_study_existing(uuid):
@@ -136,6 +138,7 @@ class RequestHandler:
 
         config, study = self.study_factory.create_from_fs(study_path)
         data_source = study.get()
+        del study
 
         uuid = RequestHandler.generate_uuid()
         config.path = self.get_study_path(uuid)
@@ -145,8 +148,9 @@ class RequestHandler:
         data_destination["output"] = {}
         config.outputs = {}
 
-        self.study_factory.create_from_config(config).save(data_destination)
-
+        study = self.study_factory.create_from_config(config)
+        study.save(data_destination)
+        del study
         return uuid
 
     def export_study(self, name: str, compact: bool = False) -> BytesIO:
@@ -159,6 +163,7 @@ class RequestHandler:
                 path=self.path_to_studies / name
             )
             data = study.get()
+            del study
             return self.exporter.export_compact(path_study, data)
         else:
             return self.exporter.export_file(path_study)
@@ -195,6 +200,7 @@ class RequestHandler:
                     path_study, data
                 )
                 study.save(data)
+            del study
             shutil.rmtree(path_study / "res")
             os.remove(data_file)
 
@@ -212,6 +218,7 @@ class RequestHandler:
 
         _, study = self.study_factory.create_from_fs(study_path)
         study.save(new, url.split("/"))
+        del study
         return new
 
     @staticmethod
