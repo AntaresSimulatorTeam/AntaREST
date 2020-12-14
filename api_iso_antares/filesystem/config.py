@@ -274,7 +274,7 @@ class ConfigJsonBuilder:
         )
 
     @staticmethod
-    def _parse_parameters(json: JSON):
+    def _parse_parameters(json: JSON) -> Tuple[int, bool, bool]:
         return (
             json["general"]["nbyears"],
             json["general"]["year-by-year"],

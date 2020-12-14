@@ -1,6 +1,6 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any
 
-from api_iso_antares.custom_types import JSON
+from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.inode import INode, TREE
 
@@ -13,7 +13,7 @@ class ChildNotFoundError(Exception):
     pass
 
 
-class FolderNode(INode[JSON]):
+class FolderNode(INode[JSON, JSON, JSON]):
     def __init__(self, config: Config, children: TREE) -> None:
         self.children: TREE = children
         self.config = config
@@ -22,7 +22,9 @@ class FolderNode(INode[JSON]):
         if url and url != [""]:
             names, sub_url = self.extract_child(url)
             if len(names) == 1:
-                return self.children[names[0]].get(sub_url, depth=depth)
+                return self.children[names[0]].get(  # type: ignore
+                    sub_url, depth=depth
+                )
             else:
                 return {
                     key: self.children[key].get(sub_url, depth=depth)

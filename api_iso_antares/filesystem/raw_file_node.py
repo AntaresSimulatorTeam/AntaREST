@@ -6,7 +6,7 @@ from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.inode import INode
 
 
-class RawFileNode(INode[str]):
+class RawFileNode(INode[str, str, str]):
     def __init__(self, config: Config):
         self.config = config
 

@@ -10,7 +10,7 @@ from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.inode import INode
 
 
-class IniFileNode(INode[SUB_JSON]):
+class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
         config: Config,
@@ -50,7 +50,7 @@ class IniFileNode(INode[SUB_JSON]):
         self.validate(json)
         self.writer.write(json, self.path)
 
-    def validate(self, data: SUB_JSON) -> None:
+    def validate(self, data: JSON) -> None:
         for section, params in self.types.items():
             if section not in data:
                 raise ValueError(

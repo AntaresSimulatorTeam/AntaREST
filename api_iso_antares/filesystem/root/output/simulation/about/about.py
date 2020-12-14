@@ -1,5 +1,6 @@
 from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.folder_node import FolderNode
+from api_iso_antares.filesystem.inode import TREE
 from api_iso_antares.filesystem.root.output.simulation.about.areas import (
     OutputSimulationAboutAreas,
 )
@@ -22,7 +23,7 @@ from api_iso_antares.filesystem.root.output.simulation.about.study import (
 
 class OutputSimulationAbout(FolderNode):
     def __init__(self, config: Config):
-        children = {
+        children: TREE = {
             "areas": OutputSimulationAboutAreas(config.next_file("areas.txt")),
             "comments": OutputSimulationAboutComments(
                 config.next_file("comments.txt")

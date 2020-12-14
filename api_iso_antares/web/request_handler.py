@@ -65,9 +65,9 @@ class RequestHandler:
         self.assert_study_exist(uuid)
 
         _, study = self.study_factory.create_from_fs(study_path)
-        url = [item for item in url.split("/") if item]
+        parts = [item for item in url.split("/") if item]
 
-        data = study.get(url, depth=parameters.depth)
+        data = study.get(parts, depth=parameters.depth)
         del study
         return data
 
