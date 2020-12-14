@@ -458,7 +458,7 @@ def test_sta_mini_import_compact(
     # client = app.test_client()
     # result = client.post("/studies", data=study_data)
 
-    # request_handler.import_study(zip_study_stream)
+    request_handler.import_study(zip_study_stream)
 
     # assert result.status_code == HTTPStatus.CREATED.value
 

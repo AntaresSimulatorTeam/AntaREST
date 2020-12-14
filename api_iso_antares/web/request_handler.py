@@ -190,7 +190,10 @@ class RequestHandler:
         if data_file.is_file() and (path_study / "res").is_dir():
             with open(data_file) as file:
                 data = json.load(file)
-                self.edit_study("/", data)
+                _, study = self.study_factory.create_from_json(
+                    path_study, data
+                )
+                study.save(data)
             shutil.rmtree(path_study / "res")
             shutil.rmtree(data_file)
 
