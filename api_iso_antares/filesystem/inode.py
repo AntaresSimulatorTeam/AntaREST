@@ -3,21 +3,23 @@ from typing import List, Optional, Dict, TypeVar, Generic, Any, Union
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
 
-T = TypeVar("T")
+G = TypeVar("G")
+S = TypeVar("S")
+V = TypeVar("V")
 
 
-class INode(ABC, Generic[T]):
+class INode(ABC, Generic[G, S, V]):
     @abstractmethod
-    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> T:
+    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> G:
         pass
 
     @abstractmethod
-    def save(self, data: T, url: Optional[List[str]] = None) -> None:
+    def save(self, data: S, url: Optional[List[str]] = None) -> None:
         pass
 
     @abstractmethod
-    def validate(self, data: T) -> None:
+    def validate(self, data: V) -> None:
         pass
 
 
-TREE = Dict[str, INode[Any]]
+TREE = Dict[str, INode[Any, Any, Any]]

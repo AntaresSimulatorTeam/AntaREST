@@ -16,5 +16,5 @@ class Logs(FolderNode):
         FolderNode.__init__(self, config, children)
 
     @staticmethod
-    def keep_name(file: Path):
+    def keep_name(file: Path) -> str:
         return ".".join(file.name.split(".")[:-1])

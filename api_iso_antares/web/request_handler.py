@@ -1,4 +1,6 @@
 import copy
+import json
+import os
 import shutil
 import time
 from io import BytesIO
@@ -63,9 +65,11 @@ class RequestHandler:
         self.assert_study_exist(uuid)
 
         _, study = self.study_factory.create_from_fs(study_path)
-        url = [item for item in url.split("/") if item]
+        parts = [item for item in url.split("/") if item]
 
-        return study.get(url, depth=parameters.depth)
+        data = study.get(parts, depth=parameters.depth)
+        del study
+        return data
 
     def assert_study_exist(self, uuid: str) -> None:
         if not self.is_study_existing(uuid):
@@ -134,6 +138,7 @@ class RequestHandler:
 
         config, study = self.study_factory.create_from_fs(study_path)
         data_source = study.get()
+        del study
 
         uuid = RequestHandler.generate_uuid()
         config.path = self.get_study_path(uuid)
@@ -143,8 +148,9 @@ class RequestHandler:
         data_destination["output"] = {}
         config.outputs = {}
 
-        self.study_factory.create_from_config(config).save(data_destination)
-
+        study = self.study_factory.create_from_config(config)
+        study.save(data_destination)
+        del study
         return uuid
 
     def export_study(self, name: str, compact: bool = False) -> BytesIO:
@@ -153,10 +159,11 @@ class RequestHandler:
         self.assert_study_exist(name)
 
         if compact:
-            _, study = self.study_factory.create_from_fs(
+            config, study = self.study_factory.create_from_fs(
                 path=self.path_to_studies / name
             )
             data = study.get()
+            del study
             return self.exporter.export_compact(path_study, data)
         else:
             return self.exporter.export_file(path_study)
@@ -184,6 +191,19 @@ class RequestHandler:
         path_study = Path(self.path_to_studies) / uuid
         path_study.mkdir()
         RequestHandler.extract_zip(stream, path_study)
+
+        data_file = path_study / "data.json"
+        if data_file.is_file() and (path_study / "res").is_dir():
+            with open(data_file) as file:
+                data = json.load(file)
+                _, study = self.study_factory.create_from_json(
+                    path_study, data
+                )
+                study.save(data)
+            del study
+            shutil.rmtree(path_study / "res")
+            os.remove(data_file)
+
         data = self.get(uuid, parameters=RequestHandlerParameters(depth=-1))
         if data is None:
             self.delete_study(uuid)
@@ -198,6 +218,7 @@ class RequestHandler:
 
         _, study = self.study_factory.create_from_fs(study_path)
         study.save(new, url.split("/"))
+        del study
         return new
 
     @staticmethod

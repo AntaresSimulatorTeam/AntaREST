@@ -6,12 +6,13 @@ from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.inode import INode
 
 
-class RawFileNode(INode[str]):
+class RawFileNode(INode[str, str, str]):
     def __init__(self, config: Config):
         self.config = config
 
     def get(self, url: Optional[List[str]] = None, depth: int = -1) -> str:
         self._assert_url(url)
+        self.validate("")
 
         file_path = "/".join(self.config.path.absolute().parts)
         root_path = "/".join(self.config.root_path.parent.absolute().parts)
@@ -21,11 +22,14 @@ class RawFileNode(INode[str]):
     def save(self, data: str, url: Optional[List[str]] = None) -> None:
         self._assert_url(url)
 
-        path = self.config.root_path.parent / data[len("file/") :]
+        if "file/" in data:
+            path = self.config.root_path.parent / data[len("file/") :]
+        else:
+            path = self.config.root_path / "res" / data
         shutil.copyfile(path, self.config.path)
 
     def validate(self, data: str) -> None:
-        pass  # no validation
+        assert self.config.path.exists()
 
     def _assert_url(self, url: Optional[List[str]] = None) -> None:
         url = url or []

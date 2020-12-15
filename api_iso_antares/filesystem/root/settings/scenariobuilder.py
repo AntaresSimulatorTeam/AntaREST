@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Type
 
 from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.ini_file_node import IniFileNode
@@ -8,7 +8,7 @@ class ScenarioBuilder(IniFileNode):
     def __init__(self, config: Config):
         self.config = config
 
-        rules = dict()
+        rules: Dict[str, Type[int]] = dict()
         for area in self.config.areas:
             for mode in ["l", "s", "w", "h"]:
                 rules[f"{mode},{area},0"] = int
@@ -18,6 +18,6 @@ class ScenarioBuilder(IniFileNode):
             self, config=config, types={"Default Ruleset": rules}
         )
 
-    def _add_thermal(self, area: str, rules: Dict):
+    def _add_thermal(self, area: str, rules: Dict[str, Type[int]]) -> None:
         for thermal in self.config.get_thermals(area):
             rules[f"t,{area},0,{thermal}"] = int

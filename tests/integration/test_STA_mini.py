@@ -447,6 +447,20 @@ def test_sta_mini_import(
 
 
 @pytest.mark.integration_test
+def test_sta_mini_import_compact(
+    tmp_path: Path, request_handler: RequestHandler
+) -> None:
+
+    zip_study_stream = request_handler.export_study("STA-mini", compact=True)
+
+    app = create_server(request_handler)
+    client = app.test_client()
+    result = client.post("/studies", data=zip_study_stream)
+
+    assert result.status_code == HTTPStatus.CREATED.value
+
+
+@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [

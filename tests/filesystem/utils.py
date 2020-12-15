@@ -6,7 +6,7 @@ from api_iso_antares.filesystem.inode import TREE, INode
 from api_iso_antares.filesystem.folder_node import FolderNode
 
 
-class TestSubNode(INode[int]):
+class TestSubNode(INode[int, int, int]):
     def __init__(self, value: int):
         self.value = value
 
