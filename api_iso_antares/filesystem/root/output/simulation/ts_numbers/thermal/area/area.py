@@ -8,10 +8,14 @@ from api_iso_antares.filesystem.root.output.simulation.ts_numbers.thermal.area.t
 
 class OutputSimulationTsNumbersThermalArea(FolderNode):
     def __init__(self, config: Config, area: str):
+        FolderNode.__init__(self, config)
+        self.area = area
+
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             thermal: OutputSimulationTsNumbersThermalAreaThermal(
                 config.next_file(thermal + ".txt")
             )
-            for thermal in config.get_thermals(area)
+            for thermal in config.get_thermals(self.area)
         }
-        FolderNode.__init__(self, config, children)
+        return children

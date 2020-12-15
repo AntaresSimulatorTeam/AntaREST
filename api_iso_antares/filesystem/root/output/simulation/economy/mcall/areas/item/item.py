@@ -14,19 +14,23 @@ from api_iso_antares.filesystem.root.output.simulation.economy.mcall.areas.item.
 
 class OutputSimulationEconomyMcAllAreasItem(FolderNode):
     def __init__(self, config: Config, area: str):
+        FolderNode.__init__(self, config)
+        self.area = area
+
+    def build(self, config: Config) -> TREE:
         children: TREE = dict()
 
-        for timing in config.get_filters_synthesis(area):
+        for timing in config.get_filters_synthesis(self.area):
             children[f"details-{timing}"] = Details(
                 config.next_file(f"details-{timing}.txt")
             )
 
-        for timing in config.get_filters_synthesis(area):
+        for timing in config.get_filters_synthesis(self.area):
             children[f"id-{timing}"] = Id(config.next_file(f"id-{timing}.txt"))
 
-        for timing in config.get_filters_synthesis(area):
+        for timing in config.get_filters_synthesis(self.area):
             children[f"values-{timing}"] = Values(
                 config.next_file(f"values-{timing}.txt")
             )
 
-        FolderNode.__init__(self, config, children)
+        return children

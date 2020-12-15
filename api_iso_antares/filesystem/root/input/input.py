@@ -22,7 +22,7 @@ from api_iso_antares.filesystem.root.input.wind.wind import InputWind
 
 
 class Input(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "areas": InputAreas(config.next_file("areas")),
             "bindingconstraints": BindingConstraints(
@@ -37,4 +37,4 @@ class Input(FolderNode):
             "thermal": InputThermal(config.next_file("thermal")),
             "wind": InputWind(config.next_file("wind")),
         }
-        FolderNode.__init__(self, config, children)
+        return children

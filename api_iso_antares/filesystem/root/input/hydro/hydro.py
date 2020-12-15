@@ -19,7 +19,7 @@ from api_iso_antares.filesystem.root.input.hydro.series.series import (
 
 
 class InputHydro(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "allocation": InputHydroAllocation(config.next_file("allocation")),
             "common": InputHydroCommon(config.next_file("common")),
@@ -27,4 +27,4 @@ class InputHydro(FolderNode):
             "series": InputHydroSeries(config.next_file("series")),
             "hydro": InputHydroIni(config.next_file("hydro.ini")),
         }
-        FolderNode.__init__(self, config, children)
+        return children

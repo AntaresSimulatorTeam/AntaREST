@@ -7,7 +7,7 @@ from api_iso_antares.antares_io.reader.ini_reader import IReader
 from api_iso_antares.antares_io.writer.ini_writer import IniWriter
 from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.filesystem.config import Config
-from api_iso_antares.filesystem.inode import INode
+from api_iso_antares.filesystem.inode import INode, TREE
 
 
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
@@ -21,6 +21,9 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self.types = types
         self.reader = reader or IniReader()
         self.writer = IniWriter()
+
+    def build(self, config: Config) -> TREE:
+        pass  # end node has nothing to build
 
     def get(
         self, url: Optional[List[str]] = None, depth: int = -1

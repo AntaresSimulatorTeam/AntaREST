@@ -7,11 +7,11 @@ from api_iso_antares.filesystem.root.output.simulation.ts_numbers.load.area impo
 
 
 class OutputSimulationTsNumbersLoad(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             area: OutputSimulationTsNumbersLoadArea(
                 config.next_file(area + ".txt")
             )
             for area in config.area_names
         }
-        FolderNode.__init__(self, config, children)
+        return children

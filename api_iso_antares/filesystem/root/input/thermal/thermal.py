@@ -16,11 +16,11 @@ from api_iso_antares.filesystem.root.input.thermal.series.series import (
 
 
 class InputThermal(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "clusters": InputThermalClusters(config.next_file("clusters")),
             "prepro": InputThermalPrepro(config.next_file("prepro")),
             "series": InputThermalSeries(config.next_file("series")),
             "areas": InputThermalAreasIni(config.next_file("areas.ini")),
         }
-        FolderNode.__init__(self, config, children)
+        return children

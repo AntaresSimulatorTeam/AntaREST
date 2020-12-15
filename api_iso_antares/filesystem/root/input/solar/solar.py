@@ -10,9 +10,9 @@ from api_iso_antares.filesystem.root.input.solar.series.series import (
 
 
 class InputSolar(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "prepro": InputSolarPrepro(config.next_file("prepro")),
             "series": InputSolarSeries(config.next_file("series")),
         }
-        FolderNode.__init__(self, config, children)
+        return children

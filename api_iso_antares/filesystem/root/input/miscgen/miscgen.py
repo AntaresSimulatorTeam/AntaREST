@@ -7,11 +7,11 @@ from api_iso_antares.filesystem.root.input.miscgen.area import (
 
 
 class InputMiscGen(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             f"miscgen-{a}": InputMiscGenArea(
                 config.next_file(f"miscgen-{a}.txt")
             )
             for a in config.area_names
         }
-        FolderNode.__init__(self, config, children)
+        return children

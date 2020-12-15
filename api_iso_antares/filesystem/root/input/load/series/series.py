@@ -7,9 +7,9 @@ from api_iso_antares.filesystem.root.input.load.series.area import (
 
 
 class InputLoadSeries(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             f"load_{a}": InputLoadSeriesArea(config.next_file(f"load_{a}.txt"))
             for a in config.area_names
         }
-        FolderNode.__init__(self, config, children)
+        return children

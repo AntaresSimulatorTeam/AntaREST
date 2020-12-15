@@ -11,14 +11,18 @@ from api_iso_antares.filesystem.root.output.simulation.adequacy.mcind.mcind impo
 
 class OutputSimulationAdequacy(FolderNode):
     def __init__(self, config: Config, simulation: Simulation):
+        FolderNode.__init__(self, config)
+        self.simulation = simulation
+
+    def build(self, config: Config) -> TREE:
         children: TREE = {}
 
-        if simulation.by_year:
+        if self.simulation.by_year:
             children["mc-ind"] = OutputSimulationAdequacyMcInd(
-                config.next_file("mc-ind"), simulation
+                config.next_file("mc-ind"), self.simulation
             )
-        if simulation.synthesis:
+        if self.simulation.synthesis:
             children["mc-all"] = OutputSimulationAdequacyMcAll(
                 config.next_file("mc-all")
             )
-        FolderNode.__init__(self, config, children)
+        return children

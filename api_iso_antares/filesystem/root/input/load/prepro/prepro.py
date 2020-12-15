@@ -10,7 +10,7 @@ from api_iso_antares.filesystem.root.input.load.prepro.correlation import (
 
 
 class InputLoadPrepro(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             a: InputLoadPreproArea(config.next_file(a))
             for a in config.area_names
@@ -18,4 +18,4 @@ class InputLoadPrepro(FolderNode):
         children["correlation"] = InputLoadPreproCorrelation(
             config.next_file("correlation.ini")
         )
-        FolderNode.__init__(self, config, children)
+        return children

@@ -8,15 +8,19 @@ from api_iso_antares.filesystem.root.output.simulation.economy.mcind.scn.links.i
 
 class _OutputSimulationEconomyMcIndScnLinksBis(FolderNode):
     def __init__(self, config: Config, area: str):
+        FolderNode.__init__(self, config)
+        self.area = area
+
+    def build(self, config: Config) -> TREE:
         children: TREE = {}
-        for link in config.get_links(area):
-            name = f"{area} - {link}"
-            children[link] = Item(config.next_file(name), area, link)
-        FolderNode.__init__(self, config, children)
+        for link in config.get_links(self.area):
+            name = f"{self.area} - {link}"
+            children[link] = Item(config.next_file(name), self.area, link)
+        return children
 
 
 class OutputSimulationEconomyMcIndScnLinks(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {}
 
         for area in config.area_names:
@@ -24,4 +28,4 @@ class OutputSimulationEconomyMcIndScnLinks(FolderNode):
                 config, area
             )
 
-        FolderNode.__init__(self, config, children)
+        return children

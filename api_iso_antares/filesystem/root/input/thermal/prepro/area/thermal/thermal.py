@@ -10,7 +10,7 @@ from api_iso_antares.filesystem.root.input.thermal.prepro.area.thermal.modulatio
 
 
 class InputThermalPreproAreaThermal(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "data": InputThermalPreproAreaThermalData(
                 config.next_file("data.txt")
@@ -19,4 +19,4 @@ class InputThermalPreproAreaThermal(FolderNode):
                 config.next_file("modulation.txt")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children

@@ -19,7 +19,7 @@ from api_iso_antares.filesystem.root.output.simulation.ts_numbers.wind.wind impo
 
 
 class OutputSimulationTsNumbers(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "hydro": OutputSimulationTsNumbersHydro(config.next_file("hydro")),
             "load": OutputSimulationTsNumbersLoad(config.next_file("load")),
@@ -29,4 +29,4 @@ class OutputSimulationTsNumbers(FolderNode):
                 config.next_file("thermal")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children

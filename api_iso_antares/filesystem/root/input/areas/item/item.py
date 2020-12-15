@@ -8,11 +8,11 @@ from api_iso_antares.filesystem.root.input.areas.item.ui import InputAreasUi
 
 
 class InputAreasItem(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "ui": InputAreasUi(config.next_file("ui.ini")),
             "optimization": InputAreasOptimization(
                 config.next_file("optimization.ini")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children

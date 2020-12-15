@@ -12,16 +12,20 @@ from api_iso_antares.filesystem.root.output.simulation.adequacy.mcind.scn.areas.
 
 class OutputSimulationAdequacyMcIndScnAreasItem(FolderNode):
     def __init__(self, config: Config, area: str):
+        FolderNode.__init__(self, config)
+        self.area = area
+
+    def build(self, config: Config) -> TREE:
         children: TREE = dict()
 
-        for timing in config.get_filters_year(area):
+        for timing in config.get_filters_year(self.area):
             children[f"details-{timing}"] = Details(
                 config.next_file(f"details-{timing}.txt")
             )
 
-        for timing in config.get_filters_year(area):
+        for timing in config.get_filters_year(self.area):
             children[f"values-{timing}"] = Values(
                 config.next_file(f"values-{timing}.txt")
             )
 
-        FolderNode.__init__(self, config, children)
+        return children

@@ -7,9 +7,9 @@ from api_iso_antares.filesystem.root.input.reserves.area import (
 
 
 class InputReserves(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             a: InputReservesArea(config.next_file(f"{a}.txt"))
             for a in config.area_names
         }
-        FolderNode.__init__(self, config, children)
+        return children

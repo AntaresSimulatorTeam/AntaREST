@@ -9,6 +9,6 @@ from api_iso_antares.filesystem.root.settings.resources.study_ico import (
 
 
 class Resources(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {"study": StudyIcon(config.next_file("study.ico"))}
-        FolderNode.__init__(self, config, children)
+        return children

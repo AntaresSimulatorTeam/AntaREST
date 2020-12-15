@@ -19,7 +19,7 @@ from api_iso_antares.filesystem.root.input.solar.prepro.area.translation import 
 
 
 class InputSolarPreproArea(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "conversion": InputSolarPreproAreaConversation(
                 config.next_file("conversion.txt")
@@ -33,4 +33,4 @@ class InputSolarPreproArea(FolderNode):
                 config.next_file("settings.ini")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children

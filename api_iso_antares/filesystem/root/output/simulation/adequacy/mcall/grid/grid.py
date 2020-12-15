@@ -16,7 +16,7 @@ from api_iso_antares.filesystem.root.output.simulation.adequacy.mcall.grid.therm
 
 
 class OutputSimulationAdequacyMcAllGrid(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "areas": OutputSimulationAdequacyMcAllGridAreas(
                 config.next_file("areas.txt")
@@ -31,4 +31,4 @@ class OutputSimulationAdequacyMcAllGrid(FolderNode):
                 config.next_file("thermal.txt")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children
