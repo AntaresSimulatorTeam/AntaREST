@@ -26,7 +26,9 @@ class RawFileNode(INode[str, str, str]):
             path = self.config.root_path.parent / data[len("file/") :]
         else:
             path = self.config.root_path / "res" / data
-        shutil.copyfile(path, self.config.path)
+
+        if path != self.config.path:
+            shutil.copyfile(path, self.config.path)
 
     def validate(self, data: str) -> None:
         assert self.config.path.exists()
