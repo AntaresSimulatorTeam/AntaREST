@@ -7,10 +7,10 @@ from api_iso_antares.filesystem.root.input.thermal.series.area.thermal.series im
 
 
 class InputThermalSeriesAreaThermal(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "series": InputThermalSeriesAreaThermalSeries(
                 config.next_file("series.txt")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children

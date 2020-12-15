@@ -10,9 +10,9 @@ from api_iso_antares.filesystem.root.input.hydro.series.area.ror import (
 
 
 class InputHydroSeriesArea(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "mod": InputHydroSeriesAreaMod(config.next_file("mod.txt")),
             "ror": InputHydroSeriesAreaRor(config.next_file("ror.txt")),
         }
-        FolderNode.__init__(self, config, children)
+        return children

@@ -7,10 +7,10 @@ from api_iso_antares.filesystem.root.input.bindingconstraints.bindingconstraints
 
 
 class BindingConstraints(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "bindingconstraints": BindingConstraintsIni(
                 config.next_file("bindingconstraints.ini")
             )
         }
-        FolderNode.__init__(self, config, children)
+        return children

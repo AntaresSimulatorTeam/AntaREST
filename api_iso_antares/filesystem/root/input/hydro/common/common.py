@@ -7,8 +7,8 @@ from api_iso_antares.filesystem.root.input.hydro.common.capacity.capacity import
 
 
 class InputHydroCommon(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "capacity": InputHydroCommonCapacity(config.next_file("capacity"))
         }
-        FolderNode.__init__(self, config, children)
+        return children

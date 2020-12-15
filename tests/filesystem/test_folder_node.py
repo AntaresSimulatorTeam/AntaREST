@@ -4,13 +4,13 @@ import pytest
 
 from api_iso_antares.filesystem.folder_node import FolderNode
 from api_iso_antares.filesystem.inode import INode
-from tests.filesystem.utils import TestSubNode
+from tests.filesystem.utils import TestSubNode, TestMiddleNode
 
 
 def build_tree() -> INode:
     config = Mock()
     config.path.exist.return_value = True
-    return FolderNode(
+    return TestMiddleNode(
         config=config,
         children={
             "input": TestSubNode(value=100),
@@ -34,7 +34,7 @@ def test_get():
 def test_get_depth():
     config = Mock()
     config.path.exist.return_value = True
-    tree = FolderNode(
+    tree = TestMiddleNode(
         config=config,
         children={"childA": build_tree(), "childB": build_tree()},
     )

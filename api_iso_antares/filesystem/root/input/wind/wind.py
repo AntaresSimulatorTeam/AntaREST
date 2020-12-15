@@ -10,9 +10,9 @@ from api_iso_antares.filesystem.root.input.wind.series.series import (
 
 
 class InputWind(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "prepro": InputWindPrepro(config.next_file("prepro")),
             "series": InputWindSeries(config.next_file("series")),
         }
-        FolderNode.__init__(self, config, children)
+        return children

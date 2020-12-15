@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, TypeVar, Generic, Any, Union
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
+from api_iso_antares.filesystem.config import Config
 
 G = TypeVar("G")
 S = TypeVar("S")
@@ -9,6 +10,10 @@ V = TypeVar("V")
 
 
 class INode(ABC, Generic[G, S, V]):
+    @abstractmethod
+    def build(self, config: Config) -> "TREE":
+        pass
+
     @abstractmethod
     def get(self, url: Optional[List[str]] = None, depth: int = -1) -> G:
         pass

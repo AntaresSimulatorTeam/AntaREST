@@ -2,11 +2,15 @@ from pathlib import Path
 from typing import Optional, List
 from zipfile import ZipFile
 
+from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.inode import TREE, INode
 from api_iso_antares.filesystem.folder_node import FolderNode
 
 
 class TestSubNode(INode[int, int, int]):
+    def build(self, config: Config) -> "TREE":
+        pass
+
     def __init__(self, value: int):
         self.value = value
 
@@ -18,6 +22,15 @@ class TestSubNode(INode[int, int, int]):
 
     def validate(self, data: int) -> None:
         pass
+
+
+class TestMiddleNode(FolderNode):
+    def __init__(self, config: Config, children: TREE):
+        FolderNode.__init__(self, config)
+        self.children = children
+
+    def build(self, config: Config) -> TREE:
+        return self.children
 
 
 def extract_sta(project_path: Path, tmp_path: Path) -> Path:

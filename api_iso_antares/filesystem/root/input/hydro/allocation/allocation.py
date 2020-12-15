@@ -7,9 +7,9 @@ from api_iso_antares.filesystem.root.input.hydro.allocation.area import (
 
 
 class InputHydroAllocation(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             a: InputHydroAllocationArea(config.next_file(f"{a}.ini"), area=a)
             for a in config.area_names
         }
-        FolderNode.__init__(self, config, children)
+        return children

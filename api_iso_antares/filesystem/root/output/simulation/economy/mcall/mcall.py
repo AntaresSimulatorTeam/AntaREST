@@ -13,7 +13,7 @@ from api_iso_antares.filesystem.root.output.simulation.economy.mcall.links.links
 
 
 class OutputSimulationEconomyMcAll(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "areas": OutputSimulationEconomyMcAllAreas(
                 config.next_file("areas")
@@ -23,4 +23,4 @@ class OutputSimulationEconomyMcAll(FolderNode):
                 config.next_file("links")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children

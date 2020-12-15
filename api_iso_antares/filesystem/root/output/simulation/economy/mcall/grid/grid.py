@@ -16,7 +16,7 @@ from api_iso_antares.filesystem.root.output.simulation.economy.mcall.grid.therma
 
 
 class OutputSimulationEconomyMcAllGrid(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "areas": OutputSimulationEconomyMcAllGridAreas(
                 config.next_file("areas.txt")
@@ -31,4 +31,4 @@ class OutputSimulationEconomyMcAllGrid(FolderNode):
                 config.next_file("thermal.txt")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children

@@ -18,7 +18,7 @@ from api_iso_antares.filesystem.root.settings.simulations.simulations import (
 
 
 class Settings(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "resources": Resources(config.next_file("resources")),
             "simulations": SettingsSimulations(
@@ -30,4 +30,4 @@ class Settings(FolderNode):
                 config.next_file("scenariobuilder.dat")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children

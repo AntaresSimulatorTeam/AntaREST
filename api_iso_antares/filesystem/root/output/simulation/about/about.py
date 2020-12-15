@@ -22,7 +22,7 @@ from api_iso_antares.filesystem.root.output.simulation.about.study import (
 
 
 class OutputSimulationAbout(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "areas": OutputSimulationAboutAreas(config.next_file("areas.txt")),
             "comments": OutputSimulationAboutComments(
@@ -35,4 +35,4 @@ class OutputSimulationAbout(FolderNode):
                 config.next_file("parameters.ini")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children

@@ -13,7 +13,7 @@ from api_iso_antares.filesystem.root.output.simulation.adequacy.mcall.links.link
 
 
 class OutputSimulationAdequacyMcAll(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "areas": OutputSimulationAdequacyMcAllAreas(
                 config.next_file("areas")
@@ -25,4 +25,4 @@ class OutputSimulationAdequacyMcAll(FolderNode):
                 config.next_file("links")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children

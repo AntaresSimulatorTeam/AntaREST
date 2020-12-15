@@ -34,7 +34,7 @@ def test_performance(tmp_path: Path, project_path: Path):
         lambda: StudyFactory().create_from_fs(path_studies)
     )
     data, bench["get"] = benchmark(lambda: study.get())
-    _, bench["get_version"] = benchmark(
+    _, bench["get_author"] = benchmark(
         lambda: study.get(["study", "antares", "author"])
     )
 
@@ -42,4 +42,4 @@ def test_performance(tmp_path: Path, project_path: Path):
     _, bench["save_author"] = benchmark(
         lambda: study.save("John Smith", url=["study", "antares", "author"])
     )
-    print(bench)
+    print("BENCHMARK", bench)

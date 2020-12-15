@@ -10,7 +10,7 @@ from api_iso_antares.filesystem.root.input.hydro.prepro.area.prepro import (
 
 
 class InputHydroPreproArea(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "energy": InputHydroPreproAreaEnergy(
                 config.next_file("energy.txt")
@@ -19,4 +19,4 @@ class InputHydroPreproArea(FolderNode):
                 config.next_file("prepro.ini")
             ),
         }
-        FolderNode.__init__(self, config, children)
+        return children

@@ -8,8 +8,12 @@ from api_iso_antares.filesystem.root.input.thermal.series.area.thermal.thermal i
 
 class InputThermalSeriesArea(FolderNode):
     def __init__(self, config: Config, area: str):
+        FolderNode.__init__(self, config)
+        self.area = area
+
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             ther: InputThermalSeriesAreaThermal(config.next_file(ther))
-            for ther in config.get_thermals(area)
+            for ther in config.get_thermals(self.area)
         }
-        FolderNode.__init__(self, config, children)
+        return children

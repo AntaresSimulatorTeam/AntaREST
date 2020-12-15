@@ -13,7 +13,7 @@ from api_iso_antares.filesystem.root.study_antares import StudyAntares
 
 
 class Study(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "Desktop": Desktop(config.next_file("Desktop.ini")),
             "study": StudyAntares(config.next_file("study.antares")),
@@ -23,4 +23,4 @@ class Study(FolderNode):
             "input": Input(config.next_file("input")),
             "output": Output(config.next_file("output")),
         }
-        FolderNode.__init__(self, config, children)
+        return children

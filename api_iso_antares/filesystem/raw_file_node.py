@@ -3,12 +3,15 @@ from typing import List, Optional
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
 from api_iso_antares.filesystem.config import Config
-from api_iso_antares.filesystem.inode import INode
+from api_iso_antares.filesystem.inode import INode, TREE
 
 
 class RawFileNode(INode[str, str, str]):
     def __init__(self, config: Config):
         self.config = config
+
+    def build(self, config: Config) -> TREE:
+        pass  # end node has nothing to build
 
     def get(self, url: Optional[List[str]] = None, depth: int = -1) -> str:
         self._assert_url(url)

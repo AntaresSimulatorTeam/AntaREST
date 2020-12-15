@@ -32,6 +32,10 @@ from api_iso_antares.filesystem.root.output.simulation.ts_numbers.ts_numbers imp
 
 class OutputSimulation(FolderNode):
     def __init__(self, config: Config, simulation: Simulation):
+        FolderNode.__init__(self, config)
+        self.simulation = simulation
+
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             "about-the-study": OutputSimulationAbout(
                 config.next_file("about-the-study")
@@ -55,14 +59,14 @@ class OutputSimulation(FolderNode):
                 config.next_file("info.antares-output")
             ),
         }
-        if simulation.mode == "economy":
+        if self.simulation.mode == "economy":
             children["economy"] = OutputSimulationEconomy(
-                config.next_file("economy"), simulation
+                config.next_file("economy"), self.simulation
             )
 
-        elif simulation.mode == "adequacy":
+        elif self.simulation.mode == "adequacy":
             children["adequacy"] = OutputSimulationAdequacy(
-                config.next_file("adequacy"), simulation
+                config.next_file("adequacy"), self.simulation
             )
 
-        FolderNode.__init__(self, config, children)
+        return children

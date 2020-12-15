@@ -7,9 +7,9 @@ from api_iso_antares.filesystem.root.input.thermal.cluster.area.area import (
 
 
 class InputThermalClusters(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             a: InputThermalClustersArea(config.next_file(a), area=a)
             for a in config.area_names
         }
-        FolderNode.__init__(self, config, children)
+        return children

@@ -8,10 +8,15 @@ from api_iso_antares.filesystem.root.output.simulation.economy.mcind.scn.links.i
 
 class OutputSimulationEconomyMcIndScnLinksItem(FolderNode):
     def __init__(self, config: Config, area: str, link: str):
+        FolderNode.__init__(self, config)
+        self.area = area
+        self.link = link
+
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             f"values-{timing}": Values(
                 config.next_file(f"values-{timing}.txt")
             )
-            for timing in config.get_filters_year(area, link)
+            for timing in config.get_filters_year(self.area, self.link)
         }
-        FolderNode.__init__(self, config, children)
+        return children

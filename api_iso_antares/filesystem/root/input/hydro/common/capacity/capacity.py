@@ -7,7 +7,7 @@ from api_iso_antares.filesystem.root.input.hydro.common.capacity.item import (
 
 
 class InputHydroCommonCapacity(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         children: TREE = dict()
         for area in config.area_names:
             for file in [
@@ -21,4 +21,4 @@ class InputHydroCommonCapacity(FolderNode):
                 children[name] = InputHydroCommonCapacityItem(
                     config.next_file(f"{name}.txt")
                 )
-        FolderNode.__init__(self, config, children)
+        return children

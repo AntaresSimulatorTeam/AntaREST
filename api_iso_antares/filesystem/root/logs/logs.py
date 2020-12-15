@@ -7,13 +7,13 @@ from api_iso_antares.filesystem.root.logs.logs_item import LogsItem
 
 
 class Logs(FolderNode):
-    def __init__(self, config: Config):
+    def build(self, config: Config) -> TREE:
         # TODO force simulations list
         children: TREE = {
             Logs.keep_name(file): LogsItem(config.next_file(file.name))
             for file in config.path.iterdir()
         }
-        FolderNode.__init__(self, config, children)
+        return children
 
     @staticmethod
     def keep_name(file: Path) -> str:

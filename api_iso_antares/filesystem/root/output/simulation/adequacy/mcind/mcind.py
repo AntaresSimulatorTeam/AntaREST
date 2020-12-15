@@ -8,10 +8,14 @@ from api_iso_antares.filesystem.root.output.simulation.adequacy.mcind.scn.scn im
 
 class OutputSimulationAdequacyMcInd(FolderNode):
     def __init__(self, config: Config, simulation: Simulation):
+        FolderNode.__init__(self, config)
+        self.simulation = simulation
+
+    def build(self, config: Config) -> TREE:
         children: TREE = {
             str("{:05d}".format(scn)): OutputSimulationAdequacyMcIndScn(
                 config.next_file("{:05d}".format(scn))
             )
-            for scn in range(1, simulation.nbyears + 1)
+            for scn in range(1, self.simulation.nbyears + 1)
         }
-        FolderNode.__init__(self, config, children)
+        return children
