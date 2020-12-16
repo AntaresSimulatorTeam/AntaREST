@@ -7,6 +7,8 @@ from typing import Any, Optional
 import subprocess
 
 from flask import escape, Flask, jsonify, request, Response, send_file
+from flask_swagger import swagger
+from flask_swagger_ui import get_swaggerui_blueprint
 
 from api_iso_antares import __version__
 from api_iso_antares.custom_types import JSON
@@ -80,12 +82,47 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
 def create_study_routes(application: Flask) -> None:
     @application.route("/studies", methods=["GET"])
     def get_studies() -> Any:
+        """
+        Get Studies
+        ---
+        produces:
+          - application/json
+        responses:
+          '200':
+            description: Successful operation
+          '400':
+            description: Invalid request
+        tags:
+          - Manage Studies
+        """
         global request_handler
         available_studies = request_handler.get_studies_informations()
         return jsonify(available_studies), HTTPStatus.OK.value
 
     @application.route("/studies", methods=["POST"])
     def import_study() -> Any:
+        """
+        Import Study
+        ---
+        produces:
+          - application/json
+        responses:
+          '200':
+            description: Successful operation
+          '400':
+            description: Invalid request
+        requestBody:
+            content:
+                multipart/form-data:
+                  schema:
+                    type: object
+                    properties:
+                      study:
+                         type: string
+                         format: binary
+        tags:
+          - Manage Studies
+        """
         global request_handler
 
         if "study" not in request.files:
@@ -120,6 +157,30 @@ def create_study_routes(application: Flask) -> None:
     )
     @stop_and_return_on_html_exception
     def copy_study(uuid: str) -> Any:
+        """
+        Copy study
+        ---
+        produces:
+          - application/json
+        responses:
+          '200':
+            description: Successful operation
+          '400':
+            description: Invalid request
+        parameters:
+        - in: path
+          name: uuid
+          required: true
+          description: study uuid stored in server
+          type: string
+        - in: query
+          name: dest
+          required: true
+          description: new study name
+          type: string
+        tags:
+          - Manage Studies
+        """
         global request_handler
 
         source_uuid = uuid
@@ -150,6 +211,26 @@ def create_study_routes(application: Flask) -> None:
     )
     @stop_and_return_on_html_exception
     def create_study(name: str) -> Any:
+        """
+        Create study name
+        ---
+        description: Create an empty study
+        produces:
+          - application/json
+        responses:
+          '200':
+            description: Successful operation
+          '400':
+            description: Invalid request
+        parameters:
+          - in: path
+            name: name
+            required: true
+            description: study name asked
+            type: string
+        tags:
+          - Manage Studies
+        """
         global request_handler
 
         name_sanitized = sanitize_study_name(name)
@@ -164,6 +245,30 @@ def create_study_routes(application: Flask) -> None:
     @application.route("/studies/<string:uuid>/export", methods=["GET"])
     @stop_and_return_on_html_exception
     def export_study(uuid: str) -> Any:
+        """
+        Export Study
+        ---
+        produces:
+          - application/octet-stream
+        responses:
+          '200':
+            description: Successful operation
+          '400':
+            description: Invalid request
+        parameters:
+        - in: path
+          name: uuid
+          required: true
+          description: study uuid stored in server
+          type: string
+        - in: query
+          name: compact
+          required: false
+          description: select compact format
+          type: boolean
+        tags:
+          - Manage Studies
+        """
         global request_handler
 
         uuid_sanitized = sanitize_uuid(uuid)
@@ -181,6 +286,25 @@ def create_study_routes(application: Flask) -> None:
     @application.route("/studies/<string:uuid>", methods=["DELETE"])
     @stop_and_return_on_html_exception
     def delete_study(uuid: str) -> Any:
+        """
+        Delete study
+        ---
+        produces:
+          - application/json
+        responses:
+          '200':
+            description: Successful operation
+          '400':
+            description: Invalid request
+        parameters:
+          - in: path
+            name: uuid
+            required: true
+            description: study uuid used by server
+            type: string
+        tags:
+          - Manage Studies
+        """
         global request_handler
 
         uuid_sanitized = sanitize_uuid(uuid)
@@ -208,11 +332,37 @@ def create_study_routes(application: Flask) -> None:
 
 
 def create_non_business_routes(application: Flask) -> None:
+    swaggerui_blueprint = get_swaggerui_blueprint(
+        "/api/docs",
+        "/api/swagger.json",
+        config={"app_name": "Test application", "validatorUrl": None},
+    )
+    application.register_blueprint(swaggerui_blueprint)
+
     @application.route(
         "/file/<path:path>",
         methods=["GET"],
     )
     def get_file(path: str) -> Any:
+        """
+        Get file
+        ---
+        produces:
+          - application/octet-stream
+        responses:
+            '200':
+                description: Successful operation
+            '404':
+                description: File not found
+        parameters:
+          - in: path
+            name: path
+            required: true
+            type: string
+        tags:
+          - Manage Matrix
+
+        """
         global request_handler
 
         try:
@@ -227,6 +377,33 @@ def create_non_business_routes(application: Flask) -> None:
     )
     @stop_and_return_on_html_exception
     def post_file(path: str) -> Any:
+        """
+        Post file
+        ---
+        parameters:
+          - in: path
+            name: path
+            required: true
+            type: string
+        requestBody:
+            content:
+                multipart/form-data:
+                  schema:
+                    type: object
+                    properties:
+                      matrix:
+                         type: string
+                         format: binary
+        produces:
+          - application/json
+        responses:
+          '200':
+            description: Successful operation
+          '400':
+            description: Invalid request
+        tags:
+          - Manage Matrix
+        """
         global request_handler
 
         data = request.files["matrix"].read()
@@ -237,13 +414,11 @@ def create_non_business_routes(application: Flask) -> None:
         return output, code
 
     @application.route(
-        "/swagger",
+        "/api/swagger.json",
         methods=["GET"],
     )
-    def swagger() -> Any:
-        global request_handler
-        swg_doc: JSON = {}
-        return jsonify(swg_doc), 200
+    def spec():
+        return jsonify(swagger(application))
 
     @application.route("/health", methods=["GET"])
     def health() -> Any:
