@@ -20,6 +20,7 @@ from api_iso_antares.web.request_handler import (
     RequestHandler,
     RequestHandlerParameters,
 )
+from api_iso_antares.web.swagger import update
 
 request_handler: RequestHandler
 
@@ -85,10 +86,10 @@ def create_study_routes(application: Flask) -> None:
         """
         Get Studies
         ---
-        produces:
-          - application/json
         responses:
           '200':
+            content:
+              application/json: {}
             description: Successful operation
           '400':
             description: Invalid request
@@ -104,10 +105,10 @@ def create_study_routes(application: Flask) -> None:
         """
         Import Study
         ---
-        produces:
-          - application/json
         responses:
           '200':
+            content:
+              application/json: {}
             description: Successful operation
           '400':
             description: Invalid request
@@ -160,10 +161,10 @@ def create_study_routes(application: Flask) -> None:
         """
         Copy study
         ---
-        produces:
-          - application/json
         responses:
           '200':
+            content:
+              application/json: {}
             description: Successful operation
           '400':
             description: Invalid request
@@ -172,14 +173,17 @@ def create_study_routes(application: Flask) -> None:
           name: uuid
           required: true
           description: study uuid stored in server
-          type: string
+          schema:
+            type: string
         - in: query
           name: dest
           required: true
           description: new study name
-          type: string
+          schema:
+            type: string
         tags:
           - Manage Studies
+
         """
         global request_handler
 
@@ -215,10 +219,10 @@ def create_study_routes(application: Flask) -> None:
         Create study name
         ---
         description: Create an empty study
-        produces:
-          - application/json
         responses:
           '200':
+            content:
+              application/json: {}
             description: Successful operation
           '400':
             description: Invalid request
@@ -227,7 +231,8 @@ def create_study_routes(application: Flask) -> None:
             name: name
             required: true
             description: study name asked
-            type: string
+            schema:
+              type: string
         tags:
           - Manage Studies
         """
@@ -248,10 +253,10 @@ def create_study_routes(application: Flask) -> None:
         """
         Export Study
         ---
-        produces:
-          - application/octet-stream
         responses:
           '200':
+            content:
+              application/json: {}
             description: Successful operation
           '400':
             description: Invalid request
@@ -260,12 +265,15 @@ def create_study_routes(application: Flask) -> None:
           name: uuid
           required: true
           description: study uuid stored in server
-          type: string
+          schema:
+            type: string
         - in: query
           name: compact
           required: false
+          example: false
           description: select compact format
-          type: boolean
+          schema:
+            type: boolean
         tags:
           - Manage Studies
         """
@@ -289,10 +297,10 @@ def create_study_routes(application: Flask) -> None:
         """
         Delete study
         ---
-        produces:
-          - application/json
         responses:
           '200':
+            content:
+              application/json: {}
             description: Successful operation
           '400':
             description: Invalid request
@@ -301,7 +309,8 @@ def create_study_routes(application: Flask) -> None:
             name: uuid
             required: true
             description: study uuid used by server
-            type: string
+            schema:
+              type: string
         tags:
           - Manage Studies
         """
@@ -347,18 +356,19 @@ def create_non_business_routes(application: Flask) -> None:
         """
         Get file
         ---
-        produces:
-          - application/octet-stream
         responses:
             '200':
-                description: Successful operation
+              content:
+                application/octet-stream: {}
+              description: Successful operation
             '404':
-                description: File not found
+              description: File not found
         parameters:
           - in: path
             name: path
             required: true
-            type: string
+            schema:
+                type: string
         tags:
           - Manage Matrix
 
@@ -384,7 +394,8 @@ def create_non_business_routes(application: Flask) -> None:
           - in: path
             name: path
             required: true
-            type: string
+            schema:
+              type: string
         requestBody:
             content:
                 multipart/form-data:
@@ -394,10 +405,10 @@ def create_non_business_routes(application: Flask) -> None:
                       matrix:
                          type: string
                          format: binary
-        produces:
-          - application/json
         responses:
           '200':
+            content:
+              application/json: {}
             description: Successful operation
           '400':
             description: Invalid request
@@ -418,7 +429,9 @@ def create_non_business_routes(application: Flask) -> None:
         methods=["GET"],
     )
     def spec():
-        return jsonify(swagger(application))
+        spec = update(swagger(application))
+        spec["servers"] = [{"url": request.host}]
+        return jsonify(spec)
 
     @application.route("/health", methods=["GET"])
     def health() -> Any:
