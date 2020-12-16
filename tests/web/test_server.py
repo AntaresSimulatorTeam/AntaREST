@@ -147,8 +147,9 @@ def test_import_study_zipped(
     assert result.status_code == HTTPStatus.BAD_REQUEST.value
 
     study_data = io.BytesIO(path_zip.read_bytes())
-    result = client.post("/studies", data=study_data)
+    result = client.post("/studies", data={"study": (study_data, "study.zip")})
 
+    print(result.data)
     assert json.loads(result.data) == "/studies/" + study_name
     assert result.status_code == HTTPStatus.CREATED.value
     mock_request_handler.import_study.assert_called_once()
@@ -262,11 +263,13 @@ def test_import_matrix() -> None:
     app = create_server(mock_handler)
     client = app.test_client()
 
-    data = b"hello"
+    data = io.BytesIO(b"hello")
     path = "path/to/matrix.txt"
-    result = client.post("/file/" + path, data=data)
+    result = client.post(
+        "/file/" + path, data={"matrix": (data, "matrix.txt")}
+    )
 
-    mock_handler.upload_matrix.assert_called_once_with(path, data)
+    mock_handler.upload_matrix.assert_called_once_with(path, b"hello")
     assert result.status_code == HTTPStatus.NO_CONTENT.value
 
 
@@ -279,9 +282,11 @@ def test_import_matrix_with_wrong_path() -> None:
     app = create_server(mock_handler)
     client = app.test_client()
 
-    data = b"hello"
+    data = io.BytesIO(b"hello")
     path = "path/to/matrix.txt"
-    result = client.post("/file/" + path, data=data)
+    result = client.post(
+        "/file/" + path, data={"matrix": (data, "matrix.txt")}
+    )
 
     assert result.status_code == HTTPStatus.NOT_FOUND.value
 

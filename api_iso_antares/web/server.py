@@ -88,12 +88,12 @@ def create_study_routes(application: Flask) -> None:
     def import_study() -> Any:
         global request_handler
 
-        if not request.data:
+        if "study" not in request.files:
             content = "No data provided."
             code = HTTPStatus.BAD_REQUEST.value
             return content, code
 
-        zip_binary = io.BytesIO(request.data)
+        zip_binary = io.BytesIO(request.files["study"].read())
 
         uuid = request_handler.import_study(zip_binary)
         content = "/studies/" + uuid
@@ -229,7 +229,8 @@ def create_non_business_routes(application: Flask) -> None:
     def post_file(path: str) -> Any:
         global request_handler
 
-        request_handler.upload_matrix(path, request.data)
+        data = request.files["matrix"].read()
+        request_handler.upload_matrix(path, data)
         output = b""
         code = HTTPStatus.NO_CONTENT.value
 
