@@ -441,7 +441,7 @@ def test_sta_mini_import(
     client = app.test_client()
 
     study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
-    result = client.post("/studies", data=study_data)
+    result = client.post("/studies", data={"study": (study_data, "study.zip")})
 
     assert result.status_code == HTTPStatus.CREATED.value
 
@@ -455,7 +455,9 @@ def test_sta_mini_import_compact(
 
     app = create_server(request_handler)
     client = app.test_client()
-    result = client.post("/studies", data=zip_study_stream)
+    result = client.post(
+        "/studies", data={"study": (zip_study_stream, "study.zip")}
+    )
 
     assert result.status_code == HTTPStatus.CREATED.value
 
