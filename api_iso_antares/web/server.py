@@ -11,7 +11,6 @@ from flask_swagger import swagger
 from flask_swagger_ui import get_swaggerui_blueprint
 
 from api_iso_antares import __version__
-from api_iso_antares.custom_types import JSON
 from api_iso_antares.web.html_exception import (
     HtmlException,
     stop_and_return_on_html_exception,
@@ -145,6 +144,30 @@ def create_study_routes(application: Flask) -> None:
     )
     @stop_and_return_on_html_exception
     def get_study(path: str) -> Any:
+        """
+        Read data
+        ---
+        responses:
+          '200':
+            description: Successful operation
+            content:
+              application/json: {}
+          '404':
+            description: File not found
+        parameters:
+          - in: path
+            name: uuid
+            required: true
+            schema:
+              type: string
+          - in: path
+            name: path
+            schema:
+              type: string
+            required: true
+        tags:
+          - Manage Data inside Study
+        """
         global request_handler
 
         parameters = _construct_parameters(request.args)
@@ -327,6 +350,33 @@ def create_study_routes(application: Flask) -> None:
     @application.route("/studies/<path:path>", methods=["POST"])
     @stop_and_return_on_html_exception
     def edit_study(path: str) -> Any:
+        """
+        Update data
+        ---
+        responses:
+          '200':
+            description: Successful operation
+            content:
+              application/json: {}
+          '404':
+            description: File not found
+        requestBody:
+            content:
+                application/json: {}
+        parameters:
+          - in: path
+            name: uuid
+            required: true
+            schema:
+              type: string
+          - in: path
+            name: path
+            schema:
+              type: string
+            required: true
+        tags:
+          - Manage Data inside Study
+        """
         global request_handler
 
         new = json.loads(request.data)
@@ -430,7 +480,8 @@ def create_non_business_routes(application: Flask) -> None:
     )
     def spec():
         spec = update(swagger(application))
-        spec["servers"] = [{"url": request.host}]
+        spec["servers"] = [{"url": request.host_url}]
+        print(spec["servers"])
         return jsonify(spec)
 
     @application.route("/health", methods=["GET"])
