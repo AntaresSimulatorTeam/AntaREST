@@ -26,7 +26,68 @@ urls: List[Tuple[str, str]] = [
 ]
 
 
+def _add_examples(swagger: JSON) -> None:
+    endpoint = "/studies/{path}"
+    examples = {url: {"value": url, "description": des} for url, des in urls}
+
+    swagger["paths"][endpoint]["get"]["parameters"][1]["examples"] = examples
+    swagger["paths"][endpoint]["post"]["parameters"][1]["examples"] = examples
+    swagger["paths"]["/studies/{uuid}/{path}"] = swagger["paths"][endpoint]
+    del swagger["paths"][endpoint]
+
+
+def _add_post_file_body(swagger: JSON) -> None:
+    swagger["paths"]["/file/{path}"]["post"]["requestBody"] = {
+        "description": "Send text file to server",
+        "required": True,
+        "content": {
+            "multipart/form-data": {
+                "schema": {
+                    "type": "object",
+                    "required": ["matrix"],
+                    "properties": {
+                        "matrix": {"type": "string", "format": "binary"}
+                    },
+                }
+            }
+        },
+    }
+
+
+def _add_post_import_body(swagger: JSON) -> None:
+    swagger["paths"]["/studies"]["post"]["requestBody"] = {
+        "description": "Import study to server",
+        "required": True,
+        "content": {
+            "multipart/form-data": {
+                "schema": {
+                    "type": "object",
+                    "required": ["study"],
+                    "properties": {
+                        "study": {"type": "string", "format": "binary"}
+                    },
+                }
+            }
+        },
+    }
+
+
+def _add_post_edit_study(swagger: JSON) -> None:
+    swagger["paths"]["/studies/{uuid}/{path}"]["post"]["requestBody"] = {
+        "description": "Import study to server",
+        "required": True,
+        "content": {
+            "application/json": {
+                "schema": {
+                    "type": "object",
+                }
+            }
+        },
+    }
+
+
 def update(swagger: JSON) -> JSON:
+    print(swagger)
     # Set file format version
     del swagger["swagger"]
     swagger["openapi"] = "3.0.0"
@@ -35,16 +96,12 @@ def update(swagger: JSON) -> JSON:
     swagger["info"]["title"] = "API Antares"
     swagger["info"]["version"] = __version__
 
-    # Add dynmatic path
-    url = "/studies/{path}"
-    examples = {
-        value: {"value": value, "description": des} for value, des in urls
-    }
+    # Add dynamics path
+    _add_examples(swagger)
 
-    print(list(swagger["paths"][url]))
-    swagger["paths"][url]["get"]["parameters"][1]["examples"] = examples
-    swagger["paths"][url]["post"]["parameters"][1]["examples"] = examples
-    swagger["paths"]["/studies/{uuid}/{path}"] = swagger["paths"][url]
-    del swagger["paths"][url]
+    # Add request body
+    _add_post_edit_study(swagger)
+    _add_post_file_body(swagger)
+    _add_post_import_body(swagger)
 
     return swagger

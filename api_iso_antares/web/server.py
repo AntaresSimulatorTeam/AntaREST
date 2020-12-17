@@ -7,8 +7,8 @@ from typing import Any, Optional
 import subprocess
 
 from flask import escape, Flask, jsonify, request, Response, send_file
-from flask_swagger import swagger
-from flask_swagger_ui import get_swaggerui_blueprint
+from flask_swagger import swagger  # type: ignore
+from flask_swagger_ui import get_swaggerui_blueprint  # type: ignore
 
 from api_iso_antares import __version__
 from api_iso_antares.web.html_exception import (
@@ -111,15 +111,6 @@ def create_study_routes(application: Flask) -> None:
             description: Successful operation
           '400':
             description: Invalid request
-        requestBody:
-            content:
-                multipart/form-data:
-                  schema:
-                    type: object
-                    properties:
-                      study:
-                         type: string
-                         format: binary
         tags:
           - Manage Studies
         """
@@ -360,9 +351,6 @@ def create_study_routes(application: Flask) -> None:
               application/json: {}
           '404':
             description: File not found
-        requestBody:
-            content:
-                application/json: {}
         parameters:
           - in: path
             name: uuid
@@ -392,8 +380,8 @@ def create_study_routes(application: Flask) -> None:
 
 def create_non_business_routes(application: Flask) -> None:
     swaggerui_blueprint = get_swaggerui_blueprint(
-        "/api/docs",
-        "/api/swagger.json",
+        "/docs",
+        "/swagger.json",
         config={"app_name": "Test application", "validatorUrl": None},
     )
     application.register_blueprint(swaggerui_blueprint)
@@ -446,15 +434,6 @@ def create_non_business_routes(application: Flask) -> None:
             required: true
             schema:
               type: string
-        requestBody:
-            content:
-                multipart/form-data:
-                  schema:
-                    type: object
-                    properties:
-                      matrix:
-                         type: string
-                         format: binary
         responses:
           '200':
             content:
@@ -475,10 +454,10 @@ def create_non_business_routes(application: Flask) -> None:
         return output, code
 
     @application.route(
-        "/api/swagger.json",
+        "/swagger.json",
         methods=["GET"],
     )
-    def spec():
+    def spec() -> Any:
         spec = update(swagger(application))
         spec["servers"] = [{"url": request.host_url}]
 
