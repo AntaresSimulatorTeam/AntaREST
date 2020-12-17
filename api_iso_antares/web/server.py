@@ -481,7 +481,7 @@ def create_non_business_routes(application: Flask) -> None:
     def spec():
         spec = update(swagger(application))
         spec["servers"] = [{"url": request.host_url}]
-        print(spec["servers"])
+
         return jsonify(spec)
 
     @application.route("/health", methods=["GET"])
