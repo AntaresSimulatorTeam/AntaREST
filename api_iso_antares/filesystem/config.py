@@ -162,6 +162,7 @@ class ConfigPathBuilder:
         return {
             i + 1: ConfigPathBuilder.parse_simulation(f)
             for i, f in enumerate(files)
+            if (f / "about-the-study").exists()
         }
 
     @staticmethod
