@@ -3,6 +3,8 @@ Architecture
 
 API Antares is designe upon three main packages.
 
+.. image:: /_static/overview.png
+
 * **web** contains flask server and algorithm to handle request
 
 * **filesystem** is the main package. It representes a antares filesystem coded with python object inside a huge tree. Feature are implemented thanks to *Component* pattern.
@@ -24,6 +26,9 @@ To manage this filesystem (writing, reading, validating) we copy folder by folde
 * initialize its children according to study configuration
 
 * inherits  a meta-node to inherit its behavior.
+
+.. image:: /_static/ulm.png
+
 
 Meta-Node
 *********
@@ -110,5 +115,4 @@ Children can also by dynamics by :code:`if` branching, like :code:`OutputSimulat
 antares_io
 ----------
 
-
-blabla
+This package provide a sets of writers / readers. There are also study importer and exporter.
