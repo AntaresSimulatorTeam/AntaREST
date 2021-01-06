@@ -10,6 +10,11 @@ from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.inode import INode, TREE
 
 
+class IniReaderError(Exception):
+    def __init__(self, name: str, mes: str):
+        super(IniReaderError, self).__init__(f"Error read node {name} = {mes}")
+
+
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
@@ -31,7 +36,10 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         if depth == 0:
             return {}
         url = url or []
-        json = self.reader.read(self.path)
+        try:
+            json = self.reader.read(self.path)
+        except Exception as e:
+            raise IniReaderError(self.__class__.__name__, str(e))
         # TODO self.validate(json)
         if len(url) == 2:
             json = json[url[0]][url[1]]
