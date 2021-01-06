@@ -158,6 +158,9 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_outputs(root: Path) -> Dict[int, Simulation]:
+        if not (root / "output").exists():
+            return {}
+
         files = sorted((root / "output").iterdir())
         return {
             i + 1: ConfigPathBuilder.parse_simulation(f)
@@ -250,6 +253,9 @@ class ConfigJsonBuilder:
 
     @staticmethod
     def _parse_outputs(json: JSON) -> Dict[int, Simulation]:
+        if "output" not in json:
+            return {}
+
         outputs = json["output"]
         return {
             int(i): ConfigJsonBuilder._parse_simulation(s)

@@ -32,7 +32,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             return {}
         url = url or []
         json = self.reader.read(self.path)
-        self.validate(json)
+        # TODO self.validate(json)
         if len(url) == 2:
             json = json[url[0]][url[1]]
         elif len(url) == 1:
