@@ -38,7 +38,7 @@ def _assert_uuid(uuid: str) -> None:
 
 
 def sanitize_uuid(uuid: str) -> str:
-    _assert_uuid(uuid)
+    # TODO _assert_uuid(uuid)
     return escape(uuid)
 
 

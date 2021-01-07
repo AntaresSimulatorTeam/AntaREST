@@ -202,7 +202,7 @@ class RequestHandler:
                 study.save(data)
             del study
             shutil.rmtree(path_study / "res")
-            os.remove(data_file)
+            os.remove(str(data_file.absolute()))
 
         data = self.get(uuid, parameters=RequestHandlerParameters(depth=-1))
         if data is None:
