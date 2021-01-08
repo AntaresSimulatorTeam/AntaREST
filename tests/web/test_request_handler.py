@@ -249,7 +249,7 @@ def test_export_file(tmp_path: Path, request_handler_builder: Callable):
 
     # Test good study
     assert b"Hello" == request_handler.export_study(name)
-    exporter.export_file.assert_called_once_with(study_path)
+    exporter.export_file.assert_called_once_with(study_path, True)
 
 
 @pytest.mark.unit_test
@@ -273,7 +273,7 @@ def test_export_compact_file(tmp_path: Path, request_handler_builder):
     )
 
     assert b"Hello" == request_handler.export_study(name, compact=True)
-    exporter.export_compact.assert_called_once_with(study_path, 42)
+    exporter.export_compact.assert_called_once_with(study_path, 42, True)
 
 
 @pytest.mark.unit_test

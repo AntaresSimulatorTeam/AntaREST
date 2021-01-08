@@ -1,10 +1,10 @@
 import io
 import json
 import re
+import subprocess
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional
-import subprocess
 
 from flask import escape, Flask, jsonify, request, Response, send_file
 from flask_swagger import swagger  # type: ignore
@@ -294,9 +294,12 @@ def create_study_routes(application: Flask) -> None:
         global request_handler
 
         uuid_sanitized = sanitize_uuid(uuid)
-        compact = "compact" in request.args
+        compact: bool = "compact" in request.args
+        outputs: bool = bool(request.args.get("outputs", True))
 
-        content = request_handler.export_study(uuid_sanitized, compact)
+        content = request_handler.export_study(
+            uuid_sanitized, compact, outputs
+        )
 
         return send_file(
             content,
