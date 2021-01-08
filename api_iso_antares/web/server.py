@@ -24,14 +24,6 @@ from api_iso_antares.web.swagger import update
 request_handler: RequestHandler
 
 
-class BadUUIDError(HtmlException):
-    def __init__(self) -> None:
-        super().__init__(
-            "Study's UUID can only contain alphanumeric characters with '-'",
-            HTTPStatus.BAD_REQUEST.value,
-        )
-
-
 def sanitize_uuid(uuid: str) -> str:
     return escape(uuid)
 
@@ -282,6 +274,13 @@ def create_study_routes(application: Flask) -> None:
           description: select compact format
           schema:
             type: boolean
+        - in: query
+          name: no-output
+          required: false
+          example: false
+          description: specify
+          schema:
+            type: boolean
         tags:
           - Manage Studies
         """
@@ -289,7 +288,7 @@ def create_study_routes(application: Flask) -> None:
 
         uuid_sanitized = sanitize_uuid(uuid)
         compact: bool = "compact" in request.args
-        outputs: bool = bool(request.args.get("outputs", True))
+        outputs: bool = "no-output" not in request.args
 
         content = request_handler.export_study(
             uuid_sanitized, compact, outputs
