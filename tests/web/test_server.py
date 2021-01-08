@@ -218,7 +218,7 @@ def test_export_files() -> None:
     result = client.get("/studies/name/export")
 
     assert result.data == b"Hello"
-    mock_handler.export_study.assert_called_once_with("name", False)
+    mock_handler.export_study.assert_called_once_with("name", False, True)
 
     result_wrong = client.get("/studies/%BAD_STUDY_NAME%/export")
     assert result_wrong.status_code == HTTPStatus.BAD_REQUEST.value
@@ -235,7 +235,7 @@ def test_export_compact() -> None:
     result = client.get("/studies/name/export?compact")
 
     assert result.data == b"Hello"
-    mock_handler.export_study.assert_called_once_with("name", True)
+    mock_handler.export_study.assert_called_once_with("name", True, True)
 
 
 @pytest.mark.unit_test

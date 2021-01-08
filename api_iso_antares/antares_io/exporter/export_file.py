@@ -11,7 +11,7 @@ from api_iso_antares.custom_types import JSON
 
 
 class Exporter:
-    def export_file(self, path_study: Path) -> BytesIO:
+    def export_file(self, path_study: Path, outputs: bool = True) -> BytesIO:
         data = BytesIO()
         zipf = ZipFile(data, "w", ZIP_DEFLATED)
 
@@ -21,7 +21,8 @@ class Exporter:
         os.chdir(path_study)
 
         for path in glob.glob("**", recursive=True):
-            zipf.write(path, root + path)
+            if outputs or path.split(os.sep)[0] != "output":
+                zipf.write(path, root + path)
 
         zipf.close()
 
@@ -29,11 +30,16 @@ class Exporter:
         data.seek(0)
         return data
 
-    def export_compact(self, path_study: Path, data: JSON) -> BytesIO:
+    def export_compact(
+        self, path_study: Path, data: JSON, outputs: bool = True
+    ) -> BytesIO:
         zip = BytesIO()
         zipf = ZipFile(zip, "w", ZIP_DEFLATED)
 
         root = path_study.parent.absolute()
+
+        if not outputs:
+            del data["output"]
         jsonify = json.dumps(data)
 
         for url in re.findall(r"file\/[\w\d\-.\/\s]*", jsonify):

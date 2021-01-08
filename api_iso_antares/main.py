@@ -2,15 +2,13 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import cast, Optional, Tuple
+from typing import Optional, Tuple
 
 from flask import Flask
 
 from api_iso_antares import __version__
 from api_iso_antares.antares_io.exporter.export_file import Exporter
-
 from api_iso_antares.filesystem.factory import StudyFactory
-
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.server import create_server
 

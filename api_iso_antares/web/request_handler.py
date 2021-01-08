@@ -153,7 +153,9 @@ class RequestHandler:
         del study
         return uuid
 
-    def export_study(self, name: str, compact: bool = False) -> BytesIO:
+    def export_study(
+        self, name: str, compact: bool = False, outputs: bool = True
+    ) -> BytesIO:
         path_study = self.path_to_studies / name
 
         self.assert_study_exist(name)
@@ -164,9 +166,9 @@ class RequestHandler:
             )
             data = study.get()
             del study
-            return self.exporter.export_compact(path_study, data)
+            return self.exporter.export_compact(path_study, data, outputs)
         else:
-            return self.exporter.export_file(path_study)
+            return self.exporter.export_file(path_study, outputs)
 
     def delete_study(self, name: str) -> None:
         self.assert_study_exist(name)

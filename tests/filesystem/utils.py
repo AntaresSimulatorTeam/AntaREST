@@ -3,8 +3,8 @@ from typing import Optional, List
 from zipfile import ZipFile
 
 from api_iso_antares.filesystem.config import Config
-from api_iso_antares.filesystem.inode import TREE, INode
 from api_iso_antares.filesystem.folder_node import FolderNode
+from api_iso_antares.filesystem.inode import TREE, INode
 
 
 class TestSubNode(INode[int, int, int]):

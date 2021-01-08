@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 from api_iso_antares.filesystem.config import Config
