@@ -11,6 +11,7 @@ from zipfile import BadZipFile, ZipFile
 
 from api_iso_antares.antares_io.exporter.export_file import Exporter
 from api_iso_antares.custom_types import JSON, SUB_JSON
+from api_iso_antares.filesystem.config import Config
 from api_iso_antares.filesystem.factory import StudyFactory
 from api_iso_antares.web.html_exception import (
     BadZipBinary,
@@ -87,24 +88,25 @@ class RequestHandler:
         return uuid in self.get_study_uuids()
 
     def get_study_uuids(self) -> List[str]:
-        studies_list = []
-        for path in self.path_to_studies.iterdir():
-            if (path / "study.antares").is_file():
-                studies_list.append(path.name)
+        studies_list = [
+            path.name
+            for path in self.path_to_studies.iterdir()
+            if (path / "study.antares").is_file()
+        ]
 
         # sorting needed for test
         return sorted(studies_list)
 
     def get_studies_informations(self) -> JSON:
-        studies = {}
-        study_uuids = self.get_study_uuids()
-        for uuid in study_uuids:
-            studies[uuid] = self.get_study_informations(uuid)
-        return studies
+        return {
+            uuid: self.get_study_informations(uuid)
+            for uuid in self.get_study_uuids()
+        }
 
     def get_study_informations(self, uuid: str) -> SUB_JSON:
-        url = uuid + "/study"
-        return self.get(url, RequestHandlerParameters(depth=2))
+        config = Config(study_path=self.path_to_studies / uuid)
+        study = self.study_factory.create_from_config(config)
+        return study.get(url=["study"])
 
     def get_study_path(self, uuid: str) -> Path:
         return self.path_to_studies / uuid
