@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
-from api_iso_antares.custom_types import JSON
 from api_iso_antares import __version__
+from api_iso_antares.custom_types import JSON
 
 sim = "{sim} = simulation index <br/>"
 area = "{area} = area name to select <br/>"
