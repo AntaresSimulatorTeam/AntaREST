@@ -100,6 +100,7 @@ def test_build_json() -> None:
 
     json = {
         "input": {
+            "bindingconstraints": {"bindingconstraints": {}},
             "areas": {
                 "de": {
                     "optimization": {

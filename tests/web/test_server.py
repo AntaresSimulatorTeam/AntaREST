@@ -18,7 +18,6 @@ from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
 )
 from api_iso_antares.web.server import (
-    _assert_uuid,
     BadUUIDError,
     create_server,
 )
@@ -117,9 +116,6 @@ def test_create_study(
     assert json.loads(result_right.data) == "/studies/my-uuid"
     request_handler.create_study.assert_called_once_with("study2")
 
-    result_wrong = client.post("/studies/%BAD_STUDY_NAME%")
-    assert result_wrong.status_code == HTTPStatus.BAD_REQUEST.value
-
 
 @pytest.mark.unit_test
 def test_import_study_zipped(
@@ -162,14 +158,6 @@ def test_copy_study(tmp_path: Path, request_handler_builder: Callable) -> None:
 
     app = create_server(request_handler)
     client = app.test_client()
-
-    result = client.post("/studies/%%%%/copy?dest=study")
-
-    assert result.status_code == HTTPStatus.BAD_REQUEST.value
-
-    result = client.post("/studies/study1/copy")
-
-    assert result.status_code == HTTPStatus.BAD_REQUEST.value
 
     result = client.post("/studies/existing-study/copy?dest=study-copied")
 
@@ -220,9 +208,6 @@ def test_export_files() -> None:
     assert result.data == b"Hello"
     mock_handler.export_study.assert_called_once_with("name", False, True)
 
-    result_wrong = client.get("/studies/%BAD_STUDY_NAME%/export")
-    assert result_wrong.status_code == HTTPStatus.BAD_REQUEST.value
-
 
 @pytest.mark.unit_test
 def test_export_compact() -> None:
@@ -236,12 +221,6 @@ def test_export_compact() -> None:
 
     assert result.data == b"Hello"
     mock_handler.export_study.assert_called_once_with("name", True, True)
-
-
-@pytest.mark.unit_test
-def test_bad_uuid() -> None:
-    with pytest.raises(BadUUIDError):
-        _assert_uuid("<toto")
 
 
 @pytest.mark.unit_test

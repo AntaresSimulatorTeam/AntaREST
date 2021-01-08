@@ -32,13 +32,7 @@ class BadUUIDError(HtmlException):
         )
 
 
-def _assert_uuid(uuid: str) -> None:
-    if not re.match("^[a-zA-Z0-9-]*$", uuid):
-        raise BadUUIDError
-
-
 def sanitize_uuid(uuid: str) -> str:
-    _assert_uuid(uuid)
     return escape(uuid)
 
 

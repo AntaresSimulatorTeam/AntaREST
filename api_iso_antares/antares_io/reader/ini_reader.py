@@ -61,7 +61,7 @@ class IniReader(IReader):
         }
 
 
-class IniConfigParser(configparser.ConfigParser):
+class IniConfigParser(configparser.RawConfigParser):
     def optionxform(self, optionstr: str) -> str:
         return optionstr
 

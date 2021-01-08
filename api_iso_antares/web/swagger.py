@@ -87,7 +87,6 @@ def _add_post_edit_study(swagger: JSON) -> None:
 
 
 def update(swagger: JSON) -> JSON:
-    print(swagger)
     # Set file format version
     del swagger["swagger"]
     swagger["openapi"] = "3.0.0"

@@ -42,7 +42,7 @@ class Exporter:
             del data["output"]
         jsonify = json.dumps(data)
 
-        for url in re.findall(r"file\/[\w\d\-.\/\s]*", jsonify):
+        for url in re.findall(r"file\/[^\"]*", jsonify):
             uuid4 = str(uuid.uuid4())
             jsonify = jsonify.replace(url, uuid4)
             url = url.replace("file/", "")

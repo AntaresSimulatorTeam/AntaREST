@@ -21,6 +21,9 @@ class Study(FolderNode):
             "layers": Layers(config.next_file("layers")),
             # TODO "logs": Logs(config.next_file("logs")),
             "input": Input(config.next_file("input")),
-            "output": Output(config.next_file("output")),
         }
+
+        if config.outputs:
+            children["output"] = Output(config.next_file("output"))
+
         return children

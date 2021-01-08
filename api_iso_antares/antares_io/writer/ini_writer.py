@@ -1,4 +1,4 @@
-from configparser import ConfigParser
+from configparser import ConfigParser, RawConfigParser
 from pathlib import Path
 
 from api_iso_antares.custom_types import JSON
@@ -11,6 +11,6 @@ class IniWriter:
         config_parser.write(path.open("w"))
 
 
-class IniConfigParser(ConfigParser):
+class IniConfigParser(RawConfigParser):
     def optionxform(self, optionstr: str) -> str:
         return optionstr

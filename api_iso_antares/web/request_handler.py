@@ -145,7 +145,8 @@ class RequestHandler:
         data_destination = copy.deepcopy(data_source)
 
         RequestHandler._update_antares_info(dest_study_name, data_destination)
-        data_destination["output"] = {}
+        if "output" in data_destination:
+            del data_destination["output"]
         config.outputs = {}
 
         study = self.study_factory.create_from_config(config)
@@ -204,7 +205,7 @@ class RequestHandler:
                 study.save(data)
             del study
             shutil.rmtree(path_study / "res")
-            os.remove(data_file)
+            os.remove(str(data_file.absolute()))
 
         data = self.get(uuid, parameters=RequestHandlerParameters(depth=-1))
         if data is None:

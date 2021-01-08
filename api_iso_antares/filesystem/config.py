@@ -97,11 +97,13 @@ class Config(DTO):
         study_path: Path,
         areas: Optional[Dict[str, Area]] = None,
         outputs: Optional[Dict[int, Simulation]] = None,
+        bindings: Optional[List[str]] = None,
     ):
         self.root_path = study_path
         self.path = study_path
         self.areas = areas or dict()
         self.outputs = outputs or dict()
+        self.bindings = bindings or list()
 
     def next_file(self, name: str) -> "Config":
         copy = deepcopy(self)
@@ -148,7 +150,15 @@ class ConfigPathBuilder:
             study_path=study_path,
             areas=ConfigPathBuilder._parse_areas(study_path),
             outputs=ConfigPathBuilder._parse_outputs(study_path),
+            bindings=ConfigPathBuilder._parse_bindings(study_path),
         )
+
+    @staticmethod
+    def _parse_bindings(root: Path) -> List[str]:
+        bindings = IniReader().read(
+            root / "input/bindingconstraints/bindingconstraints.ini"
+        )
+        return [bind["id"] for bind in bindings.values()]
 
     @staticmethod
     def _parse_areas(root: Path) -> Dict[str, Area]:
@@ -158,6 +168,9 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_outputs(root: Path) -> Dict[int, Simulation]:
+        if not (root / "output").exists():
+            return {}
+
         files = sorted((root / "output").iterdir())
         return {
             i + 1: ConfigPathBuilder.parse_simulation(f)
@@ -240,7 +253,13 @@ class ConfigJsonBuilder:
             study_path=study_path,
             areas=ConfigJsonBuilder._parse_areas(json),
             outputs=ConfigJsonBuilder._parse_outputs(json),
+            bindings=ConfigJsonBuilder._parse_bindings(json),
         )
+
+    @staticmethod
+    def _parse_bindings(json: JSON) -> List[str]:
+        bindings = json["input"]["bindingconstraints"]["bindingconstraints"]
+        return [bind["id"] for bind in bindings.values()]
 
     @staticmethod
     def _parse_areas(json: JSON) -> Dict[str, Area]:
@@ -250,6 +269,9 @@ class ConfigJsonBuilder:
 
     @staticmethod
     def _parse_outputs(json: JSON) -> Dict[int, Simulation]:
+        if "output" not in json:
+            return {}
+
         outputs = json["output"]
         return {
             int(i): ConfigJsonBuilder._parse_simulation(s)
