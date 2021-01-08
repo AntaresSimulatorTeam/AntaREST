@@ -1,5 +1,6 @@
 import hashlib
 import json
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -11,6 +12,16 @@ ENDC = "\033[0m"
 
 
 def export(host: str, study: str) -> Optional[bytes]:
+    """
+    Send exportation request.
+
+    Args:
+        host: server url
+        study: study id
+
+    Returns: zip file if request success
+
+    """
     res = requests.get(f"{host}/studies/{study}/export?compact")
     if res.status_code == 200:
         print(f"{OKGREEN}EXPORT SUCCESS{ENDC}", end=" | ")
@@ -21,6 +32,16 @@ def export(host: str, study: str) -> Optional[bytes]:
 
 
 def importation(host: str, study: bytes) -> Optional[str]:
+    """
+    Send importation request.
+
+    Args:
+        host: url server
+        study: zip file
+
+    Returns: study id if request request
+
+    """
     headers = {"Content-Length": str(len(study))}
     res = requests.post(
         f"{host}/studies", headers=headers, files={"study": study}
@@ -34,22 +55,33 @@ def importation(host: str, study: bytes) -> Optional[str]:
         return None
 
 
-def compare(origin: Path, copy: Path):
-    def hash(file: Path) -> str:
-        return hashlib.md5(open(file, "rb").read()).hexdigest()
+def compare(origin: Path, copy: Path) -> bool:
+    """
+    Compare file by file to folder.
 
+    Args:
+        origin: origin folder
+        copy: copy folder to compare
+
+    Returns: True if all files and folders are same
+
+    """
     if origin.is_file():
         if not copy.is_file():
             print(f"{FAIL}file {origin} not present in copy{ENDC}")
+            return False
+        return True
 
     else:
         if not copy.is_dir():
             print(f"{FAIL}file {origin} not present in copy{ENDC}")
-        for child in origin.iterdir():
-            compare(child, copy / child.name)
+            return False
+        return all(
+            compare(child, copy / child.name) for child in origin.iterdir()
+        )
 
 
-def main(path: Path, host: str = "http://localhost:8080"):
+def main(path: Path, host: str) -> None:
     res = requests.get(f"{host}/studies")
 
     if res.status_code != 200:
@@ -62,18 +94,18 @@ def main(path: Path, host: str = "http://localhost:8080"):
     print(f"There are {len(studies)} studies to test")
 
     for study in studies:
-        print(f"{study:>80}", end="\t")
+        print(f"{study[:3]}", end="\t")
 
         data = export(host, study)
         if data:
             uuid = importation(host, data)
-            print(uuid)
             if uuid:
-                compare(origin=path / study, copy=path / uuid)
-                print(f"{OKGREEN}COMPARE SUCCESS{ENDC}")
-        return
+                res = compare(origin=path / study, copy=path / uuid)
+                print(f"{OKGREEN}COMPARE SUCCESS{ENDC}") if res else print("")
+                shutil.rmtree(path / uuid)
 
 
 if __name__ == "__main__":
     path = Path("/Volumes/Crucial X8/antares/Antares_Simulator_Examples")
-    main(path=path)
+    host = "http://localhost:8080"
+    main(path=path, host=host)
