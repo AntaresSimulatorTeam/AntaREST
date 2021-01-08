@@ -21,8 +21,7 @@ class Exporter:
         os.chdir(path_study)
 
         for path in glob.glob("**", recursive=True):
-            if outputs or path.split("/")[0] != "output":
-                print(path, path.split("/")[0])
+            if outputs or path.split(os.sep)[0] != "output":
                 zipf.write(path, root + path)
 
         zipf.close()
