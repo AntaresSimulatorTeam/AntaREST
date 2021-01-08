@@ -383,7 +383,7 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
                     replace_study_name(value)
 
     replace_study_name(data_destination)
-    data_source["output"] = {}
+    del data_source["output"]
     data_source["study"] = {}
     data_destination["study"] = {}
 
