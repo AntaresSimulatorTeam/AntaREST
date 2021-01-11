@@ -30,16 +30,12 @@ class Exporter:
         data.seek(0)
         return data
 
-    def export_compact(
-        self, path_study: Path, data: JSON, outputs: bool = True
-    ) -> BytesIO:
+    def export_compact(self, path_study: Path, data: JSON) -> BytesIO:
         zip = BytesIO()
         zipf = ZipFile(zip, "w", ZIP_DEFLATED)
 
         root = path_study.parent.absolute()
 
-        if not outputs:
-            del data["output"]
         jsonify = json.dumps(data)
 
         for url in re.findall(r"file\/[^\"]*", jsonify):

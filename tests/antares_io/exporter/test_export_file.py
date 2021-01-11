@@ -27,8 +27,7 @@ def test_export_file(tmp_path: Path, outputs: bool):
     assert ("folder/output/file.txt" in zipf.namelist()) == outputs
 
 
-@pytest.mark.parametrize("outputs", [True, False])
-def test_export_compact(tmp_path: Path, outputs):
+def test_export_compact(tmp_path: Path):
     root = tmp_path / "folder"
     root.mkdir()
     (root / "input").mkdir()
@@ -41,7 +40,7 @@ def test_export_compact(tmp_path: Path, outputs):
         "output": {"file": "file/folder/output/file.txt"},
     }
 
-    buffer = Exporter().export_compact(root, data, outputs)
+    buffer = Exporter().export_compact(root, data)
     zipf = ZipFile(buffer)
 
     zipf.extract("data.json", str(tmp_path.absolute()))
@@ -49,7 +48,4 @@ def test_export_compact(tmp_path: Path, outputs):
     data_res = json.loads(data_res_path.read_text())
 
     assert f"res/{data_res['input']['file']}" in zipf.namelist()
-    if outputs:
-        assert f"res/{data_res['output']['file']}" in zipf.namelist()
-    else:
-        assert "output" not in data_res
+    assert f"res/{data_res['output']['file']}" in zipf.namelist()

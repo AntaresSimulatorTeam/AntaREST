@@ -165,9 +165,14 @@ class RequestHandler:
             config, study = self.study_factory.create_from_fs(
                 path=self.path_to_studies / name
             )
+
+            if not outputs:
+                config.outputs = dict()
+                study = self.study_factory.create_from_config(config)
+
             data = study.get()
             del study
-            return self.exporter.export_compact(path_study, data, outputs)
+            return self.exporter.export_compact(path_study, data)
         else:
             return self.exporter.export_file(path_study, outputs)
 

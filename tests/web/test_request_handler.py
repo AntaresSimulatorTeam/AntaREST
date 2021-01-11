@@ -6,6 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from api_iso_antares.filesystem.config import Config, Simulation
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.html_exception import (
     BadZipBinary,
@@ -261,10 +262,16 @@ def test_export_compact_file(tmp_path: Path, request_handler_builder):
 
     exporter = Mock()
     exporter.export_compact.return_value = b"Hello"
+
     study = Mock()
     study.get.return_value = 42
+
     factory = Mock()
-    factory.create_from_fs.return_value = None, study
+    factory.create_from_fs.return_value = (
+        Config(study_path=study_path, outputs={42: "value"}),
+        study,
+    )
+    factory.create_from_config.return_value = study
 
     request_handler = request_handler_builder(
         study_factory=factory,
@@ -272,8 +279,14 @@ def test_export_compact_file(tmp_path: Path, request_handler_builder):
         path_studies=tmp_path,
     )
 
-    assert b"Hello" == request_handler.export_study(name, compact=True)
-    exporter.export_compact.assert_called_once_with(study_path, 42, True)
+    assert b"Hello" == request_handler.export_study(
+        name, compact=True, outputs=False
+    )
+
+    factory.create_from_config.assert_called_once_with(
+        Config(study_path=study_path)
+    )
+    exporter.export_compact.assert_called_once_with(study_path, 42)
 
 
 @pytest.mark.unit_test
