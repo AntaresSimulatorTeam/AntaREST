@@ -18,7 +18,6 @@ from api_iso_antares.web.request_handler import (
     RequestHandlerParameters,
 )
 from api_iso_antares.web.server import (
-    BadUUIDError,
     create_server,
 )
 
