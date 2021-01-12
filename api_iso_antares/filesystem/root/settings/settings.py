@@ -1,7 +1,7 @@
 from typing import Optional
 
 from api_iso_antares.custom_types import JSON
-from api_iso_antares.filesystem.config import Config
+from api_iso_antares.filesystem.config.model import Config
 from api_iso_antares.filesystem.folder_node import FolderNode
 from api_iso_antares.filesystem.inode import TREE
 from api_iso_antares.filesystem.root.settings.comments import Comments

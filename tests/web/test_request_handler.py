@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from api_iso_antares.filesystem.config import Config, Simulation
+from api_iso_antares.filesystem.config.model import Config, Simulation
 from api_iso_antares.web import RequestHandler
 from api_iso_antares.web.html_exception import (
     BadZipBinary,

@@ -4,7 +4,7 @@ from typing import Tuple
 import pytest
 
 from api_iso_antares.custom_types import JSON
-from api_iso_antares.filesystem.config import Config
+from api_iso_antares.filesystem.config.model import Config
 from api_iso_antares.filesystem.ini_file_node import IniFileNode
 
 

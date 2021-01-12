@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from api_iso_antares.filesystem.config import Area, Config
+from api_iso_antares.filesystem.config.model import Area, Config
 from api_iso_antares.filesystem.root.settings.scenariobuilder import (
     ScenarioBuilder,
 )
