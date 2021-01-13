@@ -6,10 +6,11 @@ from api_iso_antares.filesystem.inode import TREE
 from api_iso_antares.filesystem.root.desktop import Desktop
 from api_iso_antares.filesystem.root.input.input import Input
 from api_iso_antares.filesystem.root.layers.layers import Layers
-from api_iso_antares.filesystem.root.logs.logs import Logs
+from api_iso_antares.filesystem.root.logs import Logs
 from api_iso_antares.filesystem.root.output.output import Output
 from api_iso_antares.filesystem.root.settings.settings import Settings
 from api_iso_antares.filesystem.root.study_antares import StudyAntares
+from api_iso_antares.filesystem.root.user import User
 
 
 class Study(FolderNode):
@@ -19,8 +20,9 @@ class Study(FolderNode):
             "study": StudyAntares(config.next_file("study.antares")),
             "settings": Settings(config.next_file("settings")),
             "layers": Layers(config.next_file("layers")),
-            # TODO "logs": Logs(config.next_file("logs")),
+            "logs": Logs(config.next_file("logs")),
             "input": Input(config.next_file("input")),
+            "user": User(config.next_file("user")),
         }
 
         if config.outputs:
