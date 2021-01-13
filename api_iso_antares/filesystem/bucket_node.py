@@ -1,5 +1,6 @@
 import glob
 import os
+from pathlib import Path
 from typing import Optional, List
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
@@ -31,7 +32,7 @@ class BucketNode(FolderNode):
         os.chdir(self.config.path)
 
         children: TREE = {
-            file: RawFileNode(self.config.next_file(file))
+            str(Path(file)): RawFileNode(self.config.next_file(file))
             for file in glob.glob("**", recursive=True)
         }
 
