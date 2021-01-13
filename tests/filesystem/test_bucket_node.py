@@ -1,7 +1,7 @@
 from pathlib import Path
 
+from api_iso_antares.filesystem.bucket_node import BucketNode
 from api_iso_antares.filesystem.config.model import Config
-from api_iso_antares.filesystem.root.user.user import User
 
 
 def build_bucket(tmp: Path) -> Path:
@@ -15,7 +15,7 @@ def build_bucket(tmp: Path) -> Path:
     return bucket
 
 
-def test_bucket(tmp_path: Path):
+def test_get_bucket(tmp_path: Path):
     bucket = build_bucket(tmp_path)
 
     expected = {
@@ -25,7 +25,18 @@ def test_bucket(tmp_path: Path):
         "folder/fileC.txt": "file/user/folder/fileC.txt",
     }
 
-    node = User(config=Config(study_path=bucket))
+    node = BucketNode(config=Config(study_path=bucket))
 
     assert node.get(["fileA.txt"]) == "file/user/fileA.txt"
     assert node.get() == expected
+
+
+def test_save_bucket(tmp_path: Path):
+    bucket = build_bucket(tmp_path)
+
+    (tmp_path / "new.txt").write_text("Hello, World")
+
+    node = BucketNode(config=Config(study_path=bucket))
+    node.save(data="file/new.txt", url=["fileA.txt"])
+
+    assert (bucket / "fileA.txt").read_text() == "Hello, World"

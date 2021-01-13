@@ -52,9 +52,7 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
         url = url or []
 
         if url:
-            [
-                name,
-            ], sub_url = self.extract_child(children, url)
+            (name,), sub_url = self.extract_child(children, url)
             return children[name].save(data, sub_url)
         else:
             self.validate(data)
