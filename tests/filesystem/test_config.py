@@ -1,7 +1,14 @@
 from copy import deepcopy
 from pathlib import Path
 
-from api_iso_antares.filesystem.config import Config, Area, Link, Simulation
+from api_iso_antares.filesystem.config.files import ConfigPathBuilder
+from api_iso_antares.filesystem.config.json import ConfigJsonBuilder
+from api_iso_antares.filesystem.config.model import (
+    Config,
+    Area,
+    Link,
+    Simulation,
+)
 from tests.filesystem.utils import extract_sta
 
 link_year = ["hourly"]
@@ -92,7 +99,7 @@ def test_build_path(tmp_path: Path, project_path: Path) -> None:
     exp = deepcopy(config)
     exp.path = exp.root_path = study_path
 
-    assert Config.from_path(study_path=study_path) == exp
+    assert ConfigPathBuilder.build(study_path=study_path) == exp
 
 
 def test_build_json() -> None:
@@ -238,4 +245,4 @@ def test_build_json() -> None:
     }
     exp = deepcopy(config)
     exp.path = exp.root_path = study_path
-    assert Config.from_json(json, study_path) == exp
+    assert ConfigJsonBuilder.build(study_path, json) == exp

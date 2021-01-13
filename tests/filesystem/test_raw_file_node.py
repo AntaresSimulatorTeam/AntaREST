@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from api_iso_antares.filesystem.config import Config
+from api_iso_antares.filesystem.config.model import Config
 from api_iso_antares.filesystem.raw_file_node import RawFileNode
 
 

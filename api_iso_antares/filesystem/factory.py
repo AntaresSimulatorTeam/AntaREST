@@ -2,18 +2,20 @@ from pathlib import Path
 from typing import Tuple
 
 from api_iso_antares.custom_types import JSON
-from api_iso_antares.filesystem.config import Config
+from api_iso_antares.filesystem.config.files import ConfigPathBuilder
+from api_iso_antares.filesystem.config.json import ConfigJsonBuilder
+from api_iso_antares.filesystem.config.model import Config
 from api_iso_antares.filesystem.root.study import Study
 
 
 class StudyFactory:
     def create_from_fs(self, path: Path) -> Tuple[Config, Study]:
-        config = Config.from_path(path)
+        config = ConfigPathBuilder.build(path)
         return config, Study(config)
 
     def create_from_config(self, config: Config) -> Study:
         return Study(config)
 
     def create_from_json(self, path: Path, json: JSON) -> Tuple[Config, Study]:
-        config = Config.from_json(json, path)
+        config = ConfigJsonBuilder.build(path, json)
         return config, Study(config)

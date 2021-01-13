@@ -6,7 +6,7 @@ from api_iso_antares.antares_io.reader import IniReader
 from api_iso_antares.antares_io.reader.ini_reader import IReader
 from api_iso_antares.antares_io.writer.ini_writer import IniWriter
 from api_iso_antares.custom_types import JSON, SUB_JSON
-from api_iso_antares.filesystem.config import Config
+from api_iso_antares.filesystem.config.model import Config
 from api_iso_antares.filesystem.inode import INode, TREE
 
 

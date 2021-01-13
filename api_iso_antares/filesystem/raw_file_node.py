@@ -2,7 +2,7 @@ import shutil
 from typing import List, Optional
 
 from api_iso_antares.custom_types import JSON, SUB_JSON
-from api_iso_antares.filesystem.config import Config
+from api_iso_antares.filesystem.config.model import Config
 from api_iso_antares.filesystem.inode import INode, TREE
 
 
