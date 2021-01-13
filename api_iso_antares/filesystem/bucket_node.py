@@ -32,7 +32,9 @@ class BucketNode(FolderNode):
         os.chdir(self.config.path)
 
         children: TREE = {
-            str(Path(file)): RawFileNode(self.config.next_file(file))
+            "/".join(Path(file).parts): RawFileNode(
+                self.config.next_file(file)
+            )
             for file in glob.glob("**", recursive=True)
         }
 
