@@ -17,6 +17,9 @@ def build_empty_files(tmp: Path) -> Path:
     (study_path / "input/areas").mkdir(parents=True)
     (study_path / "input/areas/list.txt").touch()
 
+    (study_path / "input/links").mkdir(parents=True)
+    (study_path / "input/thermal/clusters").mkdir(parents=True)
+
     return study_path
 
 
@@ -98,35 +101,30 @@ def test_parse_area(tmp_path: Path) -> None:
     assert ConfigPathBuilder.build(study_path) == config
 
 
-def _parse_thermal(tmp_path: Path) -> None:
-    list_ini = json["input"]["thermal"]["clusters"][area]["list"]
-    return list(list_ini.keys())
+def test_parse_thermal(tmp_path: Path) -> None:
+    study_path = build_empty_files(tmp_path)
+    (study_path / "input/thermal/clusters/fr").mkdir(parents=True)
+    content = """
+    [t1]
+    name = t1
+    
+    [t2]
+    name = t2
+    """
+    (study_path / "input/thermal/clusters/fr/list.ini").write_text(content)
+
+    assert ConfigPathBuilder._parse_thermal(study_path, "fr") == ["t1", "t2"]
 
 
-def _parse_links(tmp_path: Path) -> None:
-    properties_ini = json["input"]["links"][area]["properties"]
-    return {
-        link: Link(
-            filters_synthesis=Link.split(
-                properties_ini[link]["filter-synthesis"]
-            ),
-            filters_year=Link.split(
-                properties_ini[link]["filter-year-by-year"]
-            ),
-        )
-        for link in list(properties_ini.keys())
-    }
+def test_parse_links(tmp_path: Path) -> None:
+    study_path = build_empty_files(tmp_path)
+    (study_path / "input/links/fr").mkdir(parents=True)
+    content = """
+    [l1]
+    filter-synthesis = annual
+    filter-year-by-year = hourly
+    """
+    (study_path / "input/links/fr/properties.ini").write_text(content)
 
-
-def _parse_filters_synthesis(tmp_path: Path) -> None:
-    filters: str = json["input"]["areas"][area]["optimization"]["filtering"][
-        "filter-synthesis"
-    ]
-    return Link.split(filters)
-
-
-def _parse_filters_year(tmp_path: Path) -> None:
-    filters: str = json["input"]["areas"][area]["optimization"]["filtering"][
-        "filter-year-by-year"
-    ]
-    return Link.split(filters)
+    link = Link(filters_synthesis=["annual"], filters_year=["hourly"])
+    assert ConfigPathBuilder._parse_links(study_path, "fr") == {"l1": link}

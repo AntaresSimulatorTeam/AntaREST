@@ -2,7 +2,12 @@ from pathlib import Path
 
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.filesystem.config.json import ConfigJsonBuilder
-from api_iso_antares.filesystem.config.model import Config, Simulation
+from api_iso_antares.filesystem.config.model import (
+    Config,
+    Simulation,
+    Area,
+    Link,
+)
 
 
 def build_empty_json() -> JSON:
@@ -10,6 +15,8 @@ def build_empty_json() -> JSON:
         "input": {
             "areas": {},
             "bindingconstraints": {"bindingconstraints": {}},
+            "links": {},
+            "thermal": {"clusters": {}},
         }
     }
 
@@ -64,3 +71,57 @@ def test_parse_outputs() -> None:
         },
     )
     assert ConfigJsonBuilder.build(study_path, json) == config
+
+
+def test_parse_areas() -> None:
+    study_path = Path()
+
+    json = build_empty_json()
+    json["input"]["areas"] = {
+        "fr": {
+            "optimization": {
+                "filtering": {
+                    "filter-synthesis": "daily, monthly",
+                    "filter-year-by-year": "hourly, weekly, annual",
+                }
+            }
+        }
+    }
+
+    config = Config(
+        study_path,
+        areas={
+            "fr": Area(
+                thermals=[],
+                links={},
+                filters_year=["hourly", "weekly", "annual"],
+                filters_synthesis=["daily", "monthly"],
+            )
+        },
+    )
+    assert ConfigJsonBuilder.build(study_path, json) == config
+
+
+def test_parse_thermal() -> None:
+    json = build_empty_json()
+    json["input"]["thermal"]["clusters"] = {
+        "fr": {"list": {"t1": {}, "t2": {}}}
+    }
+
+    assert ConfigJsonBuilder._parse_thermal(json, "fr") == ["t1", "t2"]
+
+
+def test_parse_links() -> None:
+    json = build_empty_json()
+    json["input"]["links"] = {
+        "fr": {
+            "properties": {
+                "l1": {
+                    "filter-synthesis": "annual",
+                    "filter-year-by-year": "hourly",
+                }
+            }
+        }
+    }
+    link = Link(filters_synthesis=["annual"], filters_year=["hourly"])
+    assert ConfigJsonBuilder._parse_links(json, "fr") == {"l1": link}

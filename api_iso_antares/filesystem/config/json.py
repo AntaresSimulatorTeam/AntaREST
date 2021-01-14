@@ -81,11 +81,17 @@ class ConfigJsonBuilder:
 
     @staticmethod
     def _parse_thermal(json: JSON, area: str) -> List[str]:
+        if area not in json["input"]["thermal"]["clusters"]:
+            return list()
+
         list_ini = json["input"]["thermal"]["clusters"][area]["list"]
         return list(list_ini.keys())
 
     @staticmethod
     def _parse_links(json: JSON, area: str) -> Dict[str, Link]:
+        if area not in json["input"]["links"]:
+            return dict()
+
         properties_ini = json["input"]["links"][area]["properties"]
         return {
             link: Link(
