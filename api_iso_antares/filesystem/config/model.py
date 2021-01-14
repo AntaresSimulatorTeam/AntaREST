@@ -66,6 +66,20 @@ class Area(DTO):
         self.filters_year = filters_year
 
 
+class Set(DTO):
+    ALL = ["hourly", "daily", "weekly", "monthly", "annual"]
+
+    def __init__(
+        self,
+        areas: Optional[List[str]] = None,
+        filters_synthesis: List[str] = ALL,
+        filters_year: List[str] = ALL,
+    ):
+        self.areas = areas
+        self.filters_synthesis = filters_synthesis
+        self.filters_year = filters_year
+
+
 class Simulation(DTO):
     def __init__(
         self,
@@ -94,12 +108,14 @@ class Config(DTO):
         self,
         study_path: Path,
         areas: Optional[Dict[str, Area]] = None,
+        sets: Optional[Dict[str, Set]] = None,
         outputs: Optional[Dict[int, Simulation]] = None,
         bindings: Optional[List[str]] = None,
     ):
         self.root_path = study_path
         self.path = study_path
         self.areas = areas or dict()
+        self.sets = sets or dict()
         self.outputs = outputs or dict()
         self.bindings = bindings or list()
 

@@ -6,6 +6,7 @@ from api_iso_antares.filesystem.config.model import (
     Area,
     Link,
     Simulation,
+    Set,
 )
 
 
@@ -74,6 +75,21 @@ def test_parse_outputs(tmp_path: Path) -> None:
         },
     )
     assert ConfigPathBuilder.build(study_path) == config
+
+
+def test_parse_sets(tmp_path: Path) -> None:
+    study_path = build_empty_files(tmp_path)
+    content = """
+[hello]
+output = true
++ = a
++ = b
+"""
+    (study_path / "input/areas/sets.ini").write_text(content)
+
+    assert ConfigPathBuilder._parse_sets(study_path) == {
+        "hello": Set(areas=["a", "b"])
+    }
 
 
 def test_parse_area(tmp_path: Path) -> None:

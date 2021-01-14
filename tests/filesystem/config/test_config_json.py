@@ -7,6 +7,7 @@ from api_iso_antares.filesystem.config.model import (
     Simulation,
     Area,
     Link,
+    Set,
 )
 
 
@@ -125,3 +126,14 @@ def test_parse_links() -> None:
     }
     link = Link(filters_synthesis=["annual"], filters_year=["hourly"])
     assert ConfigJsonBuilder._parse_links(json, "fr") == {"l1": link}
+
+
+def test_parse_sets() -> None:
+    json = build_empty_json()
+    json["input"]["areas"]["sets"] = {
+        "hello": {"output": True, "+": ["a", "b"]}
+    }
+
+    assert ConfigJsonBuilder._parse_sets(json) == {
+        "hello": Set(areas=["a", "b"])
+    }

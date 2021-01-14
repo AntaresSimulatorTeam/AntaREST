@@ -7,6 +7,7 @@ from api_iso_antares.filesystem.config.model import (
     Area,
     Simulation,
     Link,
+    Set,
 )
 
 
@@ -16,6 +17,7 @@ class ConfigJsonBuilder:
         return Config(
             study_path=study_path,
             areas=ConfigJsonBuilder._parse_areas(json),
+            sets=ConfigJsonBuilder._parse_sets(json),
             outputs=ConfigJsonBuilder._parse_outputs(json),
             bindings=ConfigJsonBuilder._parse_bindings(json),
         )
@@ -24,6 +26,15 @@ class ConfigJsonBuilder:
     def _parse_bindings(json: JSON) -> List[str]:
         bindings = json["input"]["bindingconstraints"]["bindingconstraints"]
         return [bind["id"] for bind in bindings.values()]
+
+    @staticmethod
+    def _parse_sets(json: JSON) -> Dict[str, Set]:
+        sub_json = json["input"]["areas"]["sets"]
+        return {
+            name: Set(areas=item.get("+"))
+            for name, item in sub_json.items()
+            if item.get("output", False)
+        }
 
     @staticmethod
     def _parse_areas(json: JSON) -> Dict[str, Area]:

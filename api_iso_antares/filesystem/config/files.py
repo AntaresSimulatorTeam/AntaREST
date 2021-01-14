@@ -2,13 +2,14 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
-from api_iso_antares.antares_io.reader import IniReader
+from api_iso_antares.antares_io.reader import IniReader, SetsIniReader
 from api_iso_antares.custom_types import JSON
 from api_iso_antares.filesystem.config.model import (
     Config,
     Area,
     Simulation,
     Link,
+    Set,
 )
 
 
@@ -18,6 +19,7 @@ class ConfigPathBuilder:
         return Config(
             study_path=study_path,
             areas=ConfigPathBuilder._parse_areas(study_path),
+            sets=ConfigPathBuilder._parse_sets(study_path),
             outputs=ConfigPathBuilder._parse_outputs(study_path),
             bindings=ConfigPathBuilder._parse_bindings(study_path),
         )
@@ -28,6 +30,15 @@ class ConfigPathBuilder:
             root / "input/bindingconstraints/bindingconstraints.ini"
         )
         return [bind["id"] for bind in bindings.values()]
+
+    @staticmethod
+    def _parse_sets(root: Path) -> Dict[str, Set]:
+        json = SetsIniReader().read(root / "input/areas/sets.ini")
+        return {
+            name: Set(areas=item.get("+"))
+            for name, item in json.items()
+            if item.get("output", False)
+        }
 
     @staticmethod
     def _parse_areas(root: Path) -> Dict[str, Area]:
