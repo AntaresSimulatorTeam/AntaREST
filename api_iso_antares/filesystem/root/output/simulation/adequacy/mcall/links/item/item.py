@@ -4,6 +4,9 @@ from api_iso_antares.filesystem.inode import TREE
 from api_iso_antares.filesystem.root.output.simulation.adequacy.mcall.links.item.values import (
     OutputSimulationAdequacyMcAllLinksItemValues as Values,
 )
+from api_iso_antares.filesystem.root.output.simulation.adequacy.mcall.links.item.id import (
+    OutputSimulationAdequacyMcAllLinksItemId as Id,
+)
 
 
 class OutputSimulationAdequacyMcAllLinksItem(FolderNode):
@@ -13,10 +16,10 @@ class OutputSimulationAdequacyMcAllLinksItem(FolderNode):
         self.link = link
 
     def build(self, config: Config) -> TREE:
-        children: TREE = {
-            f"values-{timing}": Values(
+        children: TREE = {}
+        for timing in config.get_filters_synthesis(self.area, self.link):
+            children[f"values-{timing}"] = Values(
                 config.next_file(f"values-{timing}.txt")
             )
-            for timing in config.get_filters_synthesis(self.area, self.link)
-        }
+            children[f"id-{timing}"] = Id(config.next_file(f"id-{timing}.txt"))
         return children

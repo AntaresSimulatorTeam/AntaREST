@@ -77,7 +77,9 @@ def compare(origin: Path, copy: Path) -> bool:
             print(f"{FAIL}file {origin} not present in copy{ENDC}")
             return False
         return all(
-            compare(child, copy / child.name) for child in origin.iterdir()
+            compare(child, copy / child.name)
+            for child in origin.iterdir()
+            if child.name[:2] != "._"
         )
 
 
@@ -106,6 +108,6 @@ def main(path: Path, host: str) -> None:
 
 
 if __name__ == "__main__":
-    path = Path("/Volumes/Crucial X8/antares/Antares_Simulator_Examples")
+    path = Path("/Volumes/Crucial X8/antares/short-tests")
     host = "http://localhost:8080"
     main(path=path, host=host)
