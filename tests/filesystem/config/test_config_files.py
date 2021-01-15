@@ -17,6 +17,7 @@ def build_empty_files(tmp: Path) -> Path:
 
     (study_path / "input/areas").mkdir(parents=True)
     (study_path / "input/areas/list.txt").touch()
+    (study_path / "input/areas/sets.ini").touch()
 
     (study_path / "input/links").mkdir(parents=True)
     (study_path / "input/thermal/clusters").mkdir(parents=True)

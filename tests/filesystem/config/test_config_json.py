@@ -14,7 +14,7 @@ from api_iso_antares.filesystem.config.model import (
 def build_empty_json() -> JSON:
     return {
         "input": {
-            "areas": {},
+            "areas": {"sets": {}},
             "bindingconstraints": {"bindingconstraints": {}},
             "links": {},
             "thermal": {"clusters": {}},
@@ -78,13 +78,11 @@ def test_parse_areas() -> None:
     study_path = Path()
 
     json = build_empty_json()
-    json["input"]["areas"] = {
-        "fr": {
-            "optimization": {
-                "filtering": {
-                    "filter-synthesis": "daily, monthly",
-                    "filter-year-by-year": "hourly, weekly, annual",
-                }
+    json["input"]["areas"]["fr"] = {
+        "optimization": {
+            "filtering": {
+                "filter-synthesis": "daily, monthly",
+                "filter-year-by-year": "hourly, weekly, annual",
             }
         }
     }
