@@ -124,9 +124,11 @@ class Config(DTO):
         copy.path = copy.path / name
         return copy
 
-    @property
     def area_names(self) -> List[str]:
         return list(self.areas.keys())
+
+    def set_names(self) -> List[str]:
+        return list(self.sets.keys())
 
     def get_thermals(self, area: str) -> List[str]:
         return self.areas[area].thermals
@@ -139,6 +141,8 @@ class Config(DTO):
     ) -> List[str]:
         if link:
             return self.areas[area].links[link].filters_synthesis
+        if area in self.sets:
+            return self.sets[area].filters_synthesis
         return self.areas[area].filters_synthesis
 
     def get_filters_year(
@@ -146,4 +150,6 @@ class Config(DTO):
     ) -> List[str]:
         if link:
             return self.areas[area].links[link].filters_year
+        if area in self.sets:
+            return self.sets[area].filters_year
         return self.areas[area].filters_year

@@ -12,6 +12,6 @@ class OutputSimulationTsNumbersLoad(FolderNode):
             area: OutputSimulationTsNumbersLoadArea(
                 config.next_file(area + ".txt")
             )
-            for area in config.area_names
+            for area in config.area_names()
         }
         return children

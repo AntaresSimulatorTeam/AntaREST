@@ -13,7 +13,7 @@ class InputHydroIni(IniFileNode):
             "leeway up",
             "pumping efficiency",
         ]
-        section = {a: (int, float) for a in config.area_names}
+        section = {a: (int, float) for a in config.area_names()}
         types = {name: section for name in sections}
 
         IniFileNode.__init__(self, config, types)

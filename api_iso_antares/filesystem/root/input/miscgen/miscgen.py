@@ -12,6 +12,6 @@ class InputMiscGen(FolderNode):
             f"miscgen-{a}": InputMiscGenArea(
                 config.next_file(f"miscgen-{a}.txt")
             )
-            for a in config.area_names
+            for a in config.area_names()
         }
         return children

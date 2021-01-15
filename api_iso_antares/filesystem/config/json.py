@@ -33,7 +33,7 @@ class ConfigJsonBuilder:
         return {
             name: Set(areas=item.get("+"))
             for name, item in sub_json.items()
-            if item.get("output", False)
+            if item.get("output", True)
         }
 
     @staticmethod

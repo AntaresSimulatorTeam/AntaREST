@@ -13,7 +13,7 @@ class InputWindPrepro(FolderNode):
     def build(self, config: Config) -> TREE:
         children: TREE = {
             a: InputWindPreproArea(config.next_file(a))
-            for a in config.area_names
+            for a in config.area_names()
         }
         children["correlation"] = InputWindPreproCorrelation(
             config.next_file("correlation.ini")

@@ -55,6 +55,18 @@ def importation(host: str, study: bytes) -> Optional[str]:
         return None
 
 
+def excluded(name: str) -> bool:
+    # some file as ghost like sets.ini -> ._sets.ini
+    if name[:2] == "._":
+        return True
+
+    # reference file not used
+    if name == "reference":
+        return True
+
+    return False
+
+
 def compare(origin: Path, copy: Path) -> bool:
     """
     Compare file by file to folder.
@@ -79,7 +91,7 @@ def compare(origin: Path, copy: Path) -> bool:
         return all(
             compare(child, copy / child.name)
             for child in origin.iterdir()
-            if child.name[:2] != "._"
+            if not excluded(child.name)
         )
 
 

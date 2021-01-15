@@ -35,9 +35,9 @@ class ConfigPathBuilder:
     def _parse_sets(root: Path) -> Dict[str, Set]:
         json = SetsIniReader().read(root / "input/areas/sets.ini")
         return {
-            name: Set(areas=item.get("+"))
+            name.lower(): Set(areas=item.get("+"))
             for name, item in json.items()
-            if item.get("output", False)
+            if item.get("output", True)
         }
 
     @staticmethod

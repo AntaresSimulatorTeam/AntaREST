@@ -23,7 +23,7 @@ class OutputSimulationModeMcIndScnLinks(FolderNode):
     def build(self, config: Config) -> TREE:
         children: TREE = {}
 
-        for area in config.area_names:
+        for area in config.area_names():
             children[area] = _OutputSimulationModeMcIndScnLinksBis(
                 config, area
             )

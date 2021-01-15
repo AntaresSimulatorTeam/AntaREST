@@ -10,7 +10,7 @@ from api_iso_antares.filesystem.root.output.simulation.mode.mcind.scn.areas.item
 )
 
 
-class OutputSimulationModeMcIndScnAreasItem(FolderNode):
+class OutputSimulationModeMcIndScnAreasArea(FolderNode):
     def __init__(self, config: Config, area: str):
         FolderNode.__init__(self, config)
         self.area = area
