@@ -55,6 +55,18 @@ def importation(host: str, study: bytes) -> Optional[str]:
         return None
 
 
+def excluded(name: str) -> bool:
+    # some file as ghost like sets.ini -> ._sets.ini
+    if name[:2] == "._":
+        return True
+
+    # reference file not used
+    if name == "reference":
+        return True
+
+    return False
+
+
 def compare(origin: Path, copy: Path) -> bool:
     """
     Compare file by file to folder.
@@ -77,7 +89,9 @@ def compare(origin: Path, copy: Path) -> bool:
             print(f"{FAIL}file {origin} not present in copy{ENDC}")
             return False
         return all(
-            compare(child, copy / child.name) for child in origin.iterdir()
+            compare(child, copy / child.name)
+            for child in origin.iterdir()
+            if not excluded(child.name)
         )
 
 
@@ -106,6 +120,6 @@ def main(path: Path, host: str) -> None:
 
 
 if __name__ == "__main__":
-    path = Path("/Volumes/Crucial X8/antares/Antares_Simulator_Examples")
+    path = Path("/Volumes/Crucial X8/antares/short-tests")
     host = "http://localhost:8080"
     main(path=path, host=host)

@@ -10,6 +10,6 @@ class InputWindSeries(FolderNode):
     def build(self, config: Config) -> TREE:
         children: TREE = {
             f"wind_{a}": InputWindSeriesArea(config.next_file(f"wind_{a}.txt"))
-            for a in config.area_names
+            for a in config.area_names()
         }
         return children

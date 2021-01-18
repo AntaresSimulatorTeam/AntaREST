@@ -4,17 +4,14 @@ from api_iso_antares.filesystem.inode import TREE
 from api_iso_antares.filesystem.root.output.simulation.about.about import (
     OutputSimulationAbout,
 )
-from api_iso_antares.filesystem.root.output.simulation.adequacy.adequacy import (
-    OutputSimulationAdequacy,
-)
 from api_iso_antares.filesystem.root.output.simulation.annualSystemCost import (
     OutputSimulationAnnualSystemCost,
 )
 from api_iso_antares.filesystem.root.output.simulation.checkIntegrity import (
     OutputSimulationCheckIntegrity,
 )
-from api_iso_antares.filesystem.root.output.simulation.economy.economy import (
-    OutputSimulationEconomy,
+from api_iso_antares.filesystem.root.output.simulation.mode.economy import (
+    OutputSimulationMode,
 )
 from api_iso_antares.filesystem.root.output.simulation.info_antares_output import (
     OutputSimulationInfoAntaresOutput,
@@ -60,12 +57,12 @@ class OutputSimulation(FolderNode):
             ),
         }
         if self.simulation.mode == "economy":
-            children["economy"] = OutputSimulationEconomy(
+            children["economy"] = OutputSimulationMode(
                 config.next_file("economy"), self.simulation
             )
 
         elif self.simulation.mode == "adequacy":
-            children["adequacy"] = OutputSimulationAdequacy(
+            children["adequacy"] = OutputSimulationMode(
                 config.next_file("adequacy"), self.simulation
             )
 

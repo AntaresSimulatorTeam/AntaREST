@@ -28,6 +28,9 @@ class BucketNode(FolderNode):
                 )
 
     def build(self, config: Config) -> TREE:
+        if not config.path.exists():
+            return dict()
+
         current_dir = os.getcwd()
         os.chdir(self.config.path)
 
@@ -36,6 +39,7 @@ class BucketNode(FolderNode):
                 self.config.next_file(file)
             )
             for file in glob.glob("**", recursive=True)
+            if Path(file).is_file()
         }
 
         os.chdir(current_dir)

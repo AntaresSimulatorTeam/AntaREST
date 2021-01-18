@@ -12,6 +12,6 @@ class OutputSimulationTsNumbersThermal(FolderNode):
             area: OutputSimulationTsNumbersThermalArea(
                 config.next_file(area), area
             )
-            for area in config.area_names
+            for area in config.area_names()
         }
         return children

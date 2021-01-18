@@ -13,7 +13,7 @@ class InputSolarPrepro(FolderNode):
     def build(self, config: Config) -> TREE:
         children: TREE = {
             a: InputSolarPreproArea(config.next_file(a))
-            for a in config.area_names
+            for a in config.area_names()
         }
         children["correlation"] = InputSolarPreproCorrelation(
             config.next_file("correlation.ini")

@@ -34,7 +34,8 @@ class RawFileNode(INode[str, str, str]):
             shutil.copyfile(path, self.config.path)
 
     def validate(self, data: str) -> None:
-        assert self.config.path.exists()
+        if not self.config.path.exists():
+            raise ValueError(f"{self.config.path} not exist")
 
     def _assert_url(self, url: Optional[List[str]] = None) -> None:
         url = url or []

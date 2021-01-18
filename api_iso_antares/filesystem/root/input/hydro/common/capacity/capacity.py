@@ -9,7 +9,7 @@ from api_iso_antares.filesystem.root.input.hydro.common.capacity.item import (
 class InputHydroCommonCapacity(FolderNode):
     def build(self, config: Config) -> TREE:
         children: TREE = dict()
-        for area in config.area_names:
+        for area in config.area_names():
             for file in [
                 "creditmodulations",
                 "inflowPattern",

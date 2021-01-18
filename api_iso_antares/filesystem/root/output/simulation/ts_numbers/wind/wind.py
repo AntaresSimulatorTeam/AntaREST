@@ -12,6 +12,6 @@ class OutputSimulationTsNumbersWind(FolderNode):
             area: OutputSimulationTsNumbersWindArea(
                 config.next_file(area + ".txt")
             )
-            for area in config.area_names
+            for area in config.area_names()
         }
         return children

@@ -10,6 +10,6 @@ class InputThermalPrepro(FolderNode):
     def build(self, config: Config) -> TREE:
         children: TREE = {
             a: InputThermalPreproArea(config.next_file(a), area=a)
-            for a in config.area_names
+            for a in config.area_names()
         }
         return children
