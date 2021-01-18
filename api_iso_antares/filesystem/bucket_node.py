@@ -39,6 +39,7 @@ class BucketNode(FolderNode):
                 self.config.next_file(file)
             )
             for file in glob.glob("**", recursive=True)
+            if Path(file).is_file()
         }
 
         os.chdir(current_dir)

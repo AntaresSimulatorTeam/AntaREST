@@ -21,7 +21,6 @@ def test_get_bucket(tmp_path: Path):
     expected = {
         "fileA.txt": "file/user/fileA.txt",
         "fileB.txt": "file/user/fileB.txt",
-        "folder": "file/user/folder",
         "folder/fileC.txt": "file/user/folder/fileC.txt",
     }
 
