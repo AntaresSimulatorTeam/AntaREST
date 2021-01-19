@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AntaREST</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet">
+    <style>
+        h1, h2, h3, h4, p, button {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        h1 {
+            font-size: xx-large;
+        }
+
+        .primary {
+            color: #0277bd;
+        }
+
+        .primary-dark {
+            color: #004c8c;
+        }
+
+        .gray {
+            color: #a4a4a4;
+        }
+
+        .title {
+            font-size: x-large;
+            padding: 0;
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .id {
+            font-size: small;
+            padding: -10px 0 20px 0;
+            margin-top: 0;
+            font-family: 'Courier', sans-serif;
+        }
+
+        .card {
+            background-color: white;
+            display: inline-block;
+            margin: 10px;
+            padding: 20px;
+            width: 400px;
+            height: 160px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        }
+
+        .item {
+            width: 50%;
+        }
+
+        .separtor {
+            border-bottom: solid 1px #dbdbdb;
+            margin: 20px -20px 0 -20px;
+        }
+
+        .button-card {
+            margin: 5px;
+            font-size: large;
+            border: none;
+            background-color: transparent;
+            height: 40px;
+        }
+
+        .button-card:active {
+            border: none;
+            background-color: #d7d7d7;
+        }
+
+        .button-card:focus {
+            outline: 0;
+        }
+
+        .raised-button {
+            margin: 10px;
+            padding: 10px;
+            height: 40px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            background-color: #0277bd;
+        }
+
+        .raised-button:active {
+            background-color: #004c8c;
+        }
+
+        .raised-button:focus {
+            outline: 0;
+        }
+
+        .material-icons {
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body style="background-color: #efefef">
+
+    <div style="width: 100%; text-align: center">
+        <h1 class="primary">AntaREST</h1>
+    </div>
+
+
+    <div style="padding: 10px; width: 100%">
+        <span><button class="raised-button"><i class="material-icons">add</i>ADD</button></span>
+        <span><button class="raised-button"><i class="material-icons">get_app</i>IMPORT</button></span>
+        <span style="float: right"><button class="raised-button"><i class="material-icons">import_contacts</i>DOCS</button></span>
+
+    </div>
+
+    <span>
+        {% for id, s in studies.items() %}
+        <div class="card">
+            <p class="title primary">{{ s["antares"]["caption"] }}</p>
+            <p class="id">{{ id }}</p>
+            <table style="width: 100%">
+                <tr>
+                    <td class="item"><i class="material-icons gray">account_circle</i> {{ s["antares"]["author"] }} </td>
+                    <td class="item"><i class="material-icons gray">get_app</i> {{ s["antares"]["created"] | date }} </td>
+                </tr>
+                <tr>
+                    <td class="item"><i class="material-icons gray">info</i> {{ s["antares"]["version"] }} </td>
+                    <td class="item"><i class="material-icons gray">create</i> {{ s["antares"]["lastsave"] | date }} </td>
+                </tr>
+            </table>
+
+            <div class="separtor"></div>
+
+            <span><button class="button-card primary">SAVE</button></span>
+            <span><button class="button-card primary">EXPORT</button></span>
+            <span style="float: right"><button class="button-card" style="color: red">DELETE</button></span>
+
+        </div>
+        {% endfor %}
+    </span>
+</body>
+</html>
+
+<!--
+{'antares': {'version': 700, 'caption': 'STA-mini', 'created': 1480683452, 'lastsave': 1602678639, 'author': 'Json Smith'}}
+-->
