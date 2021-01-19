@@ -6,7 +6,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet">
+          rel="stylesheet">
     <style>
         h1, h2, h3, h4, p, button {
             font-family: 'Roboto', sans-serif;
@@ -49,7 +49,7 @@
             padding: 20px;
             width: 400px;
             height: 160px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
         }
 
         .item {
@@ -63,7 +63,7 @@
 
         .button-card {
             margin: 5px;
-            font-size: large;
+            font-size: medium;
             border: none;
             background-color: transparent;
             height: 40px;
@@ -82,15 +82,15 @@
             margin: 10px;
             padding: 10px;
             height: 40px;
-            border: none;
+            border: solid 2px #0277bd;
             border-radius: 5px;
-            color: white;
+            color: #0277bd;
             font-weight: bold;
-            background-color: #0277bd;
+            background-color: transparent;
         }
 
         .raised-button:active {
-            background-color: #004c8c;
+            background-color: #9dc6ea;
         }
 
         .raised-button:focus {
@@ -101,43 +101,83 @@
             vertical-align: middle;
             margin-right: 5px;
         }
+
+        .input-text {
+            height: 40px;
+            border: none;
+            background-color: transparent;
+            border-bottom: solid 1px #808080;
+        }
+
+        .input-text:focus {
+            outline: 0;
+            border: none;
+            border-bottom: solid 2px #0277bd;
+        }
+
     </style>
 </head>
 <body style="background-color: #efefef">
 
-    <div style="width: 100%; text-align: center">
-        <h1 class="primary">AntaREST</h1>
-    </div>
+<div style="width: 100%; text-align: center">
+    <h1 class="primary">AntaREST</h1>
+</div>
 
 
-    <div style="padding: 10px; width: 100%">
-        <span><button class="raised-button"><i class="material-icons">add</i>ADD</button></span>
-        <span><button class="raised-button"><i class="material-icons">get_app</i>IMPORT</button></span>
-        <span style="float: right"><button class="raised-button"><i class="material-icons">import_contacts</i>DOCS</button></span>
+<div style="margin: 10px; width: 100%">
+    <span><button class="raised-button"><i class="material-icons">add</i>ADD</button></span>
+    <span><button class="raised-button"><i class="material-icons">get_app</i>IMPORT</button></span>
+    <span style="float: right"><button class="raised-button" onclick="window.location.href='/docs'"><i
+            class="material-icons">import_contacts</i>DOCS</button></span>
+</div>
 
-    </div>
+<form action="/" method="POST" style="margin: 10px">
+    <input type="text"
+           name="name"
+           required
+           class="input-text"
+           placeholder="study name"/>
+    <input type="submit" value="ADD" class="raised-button"/>
+</form>
 
-    <span>
+<form action="/" method="POST" enctype="multipart/form-data" style="margin: 10px">
+    <input type="file"
+           name="study"
+           accept="application/zip"
+           required/>
+    <input type="submit" value="IMPORT" class="raised-button"/>
+</form>
+
+<span>
         {% for id, s in studies.items() %}
         <div class="card">
             <p class="title primary">{{ s["antares"]["caption"] }}</p>
             <p class="id">{{ id }}</p>
             <table style="width: 100%">
                 <tr>
-                    <td class="item"><i class="material-icons gray">account_circle</i> {{ s["antares"]["author"] }} </td>
-                    <td class="item"><i class="material-icons gray">get_app</i> {{ s["antares"]["created"] | date }} </td>
+                    <td class="item"><i
+                            class="material-icons gray">account_circle</i> {{ s["antares"]["author"] }} </td>
+                    <td class="item"><i
+                            class="material-icons gray">get_app</i> {{ s["antares"]["created"] | date }} </td>
                 </tr>
                 <tr>
                     <td class="item"><i class="material-icons gray">info</i> {{ s["antares"]["version"] }} </td>
-                    <td class="item"><i class="material-icons gray">create</i> {{ s["antares"]["lastsave"] | date }} </td>
+                    <td class="item"><i
+                            class="material-icons gray">create</i> {{ s["antares"]["lastsave"] | date }} </td>
                 </tr>
             </table>
 
             <div class="separtor"></div>
 
-            <span><button class="button-card primary">SAVE</button></span>
-            <span><button class="button-card primary">EXPORT</button></span>
-            <span style="float: right"><button class="button-card" style="color: red">DELETE</button></span>
+            <span><button class="button-card primary"
+                          onclick="window.location.href='/studies/{{ id }}/export'">SAVE</button></span>
+            <span><button class="button-card primary" onclick="window.location.href='/studies/{{ id }}/export?compact'">EXPORT</button></span>
+            <span style="float: right">
+                <form action="/" method="POST">
+                    <input type=hidden name="delete-id" value="{{ id }}">
+                    <input type="submit" value="DELETE" class="button-card" style="color: red"/>
+                </form>
+            </span>
 
         </div>
         {% endfor %}

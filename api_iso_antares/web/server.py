@@ -76,7 +76,7 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
 
 
 def create_ui_routes(application: Flask) -> None:
-    @application.route("/", methods=["GET"])
+    @application.route("/", methods=["GET", "POST"])
     def home() -> Any:
         """
         Home ui
@@ -85,10 +85,20 @@ def create_ui_routes(application: Flask) -> None:
             '200':
               content:
                  application/html: {}
-              description html home page
+              description: html home page
         tags:
           - UI
         """
+        if request.method == "POST":
+            if "name" in request.form:
+                request_handler.create_study(request.form["name"])
+
+            elif "delete-id" in request.form:  # DELETE
+                request_handler.delete_study(request.form.get("delete-id", ""))
+
+            elif "study" in request.form:
+                request_handler.import_study(request.form["study"])
+
         studies = request_handler.get_studies_informations()
         return render_template("home.html", studies=studies, size=len(studies))
 
