@@ -215,13 +215,6 @@ class RequestHandler:
             del study
             shutil.rmtree(path_study / "res")
             os.remove(str(data_file.absolute()))
-        # If files study remove middle level folder
-        else:
-            middle = list(path_study.iterdir())[0]
-            for path in middle.iterdir():
-                shutil.move(str(path.absolute()), path_study)
-            os.removedirs(middle)
-            print(path_study)
 
         data = self.get(uuid, parameters=RequestHandlerParameters(depth=-1))
         if data is None:

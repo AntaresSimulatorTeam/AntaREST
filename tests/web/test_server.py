@@ -29,7 +29,7 @@ def test_server() -> None:
 
     parameters = RequestHandlerParameters()
 
-    app = create_server(mock_handler)
+    app = create_server(mock_handler, res=Path())
     client = app.test_client()
     client.get("/studies/study1/settings/general/params")
 
@@ -43,7 +43,7 @@ def test_404() -> None:
     mock_handler = Mock()
     mock_handler.get.side_effect = UrlNotMatchJsonDataError("Test")
 
-    app = create_server(mock_handler)
+    app = create_server(mock_handler, res=Path())
     client = app.test_client()
     result = client.get("/studies/study1/settings/general/params")
     assert result.status_code == 404
@@ -58,7 +58,7 @@ def test_server_with_parameters() -> None:
     mock_handler = Mock()
     mock_handler.get.return_value = {}
 
-    app = create_server(mock_handler)
+    app = create_server(mock_handler, res=Path())
     client = app.test_client()
     result = client.get("/studies/study1?depth=4")
 
@@ -83,7 +83,7 @@ def test_matrix(tmp_path: str, request_handler_builder: Callable) -> None:
 
     request_handler = request_handler_builder(path_studies=tmp)
 
-    app = create_server(request_handler)
+    app = create_server(request_handler, res=Path())
     client = app.test_client()
     result_right = client.get("/file/study1/matrix")
 
@@ -106,7 +106,7 @@ def test_create_study(
     request_handler = Mock()
     request_handler.create_study.return_value = "my-uuid"
 
-    app = create_server(request_handler)
+    app = create_server(request_handler, res=Path())
     client = app.test_client()
 
     result_right = client.post("/studies/study2")
@@ -134,7 +134,7 @@ def test_import_study_zipped(
 
     mock_request_handler = Mock()
     mock_request_handler.import_study.return_value = study_name
-    app = create_server(mock_request_handler)
+    app = create_server(mock_request_handler, res=Path())
     client = app.test_client()
 
     result = client.post("/studies")
@@ -155,7 +155,7 @@ def test_copy_study(tmp_path: Path, request_handler_builder: Callable) -> None:
     request_handler = Mock()
     request_handler.copy_study.return_value = "/studies/study-copied"
 
-    app = create_server(request_handler)
+    app = create_server(request_handler, res=Path())
     client = app.test_client()
 
     result = client.post("/studies/existing-study/copy?dest=study-copied")
@@ -179,7 +179,7 @@ def test_list_studies(
     request_handler = Mock()
     request_handler.get_studies_informations.return_value = studies
 
-    app = create_server(request_handler)
+    app = create_server(request_handler, res=Path())
     client = app.test_client()
     result = client.get("/studies")
 
@@ -188,7 +188,7 @@ def test_list_studies(
 
 @pytest.mark.unit_test
 def test_server_health() -> None:
-    app = create_server(Mock())
+    app = create_server(Mock(), res=Path())
     client = app.test_client()
     result = client.get("/health")
     assert result.data == b'{"status":"available"}\n'
@@ -200,7 +200,7 @@ def test_export_files() -> None:
     mock_handler = Mock()
     mock_handler.export_study.return_value = BytesIO(b"Hello")
 
-    app = create_server(mock_handler)
+    app = create_server(mock_handler, res=Path())
     client = app.test_client()
     result = client.get("/studies/name/export")
 
@@ -214,7 +214,7 @@ def test_export_compact() -> None:
     mock_handler = Mock()
     mock_handler.export_study.return_value = BytesIO(b"Hello")
 
-    app = create_server(mock_handler)
+    app = create_server(mock_handler, res=Path())
     client = app.test_client()
     result = client.get("/studies/name/export?compact")
 
@@ -227,7 +227,7 @@ def test_delete_study() -> None:
 
     mock_handler = Mock()
 
-    app = create_server(mock_handler)
+    app = create_server(mock_handler, res=Path())
     client = app.test_client()
     client.delete("/studies/name")
 
@@ -238,7 +238,7 @@ def test_delete_study() -> None:
 def test_import_matrix() -> None:
     mock_handler = Mock()
 
-    app = create_server(mock_handler)
+    app = create_server(mock_handler, res=Path())
     client = app.test_client()
 
     data = io.BytesIO(b"hello")
@@ -257,7 +257,7 @@ def test_import_matrix_with_wrong_path() -> None:
     mock_handler = Mock()
     mock_handler.upload_matrix = Mock(side_effect=IncorrectPathError(""))
 
-    app = create_server(mock_handler)
+    app = create_server(mock_handler, res=Path())
     client = app.test_client()
 
     data = io.BytesIO(b"hello")
@@ -276,7 +276,7 @@ def test_edit_study() -> None:
 
     data = json.dumps({"Hello": "World"})
 
-    app = create_server(mock_handler)
+    app = create_server(mock_handler, res=Path())
     client = app.test_client()
     client.post("/studies/my-uuid/url/to/change", data=data)
 
@@ -291,7 +291,7 @@ def test_edit_study_fail() -> None:
 
     data = json.dumps({})
 
-    app = create_server(mock_handler)
+    app = create_server(mock_handler, res=Path())
     client = app.test_client()
     res = client.post("/studies/my-uuid/url/to/change", data=data)
 
@@ -306,7 +306,7 @@ def test_version() -> None:
     mock_request_handler = Mock()
     mock_request_handler.path_resources = Path("/")
 
-    app = create_server(mock_request_handler)
+    app = create_server(mock_request_handler, res=Path())
     client = app.test_client()
 
     path = "/version"

@@ -9,7 +9,7 @@ from api_iso_antares.web.server import create_server
 
 
 def assert_url_content(request_handler: RequestHandler, url: str) -> bytes:
-    app = create_server(request_handler)
+    app = create_server(request_handler, res=Path())
     client = app.test_client()
     res = client.get(url)
     return res.data
