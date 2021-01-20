@@ -105,7 +105,7 @@ def create_ui_routes(application: Flask) -> None:
         studies = request_handler.get_studies_informations()
         return render_template("home.html", studies=studies, size=len(studies))
 
-    @application.template_filter("date")
+    @application.template_filter("date")  # type: ignore
     def time_filter(date: int) -> str:
         return datetime.fromtimestamp(date).strftime("%d-%m-%Y %H:%M")
 
