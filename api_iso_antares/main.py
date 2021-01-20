@@ -65,7 +65,7 @@ def get_flask_application(studies_path: Path) -> Flask:
         path_studies=studies_path,
         path_resources=path_resources,
     )
-    application = create_server(request_handler)
+    application = create_server(request_handler, path_resources)
 
     return application
 

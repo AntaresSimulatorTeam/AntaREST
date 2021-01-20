@@ -15,7 +15,7 @@ from api_iso_antares.web.server import create_server
 def assert_url_content(
     request_handler: RequestHandler, url: str, expected_output: str
 ) -> None:
-    app = create_server(request_handler)
+    app = create_server(request_handler, res=Path() / "resources")
     client = app.test_client()
     res = client.get(url)
     assert json.loads(res.data) == expected_output
@@ -341,7 +341,7 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
     source_study_name = "STA-mini"
     destination_study_name = "copy-STA-mini"
 
-    app = create_server(request_handler)
+    app = create_server(request_handler, res=Path())
     client = app.test_client()
     result = client.post(
         f"/studies/{source_study_name}/copy?dest={destination_study_name}"
@@ -437,7 +437,7 @@ def test_sta_mini_import(
     sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
-    app = create_server(request_handler)
+    app = create_server(request_handler, res=Path())
     client = app.test_client()
 
     study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
@@ -453,7 +453,7 @@ def test_sta_mini_import_compact(
 
     zip_study_stream = request_handler.export_study("STA-mini", compact=True)
 
-    app = create_server(request_handler)
+    app = create_server(request_handler, res=Path())
     client = app.test_client()
     result = client.post(
         "/studies", data={"study": (zip_study_stream, "study.zip")}

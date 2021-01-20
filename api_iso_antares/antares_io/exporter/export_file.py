@@ -15,14 +15,12 @@ class Exporter:
         data = BytesIO()
         zipf = ZipFile(data, "w", ZIP_DEFLATED)
 
-        root = path_study.name + os.sep
-
         current_dir = os.getcwd()
         os.chdir(path_study)
 
         for path in glob.glob("**", recursive=True):
             if outputs or path.split(os.sep)[0] != "output":
-                zipf.write(path, root + path)
+                zipf.write(path, path)
 
         zipf.close()
 

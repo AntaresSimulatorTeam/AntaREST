@@ -1,12 +1,22 @@
 import io
 import json
+import os
 import re
 import subprocess
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional
 
-from flask import escape, Flask, jsonify, request, Response, send_file
+from flask import (
+    escape,
+    Flask,
+    jsonify,
+    request,
+    Response,
+    send_file,
+    render_template,
+)
 from flask_swagger import swagger  # type: ignore
 from flask_swagger_ui import get_swaggerui_blueprint  # type: ignore
 
@@ -63,6 +73,41 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
         commit_id = remove_carriage_return(commit_id)
 
     return commit_id
+
+
+def create_ui_routes(application: Flask) -> None:
+    @application.route("/", methods=["GET", "POST"])
+    def home() -> Any:
+        """
+        Home ui
+        ---
+        responses:
+            '200':
+              content:
+                 application/html: {}
+              description: html home page
+        tags:
+          - UI
+        """
+        if request.method == "POST":
+            print(request.form)
+            print(request.files)
+            if "name" in request.form:
+                request_handler.create_study(request.form["name"])
+
+            elif "delete-id" in request.form:  # DELETE
+                request_handler.delete_study(request.form.get("delete-id", ""))
+
+            elif "study" in request.files:
+                zip_binary = io.BytesIO(request.files["study"].read())
+                request_handler.import_study(zip_binary)
+
+        studies = request_handler.get_studies_informations()
+        return render_template("home.html", studies=studies, size=len(studies))
+
+    @application.template_filter("date")  # type: ignore
+    def time_filter(date: int) -> str:
+        return datetime.fromtimestamp(date).strftime("%d-%m-%Y %H:%M")
 
 
 def create_study_routes(application: Flask) -> None:
@@ -484,11 +529,13 @@ def create_non_business_routes(application: Flask) -> None:
 def create_routes(application: Flask) -> None:
     create_study_routes(application)
     create_non_business_routes(application)
+    create_ui_routes(application)
 
 
-def create_server(req: RequestHandler) -> Flask:
+def create_server(req: RequestHandler, res: Path) -> Flask:
     global request_handler
     request_handler = req
-    application = Flask(__name__)
+    print(Path(os.curdir).absolute())
+    application = Flask(__name__, template_folder=str(res / "templates"))
     create_routes(application)
     return application

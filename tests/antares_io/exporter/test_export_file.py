@@ -20,11 +20,11 @@ def test_export_file(tmp_path: Path, outputs: bool):
     data = Exporter().export_file(root, outputs)
     zipf = ZipFile(data)
 
-    assert "folder/file.txt" in zipf.namelist()
-    assert "folder/test/" in zipf.namelist()
-    assert "folder/test/file.txt" in zipf.namelist()
-    assert ("folder/output/" in zipf.namelist()) == outputs
-    assert ("folder/output/file.txt" in zipf.namelist()) == outputs
+    assert "file.txt" in zipf.namelist()
+    assert "test/" in zipf.namelist()
+    assert "test/file.txt" in zipf.namelist()
+    assert ("output/" in zipf.namelist()) == outputs
+    assert ("output/file.txt" in zipf.namelist()) == outputs
 
 
 def test_export_compact(tmp_path: Path):
