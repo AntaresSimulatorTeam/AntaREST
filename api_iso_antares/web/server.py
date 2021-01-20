@@ -90,14 +90,17 @@ def create_ui_routes(application: Flask) -> None:
           - UI
         """
         if request.method == "POST":
+            print(request.form)
+            print(request.files)
             if "name" in request.form:
                 request_handler.create_study(request.form["name"])
 
             elif "delete-id" in request.form:  # DELETE
                 request_handler.delete_study(request.form.get("delete-id", ""))
 
-            elif "study" in request.form:
-                request_handler.import_study(request.form["study"])
+            elif "study" in request.files:
+                zip_binary = io.BytesIO(request.files["study"].read())
+                request_handler.import_study(zip_binary)
 
         studies = request_handler.get_studies_informations()
         return render_template("home.html", studies=studies, size=len(studies))
