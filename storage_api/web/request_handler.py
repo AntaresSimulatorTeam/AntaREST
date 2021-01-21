@@ -103,7 +103,7 @@ class RequestHandler:
             for uuid in self.get_study_uuids()
         }
 
-    def get_study_informations(self, uuid: str) -> SUB_JSON:
+    def get_study_informations(self, uuid: str) -> JSON:
         config = Config(study_path=self.path_to_studies / uuid)
         study = self.study_factory.create_from_config(config)
         return study.get(url=["study"])

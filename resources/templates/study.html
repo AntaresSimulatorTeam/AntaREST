@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
           rel="stylesheet">
     <style>
-        h1, h2, h3, h4, p, button {
+        h1, h2, h3, h4, p, a, button {
             font-family: 'Roboto', sans-serif;
         }
 
@@ -27,13 +27,78 @@
             font-family: 'Courier', sans-serif;
         }
 
+        .column {
+            margin: 10px;
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        .row {
+            border-left: 1px solid darkgray;
+            border-right: 1px solid darkgray;
+            border-top: 1px solid #e7e7e7;
+            padding: 0 10px 0 10px;
+            margin-bottom: -20px;
+            background-color: white;
+            width: 200px;
+            height: 70px;
+            line-height: 70px;
+            display: block;
+            color: black;
+            text-decoration: none;
+        }
+
+        .row:first-child {
+            border-top: 1px solid darkgray;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+
+        .row:last-child {
+            border-bottom: 1px solid darkgray;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+
+        .row:hover {
+            background-color: #d0cece;
+        }
+
+        .selected {
+            background-color: #d0cece;
+        }
+
+        .parameter {
+            width: auto;
+        }
+
     </style>
 </head>
 <body style="background-color: #efefef">
 
 <div style="width: 100%; text-align: center">
-    <h1 class="primary">{{ info["caption"] }}</h1>
+    <a href="/"><h1>AntaREST</h1></a>
+</div>
+
+<div style="margin-left: 10px">
+    <h1>{{ info["caption"] }}</h1>
     <p class="id">{{ id | trim_id }}</p>
+</div>
+
+<div style="white-space: nowrap">
+    {% for select, list in data %}
+    <div class="column">
+        {% for item, url in list %}
+        {% if url == "" %}
+        <p class="row parameter">{{ item }}</p>
+        {% elif item == select %}
+        <a class="row selected" href="{{ url }}">{{ item }}</a>
+        {% else %}
+        <a class="row" href="{{ url }}">{{ item }}</a>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endfor %}
 </div>
 
 </body>

@@ -171,7 +171,7 @@
 <span>
         {% for id, s in studies.items() %}
         <div class="card">
-            <a href="/viewer/{{ id }}" target="_blank" class="title primary">
+            <a href="/viewer/{{ id }}/" target="_blank" class="title primary">
                 {{ s["antares"]["caption"] | trim_title }}
             </a>
             <p class="id">{{ id | trim_id }}</p>

@@ -130,11 +130,34 @@ def create_ui_routes(application: Flask) -> None:
 
     @application.route("/viewer/<path:path>", methods=["GET"])
     def display_study(path: str):
-        uuid = path.split("/")[0]
-        params = RequestHandlerParameters(depth=3)
+        def set_item(sub_path: str, name: str, value: Any) -> Tuple[str, str]:
+            if isinstance(value, str) and "file/" in value:
+                return name, f"/{value}"
+            elif isinstance(value, (str, int, float)):
+                return f"{name} = {value}", ""
+            else:
+                return name, f"/viewer/{sub_path}/{name}/"
+
+        parts = path.split("/")
+        uuid, selections = parts[0], parts[1:]
+        params = RequestHandlerParameters(depth=1)
         info = request_handler.get_study_informations(uuid=uuid)["antares"]
-        print(info)
-        return render_template("study.html", info=info, id=uuid)
+
+        # [
+        #  (selected, [(name, url), ...]),
+        # ]
+        data = []
+        print(request_handler.get(path, params))
+        for i, part in enumerate(selections):
+            sub_path = "/".join([uuid] + selections[:i])
+            items = [
+                set_item(sub_path, name, value)
+                for name, value in request_handler.get(
+                    sub_path, params
+                ).items()
+            ]
+            data.append((part, items))
+        return render_template("study.html", info=info, id=uuid, data=data)
 
     @application.template_filter("date")  # type: ignore
     def time_filter(date: int) -> str:
