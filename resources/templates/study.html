@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AntaREST</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet">
+    <style>
+        h1, h2, h3, h4, p, button {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        h1 {
+            font-size: xx-large;
+        }
+
+        .primary {
+            color: #0277bd;
+        }
+
+        .id {
+            font-size: small;
+            padding: -10px 0 20px 0;
+            margin-top: 0;
+            font-family: 'Courier', sans-serif;
+        }
+
+    </style>
+</head>
+<body style="background-color: #efefef">
+
+<div style="width: 100%; text-align: center">
+    <h1 class="primary">{{ info["caption"] }}</h1>
+    <p class="id">{{ id | trim_id }}</p>
+</div>
+
+</body>
+</html>

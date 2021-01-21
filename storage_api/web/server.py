@@ -6,7 +6,7 @@ import subprocess
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Callable, Tuple
 
 from flask import (
     escape,
@@ -75,6 +75,15 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
     return commit_id
 
 
+def wrap_status(fnc: Callable[[], Any]) -> str:
+    try:
+        fnc()
+        return "ok"
+    except Exception as e:
+        print(e)
+        return "error"
+
+
 def create_ui_routes(application: Flask) -> None:
     @application.route("/", methods=["GET", "POST"])
     def home() -> Any:
@@ -89,25 +98,57 @@ def create_ui_routes(application: Flask) -> None:
         tags:
           - UI
         """
+        status = ""
+
         if request.method == "POST":
             print(request.form)
             print(request.files)
             if "name" in request.form:
-                request_handler.create_study(request.form["name"])
+                status = wrap_status(
+                    fnc=lambda: request_handler.create_study(
+                        request.form["name"]
+                    )
+                )
 
             elif "delete-id" in request.form:  # DELETE
-                request_handler.delete_study(request.form.get("delete-id", ""))
+                status = wrap_status(
+                    fnc=lambda: request_handler.delete_study(
+                        request.form.get("delete-id", "")
+                    )
+                )
 
             elif "study" in request.files:
                 zip_binary = io.BytesIO(request.files["study"].read())
-                request_handler.import_study(zip_binary)
+                status = wrap_status(
+                    fnc=lambda: request_handler.import_study(zip_binary)
+                )
 
         studies = request_handler.get_studies_informations()
-        return render_template("home.html", studies=studies, size=len(studies))
+        return render_template(
+            "home.html", studies=studies, size=len(studies), status=status
+        )
+
+    @application.route("/viewer/<path:path>", methods=["GET"])
+    def display_study(path: str):
+        uuid = path.split("/")[0]
+        params = RequestHandlerParameters(depth=3)
+        info = request_handler.get_study_informations(uuid=uuid)["antares"]
+        print(info)
+        return render_template("study.html", info=info, id=uuid)
 
     @application.template_filter("date")  # type: ignore
     def time_filter(date: int) -> str:
         return datetime.fromtimestamp(date).strftime("%d-%m-%Y %H:%M")
+
+    @application.template_filter("trim_title")
+    def trim_title_filter(text: str) -> str:
+        size = 30
+        return text if len(text) < size else text[:size] + "..."
+
+    @application.template_filter("trim_id")
+    def trim_id_filter(text: str) -> str:
+        size = 45
+        return text if len(text) < size else text[:size] + "..."
 
 
 def create_study_routes(application: Flask) -> None:

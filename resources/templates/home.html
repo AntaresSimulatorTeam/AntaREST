@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
           rel="stylesheet">
     <style>
-        h1, h2, h3, h4, p, button {
+        h1, h2, h3, h4, p, a, button {
             font-family: 'Roboto', sans-serif;
         }
 
@@ -33,6 +33,11 @@
             padding: 0;
             margin: 0;
             font-weight: bold;
+            text-decoration: none;
+        }
+
+        .title:hover {
+            text-decoration: underline;
         }
 
         .id {
@@ -155,13 +160,21 @@
            required/>
 </form>
 
+    {% if status == "error" %}
+    <h2 style="color: red; margin-left: 20px">Error occured on server</h2>
+    {% endif %}
+    {% if status == "ok" %}
+    <h2 style="color: green; margin-left: 20px">Action success</h2>
+    {% endif %}
 
 
 <span>
         {% for id, s in studies.items() %}
         <div class="card">
-            <p class="title primary">{{ s["antares"]["caption"] }}</p>
-            <p class="id">{{ id }}</p>
+            <a href="/viewer/{{ id }}" target="_blank" class="title primary">
+                {{ s["antares"]["caption"] | trim_title }}
+            </a>
+            <p class="id">{{ id | trim_id }}</p>
             <table style="width: 100%">
                 <tr>
                     <td class="item"><i
@@ -179,11 +192,13 @@
             <div class="separtor"></div>
 
             <span><button class="button-card primary"
-                          onclick="window.location.href='/studies/{{ id }}/export'">SAVE</button></span>
+                          onclick="window.location.href='/studies/{{ id }}/export'">ARCHIVE</button></span>
             <span><button class="button-card primary" onclick="window.location.href='/studies/{{ id }}/export?compact'">EXPORT</button></span>
+
             <span style="float: right">
                 <form action="/" method="POST">
                     <input type=hidden name="delete-id" value="{{ id }}">
+                    <input type="checkbox" required name="">
                     <input type="submit" value="DELETE" class="button-card" style="color: red"/>
                 </form>
             </span>
