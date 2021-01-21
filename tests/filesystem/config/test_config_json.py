@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from api_iso_antares.custom_types import JSON
-from api_iso_antares.filesystem.config.json import ConfigJsonBuilder
-from api_iso_antares.filesystem.config.model import (
+from storage_api.custom_types import JSON
+from storage_api.filesystem.config.json import ConfigJsonBuilder
+from storage_api.filesystem.config.model import (
     Config,
     Simulation,
     Area,

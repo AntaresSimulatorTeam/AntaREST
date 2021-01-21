@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from api_iso_antares.filesystem.config.files import ConfigPathBuilder
-from api_iso_antares.filesystem.config.model import (
+from storage_api.filesystem.config.files import ConfigPathBuilder
+from storage_api.filesystem.config.model import (
     Config,
     Area,
     Link,

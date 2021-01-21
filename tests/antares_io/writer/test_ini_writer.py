@@ -3,7 +3,7 @@ from typing import Callable
 
 import pytest
 
-from api_iso_antares.antares_io.writer.ini_writer import IniWriter
+from storage_api.antares_io.writer.ini_writer import IniWriter
 
 
 @pytest.mark.unit_test
