@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from api_iso_antares.filesystem.bucket_node import BucketNode
-from api_iso_antares.filesystem.config.model import Config
+from storage_api.filesystem.bucket_node import BucketNode
+from storage_api.filesystem.config.model import Config
 
 
 def build_bucket(tmp: Path) -> Path:

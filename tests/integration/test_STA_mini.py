@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from api_iso_antares.custom_types import JSON
-from api_iso_antares.web import RequestHandler
-from api_iso_antares.web.request_handler import RequestHandlerParameters
-from api_iso_antares.web.server import create_server
+from storage_api.custom_types import JSON
+from storage_api.web import RequestHandler
+from storage_api.web.request_handler import RequestHandlerParameters
+from storage_api.web.server import create_server
 
 
 def assert_url_content(

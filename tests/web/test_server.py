@@ -9,15 +9,15 @@ from unittest.mock import Mock
 
 import pytest
 
-from api_iso_antares import __version__
-from api_iso_antares.web.html_exception import (
+from storage_api import __version__
+from storage_api.web.html_exception import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
 )
-from api_iso_antares.web.request_handler import (
+from storage_api.web.request_handler import (
     RequestHandlerParameters,
 )
-from api_iso_antares.web.server import (
+from storage_api.web.server import (
     create_server,
 )
 

@@ -3,9 +3,9 @@ from typing import Tuple
 
 import pytest
 
-from api_iso_antares.custom_types import JSON
-from api_iso_antares.filesystem.config.model import Config
-from api_iso_antares.filesystem.ini_file_node import IniFileNode
+from storage_api.custom_types import JSON
+from storage_api.filesystem.config.model import Config
+from storage_api.filesystem.ini_file_node import IniFileNode
 
 
 def build_dataset(tmp_path: str) -> Tuple[Path, JSON]:

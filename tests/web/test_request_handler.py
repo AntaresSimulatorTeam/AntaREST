@@ -6,15 +6,15 @@ from unittest.mock import Mock
 
 import pytest
 
-from api_iso_antares.filesystem.config.model import Config, Simulation
-from api_iso_antares.web import RequestHandler
-from api_iso_antares.web.html_exception import (
+from storage_api.filesystem.config.model import Config, Simulation
+from storage_api.web import RequestHandler
+from storage_api.web.html_exception import (
     BadZipBinary,
     IncorrectPathError,
     StudyNotFoundError,
     StudyValidationError,
 )
-from api_iso_antares.web.request_handler import (
+from storage_api.web.request_handler import (
     RequestHandlerParameters,
 )
 

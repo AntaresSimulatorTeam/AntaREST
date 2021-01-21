@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from api_iso_antares.filesystem.config.model import Config
-from api_iso_antares.filesystem.raw_file_node import RawFileNode
+from storage_api.filesystem.config.model import Config
+from storage_api.filesystem.raw_file_node import RawFileNode
 
 
 def test_get(tmp_path: Path):
