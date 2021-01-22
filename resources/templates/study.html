@@ -88,9 +88,9 @@
 <div style="white-space: nowrap">
     {% for select, list in data %}
     <div class="column">
-        {% for item, url in list %}
-        {% if url == "" %}
-        <p class="row parameter">{{ item }}</p>
+        {% for type, item, url in list %}
+        {% if type == "data" %}
+        <p class="row parameter">{{ item }} :<i>{{ url }}</i></p>
         {% elif item == select %}
         <a class="row selected" href="{{ url }}">{{ item }}</a>
         {% else %}

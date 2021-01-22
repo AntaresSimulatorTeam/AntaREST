@@ -130,13 +130,15 @@ def create_ui_routes(application: Flask) -> None:
 
     @application.route("/viewer/<path:path>", methods=["GET"])
     def display_study(path: str):
-        def set_item(sub_path: str, name: str, value: Any) -> Tuple[str, str]:
+        def set_item(
+            sub_path: str, name: str, value: Any
+        ) -> Tuple[str, str, str]:
             if isinstance(value, str) and "file/" in value:
-                return name, f"/{value}"
+                return "link", name, f"/{value}"
             elif isinstance(value, (str, int, float)):
-                return f"{name} = {value}", ""
+                return "data", name, value
             else:
-                return name, f"/viewer/{sub_path}/{name}/"
+                return "folder", name, f"/viewer/{sub_path}/{name}/"
 
         parts = path.split("/")
         uuid, selections = parts[0], parts[1:]
@@ -144,7 +146,7 @@ def create_ui_routes(application: Flask) -> None:
         info = request_handler.get_study_informations(uuid=uuid)["antares"]
 
         # [
-        #  (selected, [(name, url), ...]),
+        #  (selected, [(type, name, url), ...]),
         # ]
         data = []
         print(request_handler.get(path, params))
