@@ -129,14 +129,14 @@ def create_ui_routes(application: Flask) -> None:
         )
 
     @application.route("/viewer/<path:path>", methods=["GET"])
-    def display_study(path: str):
+    def display_study(path: str) -> Any:
         def set_item(
             sub_path: str, name: str, value: Any
         ) -> Tuple[str, str, str]:
             if isinstance(value, str) and "file/" in value:
                 return "link", name, f"/{value}"
             elif isinstance(value, (str, int, float)):
-                return "data", name, value
+                return "data", name, str(value)
             else:
                 return "folder", name, f"/viewer/{sub_path}/{name}/"
 
@@ -165,12 +165,12 @@ def create_ui_routes(application: Flask) -> None:
     def time_filter(date: int) -> str:
         return datetime.fromtimestamp(date).strftime("%d-%m-%Y %H:%M")
 
-    @application.template_filter("trim_title")
+    @application.template_filter("trim_title")  # type: ignore
     def trim_title_filter(text: str) -> str:
         size = 30
         return text if len(text) < size else text[:size] + "..."
 
-    @application.template_filter("trim_id")
+    @application.template_filter("trim_id")  # type: ignore
     def trim_id_filter(text: str) -> str:
         size = 45
         return text if len(text) < size else text[:size] + "..."
