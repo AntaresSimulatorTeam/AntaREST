@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AntaREST</title>
+    <title>AntaREST - {{ info["caption"] }}</title>
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
@@ -16,14 +16,19 @@
             font-size: xx-large;
         }
 
-        .primary {
-            color: #0277bd;
+        .gray {
+            color: #a4a4a4;
+        }
+
+        .material-icons {
+            vertical-align: middle;
+            margin-right: 5px;
         }
 
         .id {
             font-size: small;
             padding: -10px 0 20px 0;
-            margin-top: 0;
+            margin-top: -15px;
             font-family: 'Courier', sans-serif;
         }
 
@@ -60,27 +65,50 @@
             border-bottom-right-radius: 5px;
         }
 
-        .row:hover {
-            background-color: #d0cece;
-        }
-
-        .selected {
-            background-color: #d0cece;
+        .row:hover, .selected {
+            background-color: #1a237e;
+            color: white;
         }
 
         .parameter {
             width: auto;
         }
 
+        .navbar {
+            width: 101.5%; background-color: #1a237e; height: 70px; line-height: 70px;
+            margin: -10px -10px -10px -10px;
+            color: white;
+        }
+
+        .navbar-txt, .navbar-txt:visited, .navbar-txt:link {
+            margin: 10px;
+            color: white;
+            text-decoration: none;
+            outline: 0;
+        }
+
+        .navbar-txt:hover {
+            text-decoration: underline;
+        }
+
+        .navbar-title {
+            font-size: x-large;
+            font-weight: bold;
+        }
+
     </style>
 </head>
 <body style="background-color: #efefef">
 
-<div style="width: 100%; text-align: center">
-    <a href="/"><h1>AntaREST</h1></a>
+<div class="navbar">
+    <a class="navbar-title navbar-txt" href="/">AntaREST</a>
+    <a class="navbar-txt" href="https://github.com/AntaresSimulatorTeam/AntaREST-storage">Github</a>
+    <a class="navbar-txt" href="/docs">API</a>
+    <a class="navbar-txt" href="https://api-antares.readthedocs.io/en/dev/inside.html">Docs</a>
+
 </div>
 
-<div style="margin-left: 10px">
+<div style="margin-left: 10px; text-align: center">
     <h1>{{ info["caption"] }}</h1>
     <p class="id">{{ id | trim_id }}</p>
 </div>
@@ -88,13 +116,15 @@
 <div style="white-space: nowrap">
     {% for select, list in data %}
     <div class="column">
-        {% for type, item, url in list %}
+        {% for type, key, value in list %}
         {% if type == "data" %}
-        <p class="row parameter">{{ item }} :<i>{{ url }}</i></p>
-        {% elif item == select %}
-        <a class="row selected" href="{{ url }}">{{ item }}</a>
+        <p class="row parameter">{{ key }} : <code>{{ value }}</code></p>
+        {% elif type == "link" %}
+        <a class="row parameter" href="{{ value }}">{{ key }}<i class="material-icons gray">launch</i></a>
+        {% elif key == select %}
+        <a class="row selected" href="{{ value }}">{{ key }}</a>
         {% else %}
-        <a class="row" href="{{ url }}">{{ item }}</a>
+        <a class="row" href="{{ value }}">{{ key }}</a>
         {% endif %}
         {% endfor %}
     </div>
