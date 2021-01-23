@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AntaREST - {{ info["caption"] }}</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet">
+    <style>
+        h1, h2, h3, h4, p, a, button {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        h1 {
+            font-size: xx-large;
+        }
+
+        .gray {
+            color: #a4a4a4;
+        }
+
+        .material-icons {
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+
+        .id {
+            font-size: small;
+            padding: -10px 0 20px 0;
+            margin-top: -15px;
+            font-family: 'Courier', sans-serif;
+        }
+
+        .column {
+            margin: 10px;
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        .row {
+            border-left: 1px solid darkgray;
+            border-right: 1px solid darkgray;
+            border-top: 1px solid #e7e7e7;
+            padding: 0 10px 0 10px;
+            margin-bottom: -20px;
+            background-color: white;
+            width: 200px;
+            height: 70px;
+            line-height: 70px;
+            display: block;
+            color: black;
+            text-decoration: none;
+        }
+
+        .row:first-child {
+            border-top: 1px solid darkgray;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+
+        .row:last-child {
+            border-bottom: 1px solid darkgray;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+
+        .row:hover, .selected {
+            background-color: #1a237e;
+            color: white;
+        }
+
+        .parameter {
+            width: auto;
+        }
+
+        .navbar {
+            width: 101.5%; background-color: #1a237e; height: 70px; line-height: 70px;
+            margin: -10px -10px -10px -10px;
+            color: white;
+        }
+
+        .navbar-txt, .navbar-txt:visited, .navbar-txt:link {
+            margin: 10px;
+            color: white;
+            text-decoration: none;
+            outline: 0;
+        }
+
+        .navbar-txt:hover {
+            text-decoration: underline;
+        }
+
+        .navbar-title {
+            font-size: x-large;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body style="background-color: #efefef">
+
+<div class="navbar">
+    <a class="navbar-title navbar-txt" href="/">AntaREST</a>
+    <a class="navbar-txt" href="https://github.com/AntaresSimulatorTeam/AntaREST-storage">Github</a>
+    <a class="navbar-txt" href="/docs">API</a>
+    <a class="navbar-txt" href="https://api-antares.readthedocs.io/en/dev/inside.html">Docs</a>
+
+</div>
+
+<div style="margin-left: 10px; text-align: center">
+    <h1>{{ info["caption"] }}</h1>
+    <p class="id">{{ id | trim_id }}</p>
+</div>
+
+<div style="white-space: nowrap">
+    {% for select, list in data %}
+    <div class="column">
+        {% for type, key, value in list %}
+        {% if type == "data" %}
+        <p class="row parameter">{{ key }} : <code>{{ value }}</code></p>
+        {% elif type == "link" %}
+        <a class="row parameter" href="{{ value }}">{{ key }}<i class="material-icons gray">launch</i></a>
+        {% elif key == select %}
+        <a class="row selected" href="{{ value }}">{{ key }}</a>
+        {% else %}
+        <a class="row" href="{{ value }}">{{ key }}</a>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>
