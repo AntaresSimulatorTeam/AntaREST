@@ -37,6 +37,11 @@ class StudyValidationError(HtmlException):
         super().__init__(message, HTTPStatus.UNPROCESSABLE_ENTITY)
 
 
+class BadOutputError(HtmlException):
+    def __init__(self, message: str) -> None:
+        super().__init__(message, HTTPStatus.UNPROCESSABLE_ENTITY)
+
+
 class BadZipBinary(HtmlException):
     def __init__(self, message: str) -> None:
         super().__init__(message, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
