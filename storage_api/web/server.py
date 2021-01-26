@@ -490,6 +490,26 @@ def create_study_routes(application: Flask) -> None:
     )
     @stop_and_return_on_html_exception
     def import_output(uuid: str) -> Any:
+        """
+        Import Output
+        ---
+        responses:
+          '202':
+            content:
+              application/json: {}
+            description: Successful operation
+          '400':
+            description: Invalid request
+        parameters:
+          - in: path
+            name: uuid
+            required: true
+            description: study uuid used by server
+            schema:
+              type: string
+        tags:
+          - Manage Outputs
+        """
         global request_handler
         uuid_sanitized = sanitize_uuid(uuid)
 
