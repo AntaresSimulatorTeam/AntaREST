@@ -242,14 +242,10 @@ class RequestHandler:
             path_output / "info.antares-output"
         )["general"]
 
-        output_name_timestamp = datetime.fromtimestamp(
+        date = datetime.fromtimestamp(
             int(info_antares_output["timestamp"])
-        )
-        year = str(output_name_timestamp.year).zfill(4)
-        month = str(output_name_timestamp.month).zfill(2)
-        day = str(output_name_timestamp.day).zfill(2)
-        hour = str(output_name_timestamp.hour).zfill(2)
-        minute = str(output_name_timestamp.minute).zfill(2)
+        ).strftime("%Y%m%d-%H%M")
+
         mode = "eco" if info_antares_output["mode"] == "Economy" else "adq"
         name = (
             f"-{info_antares_output['name']}"
@@ -257,7 +253,7 @@ class RequestHandler:
             else ""
         )
 
-        output_name = f"{year}{month}{day}-{hour}{minute}{mode}{name}"
+        output_name = f"{date}{mode}{name}"
         path_output.rename(Path(path_output.parent, output_name))
 
         output_id = (
