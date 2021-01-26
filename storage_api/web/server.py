@@ -1,7 +1,6 @@
 import io
 import json
 import os
-import re
 import subprocess
 from datetime import datetime
 from http import HTTPStatus
@@ -566,7 +565,7 @@ def create_non_business_routes(application: Flask) -> None:
     )
     def spec() -> Any:
         spec = update(swagger(application))
-        spec["servers"] = [{"url": request.host_url}]
+        spec["servers"] = [{"url": request.url_root}]
 
         return jsonify(spec)
 

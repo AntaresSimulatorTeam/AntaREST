@@ -10,11 +10,11 @@ from storage_api import __version__
 from storage_api.antares_io.exporter.export_file import Exporter
 from storage_api.filesystem.factory import StudyFactory
 from storage_api.web import RequestHandler
+from storage_api.web.reverse_proxy import ReverseProxyMiddleware
 from storage_api.web.server import create_server
 
 
 def parse_arguments() -> argparse.Namespace:
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-s",
@@ -34,7 +34,6 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def get_arguments() -> Tuple[Optional[Path], bool]:
-
     arguments = parse_arguments()
 
     arg_studies_path = arguments.studies_path
@@ -56,7 +55,6 @@ def get_local_path() -> Path:
 
 
 def get_flask_application(studies_path: Path) -> Flask:
-
     path_resources = get_local_path() / "resources"
 
     request_handler = RequestHandler(
@@ -66,7 +64,7 @@ def get_flask_application(studies_path: Path) -> Flask:
         path_resources=path_resources,
     )
     application = create_server(request_handler, path_resources)
-
+    application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
     return application
 
 
