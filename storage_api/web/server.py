@@ -500,10 +500,12 @@ def create_study_routes(application: Flask) -> None:
 
         zip_binary = io.BytesIO(request.files["output"].read())
 
-        content = request_handler.import_output(uuid_sanitized, zip_binary)
+        content = str(
+            request_handler.import_output(uuid_sanitized, zip_binary)
+        )
         code = HTTPStatus.ACCEPTED.value
 
-        return content, code
+        return jsonify(content), code
 
 
 def create_non_business_routes(application: Flask) -> None:
