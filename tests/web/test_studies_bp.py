@@ -298,19 +298,3 @@ def test_edit_study_fail() -> None:
     assert res.status_code == 400
 
     mock_handler.edit_study.assert_not_called()
-
-
-@pytest.mark.unit_test
-def test_version() -> None:
-
-    mock_request_handler = Mock()
-    mock_request_handler.path_resources = Path("/")
-
-    app = create_server(mock_request_handler, res=Path())
-    client = app.test_client()
-
-    path = "/version"
-    result = client.get(path)
-
-    assert result.status_code == HTTPStatus.OK.value
-    assert json.loads(result.data)["version"] == __version__
