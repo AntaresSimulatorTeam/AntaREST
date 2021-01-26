@@ -463,6 +463,36 @@ def test_sta_mini_import_compact(
 
 
 @pytest.mark.integration_test
+def test_sta_mini_import_output(
+    tmp_path: Path, request_handler: RequestHandler
+) -> None:
+
+    path_study_output = (
+        request_handler.get_study_path("STA-mini")
+        / "output"
+        / "20201014-1422eco-hello"
+    )
+    sta_mini_output_zip_filepath = shutil.make_archive(
+        tmp_path, "zip", path_study_output
+    )
+
+    shutil.rmtree(path_study_output)
+
+    sta_mini_output_zip_path = Path(sta_mini_output_zip_filepath)
+
+    app = create_server(request_handler, res=Path())
+    client = app.test_client()
+
+    study_output_data = io.BytesIO(sta_mini_output_zip_path.read_bytes())
+    result = client.post(
+        "/studies/STA-mini/output",
+        data={"output": (study_output_data, "output.zip")},
+    )
+
+    assert result.status_code == HTTPStatus.ACCEPTED.value
+
+
+@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [

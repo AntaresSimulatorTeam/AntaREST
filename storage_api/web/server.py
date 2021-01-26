@@ -483,6 +483,49 @@ def create_study_routes(application: Flask) -> None:
 
         return content, code
 
+    @application.route(
+        "/studies/<string:uuid>/output",
+        methods=["POST"],
+    )
+    @stop_and_return_on_html_exception
+    def import_output(uuid: str) -> Any:
+        """
+        Import Output
+        ---
+        responses:
+          '202':
+            content:
+              application/json: {}
+            description: Successful operation
+          '400':
+            description: Invalid request
+        parameters:
+          - in: path
+            name: uuid
+            required: true
+            description: study uuid used by server
+            schema:
+              type: string
+        tags:
+          - Manage Outputs
+        """
+        global request_handler
+        uuid_sanitized = sanitize_uuid(uuid)
+
+        if "output" not in request.files:
+            content = "No data provided."
+            code = HTTPStatus.BAD_REQUEST.value
+            return content, code
+
+        zip_binary = io.BytesIO(request.files["output"].read())
+
+        content = str(
+            request_handler.import_output(uuid_sanitized, zip_binary)
+        )
+        code = HTTPStatus.ACCEPTED.value
+
+        return jsonify(content), code
+
 
 def create_non_business_routes(application: Flask) -> None:
     swaggerui_blueprint = get_swaggerui_blueprint(

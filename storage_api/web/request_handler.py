@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import time
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any, IO, List, Tuple
@@ -10,6 +11,7 @@ from uuid import uuid4
 from zipfile import BadZipFile, ZipFile
 
 from storage_api.antares_io.exporter.export_file import Exporter
+from storage_api.antares_io.reader import IniReader
 from storage_api.custom_types import JSON, SUB_JSON
 from storage_api.filesystem.config.model import Config
 from storage_api.filesystem.factory import StudyFactory
@@ -19,6 +21,7 @@ from storage_api.web.html_exception import (
     StudyAlreadyExistError,
     StudyNotFoundError,
     StudyValidationError,
+    BadOutputError,
 )
 
 
@@ -183,6 +186,10 @@ class RequestHandler:
         study_path = self.get_study_path(name)
         shutil.rmtree(study_path)
 
+    def delete_output(self, uuid: str, output_name: str) -> None:
+        output_path = self.path_to_studies / uuid / "output" / output_name
+        shutil.rmtree(output_path, ignore_errors=True)
+
     def upload_matrix(self, path: str, data: bytes) -> None:
 
         relative_path_matrix = Path(path)
@@ -222,6 +229,47 @@ class RequestHandler:
             return ""  # TODO return exception
 
         return uuid
+
+    def import_output(self, uuid: str, stream: IO[bytes]) -> JSON:
+        path_output = (
+            Path(self.path_to_studies) / uuid / "output" / "imported_output"
+        )
+        path_output.mkdir()
+        RequestHandler.extract_zip(stream, path_output)
+
+        ini_reader = IniReader()
+        info_antares_output = ini_reader.read(
+            path_output / "info.antares-output"
+        )["general"]
+
+        date = datetime.fromtimestamp(
+            int(info_antares_output["timestamp"])
+        ).strftime("%Y%m%d-%H%M")
+
+        mode = "eco" if info_antares_output["mode"] == "Economy" else "adq"
+        name = (
+            f"-{info_antares_output['name']}"
+            if info_antares_output["name"]
+            else ""
+        )
+
+        output_name = f"{date}{mode}{name}"
+        path_output.rename(Path(path_output.parent, output_name))
+
+        output_id = (
+            sorted(os.listdir(path_output.parent)).index(output_name) + 1
+        )
+
+        data = self.get(
+            f"{uuid}/output/{output_id}",
+            parameters=RequestHandlerParameters(depth=-1),
+        )
+
+        if data is None:
+            self.delete_output(uuid, "imported_output")
+            raise BadOutputError("The output provided is not conform.")
+
+        return data
 
     def edit_study(self, route: str, new: JSON) -> JSON:
         # Get data
