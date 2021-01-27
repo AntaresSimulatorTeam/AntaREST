@@ -2,9 +2,9 @@ from pathlib import Path
 from typing import Optional, List
 from zipfile import ZipFile
 
-from storage_api.filesystem.config.model import Config
-from storage_api.filesystem.folder_node import FolderNode
-from storage_api.filesystem.inode import TREE, INode
+from AntaREST.storage_api.filesystem.config.model import Config
+from AntaREST.storage_api.filesystem.folder_node import FolderNode
+from AntaREST.storage_api.filesystem.inode import TREE, INode
 
 
 class TestSubNode(INode[int, int, int]):

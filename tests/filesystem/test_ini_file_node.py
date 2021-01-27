@@ -3,9 +3,9 @@ from typing import Tuple
 
 import pytest
 
-from storage_api.custom_types import JSON
-from storage_api.filesystem.config.model import Config
-from storage_api.filesystem.ini_file_node import IniFileNode
+from AntaREST.storage_api.custom_types import JSON
+from AntaREST.storage_api.filesystem.config.model import Config
+from AntaREST.storage_api.filesystem.ini_file_node import IniFileNode
 
 
 def build_dataset(tmp_path: str) -> Tuple[Path, JSON]:

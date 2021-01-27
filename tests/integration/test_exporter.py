@@ -2,10 +2,10 @@ from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
-from storage_api.antares_io.exporter.export_file import Exporter
-from storage_api.filesystem.factory import StudyFactory
-from storage_api.web import RequestHandler
-from storage_api.web.server import create_server
+from AntaREST.storage_api.antares_io.exporter.export_file import Exporter
+from AntaREST.storage_api.filesystem.factory import StudyFactory
+from AntaREST.storage_api.web import RequestHandler
+from AntaREST.storage_api.web.server import create_server
 
 
 def assert_url_content(request_handler: RequestHandler, url: str) -> bytes:

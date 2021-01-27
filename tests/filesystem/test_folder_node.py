@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from storage_api.filesystem.inode import INode
+from AntaREST.storage_api.filesystem.inode import INode
 from tests.filesystem.utils import TestSubNode, TestMiddleNode
 
 

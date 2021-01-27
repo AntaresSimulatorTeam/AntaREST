@@ -3,8 +3,8 @@ from typing import Callable
 
 import pytest
 
-from storage_api.antares_io.reader import IniReader
-from storage_api.antares_io.reader.ini_reader import SetsIniReader
+from AntaREST.storage_api.antares_io.reader import IniReader
+from AntaREST.storage_api.antares_io.reader.ini_reader import SetsIniReader
 
 
 @pytest.mark.unit_test

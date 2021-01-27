@@ -2,7 +2,7 @@ from typing import Tuple
 
 import pytest
 
-from storage_api.web.html_exception import (
+from AntaREST.storage_api.web.html_exception import (
     HtmlException,
     stop_and_return_on_html_exception,
 )

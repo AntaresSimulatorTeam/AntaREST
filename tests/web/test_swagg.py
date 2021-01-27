@@ -1,4 +1,4 @@
-from storage_api.web.swagger import update
+from AntaREST.storage_api.web.swagger import update
 
 
 def test_update():

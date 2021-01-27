@@ -1,4 +1,4 @@
-from storage_api.web import ReverseProxyMiddleware
+from AntaREST.storage_api.web import ReverseProxyMiddleware
 
 import pytest
 

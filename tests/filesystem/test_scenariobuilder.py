@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from storage_api.filesystem.config.model import Area, Config
-from storage_api.filesystem.root.settings.scenariobuilder import (
+from AntaREST.storage_api.filesystem.config.model import Area, Config
+from AntaREST.storage_api.filesystem.root.settings.scenariobuilder import (
     ScenarioBuilder,
 )
 

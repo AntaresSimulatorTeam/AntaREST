@@ -1,8 +1,8 @@
 # AntaREST Storage
 
-[![CI](https://github.com/AntaresSimulatorTeam/AntaREST-storage/workflows/main/badge.svg)](https://github.com/AntaresSimulatorTeam/AntaREST-storage/actions?query=workflow%3Amain)
+[![CI](https://github.com/AntaresSimulatorTeam/AntaREST/workflows/main/badge.svg)](https://github.com/AntaresSimulatorTeam/AntaREST/actions?query=workflow%3Amain)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=AntaresSimulatorTeam_api-iso-antares&metric=coverage)](https://sonarcloud.io/dashboard?id=AntaresSimulatorTeam_api-iso-antares)
-[![Licence](https://img.shields.io/github/license/AntaresSimulatorTeam/AntaREST-storage)](https://www.apache.org/licenses/LICENSE-2.0)
+[![Licence](https://img.shields.io/github/license/AntaresSimulatorTeam/AntaREST)](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!-- ![architecture api antares](./docs/images/archi-api-antares.png) -->
 

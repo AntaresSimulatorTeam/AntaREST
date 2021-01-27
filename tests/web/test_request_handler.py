@@ -6,15 +6,15 @@ from unittest.mock import Mock
 
 import pytest
 
-from storage_api.filesystem.config.model import Config, Simulation
-from storage_api.web import RequestHandler
-from storage_api.web.html_exception import (
+from AntaREST.storage_api.filesystem.config.model import Config, Simulation
+from AntaREST.storage_api.web import RequestHandler
+from AntaREST.storage_api.web.html_exception import (
     BadZipBinary,
     IncorrectPathError,
     StudyNotFoundError,
     StudyValidationError,
 )
-from storage_api.web.request_handler import (
+from AntaREST.storage_api.web.request_handler import (
     RequestHandlerParameters,
 )
 

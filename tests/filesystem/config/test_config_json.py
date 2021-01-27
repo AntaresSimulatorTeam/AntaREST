@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from storage_api.custom_types import JSON
-from storage_api.filesystem.config.json import ConfigJsonBuilder
-from storage_api.filesystem.config.model import (
+from AntaREST.storage_api.custom_types import JSON
+from AntaREST.storage_api.filesystem.config.json import ConfigJsonBuilder
+from AntaREST.storage_api.filesystem.config.model import (
     Config,
     Simulation,
     Area,

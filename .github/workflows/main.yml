@@ -49,7 +49,7 @@ jobs:
       - name: Fix code coverage paths
         if: matrix.python-version == 3.6 && matrix.os == 'ubuntu-latest'
         run: |
-          sed -i 's/\/home\/runner\/work\/AntaREST-storage\/AntaREST-storage/\/github\/workspace/g' coverage.xml
+          sed -i 's/\/home\/runner\/work\/AntaREST\/AntaREST/\/github\/workspace/g' coverage.xml
       - name: SonarCloud Scan
         if: matrix.python-version == 3.6 && matrix.os == 'ubuntu-latest'
         uses: sonarsource/sonarcloud-github-action@master

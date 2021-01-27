@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from storage_api.filesystem.config.model import Config
-from storage_api.filesystem.raw_file_node import RawFileNode
+from AntaREST.storage_api.filesystem.config.model import Config
+from AntaREST.storage_api.filesystem.raw_file_node import RawFileNode
 
 
 def test_get(tmp_path: Path):

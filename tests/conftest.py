@@ -9,8 +9,8 @@ import pytest
 project_dir: Path = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_dir))
 
-from storage_api.custom_types import JSON
-from storage_api.web import RequestHandler
+from AntaREST.storage_api.custom_types import JSON
+from AntaREST.storage_api.web import RequestHandler
 
 
 @pytest.fixture

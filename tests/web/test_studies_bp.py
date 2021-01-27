@@ -9,15 +9,15 @@ from unittest.mock import Mock
 
 import pytest
 
-from storage_api import __version__
-from storage_api.web.html_exception import (
+from AntaREST.storage_api import __version__
+from AntaREST.storage_api.web.html_exception import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
 )
-from storage_api.web.request_handler import (
+from AntaREST.storage_api.web.request_handler import (
     RequestHandlerParameters,
 )
-from storage_api.web.server import (
+from AntaREST.storage_api.web.server import (
     create_server,
 )
 

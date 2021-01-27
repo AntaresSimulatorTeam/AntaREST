@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from storage_api.filesystem.config.files import ConfigPathBuilder
-from storage_api.filesystem.config.model import (
+from AntaREST.storage_api.filesystem.config.files import ConfigPathBuilder
+from AntaREST.storage_api.filesystem.config.model import (
     Config,
     Area,
     Link,

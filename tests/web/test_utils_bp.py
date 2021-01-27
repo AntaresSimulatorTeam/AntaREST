@@ -5,8 +5,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from storage_api import __version__
-from storage_api.web.server import create_server
+from AntaREST.storage_api import __version__
+from AntaREST.storage_api.web.server import create_server
 
 
 @pytest.mark.unit_test

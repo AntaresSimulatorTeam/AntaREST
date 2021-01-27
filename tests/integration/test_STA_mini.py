@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from storage_api.custom_types import JSON
-from storage_api.web import RequestHandler
-from storage_api.web.request_handler import RequestHandlerParameters
-from storage_api.web.server import create_server
+from AntaREST.storage_api.custom_types import JSON
+from AntaREST.storage_api.web import RequestHandler
+from AntaREST.storage_api.web.request_handler import RequestHandlerParameters
+from AntaREST.storage_api.web.server import create_server
 
 
 def assert_url_content(

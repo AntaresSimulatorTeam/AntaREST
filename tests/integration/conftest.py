@@ -3,9 +3,9 @@ from zipfile import ZipFile
 
 import pytest
 
-from storage_api.antares_io.exporter.export_file import Exporter
-from storage_api.filesystem.factory import StudyFactory
-from storage_api.web import RequestHandler
+from AntaREST.storage_api.antares_io.exporter.export_file import Exporter
+from AntaREST.storage_api.filesystem.factory import StudyFactory
+from AntaREST.storage_api.web import RequestHandler
 
 
 @pytest.fixture
