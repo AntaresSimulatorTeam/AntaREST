@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>AntaREST</title>
+    <link rel="icon" href="/ui/static/favicon.png">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
           rel="stylesheet">
     <style>
-        h1, h2, h3, h4, p, a, button, span {
+        body {
             font-family: 'Roboto', sans-serif;
         }
 
@@ -17,12 +18,27 @@
         }
 
         .primary {
-            color: #1a237e;
-            border-color: #1a237e;
+            color: #00285d;
+            border-color: #00285d;
+        }
+
+        .secondary {
+            color: #00a3ca;
+        }
+
+        .highlight {
+            color: #ff9800;
         }
 
         .gray {
             color: #a4a4a4;
+        }
+
+        .wrap-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            white-space: nowrap;
         }
 
         .title {
@@ -39,8 +55,7 @@
 
         .id {
             font-size: small;
-            padding: -10px 0 20px 0;
-            margin-top: 0;
+            margin: 4px 0 10px 2px;
             font-family: 'Courier', sans-serif;
         }
 
@@ -60,15 +75,15 @@
 
         .separtor {
             border-bottom: solid 1px #dbdbdb;
-            margin: 20px -20px 0 -20px;
+            margin: 16px -20px 0 -20px;
         }
 
         .button-card {
-            margin: 5px;
             font-size: medium;
             border: none;
             background-color: transparent;
             height: 40px;
+            cursor: pointer;
         }
 
         .button-card:active {
@@ -88,10 +103,15 @@
             border-radius: 5px;
             font-weight: bold;
             background-color: transparent;
+            cursor: pointer;
         }
 
         .raised-button:active {
             background-color: #9dc6ea;
+        }
+
+        .raised-button:hover {
+            color: #ff9800;
         }
 
         .raised-button:focus {
@@ -117,8 +137,8 @@
         }
 
         .navbar {
-            width: 101.5%; background-color: #1a237e; height: 70px; line-height: 70px;
-            margin: -10px -10px -10px -10px;
+            width: 100%; background-color: #00285d; height: 70px; line-height: 70px;
+            margin: 0 0 10px;
             color: white;
         }
 
@@ -140,18 +160,14 @@
 
     </style>
 </head>
-<body style="background-color: #efefef">
+<body style="background-color: #efefef; margin: 0;">
 
 <div class="navbar">
-    <a class="navbar-title navbar-txt" href="/">AntaREST</a>
+    <a class="navbar-txt navbar-title" href="/">AntaREST</a>
     <a class="navbar-txt" href="https://github.com/AntaresSimulatorTeam/AntaREST">Github</a>
     <a class="navbar-txt" href="/docs">API</a>
     <a class="navbar-txt" href="https://api-antares.readthedocs.io/en/dev/inside.html">Docs</a>
 
-</div>
-
-<div style="margin: 10px; text-align: center">
-    <h1>Home</h1>
 </div>
 
 <form action="/" method="POST" style="margin: 10px">
@@ -184,10 +200,10 @@
 <span>
         {% for id, s in studies.items() %}
         <div class="card">
-            <a href="/viewer/{{ id }}/" target="_blank"  class="title primary">
-                {{ s["antares"]["caption"] | trim_title }}
+            <a href="/viewer/{{ id }}/" target="_blank"  class="title primary wrap-text">
+                {{ s["antares"]["caption"] }}
             </a>
-            <p class="id">{{ id | trim_id }}</p>
+            <div class="id wrap-text">{{ id }}</div>
             <table style="width: 100%">
                 <tr>
                     <td class="item"><i
@@ -204,12 +220,12 @@
 
             <div class="separtor"></div>
 
-            <span><button class="button-card primary"
+            <span><button class="button-card secondary"
                           onclick="window.location.href='/studies/{{ id }}/export'">ARCHIVE</button></span>
-            <span><button class="button-card primary" onclick="window.location.href='/studies/{{ id }}/export?compact'">EXPORT</button></span>
+            <span><button class="button-card secondary" onclick="window.location.href='/studies/{{ id }}/export?compact'">EXPORT</button></span>
 
             <span style="float: right">
-                <form action="/" method="POST">
+                <form action="/" method="POST" style="display: flex; align-items: center;">
                     <input type=hidden name="delete-id" value="{{ id }}">
                     <input type="checkbox" required name="">
                     <input type="submit" value="DELETE" class="button-card" style="color: red"/>
