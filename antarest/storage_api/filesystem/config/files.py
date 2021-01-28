@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
 from antarest.storage_api.antares_io.reader import IniReader, SetsIniReader
-from antarest.storage_api.custom_types import JSON
+from antarest.common.custom_types import JSON
 from antarest.storage_api.filesystem.config.model import (
     Config,
     Area,

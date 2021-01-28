@@ -12,7 +12,7 @@ from zipfile import BadZipFile, ZipFile
 
 from antarest.storage_api.antares_io.exporter.export_file import Exporter
 from antarest.storage_api.antares_io.reader import IniReader
-from antarest.storage_api.custom_types import JSON, SUB_JSON
+from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage_api.filesystem.config.model import Config
 from antarest.storage_api.filesystem.factory import StudyFactory
 from antarest.storage_api.web.html_exception import (

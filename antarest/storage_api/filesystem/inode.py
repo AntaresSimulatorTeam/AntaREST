@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, TypeVar, Generic, Any, Union
 
-from antarest.storage_api.custom_types import JSON, SUB_JSON
+from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage_api.filesystem.config.model import Config
 
 G = TypeVar("G")

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from antarest.storage_api.custom_types import SUB_JSON
+from antarest.common.custom_types import SUB_JSON
 from antarest.storage_api.web import RequestHandler
 from antarest.storage_api.web.request_handler import RequestHandlerParameters
 from antarest.storage_api.web.server import create_server

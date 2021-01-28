@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Tuple
 
-from antarest.storage_api.custom_types import JSON
+from antarest.common.custom_types import JSON
 from antarest.storage_api.filesystem.config.files import ConfigPathBuilder
 from antarest.storage_api.filesystem.config.json import ConfigJsonBuilder
 from antarest.storage_api.filesystem.config.model import Config

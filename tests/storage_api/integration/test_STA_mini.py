@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from antarest.storage_api.custom_types import JSON
+from antarest.common.custom_types import JSON
 from antarest.storage_api.web import RequestHandler
 from antarest.storage_api.web.request_handler import RequestHandlerParameters
 from antarest.storage_api.web.server import create_server

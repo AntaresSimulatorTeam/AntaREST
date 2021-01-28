@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 from antarest.storage_api import __version__
-from antarest.storage_api.custom_types import JSON
+from antarest.common.custom_types import JSON
 
 sim = "{sim} = simulation index <br/>"
 area = "{area} = area name to select <br/>"

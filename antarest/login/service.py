@@ -1,0 +1,23 @@
+from typing import Optional
+
+from antarest.common.custom_types import JSON
+from antarest.login.model import User
+from antarest.login.repository import UserRepository
+
+
+class LoginService:
+    def __init__(self, user_repo: UserRepository):
+        self.repo = user_repo
+
+    def save(self, user: User) -> None:
+        self.repo.save(user)
+
+    def get(self, id: int) -> Optional[User]:
+        return self.repo.get(id)
+
+    def authenticate(self, name: str, pwd: str) -> bool:
+        user = self.repo.get_by_name(name)
+        return user.password == pwd if user else False
+
+    def identify(self, payload: JSON) -> Optional[User]:
+        return self.get(payload["identity"])

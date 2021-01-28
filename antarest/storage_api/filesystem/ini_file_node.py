@@ -5,7 +5,7 @@ from typing import List, Optional, Union, cast, Type, Dict, Any
 from antarest.storage_api.antares_io.reader import IniReader
 from antarest.storage_api.antares_io.reader.ini_reader import IReader
 from antarest.storage_api.antares_io.writer.ini_writer import IniWriter
-from antarest.storage_api.custom_types import JSON, SUB_JSON
+from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage_api.filesystem.config.model import Config
 from antarest.storage_api.filesystem.inode import INode, TREE
 

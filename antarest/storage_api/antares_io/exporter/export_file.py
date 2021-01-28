@@ -7,7 +7,7 @@ from io import BytesIO
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from antarest.storage_api.custom_types import JSON
+from antarest.common.custom_types import JSON
 
 
 class Exporter:
