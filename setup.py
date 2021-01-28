@@ -4,9 +4,9 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="storage-api",
+    name="AntaREST",
     version="0.0.1",
-    description="Storage API for antares",
+    description="Antares Server",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/AntaresSimulatorTeam/api-iso-antares",
