@@ -1,17 +1,19 @@
 import json
 
 import pytest
+from flask import Flask
 
 from antarest.common.custom_types import SUB_JSON
+from antarest.storage_api.main import build_storage
 from antarest.storage_api.web import RequestHandler
 from antarest.storage_api.web.request_handler import RequestHandlerParameters
-from antarest.storage_api.web.server import create_server
 
 
 def assert_url_content(
     request_handler: RequestHandler, url: str, new: SUB_JSON
 ) -> None:
-    app = create_server(request_handler)
+    app = Flask(__name__)
+    build_storage(app, req=request_handler, res=request_handler.path_resources)
     client = app.test_client()
     res = client.post(url, data=json.dumps(url))
     assert json.loads(res.data) == new

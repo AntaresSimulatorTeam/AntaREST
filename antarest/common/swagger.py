@@ -1,7 +1,12 @@
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
-from antarest.storage_api import __version__
+from flask import request, jsonify
+from flask_swagger import swagger
+from flask_swagger_ui import get_swaggerui_blueprint
+
 from antarest.common.custom_types import JSON
+from antarest import __version__
+
 
 sim = "{sim} = simulation index <br/>"
 area = "{area} = area name to select <br/>"
@@ -86,7 +91,7 @@ def _add_post_edit_study(swagger: JSON) -> None:
     }
 
 
-def update(swagger: JSON) -> JSON:
+def _update(swagger: JSON) -> JSON:
     # Set file format version
     del swagger["swagger"]
     swagger["openapi"] = "3.0.0"
@@ -104,3 +109,22 @@ def update(swagger: JSON) -> JSON:
     _add_post_import_body(swagger)
 
     return swagger
+
+
+def build_swagger(application: Any) -> None:
+    @application.route(  # type: ignore
+        "/swagger.json",
+        methods=["GET"],
+    )
+    def spec() -> Any:
+        specification = _update(swagger(application))
+        specification["servers"] = [{"url": request.url_root}]
+
+        return jsonify(specification)
+
+    swaggerui_blueprint = get_swaggerui_blueprint(
+        "/docs",
+        "/swagger.json",
+        config={"app_name": "Test application", "validatorUrl": None},
+    )
+    application.register_blueprint(swaggerui_blueprint)

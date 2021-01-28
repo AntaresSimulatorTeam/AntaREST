@@ -2,14 +2,17 @@ from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
+from flask import Flask
+
 from antarest.storage_api.antares_io.exporter.export_file import Exporter
 from antarest.storage_api.filesystem.factory import StudyFactory
+from antarest.storage_api.main import build_storage
 from antarest.storage_api.web import RequestHandler
-from antarest.storage_api.web.server import create_server
 
 
 def assert_url_content(request_handler: RequestHandler, url: str) -> bytes:
-    app = create_server(request_handler, res=Path())
+    app = Flask(__name__)
+    build_storage(app, req=request_handler, res=request_handler.path_resources)
     client = app.test_client()
     res = client.get(url)
     return res.data
@@ -30,7 +33,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         study_factory=StudyFactory(),
         exporter=Exporter(),
         path_studies=path_studies,
-        path_resources=Mock(),
+        path_resources=Path(),
     )
 
     data = assert_url_content(handler, url="/studies/STA-mini/export")
@@ -51,7 +54,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
         study_factory=StudyFactory(),
         exporter=Exporter(),
         path_studies=path_studies,
-        path_resources=Mock(),
+        path_resources=Path(),
     )
 
     data = assert_url_content(

@@ -7,7 +7,7 @@ from antarest.storage_api.web import RequestHandler
 from antarest.storage_api.web.html_exception import (
     stop_and_return_on_html_exception,
 )
-from antarest.storage_api import __version__
+from antarest import __version__
 
 
 def create_utils_routes(request_handler: RequestHandler) -> Blueprint:

@@ -1,4 +1,4 @@
-from antarest.storage_api.web import ReverseProxyMiddleware
+from antarest.common.reverse_proxy import ReverseProxyMiddleware
 
 import pytest
 
