@@ -78,11 +78,10 @@ def create_ui(res: Path, request_handler: RequestHandler) -> Blueprint:
             "home.html", studies=studies, size=len(studies), status=status
         )
 
-    @bp.route('/ui/static/<path:filename>')
-    def download_file(filename):
+    @bp.route("/ui/static/<path:filename>")
+    def serve_static_file(filename: Path) -> Any:
         static_folder = get_local_path() / "static"
-        return send_from_directory(static_folder,
-                                   filename)
+        return send_from_directory(static_folder, filename)
 
     @bp.route("/viewer/<path:path>", methods=["GET"])
     def display_study(path: str) -> Any:
