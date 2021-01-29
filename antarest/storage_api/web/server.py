@@ -19,7 +19,7 @@ from antarest.storage_api.web.ui_blueprint import create_ui
 from antarest.storage_api.web.utils_blueprint import create_utils_routes
 
 
-def create_swagger(application: Any) -> None:
+def create_swagger(application: Any, res: Path) -> None:
     @application.route(  # type: ignore
         "/swagger.json",
         methods=["GET"],
@@ -35,6 +35,7 @@ def create_swagger(application: Any) -> None:
         "/swagger.json",
         config={"app_name": "Test application", "validatorUrl": None},
     )
+    swaggerui_blueprint.template_folder = res / "templates"
     application.register_blueprint(swaggerui_blueprint)
 
 
@@ -46,5 +47,5 @@ def create_server(req: RequestHandler, res: Path) -> Flask:
     application.register_blueprint(create_study_routes(request_handler))
     application.register_blueprint(create_utils_routes(request_handler))
 
-    create_swagger(application)
+    create_swagger(application, res)
     return application
