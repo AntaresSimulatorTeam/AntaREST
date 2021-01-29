@@ -7,6 +7,12 @@ from werkzeug.security import (
 )
 
 from antarest.common.custom_types import JSON
+from antarest.common.dto import DTO
+
+
+class Role:
+    ADMIN: str = "ADMIN"
+    USER: str = "USER"
 
 
 class Password:
@@ -21,14 +27,20 @@ class Password:
 
 class User:
     def __init__(
-        self, id: Optional[int] = None, name: str = "", pwd: str = ""
+        self,
+        id: Optional[int] = None,
+        name: str = "",
+        pwd: str = "",
+        role: str = Role.USER,
     ):
         self.id = id
+        self.role = role
         self.name = name
         self.password = Password(pwd)
 
-    def from_dict(self, data: JSON) -> "User":
-        return User(id=data["id"], name=data["name"])
+    @staticmethod
+    def from_dict(data: JSON) -> "User":
+        return User(id=data["id"], name=data["name"], role=data["role"])
 
     def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name}
+        return {"id": self.id, "name": self.name, "role": self.role}

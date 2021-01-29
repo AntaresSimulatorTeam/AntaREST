@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from antarest.common.custom_types import JSON
 from antarest.login.model import User
@@ -9,8 +9,8 @@ class LoginService:
     def __init__(self, user_repo: UserRepository):
         self.repo = user_repo
 
-    def save(self, user: User) -> None:
-        self.repo.save(user)
+    def save(self, user: User) -> User:
+        return self.repo.save(user)
 
     def get(self, id: int) -> Optional[User]:
         return self.repo.get(id)
@@ -21,3 +21,6 @@ class LoginService:
 
     def identify(self, payload: JSON) -> Optional[User]:
         return self.get(payload["identity"])
+
+    def get_all(self) -> List[User]:
+        return self.repo.get_all()

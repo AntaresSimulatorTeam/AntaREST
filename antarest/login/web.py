@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from flask import Blueprint, request, jsonify
@@ -7,6 +8,7 @@ from flask_jwt_extended import (
     get_jwt_identity,
 )
 
+from antarest.login.model import User
 from antarest.login.service import LoginService
 
 
@@ -30,8 +32,22 @@ def create_login_api(service: LoginService) -> Blueprint:
             return jsonify({"msg": "Bad username or password"}), 401
 
         # Identity can be any data that is json serializable
-        access_token = create_access_token(identity=user.id)
+        access_token = create_access_token(identity=user.to_dict())
         return jsonify(access_token=access_token), 200
+
+    @bp.route("/users", methods=["GET", "POST"])
+    @jwt_required
+    def users():
+        if get_jwt_identity()["role"] != "ADMIN":
+            return "Only admin can manage user", 403
+
+        if request.method == "GET":
+            return jsonify([u.to_dict() for u in service.get_all()])
+
+        elif request.method == "POST":
+            print(request.data)
+            use = User.from_dict(json.loads(request.data))
+            return jsonify(service.save(use))
 
     @bp.route("/protected")
     @jwt_required
