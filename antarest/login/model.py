@@ -28,7 +28,7 @@ class User:
         self.password = Password(pwd)
 
     def from_dict(self, data: JSON) -> "User":
-        return User(id=data["id"], name=data["id"])
+        return User(id=data["id"], name=data["name"])
 
     def to_dict(self) -> JSON:
         return {"id": self.id, "name": self.name}

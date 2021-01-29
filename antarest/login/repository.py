@@ -6,7 +6,9 @@ from antarest.login.model import User
 
 class UserRepository:
     def __init__(self) -> None:
-        self.users: Dict[int, User] = dict()
+        self.users: Dict[int, User] = {
+            0: User(id=0, name="admin", pwd="admin")
+        }
 
     def save(self, user: User) -> User:
         if user.id is None:

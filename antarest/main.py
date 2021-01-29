@@ -9,6 +9,7 @@ from flask import Flask
 from antarest import __version__
 from antarest.common.reverse_proxy import ReverseProxyMiddleware
 from antarest.common.swagger import build_swagger
+from antarest.login.main import build_login
 from antarest.storage_api.main import build_storage
 
 
@@ -56,8 +57,10 @@ def main(studies_path: Path):
     res = get_local_path() / "resources"
     application = Flask(__name__)
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
+    application.config["SECRET_KEY"] = "super-secret"  # TODO strong password
 
     build_storage(application, res, studies_path)
+    build_login(application)
     build_swagger(application)
 
     application.run(debug=False, host="0.0.0.0", port=8080)

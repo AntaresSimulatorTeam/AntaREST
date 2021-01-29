@@ -15,9 +15,9 @@ class LoginService:
     def get(self, id: int) -> Optional[User]:
         return self.repo.get(id)
 
-    def authenticate(self, name: str, pwd: str) -> bool:
+    def authenticate(self, name: str, pwd: str) -> Optional[User]:
         user = self.repo.get_by_name(name)
-        return user.password == pwd if user else False
+        return user if user.password == pwd else None
 
     def identify(self, payload: JSON) -> Optional[User]:
         return self.get(payload["identity"])

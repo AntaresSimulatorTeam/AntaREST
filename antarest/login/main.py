@@ -1,12 +1,15 @@
+from typing import Optional
+
 from flask import Flask
+from flask_jwt_extended import JWTManager
 
 from antarest.login.repository import UserRepository
 from antarest.login.service import LoginService
 from antarest.login.web import create_login_api
 
 
-def build_login(application: Flask):
+def build_login(application: Flask, service: Optional[LoginService] = None):
     repo = UserRepository()
-    service = LoginService(user_repo=repo)
-
+    service = service or LoginService(user_repo=repo)
+    jwt = JWTManager(application)
     application.register_blueprint(create_login_api(service))
