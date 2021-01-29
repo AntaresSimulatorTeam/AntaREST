@@ -1,12 +1,22 @@
 import io
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Tuple
 
-from flask import Blueprint, request, render_template
+from flask import Blueprint, request, render_template, send_from_directory
 
 from antarest.storage_api.web import RequestHandler
 from antarest.storage_api.web.request_handler import RequestHandlerParameters
+
+
+def get_local_path() -> Path:
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        return Path(sys._MEIPASS)  # type: ignore
+    except Exception:
+        return Path(os.path.abspath(""))
 
 
 def wrap_status(fnc: Callable[[], Any]) -> str:
@@ -68,6 +78,11 @@ def create_ui(res: Path, request_handler: RequestHandler) -> Blueprint:
             "home.html", studies=studies, size=len(studies), status=status
         )
 
+    @bp.route("/ui/static/<path:filename>")
+    def serve_static_file(filename: Path) -> Any:
+        static_folder = get_local_path() / "static"
+        return send_from_directory(static_folder, filename)
+
     @bp.route("/viewer/<path:path>", methods=["GET"])
     def display_study(path: str) -> Any:
         def set_item(
@@ -104,15 +119,5 @@ def create_ui(res: Path, request_handler: RequestHandler) -> Blueprint:
     @bp.app_template_filter("date")  # type: ignore
     def time_filter(date: int) -> str:
         return datetime.fromtimestamp(date).strftime("%d-%m-%Y %H:%M")
-
-    @bp.app_template_filter("trim_title")  # type: ignore
-    def trim_title_filter(text: str) -> str:
-        size = 30
-        return text if len(text) < size else text[:size] + "..."
-
-    @bp.app_template_filter("trim_id")  # type: ignore
-    def trim_id_filter(text: str) -> str:
-        size = 45
-        return text if len(text) < size else text[:size] + "..."
 
     return bp
