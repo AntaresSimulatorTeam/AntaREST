@@ -75,7 +75,11 @@ def create_ui(res: Path, request_handler: RequestHandler) -> Blueprint:
 
         studies = request_handler.get_studies_informations()
         return render_template(
-            "home.html", studies=studies, size=len(studies), status=status
+            "home.html",
+            studies=studies,
+            size=len(studies),
+            status=status,
+            base_url=request.url_root,
         )
 
     @bp.route("/ui/static/<path:filename>")
@@ -114,7 +118,13 @@ def create_ui(res: Path, request_handler: RequestHandler) -> Blueprint:
                 ).items()
             ]
             data.append((part, items))
-        return render_template("study.html", info=info, id=uuid, data=data)
+        return render_template(
+            "study.html",
+            info=info,
+            id=uuid,
+            data=data,
+            base_url=request.url_root,
+        )
 
     @bp.app_template_filter("date")  # type: ignore
     def time_filter(date: int) -> str:
