@@ -1,4 +1,4 @@
-FROM inca.rte-france.com/rtsi/python:3.6.5-centos7.4
+FROM centos/python-36-centos7
 
 ENV GUNICORN_WORKERS ALL_AVAILABLE
 ENV API_ANTARES_STUDIES_PATH /studies
