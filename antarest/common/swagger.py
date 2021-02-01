@@ -1,8 +1,8 @@
 from typing import Any, List, Tuple
 
 from flask import request, jsonify
-from flask_swagger import swagger
-from flask_swagger_ui import get_swaggerui_blueprint
+from flask_swagger import swagger  # type: ignore
+from flask_swagger_ui import get_swaggerui_blueprint  # type: ignore
 
 from antarest.common.custom_types import JSON
 from antarest import __version__

@@ -53,7 +53,7 @@ def get_local_path() -> Path:
         return Path(os.path.abspath(""))
 
 
-def main(studies_path: Path):
+def main(studies_path: Path) -> Flask:
     res = get_local_path() / "resources"
     application = Flask(__name__)
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
@@ -64,6 +64,7 @@ def main(studies_path: Path):
     build_swagger(application)
 
     application.run(debug=False, host="0.0.0.0", port=8080)
+    return application
 
 
 if __name__ == "__main__":

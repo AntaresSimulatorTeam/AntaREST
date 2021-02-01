@@ -16,7 +16,7 @@ def build_storage(
     res: Path,
     studies_path: Path = Path(),
     req: Optional[RequestHandler] = None,
-):
+) -> None:
     request_handler = req or RequestHandler(
         study_factory=StudyFactory(),
         exporter=Exporter(),

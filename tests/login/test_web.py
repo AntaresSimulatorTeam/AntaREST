@@ -3,27 +3,27 @@ from unittest.mock import Mock
 
 import pytest
 from flask import Flask
+from flask_jwt_extended import create_access_token
 
 from antarest.login.main import build_login
 from antarest.login.model import User, Role
 
 
-def create_client(
-    service: Mock, admin: bool = False
-) -> Tuple[Any, Dict[str, str]]:
-    service.authenticate.return_value = User(
-        id=0, name="user", role=Role.ADMIN if admin else Role.USER
-    )
+def create_client(service: Mock) -> Any:
 
     app = Flask(__name__)
     app.config["SECRET_KEY"] = "super-secret"
 
     build_login(app, service=service)
-    client = app.test_client()
+    return app.test_client()
 
-    res = client.post("/auth", json={"username": "admin", "password": "admin"})
-    token = res.json["access_token"]
-    return client, {"Authorization": f"Bearer {token}"}
+
+def get_token(role: str = Role.USER) -> Dict[str, str]:
+    if role == Role.USER:
+        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MTIxNzU4MDYsIm5iZiI6MTYxMjE3NTgwNiwianRpIjoiMzkzM2M0MTItZGI2NS00YjUwLTk5ZGMtYzJlYjgxMTBkNTlhIiwiZXhwIjo5OTk5OTk5OTk5LCJpZGVudGl0eSI6eyJpZCI6MCwibmFtZSI6ImFkbWluIiwicm9sZSI6IlVTRVIifSwiZnJlc2giOmZhbHNlLCJ0eXBlIjoiYWNjZXNzIn0.uNpLBLA-tEM-TB8dv4wrj3KLGVQL9A07wjE3835GDjM"
+    elif role == Role.ADMIN:
+        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MTIxNzU4MDYsIm5iZiI6MTYxMjE3NTgwNiwianRpIjoiMzkzM2M0MTItZGI2NS00YjUwLTk5ZGMtYzJlYjgxMTBkNTlhIiwiZXhwIjo5OTk5OTk5OTk5LCJpZGVudGl0eSI6eyJpZCI6MCwibmFtZSI6ImFkbWluIiwicm9sZSI6IkFETUlOIn0sImZyZXNoIjpmYWxzZSwidHlwZSI6ImFjY2VzcyJ9.Gbxhmz6XSke0OZ2-fwRFKoh8LOrFj0pbJeR3Vfj536Q"
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.mark.unit_test
@@ -31,10 +31,7 @@ def test_auth() -> None:
     service = Mock()
     service.authenticate.return_value = User(id=0, name="admin")
 
-    app = Flask(__name__)
-    app.config["SECRET_KEY"] = "super-secret"
-    build_login(app, service=service)
-    client = app.test_client()
+    client = create_client(service)
     res = client.post("/auth", json={"username": "admin", "password": "admin"})
 
     assert res.status_code == 200
@@ -48,10 +45,7 @@ def test_auth_fail() -> None:
     service = Mock()
     service.authenticate.return_value = None
 
-    app = Flask(__name__)
-    app.config["SECRET_KEY"] = "super-secret"
-    build_login(app, service=service)
-    client = app.test_client()
+    client = create_client(service)
     res = client.post("/auth", json={"username": "admin", "password": "admin"})
 
     assert res.status_code == 401
@@ -62,8 +56,8 @@ def test_user_fail() -> None:
     service = Mock()
     service.get_all.return_value = [User(id=1, name="user", role=Role.USER)]
 
-    client, token = create_client(service)
-    res = client.get("/users", headers=token)
+    client = create_client(service)
+    res = client.get("/users", headers=get_token())
     assert res.status_code == 403
 
 
@@ -72,22 +66,35 @@ def test_user() -> None:
     service = Mock()
     service.get_all.return_value = [User(id=1, name="user", role=Role.USER)]
 
-    client, token = create_client(service, admin=True)
-    res = client.get("/users", headers=token)
+    client = create_client(service)
+    res = client.get("/users", headers=get_token(Role.ADMIN))
     assert res.status_code == 200
     assert res.json == [User(id=1, name="user", role=Role.USER).to_dict()]
 
 
 @pytest.mark.unit_test
 def test_user_create() -> None:
+    user = User(id=1, name="a", role=Role.USER, pwd="b")
     service = Mock()
+    service.save.return_value = user
 
-    client, token = create_client(service, admin=True)
+    client = create_client(service)
     res = client.post(
         "/users",
-        headers=token,
+        headers=get_token(Role.ADMIN),
         json={"name": "a", "password": "b", "role": "USER"},
     )
 
     assert res.status_code == 200
-    assert res.json == User(id=1, name="a", role=Role.USER).to_dict()
+    assert res.json == user.to_dict()
+
+
+@pytest.mark.unit_test
+def test_user_delete() -> None:
+    service = Mock()
+
+    client = create_client(service)
+    res = client.delete("/users/0", headers=get_token(Role.ADMIN))
+
+    assert res.status_code == 200
+    service.delete_assert_called_once_with(0)

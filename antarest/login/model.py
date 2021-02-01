@@ -24,8 +24,14 @@ class Password:
             return False
         return check_password_hash(self._pwd, other)  # type: ignore
 
+    def __str__(self) -> str:
+        return "*****"
 
-class User:
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class User(DTO):
     def __init__(
         self,
         id: Optional[int] = None,
@@ -40,7 +46,7 @@ class User:
 
     @staticmethod
     def from_dict(data: JSON) -> "User":
-        return User(id=data["id"], name=data["name"], role=data["role"])
+        return User(id=data.get("id"), name=data["name"], role=data["role"])
 
     def to_dict(self) -> JSON:
         return {"id": self.id, "name": self.name, "role": self.role}

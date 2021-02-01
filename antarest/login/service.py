@@ -17,10 +17,13 @@ class LoginService:
 
     def authenticate(self, name: str, pwd: str) -> Optional[User]:
         user = self.repo.get_by_name(name)
-        return user if user.password == pwd else None
+        return user if user and user.password == pwd else None
 
     def identify(self, payload: JSON) -> Optional[User]:
         return self.get(payload["identity"])
 
     def get_all(self) -> List[User]:
         return self.repo.get_all()
+
+    def delete(self, id: int) -> None:
+        self.repo.delete(id)
