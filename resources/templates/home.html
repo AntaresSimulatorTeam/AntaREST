@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AntaREST</title>
+    <link rel="icon" href="/ui/static/favicon.png">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        h1 {
+            font-size: xx-large;
+        }
+
+        .primary {
+            color: #00285d;
+            border-color: #00285d;
+        }
+
+        .secondary {
+            color: #00a3ca;
+        }
+
+        .highlight {
+            color: #ff9800;
+        }
+
+        .gray {
+            color: #a4a4a4;
+        }
+
+        .wrap-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            white-space: nowrap;
+        }
+
+        .title {
+            font-size: x-large;
+            padding: 0;
+            margin: 0;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .title:hover {
+            text-decoration: underline;
+        }
+
+        .id {
+            font-size: small;
+            margin: 4px 0 10px 2px;
+            font-family: 'Courier', sans-serif;
+        }
+
+        .card {
+            background-color: white;
+            display: inline-block;
+            margin: 10px;
+            padding: 20px;
+            width: 400px;
+            height: 160px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+
+        .item {
+            width: 50%;
+        }
+
+        .separtor {
+            border-bottom: solid 1px #dbdbdb;
+            margin: 16px -20px 0 -20px;
+        }
+
+        .button-card {
+            font-size: medium;
+            border: none;
+            background-color: transparent;
+            height: 40px;
+            cursor: pointer;
+        }
+
+        .button-card:active {
+            border: none;
+            background-color: #d7d7d7;
+        }
+
+        .button-card:focus {
+            outline: 0;
+        }
+
+        .raised-button {
+            margin: 10px;
+            padding: 10px;
+            height: 40px;
+            border: solid 2px;
+            border-radius: 5px;
+            font-weight: bold;
+            background-color: transparent;
+            cursor: pointer;
+        }
+
+        .raised-button:active {
+            background-color: #9dc6ea;
+        }
+
+        .raised-button:hover {
+            color: #ff9800;
+        }
+
+        .raised-button:focus {
+            outline: 0;
+        }
+
+        .material-icons {
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+
+        .input-text {
+            height: 40px;
+            border: none;
+            background-color: transparent;
+            border-bottom: solid 1px #808080;
+        }
+
+        .input-text:focus {
+            outline: 0;
+            border: none;
+            border-bottom: solid 2px;
+        }
+
+        .navbar {
+            width: 100%; background-color: #00285d; height: 70px; line-height: 70px;
+            margin: 0 0 10px;
+            color: white;
+        }
+
+        .navbar-txt, .navbar-txt:visited, .navbar-txt:link {
+            margin: 10px;
+            color: white;
+            text-decoration: none;
+            outline: 0;
+        }
+
+        .navbar-txt:hover {
+            text-decoration: underline;
+        }
+
+        .navbar-title {
+            font-size: x-large;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body style="background-color: #efefef; margin: 0;">
+
+<div class="navbar">
+    <a class="navbar-txt navbar-title" href="/">AntaREST</a>
+    <a class="navbar-txt" href="https://github.com/AntaresSimulatorTeam/AntaREST">Github</a>
+    <a class="navbar-txt" href="/docs">API</a>
+    <a class="navbar-txt" href="https://api-antares.readthedocs.io/en/dev/inside.html">Docs</a>
+
+</div>
+
+<form action="/" method="POST" style="margin: 10px">
+    <input type="submit" value="CREATE" class="raised-button primary" style="width: 100px"/>
+    <input type="text"
+           name="name"
+           id="name"
+           required
+           class="input-text primary"
+           placeholder="study name"/>
+</form>
+
+<form action="/" method="POST" enctype="multipart/form-data" style="margin: 10px">
+    <input type="submit" value="IMPORT" class="raised-button primary" style="width: 100px"/>
+    <input type="file"
+           name="study"
+           id="study"
+           accept="application/zip"
+           required/>
+</form>
+
+    {% if status == "error" %}
+    <h2 style="color: red; margin-left: 20px">Error occured on server</h2>
+    {% endif %}
+    {% if status == "ok" %}
+    <h2 style="color: green; margin-left: 20px">Action success</h2>
+    {% endif %}
+
+
+<span>
+        {% for id, s in studies.items() %}
+        <div class="card">
+            <a href="/viewer/{{ id }}/" target="_blank"  class="title primary wrap-text">
+                {{ s["antares"]["caption"] }}
+            </a>
+            <div class="id wrap-text">{{ id }}</div>
+            <table style="width: 100%">
+                <tr>
+                    <td class="item"><i
+                            class="material-icons gray">account_circle</i> {{ s["antares"]["author"] }} </td>
+                    <td class="item"><i
+                            class="material-icons gray">get_app</i> {{ s["antares"]["created"] | date }} </td>
+                </tr>
+                <tr>
+                    <td class="item"><i class="material-icons gray">info</i> {{ s["antares"]["version"] }} </td>
+                    <td class="item"><i
+                            class="material-icons gray">create</i> {{ s["antares"]["lastsave"] | date }} </td>
+                </tr>
+            </table>
+
+            <div class="separtor"></div>
+
+            <span><button class="button-card secondary"
+                          onclick="window.location.href='/studies/{{ id }}/export'">ARCHIVE</button></span>
+            <span><button class="button-card secondary" onclick="window.location.href='/studies/{{ id }}/export?compact'">EXPORT</button></span>
+
+            <span style="float: right">
+                <form action="/" method="POST" style="display: flex; align-items: center;">
+                    <input type=hidden name="delete-id" value="{{ id }}">
+                    <input type="checkbox" required name="">
+                    <input type="submit" value="DELETE" class="button-card" style="color: red"/>
+                </form>
+            </span>
+
+        </div>
+        {% endfor %}
+    </span>
+</body>
+</html>
