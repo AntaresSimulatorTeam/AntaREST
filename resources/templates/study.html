@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>AntaREST - {{ info["caption"] }}</title>
-    <link rel="icon" href="/ui/static/favicon.png">
+    <link rel="icon" href="{{ base_url }}ui/static/favicon.png">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
@@ -132,11 +132,11 @@
         {% if type == "data" %}
         <div class="row parameter">{{ key }} : <code>{{ value }}</code></div>
         {% elif type == "link" %}
-        <a class="row parameter" href="{{ value }}">{{ key }}<i class="material-icons gray">launch</i></a>
+        <a class="row parameter" href="{{ base_url }}{{ value }}">{{ key }}<i class="material-icons gray">launch</i></a>
         {% elif key == select %}
-        <a class="row selected" href="{{ value }}">{{ key }}</a>
+        <a class="row selected" href="{{ base_url }}{{ value }}">{{ key }}</a>
         {% else %}
-        <a class="row" href="{{ value }}">{{ key }}</a>
+        <a class="row" href="{{ base_url }}{{ value }}">{{ key }}</a>
         {% endif %}
         {% endfor %}
     </div>

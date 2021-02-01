@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>AntaREST</title>
-    <link rel="icon" href="/ui/static/favicon.png">
+    <link rel="icon" href="{{ base_url }}ui/static/favicon.png">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
@@ -170,7 +170,7 @@
 
 </div>
 
-<form action="/" method="POST" style="margin: 10px">
+<form action="{{ base_url }}" method="POST" style="margin: 10px">
     <input type="submit" value="CREATE" class="raised-button primary" style="width: 100px"/>
     <input type="text"
            name="name"
@@ -180,7 +180,7 @@
            placeholder="study name"/>
 </form>
 
-<form action="/" method="POST" enctype="multipart/form-data" style="margin: 10px">
+<form action="{{ base_url }}" method="POST" enctype="multipart/form-data" style="margin: 10px">
     <input type="submit" value="IMPORT" class="raised-button primary" style="width: 100px"/>
     <input type="file"
            name="study"
@@ -200,7 +200,7 @@
 <span>
         {% for id, s in studies.items() %}
         <div class="card">
-            <a href="/viewer/{{ id }}/" target="_blank"  class="title primary wrap-text">
+            <a href="{{ base_url }}viewer/{{ id }}/" target="_blank"  class="title primary wrap-text">
                 {{ s["antares"]["caption"] }}
             </a>
             <div class="id wrap-text">{{ id }}</div>
@@ -221,11 +221,11 @@
             <div class="separtor"></div>
 
             <span><button class="button-card secondary"
-                          onclick="window.location.href='/studies/{{ id }}/export'">ARCHIVE</button></span>
-            <span><button class="button-card secondary" onclick="window.location.href='/studies/{{ id }}/export?compact'">EXPORT</button></span>
+                          onclick="window.location.href='{{ base_url }}studies/{{ id }}/export'">ARCHIVE</button></span>
+            <span><button class="button-card secondary" onclick="window.location.href='{{ base_url }}studies/{{ id }}/export?compact'">EXPORT</button></span>
 
             <span style="float: right">
-                <form action="/" method="POST" style="display: flex; align-items: center;">
+                <form action="{{ base_url }}" method="POST" style="display: flex; align-items: center;">
                     <input type=hidden name="delete-id" value="{{ id }}">
                     <input type="checkbox" required name="">
                     <input type="submit" value="DELETE" class="button-card" style="color: red"/>
