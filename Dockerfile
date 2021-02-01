@@ -8,6 +8,7 @@ RUN mkdir $API_ANTARES_STUDIES_PATH
 COPY ./requirements.txt ./conf/* /conf/
 COPY ./antarest /antarest
 COPY ./resources /resources
+COPY ./static /static
 
 RUN pip3 install --upgrade pip \
     && pip3 install -r /conf/requirements.txt
