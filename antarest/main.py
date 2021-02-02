@@ -58,9 +58,10 @@ def main(studies_path: Path) -> Flask:
     application = Flask(__name__)
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
     application.config["SECRET_KEY"] = "super-secret"  # TODO strong password
+    application.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
 
     build_storage(application, res, studies_path)
-    build_login(application)
+    build_login(application, res)
     build_swagger(application)
 
     application.run(debug=False, host="0.0.0.0", port=8080)

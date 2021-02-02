@@ -1,27 +1,29 @@
 import json
+from pathlib import Path
 from typing import Any, Optional
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from flask_jwt_extended import (  # type: ignore
     create_access_token,
     jwt_required,
     get_jwt_identity,
+    set_access_cookies,
 )
 
 from antarest.login.model import User
 from antarest.login.service import LoginService
 
 
-def create_login_api(service: LoginService) -> Blueprint:
-    bp = Blueprint("create_login_api", __name__)
+def create_login_api(service: LoginService, res: Path) -> Blueprint:
+    bp = Blueprint(
+        "create_login_api", __name__, template_folder=str(res / "templates")
+    )
 
     @bp.route("/auth", methods=["POST"])
     def auth() -> Any:
-        if not request.is_json:
-            return jsonify({"msg": "Missing JSON in request"}), 400
+        username = request.form.get("username") or request.json.get("username")
+        password = request.form.get("password") or request.json.get("password")
 
-        username = request.json.get("username", None)
-        password = request.json.get("password", None)
         if not username:
             return jsonify({"msg": "Missing username parameter"}), 400
         if not password:
@@ -33,7 +35,16 @@ def create_login_api(service: LoginService) -> Blueprint:
 
         # Identity can be any data that is json serializable
         access_token = create_access_token(identity=user.to_dict())
-        return jsonify(access_token=access_token), 200
+        resp = jsonify({"login": True})
+        set_access_cookies(resp, access_token)
+        return (
+            jsonify(access_token=access_token) if request.is_json else resp,
+            200,
+        )
+
+    @bp.route("/login", methods=["GET"])
+    def login() -> Any:
+        return render_template("login.html")
 
     @bp.route("/users", methods=["GET", "POST"], defaults={"id": None})
     @bp.route("/users/<int:id>", methods=["DELETE"])

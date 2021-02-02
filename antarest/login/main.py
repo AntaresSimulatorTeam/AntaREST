@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 from flask import Flask
@@ -9,9 +10,9 @@ from antarest.login.web import create_login_api
 
 
 def build_login(
-    application: Flask, service: Optional[LoginService] = None
+    application: Flask, res: Path, service: Optional[LoginService] = None
 ) -> None:
     repo = UserRepository()
     service = service or LoginService(user_repo=repo)
     jwt = JWTManager(application)
-    application.register_blueprint(create_login_api(service))
+    application.register_blueprint(create_login_api(service, res))

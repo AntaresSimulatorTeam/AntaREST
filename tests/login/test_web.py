@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Dict, Tuple
 from unittest.mock import Mock
 
@@ -13,8 +14,9 @@ def create_client(service: Mock) -> Any:
 
     app = Flask(__name__)
     app.config["SECRET_KEY"] = "super-secret"
+    app.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
 
-    build_login(app, service=service)
+    build_login(app, service=service, res=Path())
     return app.test_client()
 
 
