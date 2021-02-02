@@ -1,4 +1,4 @@
-from antarest.storage_api.web.swagger import update
+from antarest.common.swagger import _update
 
 
 def test_update():
@@ -16,7 +16,7 @@ def test_update():
         },
     }
 
-    res = update(swagger)
+    res = _update(swagger)
     assert "requestBody" in res["paths"]["/studies/{uuid}/{path}"]["post"]
     assert "requestBody" in res["paths"]["/studies"]["post"]
     assert "requestBody" in res["paths"]["/file/{path}"]["post"]

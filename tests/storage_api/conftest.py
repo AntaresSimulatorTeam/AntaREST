@@ -9,7 +9,7 @@ import pytest
 project_dir: Path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_dir))
 
-from antarest.storage_api.custom_types import JSON
+from antarest.common.custom_types import JSON
 from antarest.storage_api.web import RequestHandler
 
 

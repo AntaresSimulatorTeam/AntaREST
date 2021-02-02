@@ -2,35 +2,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
-from antarest.storage_api.custom_types import JSON
-
-
-class DTO:
-    """
-    Implement basic method for DTO objects
-    """
-
-    def __hash__(self) -> int:
-        return hash(tuple(sorted(self.__dict__.items())))
-
-    def __eq__(self, other: Any) -> bool:
-        return (
-            isinstance(other, type(self)) and self.__dict__ == other.__dict__
-        )
-
-    def __str__(self) -> str:
-        return "{}({})".format(
-            type(self).__name__,
-            ", ".join(
-                [
-                    "{}={}".format(k, str(self.__dict__[k]))
-                    for k in sorted(self.__dict__)
-                ]
-            ),
-        )
-
-    def __repr__(self) -> str:
-        return self.__str__()
+from antarest.common.custom_types import JSON
+from antarest.common.dto import DTO
 
 
 class Link(DTO):

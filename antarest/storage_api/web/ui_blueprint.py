@@ -51,8 +51,6 @@ def create_ui(res: Path, request_handler: RequestHandler) -> Blueprint:
         status = ""
 
         if request.method == "POST":
-            print(request.form)
-            print(request.files)
             if "name" in request.form:
                 status = wrap_status(
                     fnc=lambda: request_handler.create_study(
