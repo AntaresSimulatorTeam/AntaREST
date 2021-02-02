@@ -1,5 +1,7 @@
+import subprocess
 from http import HTTPStatus
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional
 
 from flask import Blueprint, send_file, request, jsonify, Response
 
@@ -8,6 +10,29 @@ from antarest.storage_api.web.html_exception import (
     stop_and_return_on_html_exception,
 )
 from antarest import __version__
+
+
+def get_commit_id(path_resources: Path) -> Optional[str]:
+
+    commit_id = None
+
+    path_commit_id = path_resources / "commit_id"
+    if path_commit_id.exists():
+        commit_id = path_commit_id.read_text()[:-1]
+    else:
+        command = "git log -1 HEAD --format=%H"
+        process = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
+        if process.returncode == 0:
+            commit_id = process.stdout.decode("utf-8")
+
+    if commit_id is not None:
+
+        def remove_carriage_return(value: str) -> str:
+            return value[:-1]
+
+        commit_id = remove_carriage_return(commit_id)
+
+    return commit_id
 
 
 def create_utils_routes(request_handler: RequestHandler) -> Blueprint:
@@ -85,6 +110,11 @@ def create_utils_routes(request_handler: RequestHandler) -> Blueprint:
     @bp.route("/version", methods=["GET"])
     def version() -> Any:
         version_data = {"version": __version__}
+
+        commit_id = get_commit_id(request_handler.path_resources)
+        if commit_id is not None:
+            version_data["gitcommit"] = commit_id
+
         return jsonify(version_data), HTTPStatus.OK.value
 
     @bp.after_request
