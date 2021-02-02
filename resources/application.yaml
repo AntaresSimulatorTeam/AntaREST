@@ -1,5 +1,7 @@
 main:
-  hello: World
-  bonjour:
-    - le
-    - monde
+  jwt:
+    key: super-secret
+
+login:
+  admin:
+    pwd: admin

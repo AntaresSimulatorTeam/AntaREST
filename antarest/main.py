@@ -7,6 +7,7 @@ from typing import Optional, Tuple
 from flask import Flask
 
 from antarest import __version__
+from antarest.common.config import ConfigYaml
 from antarest.common.reverse_proxy import ReverseProxyMiddleware
 from antarest.common.swagger import build_swagger
 from antarest.login.main import build_login
@@ -55,13 +56,15 @@ def get_local_path() -> Path:
 
 def main(studies_path: Path) -> Flask:
     res = get_local_path() / "resources"
+    config = ConfigYaml(res=res, file=res / "application.yaml")
+
     application = Flask(__name__)
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
-    application.config["SECRET_KEY"] = "super-secret"  # TODO strong password
+    application.config["SECRET_KEY"] = config["main.jwt.key"]
     application.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
 
     build_storage(application, res, studies_path)
-    build_login(application, res)
+    build_login(application, config)
     build_swagger(application)
 
     application.run(debug=False, host="0.0.0.0", port=8080)

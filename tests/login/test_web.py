@@ -6,6 +6,7 @@ import pytest
 from flask import Flask
 from flask_jwt_extended import create_access_token
 
+from antarest.common.config import Config
 from antarest.login.main import build_login
 from antarest.login.model import User, Role
 
@@ -16,7 +17,7 @@ def create_client(service: Mock) -> Any:
     app.config["SECRET_KEY"] = "super-secret"
     app.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
 
-    build_login(app, service=service, res=Path())
+    build_login(app, service=service, config=Config({"main": {"res": Path()}}))
     return app.test_client()
 
 

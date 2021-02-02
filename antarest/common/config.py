@@ -1,14 +1,16 @@
 import os
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import yaml
 
+from antarest.common.custom_types import JSON
+
 
 class Config:
-    def __init__(self, file: Path):
-        self.data = yaml.load(open(file))
+    def __init__(self, data: Optional[JSON] = None):
+        self.data = data or dict()
 
     def __getitem__(self, item: str) -> Any:
         return self._get(item)
@@ -24,3 +26,10 @@ class Config:
         for p in parts:
             data = data[p]
         return data
+
+
+class ConfigYaml(Config):
+    def __init__(self, file: Path, res: Optional[Path] = None):
+        data = yaml.safe_load(open(file))
+        data["main"]["res"] = res
+        Config.__init__(self, data)
