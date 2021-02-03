@@ -7,6 +7,7 @@ from typing import Any, Callable, Tuple
 
 from flask import Blueprint, request, render_template, send_from_directory
 
+from antarest.common.config import Config
 from antarest.storage_api.web import RequestHandler
 from antarest.storage_api.web.request_handler import RequestHandlerParameters
 
@@ -28,11 +29,11 @@ def wrap_status(fnc: Callable[[], Any]) -> str:
         return "error"
 
 
-def create_ui(res: Path, request_handler: RequestHandler) -> Blueprint:
+def create_ui(request_handler: RequestHandler, config: Config) -> Blueprint:
     bp = Blueprint(
         "create_ui",
         __name__,
-        template_folder=str(res / "templates"),
+        template_folder=str(config["main.res"] / "templates"),
     )
 
     @bp.route("/", methods=["GET", "POST"])

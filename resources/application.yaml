@@ -6,5 +6,5 @@ login:
   admin:
     pwd: admin
 
-storages:
+storage:
   studies: examples/studies

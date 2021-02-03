@@ -7,6 +7,7 @@ import pytest
 from flask import Flask
 
 from antarest import __version__
+from antarest.common.config import Config
 from antarest.storage_api.main import build_storage
 
 
@@ -17,7 +18,9 @@ def test_version() -> None:
     mock_request_handler.path_resources = Path("/")
 
     app = Flask(__name__)
-    build_storage(app, req=mock_request_handler, res=Path())
+    build_storage(
+        app, req=mock_request_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
 
     path = "/version"

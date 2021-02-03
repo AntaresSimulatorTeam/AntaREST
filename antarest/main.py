@@ -36,7 +36,7 @@ def parse_arguments() -> argparse.Namespace:
 def get_arguments() -> Tuple[Optional[Path], bool]:
     arguments = parse_arguments()
 
-    config_file = Path(arguments.studies_path)
+    config_file = Path(arguments.config_file)
     display_version = arguments.version or False
 
     return config_file, display_version

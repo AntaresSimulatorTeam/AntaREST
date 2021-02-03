@@ -11,6 +11,7 @@ import pytest
 from flask import Flask
 
 from antarest import __version__
+from antarest.common.config import Config
 from antarest.storage_api.main import build_storage
 from antarest.storage_api.web.html_exception import (
     IncorrectPathError,
@@ -29,7 +30,9 @@ def test_server() -> None:
     parameters = RequestHandlerParameters()
 
     app = Flask(__name__)
-    build_storage(app, req=mock_handler, res=Path())
+    build_storage(
+        app, req=mock_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
     client.get("/studies/study1/settings/general/params")
 
@@ -44,7 +47,9 @@ def test_404() -> None:
     mock_handler.get.side_effect = UrlNotMatchJsonDataError("Test")
 
     app = Flask(__name__)
-    build_storage(app, req=mock_handler, res=Path())
+    build_storage(
+        app, req=mock_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
     result = client.get("/studies/study1/settings/general/params")
     assert result.status_code == 404
@@ -60,7 +65,9 @@ def test_server_with_parameters() -> None:
     mock_handler.get.return_value = {}
 
     app = Flask(__name__)
-    build_storage(app, req=mock_handler, res=Path())
+    build_storage(
+        app, req=mock_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
     result = client.get("/studies/study1?depth=4")
 
@@ -86,7 +93,9 @@ def test_matrix(tmp_path: str, request_handler_builder: Callable) -> None:
     request_handler = request_handler_builder(path_studies=tmp)
 
     app = Flask(__name__)
-    build_storage(app, req=request_handler, res=Path())
+    build_storage(
+        app, req=request_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
     result_right = client.get("/file/study1/matrix")
 
@@ -110,7 +119,9 @@ def test_create_study(
     request_handler.create_study.return_value = "my-uuid"
 
     app = Flask(__name__)
-    build_storage(app, req=request_handler, res=Path())
+    build_storage(
+        app, req=request_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
 
     result_right = client.post("/studies/study2")
@@ -140,7 +151,9 @@ def test_import_study_zipped(
     mock_request_handler.import_study.return_value = study_name
 
     app = Flask(__name__)
-    build_storage(app, req=mock_request_handler, res=Path())
+    build_storage(
+        app, req=mock_request_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
 
     result = client.post("/studies")
@@ -162,7 +175,9 @@ def test_copy_study(tmp_path: Path, request_handler_builder: Callable) -> None:
     request_handler.copy_study.return_value = "/studies/study-copied"
 
     app = Flask(__name__)
-    build_storage(app, req=request_handler, res=Path())
+    build_storage(
+        app, req=request_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
 
     result = client.post("/studies/existing-study/copy?dest=study-copied")
@@ -187,7 +202,9 @@ def test_list_studies(
     request_handler.get_studies_informations.return_value = studies
 
     app = Flask(__name__)
-    build_storage(app, req=request_handler, res=Path())
+    build_storage(
+        app, req=request_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
     result = client.get("/studies")
 
@@ -197,7 +214,7 @@ def test_list_studies(
 @pytest.mark.unit_test
 def test_server_health() -> None:
     app = Flask(__name__)
-    build_storage(app, req=Mock(), res=Path())
+    build_storage(app, req=Mock(), config=Config({"main": {"res": Path()}}))
     client = app.test_client()
     result = client.get("/health")
     assert result.data == b'{"status":"available"}\n'
@@ -210,7 +227,9 @@ def test_export_files() -> None:
     mock_handler.export_study.return_value = BytesIO(b"Hello")
 
     app = Flask(__name__)
-    build_storage(app, req=mock_handler, res=Path())
+    build_storage(
+        app, req=mock_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
     result = client.get("/studies/name/export")
 
@@ -225,7 +244,9 @@ def test_export_compact() -> None:
     mock_handler.export_study.return_value = BytesIO(b"Hello")
 
     app = Flask(__name__)
-    build_storage(app, req=mock_handler, res=Path())
+    build_storage(
+        app, req=mock_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
     result = client.get("/studies/name/export?compact")
 
@@ -239,7 +260,9 @@ def test_delete_study() -> None:
     mock_handler = Mock()
 
     app = Flask(__name__)
-    build_storage(app, req=mock_handler, res=Path())
+    build_storage(
+        app, req=mock_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
     client.delete("/studies/name")
 
@@ -251,7 +274,9 @@ def test_import_matrix() -> None:
     mock_handler = Mock()
 
     app = Flask(__name__)
-    build_storage(app, req=mock_handler, res=Path())
+    build_storage(
+        app, req=mock_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
 
     data = io.BytesIO(b"hello")
@@ -271,7 +296,9 @@ def test_import_matrix_with_wrong_path() -> None:
     mock_handler.upload_matrix = Mock(side_effect=IncorrectPathError(""))
 
     app = Flask(__name__)
-    build_storage(app, req=mock_handler, res=Path())
+    build_storage(
+        app, req=mock_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
 
     data = io.BytesIO(b"hello")
@@ -291,7 +318,9 @@ def test_edit_study() -> None:
     data = json.dumps({"Hello": "World"})
 
     app = Flask(__name__)
-    build_storage(app, req=mock_handler, res=Path())
+    build_storage(
+        app, req=mock_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
     client.post("/studies/my-uuid/url/to/change", data=data)
 
@@ -307,7 +336,9 @@ def test_edit_study_fail() -> None:
     data = json.dumps({})
 
     app = Flask(__name__)
-    build_storage(app, req=mock_handler, res=Path())
+    build_storage(
+        app, req=mock_handler, config=Config({"main": {"res": Path()}})
+    )
     client = app.test_client()
     res = client.post("/studies/my-uuid/url/to/change", data=data)
 

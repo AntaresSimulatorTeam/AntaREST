@@ -6,6 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.common.config import Config
 from antarest.storage_api.filesystem.config.model import (
     StudyConfig,
     Simulation,
@@ -56,8 +57,12 @@ def test_get(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_factory=study_factory,
         exporter=Mock(),
-        path_studies=path_to_studies,
-        path_resources=project_path / "resources",
+        config=Config(
+            {
+                "main": {"res": project_path / "resources"},
+                "storage": {"studies": path_to_studies},
+            }
+        ),
     )
 
     parameters = RequestHandlerParameters(depth=2)
@@ -89,8 +94,12 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_factory=Mock(),
         exporter=Mock(),
-        path_studies=path_to_studies,
-        path_resources=project_path / "resources",
+        config=Config(
+            {
+                "main": {"res": project_path / "resources"},
+                "storage": {"studies": path_to_studies},
+            }
+        ),
     )
     request_handler.assert_study_exist(study_name)
 
@@ -113,8 +122,12 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_factory=Mock(),
         exporter=Mock(),
-        path_studies=path_to_studies,
-        path_resources=project_path / "resources",
+        config=Config(
+            {
+                "main": {"res": project_path / "resources"},
+                "storage": {"studies": path_to_studies},
+            }
+        ),
     )
     with pytest.raises(StudyNotFoundError):
         request_handler.assert_study_exist(study_name)
