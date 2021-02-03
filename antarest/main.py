@@ -17,10 +17,10 @@ from antarest.storage_api.main import build_storage
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-s",
-        "--studies",
-        dest="studies_path",
-        help="Path to the studies directory",
+        "-c",
+        "--config",
+        dest="config_file",
+        help="path to the config file",
     )
     parser.add_argument(
         "-v",
@@ -36,14 +36,10 @@ def parse_arguments() -> argparse.Namespace:
 def get_arguments() -> Tuple[Optional[Path], bool]:
     arguments = parse_arguments()
 
-    arg_studies_path = arguments.studies_path
-    studies_path = None
-    if arg_studies_path is not None:
-        studies_path = Path(arguments.studies_path)
-
+    config_file = Path(arguments.studies_path)
     display_version = arguments.version or False
 
-    return studies_path, display_version
+    return config_file, display_version
 
 
 def get_local_path() -> Path:
@@ -54,16 +50,16 @@ def get_local_path() -> Path:
         return Path(os.path.abspath(""))
 
 
-def main(studies_path: Path) -> Flask:
+def main(config_file: Path) -> Flask:
     res = get_local_path() / "resources"
-    config = ConfigYaml(res=res, file=res / "application.yaml")
+    config = ConfigYaml(res=res, file=config_file)
 
     application = Flask(__name__)
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
     application.config["SECRET_KEY"] = config["main.jwt.key"]
     application.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
 
-    build_storage(application, res, studies_path)
+    build_storage(application, config)
     build_login(application, config)
     build_swagger(application)
 
@@ -72,12 +68,12 @@ def main(studies_path: Path) -> Flask:
 
 
 if __name__ == "__main__":
-    studies_path, display_version = get_arguments()
+    config_file, display_version = get_arguments()
 
     if display_version:
         print(__version__)
         sys.exit()
-    if studies_path is not None:
-        main(studies_path)
+    if config_file:
+        main(config_file)
     else:
         raise argparse.ArgumentError("Please provide the path for studies.")

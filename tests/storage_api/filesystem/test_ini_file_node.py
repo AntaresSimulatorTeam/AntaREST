@@ -4,7 +4,7 @@ from typing import Tuple
 import pytest
 
 from antarest.common.custom_types import JSON
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.ini_file_node import IniFileNode
 
 
@@ -39,7 +39,9 @@ def test_get(tmp_path: str) -> None:
         "part1": {"key_int": 1, "key_str": "value1", "key_float": 2.1},
         "part2": {"key_bool": True, "key_bool2": False},
     }
-    node = IniFileNode(Config(path, areas=dict(), outputs=dict()), types=types)
+    node = IniFileNode(
+        StudyConfig(path, areas=dict(), outputs=dict()), types=types
+    )
     assert node.get([]) == expected_json
     assert node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
     assert node.get(["part2", "key_bool"])
@@ -53,7 +55,9 @@ def test_get_depth(tmp_path: str) -> None:
         "part1": {},
         "part2": {},
     }
-    node = IniFileNode(Config(path, areas=dict(), outputs=dict()), types=types)
+    node = IniFileNode(
+        StudyConfig(path, areas=dict(), outputs=dict()), types=types
+    )
     assert node.get(depth=1) == expected_json
 
 
@@ -77,7 +81,9 @@ key_float = 3.14
 
     types = {"part1": {"key_int": int, "key_float": float, "key_str": str}}
 
-    node = IniFileNode(Config(path, areas=dict(), outputs=dict()), types=types)
+    node = IniFileNode(
+        StudyConfig(path, areas=dict(), outputs=dict()), types=types
+    )
     data = {
         "part1": {"key_int": 10, "key_str": "value10", "key_float": 2.1},
     }

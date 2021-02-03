@@ -1,4 +1,4 @@
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.folder_node import FolderNode
 from antarest.storage_api.filesystem.inode import TREE
 from antarest.storage_api.filesystem.root.output.simulation.mode.mcall.areas.item.id import (
@@ -10,11 +10,11 @@ from antarest.storage_api.filesystem.root.output.simulation.mode.mcall.areas.ite
 
 
 class OutputSimulationModeMcAllAreasSet(FolderNode):
-    def __init__(self, config: Config, set: str):
+    def __init__(self, config: StudyConfig, set: str):
         FolderNode.__init__(self, config)
         self.set = set
 
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         children: TREE = dict()
         for timing in config.get_filters_synthesis(self.set):
             children[f"id-{timing}"] = Id(config.next_file(f"id-{timing}.txt"))

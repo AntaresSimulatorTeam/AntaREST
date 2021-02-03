@@ -1,4 +1,4 @@
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.folder_node import FolderNode
 from antarest.storage_api.filesystem.inode import TREE
 from antarest.storage_api.filesystem.root.input.solar.prepro.area.conversion import (
@@ -19,7 +19,7 @@ from antarest.storage_api.filesystem.root.input.solar.prepro.area.translation im
 
 
 class InputSolarPreproArea(FolderNode):
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "conversion": InputSolarPreproAreaConversation(
                 config.next_file("conversion.txt")

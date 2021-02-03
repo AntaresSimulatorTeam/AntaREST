@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, List
 
 from antarest.common.custom_types import JSON
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.folder_node import FolderNode
 from antarest.storage_api.filesystem.inode import TREE
 from antarest.storage_api.filesystem.raw_file_node import RawFileNode
@@ -27,7 +27,7 @@ class BucketNode(FolderNode):
                     str(content)
                 )
 
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         if not config.path.exists():
             return dict()
 

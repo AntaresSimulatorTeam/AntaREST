@@ -1,4 +1,4 @@
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.folder_node import FolderNode
 from antarest.storage_api.filesystem.inode import TREE
 from antarest.storage_api.filesystem.root.desktop import Desktop
@@ -12,7 +12,7 @@ from antarest.storage_api.filesystem.root.user import User
 
 
 class Study(FolderNode):
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "Desktop": Desktop(config.next_file("Desktop.ini")),
             "study": StudyAntares(config.next_file("study.antares")),

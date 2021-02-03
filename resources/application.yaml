@@ -5,3 +5,6 @@ main:
 login:
   admin:
     pwd: admin
+
+storages:
+  studies: examples/studies

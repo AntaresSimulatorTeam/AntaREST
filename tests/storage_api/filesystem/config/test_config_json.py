@@ -3,7 +3,7 @@ from pathlib import Path
 from antarest.common.custom_types import JSON
 from antarest.storage_api.filesystem.config.json import ConfigJsonBuilder
 from antarest.storage_api.filesystem.config.model import (
-    Config,
+    StudyConfig,
     Simulation,
     Area,
     Link,
@@ -30,7 +30,7 @@ def test_parse_bindings() -> None:
         "bindA": {"id": "bindA"},
         "bindB": {"id": "bindB"},
     }
-    config = Config(study_path=study_path, bindings=["bindA", "bindB"])
+    config = StudyConfig(study_path=study_path, bindings=["bindA", "bindB"])
 
     # Test
     assert ConfigJsonBuilder.build(study_path, json) == config
@@ -58,7 +58,7 @@ def test_parse_outputs() -> None:
         }
     }
 
-    config = Config(
+    config = StudyConfig(
         study_path,
         outputs={
             1: Simulation(
@@ -87,7 +87,7 @@ def test_parse_areas() -> None:
         }
     }
 
-    config = Config(
+    config = StudyConfig(
         study_path,
         areas={
             "fr": Area(

@@ -2,13 +2,13 @@ from pathlib import Path
 from typing import Optional, List
 from zipfile import ZipFile
 
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.folder_node import FolderNode
 from antarest.storage_api.filesystem.inode import TREE, INode
 
 
 class TestSubNode(INode[int, int, int]):
-    def build(self, config: Config) -> "TREE":
+    def build(self, config: StudyConfig) -> "TREE":
         pass
 
     def __init__(self, value: int):
@@ -25,11 +25,11 @@ class TestSubNode(INode[int, int, int]):
 
 
 class TestMiddleNode(FolderNode):
-    def __init__(self, config: Config, children: TREE):
+    def __init__(self, config: StudyConfig, children: TREE):
         FolderNode.__init__(self, config)
         self.children = children
 
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         return self.children
 
 

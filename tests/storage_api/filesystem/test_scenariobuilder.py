@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from antarest.storage_api.filesystem.config.model import Area, Config
+from antarest.storage_api.filesystem.config.model import Area, StudyConfig
 from antarest.storage_api.filesystem.root.settings.scenariobuilder import (
     ScenarioBuilder,
 )
@@ -86,7 +86,7 @@ def test_get(tmp_path: Path):
     }
 
     node = ScenarioBuilder(
-        Config(study_path=path, areas=areas, outputs=dict())
+        StudyConfig(study_path=path, areas=areas, outputs=dict())
     )
 
     assert node.get(["Default Ruleset", "t,it,0,09_hydro_pump"]) == 1

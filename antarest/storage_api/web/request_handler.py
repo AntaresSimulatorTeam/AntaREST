@@ -13,7 +13,7 @@ from zipfile import BadZipFile, ZipFile
 from antarest.storage_api.antares_io.exporter.export_file import Exporter
 from antarest.storage_api.antares_io.reader import IniReader
 from antarest.common.custom_types import JSON, SUB_JSON
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.factory import StudyFactory
 from antarest.storage_api.web.html_exception import (
     BadZipBinary,
@@ -107,7 +107,7 @@ class RequestHandler:
         }
 
     def get_study_informations(self, uuid: str) -> JSON:
-        config = Config(study_path=self.path_to_studies / uuid)
+        config = StudyConfig(study_path=self.path_to_studies / uuid)
         study = self.study_factory.create_from_config(config)
         return study.get(url=["study"])
 

@@ -1,15 +1,15 @@
 import shutil
 from typing import List, Optional
 
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.inode import INode, TREE
 
 
 class RawFileNode(INode[str, str, str]):
-    def __init__(self, config: Config):
+    def __init__(self, config: StudyConfig):
         self.config = config
 
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
 
     def get(self, url: Optional[List[str]] = None, depth: int = -1) -> str:

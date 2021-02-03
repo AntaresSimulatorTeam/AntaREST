@@ -1,4 +1,4 @@
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.folder_node import FolderNode
 from antarest.storage_api.filesystem.inode import TREE
 from antarest.storage_api.filesystem.root.settings.comments import Comments
@@ -17,7 +17,7 @@ from antarest.storage_api.filesystem.root.settings.simulations.simulations impor
 
 
 class Settings(FolderNode):
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "resources": Resources(config.next_file("resources")),
             "simulations": SettingsSimulations(
