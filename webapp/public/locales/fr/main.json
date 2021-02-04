@@ -1,0 +1,11 @@
+{
+  "connexion": "Connexion",
+  "password": "Mot de passe",
+  "delete": "Supprimer",
+  "archive": "Archiver",
+  "export": "Exporter",
+  "create": "Créer",
+  "name": "Nom",
+  "import": "Importer",
+  "allStudies": "Toutes les études"
+}
