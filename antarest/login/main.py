@@ -13,8 +13,10 @@ from antarest.login.web import create_login_api
 def build_login(
     application: Flask, config: Config, service: Optional[LoginService] = None
 ) -> None:
+
     if service is None:
         repo = UserRepository(config)
         service = LoginService(user_repo=repo)
+
     jwt = JWTManager(application)
     application.register_blueprint(create_login_api(service, config))

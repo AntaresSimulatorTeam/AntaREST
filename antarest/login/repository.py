@@ -1,36 +1,42 @@
 import uuid
 from typing import Dict, Optional, List
 
+from sqlalchemy.orm import Session
+
 from antarest.common.config import Config
 from antarest.login.model import User, Role
 
 
 class UserRepository:
-    def __init__(self, config: Config) -> None:
-        self.users: Dict[int, User] = {
-            0: User(
-                id=0,
-                name="admin",
-                pwd=config["login.admin.pwd"],
-                role=Role.ADMIN,
-            )
-        }
+    def __init__(self, config: Config, db: Session) -> None:
+        # self.users: Dict[int, User] = {
+        #     0: User(
+        #         name="admin",
+        #         pwd=config["login.admin.pwd"],
+        #         role=Role.ADMIN,
+        #     )
+        # }
+
+        self.db = db
 
     def save(self, user: User) -> User:
-        if user.id is None:
-            user.id = uuid.uuid4().int
-        self.users[user.id] = user
+        self.db.add(user)
+        self.db.commit()
         return user
 
     def get(self, id: int) -> Optional[User]:
-        return self.users.get(id)
+        user: User = self.db.query(User).get(id)
+        return user
 
     def get_by_name(self, name: str) -> User:
-        return [u for u in self.users.values() if u.name == name][0]
+        user: User = self.db.query(User).filter_by(name=name).first()
+        return user
 
     def get_all(self) -> List[User]:
-        return list(self.users.values())
+        users: List[User] = self.db.query(User).all()
+        return users
 
     def delete(self, id: int) -> None:
-        if id in self.users:
-            del self.users[id]
+        u = self.get(id)
+        self.db.delete(u)
+        self.db.commit()

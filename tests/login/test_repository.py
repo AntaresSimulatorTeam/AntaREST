@@ -1,20 +1,30 @@
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from antarest.common.config import Config
-from antarest.login.model import User
+from antarest.common.dto import Base
+from antarest.login.model import User, Role, Password
 from antarest.login.repository import UserRepository
 
 
 def test_cyclelife():
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Session = sessionmaker(bind=engine)
+
+    Base.metadata.create_all(engine)
+
     repo = UserRepository(
-        config=Config({"login": {"admin": {"pwd": "admin"}}})
+        config=Config({"login": {"admin": {"pwd": "admin"}}}), db=Session()
     )
-    a = User(id=0, name="a", pwd="a")
-    b = User(name="b", pwd="b")
+    a = User(name="a", role=Role.ADMIN, password=Password("a"))
+    b = User(name="b", role=Role.ADMIN, password=Password("b"))
 
     repo.save(a)
-    b = repo.save(b)
+    repo.save(b)
     assert b.id
-    assert a == repo.get(0)
+    assert a == repo.get(a.id)
+    assert a.password == "a"
     assert b == repo.get_by_name("b")
 
-    repo.delete(0)
-    assert repo.get(0) is None
+    repo.delete(a.id)
+    assert repo.get(a.id) is None

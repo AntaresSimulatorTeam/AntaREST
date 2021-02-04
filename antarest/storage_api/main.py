@@ -17,6 +17,7 @@ def build_storage(
     config: Config,
     req: Optional[RequestHandler] = None,
 ) -> None:
+
     request_handler = req or RequestHandler(
         study_factory=StudyFactory(), exporter=Exporter(), config=config
     )
