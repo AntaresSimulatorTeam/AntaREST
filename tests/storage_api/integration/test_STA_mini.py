@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from flask import Flask
 
+from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.storage_api.main import build_storage
 from antarest.storage_api.web import RequestHandler
@@ -17,7 +18,11 @@ def assert_url_content(
     request_handler: RequestHandler, url: str, expected_output: str
 ) -> None:
     app = Flask(__name__)
-    build_storage(app, req=request_handler, res=request_handler.path_resources)
+    build_storage(
+        app,
+        req=request_handler,
+        config=Config({"main": {"res": request_handler.path_resources}}),
+    )
     client = app.test_client()
     res = client.get(url)
     assert json.loads(res.data) == expected_output
@@ -344,7 +349,11 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
     destination_study_name = "copy-STA-mini"
 
     app = Flask(__name__)
-    build_storage(app, req=request_handler, res=request_handler.path_resources)
+    build_storage(
+        app,
+        req=request_handler,
+        config=Config({"main": {"res": request_handler.path_resources}}),
+    )
     client = app.test_client()
     result = client.post(
         f"/studies/{source_study_name}/copy?dest={destination_study_name}"
@@ -441,7 +450,11 @@ def test_sta_mini_import(
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
     app = Flask(__name__)
-    build_storage(app, req=request_handler, res=request_handler.path_resources)
+    build_storage(
+        app,
+        req=request_handler,
+        config=Config({"main": {"res": request_handler.path_resources}}),
+    )
     client = app.test_client()
 
     study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
@@ -458,7 +471,11 @@ def test_sta_mini_import_compact(
     zip_study_stream = request_handler.export_study("STA-mini", compact=True)
 
     app = Flask(__name__)
-    build_storage(app, req=request_handler, res=request_handler.path_resources)
+    build_storage(
+        app,
+        req=request_handler,
+        config=Config({"main": {"res": request_handler.path_resources}}),
+    )
     client = app.test_client()
     result = client.post(
         "/studies", data={"study": (zip_study_stream, "study.zip")}
@@ -486,7 +503,11 @@ def test_sta_mini_import_output(
     sta_mini_output_zip_path = Path(sta_mini_output_zip_filepath)
 
     app = Flask(__name__)
-    build_storage(app, req=request_handler, res=request_handler.path_resources)
+    build_storage(
+        app,
+        req=request_handler,
+        config=Config({"main": {"res": request_handler.path_resources}}),
+    )
     client = app.test_client()
 
     study_output_data = io.BytesIO(sta_mini_output_zip_path.read_bytes())

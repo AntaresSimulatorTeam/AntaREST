@@ -1,4 +1,4 @@
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.folder_node import FolderNode
 from antarest.storage_api.filesystem.inode import TREE
 from antarest.storage_api.filesystem.root.output.simulation.mode.mcind.scn.links.item.item import (
@@ -7,11 +7,11 @@ from antarest.storage_api.filesystem.root.output.simulation.mode.mcind.scn.links
 
 
 class _OutputSimulationModeMcIndScnLinksBis(FolderNode):
-    def __init__(self, config: Config, area: str):
+    def __init__(self, config: StudyConfig, area: str):
         FolderNode.__init__(self, config)
         self.area = area
 
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         children: TREE = {}
         for link in config.get_links(self.area):
             name = f"{self.area} - {link}"
@@ -20,7 +20,7 @@ class _OutputSimulationModeMcIndScnLinksBis(FolderNode):
 
 
 class OutputSimulationModeMcIndScnLinks(FolderNode):
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         children: TREE = {}
 
         for area in config.area_names():

@@ -3,6 +3,7 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.common.config import Config
 from antarest.storage_api.antares_io.exporter.export_file import Exporter
 from antarest.storage_api.filesystem.factory import StudyFactory
 from antarest.storage_api.web import RequestHandler
@@ -33,8 +34,12 @@ def request_handler(
     request_handler = RequestHandler(
         study_factory=StudyFactory(),
         exporter=Exporter(),
-        path_studies=path_studies,
-        path_resources=path_resources,
+        config=Config(
+            {
+                "main": {"res": path_resources},
+                "storage": {"studies": path_studies},
+            }
+        ),
     )
 
     return request_handler

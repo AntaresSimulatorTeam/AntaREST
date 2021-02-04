@@ -1,4 +1,4 @@
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.folder_node import FolderNode
 from antarest.storage_api.filesystem.inode import TREE
 from antarest.storage_api.filesystem.root.output.simulation.mode.mcall.areas.areas import (
@@ -13,7 +13,7 @@ from antarest.storage_api.filesystem.root.output.simulation.mode.mcall.links.lin
 
 
 class OutputSimulationModeMcAll(FolderNode):
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "areas": OutputSimulationModeMcAllAreas(config.next_file("areas")),
             "grid": OutputSimulationModeMcAllGrid(config.next_file("grid")),

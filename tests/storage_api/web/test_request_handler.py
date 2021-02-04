@@ -6,7 +6,11 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.storage_api.filesystem.config.model import Config, Simulation
+from antarest.common.config import Config
+from antarest.storage_api.filesystem.config.model import (
+    StudyConfig,
+    Simulation,
+)
 from antarest.storage_api.web import RequestHandler
 from antarest.storage_api.web.html_exception import (
     BadZipBinary,
@@ -53,8 +57,12 @@ def test_get(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_factory=study_factory,
         exporter=Mock(),
-        path_studies=path_to_studies,
-        path_resources=project_path / "resources",
+        config=Config(
+            {
+                "main": {"res": project_path / "resources"},
+                "storage": {"studies": path_to_studies},
+            }
+        ),
     )
 
     parameters = RequestHandlerParameters(depth=2)
@@ -86,8 +94,12 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_factory=Mock(),
         exporter=Mock(),
-        path_studies=path_to_studies,
-        path_resources=project_path / "resources",
+        config=Config(
+            {
+                "main": {"res": project_path / "resources"},
+                "storage": {"studies": path_to_studies},
+            }
+        ),
     )
     request_handler.assert_study_exist(study_name)
 
@@ -110,8 +122,12 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     request_handler = RequestHandler(
         study_factory=Mock(),
         exporter=Mock(),
-        path_studies=path_to_studies,
-        path_resources=project_path / "resources",
+        config=Config(
+            {
+                "main": {"res": project_path / "resources"},
+                "storage": {"studies": path_to_studies},
+            }
+        ),
     )
     with pytest.raises(StudyNotFoundError):
         request_handler.assert_study_exist(study_name)
@@ -268,7 +284,7 @@ def test_export_compact_file(tmp_path: Path, request_handler_builder):
 
     factory = Mock()
     factory.create_from_fs.return_value = (
-        Config(study_path=study_path, outputs={42: "value"}),
+        StudyConfig(study_path=study_path, outputs={42: "value"}),
         study,
     )
     factory.create_from_config.return_value = study
@@ -284,7 +300,7 @@ def test_export_compact_file(tmp_path: Path, request_handler_builder):
     )
 
     factory.create_from_config.assert_called_once_with(
-        Config(study_path=study_path)
+        StudyConfig(study_path=study_path)
     )
     exporter.export_compact.assert_called_once_with(study_path, 42)
 

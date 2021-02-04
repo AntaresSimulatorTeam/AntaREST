@@ -2,7 +2,7 @@ from abc import abstractmethod, ABC
 from typing import List, Optional, Tuple
 
 from antarest.common.custom_types import JSON
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.inode import INode, TREE
 
 
@@ -15,11 +15,11 @@ class ChildNotFoundError(Exception):
 
 
 class FolderNode(INode[JSON, JSON, JSON], ABC):
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: StudyConfig) -> None:
         self.config = config
 
     @abstractmethod
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         pass
 
     def get(self, url: Optional[List[str]] = None, depth: int = -1) -> JSON:

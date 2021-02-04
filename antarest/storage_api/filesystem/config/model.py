@@ -76,7 +76,7 @@ class Simulation(DTO):
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
 
-class Config(DTO):
+class StudyConfig(DTO):
     def __init__(
         self,
         study_path: Path,
@@ -92,7 +92,7 @@ class Config(DTO):
         self.outputs = outputs or dict()
         self.bindings = bindings or list()
 
-    def next_file(self, name: str) -> "Config":
+    def next_file(self, name: str) -> "StudyConfig":
         copy = deepcopy(self)
         copy.path = copy.path / name
         return copy

@@ -10,13 +10,16 @@ from flask_jwt_extended import (  # type: ignore
     set_access_cookies,
 )
 
+from antarest.common.config import Config
 from antarest.login.model import User
 from antarest.login.service import LoginService
 
 
-def create_login_api(service: LoginService, res: Path) -> Blueprint:
+def create_login_api(service: LoginService, config: Config) -> Blueprint:
     bp = Blueprint(
-        "create_login_api", __name__, template_folder=str(res / "templates")
+        "create_login_api",
+        __name__,
+        template_folder=str(config["main.res"] / "templates"),
     )
 
     @bp.route("/auth", methods=["POST"])

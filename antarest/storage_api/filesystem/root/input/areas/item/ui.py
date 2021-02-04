@@ -1,4 +1,4 @@
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.ini_file_node import IniFileNode
 
 
@@ -23,7 +23,7 @@ class InputAreasUi(IniFileNode):
     0 = 0 , 128 , 255
     """
 
-    def __init__(self, config: Config):
+    def __init__(self, config: StudyConfig):
         types = {
             "ui": {
                 "x": int,

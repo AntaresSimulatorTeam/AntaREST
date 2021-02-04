@@ -6,7 +6,7 @@ from antarest.storage_api.antares_io.reader import IniReader
 from antarest.storage_api.antares_io.reader.ini_reader import IReader
 from antarest.storage_api.antares_io.writer.ini_writer import IniWriter
 from antarest.common.custom_types import JSON, SUB_JSON
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.inode import INode, TREE
 
 
@@ -18,7 +18,7 @@ class IniReaderError(Exception):
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
-        config: Config,
+        config: StudyConfig,
         types: Dict[str, Any],
         reader: Optional[IReader] = None,
     ):
@@ -27,7 +27,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self.reader = reader or IniReader()
         self.writer = IniWriter()
 
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
 
     def get(

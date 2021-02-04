@@ -6,6 +6,8 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.common.config import Config
+
 project_dir: Path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_dir))
 
@@ -40,22 +42,21 @@ def request_handler_builder() -> Callable:
     def build_request_handler(
         study_factory=Mock(),
         exporter=Mock(),
-        path_studies=Mock(),
-        path_resources=Mock(),
+        path_studies=Path(),
+        path_resources=Path(),
     ) -> RequestHandler:
         return RequestHandler(
             study_factory=study_factory,
             exporter=exporter,
-            path_studies=path_studies,
-            path_resources=path_resources,
+            config=Config(
+                {
+                    "main": {"res": path_resources},
+                    "storage": {"studies": path_studies},
+                }
+            ),
         )
 
     return build_request_handler
-
-
-@pytest.fixture
-def project_path() -> Path:
-    return project_dir
 
 
 @pytest.fixture

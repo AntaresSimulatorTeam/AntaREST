@@ -1,9 +1,12 @@
+from antarest.common.config import Config
 from antarest.login.model import User
 from antarest.login.repository import UserRepository
 
 
 def test_cyclelife():
-    repo = UserRepository()
+    repo = UserRepository(
+        config=Config({"login": {"admin": {"pwd": "admin"}}})
+    )
     a = User(id=0, name="a", pwd="a")
     b = User(name="b", pwd="b")
 

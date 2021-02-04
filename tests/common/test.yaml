@@ -1,0 +1,5 @@
+main:
+  hello: World
+  bonjour:
+    - le
+    - monde

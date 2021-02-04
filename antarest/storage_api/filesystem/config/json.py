@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple
 
 from antarest.common.custom_types import JSON
 from antarest.storage_api.filesystem.config.model import (
-    Config,
+    StudyConfig,
     Area,
     Simulation,
     Link,
@@ -13,8 +13,8 @@ from antarest.storage_api.filesystem.config.model import (
 
 class ConfigJsonBuilder:
     @staticmethod
-    def build(study_path: Path, json: JSON) -> "Config":
-        return Config(
+    def build(study_path: Path, json: JSON) -> "StudyConfig":
+        return StudyConfig(
             study_path=study_path,
             areas=ConfigJsonBuilder._parse_areas(json),
             sets=ConfigJsonBuilder._parse_sets(json),

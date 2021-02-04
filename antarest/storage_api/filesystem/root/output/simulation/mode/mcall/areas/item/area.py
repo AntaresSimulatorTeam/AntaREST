@@ -1,4 +1,4 @@
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.folder_node import FolderNode
 from antarest.storage_api.filesystem.inode import TREE
 from antarest.storage_api.filesystem.root.output.simulation.mode.mcall.areas.item.details import (
@@ -13,11 +13,11 @@ from antarest.storage_api.filesystem.root.output.simulation.mode.mcall.areas.ite
 
 
 class OutputSimulationModeMcAllAreasArea(FolderNode):
-    def __init__(self, config: Config, area: str):
+    def __init__(self, config: StudyConfig, area: str):
         FolderNode.__init__(self, config)
         self.area = area
 
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         children: TREE = dict()
 
         filters = config.get_filters_synthesis(self.area)

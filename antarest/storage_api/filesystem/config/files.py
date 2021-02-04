@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Tuple
 from antarest.storage_api.antares_io.reader import IniReader, SetsIniReader
 from antarest.common.custom_types import JSON
 from antarest.storage_api.filesystem.config.model import (
-    Config,
+    StudyConfig,
     Area,
     Simulation,
     Link,
@@ -15,8 +15,8 @@ from antarest.storage_api.filesystem.config.model import (
 
 class ConfigPathBuilder:
     @staticmethod
-    def build(study_path: Path) -> "Config":
-        return Config(
+    def build(study_path: Path) -> "StudyConfig":
+        return StudyConfig(
             study_path=study_path,
             areas=ConfigPathBuilder._parse_areas(study_path),
             sets=ConfigPathBuilder._parse_sets(study_path),

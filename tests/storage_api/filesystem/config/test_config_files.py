@@ -2,7 +2,7 @@ from pathlib import Path
 
 from antarest.storage_api.filesystem.config.files import ConfigPathBuilder
 from antarest.storage_api.filesystem.config.model import (
-    Config,
+    StudyConfig,
     Area,
     Link,
     Simulation,
@@ -39,7 +39,7 @@ def test_parse_bindings(tmp_path: Path) -> None:
         study_path / "input/bindingconstraints/bindingconstraints.ini"
     ).write_text(content)
 
-    config = Config(study_path=study_path, bindings=["bindA", "bindB"])
+    config = StudyConfig(study_path=study_path, bindings=["bindA", "bindB"])
     assert ConfigPathBuilder.build(study_path) == config
 
 
@@ -62,7 +62,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
     """
     file.write_text(content)
 
-    config = Config(
+    config = StudyConfig(
         study_path,
         outputs={
             1: Simulation(
@@ -104,7 +104,7 @@ def test_parse_area(tmp_path: Path) -> None:
     """
     (study_path / "input/areas/fr/optimization.ini").write_text(content)
 
-    config = Config(
+    config = StudyConfig(
         study_path,
         areas={
             "fr": Area(

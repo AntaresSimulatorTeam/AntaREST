@@ -1,13 +1,19 @@
 import uuid
 from typing import Dict, Optional, List
 
+from antarest.common.config import Config
 from antarest.login.model import User, Role
 
 
 class UserRepository:
-    def __init__(self) -> None:
+    def __init__(self, config: Config) -> None:
         self.users: Dict[int, User] = {
-            0: User(id=0, name="admin", pwd="admin", role=Role.ADMIN)
+            0: User(
+                id=0,
+                name="admin",
+                pwd=config["login.admin.pwd"],
+                role=Role.ADMIN,
+            )
         }
 
     def save(self, user: User) -> User:

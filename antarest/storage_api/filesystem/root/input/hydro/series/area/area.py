@@ -1,4 +1,4 @@
-from antarest.storage_api.filesystem.config.model import Config
+from antarest.storage_api.filesystem.config.model import StudyConfig
 from antarest.storage_api.filesystem.folder_node import FolderNode
 from antarest.storage_api.filesystem.inode import TREE
 from antarest.storage_api.filesystem.root.input.hydro.series.area.mod import (
@@ -10,7 +10,7 @@ from antarest.storage_api.filesystem.root.input.hydro.series.area.ror import (
 
 
 class InputHydroSeriesArea(FolderNode):
-    def build(self, config: Config) -> TREE:
+    def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "mod": InputHydroSeriesAreaMod(config.next_file("mod.txt")),
             "ror": InputHydroSeriesAreaRor(config.next_file("ror.txt")),

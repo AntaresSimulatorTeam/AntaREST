@@ -1,0 +1,10 @@
+main:
+  jwt:
+    key: super-secret
+
+login:
+  admin:
+    pwd: admin
+
+storage:
+  studies: examples/studies

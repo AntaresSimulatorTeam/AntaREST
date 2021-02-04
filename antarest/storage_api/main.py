@@ -3,6 +3,7 @@ from typing import Optional
 
 from flask import Flask
 
+from antarest.common.config import Config
 from antarest.storage_api.antares_io.exporter.export_file import Exporter
 from antarest.storage_api.filesystem.factory import StudyFactory
 from antarest.storage_api.web import RequestHandler
@@ -13,17 +14,13 @@ from antarest.storage_api.web.utils_blueprint import create_utils_routes
 
 def build_storage(
     application: Flask,
-    res: Path,
-    studies_path: Path = Path(),
+    config: Config,
     req: Optional[RequestHandler] = None,
 ) -> None:
     request_handler = req or RequestHandler(
-        study_factory=StudyFactory(),
-        exporter=Exporter(),
-        path_studies=studies_path,
-        path_resources=res,
+        study_factory=StudyFactory(), exporter=Exporter(), config=config
     )
 
-    application.register_blueprint(create_ui(res, request_handler))
+    application.register_blueprint(create_ui(request_handler, config))
     application.register_blueprint(create_study_routes(request_handler))
     application.register_blueprint(create_utils_routes(request_handler))
