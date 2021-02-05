@@ -9,21 +9,21 @@ from antarest.login.repository import UserRepository
 
 def test_cyclelife():
     engine = create_engine("sqlite:///:memory:", echo=True)
-    Session = sessionmaker(bind=engine)
 
     Base.metadata.create_all(engine)
 
     repo = UserRepository(
-        config=Config({"login": {"admin": {"pwd": "admin"}}}), db=Session()
+        config=Config({"login": {"admin": {"pwd": "admin"}}}), engine=engine
     )
     a = User(name="a", role=Role.ADMIN, password=Password("a"))
     b = User(name="b", role=Role.ADMIN, password=Password("b"))
 
-    repo.save(a)
-    repo.save(b)
+    a = repo.save(a)
+    b = repo.save(b)
     assert b.id
-    assert a == repo.get(a.id)
-    assert a.password == "a"
+    c = repo.get(a.id)
+    assert a == c
+    assert a.password.check("a")
     assert b == repo.get_by_name("b")
 
     repo.delete(a.id)

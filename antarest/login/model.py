@@ -1,7 +1,7 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
-from sqlalchemy import Column, Integer, Sequence, String
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import Column, Integer, Sequence, String  # type: ignore
+from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from werkzeug.security import (
     safe_str_cmp,
     generate_password_hash,
@@ -26,10 +26,8 @@ class Password:
     def get(self) -> str:
         return self._pwd
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, str):
-            return False
-        return check_password_hash(self._pwd, other)  # type: ignore
+    def check(self, pwd: str) -> bool:
+        return check_password_hash(self._pwd, pwd)  # type: ignore
 
     def __str__(self) -> str:
         return "*****"
@@ -38,7 +36,7 @@ class Password:
         return self.__str__()
 
 
-class User(DTO, Base):
+class User(DTO, Base):  # type: ignore
     __tablename__ = "users"
 
     id = Column(Integer, Sequence("user_id_seq"), primary_key=True)
@@ -50,7 +48,7 @@ class User(DTO, Base):
     def password(self) -> Password:
         return Password(str(self._pwd))
 
-    @password.setter
+    @password.setter  # type: ignore
     def password(self, pwd: Password) -> None:
         self._pwd = pwd.get()
 
@@ -60,3 +58,12 @@ class User(DTO, Base):
 
     def to_dict(self) -> JSON:
         return {"id": self.id, "name": self.name, "role": self.role}
+
+    def __eq__(self, o: Any) -> bool:
+        if not isinstance(o, User):
+            return False
+        return bool(
+            (o.id == self.id)
+            and (o.name == self.name)
+            and (o.role == self.role)
+        )
