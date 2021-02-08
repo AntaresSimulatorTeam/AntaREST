@@ -11,7 +11,7 @@ from flask_jwt_extended import (  # type: ignore
 )
 
 from antarest.common.config import Config
-from antarest.login.model import User
+from antarest.login.model import User, Group
 from antarest.login.service import LoginService
 
 
@@ -57,14 +57,38 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
             return "Only admin can manage user", 403
 
         if request.method == "GET":
-            return jsonify([u.to_dict() for u in service.get_all()])
+            if id is not None:
+                return jsonify(service.get_user(id).to_dict())
+            else:
+                return jsonify([u.to_dict() for u in service.get_all_users()])
 
         if request.method == "POST":
             user = User.from_dict(json.loads(request.data))
-            return jsonify(service.save(user).to_dict())
+            return jsonify(service.save_user(user).to_dict())
 
         if id is not None and request.method == "DELETE":
-            service.delete(id)
+            service.delete_user(id)
+            return jsonify(id), 200
+
+    @bp.route("/groups", methods=["GET", "POST"], defaults={"id": None})
+    @bp.route("/groups/<int:id>", methods=["DELETE"])
+    @jwt_required  # type: ignore
+    def groups(id: Optional[int]) -> Any:
+        if get_jwt_identity()["role"] != "ADMIN":
+            return "Only admin can manage group", 403
+
+        if request.method == "GET":
+            if id is not None:
+                return jsonify(service.get_group(id).to_dict())
+            else:
+                return jsonify([g.to_dict() for g in service.get_all_groups()])
+
+        if request.method == "POST":
+            group = Group.from_dict(json.loads(request.data))
+            return jsonify(service.save_group(group).to_dict())
+
+        if id is not None and request.method == "DELETE":
+            service.delete_group(id)
             return jsonify(id), 200
 
     @bp.route("/protected")

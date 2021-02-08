@@ -8,7 +8,7 @@ from flask_jwt_extended import create_access_token
 
 from antarest.common.config import Config
 from antarest.login.main import build_login
-from antarest.login.model import User, Role, Password
+from antarest.login.model import User, Role, Password, Group
 
 
 def create_client(service: Mock) -> Any:
@@ -62,7 +62,9 @@ def test_auth_fail() -> None:
 @pytest.mark.unit_test
 def test_user_fail() -> None:
     service = Mock()
-    service.get_all.return_value = [User(id=1, name="user", role=Role.USER)]
+    service.get_all_users.return_value = [
+        User(id=1, name="user", role=Role.USER)
+    ]
 
     client = create_client(service)
     res = client.get("/users", headers=get_token())
@@ -72,7 +74,9 @@ def test_user_fail() -> None:
 @pytest.mark.unit_test
 def test_user() -> None:
     service = Mock()
-    service.get_all.return_value = [User(id=1, name="user", role=Role.USER)]
+    service.get_all_users.return_value = [
+        User(id=1, name="user", role=Role.USER)
+    ]
 
     client = create_client(service)
     res = client.get("/users", headers=get_token(Role.ADMIN))
@@ -84,7 +88,7 @@ def test_user() -> None:
 def test_user_create() -> None:
     user = User(id=1, name="a", role=Role.USER, password=Password("b"))
     service = Mock()
-    service.save.return_value = user
+    service.save_user.return_value = user
 
     client = create_client(service)
     res = client.post(
@@ -105,4 +109,53 @@ def test_user_delete() -> None:
     res = client.delete("/users/0", headers=get_token(Role.ADMIN))
 
     assert res.status_code == 200
-    service.delete_assert_called_once_with(0)
+    service.delete_user.assert_called_once_with(0)
+
+
+@pytest.mark.unit_test
+def test_groups_fail() -> None:
+    service = Mock()
+    service.get_all_groups.return_value = [Group(id=1, name="group")]
+
+    client = create_client(service)
+    res = client.get("/groups", headers=get_token())
+    assert res.status_code == 403
+
+
+@pytest.mark.unit_test
+def test_group() -> None:
+    service = Mock()
+    service.get_all_groups.return_value = [Group(id=1, name="group")]
+
+    client = create_client(service)
+    res = client.get("/groups", headers=get_token(Role.ADMIN))
+    assert res.status_code == 200
+    assert res.json == [Group(id=1, name="group").to_dict()]
+
+
+@pytest.mark.unit_test
+def test_user_create() -> None:
+    group = Group(id=1, name="group")
+    service = Mock()
+    service.save_group.return_value = group
+
+    client = create_client(service)
+    res = client.post(
+        "/groups",
+        headers=get_token(Role.ADMIN),
+        json={"name": "group"},
+    )
+
+    assert res.status_code == 200
+    assert res.json == group.to_dict()
+
+
+@pytest.mark.unit_test
+def test_user_delete() -> None:
+    service = Mock()
+
+    client = create_client(service)
+    res = client.delete("/groups/0", headers=get_token(Role.ADMIN))
+
+    assert res.status_code == 200
+    service.delete_group.assert_called_once_with(0)

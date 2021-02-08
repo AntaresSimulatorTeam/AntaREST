@@ -95,7 +95,7 @@ class Group(DTO, Base):  # type: ignore
         return Group(
             id=data.get("id"),
             name=data["name"],
-            users=[u.from_dict(u) for u in data["users"]],
+            users=[u.from_dict(u) for u in data.get("users", list())],
         )
 
     def to_dict(self) -> JSON:

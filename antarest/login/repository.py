@@ -28,7 +28,7 @@ class GroupRepository:
     def __init__(self, config: Config, engine: Engine):
         self.engine = engine
 
-    def save(self, group: Group):
+    def save(self, group: Group) -> Group:
         with session_scope(self.engine) as sess:
             sess.add(group)
             sess.commit()
@@ -38,6 +38,16 @@ class GroupRepository:
         with session_scope(self.engine) as sess:
             group: Group = sess.query(Group).get(id)
             return group
+
+    def get_all(self) -> List[Group]:
+        with session_scope(self.engine) as sess:
+            groups: List[Group] = sess.query(Group).all()
+            return groups
+
+    def delete(self, id: int) -> None:
+        with session_scope(self.engine) as sess:
+            g = sess.query(Group).get(id)
+            sess.delete(g)
 
 
 class UserRepository:

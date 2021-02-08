@@ -50,3 +50,6 @@ def test_groups():
     a = repo.save(a)
     assert a.id
     assert a == repo.get(a.id)
+
+    repo.delete(a.id)
+    assert repo.get(a.id) is None
