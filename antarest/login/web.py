@@ -58,7 +58,8 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
         if request.method == "GET":
             if id is not None:
-                return jsonify(service.get_user(id).to_dict())
+                user = service.get_user(id)
+                return jsonify(user.to_dict()) if user else "", 404
             else:
                 return jsonify([u.to_dict() for u in service.get_all_users()])
 
@@ -79,7 +80,8 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
         if request.method == "GET":
             if id is not None:
-                return jsonify(service.get_group(id).to_dict())
+                group = service.get_group(id)
+                return jsonify(group.to_dict()) if group else "", 404
             else:
                 return jsonify([g.to_dict() for g in service.get_all_groups()])
 

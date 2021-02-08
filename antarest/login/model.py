@@ -2,7 +2,7 @@ from typing import Any, Optional, Union
 
 from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship  # type: ignore
 from werkzeug.security import (
     safe_str_cmp,
     generate_password_hash,
