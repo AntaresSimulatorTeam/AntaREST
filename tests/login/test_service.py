@@ -1,12 +1,12 @@
 from unittest.mock import Mock
 
-from antarest.login.model import User
+from antarest.login.model import User, Password
 from antarest.login.service import LoginService
 
 
 def test_authenticate():
     repo = Mock()
-    repo.get_by_name.return_value = User(pwd="pwd")
+    repo.get_by_name.return_value = User(password="pwd")
 
     service = LoginService(user_repo=repo)
     assert service.authenticate("dupond", "pwd")
@@ -24,7 +24,7 @@ def test_authentication_wrong_user():
 
 def test_authenticate():
     repo = Mock()
-    repo.get_by_name.return_value = User(pwd="pwd")
+    repo.get_by_name.return_value = User(password=Password("pwd"))
 
     service = LoginService(user_repo=repo)
     assert not service.authenticate("dupond", "wrong")
@@ -32,7 +32,7 @@ def test_authenticate():
 
 
 def test_authenticate():
-    user = User(id=0, name="user", pwd="pwd")
+    user = User(id=0, name="user", password=Password("pwd"))
     repo = Mock()
     repo.get.return_value = user
 

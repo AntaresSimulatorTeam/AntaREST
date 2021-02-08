@@ -5,9 +5,11 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 from flask import Flask
+from sqlalchemy import create_engine  # type: ignore
 
 from antarest import __version__
 from antarest.common.config import ConfigYaml
+from antarest.common.dto import Base
 from antarest.common.reverse_proxy import ReverseProxyMiddleware
 from antarest.common.swagger import build_swagger
 from antarest.login.main import build_login
@@ -54,13 +56,17 @@ def main(config_file: Path) -> Flask:
     res = get_local_path() / "resources"
     config = ConfigYaml(res=res, file=config_file)
 
+    # Database
+    engine = create_engine(config["main.db.url"], echo=True)
+    Base.metadata.create_all(engine)
+
     application = Flask(__name__)
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
     application.config["SECRET_KEY"] = config["main.jwt.key"]
     application.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
 
     build_storage(application, config)
-    build_login(application, config)
+    build_login(application, config, engine)
     build_swagger(application)
 
     application.run(debug=False, host="0.0.0.0", port=8080)

@@ -1,6 +1,8 @@
 main:
   jwt:
     key: super-secret
+  db:
+    url: "sqlite:///database.db"
 
 login:
   admin:
