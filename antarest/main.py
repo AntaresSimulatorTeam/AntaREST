@@ -12,8 +12,9 @@ from antarest.common.config import ConfigYaml
 from antarest.common.dto import Base
 from antarest.common.reverse_proxy import ReverseProxyMiddleware
 from antarest.common.swagger import build_swagger
+from antarest.launcher.main import build_launcher
 from antarest.login.main import build_login
-from antarest.storage_api.main import build_storage
+from antarest.storage.main import build_storage
 
 
 def parse_arguments() -> argparse.Namespace:
