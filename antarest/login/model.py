@@ -84,7 +84,7 @@ class User(DTO, Base):  # type: ignore
 class Group(DTO, Base):  # type: ignore
     __tablename__ = "groups"
 
-    id = Column(Integer, Sequence("user_id_seq"), primary_key=True)
+    id = Column(Integer, Sequence("group_id_seq"), primary_key=True)
     name = Column(String(255))
     users = relationship(
         "User", secondary=users_groups, back_populates="groups"
