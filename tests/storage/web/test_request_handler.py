@@ -7,7 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.common.config import Config
-from antarest.storage.filesystem.config.model import (
+from antarest.storage.repository.filesystem.config.model import (
     StudyConfig,
     Simulation,
 )

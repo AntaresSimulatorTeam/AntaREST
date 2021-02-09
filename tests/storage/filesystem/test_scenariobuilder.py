@@ -1,7 +1,10 @@
 from pathlib import Path
 
-from antarest.storage.filesystem.config.model import Area, StudyConfig
-from antarest.storage.filesystem.root.settings.scenariobuilder import (
+from antarest.storage.repository.filesystem.config.model import (
+    Area,
+    StudyConfig,
+)
+from antarest.storage.repository.filesystem.root.settings.scenariobuilder import (
     ScenarioBuilder,
 )
 

@@ -4,8 +4,10 @@ from typing import Optional
 from flask import Flask
 
 from antarest.common.config import Config
-from antarest.storage.antares_io.exporter.export_file import Exporter
-from antarest.storage.filesystem.factory import StudyFactory
+from antarest.storage.repository.antares_io.exporter.export_file import (
+    Exporter,
+)
+from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.web import RequestHandler
 from antarest.storage.web.studies_blueprint import create_study_routes
 from antarest.storage.web.ui_blueprint import create_ui

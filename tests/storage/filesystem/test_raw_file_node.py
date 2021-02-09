@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from antarest.storage.filesystem.config.model import StudyConfig
-from antarest.storage.filesystem.raw_file_node import RawFileNode
+from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.raw_file_node import RawFileNode
 
 
 def test_get(tmp_path: Path):

@@ -4,8 +4,8 @@ from typing import Tuple
 import pytest
 
 from antarest.common.custom_types import JSON
-from antarest.storage.filesystem.config.model import StudyConfig
-from antarest.storage.filesystem.ini_file_node import IniFileNode
+from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
 
 
 def build_dataset(tmp_path: str) -> Tuple[Path, JSON]:

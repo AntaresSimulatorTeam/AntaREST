@@ -1,8 +1,10 @@
 from pathlib import Path
 
 from antarest.common.custom_types import JSON
-from antarest.storage.filesystem.config.json import ConfigJsonBuilder
-from antarest.storage.filesystem.config.model import (
+from antarest.storage.repository.filesystem.config.json import (
+    ConfigJsonBuilder,
+)
+from antarest.storage.repository.filesystem.config.model import (
     StudyConfig,
     Simulation,
     Area,

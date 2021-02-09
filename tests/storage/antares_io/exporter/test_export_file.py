@@ -4,7 +4,9 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.storage.antares_io.exporter.export_file import Exporter
+from antarest.storage.repository.antares_io.exporter.export_file import (
+    Exporter,
+)
 
 
 @pytest.mark.parametrize("outputs", [True, False])

@@ -3,8 +3,10 @@ from typing import Callable
 
 import pytest
 
-from antarest.storage.antares_io.reader import IniReader
-from antarest.storage.antares_io.reader.ini_reader import SetsIniReader
+from antarest.storage.repository.antares_io.reader import IniReader
+from antarest.storage.repository.antares_io.reader.ini_reader import (
+    SetsIniReader,
+)
 
 
 @pytest.mark.unit_test

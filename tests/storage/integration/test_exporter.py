@@ -5,8 +5,10 @@ from zipfile import ZipFile
 from flask import Flask
 
 from antarest.common.config import Config
-from antarest.storage.antares_io.exporter.export_file import Exporter
-from antarest.storage.filesystem.factory import StudyFactory
+from antarest.storage.repository.antares_io.exporter.export_file import (
+    Exporter,
+)
+from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.main import build_storage
 from antarest.storage.web import RequestHandler
 

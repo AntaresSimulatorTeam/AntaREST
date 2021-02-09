@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from antarest.storage.filesystem.bucket_node import BucketNode
-from antarest.storage.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.bucket_node import BucketNode
+from antarest.storage.repository.filesystem.config.model import StudyConfig
 
 
 def build_bucket(tmp: Path) -> Path:

@@ -11,11 +11,13 @@ from uuid import uuid4
 from zipfile import BadZipFile, ZipFile
 
 from antarest.common.config import Config
-from antarest.storage.antares_io.exporter.export_file import Exporter
-from antarest.storage.antares_io.reader import IniReader
+from antarest.storage.repository.antares_io.exporter.export_file import (
+    Exporter,
+)
+from antarest.storage.repository.antares_io.reader import IniReader
 from antarest.common.custom_types import JSON, SUB_JSON
-from antarest.storage.filesystem.config.model import StudyConfig
-from antarest.storage.filesystem.factory import StudyFactory
+from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.web.html_exception import (
     BadZipBinary,
     IncorrectPathError,

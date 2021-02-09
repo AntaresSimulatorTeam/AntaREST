@@ -3,7 +3,7 @@ from time import time
 from typing import Callable, Any
 from zipfile import ZipFile
 
-from antarest.storage.filesystem.factory import StudyFactory
+from antarest.storage.repository.filesystem.factory import StudyFactory
 
 
 def extract_sta(tmp_path: Path, project_path: Path) -> Path:
