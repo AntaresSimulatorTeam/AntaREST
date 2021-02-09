@@ -9,7 +9,7 @@ from sqlalchemy import create_engine  # type: ignore
 
 from antarest import __version__
 from antarest.common.config import ConfigYaml
-from antarest.common.dto import Base
+from antarest.common.persistence import Base
 from antarest.common.reverse_proxy import ReverseProxyMiddleware
 from antarest.common.swagger import build_swagger
 from antarest.launcher.main import build_launcher

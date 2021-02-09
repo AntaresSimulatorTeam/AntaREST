@@ -6,7 +6,7 @@ from antarest.common.persistence import session_scope
 from antarest.storage.model import Metadata
 
 
-class StudyMetadata:
+class StudyMetadataRepository:
     def __init__(self, engine: Engine) -> None:
         self.engine = engine
 

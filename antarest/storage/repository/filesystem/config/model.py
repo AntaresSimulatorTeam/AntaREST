@@ -1,9 +1,9 @@
 from copy import deepcopy
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
 
 from antarest.common.custom_types import JSON
-from antarest.common.dto import DTO
+from antarest.common.persistence import DTO
 
 
 class Link(DTO):

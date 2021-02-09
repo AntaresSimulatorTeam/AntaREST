@@ -1,12 +1,11 @@
 import uuid
 from typing import Any
-from uuid import UUID
+from antarest.login.model import User
 
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey
 from sqlalchemy.orm import relationship
 
 from antarest.common.persistence import DTO, Base
-
 
 users_metadata = Table(
     "users_metadata",
@@ -20,16 +19,17 @@ class Metadata(DTO, Base):
     __tablename__ = "metadata"
 
     id = Column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+        unique=True,
     )
     name = Column(String(255))
     version = Column(String(255))
     author = Column(String(255))
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
-    users = relationship(
-        "User", secondary=users_metadata, back_populates="metadata"
-    )
+    users = relationship("User", secondary=users_metadata)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Metadata):

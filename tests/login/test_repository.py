@@ -1,8 +1,7 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from antarest.common.config import Config
-from antarest.common.dto import Base
+from antarest.common.persistence import Base
 from antarest.login.model import User, Role, Password, Group
 from antarest.login.repository import UserRepository, GroupRepository
 

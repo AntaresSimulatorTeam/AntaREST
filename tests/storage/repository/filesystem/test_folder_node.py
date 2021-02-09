@@ -3,7 +3,10 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.storage.repository.filesystem.inode import INode
-from tests.storage.filesystem.utils import TestSubNode, TestMiddleNode
+from tests.storage.repository.filesystem.utils import (
+    TestSubNode,
+    TestMiddleNode,
+)
 
 
 def build_tree() -> INode:
