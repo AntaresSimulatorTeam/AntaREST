@@ -85,6 +85,17 @@ def test_user() -> None:
 
 
 @pytest.mark.unit_test
+def test_user_id() -> None:
+    service = Mock()
+    service.get_user.return_value = User(id=1, name="user", role=Role.USER)
+
+    client = create_client(service)
+    res = client.get("/users/1", headers=get_token(Role.ADMIN))
+    assert res.status_code == 200
+    assert res.json == User(id=1, name="user", role=Role.USER).to_dict()
+
+
+@pytest.mark.unit_test
 def test_user_create() -> None:
     user = User(id=1, name="a", role=Role.USER, password=Password("b"))
     service = Mock()
@@ -134,7 +145,18 @@ def test_group() -> None:
 
 
 @pytest.mark.unit_test
-def test_user_create() -> None:
+def test_group_id() -> None:
+    service = Mock()
+    service.get_group.return_value = Group(id=1, name="group")
+
+    client = create_client(service)
+    res = client.get("/groups/1", headers=get_token(Role.ADMIN))
+    assert res.status_code == 200
+    assert res.json == Group(id=1, name="group").to_dict()
+
+
+@pytest.mark.unit_test
+def test_group_create() -> None:
     group = Group(id=1, name="group")
     service = Mock()
     service.save_group.return_value = group
@@ -151,7 +173,7 @@ def test_user_create() -> None:
 
 
 @pytest.mark.unit_test
-def test_user_delete() -> None:
+def test_group_delete() -> None:
     service = Mock()
 
     client = create_client(service)

@@ -49,49 +49,81 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
     def login() -> Any:
         return render_template("login.html")
 
-    @bp.route("/users", methods=["GET", "POST"], defaults={"id": None})
-    @bp.route("/users/<int:id>", methods=["DELETE"])
+    @bp.route("/users", methods=["GET"])
     @jwt_required  # type: ignore
-    def users(id: Optional[int]) -> Any:
+    def users_get_all() -> Any:
         if get_jwt_identity()["role"] != "ADMIN":
             return "Only admin can manage user", 403
 
-        if request.method == "GET":
-            if id is not None:
-                user = service.get_user(id)
-                return jsonify(user.to_dict()) if user else "", 404
-            else:
-                return jsonify([u.to_dict() for u in service.get_all_users()])
+        return jsonify([u.to_dict() for u in service.get_all_users()])
 
-        if request.method == "POST":
-            user = User.from_dict(json.loads(request.data))
-            return jsonify(service.save_user(user).to_dict())
-
-        if id is not None and request.method == "DELETE":
-            service.delete_user(id)
-            return jsonify(id), 200
-
-    @bp.route("/groups", methods=["GET", "POST"], defaults={"id": None})
-    @bp.route("/groups/<int:id>", methods=["DELETE"])
+    @bp.route("/users/<int:id>", methods=["GET"])
     @jwt_required  # type: ignore
-    def groups(id: Optional[int]) -> Any:
+    def users_get_id(id: int) -> Any:
+        if get_jwt_identity()["role"] != "ADMIN":
+            return "Only admin can manage user", 403
+
+        user = service.get_user(id)
+        if user:
+            return jsonify(user.to_dict())
+        else:
+            return "", 404
+
+    @bp.route("/users", methods=["POST"])
+    @jwt_required  # type: ignore
+    def users_create() -> Any:
+        if get_jwt_identity()["role"] != "ADMIN":
+            return "Only admin can manage user", 403
+
+        user = User.from_dict(json.loads(request.data))
+        return jsonify(service.save_user(user).to_dict())
+
+    @bp.route("/users/<int:id>", methods=["DELETE"])
+    @jwt_required  # type: ignore
+    def users_delete(id: int) -> Any:
+        if get_jwt_identity()["role"] != "ADMIN":
+            return "Only admin can manage user", 403
+
+        service.delete_user(id)
+        return jsonify(id), 200
+
+    @bp.route("/groups", methods=["GET"])
+    @jwt_required  # type: ignore
+    def groups_get_all() -> Any:
         if get_jwt_identity()["role"] != "ADMIN":
             return "Only admin can manage group", 403
 
-        if request.method == "GET":
-            if id is not None:
-                group = service.get_group(id)
-                return jsonify(group.to_dict()) if group else "", 404
-            else:
-                return jsonify([g.to_dict() for g in service.get_all_groups()])
+        return jsonify([g.to_dict() for g in service.get_all_groups()])
 
-        if request.method == "POST":
-            group = Group.from_dict(json.loads(request.data))
-            return jsonify(service.save_group(group).to_dict())
+    @bp.route("/groups/<int:id>", methods=["GET"])
+    @jwt_required  # type: ignore
+    def groups_get_id(id: int) -> Any:
+        if get_jwt_identity()["role"] != "ADMIN":
+            return "Only admin can manage group", 403
 
-        if id is not None and request.method == "DELETE":
-            service.delete_group(id)
-            return jsonify(id), 200
+        group = service.get_group(id)
+        if group:
+            return jsonify(group.to_dict())
+        else:
+            return f"Group {id} not found", 404
+
+    @bp.route("/groups", methods=["POST"])
+    @jwt_required  # type: ignore
+    def groups_create() -> Any:
+        if get_jwt_identity()["role"] != "ADMIN":
+            return "Only admin can manage group", 403
+
+        group = Group.from_dict(json.loads(request.data))
+        return jsonify(service.save_group(group).to_dict())
+
+    @bp.route("/groups/<int:id>", methods=["DELETE"])
+    @jwt_required  # type: ignore
+    def groups_delete(id: int) -> Any:
+        if get_jwt_identity()["role"] != "ADMIN":
+            return "Only admin can manage group", 403
+
+        service.delete_group(id)
+        return jsonify(id), 200
 
     @bp.route("/protected")
     @jwt_required  # type: ignore
