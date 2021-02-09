@@ -1,27 +1,10 @@
-import uuid
-from contextlib import contextmanager
 from typing import Dict, Optional, List, Generator, Any
 
 from sqlalchemy.engine import Engine  # type: ignore
-from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 
 from antarest.common.config import Config
+from antarest.common.persistence import session_scope
 from antarest.login.model import User, Role, Password, Group
-
-
-@contextmanager
-def session_scope(engine: Engine) -> Generator[Session, Any, Any]:
-    """Provide a transactional scope around a series of operations."""
-    try:
-        Session = sessionmaker(engine, expire_on_commit=False)
-        sess = Session()
-        yield sess
-        sess.commit()
-    except:
-        sess.rollback()
-        raise
-    finally:
-        sess.close()
 
 
 class GroupRepository:

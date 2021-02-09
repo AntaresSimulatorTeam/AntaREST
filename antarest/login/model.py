@@ -1,6 +1,6 @@
 from typing import Any, Optional, Union
 
-from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey  # type: ignore
+from sqlalchemy import Column, Integer, Sequence, String, BigInteger, Table, ForeignKey  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from werkzeug.security import (
@@ -10,7 +10,7 @@ from werkzeug.security import (
 )
 
 from antarest.common.custom_types import JSON
-from antarest.common.dto import DTO, Base
+from antarest.common.persistence import DTO, Base
 
 
 users_groups = Table(
@@ -48,7 +48,7 @@ class Password:
 class User(DTO, Base):  # type: ignore
     __tablename__ = "users"
 
-    id = Column(Integer, Sequence("user_id_seq"), primary_key=True)
+    id = Column(BigInteger, Sequence("user_id_seq"), primary_key=True)
     name = Column(String(255))
     role = Column(String(255))
     _pwd = Column(String(255))
