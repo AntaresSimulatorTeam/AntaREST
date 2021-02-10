@@ -19,4 +19,9 @@ export interface StudyMetadata {
   version: string;
 }
 
+export interface UserInfo {
+  user: string;
+  token: string;
+}
+
 export default {};

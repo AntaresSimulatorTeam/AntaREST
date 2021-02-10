@@ -22,8 +22,8 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
         template_folder=str(config["main.res"] / "templates"),
     )
 
-    @bp.route("/auth", methods=["POST"])
-    def auth() -> Any:
+    @bp.route("/login", methods=["POST"])
+    def login() -> Any:
         username = request.form.get("username") or request.json.get("username")
         password = request.form.get("password") or request.json.get("password")
 
@@ -38,16 +38,12 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
         # Identity can be any data that is json serializable
         access_token = create_access_token(identity=user.to_dict())
-        resp = jsonify({"login": True})
-        set_access_cookies(resp, access_token)
+        resp = jsonify({"user": user.name, "token": access_token})
+        #set_access_cookies(resp, access_token)
         return (
-            jsonify(access_token=access_token) if request.is_json else resp,
+            resp,
             200,
         )
-
-    @bp.route("/login", methods=["GET"])
-    def login() -> Any:
-        return render_template("login.html")
 
     @bp.route("/users", methods=["GET"])
     @jwt_required  # type: ignore
