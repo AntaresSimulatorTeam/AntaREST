@@ -1,9 +1,7 @@
 from contextlib import contextmanager
 from typing import Any, Generator
 
-from sqlalchemy.engine import Engine  # type: ignore
 from sqlalchemy.ext.declarative import declarative_base  # type: ignore
-from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 
 Base = declarative_base()
 
@@ -34,18 +32,3 @@ class DTO:
 
     def __repr__(self) -> str:
         return self.__str__()
-
-
-@contextmanager
-def session_scope(engine: Engine) -> Generator[Session, Any, Any]:
-    """Provide a transactional scope around a series of operations."""
-    try:
-        Session = sessionmaker(engine, expire_on_commit=False)
-        sess = Session()
-        yield sess
-        sess.commit()
-    except:
-        sess.rollback()
-        raise
-    finally:
-        sess.close()

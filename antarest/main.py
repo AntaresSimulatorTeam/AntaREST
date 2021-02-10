@@ -2,10 +2,11 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any
 
 from flask import Flask
 from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 
 from antarest import __version__
 from antarest.common.config import ConfigYaml
@@ -59,14 +60,21 @@ def main(config_file: Path) -> Flask:
     # Database
     engine = create_engine(config["main.db.url"], echo=True)
     Base.metadata.create_all(engine)
+    db_session = scoped_session(
+        sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    )
 
     application = Flask(__name__)
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
     application.config["SECRET_KEY"] = config["main.jwt.key"]
     application.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
 
+    @application.teardown_appcontext
+    def shutdown_session(exception: Any = None) -> None:
+        db_session.remove()
+
     build_storage(application, config)
-    build_login(application, config, engine)
+    build_login(application, config, db_session)
     build_swagger(application)
 
     application.run(debug=False, host="0.0.0.0", port=8080)
