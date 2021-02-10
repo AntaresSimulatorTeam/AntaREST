@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 CURDIR=$(cd `dirname $0` && pwd)
 
 cd $CURDIR/../webapp

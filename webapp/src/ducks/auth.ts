@@ -1,5 +1,4 @@
 import { Action, AnyAction } from 'redux';
-import { AppState } from '../App/reducers';
 
 /** ******************************************* */
 /* State                                        */
