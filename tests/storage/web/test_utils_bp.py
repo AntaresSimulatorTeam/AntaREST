@@ -14,12 +14,14 @@ from antarest.storage.main import build_storage
 @pytest.mark.unit_test
 def test_version() -> None:
 
-    mock_request_handler = Mock()
-    mock_request_handler.path_resources = Path("/")
+    mock_storage_service = Mock()
+    mock_storage_service.storage_service.path_resources = Path("/")
 
     app = Flask(__name__)
     build_storage(
-        app, req=mock_request_handler, config=Config({"main": {"res": Path()}})
+        app,
+        storage_service=mock_storage_service,
+        config=Config({"main": {"res": Path()}}),
     )
     client = app.test_client()
 

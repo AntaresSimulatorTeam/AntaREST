@@ -7,12 +7,12 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.common.config import Config
+from antarest.storage.service import StorageService
 
 project_dir: Path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_dir))
 
 from antarest.common.custom_types import JSON
-from antarest.storage.web import RequestHandler
 
 
 @pytest.fixture
@@ -38,14 +38,14 @@ def clean_ini_writer(
 
 
 @pytest.fixture
-def request_handler_builder() -> Callable:
-    def build_request_handler(
+def storage_service_builder() -> Callable:
+    def build_storage_service(
         study_factory=Mock(),
         exporter=Mock(),
         path_studies=Path(),
         path_resources=Path(),
-    ) -> RequestHandler:
-        return RequestHandler(
+    ) -> StorageService:
+        return StorageService(
             study_factory=study_factory,
             exporter=exporter,
             config=Config(
@@ -56,7 +56,7 @@ def request_handler_builder() -> Callable:
             ),
         )
 
-    return build_request_handler
+    return build_storage_service
 
 
 @pytest.fixture

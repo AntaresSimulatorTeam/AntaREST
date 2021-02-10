@@ -11,14 +11,13 @@ from antarest.storage.repository.filesystem.config.model import (
     StudyConfig,
     Simulation,
 )
-from antarest.storage.web import RequestHandler
 from antarest.storage.web.html_exception import (
     BadZipBinary,
     IncorrectPathError,
     StudyNotFoundError,
     StudyValidationError,
 )
-from antarest.storage.service import StorageServiceParameters
+from antarest.storage.service import StorageServiceParameters, StorageService
 
 
 @pytest.mark.unit_test
@@ -52,7 +51,7 @@ def test_get(tmp_path: str, project_path) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = (None, study)
 
-    request_handler = RequestHandler(
+    storage_service = StorageService(
         study_factory=study_factory,
         exporter=Mock(),
         config=Config(
@@ -65,7 +64,7 @@ def test_get(tmp_path: str, project_path) -> None:
 
     parameters = StorageServiceParameters(depth=2)
 
-    output = request_handler.get(
+    output = storage_service.get(
         route=f"study2.py/{sub_route}", parameters=parameters
     )
 
@@ -89,7 +88,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     path_to_studies = Path(tmp_path)
 
     # Test & Verify
-    request_handler = RequestHandler(
+    storage_service = StorageService(
         study_factory=Mock(),
         exporter=Mock(),
         config=Config(
@@ -99,7 +98,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
             }
         ),
     )
-    request_handler.assert_study_exist(study_name)
+    storage_service.assert_study_exist(study_name)
 
 
 @pytest.mark.unit_test
@@ -117,7 +116,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     path_to_studies = Path(tmp_path)
 
     # Test & Verify
-    request_handler = RequestHandler(
+    storage_service = StorageService(
         study_factory=Mock(),
         exporter=Mock(),
         config=Config(
@@ -128,13 +127,11 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         ),
     )
     with pytest.raises(StudyNotFoundError):
-        request_handler.assert_study_exist(study_name)
+        storage_service.assert_study_exist(study_name)
 
 
 @pytest.mark.unit_test
-def test_find_studies(
-    tmp_path: str, request_handler_builder: Callable
-) -> None:
+def test_find_studies(tmp_path: str, storage_service_builder) -> None:
     # Create folders
     path_studies = Path(tmp_path) / "studies"
     path_studies.mkdir()
@@ -160,14 +157,14 @@ def test_find_studies(
     study_names = ["study1", "study2"]
 
     # Test & Verify
-    request_handler = request_handler_builder(path_studies=path_studies)
+    storage_service = storage_service_builder(path_studies=path_studies)
 
-    assert study_names == request_handler.get_study_uuids()
+    assert study_names == storage_service.get_study_uuids()
 
 
 @pytest.mark.unit_test
 def test_create_study(
-    tmp_path: str, request_handler_builder: Callable, project_path
+    tmp_path: str, storage_service_builder, project_path
 ) -> None:
 
     path_studies = Path(tmp_path)
@@ -179,7 +176,7 @@ def test_create_study(
     study_factory = Mock()
     study_factory.create_from_fs.return_value = (None, study)
 
-    request_handler = request_handler_builder(
+    storage_service = storage_service_builder(
         path_studies=path_studies,
         study_factory=study_factory,
         exporter=Mock(),
@@ -187,7 +184,7 @@ def test_create_study(
     )
 
     study_name = "study1"
-    uuid = request_handler.create_study(study_name)
+    uuid = storage_service.create_study(study_name)
 
     path_study = path_studies / uuid
     assert path_study.exists()
@@ -200,7 +197,7 @@ def test_create_study(
 def test_copy_study(
     tmp_path: str,
     clean_ini_writer: Callable,
-    request_handler_builder: Callable,
+    storage_service_builder,
 ) -> None:
 
     path_studies = Path(tmp_path)
@@ -232,19 +229,19 @@ def test_copy_study(
 
     url_engine = Mock()
     url_engine.resolve.return_value = None, None, None
-    request_handler = request_handler_builder(
+    storage_service = storage_service_builder(
         study_factory=study_factory,
         path_studies=path_studies,
     )
 
     destination_name = "study2"
-    request_handler.copy_study(source_name, destination_name)
+    storage_service.copy_study(source_name, destination_name)
 
     study.get.assert_called_once_with()
 
 
 @pytest.mark.unit_test
-def test_export_file(tmp_path: Path, request_handler_builder: Callable):
+def test_export_file(tmp_path: Path, storage_service_builder):
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -253,22 +250,22 @@ def test_export_file(tmp_path: Path, request_handler_builder: Callable):
     exporter = Mock()
     exporter.export_file.return_value = b"Hello"
 
-    request_handler = request_handler_builder(
+    storage_service = storage_service_builder(
         exporter=exporter,
         path_studies=tmp_path,
     )
 
     # Test wrong study
     with pytest.raises(StudyNotFoundError):
-        request_handler.export_study("WRONG")
+        storage_service.export_study("WRONG")
 
     # Test good study
-    assert b"Hello" == request_handler.export_study(name)
+    assert b"Hello" == storage_service.export_study(name)
     exporter.export_file.assert_called_once_with(study_path, True)
 
 
 @pytest.mark.unit_test
-def test_export_compact_file(tmp_path: Path, request_handler_builder):
+def test_export_compact_file(tmp_path: Path, storage_service_builder):
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -287,13 +284,13 @@ def test_export_compact_file(tmp_path: Path, request_handler_builder):
     )
     factory.create_from_config.return_value = study
 
-    request_handler = request_handler_builder(
+    storage_service = storage_service_builder(
         study_factory=factory,
         exporter=exporter,
         path_studies=tmp_path,
     )
 
-    assert b"Hello" == request_handler.export_study(
+    assert b"Hello" == storage_service.export_study(
         name, compact=True, outputs=False
     )
 
@@ -304,55 +301,49 @@ def test_export_compact_file(tmp_path: Path, request_handler_builder):
 
 
 @pytest.mark.unit_test
-def test_delete_study(
-    tmp_path: Path, request_handler_builder: Callable
-) -> None:
+def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
 
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
-    request_handler = request_handler_builder(path_studies=tmp_path)
+    storage_service = storage_service_builder(path_studies=tmp_path)
 
-    request_handler.delete_study(name)
+    storage_service.delete_study(name)
 
     assert not study_path.exists()
 
 
 @pytest.mark.unit_test
-def test_upload_matrix(
-    tmp_path: Path, request_handler_builder: Callable
-) -> None:
+def test_upload_matrix(tmp_path: Path, storage_service_builder) -> None:
 
     study_uuid = "my-study"
     study_path = tmp_path / study_uuid
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
-    request_handler = request_handler_builder(path_studies=tmp_path)
+    storage_service = storage_service_builder(path_studies=tmp_path)
 
     study_url = "WRONG-STUDY-NAME/"
     matrix_path = ""
     with pytest.raises(StudyNotFoundError):
-        request_handler.upload_matrix(study_url + matrix_path, b"")
+        storage_service.upload_matrix(study_url + matrix_path, b"")
 
     study_url = study_uuid + "/"
     matrix_path = "WRONG_MATRIX_PATH"
     with pytest.raises(IncorrectPathError):
-        request_handler.upload_matrix(study_url + matrix_path, b"")
+        storage_service.upload_matrix(study_url + matrix_path, b"")
 
     study_url = study_uuid + "/"
     matrix_path = "matrix.txt"
     data = b"hello"
-    request_handler.upload_matrix(study_url + matrix_path, data)
+    storage_service.upload_matrix(study_url + matrix_path, data)
     assert (study_path / matrix_path).read_bytes() == data
 
 
 @pytest.mark.unit_test
-def test_import_study(
-    tmp_path: Path, request_handler_builder: Callable
-) -> None:
+def test_import_study(tmp_path: Path, storage_service_builder) -> None:
 
     name = "my-study"
     study_path = tmp_path / name
@@ -364,7 +355,7 @@ def test_import_study(
     study_factory = Mock()
     study_factory.create_from_fs.return_value = None, study
 
-    request_handler = request_handler_builder(
+    storage_service = storage_service_builder(
         study_factory=study_factory, path_studies=tmp_path
     )
 
@@ -376,30 +367,30 @@ def test_import_study(
     path_zip = Path(filepath_zip)
 
     with path_zip.open("rb") as input_file:
-        uuid = request_handler.import_study(input_file)
+        uuid = storage_service.import_study(input_file)
 
-    request_handler.assert_study_exist(uuid)
-    request_handler.assert_study_not_exist(name)
+    storage_service.assert_study_exist(uuid)
+    storage_service.assert_study_not_exist(name)
 
     with pytest.raises(BadZipBinary):
-        request_handler.import_study(io.BytesIO(b""))
+        storage_service.import_study(io.BytesIO(b""))
 
 
 @pytest.mark.unit_test
 def test_check_antares_version(
-    tmp_path: Path, request_handler_builder: Callable
+    tmp_path: Path, storage_service_builder
 ) -> None:
 
     right_study = {"study": {"antares": {"version": 700}}}
-    RequestHandler.check_antares_version(right_study)
+    StorageService.check_antares_version(right_study)
 
     wrong_study = {"study": {"antares": {"version": 600}}}
     with pytest.raises(StudyValidationError):
-        RequestHandler.check_antares_version(wrong_study)
+        StorageService.check_antares_version(wrong_study)
 
 
 @pytest.mark.unit_test
-def test_edit_study(tmp_path: Path, request_handler_builder: Callable) -> None:
+def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
     # Mock
     (tmp_path / "my-uuid").mkdir()
     (tmp_path / "my-uuid/study.antares").touch()
@@ -408,7 +399,7 @@ def test_edit_study(tmp_path: Path, request_handler_builder: Callable) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = None, study
 
-    request_handler = request_handler_builder(
+    storage_service = storage_service_builder(
         study_factory=study_factory, path_studies=tmp_path
     )
 
@@ -416,7 +407,7 @@ def test_edit_study(tmp_path: Path, request_handler_builder: Callable) -> None:
     url = "my-uuid/url/to/change"
     new = {"Hello": "World"}
 
-    res = request_handler.edit_study(url, new)
+    res = storage_service.edit_study(url, new)
 
     assert new == res
     study.save.assert_called_once_with(new, ["url", "to", "change"])

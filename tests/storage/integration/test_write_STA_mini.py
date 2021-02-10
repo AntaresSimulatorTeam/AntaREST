@@ -5,15 +5,18 @@ from flask import Flask
 
 from antarest.common.custom_types import SUB_JSON
 from antarest.storage.main import build_storage
-from antarest.storage.web import RequestHandler
-from antarest.storage.service import StorageServiceParameters
+from antarest.storage.service import StorageServiceParameters, StorageService
 
 
 def assert_url_content(
-    request_handler: RequestHandler, url: str, new: SUB_JSON
+    storage_service: StorageService, url: str, new: SUB_JSON
 ) -> None:
     app = Flask(__name__)
-    build_storage(app, req=request_handler, res=request_handler.path_resources)
+    build_storage(
+        app,
+        storage_service=storage_service,
+        res=storage_service.path_resources,
+    )
     client = app.test_client()
     res = client.post(url, data=json.dumps(url))
     assert json.loads(res.data) == new
@@ -23,14 +26,14 @@ def assert_url_content(
 
 
 def assert_with_errors(
-    request_handler: RequestHandler, url: str, new: SUB_JSON
+    storage_service: StorageService, url: str, new: SUB_JSON
 ) -> None:
     url = url[len("/studies/") :]
     print(url)
-    res = request_handler.edit_study(route=url, new=new)
+    res = storage_service.edit_study(route=url, new=new)
     assert res == new
 
-    res = request_handler.get(
+    res = storage_service.get(
         route=url, parameters=StorageServiceParameters(depth=-1)
     )
     assert res == new
@@ -43,11 +46,9 @@ def assert_with_errors(
         ("/studies/STA-mini/settings/generaldata/general/horizon", 3000),
     ],
 )
-def test_sta_mini_settings(
-    request_handler: RequestHandler, url: str, new: SUB_JSON
-):
+def test_sta_mini_settings(storage_service, url: str, new: SUB_JSON):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         new=new,
     )
@@ -63,11 +64,9 @@ def test_sta_mini_settings(
         ),
     ],
 )
-def test_sta_mini_layers_layers(
-    request_handler: RequestHandler, url: str, new: SUB_JSON
-):
+def test_sta_mini_layers_layers(storage_service, url: str, new: SUB_JSON):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         new=new,
     )
@@ -83,11 +82,9 @@ def test_sta_mini_layers_layers(
         ),
     ],
 )
-def test_sta_mini_layers_layers(
-    request_handler: RequestHandler, url: str, new: SUB_JSON
-):
+def test_sta_mini_layers_layers(storage_service, url: str, new: SUB_JSON):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         new=new,
     )
@@ -108,11 +105,9 @@ def test_sta_mini_layers_layers(
         ("/studies/STA-mini/Desktop/.shellclassinfo/iconindex", 42),
     ],
 )
-def test_sta_mini_desktop(
-    request_handler: RequestHandler, url: str, new: SUB_JSON
-):
+def test_sta_mini_desktop(storage_service, url: str, new: SUB_JSON):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         new=new,
     )
@@ -132,11 +127,9 @@ def test_sta_mini_desktop(
         ),
     ],
 )
-def test_sta_mini_study_antares(
-    request_handler: RequestHandler, url: str, new: SUB_JSON
-):
+def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         new=new,
     )
@@ -179,11 +172,9 @@ def test_sta_mini_study_antares(
         ),
     ],
 )
-def test_sta_mini_input(
-    request_handler: RequestHandler, url: str, new: SUB_JSON
-):
+def test_sta_mini_input(storage_service, url: str, new: SUB_JSON):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         new=new,
     )
@@ -207,11 +198,9 @@ def test_sta_mini_input(
         ),
     ],
 )
-def test_sta_mini_output(
-    request_handler: RequestHandler, url: str, new: SUB_JSON
-):
+def test_sta_mini_output(storage_service, url: str, new: SUB_JSON):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         new=new,
     )

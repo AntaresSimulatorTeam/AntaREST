@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from flask import Blueprint, send_file, request, jsonify, Response
 
-from antarest.storage.web import RequestHandler
+from antarest.storage.service import StorageService
 from antarest.storage.web.html_exception import (
     stop_and_return_on_html_exception,
 )
@@ -35,7 +35,7 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
     return commit_id
 
 
-def create_utils_routes(request_handler: RequestHandler) -> Blueprint:
+def create_utils_routes(storage_service: StorageService) -> Blueprint:
     bp = Blueprint("create_utils", __name__)
 
     @bp.route(
@@ -65,7 +65,7 @@ def create_utils_routes(request_handler: RequestHandler) -> Blueprint:
         """
 
         try:
-            file_path = request_handler.path_to_studies / path
+            file_path = storage_service.path_to_studies / path
             return send_file(file_path.absolute())
         except FileNotFoundError:
             return f"{path} not found", HTTPStatus.NOT_FOUND.value
@@ -97,7 +97,7 @@ def create_utils_routes(request_handler: RequestHandler) -> Blueprint:
         """
 
         data = request.files["matrix"].read()
-        request_handler.upload_matrix(path, data)
+        storage_service.upload_matrix(path, data)
         output = b""
         code = HTTPStatus.NO_CONTENT.value
 
@@ -111,7 +111,9 @@ def create_utils_routes(request_handler: RequestHandler) -> Blueprint:
     def version() -> Any:
         version_data = {"version": __version__}
 
-        commit_id = get_commit_id(request_handler.path_resources)
+        commit_id = get_commit_id(
+            storage_service.storage_service.path_resources
+        )
         if commit_id is not None:
             version_data["gitcommit"] = commit_id
 

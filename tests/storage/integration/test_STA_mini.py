@@ -10,18 +10,17 @@ from flask import Flask
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.storage.main import build_storage
-from antarest.storage.web import RequestHandler
-from antarest.storage.service import StorageServiceParameters
+from antarest.storage.service import StorageServiceParameters, StorageService
 
 
 def assert_url_content(
-    request_handler: RequestHandler, url: str, expected_output: str
+    storage_service: StorageService, url: str, expected_output: str
 ) -> None:
     app = Flask(__name__)
     build_storage(
         app,
-        req=request_handler,
-        config=Config({"main": {"res": request_handler.path_resources}}),
+        storage_service=storage_service,
+        config=Config({"main": {"res": storage_service.path_resources}}),
     )
     client = app.test_client()
     res = client.get(url)
@@ -29,12 +28,12 @@ def assert_url_content(
 
 
 def assert_with_errors(
-    request_handler: RequestHandler, url: str, expected_output: dict
+    storage_service: StorageService, url: str, expected_output: dict
 ) -> None:
     url = url[len("/studies/") :]
     print(url)
     assert (
-        request_handler.get(route=url, parameters=StorageServiceParameters())
+        storage_service.get(route=url, parameters=StorageServiceParameters())
         == expected_output
     )
 
@@ -47,11 +46,9 @@ def assert_with_errors(
         ("/studies/STA-mini/settings/simulations", {}),
     ],
 )
-def test_sta_mini_settings(
-    request_handler: RequestHandler, url: str, expected_output: str
-):
+def test_sta_mini_settings(storage_service, url: str, expected_output: str):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         expected_output=expected_output,
     )
@@ -72,10 +69,10 @@ def test_sta_mini_settings(
     ],
 )
 def test_sta_mini_layers_layers(
-    request_handler: RequestHandler, url: str, expected_output: str
+    storage_service, url: str, expected_output: str
 ):
     assert_url_content(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         expected_output=expected_output,
     )
@@ -96,11 +93,9 @@ def test_sta_mini_layers_layers(
         ("/studies/STA-mini/Desktop/.shellclassinfo/iconindex", 0),
     ],
 )
-def test_sta_mini_desktop(
-    request_handler: RequestHandler, url: str, expected_output: str
-):
+def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         expected_output=expected_output,
     )
@@ -121,10 +116,10 @@ def test_sta_mini_desktop(
     ],
 )
 def test_sta_mini_study_antares(
-    request_handler: RequestHandler, url: str, expected_output: str
+    storage_service, url: str, expected_output: str
 ):
     assert_url_content(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         expected_output=expected_output,
     )
@@ -231,11 +226,9 @@ def test_sta_mini_study_antares(
         ),
     ],
 )
-def test_sta_mini_input(
-    request_handler: RequestHandler, url: str, expected_output: str
-):
+def test_sta_mini_input(storage_service, url: str, expected_output: str):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         expected_output=expected_output,
     )
@@ -332,18 +325,16 @@ def test_sta_mini_input(
         ),
     ],
 )
-def test_sta_mini_output(
-    request_handler: RequestHandler, url: str, expected_output: str
-):
+def test_sta_mini_output(storage_service, url: str, expected_output: str):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         expected_output=expected_output,
     )
 
 
 @pytest.mark.integration_test
-def test_sta_mini_copy(request_handler: RequestHandler) -> None:
+def test_sta_mini_copy(storage_service) -> None:
 
     source_study_name = "STA-mini"
     destination_study_name = "copy-STA-mini"
@@ -351,8 +342,8 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
     app = Flask(__name__)
     build_storage(
         app,
-        req=request_handler,
-        config=Config({"main": {"res": request_handler.path_resources}}),
+        storage_service=storage_service,
+        config=Config({"main": {"res": storage_service.path_resources}}),
     )
     client = app.test_client()
     result = client.post(
@@ -365,8 +356,8 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
     destination_folder = url_destination.split("/")[2]
 
     parameters = StorageServiceParameters(depth=-1)
-    data_source = request_handler.get(source_study_name, parameters)
-    data_destination = request_handler.get(destination_folder, parameters)
+    data_source = storage_service.get(source_study_name, parameters)
+    data_destination = storage_service.get(destination_folder, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
     assert link_url_source == "file/STA-mini/input/links/de/fr.txt"
@@ -403,7 +394,7 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
 
 
 @pytest.mark.integration_test
-def test_sta_mini_list_studies(request_handler: RequestHandler) -> None:
+def test_sta_mini_list_studies(storage_service) -> None:
     expected_output = {
         "STA-mini": {
             "antares": {
@@ -417,7 +408,7 @@ def test_sta_mini_list_studies(request_handler: RequestHandler) -> None:
     }
     url = "/studies"
     assert_url_content(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         expected_output=expected_output,
     )
@@ -425,7 +416,7 @@ def test_sta_mini_list_studies(request_handler: RequestHandler) -> None:
 
 @pytest.mark.integration_test
 def notest_sta_mini_with_wrong_output_folder(
-    request_handler: RequestHandler, sta_mini_path: Path
+    storage_service: StorageService, sta_mini_path: Path
 ) -> None:
     # TODO why a wrong test should success
     (sta_mini_path / "output" / "maps").mkdir()
@@ -434,26 +425,24 @@ def notest_sta_mini_with_wrong_output_folder(
     expected_output = "Antares Study7.0: STA-mini"
 
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         expected_output=expected_output,
     )
 
 
 @pytest.mark.integration_test
-def test_sta_mini_import(
-    tmp_path: Path, request_handler: RequestHandler
-) -> None:
+def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 
-    path_study = request_handler.get_study_path("STA-mini")
+    path_study = storage_service.get_study_path("STA-mini")
     sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
     app = Flask(__name__)
     build_storage(
         app,
-        req=request_handler,
-        config=Config({"main": {"res": request_handler.path_resources}}),
+        storage_service=storage_service,
+        config=Config({"main": {"res": storage_service.path_resources}}),
     )
     client = app.test_client()
 
@@ -464,17 +453,15 @@ def test_sta_mini_import(
 
 
 @pytest.mark.integration_test
-def test_sta_mini_import_compact(
-    tmp_path: Path, request_handler: RequestHandler
-) -> None:
+def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
 
-    zip_study_stream = request_handler.export_study("STA-mini", compact=True)
+    zip_study_stream = storage_service.export_study("STA-mini", compact=True)
 
     app = Flask(__name__)
     build_storage(
         app,
-        req=request_handler,
-        config=Config({"main": {"res": request_handler.path_resources}}),
+        storage_service=storage_service,
+        config=Config({"main": {"res": storage_service.path_resources}}),
     )
     client = app.test_client()
     result = client.post(
@@ -485,12 +472,10 @@ def test_sta_mini_import_compact(
 
 
 @pytest.mark.integration_test
-def test_sta_mini_import_output(
-    tmp_path: Path, request_handler: RequestHandler
-) -> None:
+def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
 
     path_study_output = (
-        request_handler.get_study_path("STA-mini")
+        storage_service.get_study_path("STA-mini")
         / "output"
         / "20201014-1422eco-hello"
     )
@@ -505,8 +490,8 @@ def test_sta_mini_import_output(
     app = Flask(__name__)
     build_storage(
         app,
-        req=request_handler,
-        config=Config({"main": {"res": request_handler.path_resources}}),
+        storage_service=storage_service,
+        config=Config({"main": {"res": storage_service.path_resources}}),
     )
     client = app.test_client()
 
@@ -541,11 +526,9 @@ def test_sta_mini_import_output(
         ),
     ],
 )
-def test_sta_mini_filter(
-    request_handler: RequestHandler, url: str, expected_output: dict
-):
+def test_sta_mini_filter(storage_service, url: str, expected_output: dict):
     assert_with_errors(
-        request_handler=request_handler,
+        storage_service=storage_service,
         url=url,
         expected_output=expected_output,
     )

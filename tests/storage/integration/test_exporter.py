@@ -10,15 +10,15 @@ from antarest.storage.repository.antares_io.exporter.export_file import (
 )
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.main import build_storage
-from antarest.storage.web import RequestHandler
+from antarest.storage.service import StorageService
 
 
-def assert_url_content(request_handler: RequestHandler, url: str) -> bytes:
+def assert_url_content(storage_service: StorageService, url: str) -> bytes:
     app = Flask(__name__)
     build_storage(
         app,
-        req=request_handler,
-        config=Config({"main": {"res": request_handler.path_resources}}),
+        storage_service=storage_service,
+        config=Config({"main": {"res": storage_service.path_resources}}),
     )
     client = app.test_client()
     res = client.get(url)
@@ -36,7 +36,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
     with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
-    handler = RequestHandler(
+    service = StorageService(
         study_factory=StudyFactory(),
         exporter=Exporter(),
         config=Config(
@@ -44,10 +44,10 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         ),
     )
 
-    data = assert_url_content(handler, url="/studies/STA-mini/export")
+    data = assert_url_content(service, url="/studies/STA-mini/export")
     assert_data(data)
 
-    data = assert_url_content(handler, url="/studies/STA-mini/export?compact")
+    data = assert_url_content(service, url="/studies/STA-mini/export?compact")
     assert_data(data)
 
 
@@ -58,7 +58,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
     with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
-    handler = RequestHandler(
+    service = StorageService(
         study_factory=StudyFactory(),
         exporter=Exporter(),
         config=Config(
@@ -67,11 +67,11 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
     )
 
     data = assert_url_content(
-        handler, url="/studies/STA-mini/export?no-output"
+        service, url="/studies/STA-mini/export?no-output"
     )
     assert_data(data)
 
     data = assert_url_content(
-        handler, url="/studies/STA-mini/export?compact&no-output"
+        service, url="/studies/STA-mini/export?compact&no-output"
     )
     assert_data(data)

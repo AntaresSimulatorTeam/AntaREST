@@ -8,8 +8,7 @@ from typing import Any, Callable, Tuple
 from flask import Blueprint, request, render_template, send_from_directory
 
 from antarest.common.config import Config
-from antarest.storage.web import RequestHandler
-from antarest.storage.service import StorageServiceParameters
+from antarest.storage.service import StorageServiceParameters, StorageService
 
 
 def get_local_path() -> Path:
@@ -29,7 +28,7 @@ def wrap_status(fnc: Callable[[], Any]) -> str:
         return "error"
 
 
-def create_ui(request_handler: RequestHandler, config: Config) -> Blueprint:
+def create_ui(storage_service: StorageService, config: Config) -> Blueprint:
     bp = Blueprint(
         "create_ui",
         __name__,
@@ -54,14 +53,14 @@ def create_ui(request_handler: RequestHandler, config: Config) -> Blueprint:
         if request.method == "POST":
             if "name" in request.form:
                 status = wrap_status(
-                    fnc=lambda: request_handler.create_study(
+                    fnc=lambda: storage_service.create_study(
                         request.form["name"]
                     )
                 )
 
             elif "delete-id" in request.form:  # DELETE
                 status = wrap_status(
-                    fnc=lambda: request_handler.delete_study(
+                    fnc=lambda: storage_service.delete_study(
                         request.form.get("delete-id", "")
                     )
                 )
@@ -69,10 +68,10 @@ def create_ui(request_handler: RequestHandler, config: Config) -> Blueprint:
             elif "study" in request.files:
                 zip_binary = io.BytesIO(request.files["study"].read())
                 status = wrap_status(
-                    fnc=lambda: request_handler.import_study(zip_binary)
+                    fnc=lambda: storage_service.import_study(zip_binary)
                 )
 
-        studies = request_handler.get_studies_information()
+        studies = storage_service.get_studies_information()
         return render_template(
             "home.html",
             studies=studies,
@@ -101,18 +100,18 @@ def create_ui(request_handler: RequestHandler, config: Config) -> Blueprint:
         parts = path.split("/")
         uuid, selections = parts[0], parts[1:]
         params = StorageServiceParameters(depth=1)
-        info = request_handler.get_study_information(uuid=uuid)["antares"]
+        info = storage_service.get_study_information(uuid=uuid)["antares"]
 
         # [
         #  (selected, [(type, name, url), ...]),
         # ]
         data = []
-        print(request_handler.get(path, params))
+        print(storage_service.get(path, params))
         for i, part in enumerate(selections):
             sub_path = "/".join([uuid] + selections[:i])
             items = [
                 set_item(sub_path, name, value)
-                for name, value in request_handler.get(
+                for name, value in storage_service.get(
                     sub_path, params
                 ).items()
             ]

@@ -15,12 +15,9 @@ from antarest.storage.web.html_exception import (
     HtmlException,
     stop_and_return_on_html_exception,
 )
-from antarest.storage.web.request_handler import (
-    RequestHandler,
-)
-from antarest.storage.service import StorageServiceParameters
+from antarest.storage.service import StorageServiceParameters, StorageService
 
-request_handler: RequestHandler
+storage_service: StorageService
 
 
 def sanitize_uuid(uuid: str) -> str:
@@ -41,7 +38,7 @@ def _construct_parameters(
     return request_parameters
 
 
-def create_study_routes(request_handler: RequestHandler) -> Blueprint:
+def create_study_routes(storage_service: StorageService) -> Blueprint:
     bp = Blueprint("create_study_route", __name__)
 
     @bp.route("/studies", methods=["GET"])
@@ -59,7 +56,7 @@ def create_study_routes(request_handler: RequestHandler) -> Blueprint:
         tags:
           - Manage Studies
         """
-        available_studies = request_handler.get_studies_information()
+        available_studies = storage_service.get_studies_information()
         return jsonify(available_studies), HTTPStatus.OK.value
 
     @bp.route("/studies", methods=["POST"])
@@ -85,7 +82,7 @@ def create_study_routes(request_handler: RequestHandler) -> Blueprint:
 
         zip_binary = io.BytesIO(request.files["study"].read())
 
-        uuid = request_handler.import_study(zip_binary)
+        uuid = storage_service.import_study(zip_binary)
         content = "/studies/" + uuid
         code = HTTPStatus.CREATED.value
 
@@ -122,7 +119,7 @@ def create_study_routes(request_handler: RequestHandler) -> Blueprint:
           - Manage Data inside Study
         """
         parameters = _construct_parameters(request.args)
-        output = request_handler.get(path, parameters)
+        output = storage_service.get(path, parameters)
 
         return jsonify(output), 200
 
@@ -173,7 +170,7 @@ def create_study_routes(request_handler: RequestHandler) -> Blueprint:
             destination_study_name
         )
 
-        destination_uuid = request_handler.copy_study(
+        destination_uuid = storage_service.copy_study(
             src_uuid=source_uuid_sanitized,
             dest_study_name=destination_name_sanitized,
         )
@@ -211,7 +208,7 @@ def create_study_routes(request_handler: RequestHandler) -> Blueprint:
         """
         name_sanitized = sanitize_study_name(name)
 
-        uuid = request_handler.create_study(name_sanitized)
+        uuid = storage_service.create_study(name_sanitized)
 
         content = "/studies/" + uuid
         code = HTTPStatus.CREATED.value
@@ -259,7 +256,7 @@ def create_study_routes(request_handler: RequestHandler) -> Blueprint:
         compact: bool = "compact" in request.args
         outputs: bool = "no-output" not in request.args
 
-        content = request_handler.export_study(
+        content = storage_service.export_study(
             uuid_sanitized, compact, outputs
         )
 
@@ -295,7 +292,7 @@ def create_study_routes(request_handler: RequestHandler) -> Blueprint:
         """
         uuid_sanitized = sanitize_uuid(uuid)
 
-        request_handler.delete_study(uuid_sanitized)
+        storage_service.delete_study(uuid_sanitized)
         content = ""
         code = HTTPStatus.NO_CONTENT.value
 
@@ -332,7 +329,7 @@ def create_study_routes(request_handler: RequestHandler) -> Blueprint:
         if not new:
             raise HtmlException("empty body not authorized", 400)
 
-        request_handler.edit_study(path, new)
+        storage_service.edit_study(path, new)
         content = ""
         code = HTTPStatus.NO_CONTENT.value
 
@@ -374,7 +371,7 @@ def create_study_routes(request_handler: RequestHandler) -> Blueprint:
         zip_binary = io.BytesIO(request.files["output"].read())
 
         content = str(
-            request_handler.import_output(uuid_sanitized, zip_binary)
+            storage_service.import_output(uuid_sanitized, zip_binary)
         )
         code = HTTPStatus.ACCEPTED.value
 

@@ -8,7 +8,7 @@ from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
 )
 from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.web import RequestHandler
+from antarest.storage.service import StorageService
 
 
 @pytest.fixture
@@ -22,9 +22,9 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 
 
 @pytest.fixture
-def request_handler(
+def storage_service(
     tmp_path: str, project_path: Path, sta_mini_zip_path: Path
-) -> RequestHandler:
+) -> StorageService:
 
     path_studies = Path(tmp_path) / "studies"
 
@@ -33,7 +33,7 @@ def request_handler(
     with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
-    request_handler = RequestHandler(
+    storage_service = StorageService(
         study_factory=StudyFactory(),
         exporter=Exporter(),
         config=Config(
@@ -44,4 +44,4 @@ def request_handler(
         ),
     )
 
-    return request_handler
+    return storage_service
