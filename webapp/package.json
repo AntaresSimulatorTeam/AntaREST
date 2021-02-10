@@ -84,7 +84,7 @@
     ]
   },
   "proxy": "http://localhost:8080",
-  "homepage": "/",
+  "homepage": "./",
   "devDependencies": {
     "@types/classnames": "^2.2.10",
     "@types/debug": "^4.1.5",

@@ -32,7 +32,7 @@ def create_ui(storage_service: StorageService, config: Config) -> Blueprint:
     bp = Blueprint(
         "create_ui",
         __name__,
-        template_folder=str(config["main.res"] / "templates"),
+        template_folder=str(config["main.res"] / "webapp"),
     )
 
     @bp.route("/", methods=["GET", "POST"])
@@ -48,47 +48,12 @@ def create_ui(storage_service: StorageService, config: Config) -> Blueprint:
         tags:
           - UI
         """
-        status = ""
-
-        if request.method == "POST":
-            if "name" in request.form:
-                status = wrap_status(
-                    fnc=lambda: storage_service.create_study(
-                        request.form["name"]
-                    )
-                )
-
-            elif "delete-id" in request.form:  # DELETE
-                status = wrap_status(
-                    fnc=lambda: storage_service.delete_study(
-                        request.form.get("delete-id", "")
-                    )
-                )
-
-            elif "study" in request.files:
-                zip_binary = io.BytesIO(request.files["study"].read())
-                status = wrap_status(
-                    fnc=lambda: storage_service.import_study(zip_binary)
-                )
-
-        studies = storage_service.get_studies_information()
-        return render_template(
-            "home.html",
-            studies=studies,
-            size=len(studies),
-            status=status,
-            base_url=request.url_root,
-        )
-
-    @bp.route("/ui/static/<path:filename>")
-    def serve_static_file(filename: Path) -> Any:
-        static_folder = get_local_path() / "static"
-        return send_from_directory(static_folder, filename)
+        return render_template("index.html")
 
     @bp.route("/viewer/<path:path>", methods=["GET"])
     def display_study(path: str) -> Any:
         def set_item(
-            sub_path: str, name: str, value: Any
+                sub_path: str, name: str, value: Any
         ) -> Tuple[str, str, str]:
             if isinstance(value, str) and "file/" in value:
                 return "link", name, f"/{value}"

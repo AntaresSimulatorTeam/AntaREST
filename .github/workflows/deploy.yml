@@ -16,6 +16,18 @@ jobs:
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
         uses: actions/checkout@v1
+      - name: Set up Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.x'
+      - name: Install dependencies
+        run: npm install
+        working-directory: webapp
+      - name: Build
+        run: bash ./build-front.sh
+        working-directory: scripts
+      - name: Copy build to app resources
+        run: cp -r webapp/build resources/webapp
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
