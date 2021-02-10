@@ -8,8 +8,8 @@ cd "$PROJECT_DIR" || exit
 source ./venv/bin/activate
 export PYTHONPATH=$PYTHONPATH:.
 
-export API_ANTARES_STUDIES_PATH="$PROJECT_DIR"/examples/studies
+export ANTAREST_CONF="$PROJECT_DIR"/resources/application.yaml
 
 GUNICORN_CONFIG="$PROJECT_DIR"/conf/gunicorn.py
 
-gunicorn --config "$GUNICORN_CONFIG" api_iso_antares.wsgi:app
+gunicorn --config "$GUNICORN_CONFIG" antarest.wsgi:app

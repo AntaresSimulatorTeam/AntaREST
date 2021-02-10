@@ -11,9 +11,9 @@ def get_env_var(env_var_name: str) -> str:
     return env_var
 
 
-env_var_studies_path = get_env_var("API_ANTARES_STUDIES_PATH")
-studies_path = Path(env_var_studies_path)
+env_var_conf_path = get_env_var("ANTAREST_CONF")
+conf_path = Path(env_var_conf_path)
 
-app = main(studies_path)
+app = main(conf_path)
 
 app.config["DEBUG"] = False
