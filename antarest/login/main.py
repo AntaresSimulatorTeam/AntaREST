@@ -6,7 +6,7 @@ from flask_jwt_extended import JWTManager  # type: ignore
 from sqlalchemy.engine import Engine  # type: ignore
 
 from antarest.common.config import Config
-from antarest.login.repository import UserRepository
+from antarest.login.repository import UserRepository, GroupRepository
 from antarest.login.service import LoginService
 from antarest.login.web import create_login_api
 
@@ -19,8 +19,9 @@ def build_login(
 ) -> None:
 
     if service is None:
-        repo = UserRepository(config, engine)
-        service = LoginService(user_repo=repo)
+        user_repo = UserRepository(config, engine)
+        group_repo = GroupRepository(config, engine)
+        service = LoginService(user_repo=user_repo, group_repo=group_repo)
 
     JWTManager(application)
     application.register_blueprint(create_login_api(service, config))

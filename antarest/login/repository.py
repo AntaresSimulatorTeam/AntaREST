@@ -6,7 +6,7 @@ from sqlalchemy.engine import Engine  # type: ignore
 from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 
 from antarest.common.config import Config
-from antarest.login.model import User, Role, Password
+from antarest.login.model import User, Role, Password, Group
 
 
 @contextmanager
@@ -22,6 +22,32 @@ def session_scope(engine: Engine) -> Generator[Session, Any, Any]:
         raise
     finally:
         sess.close()
+
+
+class GroupRepository:
+    def __init__(self, config: Config, engine: Engine):
+        self.engine = engine
+
+    def save(self, group: Group) -> Group:
+        with session_scope(self.engine) as sess:
+            sess.add(group)
+            sess.commit()
+            return group
+
+    def get(self, id: int) -> Optional[Group]:
+        with session_scope(self.engine) as sess:
+            group: Group = sess.query(Group).get(id)
+            return group
+
+    def get_all(self) -> List[Group]:
+        with session_scope(self.engine) as sess:
+            groups: List[Group] = sess.query(Group).all()
+            return groups
+
+    def delete(self, id: int) -> None:
+        with session_scope(self.engine) as sess:
+            g = sess.query(Group).get(id)
+            sess.delete(g)
 
 
 class UserRepository:
