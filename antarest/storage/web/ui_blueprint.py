@@ -53,7 +53,7 @@ def create_ui(storage_service: StorageService, config: Config) -> Blueprint:
     @bp.route("/viewer/<path:path>", methods=["GET"])
     def display_study(path: str) -> Any:
         def set_item(
-                sub_path: str, name: str, value: Any
+            sub_path: str, name: str, value: Any
         ) -> Tuple[str, str, str]:
             if isinstance(value, str) and "file/" in value:
                 return "link", name, f"/{value}"

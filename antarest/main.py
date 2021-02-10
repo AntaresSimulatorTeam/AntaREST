@@ -64,7 +64,9 @@ def main(config_file: Path) -> Flask:
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
 
-    application = Flask(__name__, static_url_path='/static', static_folder=str(res / 'webapp'))
+    application = Flask(
+        __name__, static_url_path="/static", static_folder=str(res / "webapp")
+    )
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
     application.config["SECRET_KEY"] = config["main.jwt.key"]
     application.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
