@@ -13,4 +13,4 @@ COPY ./static /static
 RUN pip3 install --upgrade pip \
     && pip3 install -r /conf/requirements.txt
 
-ENTRYPOINT gunicorn --config /conf/gunicorn.py antarest.storage.wsgi:app
+ENTRYPOINT gunicorn --config /conf/gunicorn.py antarest:main
