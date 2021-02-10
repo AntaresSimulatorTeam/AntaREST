@@ -12,7 +12,6 @@ from antarest.common.config import ConfigYaml
 from antarest.common.persistence import Base
 from antarest.common.reverse_proxy import ReverseProxyMiddleware
 from antarest.common.swagger import build_swagger
-from antarest.launcher.main import build_launcher
 from antarest.login.main import build_login
 from antarest.storage.main import build_storage
 

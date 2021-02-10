@@ -1,9 +1,8 @@
 import uuid
 from typing import Any
-from antarest.login.model import User
 
-from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey  # type: ignore
+from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.common.persistence import DTO, Base
 
@@ -15,7 +14,7 @@ users_metadata = Table(
 )
 
 
-class Metadata(DTO, Base):
+class Metadata(DTO, Base):  # type: ignore
     __tablename__ = "metadata"
 
     id = Column(

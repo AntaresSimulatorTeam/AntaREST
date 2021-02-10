@@ -1,6 +1,6 @@
 from typing import Any
 
-from sqlalchemy import Column, Integer, Sequence, String, BigInteger, Table, ForeignKey  # type: ignore
+from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from werkzeug.security import (

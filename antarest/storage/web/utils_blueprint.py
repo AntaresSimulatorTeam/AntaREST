@@ -111,9 +111,7 @@ def create_utils_routes(storage_service: StorageService) -> Blueprint:
     def version() -> Any:
         version_data = {"version": __version__}
 
-        commit_id = get_commit_id(
-            storage_service.storage_service.path_resources
-        )
+        commit_id = get_commit_id(storage_service.path_resources)
         if commit_id is not None:
             version_data["gitcommit"] = commit_id
 

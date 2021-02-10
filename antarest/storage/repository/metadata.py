@@ -1,9 +1,7 @@
 from typing import Optional, List
 
-from sqlalchemy.engine import Engine  # type: ignore
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session  # type: ignore
 
-from antarest.common.persistence import session_scope
 from antarest.storage.model import Metadata
 
 
@@ -27,4 +25,4 @@ class StudyMetadataRepository:
     def delete(self, id: int) -> None:
         u: Metadata = self.session.query(Metadata).get(id)
         self.session.delete(u)
-        self.session.flush()
+        self.session.commit()

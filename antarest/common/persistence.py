@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from typing import Any, Generator
 
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Engine  # type: ignore
 from sqlalchemy.ext.declarative import declarative_base  # type: ignore
 from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 
