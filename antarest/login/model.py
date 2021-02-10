@@ -1,17 +1,15 @@
-from typing import Any, Optional, Union
+from typing import Any
 
 from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from werkzeug.security import (
-    safe_str_cmp,
     generate_password_hash,
     check_password_hash,
 )
 
 from antarest.common.custom_types import JSON
-from antarest.common.dto import DTO, Base
-
+from antarest.common.persistence import DTO, Base
 
 users_groups = Table(
     "users_groups",

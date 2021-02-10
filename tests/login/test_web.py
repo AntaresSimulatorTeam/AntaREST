@@ -21,7 +21,7 @@ def create_client(service: Mock) -> Any:
         app,
         service=service,
         config=Config({"main": {"res": Path()}}),
-        engine=Mock(),
+        db_session=Mock(),
     )
     return app.test_client()
 

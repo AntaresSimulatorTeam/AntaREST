@@ -91,10 +91,10 @@ python ./api_iso_antares/main.py -s $STUDIES_ABSOLUTE_PATH
 pip install -r ./requirements.txt
 export PYTHONPATH=$PYTHONPATH:.
 
-export API_ANTARES_STUDIES_PATH=$STUDIES_ABSOLUTE_PATH
+export ANTAREST_CONF=$ANTAREST_CONF_YAML_PATH
 export GUNICORN_WORKERS=4
 
-gunicorn --config "$YOUR_GUNICORN_CONFIG" api_iso_antares.wsgi:app
+gunicorn --config "$YOUR_GUNICORN_CONFIG" antarest.wsgi:app
 ```
 
 * $YOUR_GUNICORN_CONFIG is the path of a gunicorn server configuration file

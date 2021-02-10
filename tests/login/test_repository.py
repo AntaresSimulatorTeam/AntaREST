@@ -1,19 +1,21 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 
 from antarest.common.config import Config
-from antarest.common.dto import Base
+from antarest.common.persistence import Base
 from antarest.login.model import User, Role, Password, Group
 from antarest.login.repository import UserRepository, GroupRepository
 
 
 def test_users():
     engine = create_engine("sqlite:///:memory:", echo=True)
-
+    session = scoped_session(
+        sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    )
     Base.metadata.create_all(engine)
 
     repo = UserRepository(
-        config=Config({"login": {"admin": {"pwd": "admin"}}}), engine=engine
+        config=Config({"login": {"admin": {"pwd": "admin"}}}), session=session
     )
     a = User(
         name="a",
@@ -37,10 +39,13 @@ def test_users():
 
 def test_groups():
     engine = create_engine("sqlite:///:memory:", echo=True)
+    session = scoped_session(
+        sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    )
 
     Base.metadata.create_all(engine)
 
-    repo = GroupRepository(config=Config(), engine=engine)
+    repo = GroupRepository(config=Config(), session=session)
 
     a = Group(
         name="a",
