@@ -77,7 +77,6 @@ docs/_build/
 
 # PyBuilder
 target/
-resources/webapp/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -142,3 +141,7 @@ dmypy.json
 html/
 
 .mutmut-cache
+
+# CI build
+resources/webapp/
+resources/templates/index.html

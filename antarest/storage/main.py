@@ -9,7 +9,6 @@ from antarest.storage.repository.antares_io.exporter.export_file import (
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.service import StorageService
 from antarest.storage.web.studies_blueprint import create_study_routes
-from antarest.storage.web.ui_blueprint import create_ui
 from antarest.storage.web.utils_blueprint import create_utils_routes
 
 
@@ -23,6 +22,5 @@ def build_storage(
         study_factory=StudyFactory(), exporter=Exporter(), config=config
     )
 
-    application.register_blueprint(create_ui(storage_service, config))
     application.register_blueprint(create_study_routes(storage_service))
     application.register_blueprint(create_utils_routes(storage_service))
