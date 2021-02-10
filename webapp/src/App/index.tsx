@@ -15,7 +15,6 @@ import { getStudies } from '../services/api/study';
 import LoginWrapper from './LoginWrapper';
 import theme, { TOOLBAR_HEIGHT } from './theme';
 
-const logInfo = debug('antares:app:info');
 const logError = debug('antares:app:error');
 
 const reduxStore = createStore();

@@ -5,7 +5,7 @@ on:
       - '**'
 
 jobs:
-  lint:
+  python-lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
@@ -24,7 +24,7 @@ jobs:
         run: |
           mypy
 
-  test:
+  python-test:
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 9
@@ -56,4 +56,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  npm-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 9
+      matrix:
+        os: [ windows-latest, ubuntu-latest, macOS-latest ]
+        node-version: [ 10.x, 14.x ]
+    steps:
+      - name: Checkout github repo
+        uses: actions/checkout@v1
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies
+        run: npm install
+        working-directory: webapp
+      - name: Build
+        run: npm run build
+        working-directory: webapp
+#      - name: Run tests
+#        run: npm run test
+#        working-directory: webapp
 

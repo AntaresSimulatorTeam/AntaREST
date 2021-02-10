@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import Optional, Tuple, Any
 
-from flask import Flask
+from flask import Flask, render_template
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 
@@ -64,10 +64,27 @@ def main(config_file: Path) -> Flask:
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
 
-    application = Flask(__name__)
+    application = Flask(
+        __name__, static_url_path="/static", static_folder=str(res / "webapp")
+    )
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
     application.config["SECRET_KEY"] = config["main.jwt.key"]
     application.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
+
+    @application.route("/", methods=["GET", "POST"])
+    def home() -> Any:
+        """
+        Home ui
+        ---
+        responses:
+            '200':
+              content:
+                 application/html: {}
+              description: html home page
+        tags:
+          - UI
+        """
+        return render_template("index.html")
 
     @application.teardown_appcontext
     def shutdown_session(exception: Any = None) -> None:

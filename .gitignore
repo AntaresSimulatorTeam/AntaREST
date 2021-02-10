@@ -141,3 +141,7 @@ dmypy.json
 html/
 
 .mutmut-cache
+
+# CI build
+resources/webapp/
+resources/templates/index.html
