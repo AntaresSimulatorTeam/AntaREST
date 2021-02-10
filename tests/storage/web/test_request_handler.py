@@ -18,9 +18,7 @@ from antarest.storage.web.html_exception import (
     StudyNotFoundError,
     StudyValidationError,
 )
-from antarest.storage.web.request_handler import (
-    RequestHandlerParameters,
-)
+from antarest.storage.service import StorageServiceParameters
 
 
 @pytest.mark.unit_test
@@ -65,7 +63,7 @@ def test_get(tmp_path: str, project_path) -> None:
         ),
     )
 
-    parameters = RequestHandlerParameters(depth=2)
+    parameters = StorageServiceParameters(depth=2)
 
     output = request_handler.get(
         route=f"study2.py/{sub_route}", parameters=parameters

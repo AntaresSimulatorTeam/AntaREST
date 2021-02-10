@@ -9,7 +9,7 @@ from flask import Blueprint, request, render_template, send_from_directory
 
 from antarest.common.config import Config
 from antarest.storage.web import RequestHandler
-from antarest.storage.web.request_handler import RequestHandlerParameters
+from antarest.storage.service import StorageServiceParameters
 
 
 def get_local_path() -> Path:
@@ -72,7 +72,7 @@ def create_ui(request_handler: RequestHandler, config: Config) -> Blueprint:
                     fnc=lambda: request_handler.import_study(zip_binary)
                 )
 
-        studies = request_handler.get_studies_informations()
+        studies = request_handler.get_studies_information()
         return render_template(
             "home.html",
             studies=studies,
@@ -100,8 +100,8 @@ def create_ui(request_handler: RequestHandler, config: Config) -> Blueprint:
 
         parts = path.split("/")
         uuid, selections = parts[0], parts[1:]
-        params = RequestHandlerParameters(depth=1)
-        info = request_handler.get_study_informations(uuid=uuid)["antares"]
+        params = StorageServiceParameters(depth=1)
+        info = request_handler.get_study_information(uuid=uuid)["antares"]
 
         # [
         #  (selected, [(type, name, url), ...]),

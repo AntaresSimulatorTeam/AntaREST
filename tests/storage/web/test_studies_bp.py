@@ -17,9 +17,7 @@ from antarest.storage.web.html_exception import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
 )
-from antarest.storage.web.request_handler import (
-    RequestHandlerParameters,
-)
+from antarest.storage.service import StorageServiceParameters
 
 
 @pytest.mark.unit_test
@@ -27,7 +25,7 @@ def test_server() -> None:
     mock_handler = Mock()
     mock_handler.get.return_value = {}
 
-    parameters = RequestHandlerParameters()
+    parameters = StorageServiceParameters()
 
     app = Flask(__name__)
     build_storage(
@@ -71,14 +69,14 @@ def test_server_with_parameters() -> None:
     client = app.test_client()
     result = client.get("/studies/study1?depth=4")
 
-    parameters = RequestHandlerParameters(depth=4)
+    parameters = StorageServiceParameters(depth=4)
 
     assert result.status_code == 200
     mock_handler.get.assert_called_once_with("study1", parameters)
 
     result = client.get("/studies/study2?depth=WRONG_TYPE")
 
-    excepted_parameters = RequestHandlerParameters()
+    excepted_parameters = StorageServiceParameters()
 
     assert result.status_code == 200
     mock_handler.get.assert_called_with("study2", excepted_parameters)

@@ -17,8 +17,8 @@ from antarest.storage.web.html_exception import (
 )
 from antarest.storage.web.request_handler import (
     RequestHandler,
-    RequestHandlerParameters,
 )
+from antarest.storage.service import StorageServiceParameters
 
 request_handler: RequestHandler
 
@@ -33,8 +33,8 @@ def sanitize_study_name(name: str) -> str:
 
 def _construct_parameters(
     params: Any,
-) -> RequestHandlerParameters:
-    request_parameters = RequestHandlerParameters()
+) -> StorageServiceParameters:
+    request_parameters = StorageServiceParameters()
     request_parameters.depth = params.get(
         "depth", request_parameters.depth, type=int
     )
@@ -59,7 +59,7 @@ def create_study_routes(request_handler: RequestHandler) -> Blueprint:
         tags:
           - Manage Studies
         """
-        available_studies = request_handler.get_studies_informations()
+        available_studies = request_handler.get_studies_information()
         return jsonify(available_studies), HTTPStatus.OK.value
 
     @bp.route("/studies", methods=["POST"])

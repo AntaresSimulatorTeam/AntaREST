@@ -6,7 +6,7 @@ from flask import Flask
 from antarest.common.custom_types import SUB_JSON
 from antarest.storage.main import build_storage
 from antarest.storage.web import RequestHandler
-from antarest.storage.web.request_handler import RequestHandlerParameters
+from antarest.storage.service import StorageServiceParameters
 
 
 def assert_url_content(
@@ -31,7 +31,7 @@ def assert_with_errors(
     assert res == new
 
     res = request_handler.get(
-        route=url, parameters=RequestHandlerParameters(depth=-1)
+        route=url, parameters=StorageServiceParameters(depth=-1)
     )
     assert res == new
 

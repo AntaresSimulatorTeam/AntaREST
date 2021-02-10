@@ -11,7 +11,7 @@ from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.storage.main import build_storage
 from antarest.storage.web import RequestHandler
-from antarest.storage.web.request_handler import RequestHandlerParameters
+from antarest.storage.service import StorageServiceParameters
 
 
 def assert_url_content(
@@ -34,7 +34,7 @@ def assert_with_errors(
     url = url[len("/studies/") :]
     print(url)
     assert (
-        request_handler.get(route=url, parameters=RequestHandlerParameters())
+        request_handler.get(route=url, parameters=StorageServiceParameters())
         == expected_output
     )
 
@@ -364,7 +364,7 @@ def test_sta_mini_copy(request_handler: RequestHandler) -> None:
 
     destination_folder = url_destination.split("/")[2]
 
-    parameters = RequestHandlerParameters(depth=-1)
+    parameters = StorageServiceParameters(depth=-1)
     data_source = request_handler.get(source_study_name, parameters)
     data_destination = request_handler.get(destination_folder, parameters)
 
