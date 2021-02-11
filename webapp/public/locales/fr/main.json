@@ -7,5 +7,6 @@
   "create": "Créer",
   "name": "Nom",
   "import": "Importer",
-  "allStudies": "Toutes les études"
+  "allStudies": "Toutes les études",
+  "loginError": "Echec de l'authentification"
 }

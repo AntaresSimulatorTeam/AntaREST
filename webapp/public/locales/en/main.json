@@ -7,5 +7,6 @@
   "create": "Create",
   "name": "Name",
   "import": "Import",
-  "allStudies": "All studies"
+  "allStudies": "All studies",
+  "loginError": "Failed to authenticate"
 }

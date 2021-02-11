@@ -57,6 +57,7 @@
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
     "reselect": "^4.0.0",
+    "swagger-ui-react": "^3.42.0",
     "uuid": "^7.0.2",
     "web-streams-polyfill": "^2.1.0"
   },
@@ -93,6 +94,7 @@
     "@types/react-router-dom": "^5.1.3",
     "@types/react-virtualized": "^9.21.10",
     "@types/react-window": "^1.8.2",
+    "@types/swagger-ui-react": "^3.35.0",
     "@typescript-eslint/eslint-plugin": "^2.23.0",
     "@typescript-eslint/parser": "^2.23.0",
     "babel-plugin-import": "^1.13.0",
