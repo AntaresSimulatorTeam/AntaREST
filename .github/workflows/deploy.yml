@@ -16,6 +16,18 @@ jobs:
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
         uses: actions/checkout@v1
+      - name: Set up Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.x'
+      - name: Install dependencies
+        run: npm install
+        working-directory: webapp
+      - name: Build
+        run: bash ./build-front.sh
+        working-directory: scripts
+      - name: Copy build to app resources
+        run: cp -r webapp/build resources/webapp
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
@@ -28,13 +40,13 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > ./resources/commit_id
-          pyinstaller -F antarest/storage_api/main.py -n server --add-data resources:resources
+          pyinstaller -F antarest/main.py -n server --add-data resources:resources
           dist/server -v
       - name: Generate binary Windows
         if: matrix.os == 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
-          pyinstaller -F antarest\storage_api\main.py -n server --add-data ".\resources;.\resources"
+          pyinstaller -F antarest\main.py -n server --add-data ".\resources;.\resources"
           dist\server.exe -v
       - name: Archive server binary
         uses: actions/upload-artifact@v2

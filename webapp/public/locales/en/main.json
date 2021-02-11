@@ -1,0 +1,12 @@
+{
+  "connexion": "Connexion",
+  "password": "Password",
+  "delete": "Delete",
+  "archive": "Archive",
+  "export": "Export",
+  "create": "Create",
+  "name": "Name",
+  "import": "Import",
+  "allStudies": "All studies",
+  "loginError": "Failed to authenticate"
+}

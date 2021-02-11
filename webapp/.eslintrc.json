@@ -1,0 +1,63 @@
+{
+    "env": {
+        "browser": true,
+        "es6": true
+    },
+    "extends": [
+        "plugin:@typescript-eslint/recommended",
+        "airbnb"
+    ],
+    "globals": {
+        "Atomics": "readonly",
+        "SharedArrayBuffer": "readonly"
+    },
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaFeatures": {
+            "jsx": true
+        },
+        "ecmaVersion": 2018,
+        "sourceType": "module"
+    },
+    "plugins": [
+        "react",
+        "@typescript-eslint"
+    ],
+    "rules": {
+        "import/extensions": [
+            "error",
+            "ignorePackages",
+            {
+              "js": "never",
+              "jsx": "never",
+              "ts": "never",
+              "tsx": "never"
+            }
+         ],
+         "max-len": "off",
+         "react/jsx-filename-extension": [2, { "extensions": [".jsx", ".tsx"] }],
+         "@typescript-eslint/explicit-function-return-type": "off",
+         "import/no-extraneous-dependencies": "off",
+         // prettier compat
+         "implicit-arrow-linebreak": "off",
+         "operator-linebreak": "off",
+         "object-curly-newline": "off",
+         "react/jsx-curly-newline": "off"
+    },
+    "overrides": [
+        {
+          // enable the rule specifically for TypeScript files
+          "files": ["*.ts"],
+          "rules": {
+            "@typescript-eslint/explicit-function-return-type": ["warn"]
+          }
+        }
+      ],
+    "settings": {
+        "import/resolver": {
+            "node": {
+                "extensions": [".js", ".jsx", ".ts", ".tsx"]
+            }
+        }
+    }
+}

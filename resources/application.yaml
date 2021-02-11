@@ -1,0 +1,14 @@
+main:
+  jwt:
+    key: super-secret
+  db:
+    url: "sqlite:///database.db"
+
+login:
+  admin:
+    pwd: admin
+
+storage:
+  studies: examples/studies
+
+debug: true
