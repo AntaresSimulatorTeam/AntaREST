@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import debug from 'debug';
-import { AppState } from '../../reducers';
-import StudyCreationTools from '../../../components/StudyCreationTools';
-import StudyListing from '../../../components/StudyListing';
-import { initStudies } from '../../../ducks/study';
-import { getStudies } from '../../../services/api/study';
-import MainContentLoader from '../../../components/ui/loaders/MainContentLoader';
+import { AppState } from '../reducers';
+import StudyCreationTools from '../../components/StudyCreationTools';
+import StudyListing from '../../components/StudyListing';
+import { initStudies } from '../../ducks/study';
+import { getStudies } from '../../services/api/study';
+import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
 
 const logError = debug('antares:app:error');
 

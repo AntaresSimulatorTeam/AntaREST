@@ -2,7 +2,6 @@ from typing import Any, List, Tuple
 
 from flask import request, jsonify
 from flask_swagger import swagger  # type: ignore
-from flask_swagger_ui import get_swaggerui_blueprint  # type: ignore
 
 from antarest.common.custom_types import JSON
 from antarest import __version__
@@ -121,10 +120,3 @@ def build_swagger(application: Any) -> None:
         specification["servers"] = [{"url": request.url_root}]
 
         return jsonify(specification)
-
-    swaggerui_blueprint = get_swaggerui_blueprint(
-        "/docs",
-        "/swagger.json",
-        config={"app_name": "Test application", "validatorUrl": None},
-    )
-    application.register_blueprint(swaggerui_blueprint)

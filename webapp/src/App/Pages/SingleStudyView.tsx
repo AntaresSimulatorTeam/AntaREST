@@ -3,8 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Breadcrumbs, Typography, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
-import StudyView from '../../../components/StudyView';
-import { getStudyData } from '../../../services/api/study';
+import StudyView from '../../components/StudyView';
+import { getStudyData } from '../../services/api/study';
 
 const logError = debug('antares:singlestudyview:error');
 

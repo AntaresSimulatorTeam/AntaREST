@@ -10,6 +10,7 @@ import StudyManagement from './Pages/StudyManagement';
 import SingleStudyView from './Pages/SingleStudyView';
 import LoginWrapper from './LoginWrapper';
 import theme, { TOOLBAR_HEIGHT } from './theme';
+import SwaggerDoc from './Pages/SwaggerDoc';
 
 const reduxStore = createStore();
 
@@ -28,6 +29,9 @@ const App: React.FC<{}> = () => (
                 </Route>
                 <Route path="/study/:studyId" key="module">
                   <SingleStudyView />
+                </Route>
+                <Route path="/swagger">
+                  <SwaggerDoc />
                 </Route>
               </Switch>
             </div>

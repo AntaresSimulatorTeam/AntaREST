@@ -34,7 +34,7 @@ const MenuBar = () => {
           </div>
         </div>
         <Typography className={classes.menuitem}>
-          <a href={`${config.downloadHostUrl || config.baseUrl}/docs`} target="_blank" rel="noopener noreferrer">API</a>
+          <Link to="/swagger">API</Link>
         </Typography>
         <Typography className={classes.menuitem}>
           <a href="https://api-antares.readthedocs.io/en/dev/inside.html" target="_blank" rel="noopener noreferrer">Docs</a>
