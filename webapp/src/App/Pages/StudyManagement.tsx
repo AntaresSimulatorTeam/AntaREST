@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import debug from 'debug';
@@ -38,8 +38,7 @@ const StudyManagement = (props: PropTypes) => {
   const { studies, loadStudies } = props;
   const classes = useStyles();
   const [loaded, setLoaded] = useState(studies.length !== 0);
-
-  const init = async () => {
+  const init = useCallback(async () => {
     if (studies.length === 0) {
       try {
         const allStudies = await getStudies();
@@ -49,11 +48,11 @@ const StudyManagement = (props: PropTypes) => {
         logError('woops', e);
       }
     }
-  };
+  }, [studies, loadStudies]);
 
   useEffect(() => {
     init();
-  }, []);
+  }, [init]);
 
 
   return (

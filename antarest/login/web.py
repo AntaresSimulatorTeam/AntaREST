@@ -38,8 +38,8 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
         # Identity can be any data that is json serializable
         access_token = create_access_token(identity=user.to_dict())
-        resp = jsonify({"user": user.name, "token": access_token})
-        #set_access_cookies(resp, access_token)
+        resp = jsonify({"user": user.name, "access_token": access_token})
+        # set_access_cookies(resp, access_token)
         return (
             resp,
             200,

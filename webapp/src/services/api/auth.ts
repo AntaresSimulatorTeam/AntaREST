@@ -34,7 +34,8 @@ export async function login(
   const res = await rawAxiosInstance.post('/login', data, { headers: {
     'Content-Type': 'application/x-www-form-urlencoded',
   } });
-  return res.data;
+  const userInfo = await res.data;
+  return { user: userInfo.user, accessToken: userInfo.access_token };
 }
 
 export default {};

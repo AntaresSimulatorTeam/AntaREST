@@ -2,7 +2,7 @@ import { Action, AnyAction } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import { loadState, saveState } from '../services/utils/localStorage';
 import { UserInfo } from '../common/types';
-import client, { setAuth } from '../services/api/client';
+import { setAuth } from '../services/api/client';
 import { AppState } from '../App/reducers';
 
 /** ******************************************* */
@@ -25,7 +25,7 @@ export const persistState = (state: AuthState): void => {
   }
 };
 
-setAuth(initialState.user?.token);
+setAuth(initialState.user?.accessToken);
 
 /** ******************************************* */
 /* Actions                                      */
@@ -37,8 +37,7 @@ export interface LoginAction extends Action {
 }
 
 export const loginUser = (user: UserInfo): ThunkAction<void, AppState, unknown, LoginAction> => (dispatch): void => {
-  console.log(user)
-  setAuth(user.token);
+  setAuth(user.accessToken);
   dispatch({
     type: 'AUTH/LOGIN',
     payload: user,

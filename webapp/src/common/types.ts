@@ -21,7 +21,7 @@ export interface StudyMetadata {
 
 export interface UserInfo {
   user: string;
-  token: string;
+  accessToken: string;
 }
 
 export default {};

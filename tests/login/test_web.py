@@ -40,7 +40,9 @@ def test_auth() -> None:
     service.authenticate.return_value = User(id=0, name="admin")
 
     client = create_client(service)
-    res = client.post("/login", json={"username": "admin", "password": "admin"})
+    res = client.post(
+        "/login", json={"username": "admin", "password": "admin"}
+    )
 
     assert res.status_code == 200
     assert res.json["access_token"]
@@ -54,7 +56,9 @@ def test_auth_fail() -> None:
     service.authenticate.return_value = None
 
     client = create_client(service)
-    res = client.post("/login", json={"username": "admin", "password": "admin"})
+    res = client.post(
+        "/login", json={"username": "admin", "password": "admin"}
+    )
 
     assert res.status_code == 401
 
