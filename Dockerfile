@@ -3,7 +3,7 @@ FROM python:3.6-alpine3.8
 ENV GUNICORN_WORKERS ALL_AVAILABLE
 ENV ANTAREST_CONF /resources/application.yaml
 
-RUN mkdir -p ./exemples/studies
+RUN mkdir -p examples/studies
 
 COPY ./requirements.txt ./conf/* /conf/
 COPY ./antarest /antarest
