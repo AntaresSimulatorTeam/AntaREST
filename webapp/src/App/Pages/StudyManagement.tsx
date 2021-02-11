@@ -43,9 +43,10 @@ const StudyManagement = (props: PropTypes) => {
       try {
         const allStudies = await getStudies();
         loadStudies(allStudies);
-        setLoaded(true);
       } catch (e) {
         logError('woops', e);
+      } finally {
+        setLoaded(true);
       }
     }
   }, [studies, loadStudies]);

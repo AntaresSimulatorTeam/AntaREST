@@ -10,3 +10,5 @@ login:
 
 storage:
   studies: examples/studies
+
+debug: true

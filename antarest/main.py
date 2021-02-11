@@ -59,7 +59,7 @@ def flask_app(config_file: Path) -> Flask:
     config = ConfigYaml(res=res, file=config_file)
 
     # Database
-    engine = create_engine(config["main.db.url"], echo=True)
+    engine = create_engine(config["main.db.url"], echo=config["debug"])
     Base.metadata.create_all(engine)
     db_session = scoped_session(
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
