@@ -54,7 +54,7 @@ def get_local_path() -> Path:
         return Path(os.path.abspath(""))
 
 
-def main(config_file: Path) -> Flask:
+def flask_app(config_file: Path) -> Flask:
     res = get_local_path() / "resources"
     config = ConfigYaml(res=res, file=config_file)
 
@@ -95,7 +95,6 @@ def main(config_file: Path) -> Flask:
     build_login(application, config, db_session)
     build_swagger(application)
 
-    application.run(debug=False, host="0.0.0.0", port=8080)
     return application
 
 
@@ -106,6 +105,6 @@ if __name__ == "__main__":
         print(__version__)
         sys.exit()
     if config_file:
-        main(config_file)
+        flask_app(config_file).run(debug=False, host="0.0.0.0", port=8080)
     else:
         raise argparse.ArgumentError("Please provide the path for studies.")
