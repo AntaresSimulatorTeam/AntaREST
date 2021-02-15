@@ -1,6 +1,10 @@
 import debug from 'debug';
+import axios from 'axios';
+import { initAxiosClient } from './api/client';
+import { initRawAxiosClient } from './api/auth';
 
 const info = debug('antares:config:info');
+const warn = debug('antares:config:warn');
 
 export interface Config {
   baseUrl: string;
@@ -12,7 +16,7 @@ export interface Config {
   downloadHostUrl?: string;
 }
 
-const config: Config = {
+let config: Config = {
   baseUrl: '',
   applicationHome: '',
   restEndpoint: '/',
@@ -23,7 +27,7 @@ const config: Config = {
 if (process.env.NODE_ENV === 'development') {
   config.applicationHome = '';
   config.baseUrl = 'http://localhost:3000';
-  config.wsUrl = 'ws://localhost:8000';
+  config.wsUrl = 'ws://localhost:8080';
   config.downloadHostUrl = 'http://localhost:8080';
   localStorage.setItem('debug', 'antares:*');
 } else {
@@ -33,4 +37,21 @@ if (process.env.NODE_ENV === 'development') {
 
 info('config is', config);
 
-export default config;
+export const getConfig = (): Config => config;
+
+export const initConfig = async (callback: any): Promise<void> => {
+  try {
+    const res = await axios.get('/config.json', { baseURL: '/' });
+    config = {
+      ...config,
+      ...res,
+    };
+  } catch (e) {
+    warn('Failed to retrieve site config. Will use default env configuration.');
+  }
+
+  initAxiosClient(config);
+  initRawAxiosClient(config);
+
+  callback();
+};
