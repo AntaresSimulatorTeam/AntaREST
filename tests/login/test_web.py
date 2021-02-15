@@ -1,3 +1,5 @@
+import base64
+import json
 from pathlib import Path
 from typing import Any, Dict, Tuple
 from unittest.mock import Mock
@@ -61,6 +63,22 @@ def test_auth_fail() -> None:
     )
 
     assert res.status_code == 401
+
+
+@pytest.mark.unit_test
+def test_refresh() -> None:
+    service = Mock()
+    service.get_user.return_value = User(id=0, name="admin", role=Role.USER)
+
+    client = create_client(service)
+    res = client.post("/refresh", headers=get_token())
+
+    assert res.status_code == 200
+    data = res.json
+
+    meta, b64, sign = data["access_token"].split(".")
+    identity = json.loads(base64.b64decode(b64))["identity"]
+    assert Role.USER == identity["role"]
 
 
 @pytest.mark.unit_test
