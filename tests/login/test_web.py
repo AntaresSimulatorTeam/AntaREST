@@ -20,7 +20,7 @@ def create_client(service: Mock) -> Any:
     build_login(
         app,
         service=service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config({"main": {"res": Path(), "local": False}}),
         db_session=Mock(),
     )
     return app.test_client()
