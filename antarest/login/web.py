@@ -7,6 +7,7 @@ from flask_jwt_extended import (  # type: ignore
     create_access_token,
     get_jwt_identity,
     create_refresh_token,
+    jwt_required,
 )
 
 from antarest.common.auth import Auth
@@ -24,6 +25,17 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     auth = Auth(config)
 
+    def generate_tokens(user: User) -> Any:
+        access_token = create_access_token(identity=user.to_dict())
+        refresh_token = create_refresh_token(identity=user.to_dict())
+        return jsonify(
+            {
+                "user": user.name,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+            }
+        )
+
     @bp.route("/login", methods=["POST"])
     def login() -> Any:
         username = request.form.get("username") or request.json.get("username")
@@ -39,15 +51,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
             return jsonify({"msg": "Bad username or password"}), 401
 
         # Identity can be any data that is json serializable
-        access_token = create_access_token(identity=user.to_dict())
-        refresh_token = create_refresh_token(identity=user.to_dict())
-        resp = jsonify(
-            {
-                "user": user.name,
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-            }
-        )
+        resp = generate_tokens(user)
 
         return (
             resp,
@@ -55,13 +59,17 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
         )
 
     @bp.route("/refresh", methods=["POST"])
-    @auth.protected()
+    @jwt_required(refresh=True)  # type: ignore
     def refresh() -> Any:
         identity = get_jwt_identity()
         user = service.get_user(identity["id"])
         if user:
-            access_token = create_access_token(identity=identity)
-            return jsonify(access_token=access_token)
+            resp = generate_tokens(user)
+
+            return (
+                resp,
+                200,
+            )
         else:
             return "Token invalid", 403
 
