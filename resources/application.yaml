@@ -3,6 +3,7 @@ main:
     key: super-secret
   db:
     url: "sqlite:///database.db"
+  local: false
 
 login:
   admin:
