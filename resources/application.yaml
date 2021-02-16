@@ -1,4 +1,5 @@
 main:
+  local: true
   jwt:
     key: super-secret
   db:

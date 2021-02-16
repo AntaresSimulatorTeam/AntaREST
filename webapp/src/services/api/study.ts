@@ -1,7 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
 import { StudyMetadata, StudyListDTO } from '../../common/types';
-import config from '../config';
+import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 
 
@@ -34,7 +34,7 @@ export const deleteStudy = async (sid: string): Promise<any> => {
 };
 
 export const getExportUrl = (sid: string, compact = false, skipOutputs = false): string =>
-  `${config.downloadHostUrl || config.baseUrl}/studies/${sid}/export?compact=${compact}&skipOutputs=${skipOutputs}`;
+  `${getConfig().downloadHostUrl || (getConfig().baseUrl + getConfig().restEndpoint)}/studies/${sid}/export?compact=${compact}&skipOutputs=${skipOutputs}`;
 
 export const importStudy = async (file: File, onProgress?: (progress: number) => void): Promise<string> => {
   const options: AxiosRequestConfig = {};

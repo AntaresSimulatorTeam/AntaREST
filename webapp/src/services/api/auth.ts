@@ -2,16 +2,19 @@ import axios from 'axios';
 import querystring from 'querystring';
 import client from './client';
 import { UserInfo } from '../../common/types';
-import config from '../config';
+import { Config } from '../config';
 
 // instance sans crédentials et hooks pour l'authent
 const rawAxiosInstance = axios.create();
-rawAxiosInstance.defaults.baseURL = `${config.baseUrl}${config.restEndpoint}`;
 rawAxiosInstance.interceptors.request.use((axiosConfig) => {
   const cleanConfig = { ...axiosConfig };
   cleanConfig.headers.Authorization = '';
   return cleanConfig;
 });
+
+export const initRawAxiosClient = (config: Config): void => {
+  rawAxiosInstance.defaults.baseURL = `${config.baseUrl}${config.restEndpoint}`;
+};
 
 export const needAuth = async (): Promise<boolean> => {
   try {
