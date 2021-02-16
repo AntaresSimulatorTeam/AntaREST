@@ -120,4 +120,5 @@ if __name__ == "__main__":
     if config_file:
         flask_app(config_file).run(debug=False, host="0.0.0.0", port=8080)
     else:
-        raise ValueError("Config file not found. Set it by '-c' with command line or place it at ./config.yaml or ~/.antares/config.yaml")
+        raise ValueError("""Config file not found. Set it by '-c' with command
+ line or place it at ./config.yaml or ~/.antares/config.yaml""")
