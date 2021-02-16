@@ -28,11 +28,11 @@ def create_client(service: Mock) -> Any:
     return app.test_client()
 
 
-def get_token(role: str = Role.USER) -> Dict[str, str]:
+def get_access_token(role: str = Role.USER) -> Dict[str, str]:
     if role == Role.USER:
-        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MTIxNzU4MDYsIm5iZiI6MTYxMjE3NTgwNiwianRpIjoiMzkzM2M0MTItZGI2NS00YjUwLTk5ZGMtYzJlYjgxMTBkNTlhIiwiZXhwIjo5OTk5OTk5OTk5LCJpZGVudGl0eSI6eyJpZCI6MCwibmFtZSI6ImFkbWluIiwicm9sZSI6IlVTRVIifSwiZnJlc2giOmZhbHNlLCJ0eXBlIjoiYWNjZXNzIn0.uNpLBLA-tEM-TB8dv4wrj3KLGVQL9A07wjE3835GDjM"
+        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTYxMzQ2NzA3NSwianRpIjoiMTZlZDc3NmMtNmNlMS00MDdhLWFkMmItMzFiN2M0NjkyOTA5IiwibmJmIjoxNjEzNDY3MDc1LCJ0eXBlIjoiYWNjZXNzIiwic3ViIjp7ImlkIjoxLCJuYW1lIjoidXNlciIsInJvbGUiOiJVU0VSIn0sImNzcmYiOiI0ODIzYTlmYi1mNzJiLTQxZTAtODk1Mi1lYWU3MjlkNGUxZjQiLCJleHAiOjk5OTk5OTk5OTl9.QIcMKIEm_rE_0KrNgWMKE9ykAU9eHcbGckGFE8hhTk0"
     elif role == Role.ADMIN:
-        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MTIxNzU4MDYsIm5iZiI6MTYxMjE3NTgwNiwianRpIjoiMzkzM2M0MTItZGI2NS00YjUwLTk5ZGMtYzJlYjgxMTBkNTlhIiwiZXhwIjo5OTk5OTk5OTk5LCJpZGVudGl0eSI6eyJpZCI6MCwibmFtZSI6ImFkbWluIiwicm9sZSI6IkFETUlOIn0sImZyZXNoIjpmYWxzZSwidHlwZSI6ImFjY2VzcyJ9.Gbxhmz6XSke0OZ2-fwRFKoh8LOrFj0pbJeR3Vfj536Q"
+        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTYxMzQ2NzA3NSwianRpIjoiMTZlZDc3NmMtNmNlMS00MDdhLWFkMmItMzFiN2M0NjkyOTA5IiwibmJmIjoxNjEzNDY3MDc1LCJ0eXBlIjoiYWNjZXNzIiwic3ViIjp7ImlkIjowLCJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiQURNSU4ifSwiY3NyZiI6IjQ4MjNhOWZiLWY3MmItNDFlMC04OTUyLWVhZTcyOWQ0ZTFmNCIsImV4cCI6OTk5OTk5OTk5OX0.hvvGLnqbRzbuGyCmjuecX5-puMYDDOwsFXZHiUMJyFk"
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -71,13 +71,13 @@ def test_refresh() -> None:
     service.get_user.return_value = User(id=0, name="admin", role=Role.USER)
 
     client = create_client(service)
-    res = client.post("/refresh", headers=get_token())
+    res = client.post("/refresh", headers=get_access_token())
 
     assert res.status_code == 200
     data = res.json
 
     meta, b64, sign = data["access_token"].split(".")
-    identity = json.loads(base64.b64decode(b64))["identity"]
+    identity = json.loads(base64.b64decode(b64))["sub"]
     assert Role.USER == identity["role"]
 
 
@@ -89,7 +89,7 @@ def test_user_fail() -> None:
     ]
 
     client = create_client(service)
-    res = client.get("/users", headers=get_token())
+    res = client.get("/users", headers=get_access_token())
     assert res.status_code == 403
 
 
@@ -101,7 +101,7 @@ def test_user() -> None:
     ]
 
     client = create_client(service)
-    res = client.get("/users", headers=get_token(Role.ADMIN))
+    res = client.get("/users", headers=get_access_token(Role.ADMIN))
     assert res.status_code == 200
     assert res.json == [User(id=1, name="user", role=Role.USER).to_dict()]
 
@@ -112,7 +112,7 @@ def test_user_id() -> None:
     service.get_user.return_value = User(id=1, name="user", role=Role.USER)
 
     client = create_client(service)
-    res = client.get("/users/1", headers=get_token(Role.ADMIN))
+    res = client.get("/users/1", headers=get_access_token(Role.ADMIN))
     assert res.status_code == 200
     assert res.json == User(id=1, name="user", role=Role.USER).to_dict()
 
@@ -126,7 +126,7 @@ def test_user_create() -> None:
     client = create_client(service)
     res = client.post(
         "/users",
-        headers=get_token(Role.ADMIN),
+        headers=get_access_token(Role.ADMIN),
         json={"name": "a", "password": "b", "role": "USER"},
     )
 
@@ -139,7 +139,7 @@ def test_user_delete() -> None:
     service = Mock()
 
     client = create_client(service)
-    res = client.delete("/users/0", headers=get_token(Role.ADMIN))
+    res = client.delete("/users/0", headers=get_access_token(Role.ADMIN))
 
     assert res.status_code == 200
     service.delete_user.assert_called_once_with(0)
@@ -151,7 +151,7 @@ def test_groups_fail() -> None:
     service.get_all_groups.return_value = [Group(id=1, name="group")]
 
     client = create_client(service)
-    res = client.get("/groups", headers=get_token())
+    res = client.get("/groups", headers=get_access_token())
     assert res.status_code == 403
 
 
@@ -161,7 +161,7 @@ def test_group() -> None:
     service.get_all_groups.return_value = [Group(id=1, name="group")]
 
     client = create_client(service)
-    res = client.get("/groups", headers=get_token(Role.ADMIN))
+    res = client.get("/groups", headers=get_access_token(Role.ADMIN))
     assert res.status_code == 200
     assert res.json == [Group(id=1, name="group").to_dict()]
 
@@ -172,7 +172,7 @@ def test_group_id() -> None:
     service.get_group.return_value = Group(id=1, name="group")
 
     client = create_client(service)
-    res = client.get("/groups/1", headers=get_token(Role.ADMIN))
+    res = client.get("/groups/1", headers=get_access_token(Role.ADMIN))
     assert res.status_code == 200
     assert res.json == Group(id=1, name="group").to_dict()
 
@@ -186,7 +186,7 @@ def test_group_create() -> None:
     client = create_client(service)
     res = client.post(
         "/groups",
-        headers=get_token(Role.ADMIN),
+        headers=get_access_token(Role.ADMIN),
         json={"name": "group"},
     )
 
@@ -199,7 +199,7 @@ def test_group_delete() -> None:
     service = Mock()
 
     client = create_client(service)
-    res = client.delete("/groups/0", headers=get_token(Role.ADMIN))
+    res = client.delete("/groups/0", headers=get_access_token(Role.ADMIN))
 
     assert res.status_code == 200
     service.delete_group.assert_called_once_with(0)
