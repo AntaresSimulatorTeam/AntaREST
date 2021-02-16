@@ -35,8 +35,6 @@ if (process.env.NODE_ENV === 'development') {
 //  config.hidden = true;
 }
 
-info('config is', config);
-
 export const getConfig = (): Config => config;
 
 export const initConfig = async (callback: any): Promise<void> => {
@@ -44,11 +42,13 @@ export const initConfig = async (callback: any): Promise<void> => {
     const res = await axios.get('/config.json', { baseURL: '/' });
     config = {
       ...config,
-      ...res,
+      ...res.data,
     };
   } catch (e) {
     warn('Failed to retrieve site config. Will use default env configuration.');
   }
+
+  info('config is', config);
 
   initAxiosClient(config);
   initRawAxiosClient(config);
