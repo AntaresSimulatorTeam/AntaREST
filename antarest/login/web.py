@@ -5,9 +5,8 @@ from typing import Any, Optional
 from flask import Blueprint, request, jsonify, render_template
 from flask_jwt_extended import (  # type: ignore
     create_access_token,
-    jwt_required,
     get_jwt_identity,
-    set_access_cookies,
+    create_refresh_token,
 )
 
 from antarest.common.auth import Auth
@@ -41,12 +40,30 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
         # Identity can be any data that is json serializable
         access_token = create_access_token(identity=user.to_dict())
-        resp = jsonify({"user": user.name, "access_token": access_token})
-        # set_access_cookies(resp, access_token)
+        refresh_token = create_refresh_token(identity=user.to_dict())
+        resp = jsonify(
+            {
+                "user": user.name,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+            }
+        )
+
         return (
             resp,
             200,
         )
+
+    @bp.route("/refresh", methods=["POST"])
+    @auth.protected()
+    def refresh() -> Any:
+        identity = get_jwt_identity()
+        user = service.get_user(identity["id"])
+        if user:
+            access_token = create_access_token(identity=identity)
+            return jsonify(access_token=access_token)
+        else:
+            return "Token invalid", 403
 
     @bp.route("/users", methods=["GET"])
     @auth.protected(roles=[Role.ADMIN])
