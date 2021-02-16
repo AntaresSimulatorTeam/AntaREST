@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import webbrowser
+from datetime import timedelta
 from pathlib import Path
 from typing import Optional, Tuple, Any
 
@@ -80,7 +81,9 @@ def flask_app(config_file: Path) -> Flask:
     )
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
     application.config["SECRET_KEY"] = config["main.jwt.key"]
-    application.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
+    application.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+    application.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
+    application.config["JWT_TOKEN_LOCATION"] = ["headers"]
 
     @application.route("/", methods=["GET", "POST"])
     def home() -> Any:
