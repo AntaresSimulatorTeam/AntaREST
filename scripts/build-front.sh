@@ -12,7 +12,7 @@ sed -i 's|loadPath.*|loadPath: "/static/locales/{{lng}}/{{ns}}.json",|g' src/i18
 npm run build
 
 sed -i 's|"homepage".*|"homepage": "./",|g' package.json
-sed -i 's|loadPath.*|loadPath: "./locales/{{lng}}/{{ns}}.json",|g' src/i18n.js
+sed -i 's|loadPath.*|loadPath: "/locales/{{lng}}/{{ns}}.json",|g' src/i18n.js
 
 cd ..
 rm -fr resources/webapp
