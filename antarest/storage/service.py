@@ -18,7 +18,7 @@ from antarest.storage.repository.antares_io.exporter.export_file import (
 from antarest.storage.repository.antares_io.reader import IniReader
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.web.html_exception import (
+from antarest.storage.web.exceptions import (
     StudyNotFoundError,
     StudyAlreadyExistError,
     BadOutputError,
