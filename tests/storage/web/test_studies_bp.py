@@ -32,7 +32,12 @@ def test_server() -> None:
     build_storage(
         app,
         storage_service=mock_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     client.get("/studies/study1/settings/general/params")
@@ -51,7 +56,12 @@ def test_404() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/studies/study1/settings/general/params")
@@ -71,7 +81,12 @@ def test_server_with_parameters() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/studies/study1?depth=4")
@@ -101,7 +116,12 @@ def test_matrix(tmp_path: str, storage_service_builder) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     result_right = client.get("/file/study1/matrix")
@@ -129,7 +149,12 @@ def test_create_study(
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
 
@@ -163,7 +188,12 @@ def test_import_study_zipped(
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
 
@@ -189,7 +219,12 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
 
@@ -216,7 +251,12 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/studies")
@@ -228,7 +268,14 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
 def test_server_health() -> None:
     app = Flask(__name__)
     build_storage(
-        app, storage_service=Mock(), config=Config({"main": {"res": Path()}})
+        app,
+        storage_service=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/health")
@@ -245,7 +292,12 @@ def test_export_files() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/studies/name/export")
@@ -266,7 +318,12 @@ def test_export_params() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/studies/name/export?compact")
@@ -297,7 +354,12 @@ def test_delete_study() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     client.delete("/studies/name")
@@ -313,7 +375,12 @@ def test_import_matrix() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
 
@@ -339,7 +406,12 @@ def test_import_matrix_with_wrong_path() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
 
@@ -363,7 +435,12 @@ def test_edit_study() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     client.post("/studies/my-uuid/url/to/change", data=data)
@@ -383,7 +460,12 @@ def test_edit_study_fail() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     res = client.post("/studies/my-uuid/url/to/change", data=data)

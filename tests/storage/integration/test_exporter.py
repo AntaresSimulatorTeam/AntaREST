@@ -18,7 +18,14 @@ def assert_url_content(storage_service: StorageService, url: str) -> bytes:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": storage_service.path_resources}}),
+        config=Config(
+            {
+                "_internal": {
+                    "resources_path": storage_service.path_resources
+                },
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     res = client.get(url)
@@ -40,7 +47,10 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         study_factory=StudyFactory(),
         exporter=Exporter(),
         config=Config(
-            {"main": {"res": Path()}, "storage": {"studies": path_studies}}
+            {
+                "_internal": {"resources_path": Path()},
+                "storage": {"studies": path_studies},
+            }
         ),
     )
 
@@ -62,7 +72,11 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
         study_factory=StudyFactory(),
         exporter=Exporter(),
         config=Config(
-            {"main": {"res": Path()}, "storage": {"studies": path_studies}}
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": path_studies},
+            }
         ),
     )
 

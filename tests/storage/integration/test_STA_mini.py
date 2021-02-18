@@ -20,7 +20,14 @@ def assert_url_content(
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": storage_service.path_resources}}),
+        config=Config(
+            {
+                "_internal": {
+                    "resources_path": storage_service.path_resources
+                },
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     res = client.get(url)
@@ -343,7 +350,14 @@ def test_sta_mini_copy(storage_service) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": storage_service.path_resources}}),
+        config=Config(
+            {
+                "_internal": {
+                    "resources_path": storage_service.path_resources
+                },
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     result = client.post(
@@ -442,7 +456,14 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": storage_service.path_resources}}),
+        config=Config(
+            {
+                "_internal": {
+                    "resources_path": storage_service.path_resources
+                },
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
 
@@ -461,7 +482,14 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": storage_service.path_resources}}),
+        config=Config(
+            {
+                "_internal": {
+                    "resources_path": storage_service.path_resources
+                },
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
     result = client.post(
@@ -491,7 +519,14 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": storage_service.path_resources}}),
+        config=Config(
+            {
+                "_internal": {
+                    "resources_path": storage_service.path_resources
+                },
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
 

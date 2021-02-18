@@ -26,7 +26,12 @@ def create_app(service: Mock) -> Flask:
     build_login(
         app,
         service=service,
-        config=Config({"main": {"res": Path(), "local": False}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": False},
+            }
+        ),
         db_session=Mock(),
     )
     return app

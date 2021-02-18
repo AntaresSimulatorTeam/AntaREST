@@ -16,7 +16,7 @@ class Auth:
         ] = get_jwt_identity,  # Test only
     ):
 
-        self.local = config["main.local"]
+        self.disabled = config["security.disabled"]
         self.verify = verify
         self.get_identity = get_identity
 
@@ -27,7 +27,7 @@ class Auth:
         def auth_nested(fn: Callable[..., Any]) -> Callable[..., Any]:
             @wraps(fn)
             def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
-                if self.local:
+                if self.disabled:
                     return fn(*args, **kwargs)
 
                 self.verify()

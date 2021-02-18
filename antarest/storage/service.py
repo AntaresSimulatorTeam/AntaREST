@@ -61,7 +61,7 @@ class StorageService:
         self.study_factory = study_factory
         self.exporter = exporter
         self.path_to_studies = Path(config["storage.studies"])
-        self.path_resources = Path(config["main.res"])
+        self.path_resources = Path(config["_internal.resources_path"])
 
     def get(self, route: str, parameters: StorageServiceParameters) -> JSON:
         uuid, url, study_path = self._extract_info_from_url(route)

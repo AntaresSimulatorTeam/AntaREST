@@ -39,11 +39,11 @@ class UserRepository:
                 User(
                     name="admin",
                     role=Role.ADMIN,
-                    password=Password(config["login.admin.pwd"]),
+                    password=Password(config["security.login.admin.pwd"]),
                 )
             )
-        elif not admin_user.password.check(config["login.admin.pwd"]):  # type: ignore
-            admin_user.password = Password(config["login.admin.pwd"])  # type: ignore
+        elif not admin_user.password.check(config["security.login.admin.pwd"]):  # type: ignore
+            admin_user.password = Password(config["security.login.admin.pwd"])  # type: ignore
             self.save(admin_user)
 
     def save(self, user: User) -> User:

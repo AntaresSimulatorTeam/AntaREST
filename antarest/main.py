@@ -78,7 +78,7 @@ def flask_app(config_file: Path) -> Flask:
     config = ConfigYaml(res=res, file=config_file)
 
     # Database
-    engine = create_engine(config["main.db.url"], echo=config["debug"])
+    engine = create_engine(config["db.url"], echo=config["debug"])
     Base.metadata.create_all(engine)
     db_session = scoped_session(
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -88,7 +88,7 @@ def flask_app(config_file: Path) -> Flask:
         __name__, static_url_path="/static", static_folder=str(res / "webapp")
     )
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
-    application.config["SECRET_KEY"] = config["main.jwt.key"]
+    application.config["SECRET_KEY"] = config["security.jwt.key"]
     application.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
     application.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
     application.config["JWT_TOKEN_LOCATION"] = ["headers"]
