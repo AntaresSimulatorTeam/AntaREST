@@ -56,7 +56,8 @@ def test_get(tmp_path: str, project_path) -> None:
         exporter=Mock(),
         config=Config(
             {
-                "main": {"res": project_path / "resources"},
+                "_internal": {"resources_path": project_path / "resources"},
+                "security": {"disabled": True},
                 "storage": {"studies": path_to_studies},
             }
         ),
@@ -93,7 +94,8 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
         exporter=Mock(),
         config=Config(
             {
-                "main": {"res": project_path / "resources"},
+                "_internal": {"resources_path": project_path / "resources"},
+                "security": {"disabled": True},
                 "storage": {"studies": path_to_studies},
             }
         ),
@@ -121,7 +123,8 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         exporter=Mock(),
         config=Config(
             {
-                "main": {"res": project_path / "resources"},
+                "_internal": {"resources_path": project_path / "resources"},
+                "security": {"disabled": True},
                 "storage": {"studies": path_to_studies},
             }
         ),

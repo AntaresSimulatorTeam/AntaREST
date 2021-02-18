@@ -22,5 +22,9 @@ def build_storage(
         study_factory=StudyFactory(), exporter=Exporter(), config=config
     )
 
-    application.register_blueprint(create_study_routes(storage_service))
-    application.register_blueprint(create_utils_routes(storage_service))
+    application.register_blueprint(
+        create_study_routes(storage_service, config)
+    )
+    application.register_blueprint(
+        create_utils_routes(storage_service, config)
+    )

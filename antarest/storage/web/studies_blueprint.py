@@ -12,6 +12,8 @@ from flask import (
 )
 from werkzeug.exceptions import BadRequest
 
+from antarest.common.auth import Auth
+from antarest.common.config import Config
 from antarest.storage.service import StorageServiceParameters, StorageService
 
 storage_service: StorageService
@@ -35,10 +37,14 @@ def _construct_parameters(
     return request_parameters
 
 
-def create_study_routes(storage_service: StorageService) -> Blueprint:
+def create_study_routes(
+    storage_service: StorageService, config: Config
+) -> Blueprint:
     bp = Blueprint("create_study_route", __name__)
+    auth = Auth(config)
 
     @bp.route("/studies", methods=["GET"])
+    @auth.protected()
     def get_studies() -> Any:
         """
         Get Studies
@@ -57,6 +63,7 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         return jsonify(available_studies), HTTPStatus.OK.value
 
     @bp.route("/studies", methods=["POST"])
+    @auth.protected()
     def import_study() -> Any:
         """
         Import Study
@@ -89,6 +96,7 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         "/studies/<path:path>",
         methods=["GET"],
     )
+    @auth.protected()
     def get_study(path: str) -> Any:
         """
         Read data
@@ -123,6 +131,7 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         "/studies/<string:uuid>/copy",
         methods=["POST"],
     )
+    @auth.protected()
     def copy_study(uuid: str) -> Any:
         """
         Copy study
@@ -178,6 +187,7 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         "/studies/<string:name>",
         methods=["POST"],
     )
+    @auth.protected()
     def create_study(name: str) -> Any:
         """
         Create study name
@@ -210,6 +220,7 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         return jsonify(content), code
 
     @bp.route("/studies/<string:uuid>/export", methods=["GET"])
+    @auth.protected()
     def export_study(uuid: str) -> Any:
         """
         Export Study
@@ -266,6 +277,7 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         )
 
     @bp.route("/studies/<string:uuid>", methods=["DELETE"])
+    @auth.protected()
     def delete_study(uuid: str) -> Any:
         """
         Delete study
@@ -296,6 +308,7 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         return content, code
 
     @bp.route("/studies/<path:path>", methods=["POST"])
+    @auth.protected()
     def edit_study(path: str) -> Any:
         """
         Update data
@@ -335,6 +348,7 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         "/studies/<string:uuid>/output",
         methods=["POST"],
     )
+    @auth.protected()
     def import_output(uuid: str) -> Any:
         """
         Import Output

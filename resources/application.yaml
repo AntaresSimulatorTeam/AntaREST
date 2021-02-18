@@ -1,13 +1,13 @@
-main:
-  local: true
+security:
+  disabled: true
   jwt:
     key: super-secret
-  db:
-    url: "sqlite:///database.db"
+  login:
+    admin:
+      pwd: admin
 
-login:
-  admin:
-    pwd: admin
+db:
+  url: "sqlite:///database.db"
 
 storage:
   studies: examples/studies

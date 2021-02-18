@@ -21,7 +21,12 @@ def test_version() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+            }
+        ),
     )
     client = app.test_client()
 
