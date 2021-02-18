@@ -102,7 +102,7 @@ class ConfigPathBuilder:
         list_ini = IniReader().read(
             root / f"input/thermal/clusters/{area}/list.ini"
         )
-        return list(list_ini.keys())
+        return [key.lower() for key in list(list_ini.keys())]
 
     @staticmethod
     def _parse_links(root: Path, area: str) -> Dict[str, Link]:
