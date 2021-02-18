@@ -1,9 +1,15 @@
+/* eslint-disable camelcase */
+/* eslint-disable @typescript-eslint/camelcase */
 import { Action, AnyAction } from 'redux';
 import { ThunkAction } from 'redux-thunk';
+import jwt_decode from 'jwt-decode';
+import lodash from 'lodash';
+import moment from 'moment';
 import { loadState, saveState } from '../services/utils/localStorage';
 import { UserInfo } from '../common/types';
 import { setAuth } from '../services/api/client';
 import { AppState } from '../App/reducers';
+
 
 /** ******************************************* */
 /* State                                        */
@@ -19,9 +25,13 @@ const initialState: AuthState = {
 
 const ref = JSON.parse(JSON.stringify(initialState));
 export const persistState = (state: AuthState): void => {
-  if (ref.user !== state.user) {
-    saveState('auth.user', state.user);
-    ref.user = state.user;
+  const user = state.user ? { ...state.user } : undefined;
+  if (user) {
+    delete user.expirationDate;
+  }
+  if (!lodash.isEqual(ref.user, user)) {
+    saveState('auth.user', user);
+    ref.user = user;
   }
 };
 
@@ -37,10 +47,11 @@ export interface LoginAction extends Action {
 }
 
 export const loginUser = (user: UserInfo): ThunkAction<void, AppState, unknown, LoginAction> => (dispatch): void => {
+  const tokenData = jwt_decode(user.accessToken);
   setAuth(user.accessToken);
   dispatch({
     type: 'AUTH/LOGIN',
-    payload: user,
+    payload: { ...user, expirationDate: moment.unix((tokenData as any).exp) },
   });
 };
 
