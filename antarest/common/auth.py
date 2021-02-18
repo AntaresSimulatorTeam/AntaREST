@@ -1,3 +1,4 @@
+from datetime import timedelta
 from functools import wraps
 from typing import List, Optional, Dict, Any, Callable, Tuple
 
@@ -7,6 +8,9 @@ from antarest.common.config import Config
 
 
 class Auth:
+    ACCESS_TOKEN_DURATION = timedelta(minutes=15)
+    REFRESH_TOKEN_DURATION = timedelta(hours=30)
+
     def __init__(
         self,
         config: Config,

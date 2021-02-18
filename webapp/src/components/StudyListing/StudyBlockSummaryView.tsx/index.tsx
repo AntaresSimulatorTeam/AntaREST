@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { StudyMetadata } from '../../../common/types';
 import { deleteStudy as callDeleteStudy, getExportUrl } from '../../../services/api/study';
 import { removeStudies } from '../../../ducks/study';
+import DownloadLink from '../../ui/DownloadLink';
 
 const logError = debug('antares:studyblockview:error');
 
@@ -110,8 +111,8 @@ const StudyBlockSummaryView = (props: PropTypes) => {
         </CardContent>
         <CardActions>
           <div style={{ width: '100%' }}>
-            <Button size="small" style={{ color: theme.palette.primary.light }}><a href={getExportUrl(study.id, true, false)} rel="noopener noreferrer" target="_blank">{t('main:export')}</a></Button>
-            <Button size="small" style={{ color: theme.palette.primary.light }}><a href={getExportUrl(study.id, false, false)} rel="noopener noreferrer" target="_blank">{t('main:archive')}</a></Button>
+            <DownloadLink url={getExportUrl(study.id, true, false)}><Button size="small" style={{ color: theme.palette.primary.light }}>{t('main:export')}</Button></DownloadLink>
+            <DownloadLink url={getExportUrl(study.id, false, false)}><Button size="small" style={{ color: theme.palette.primary.light }}>{t('main:archive')}</Button></DownloadLink>
             <Button size="small" style={{ float: 'right', color: theme.palette.error.main }} onClick={deleteStudy}>{t('main:delete')}</Button>
           </div>
         </CardActions>

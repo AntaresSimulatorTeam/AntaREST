@@ -1,3 +1,5 @@
+import { Moment } from 'moment';
+
 export interface StudyMetadataDTO {
   author: string;
   caption: string;
@@ -22,6 +24,8 @@ export interface StudyMetadata {
 export interface UserInfo {
   user: string;
   accessToken: string;
+  refreshToken: string;
+  expirationDate?: Moment;
 }
 
 export default {};
