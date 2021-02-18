@@ -10,11 +10,8 @@ from flask import (
     send_file,
     Blueprint,
 )
+from werkzeug.exceptions import BadRequest
 
-from antarest.storage.web.html_exception import (
-    HtmlException,
-    stop_and_return_on_html_exception,
-)
 from antarest.storage.service import StorageServiceParameters, StorageService
 
 storage_service: StorageService
@@ -92,7 +89,6 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         "/studies/<path:path>",
         methods=["GET"],
     )
-    @stop_and_return_on_html_exception
     def get_study(path: str) -> Any:
         """
         Read data
@@ -127,7 +123,6 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         "/studies/<string:uuid>/copy",
         methods=["POST"],
     )
-    @stop_and_return_on_html_exception
     def copy_study(uuid: str) -> Any:
         """
         Copy study
@@ -183,7 +178,6 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         "/studies/<string:name>",
         methods=["POST"],
     )
-    @stop_and_return_on_html_exception
     def create_study(name: str) -> Any:
         """
         Create study name
@@ -216,7 +210,6 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         return jsonify(content), code
 
     @bp.route("/studies/<string:uuid>/export", methods=["GET"])
-    @stop_and_return_on_html_exception
     def export_study(uuid: str) -> Any:
         """
         Export Study
@@ -253,9 +246,12 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
           - Manage Studies
         """
         uuid_sanitized = sanitize_uuid(uuid)
-        compact: bool = "compact" in request.args and request.args["compact"]
+        compact: bool = (
+            "compact" in request.args and request.args["compact"] != "false"
+        )
         outputs: bool = (
-            "no-output" not in request.args or not request.args["no-output"]
+            "no-output" not in request.args
+            or request.args["no-output"] == "false"
         )
 
         content = storage_service.export_study(
@@ -270,7 +266,6 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         )
 
     @bp.route("/studies/<string:uuid>", methods=["DELETE"])
-    @stop_and_return_on_html_exception
     def delete_study(uuid: str) -> Any:
         """
         Delete study
@@ -301,7 +296,6 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         return content, code
 
     @bp.route("/studies/<path:path>", methods=["POST"])
-    @stop_and_return_on_html_exception
     def edit_study(path: str) -> Any:
         """
         Update data
@@ -329,7 +323,7 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         """
         new = json.loads(request.data)
         if not new:
-            raise HtmlException("empty body not authorized", 400)
+            raise BadRequest("empty body not authorized")
 
         storage_service.edit_study(path, new)
         content = ""
@@ -341,7 +335,6 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
         "/studies/<string:uuid>/output",
         methods=["POST"],
     )
-    @stop_and_return_on_html_exception
     def import_output(uuid: str) -> Any:
         """
         Import Output
