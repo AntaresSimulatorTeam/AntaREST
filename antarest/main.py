@@ -38,7 +38,7 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_default_config_path() -> Optional[Path]:
+def get_default_config_path() -> Path:
     config = Path("config.yaml")
     if config.exists():
         return config
@@ -47,8 +47,12 @@ def get_default_config_path() -> Optional[Path]:
     if config.exists():
         return config
 
+    raise ValueError(
+        "Config file not found. Set it by '-c' with command line or place it at ./config.yaml or ~/.antares/config.yaml"
+    )
 
-def get_arguments() -> Tuple[Optional[Path], bool]:
+
+def get_arguments() -> Tuple[Path, bool]:
     arguments = parse_arguments()
 
     config_file = Path(arguments.config_file or get_default_config_path())
@@ -117,8 +121,5 @@ if __name__ == "__main__":
     if display_version:
         print(__version__)
         sys.exit()
-    if config_file:
-        flask_app(config_file).run(debug=False, host="0.0.0.0", port=8080)
     else:
-        raise ValueError("""Config file not found. Set it by '-c' with command
- line or place it at ./config.yaml or ~/.antares/config.yaml""")
+        flask_app(config_file).run(debug=False, host="0.0.0.0", port=8080)
