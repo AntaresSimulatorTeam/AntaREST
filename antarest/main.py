@@ -60,7 +60,7 @@ def get_arguments() -> Tuple[Path, bool]:
     display_version = arguments.version or False
     if display_version:
         return Path("."), display_version
-      
+
     config_file = Path(arguments.config_file or get_default_config_path())
     return config_file, display_version
 
