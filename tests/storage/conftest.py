@@ -50,7 +50,8 @@ def storage_service_builder() -> Callable:
             exporter=exporter,
             config=Config(
                 {
-                    "main": {"res": path_resources},
+                    "_internal": {"resources_path": path_resources},
+                    "security": {"disabled": True},
                     "storage": {"studies": path_studies},
                 }
             ),

@@ -15,7 +15,8 @@ def test_users():
     Base.metadata.create_all(engine)
 
     repo = UserRepository(
-        config=Config({"login": {"admin": {"pwd": "admin"}}}), session=session
+        config=Config({"security": {"login": {"admin": {"pwd": "admin"}}}}),
+        session=session,
     )
     a = User(
         name="a",

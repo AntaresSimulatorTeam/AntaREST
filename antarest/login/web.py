@@ -20,7 +20,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
     bp = Blueprint(
         "create_login_api",
         __name__,
-        template_folder=str(config["main.res"] / "templates"),
+        template_folder=str(config["_internal.resources_path"] / "templates"),
     )
 
     auth = Auth(config)

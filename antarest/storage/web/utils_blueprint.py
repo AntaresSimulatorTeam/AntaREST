@@ -5,6 +5,8 @@ from typing import Any, Optional
 
 from flask import Blueprint, send_file, request, jsonify, Response
 
+from antarest.common.auth import Auth
+from antarest.common.config import Config
 from antarest.storage.service import StorageService
 from antarest import __version__
 
@@ -32,13 +34,17 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
     return commit_id
 
 
-def create_utils_routes(storage_service: StorageService) -> Blueprint:
+def create_utils_routes(
+    storage_service: StorageService, config: Config
+) -> Blueprint:
     bp = Blueprint("create_utils", __name__)
+    auth = Auth(config)
 
     @bp.route(
         "/file/<path:path>",
         methods=["GET"],
     )
+    @auth.protected()
     def get_file(path: str) -> Any:
         """
         Get file
@@ -71,6 +77,7 @@ def create_utils_routes(storage_service: StorageService) -> Blueprint:
         "/file/<path:path>",
         methods=["POST"],
     )
+    @auth.protected()
     def post_file(path: str) -> Any:
         """
         Post file
