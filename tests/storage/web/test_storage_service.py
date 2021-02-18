@@ -11,7 +11,7 @@ from antarest.storage.repository.filesystem.config.model import (
     StudyConfig,
     Simulation,
 )
-from antarest.storage.web.html_exception import (
+from antarest.storage.web.exceptions import (
     BadZipBinary,
     IncorrectPathError,
     StudyNotFoundError,

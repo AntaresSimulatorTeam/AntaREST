@@ -6,9 +6,6 @@ from typing import Any, Optional
 from flask import Blueprint, send_file, request, jsonify, Response
 
 from antarest.storage.service import StorageService
-from antarest.storage.web.html_exception import (
-    stop_and_return_on_html_exception,
-)
 from antarest import __version__
 
 
@@ -74,7 +71,6 @@ def create_utils_routes(storage_service: StorageService) -> Blueprint:
         "/file/<path:path>",
         methods=["POST"],
     )
-    @stop_and_return_on_html_exception
     def post_file(path: str) -> Any:
         """
         Post file

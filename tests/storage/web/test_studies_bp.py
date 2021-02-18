@@ -5,15 +5,16 @@ from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
 from typing import Callable
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 from flask import Flask
+from markupsafe import Markup
 
 from antarest import __version__
 from antarest.common.config import Config
 from antarest.storage.main import build_storage
-from antarest.storage.web.html_exception import (
+from antarest.storage.web.exceptions import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
 )
@@ -256,7 +257,7 @@ def test_export_files() -> None:
 
 
 @pytest.mark.unit_test
-def test_export_compact() -> None:
+def test_export_params() -> None:
 
     mock_storage_service = Mock()
     mock_storage_service.export_study.return_value = BytesIO(b"Hello")
@@ -271,8 +272,19 @@ def test_export_compact() -> None:
     result = client.get("/studies/name/export?compact")
 
     assert result.data == b"Hello"
-    mock_storage_service.export_study.assert_called_once_with(
-        "name", True, True
+
+    client.get("/studies/name/export?compact&no-output")
+    client.get("/studies/name/export?compact=true&no-output=true")
+    client.get("/studies/name/export?compact=false&no-output=false")
+    client.get("/studies/name/export?no-output=false")
+    mock_storage_service.export_study.assert_has_calls(
+        [
+            call(Markup("name"), True, True),
+            call(Markup("name"), True, False),
+            call(Markup("name"), True, False),
+            call(Markup("name"), False, True),
+            call(Markup("name"), False, True),
+        ]
     )
 
 

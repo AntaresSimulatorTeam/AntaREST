@@ -3,12 +3,14 @@ import os
 import sys
 import webbrowser
 from datetime import timedelta
+from numbers import Number
 from pathlib import Path
 from typing import Optional, Tuple, Any
 
-from flask import Flask, render_template
+from flask import Flask, render_template, json
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
+from werkzeug.exceptions import HTTPException
 
 from antarest import __version__
 from antarest.common.config import ConfigYaml
@@ -109,6 +111,21 @@ def flask_app(config_file: Path) -> Flask:
     @application.teardown_appcontext
     def shutdown_session(exception: Any = None) -> None:
         db_session.remove()
+
+    @application.errorhandler(HTTPException)
+    def handle_exception(e: Any) -> Tuple[Any, Number]:
+        """Return JSON instead of HTML for HTTP errors."""
+        # start with the correct headers and status code from the error
+        response = e.get_response()
+        # replace the body with JSON
+        response.data = json.dumps(
+            {
+                "name": e.name,
+                "description": e.description,
+            }
+        )
+        response.content_type = "application/json"
+        return response, e.code
 
     build_storage(application, config)
     build_login(application, config, db_session)
