@@ -40,14 +40,28 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_arguments() -> Tuple[Optional[Path], bool]:
+def get_default_config_path() -> Path:
+    config = Path("config.yaml")
+    if config.exists():
+        return config
+
+    config = Path.home() / ".antares/config.yaml"
+    if config.exists():
+        return config
+
+    raise ValueError(
+        "Config file not found. Set it by '-c' with command line or place it at ./config.yaml or ~/.antares/config.yaml"
+    )
+
+
+def get_arguments() -> Tuple[Path, bool]:
     arguments = parse_arguments()
 
     display_version = arguments.version or False
     if display_version:
         return Path("."), display_version
 
-    config_file = Path(arguments.config_file)
+    config_file = Path(arguments.config_file or get_default_config_path())
     return config_file, display_version
 
 
@@ -126,7 +140,5 @@ if __name__ == "__main__":
     if display_version:
         print(__version__)
         sys.exit()
-    if config_file:
-        flask_app(config_file).run(debug=False, host="0.0.0.0", port=8080)
     else:
-        raise argparse.ArgumentError("Please provide the path for studies.")
+        flask_app(config_file).run(debug=False, host="0.0.0.0", port=8080)
