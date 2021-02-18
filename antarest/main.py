@@ -55,9 +55,11 @@ def get_default_config_path() -> Path:
 def get_arguments() -> Tuple[Path, bool]:
     arguments = parse_arguments()
 
-    config_file = Path(arguments.config_file or get_default_config_path())
     display_version = arguments.version or False
-
+    if display_version:
+        return Path("."), display_version
+      
+    config_file = Path(arguments.config_file or get_default_config_path())
     return config_file, display_version
 
 

@@ -253,8 +253,10 @@ def create_study_routes(storage_service: StorageService) -> Blueprint:
           - Manage Studies
         """
         uuid_sanitized = sanitize_uuid(uuid)
-        compact: bool = "compact" in request.args
-        outputs: bool = "no-output" not in request.args
+        compact: bool = "compact" in request.args and request.args["compact"]
+        outputs: bool = (
+            "no-output" not in request.args or not request.args["no-output"]
+        )
 
         content = storage_service.export_study(
             uuid_sanitized, compact, outputs

@@ -1,11 +1,10 @@
 import axios, { AxiosResponse } from 'axios';
 import debug from 'debug';
-import config from '../config';
+import { Config } from '../config';
 
 const error = debug('antares:client:error');
 
 const client = axios.create();
-client.defaults.baseURL = `${config.baseUrl}${config.restEndpoint}`;
 
 export const setAxiosInterceptor = (logoutCallback: () => void): void => {
   client.interceptors.response.use(
@@ -20,6 +19,10 @@ export const setAxiosInterceptor = (logoutCallback: () => void): void => {
       return Promise.reject(e);
     },
   );
+};
+
+export const initAxiosClient = (config: Config): void => {
+  client.defaults.baseURL = `${config.baseUrl}${config.restEndpoint}`;
 };
 
 export const setAuth = (token: string | undefined): void => {

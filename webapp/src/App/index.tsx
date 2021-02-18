@@ -4,7 +4,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
 import { ThemeProvider } from '@material-ui/core/styles';
 import createStore from './reducers';
-import config from '../services/config';
+import { getConfig } from '../services/config';
 import MenuBar from './MenuBar';
 import StudyManagement from './Pages/StudyManagement';
 import SingleStudyView from './Pages/SingleStudyView';
@@ -16,9 +16,9 @@ const reduxStore = createStore();
 
 const App: React.FC<{}> = () => (
   <Provider store={reduxStore}>
-    <Router basename={config.applicationHome}>
+    <Router basename={getConfig().applicationHome}>
       <ThemeProvider theme={theme}>
-        {config.hidden && <Redirect to="/info" />}
+        {getConfig().hidden && <Redirect to="/info" />}
         <div style={{ height: '100vh' }}>
           <LoginWrapper>
             <MenuBar />
