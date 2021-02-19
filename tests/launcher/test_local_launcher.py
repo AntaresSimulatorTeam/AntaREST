@@ -16,7 +16,7 @@ def test_compute():
     uuid = uuid4()
 
     expected_execution_result = ExecutionResult(
-        ExecutionStatus.SUCCESS, msg="Hello, World!\n", exit_code=0
+        ExecutionStatus.SUCCESS, msg="Hello, World!", exit_code=0
     )
 
     local_launcher._compute(

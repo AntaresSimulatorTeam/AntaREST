@@ -55,7 +55,7 @@ class LocalLauncher(ILauncher):
 
         self.results[uuid] = ExecutionResult(
             execution_status,
-            msg=process.stdout.decode("latin-1"),
+            msg=process.stdout.decode("latin-1").rstrip(),
             exit_code=process.returncode,
         )
 
