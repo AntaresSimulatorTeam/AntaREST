@@ -11,7 +11,7 @@ class LauncherService:
         self,
         config: Config,
         storage_service: StorageService,
-        factory_launcher=FactoryLauncher,
+        factory_launcher: FactoryLauncher = FactoryLauncher(),
     ) -> None:
         self.config = config
         self.storage_service = storage_service
@@ -23,8 +23,11 @@ class LauncherService:
         )
         study_version = study_info["antares"]["version"]
         study_path = self.storage_service.get_study_path(study_uuid)
-        job_uuid = self.launcher.run_study(study_path, study_version)
+        job_uuid: UUID = self.launcher.run_study(study_path, study_version)
         return job_uuid
 
     def get_result(self, job_uuid: UUID) -> ExecutionResult:
-        return self.launcher.get_result(uuid=job_uuid)
+        execution_result: ExecutionResult = self.launcher.get_result(
+            uuid=job_uuid
+        )
+        return execution_result

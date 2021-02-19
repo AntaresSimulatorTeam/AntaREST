@@ -4,8 +4,7 @@ from antarest.launcher.local_launcher import LocalLauncher
 
 
 class FactoryLauncher:
-    @staticmethod
-    def build_launcher(config: Config) -> ILauncher:
+    def build_launcher(self, config: Config) -> ILauncher:
         if config["launcher.type"] == "local":
             return LocalLauncher(config)
         else:
