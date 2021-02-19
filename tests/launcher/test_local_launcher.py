@@ -1,5 +1,5 @@
 import platform
-from time import sleep
+from time import sleep, time
 from uuid import uuid4
 
 import pytest
@@ -36,7 +36,14 @@ def test_run_study():
     assert local_launcher.get_result(uuid) == ExecutionResult(
         ExecutionStatus.RUNNING, "", 0
     )
-    sleep(0.2)
+
+    t = time()
     result = local_launcher.get_result(uuid)
+    while (result.execution_status == ExecutionStatus.RUNNING) and (
+        time() - t
+    ) < 2:
+        sleep(0.1)
+        result = local_launcher.get_result(uuid)
+
     assert result.execution_status == ExecutionStatus.SUCCESS
     assert result.msg

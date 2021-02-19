@@ -67,5 +67,4 @@ class LocalLauncher(ILauncher):
         job = self.jobs.get(uuid, None)
         if job is None:
             raise JobNotFound()
-        elif job.is_alive():
-            return ExecutionResult(ExecutionStatus.RUNNING, "", 0)
+        return ExecutionResult(ExecutionStatus.RUNNING, "", 0)
