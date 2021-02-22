@@ -1,5 +1,6 @@
 from typing import Optional, List
 
+from sqlalchemy import exists
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.launcher.model import JobResult
@@ -10,7 +11,14 @@ class JobResultRepository:
         self.session = session
 
     def save(self, job: JobResult) -> JobResult:
-        self.session.add(job)
+        res = self.session.query(
+            exists().where(JobResult.id == job.id)
+        ).scalar()
+        if res:
+            self.session.merge(job)
+        else:
+            self.session.add(job)
+
         self.session.commit()
         return job
 

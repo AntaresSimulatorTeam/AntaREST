@@ -38,3 +38,30 @@ def test_job_result() -> None:
 
     repo.delete(a.id)
     assert repo.get(a.id) is None
+
+
+@pytest.mark.unit_test
+def test_save():
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    session = scoped_session(
+        sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    )
+    Base.metadata.create_all(engine)
+
+    repo = JobResultRepository(session=session)
+    uuid = str(uuid4())
+    a = JobResult(
+        id=uuid,
+        job_status=JobStatus.SUCCESS,
+        msg="Hello, World!",
+        exit_code=0,
+    )
+    b = JobResult(
+        id=uuid,
+        job_status=JobStatus.FAILED,
+        msg="You failed !!",
+        exit_code=1,
+    )
+
+    repo.save(a)
+    repo.save(b)
