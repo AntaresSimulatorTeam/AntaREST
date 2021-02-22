@@ -1,6 +1,6 @@
 from typing import Dict, Optional, List, Generator, Any
 
-from sqlalchemy import exists
+from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config

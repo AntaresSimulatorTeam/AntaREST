@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from sqlalchemy import exists
+from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.launcher.model import JobResult
