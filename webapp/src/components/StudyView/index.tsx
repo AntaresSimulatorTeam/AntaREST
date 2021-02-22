@@ -4,6 +4,7 @@ import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import { getStudyData } from '../../services/api/study';
 import StudyTreeView from './StudyTreeView';
 import StudyDataView from './StudyDataView';
+import MainContentLoader from '../ui/loaders/MainContentLoader';
 
 const logError = debug('antares:studyview:error');
 
@@ -13,6 +14,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     width: '100%',
     overflow: 'hidden',
     flexGrow: 1,
+    position: 'relative',
   },
   sidebar: {
     height: '100%',
@@ -53,7 +55,7 @@ const StudyView = (props: PropTypes) => {
 
   const initStudyData = async (sid: string) => {
     try {
-      const data = await getStudyData(sid, '', -1);
+      const data = await getStudyData(sid);
       setStudyData(data);
     } catch (e) {
       logError('Failed to fetch study data', sid, e);
@@ -67,16 +69,25 @@ const StudyView = (props: PropTypes) => {
 
   return (
     <div className={classes.root}>
-      <div className={classes.sidebar}>
-        <div className={classes.sidebarcontent}>
-          {studyData && <StudyTreeView data={studyData} view={(type, data) => setElementView({ type, data })} />}
-        </div>
-      </div>
-      <div className={classes.main}>
-        <div className={classes.maincontent}>
-          {elementView && <StudyDataView type={elementView.type} data={elementView.data} />}
-        </div>
-      </div>
+      {
+        studyData && (
+          <>
+            <div className={classes.sidebar}>
+              <div className={classes.sidebarcontent}>
+                {studyData && <StudyTreeView id={study} data={studyData} view={(type, data) => setElementView({ type, data })} />}
+              </div>
+            </div>
+            <div className={classes.main}>
+              <div className={classes.maincontent}>
+                {elementView && <StudyDataView type={elementView.type} sid={study} dataref={elementView.data} />}
+              </div>
+            </div>
+          </>
+        )
+      }
+      {
+        !studyData && <MainContentLoader />
+      }
     </div>
   );
 };

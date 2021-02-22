@@ -79,3 +79,6 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 raise ValueError(
                     f"param {param} of section {section} in {self.__class__.__name__} bad type"
                 )
+
+    def unloaded_placeholder_name(self):
+        return "IniFileNode"

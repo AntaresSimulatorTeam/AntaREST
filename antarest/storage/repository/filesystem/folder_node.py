@@ -39,9 +39,11 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
 
         else:
             if depth == 0:
-                return {}
+                return self.unloaded_placeholder()
             json = {
                 name: node.get(depth=depth - 1)
+                if depth - 1 != 0
+                else node.unloaded_placeholder()
                 for name, node in children.items()
             }
             self.validate(json)
@@ -84,3 +86,6 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
             if type(children[name]) != child_class:
                 raise FilterError("Filter selection has different classes")
         return names, sub_url
+
+    def unloaded_placeholder_name(self):
+        return "FolderNode"

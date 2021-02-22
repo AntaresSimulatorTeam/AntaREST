@@ -19,6 +19,13 @@ class INode(ABC, Generic[G, S, V]):
         pass
 
     @abstractmethod
+    def unloaded_placeholder_name(self):
+        pass
+
+    def unloaded_placeholder(self):
+        return "_Unloaded" + self.unloaded_placeholder_name()
+
+    @abstractmethod
     def save(self, data: S, url: Optional[List[str]] = None) -> None:
         pass
 

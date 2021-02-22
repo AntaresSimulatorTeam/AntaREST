@@ -43,3 +43,6 @@ class RawFileNode(INode[str, str, str]):
             raise ValueError(
                 f"url should be fully resolved when arrives on {self.__class__.__name__}"
             )
+
+    def unloaded_placeholder_name(self):
+        return "RawFileNode"

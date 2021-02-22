@@ -1,4 +1,5 @@
 {
   "confirmdelete": "Etes vous sûr de vouloir supprimer cette étude ?",
-  "nameofstudy": "Nom de l'étude"
+  "nameofstudy": "Nom de l'étude",
+  "failtoretrievedata": "Failed to retrieve data"
 }
