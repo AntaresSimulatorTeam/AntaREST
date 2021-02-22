@@ -3,7 +3,7 @@ from pathlib import Path
 from uuid import UUID
 
 from antarest.common.config import Config
-from antarest.launcher.model import ExecutionResult
+from antarest.launcher.model import JobResult
 
 
 class ILauncher(ABC):
@@ -15,5 +15,5 @@ class ILauncher(ABC):
         pass
 
     @abstractmethod
-    def get_result(self, uuid: UUID) -> ExecutionResult:
+    def get_result(self, uuid: UUID) -> JobResult:
         pass

@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 
 from antarest.common.config import Config
-from antarest.launcher.model import ExecutionResult, ExecutionStatus
+from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
 from antarest.storage.service import StorageService
 
@@ -41,8 +41,8 @@ def test_service_run_study():
 def test_service_get_result():
     storage_service_mock = Mock()
     launcher_mock = Mock()
-    fake_execution_result = ExecutionResult(
-        ExecutionStatus.SUCCESS, msg="Hello, World!", exit_code=0
+    fake_execution_result = JobResult(
+        JobStatus.SUCCESS, msg="Hello, World!", exit_code=0
     )
     launcher_mock.get_result.return_value = fake_execution_result
     factory_launcher_mock = Mock()

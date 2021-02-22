@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 
@@ -7,6 +8,7 @@ from antarest.login.model import User, Role, Password, Group
 from antarest.login.repository import UserRepository, GroupRepository
 
 
+@pytest.mark.unit_test
 def test_users():
     engine = create_engine("sqlite:///:memory:", echo=True)
     session = scoped_session(
@@ -38,6 +40,7 @@ def test_users():
     assert repo.get(a.id) is None
 
 
+@pytest.mark.unit_test
 def test_groups():
     engine = create_engine("sqlite:///:memory:", echo=True)
     session = scoped_session(

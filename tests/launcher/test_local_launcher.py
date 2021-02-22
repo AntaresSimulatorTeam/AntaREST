@@ -6,7 +6,7 @@ import pytest
 
 from antarest.common.config import Config
 from antarest.launcher.local_launcher import LocalLauncher
-from antarest.launcher.model import ExecutionResult, ExecutionStatus
+from antarest.launcher.model import JobResult, JobStatus
 
 
 @pytest.mark.unit_test
@@ -15,8 +15,8 @@ def test_compute():
 
     uuid = uuid4()
 
-    expected_execution_result = ExecutionResult(
-        ExecutionStatus.SUCCESS, msg="Hello, World!", exit_code=0
+    expected_execution_result = JobResult(
+        JobStatus.SUCCESS, msg="Hello, World!", exit_code=0
     )
 
     local_launcher._compute(
@@ -33,17 +33,15 @@ def test_run_study():
     local_launcher = LocalLauncher(config)
     uuid = local_launcher.run_study(study_path="www.google.com", version="42")
 
-    assert local_launcher.get_result(uuid) == ExecutionResult(
-        ExecutionStatus.RUNNING, "", 0
+    assert local_launcher.get_result(uuid) == JobResult(
+        JobStatus.RUNNING, "", 0
     )
 
     t = time()
     result = local_launcher.get_result(uuid)
-    while (result.execution_status == ExecutionStatus.RUNNING) and (
-        time() - t
-    ) < 2:
+    while (result.job_status == JobStatus.RUNNING) and (time() - t) < 2:
         sleep(0.1)
         result = local_launcher.get_result(uuid)
 
-    assert result.execution_status == ExecutionStatus.SUCCESS
+    assert result.job_status == JobStatus.SUCCESS
     assert result.msg

@@ -6,7 +6,7 @@ from flask import Flask
 
 from antarest.common.config import Config
 from antarest.launcher.main import build_launcher
-from antarest.launcher.model import ExecutionResult, ExecutionStatus
+from antarest.launcher.model import JobResult, JobStatus
 
 
 def create_app(service: Mock) -> Flask:
@@ -42,8 +42,8 @@ def test_run() -> None:
 @pytest.mark.unit_test
 def test_result() -> None:
     job = uuid4()
-    result = ExecutionResult(
-        execution_status=ExecutionStatus.SUCCESS,
+    result = JobResult(
+        execution_status=JobStatus.SUCCESS,
         msg="hello world",
         exit_code=0,
     )

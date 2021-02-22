@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 
 from antarest.common.config import Config
 from antarest.launcher.ilauncher import ILauncher
-from antarest.launcher.model import ExecutionResult, ExecutionStatus
+from antarest.launcher.model import JobResult, JobStatus
 
 
 class StudyVersionNotSupported(Exception):
@@ -22,7 +22,7 @@ class LocalLauncher(ILauncher):
     def __init__(self, config: Config) -> None:
         super().__init__(config)
         self.jobs: Dict[UUID, Thread] = {}
-        self.results: Dict[UUID, ExecutionResult] = {}
+        self.results: Dict[UUID, JobResult] = {}
 
     def run_study(self, study_path: Path, version: str) -> UUID:
         antares_solver_path = self.config[f"launcher.binaries.{version}"]
@@ -48,17 +48,17 @@ class LocalLauncher(ILauncher):
         )
 
         if process.returncode == 0:
-            execution_status = ExecutionStatus.SUCCESS
+            execution_status = JobStatus.SUCCESS
         else:
-            execution_status = ExecutionStatus.FAILED
+            execution_status = JobStatus.FAILED
 
-        self.results[uuid] = ExecutionResult(
+        self.results[uuid] = JobResult(
             execution_status,
             msg=process.stdout.decode("latin-1").rstrip(),
             exit_code=process.returncode,
         )
 
-    def get_result(self, uuid: UUID) -> ExecutionResult:
+    def get_result(self, uuid: UUID) -> JobResult:
         result = self.results.get(uuid, None)
         if result:
             return result
@@ -66,4 +66,4 @@ class LocalLauncher(ILauncher):
         job = self.jobs.get(uuid, None)
         if job is None:
             raise JobNotFound()
-        return ExecutionResult(ExecutionStatus.RUNNING, "", 0)
+        return JobResult(JobStatus.RUNNING, "", 0)
