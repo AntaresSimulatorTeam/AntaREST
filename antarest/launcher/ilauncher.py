@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Optional
 from uuid import UUID
 
 from antarest.common.config import Config
@@ -15,5 +16,5 @@ class ILauncher(ABC):
         pass
 
     @abstractmethod
-    def get_result(self, uuid: UUID) -> JobResult:
+    def get_result(self, uuid: UUID) -> Optional[JobResult]:
         pass

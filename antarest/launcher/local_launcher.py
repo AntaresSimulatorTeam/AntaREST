@@ -2,7 +2,7 @@ import subprocess
 import threading
 from pathlib import Path
 from threading import Thread
-from typing import Dict
+from typing import Dict, Optional
 from uuid import UUID, uuid4
 
 from antarest.common.config import Config
@@ -11,10 +11,6 @@ from antarest.launcher.model import JobResult, JobStatus
 
 
 class StudyVersionNotSupported(Exception):
-    pass
-
-
-class JobNotFound(Exception):
     pass
 
 
@@ -53,17 +49,22 @@ class LocalLauncher(ILauncher):
             execution_status = JobStatus.FAILED
 
         self.results[uuid] = JobResult(
-            execution_status,
+            id=str(uuid),
+            job_status=execution_status,
             msg=process.stdout.decode("latin-1").rstrip(),
             exit_code=process.returncode,
         )
 
-    def get_result(self, uuid: UUID) -> JobResult:
+    def get_result(self, uuid: UUID) -> Optional[JobResult]:
         result = self.results.get(uuid, None)
         if result:
+            del self.results[uuid]
+            del self.jobs[uuid]
             return result
 
         job = self.jobs.get(uuid, None)
         if job is None:
-            raise JobNotFound()
-        return JobResult(JobStatus.RUNNING, "", 0)
+            return None
+        return JobResult(
+            id=str(uuid), job_status=JobStatus.RUNNING, msg="", exit_code=0
+        )

@@ -43,7 +43,8 @@ def test_run() -> None:
 def test_result() -> None:
     job = uuid4()
     result = JobResult(
-        execution_status=JobStatus.SUCCESS,
+        id=str(job),
+        job_status=JobStatus.SUCCESS,
         msg="hello world",
         exit_code=0,
     )

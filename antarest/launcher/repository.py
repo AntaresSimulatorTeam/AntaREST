@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.launcher.model import JobResult
 
@@ -14,7 +14,7 @@ class JobResultRepository:
         self.session.commit()
         return job
 
-    def get(self, id: int) -> Optional[JobResult]:
+    def get(self, id: str) -> Optional[JobResult]:
         job: JobResult = self.session.query(JobResult).get(id)
         return job
 
@@ -22,7 +22,7 @@ class JobResultRepository:
         jobs: List[JobResult] = self.session.query(JobResult).all()
         return jobs
 
-    def delete(self, id: int) -> None:
+    def delete(self, id: str) -> None:
         g = self.session.query(JobResult).get(id)
         self.session.delete(g)
         self.session.commit()

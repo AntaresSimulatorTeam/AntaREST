@@ -16,7 +16,10 @@ def test_compute():
     uuid = uuid4()
 
     expected_execution_result = JobResult(
-        JobStatus.SUCCESS, msg="Hello, World!", exit_code=0
+        id=str(uuid),
+        job_status=JobStatus.SUCCESS,
+        msg="Hello, World!",
+        exit_code=0,
     )
 
     local_launcher._compute(
@@ -34,7 +37,7 @@ def test_run_study():
     uuid = local_launcher.run_study(study_path="www.google.com", version="42")
 
     assert local_launcher.get_result(uuid) == JobResult(
-        JobStatus.RUNNING, "", 0
+        id=str(uuid), job_status=JobStatus.RUNNING, msg="", exit_code=0
     )
 
     t = time()
@@ -45,3 +48,6 @@ def test_run_study():
 
     assert result.job_status == JobStatus.SUCCESS
     assert result.msg
+
+    result = local_launcher.get_result(uuid)
+    assert result is None
