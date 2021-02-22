@@ -18,7 +18,7 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
   });
 };
 
-export const getStudyData = async (sid: string, path = '', depth = -1): Promise<any> => {
+export const getStudyData = async (sid: string, path = '', depth = 1): Promise<any> => {
   const res = await client.get(`/studies/${sid}/${path}?depth=${depth}`);
   return res.data;
 };
@@ -47,6 +47,7 @@ export const importStudy = async (file: File, onProgress?: (progress: number) =>
   const formData = new FormData();
   formData.append('study', file);
   const restconfig = {
+    ...options,
     headers: {
       'content-type': 'multipart/form-data',
       'Access-Control-Allow-Origin': '*',

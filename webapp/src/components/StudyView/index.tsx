@@ -53,7 +53,7 @@ const StudyView = (props: PropTypes) => {
 
   const initStudyData = async (sid: string) => {
     try {
-      const data = await getStudyData(sid);
+      const data = await getStudyData(sid, '', -1);
       setStudyData(data);
     } catch (e) {
       logError('Failed to fetch study data', sid, e);

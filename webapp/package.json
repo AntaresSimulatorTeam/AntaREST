@@ -59,7 +59,7 @@
     "redux-thunk": "^2.3.0",
     "reselect": "^4.0.0",
     "swagger-ui-react": "^3.42.0",
-    "uuid": "^7.0.2",
+    "uuid": "^7.0.3",
     "web-streams-polyfill": "^2.1.0"
   },
   "scripts": {
