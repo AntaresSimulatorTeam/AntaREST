@@ -15,6 +15,7 @@ def test_get_yaml(project_path: Path):
         "hello": "World",
     }
     assert config["main.hello"] == "World"
+    assert config["not_existing"] is None
 
 
 @pytest.mark.unit_test

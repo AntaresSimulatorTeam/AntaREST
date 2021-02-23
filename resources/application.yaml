@@ -12,4 +12,10 @@ db:
 storage:
   studies: examples/studies
 
+launcher:
+  default: local
+  local:
+    binaries:
+      700: path/to/700
+
 debug: true

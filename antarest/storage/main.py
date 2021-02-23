@@ -16,7 +16,7 @@ def build_storage(
     application: Flask,
     config: Config,
     storage_service: Optional[StorageService] = None,
-) -> None:
+) -> StorageService:
 
     storage_service = storage_service or StorageService(
         study_factory=StudyFactory(), exporter=Exporter(), config=config
@@ -28,3 +28,5 @@ def build_storage(
     application.register_blueprint(
         create_utils_routes(storage_service, config)
     )
+
+    return storage_service
