@@ -36,12 +36,17 @@ def test_get():
 def test_get_depth():
     config = Mock()
     config.path.exist.return_value = True
+    subtree_a = build_tree()
+    subtree_b = build_tree()
     tree = TestMiddleNode(
         config=config,
-        children={"childA": build_tree(), "childB": build_tree()},
+        children={"childA": subtree_a, "childB": subtree_b},
     )
 
-    expected = {"childA": {}, "childB": {}}
+    expected = {
+        "childA": subtree_a.unloaded_placeholder(),
+        "childB": subtree_b.unloaded_placeholder(),
+    }
 
     assert tree.get(depth=1) == expected
 

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState, ReactNode } from 'react';
 import { Paper, makeStyles, Theme, createStyles } from '@material-ui/core';
 import { useSnackbar } from 'notistack';

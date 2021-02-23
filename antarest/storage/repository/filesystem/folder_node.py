@@ -87,5 +87,5 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
                 raise FilterError("Filter selection has different classes")
         return names, sub_url
 
-    def unloaded_placeholder_name(self):
+    def _unloaded_placeholder_name(self) -> str:
         return "FolderNode"

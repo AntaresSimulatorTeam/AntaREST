@@ -23,6 +23,9 @@ class TestSubNode(INode[int, int, int]):
     def validate(self, data: int) -> None:
         pass
 
+    def _unloaded_placeholder_name(self) -> str:
+        return "SubNode"
+
 
 class TestMiddleNode(FolderNode):
     def __init__(self, config: StudyConfig, children: TREE):

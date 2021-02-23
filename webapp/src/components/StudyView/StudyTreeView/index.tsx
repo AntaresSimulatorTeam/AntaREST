@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/interactive-supports-focus */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import debug from 'debug';
+import lodash from 'lodash';
 import React, { useState } from 'react';
 import TreeView from '@material-ui/lab/TreeView';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
@@ -11,23 +12,8 @@ import { useSnackbar } from 'notistack';
 import { CircularProgress } from '@material-ui/core';
 import { Translation } from 'react-i18next';
 import { getStudyData } from '../../../services/api/study';
-import { updateData, isUnloaded } from './utils';
 
 const logError = debug('antares:studytreeview:error');
-
-const isJsonLeaf = (studyDataNode: any) => {
-  if (isUnloaded(studyDataNode)) {
-    return false;
-  }
-  const childrenKeys = Object.keys(studyDataNode);
-  for (let index = 0; index < childrenKeys.length; index += 1) {
-    const element = studyDataNode[childrenKeys[index]];
-    if (typeof element !== 'object' && (typeof element !== 'string' || (!element.startsWith('file/') && !element.startsWith('_Unloaded')))) {
-      return true;
-    }
-  }
-  return false;
-};
 
 interface ItemPropTypes {
   itemkey: string;
@@ -93,6 +79,25 @@ const StudyTreeItem = (props: ItemPropTypes) => {
       ))}
     </TreeItem>
   );
+};
+
+const updateData = (datajson: any, path: string, itemdata: any): any => {
+  const pathitems = lodash.trim(path.trim(), '/').split('/');
+  const updatedData = { ...datajson };
+  let target: any = {};
+  let src: any = updatedData;
+  const targetData: any = target;
+  for (let index = 0; index < pathitems.length; index += 1) {
+    const element = pathitems[index];
+    target[element] = {};
+    src = src[element];
+    if (index === pathitems.length - 1) {
+      target[element] = itemdata;
+    } else {
+      target = target[element];
+    }
+  }
+  return lodash.merge(updatedData, targetData);
 };
 
 interface PropTypes {

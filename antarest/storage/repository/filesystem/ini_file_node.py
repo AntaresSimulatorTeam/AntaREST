@@ -80,5 +80,5 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                     f"param {param} of section {section} in {self.__class__.__name__} bad type"
                 )
 
-    def unloaded_placeholder_name(self):
+    def _unloaded_placeholder_name(self) -> str:
         return "IniFileNode"
