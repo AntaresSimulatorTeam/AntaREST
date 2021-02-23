@@ -19,9 +19,9 @@ class OutputSimulationModeMcIndScnAreasArea(FolderNode):
         children: TREE = dict()
 
         for timing in config.get_filters_year(self.area):
-            children[f"details-{timing}"] = Details(
-                config.next_file(f"details-{timing}.txt")
-            )
+            detail_config = config.next_file(f"details-{timing}.txt")
+            if detail_config.path.exists():
+                children[f"details-{timing}"] = Details(detail_config)
 
         for timing in config.get_filters_year(self.area):
             children[f"values-{timing}"] = Values(
