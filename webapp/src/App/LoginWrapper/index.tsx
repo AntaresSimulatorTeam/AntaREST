@@ -122,19 +122,6 @@ const LoginWrapper = (props: PropsWithChildren<PropTypes>) => {
         setConnexionError(true);
       }
     })();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      updateRefreshInterceptor(async (): Promise<UserInfo|undefined> => {
-        try {
-          return refresh(user, login, logout);
-        } catch (e) {
-          logError('Failed to refresh token');
-        }
-        return undefined;
-      });
-    }
   }, [user]);
 
   if (authRequired === undefined) {

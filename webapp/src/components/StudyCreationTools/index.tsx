@@ -15,6 +15,8 @@ const useFormStyles = makeStyles((theme: Theme) =>
     root: {
       marginTop: theme.spacing(2),
       marginBottom: theme.spacing(2),
+      display: 'flex',
+      alignItems: 'center',
     },
     button: {
       width: '100px',
@@ -28,6 +30,7 @@ const useFormStyles = makeStyles((theme: Theme) =>
     input: {
       width: '200px',
       marginLeft: theme.spacing(2),
+      marginRight: theme.spacing(2),
     },
   }));
 
