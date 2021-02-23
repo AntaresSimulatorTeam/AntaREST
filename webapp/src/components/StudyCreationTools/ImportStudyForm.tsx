@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Button, LinearProgress } from '@material-ui/core';
@@ -36,7 +36,7 @@ type PropTypes = PropsFromRedux & OwnProps;
 
 const ImportStudyForm = (props: PropTypes) => {
   const [t] = useTranslation();
-  const { useStyles, addStudy, uploads, createUpload, updateUploadCompletion, endUpload } = props;
+  const { useStyles, addStudy, createUpload, updateUploadCompletion, endUpload } = props;
   const classes = useStyles();
   const { register, handleSubmit } = useForm<Inputs>();
   const [uploadProgress, setUploadProgress] = useState<number>();
