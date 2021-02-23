@@ -1,8 +1,7 @@
 import subprocess
 import threading
 from pathlib import Path
-from threading import Thread
-from typing import Dict, Optional, Callable, List, Any
+from typing import Callable, List, Any
 from uuid import UUID, uuid4
 
 from antarest.common.config import Config

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Callable
 from uuid import UUID
 
 from antarest.common.config import Config

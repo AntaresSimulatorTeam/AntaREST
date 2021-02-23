@@ -1,7 +1,6 @@
 import enum
 from typing import Any
 
-from dataclasses import dataclass
 from sqlalchemy import Integer, Column, Enum, String  # type: ignore
 
 from antarest.common.custom_types import JSON
