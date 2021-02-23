@@ -55,7 +55,7 @@ const StudyView = (props: PropTypes) => {
 
   const initStudyData = async (sid: string) => {
     try {
-      const data = await getStudyData(sid);
+      const data = await getStudyData(sid, '', -1);
       setStudyData(data);
     } catch (e) {
       logError('Failed to fetch study data', sid, e);
@@ -74,12 +74,12 @@ const StudyView = (props: PropTypes) => {
           <>
             <div className={classes.sidebar}>
               <div className={classes.sidebarcontent}>
-                {studyData && <StudyTreeView id={study} data={studyData} view={(type, data) => setElementView({ type, data })} />}
+                {studyData && <StudyTreeView data={studyData} view={(type, data) => setElementView({ type, data })} />}
               </div>
             </div>
             <div className={classes.main}>
               <div className={classes.maincontent}>
-                {elementView && <StudyDataView type={elementView.type} sid={study} dataref={elementView.data} />}
+                {elementView && <StudyDataView type={elementView.type} data={elementView.data} />}
               </div>
             </div>
           </>
