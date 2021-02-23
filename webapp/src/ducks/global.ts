@@ -10,7 +10,6 @@ const logError = debug('antares:global:error');
 /* State                                        */
 /** ******************************************* */
 
-
 export interface GlobalState {
   onCloseListeners: {[id: string]: (event: Event) => void};
 }
@@ -67,7 +66,8 @@ export const removeOnCloseListener = (id: string): RemoveOnCloseListenerAction =
   payload: id,
 });
 
-type GlobalAction = AddOnCloseListenerAction | RemoveOnCloseListenerAction;
+type GlobalAction = AddOnCloseListenerAction
+  | RemoveOnCloseListenerAction;
 
 /** ******************************************* */
 /* Selectors / Misc                             */
