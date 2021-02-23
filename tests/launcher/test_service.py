@@ -50,12 +50,11 @@ def test_service_get_result_from_launcher():
         msg="Hello, World!",
         exit_code=0,
     )
-    launcher_mock.get_result.return_value = fake_execution_result
     factory_launcher_mock = Mock()
     factory_launcher_mock.build_launcher.return_value = launcher_mock
 
     repository = Mock()
-    repository.save.return_value = fake_execution_result
+    repository.get.return_value = fake_execution_result
 
     launcher_service = LauncherService(
         config=Config(),
@@ -67,7 +66,6 @@ def test_service_get_result_from_launcher():
     assert (
         launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
     )
-    repository.save.assert_called_once_with(fake_execution_result)
 
 
 @pytest.mark.unit_test

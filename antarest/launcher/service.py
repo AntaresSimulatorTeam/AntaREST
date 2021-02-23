@@ -23,6 +23,10 @@ class LauncherService:
         self.storage_service = storage_service
         self.repository = repository
         self.launcher = factory_launcher.build_launcher(config)
+        self.launcher.add_callback(self.update)
+
+    def update(self, job_result: JobResult):
+        self.repository.save(job_result)
 
     def run_study(self, study_uuid: str) -> UUID:
         study_info = self.storage_service.get_study_information(
@@ -39,11 +43,6 @@ class LauncherService:
         return job_uuid
 
     def get_result(self, job_uuid: UUID) -> JobResult:
-        job_result = self.launcher.get_result(uuid=job_uuid)
-        if job_result:
-            self.repository.save(job_result)
-            return job_result
-
         job_result = self.repository.get(str(job_uuid))
         if job_result:
             return job_result

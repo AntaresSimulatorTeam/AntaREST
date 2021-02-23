@@ -1,5 +1,6 @@
 import platform
 from time import sleep, time
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
@@ -22,32 +23,11 @@ def test_compute():
         exit_code=0,
     )
 
+    callback = Mock()
+    local_launcher.add_callback(callback)
+
     local_launcher._compute(
         antares_solver_path="echo", study_path="Hello, World!", uuid=uuid
     )
 
-    assert expected_execution_result == local_launcher.results[uuid]
-
-
-@pytest.mark.unit_test
-def test_run_study():
-    curl = "curl.exe" if platform.system() == "Windows" else "curl"
-    config = Config({"launcher": {"type": "local", "binaries": {"42": curl}}})
-    local_launcher = LocalLauncher(config)
-    uuid = local_launcher.run_study(study_path="www.google.com", version="42")
-
-    assert local_launcher.get_result(uuid) == JobResult(
-        id=str(uuid), job_status=JobStatus.RUNNING, msg="", exit_code=0
-    )
-
-    t = time()
-    result = local_launcher.get_result(uuid)
-    while (result.job_status == JobStatus.RUNNING) and (time() - t) < 2:
-        sleep(0.1)
-        result = local_launcher.get_result(uuid)
-
-    assert result.job_status == JobStatus.SUCCESS
-    assert result.msg
-
-    result = local_launcher.get_result(uuid)
-    assert result is None
+    callback.assert_called_once_with(expected_execution_result)
