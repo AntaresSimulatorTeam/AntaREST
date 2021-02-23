@@ -68,7 +68,7 @@ def create_utils_routes(
         """
 
         try:
-            file_path = storage_service.path_to_studies / path
+            file_path = storage_service.study_service.path_to_studies / path
             return send_file(file_path.absolute())
         except FileNotFoundError:
             return f"{path} not found", HTTPStatus.NOT_FOUND.value
@@ -114,7 +114,7 @@ def create_utils_routes(
     def version() -> Any:
         version_data = {"version": __version__}
 
-        commit_id = get_commit_id(storage_service.path_resources)
+        commit_id = get_commit_id(storage_service.study_service.path_resources)
         if commit_id is not None:
             version_data["gitcommit"] = commit_id
 

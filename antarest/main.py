@@ -1,11 +1,9 @@
 import argparse
 import os
 import sys
-import webbrowser
-from datetime import timedelta
 from numbers import Number
 from pathlib import Path
-from typing import Optional, Tuple, Any
+from typing import Tuple, Any
 
 from flask import Flask, render_template, json
 from sqlalchemy import create_engine  # type: ignore
@@ -130,7 +128,10 @@ def flask_app(config_file: Path) -> Flask:
         response.content_type = "application/json"
         return response, e.code
 
-    build_storage(application, config)
+    build_storage(
+        application,
+        config,
+    )
     build_login(application, config, db_session)
     build_swagger(application)
 

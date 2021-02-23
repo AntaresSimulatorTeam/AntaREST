@@ -5,7 +5,10 @@ from flask import Flask
 
 from antarest.common.custom_types import SUB_JSON
 from antarest.storage.main import build_storage
-from antarest.storage.service import StorageServiceParameters, StorageService
+from antarest.storage.service import StorageService
+from antarest.storage.business.storage_service_parameters import (
+    StorageServiceParameters,
+)
 
 
 def assert_url_content(
@@ -15,7 +18,7 @@ def assert_url_content(
     build_storage(
         app,
         storage_service=storage_service,
-        res=storage_service.path_resources,
+        res=storage_service.study_service.path_resources,
     )
     client = app.test_client()
     res = client.post(url, data=json.dumps(url))

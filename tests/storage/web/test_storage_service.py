@@ -7,9 +7,13 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.common.config import Config
+from antarest.storage.business.storage_service_parameters import (
+    StorageServiceParameters,
+)
+from antarest.storage.business.storage_service_utils import StorageServiceUtils
+from antarest.storage.main import build_storage
 from antarest.storage.repository.filesystem.config.model import (
     StudyConfig,
-    Simulation,
 )
 from antarest.storage.web.exceptions import (
     BadZipBinary,
@@ -17,7 +21,6 @@ from antarest.storage.web.exceptions import (
     StudyNotFoundError,
     StudyValidationError,
 )
-from antarest.storage.service import StorageServiceParameters, StorageService
 
 
 @pytest.mark.unit_test
@@ -51,9 +54,8 @@ def test_get(tmp_path: str, project_path) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = (None, study)
 
-    storage_service = StorageService(
-        study_factory=study_factory,
-        exporter=Mock(),
+    storage_service = build_storage(
+        application=Mock(),
         config=Config(
             {
                 "_internal": {"resources_path": project_path / "resources"},
@@ -61,6 +63,7 @@ def test_get(tmp_path: str, project_path) -> None:
                 "storage": {"studies": path_to_studies},
             }
         ),
+        study_factory=study_factory,
     )
 
     parameters = StorageServiceParameters(depth=2)
@@ -89,9 +92,8 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     path_to_studies = Path(tmp_path)
 
     # Test & Verify
-    storage_service = StorageService(
-        study_factory=Mock(),
-        exporter=Mock(),
+    storage_service = build_storage(
+        application=Mock(),
         config=Config(
             {
                 "_internal": {"resources_path": project_path / "resources"},
@@ -118,9 +120,8 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     path_to_studies = Path(tmp_path)
 
     # Test & Verify
-    storage_service = StorageService(
-        study_factory=Mock(),
-        exporter=Mock(),
+    storage_service = build_storage(
+        application=Mock(),
         config=Config(
             {
                 "_internal": {"resources_path": project_path / "resources"},
@@ -385,11 +386,11 @@ def test_check_antares_version(
 ) -> None:
 
     right_study = {"study": {"antares": {"version": 700}}}
-    StorageService.check_antares_version(right_study)
+    StorageServiceUtils.check_antares_version(right_study)
 
     wrong_study = {"study": {"antares": {"version": 600}}}
     with pytest.raises(StudyValidationError):
-        StorageService.check_antares_version(wrong_study)
+        StorageServiceUtils.check_antares_version(wrong_study)
 
 
 @pytest.mark.unit_test

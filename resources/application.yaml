@@ -10,6 +10,6 @@ db:
   url: "sqlite:///database.db"
 
 storage:
-  studies: examples/studies
+  studies: /tmp/Antares_Simulator_Examples
 
 debug: true

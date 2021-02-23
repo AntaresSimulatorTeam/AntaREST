@@ -14,7 +14,10 @@ from werkzeug.exceptions import BadRequest
 
 from antarest.common.auth import Auth
 from antarest.common.config import Config
-from antarest.storage.service import StorageServiceParameters, StorageService
+from antarest.storage.service import StorageService
+from antarest.storage.business.storage_service_parameters import (
+    StorageServiceParameters,
+)
 
 storage_service: StorageService
 

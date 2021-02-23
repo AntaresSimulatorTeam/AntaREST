@@ -10,7 +10,10 @@ from flask import Flask
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.storage.main import build_storage
-from antarest.storage.service import StorageServiceParameters, StorageService
+from antarest.storage.service import StorageService
+from antarest.storage.business.storage_service_parameters import (
+    StorageServiceParameters,
+)
 
 
 def assert_url_content(
@@ -23,9 +26,12 @@ def assert_url_content(
         config=Config(
             {
                 "_internal": {
-                    "resources_path": storage_service.path_resources
+                    "resources_path": storage_service.study_service.path_resources
                 },
                 "security": {"disabled": True},
+                "storage": {
+                    "studies": storage_service.study_service.path_to_studies
+                },
             }
         ),
     )
@@ -353,9 +359,12 @@ def test_sta_mini_copy(storage_service) -> None:
         config=Config(
             {
                 "_internal": {
-                    "resources_path": storage_service.path_resources
+                    "resources_path": storage_service.study_service.path_resources
                 },
                 "security": {"disabled": True},
+                "storage": {
+                    "studies": storage_service.study_service.path_to_studies
+                },
             }
         ),
     )
@@ -459,9 +468,12 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         config=Config(
             {
                 "_internal": {
-                    "resources_path": storage_service.path_resources
+                    "resources_path": storage_service.study_service.path_resources
                 },
                 "security": {"disabled": True},
+                "storage": {
+                    "studies": storage_service.study_service.path_to_studies
+                },
             }
         ),
     )
@@ -485,9 +497,12 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
         config=Config(
             {
                 "_internal": {
-                    "resources_path": storage_service.path_resources
+                    "resources_path": storage_service.study_service.path_resources
                 },
                 "security": {"disabled": True},
+                "storage": {
+                    "studies": storage_service.study_service.path_to_studies
+                },
             }
         ),
     )
@@ -522,9 +537,12 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         config=Config(
             {
                 "_internal": {
-                    "resources_path": storage_service.path_resources
+                    "resources_path": storage_service.study_service.path_resources
                 },
                 "security": {"disabled": True},
+                "storage": {
+                    "studies": storage_service.study_service.path_to_studies
+                },
             }
         ),
     )

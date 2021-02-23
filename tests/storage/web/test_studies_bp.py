@@ -18,7 +18,9 @@ from antarest.storage.web.exceptions import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
 )
-from antarest.storage.service import StorageServiceParameters
+from antarest.storage.business.storage_service_parameters import (
+    StorageServiceParameters,
+)
 
 
 @pytest.mark.unit_test
@@ -36,6 +38,7 @@ def test_server() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -60,6 +63,7 @@ def test_404() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -85,6 +89,7 @@ def test_server_with_parameters() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -110,7 +115,8 @@ def test_matrix(tmp_path: str, storage_service_builder) -> None:
     (tmp / "study1").mkdir()
     (tmp / "study1" / "matrix").write_text("toto")
 
-    storage_service = storage_service_builder(path_studies=tmp)
+    storage_service = Mock()
+    storage_service.study_service.path_to_studies = tmp
 
     app = Flask(__name__)
     build_storage(
@@ -120,6 +126,7 @@ def test_matrix(tmp_path: str, storage_service_builder) -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -153,6 +160,7 @@ def test_create_study(
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -192,6 +200,7 @@ def test_import_study_zipped(
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -223,6 +232,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -255,6 +265,7 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -274,6 +285,7 @@ def test_server_health() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -296,6 +308,7 @@ def test_export_files() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -322,6 +335,7 @@ def test_export_params() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -358,6 +372,7 @@ def test_delete_study() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -379,6 +394,7 @@ def test_import_matrix() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -410,6 +426,7 @@ def test_import_matrix_with_wrong_path() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -439,6 +456,7 @@ def test_edit_study() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
@@ -464,6 +482,7 @@ def test_edit_study_fail() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )
