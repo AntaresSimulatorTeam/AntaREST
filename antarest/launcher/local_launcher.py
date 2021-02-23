@@ -2,7 +2,7 @@ import subprocess
 import threading
 from pathlib import Path
 from threading import Thread
-from typing import Dict, Optional, Callable, List
+from typing import Dict, Optional, Callable, List, Any
 from uuid import UUID, uuid4
 
 from antarest.common.config import Config
@@ -32,9 +32,7 @@ class LocalLauncher(ILauncher):
             job.start()
             return uuid
 
-    def _callback(
-        self, process: subprocess.CompletedProcess, uuid: UUID
-    ) -> None:
+    def _callback(self, process: Any, uuid: UUID) -> None:
         if process.returncode == 0:
             execution_status = JobStatus.SUCCESS
         else:

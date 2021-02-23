@@ -25,7 +25,7 @@ class LauncherService:
         self.launcher = factory_launcher.build_launcher(config)
         self.launcher.add_callback(self.update)
 
-    def update(self, job_result: JobResult):
+    def update(self, job_result: JobResult) -> None:
         self.repository.save(job_result)
 
     def run_study(self, study_uuid: str) -> UUID:
