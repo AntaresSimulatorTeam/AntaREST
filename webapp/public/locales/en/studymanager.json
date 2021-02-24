@@ -1,5 +1,7 @@
 {
   "confirmdelete": "Are you sure you want to delete this study ?",
   "nameofstudy": "Study name",
-  "failtoretrievedata": "Failed to retrieve data"
+  "failtoretrievedata": "Failed to retrieve data",
+  "searchstudy": "Search studies",
+  "failtoretrievestudies": "Failed to retrieve studies"
 }

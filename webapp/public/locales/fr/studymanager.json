@@ -1,5 +1,7 @@
 {
   "confirmdelete": "Etes vous sûr de vouloir supprimer cette étude ?",
   "nameofstudy": "Nom de l'étude",
-  "failtoretrievedata": "Failed to retrieve data"
+  "failtoretrievedata": "Echec de la récupération des données",
+  "searchstudy": "Rechercher des études",
+  "failtoretrievestudies": "Echec de la récupération des études"
 }
