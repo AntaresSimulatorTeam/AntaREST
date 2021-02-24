@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import List, Optional
 from uuid import UUID
 
 from antarest.common.config import Config
@@ -26,6 +28,7 @@ class LauncherService:
         self.launcher.add_callback(self.update)
 
     def update(self, job_result: JobResult) -> None:
+        job_result.completion_date = datetime.utcnow()
         self.repository.save(job_result)
 
     def run_study(self, study_uuid: str) -> UUID:
@@ -37,7 +40,11 @@ class LauncherService:
         job_uuid: UUID = self.launcher.run_study(study_path, study_version)
 
         self.repository.save(
-            JobResult(id=str(job_uuid), job_status=JobStatus.RUNNING)
+            JobResult(
+                id=str(job_uuid),
+                study_id=study_uuid,
+                job_status=JobStatus.RUNNING,
+            )
         )
 
         return job_uuid
@@ -48,3 +55,10 @@ class LauncherService:
             return job_result
 
         raise JobNotFound()
+
+    def get_jobs(self, study_uid: Optional[str]) -> List[JobResult]:
+        if study_uid is not None:
+            job_results = self.repository.find_by_study(study_uid)
+        else:
+            job_results = self.repository.get_all()
+        return job_results

@@ -3,5 +3,7 @@
   "nameofstudy": "Study name",
   "failtoretrievedata": "Failed to retrieve data",
   "searchstudy": "Search studies",
-  "failtoretrievestudies": "Failed to retrieve studies"
+  "failtoretrievestudies": "Failed to retrieve studies",
+  "failtodeletestudy": "Failed to delete study",
+  "failtorunstudy": "Failed to run study"
 }

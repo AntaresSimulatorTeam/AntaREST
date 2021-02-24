@@ -8,5 +8,6 @@
   "name": "Nom",
   "import": "Importer",
   "allStudies": "Toutes les études",
-  "loginError": "Echec de l'authentification"
+  "loginError": "Echec de l'authentification",
+  "launch": "Lancer"
 }

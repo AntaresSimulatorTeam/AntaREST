@@ -1,10 +1,11 @@
 import debug from 'debug';
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Breadcrumbs, Typography, makeStyles, createStyles, Theme } from '@material-ui/core';
+import { Breadcrumbs, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import StudyView from '../../components/StudyView';
-import { getStudyData } from '../../services/api/study';
+import { getStudyData, getStudyJobs, LaunchJob } from '../../services/api/study';
+import PulsingDot from '../../components/ui/PulsingDot';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -18,6 +19,10 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     backgroundColor: '#d7d7d7',
     padding: theme.spacing(1),
   },
+  dot: {
+    height: '0.5em',
+    width: '0.5em',
+  },
 }));
 
 const SingleStudyView = () => {
@@ -25,6 +30,7 @@ const SingleStudyView = () => {
   const classes = useStyles();
   const [t] = useTranslation();
   const [studyname, setStudyname] = useState<string>();
+  const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
 
   const initStudyData = async (sid: string) => {
     try {
@@ -35,9 +41,31 @@ const SingleStudyView = () => {
     }
   };
 
+  const fetchStudyJob = async (sid: string) => {
+    try {
+      const data = await getStudyJobs(sid);
+      setStudyJobs(data);
+    } catch (e) {
+      logError('Failed to fetch study data', sid, e);
+    }
+  };
+
+  const renderStatus = () => {
+    if (studyJobs && !!studyJobs.find((j) => j.status === 'JobStatus.PENDING')) {
+      return (
+        <PulsingDot style={{ height: '0.5em',
+          width: '0.5em',
+          marginRight: '0.5em' }}
+        />
+      );
+    }
+    return undefined;
+  };
+
   useEffect(() => {
     if (studyId) {
       initStudyData(studyId);
+      fetchStudyJob(studyId);
     }
   }, [studyId]);
 
@@ -47,7 +75,10 @@ const SingleStudyView = () => {
         <Link to="/">
           {t('main:allStudies')}
         </Link>
-        <Typography color="textPrimary">{studyname}</Typography>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {renderStatus()}
+          {studyname}
+        </div>
       </Breadcrumbs>
       { studyId && <StudyView study={studyId} /> }
     </div>

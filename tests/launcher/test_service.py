@@ -24,7 +24,9 @@ def test_service_run_study():
     factory_launcher_mock = Mock()
     factory_launcher_mock.build_launcher.return_value = launcher_mock
 
-    running = JobResult(id=str(uuid), job_status=JobStatus.RUNNING)
+    running = JobResult(
+        id=str(uuid), study_id="study_uuid", job_status=JobStatus.RUNNING
+    )
     repository = Mock()
     repository.save.return_value = running
 

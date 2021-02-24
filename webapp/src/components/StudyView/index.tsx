@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import debug from 'debug';
+import { useSnackbar } from 'notistack';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
+import { Translation } from 'react-i18next';
 import { getStudyData } from '../../services/api/study';
 import StudyTreeView from './StudyTreeView';
 import StudyDataView from './StudyDataView';
@@ -50,21 +52,27 @@ interface PropTypes {
 const StudyView = (props: PropTypes) => {
   const { study } = props;
   const classes = useStyles();
+  const { enqueueSnackbar } = useSnackbar();
   const [studyData, setStudyData] = useState<any>();
+  const [loaded, setLoaded] = useState(false);
   const [elementView, setElementView] = useState<ElementView>();
 
-  const initStudyData = async (sid: string) => {
+  const initStudyData = useCallback(async (sid: string) => {
+    setLoaded(false);
     try {
       const data = await getStudyData(sid, '', -1);
       setStudyData(data);
     } catch (e) {
+      enqueueSnackbar(<Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, { variant: 'error' });
       logError('Failed to fetch study data', sid, e);
+    } finally {
+      setLoaded(true);
     }
-  };
+  }, [enqueueSnackbar]);
 
   useEffect(() => {
     initStudyData(study);
-  }, [study]);
+  }, [study, initStudyData]);
 
 
   return (
@@ -86,7 +94,7 @@ const StudyView = (props: PropTypes) => {
         )
       }
       {
-        !studyData && <MainContentLoader />
+        !loaded && <MainContentLoader />
       }
     </div>
   );

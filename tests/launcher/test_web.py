@@ -32,7 +32,7 @@ def test_run() -> None:
 
     app = create_app(service)
     client = app.test_client()
-    res = client.post(f"/studies/{study}/run")
+    res = client.post(f"/launcher/run/{study}")
 
     assert res.status_code == 200
     assert res.json == {"job_id": str(job)}
@@ -54,7 +54,7 @@ def test_result() -> None:
 
     app = create_app(service)
     client = app.test_client()
-    res = client.get(f"/jobs/{job}")
+    res = client.get(f"/launcher/jobs/{job}")
 
     assert res.status_code == 200
     assert res.json == result.to_dict()
