@@ -13,6 +13,11 @@ from antarest.storage.business.storage_service_parameters import (
 from antarest.storage.business.study_service import StudyService
 from antarest.storage.model import Metadata
 from antarest.storage.repository.metadata import StudyMetadataRepository
+from antarest.storage.web.exceptions import StudyNotFoundError
+
+
+class UserHasNotPermissionError(Exception):
+    pass
 
 
 class StorageService:
@@ -28,8 +33,11 @@ class StorageService:
         self.exporter_service = exporter_service
         self.repository = repository
 
-    def get(self, route: str, parameters: StorageServiceParameters) -> JSON:
-        return self.study_service.get(route, parameters)
+    def get(self, route: str, params: StorageServiceParameters) -> JSON:
+        uuid, _, _ = self.study_service.extract_info_from_url(route)
+        self._check_user_permission(params.user, uuid)
+
+        return self.study_service.get(route, params)
 
     def assert_study_exist(self, uuid: str) -> None:
         self.study_service.check_study_exist(uuid)
@@ -95,3 +103,10 @@ class StorageService:
 
     def edit_study(self, route: str, new: JSON) -> JSON:
         return self.study_service.edit_study(route, new)
+
+    def _check_user_permission(self, user: User, uuid: str) -> None:
+        md = self.repository.get(uuid)
+        if not md:
+            raise StudyNotFoundError(uuid)
+        if user not in md.users:
+            raise UserHasNotPermissionError()

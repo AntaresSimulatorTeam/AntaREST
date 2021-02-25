@@ -28,7 +28,7 @@ class StudyService:
         self.study_factory: StudyFactory = study_factory
         self.path_resources: Path = path_resources
 
-    def _extract_info_from_url(self, route: str) -> Tuple[str, str, Path]:
+    def extract_info_from_url(self, route: str) -> Tuple[str, str, Path]:
         route_parts = route.split("/")
         uuid = route_parts[0]
         url = "/".join(route_parts[1:])
@@ -61,7 +61,7 @@ class StudyService:
         return sorted(studies_list)
 
     def get(self, route: str, parameters: StorageServiceParameters) -> JSON:
-        uuid, url, study_path = self._extract_info_from_url(route)
+        uuid, url, study_path = self.extract_info_from_url(route)
         self.check_study_exist(uuid)
 
         _, study = self.study_factory.create_from_fs(study_path)
@@ -107,7 +107,7 @@ class StudyService:
         return uuid
 
     def copy_study(self, src_uuid: str, dest_study_name: str) -> str:
-        uuid, url, study_path = self._extract_info_from_url(src_uuid)
+        uuid, url, study_path = self.extract_info_from_url(src_uuid)
         self.check_study_exist(uuid)
 
         config, study = self.study_factory.create_from_fs(study_path)
@@ -141,7 +141,7 @@ class StudyService:
 
     def edit_study(self, route: str, new: JSON) -> JSON:
         # Get data
-        uuid, url, study_path = self._extract_info_from_url(route)
+        uuid, url, study_path = self.extract_info_from_url(route)
         self.check_study_exist(uuid)
 
         _, study = self.study_factory.create_from_fs(study_path)

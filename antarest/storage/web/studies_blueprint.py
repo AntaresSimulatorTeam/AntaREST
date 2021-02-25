@@ -31,10 +31,8 @@ def sanitize_study_name(name: str) -> str:
     return sanitize_uuid(name)
 
 
-def _construct_parameters(
-    params: Any,
-) -> StorageServiceParameters:
-    request_parameters = StorageServiceParameters()
+def _construct_parameters(params: Any, user: User) -> StorageServiceParameters:
+    request_parameters = StorageServiceParameters(user)
     request_parameters.depth = params.get(
         "depth", request_parameters.depth, type=int
     )
@@ -128,7 +126,7 @@ def create_study_routes(
         tags:
           - Manage Data inside Study
         """
-        parameters = _construct_parameters(request.args)
+        parameters = _construct_parameters(request.args, user)
         output = storage_service.get(path, parameters)
 
         return jsonify(output), 200

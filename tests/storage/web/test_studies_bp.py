@@ -13,6 +13,7 @@ from markupsafe import Markup
 
 from antarest import __version__
 from antarest.common.config import Config
+from antarest.login.model import User, Role
 from antarest.storage.main import build_storage
 from antarest.storage.web.exceptions import (
     IncorrectPathError,
@@ -22,13 +23,15 @@ from antarest.storage.business.storage_service_parameters import (
     StorageServiceParameters,
 )
 
+ADMIN = User(id=0, name="admin", role=Role.ADMIN)
+
 
 @pytest.mark.unit_test
 def test_server() -> None:
     mock_service = Mock()
     mock_service.get.return_value = {}
 
-    parameters = StorageServiceParameters()
+    parameters = StorageServiceParameters(ADMIN)
 
     app = Flask(__name__)
     build_storage(
