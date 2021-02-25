@@ -82,9 +82,9 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
     @bp.route("/users/<int:id>", methods=["GET"])
     @auth.protected(roles=[Role.ADMIN])
     def users_get_id(id: int, user: User) -> Any:
-        user = service.get_user(id)
-        if user:
-            return jsonify(user.to_dict())
+        u = service.get_user(id)
+        if u:
+            return jsonify(u.to_dict())
         else:
             return "", 404
 

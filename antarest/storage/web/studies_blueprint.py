@@ -10,7 +10,6 @@ from flask import (
     send_file,
     Blueprint,
 )
-from flask_jwt_extended import get_jwt_identity
 from werkzeug.exceptions import BadRequest
 
 from antarest.common.auth import Auth

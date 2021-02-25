@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 from flask import Flask
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
 from antarest.storage.business.exporter_service import ExporterService
