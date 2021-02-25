@@ -34,6 +34,7 @@ export const setAuth = (token: string | undefined): void => {
     Cookies.set('access_token_cookie', token);
   } else {
     delete client.defaults.headers.common.Authorization;
+    Cookies.remove('access_token_cookie');
   }
 };
 

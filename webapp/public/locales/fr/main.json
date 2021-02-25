@@ -1,5 +1,6 @@
 {
   "connexion": "Connexion",
+  "logout": "Déconnexion",
   "password": "Mot de passe",
   "delete": "Supprimer",
   "archive": "Archiver",

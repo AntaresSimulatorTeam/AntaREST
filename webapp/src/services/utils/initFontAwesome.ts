@@ -11,6 +11,7 @@ import {
   faFileCode,
   faCalendarCheck,
   faCalendar,
+  faUserCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
 
@@ -25,5 +26,6 @@ export default function (): void {
     faFileCode,
     faCalendarCheck,
     faCalendar,
+    faUserCircle,
   );
 }
