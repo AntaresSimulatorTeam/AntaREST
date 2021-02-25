@@ -32,7 +32,7 @@ class StorageService:
         return self.study_service.get(route, parameters)
 
     def assert_study_exist(self, uuid: str) -> None:
-        self.study_service.assert_study_exist(uuid)
+        self.study_service.check_study_exist(uuid)
 
     def assert_study_not_exist(self, uuid: str) -> None:
         self.study_service.assert_study_not_exist(uuid)

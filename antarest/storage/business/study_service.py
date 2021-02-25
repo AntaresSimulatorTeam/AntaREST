@@ -36,7 +36,7 @@ class StudyService:
 
         return uuid, url, study_path
 
-    def assert_study_exist(self, uuid: str) -> None:
+    def check_study_exist(self, uuid: str) -> None:
         if not self.is_study_existing(uuid):
             raise StudyNotFoundError(
                 f"Study with the uuid {uuid} does not exist."
@@ -62,7 +62,7 @@ class StudyService:
 
     def get(self, route: str, parameters: StorageServiceParameters) -> JSON:
         uuid, url, study_path = self._extract_info_from_url(route)
-        self.assert_study_exist(uuid)
+        self.check_study_exist(uuid)
 
         _, study = self.study_factory.create_from_fs(study_path)
         parts = [item for item in url.split("/") if item]
@@ -108,7 +108,7 @@ class StudyService:
 
     def copy_study(self, src_uuid: str, dest_study_name: str) -> str:
         uuid, url, study_path = self._extract_info_from_url(src_uuid)
-        self.assert_study_exist(uuid)
+        self.check_study_exist(uuid)
 
         config, study = self.study_factory.create_from_fs(study_path)
         data_source = study.get()
@@ -131,7 +131,7 @@ class StudyService:
         return uuid
 
     def delete_study(self, name: str) -> None:
-        self.assert_study_exist(name)
+        self.check_study_exist(name)
         study_path = self.get_study_path(name)
         shutil.rmtree(study_path)
 
@@ -142,7 +142,7 @@ class StudyService:
     def edit_study(self, route: str, new: JSON) -> JSON:
         # Get data
         uuid, url, study_path = self._extract_info_from_url(route)
-        self.assert_study_exist(uuid)
+        self.check_study_exist(uuid)
 
         _, study = self.study_factory.create_from_fs(study_path)
         study.save(new, url.split("/"))

@@ -32,7 +32,7 @@ class ImporterService:
         relative_path_matrix = Path(path)
         uuid = relative_path_matrix.parts[0]
 
-        self.study_service.assert_study_exist(uuid)
+        self.study_service.check_study_exist(uuid)
         StorageServiceUtils.assert_path_can_be_matrix(relative_path_matrix)
 
         path_matrix = self.path_to_studies / relative_path_matrix
