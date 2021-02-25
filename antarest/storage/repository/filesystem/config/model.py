@@ -93,8 +93,10 @@ class StudyConfig(DTO):
         self.bindings = bindings or list()
 
     def next_file(self, name: str) -> "StudyConfig":
-        copy = deepcopy(self)
-        copy.path = copy.path / name
+        copy = StudyConfig(
+            self.root_path, self.areas, self.sets, self.outputs, self.bindings
+        )
+        copy.path = self.path / name
         return copy
 
     def area_names(self) -> List[str]:

@@ -24,6 +24,8 @@ class Config:
 
         data = deepcopy(self.data)
         for p in parts:
+            if p not in data:
+                return None
             data = data[p]
         return data
 

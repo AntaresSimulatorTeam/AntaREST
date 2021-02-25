@@ -29,6 +29,7 @@ i18n
     ns: [
       'main',
       'studymanager',
+      'jobs',
     ],
     defaultNS: 'main',
   });

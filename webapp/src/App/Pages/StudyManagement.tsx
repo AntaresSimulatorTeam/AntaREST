@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import debug from 'debug';
@@ -8,8 +9,10 @@ import StudyListing from '../../components/StudyListing';
 import { initStudies } from '../../ducks/study';
 import { getStudies } from '../../services/api/study';
 import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
+import StudySearchTool from '../../components/StudySearchTool';
+import { StudyMetadata } from '../../common/types';
 
-const logError = debug('antares:app:error');
+const logError = debug('antares:studymanagement:error');
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -37,32 +40,34 @@ type PropTypes = ReduxProps;
 const StudyManagement = (props: PropTypes) => {
   const { studies, loadStudies } = props;
   const classes = useStyles();
-  const [loaded, setLoaded] = useState(studies.length !== 0);
-  const init = useCallback(async () => {
-    if (studies.length === 0) {
-      try {
-        const allStudies = await getStudies();
-        loadStudies(allStudies);
-      } catch (e) {
-        logError('woops', e);
-      } finally {
-        setLoaded(true);
-      }
+  const [filteredStudies, setFilteredStudies] = useState<StudyMetadata[]>(studies);
+  const [loaded, setLoaded] = useState(true);
+
+  const init = async () => {
+    setLoaded(false);
+    try {
+      const allStudies = await getStudies();
+      loadStudies(allStudies);
+    } catch (e) {
+      logError('woops', e);
+    } finally {
+      setLoaded(true);
     }
-  }, [studies, loadStudies]);
+  };
 
   useEffect(() => {
     init();
-  }, [init]);
+  }, []);
 
 
   return (
     <div className={classes.root}>
       <div className={classes.header}>
         <StudyCreationTools />
+        <StudySearchTool setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
       </div>
       {!loaded && <MainContentLoader />}
-      {studies && <StudyListing studies={studies} />}
+      {loaded && studies && <StudyListing studies={filteredStudies} />}
     </div>
   );
 };

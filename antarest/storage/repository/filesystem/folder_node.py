@@ -41,7 +41,7 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
             if depth == 0:
                 return {}
             json = {
-                name: node.get(depth=depth - 1)
+                name: node.get(depth=depth - 1) if depth - 1 != 0 else {}
                 for name, node in children.items()
             }
             self.validate(json)

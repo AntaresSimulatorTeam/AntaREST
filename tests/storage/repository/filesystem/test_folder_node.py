@@ -41,7 +41,10 @@ def test_get_depth():
         children={"childA": build_tree(), "childB": build_tree()},
     )
 
-    expected = {"childA": {}, "childB": {}}
+    expected = {
+        "childA": {},
+        "childB": {},
+    }
 
     assert tree.get(depth=1) == expected
 

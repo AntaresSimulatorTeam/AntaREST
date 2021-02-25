@@ -16,6 +16,7 @@ from antarest.common.config import ConfigYaml
 from antarest.common.persistence import Base
 from antarest.common.reverse_proxy import ReverseProxyMiddleware
 from antarest.common.swagger import build_swagger
+from antarest.launcher.main import build_launcher
 from antarest.login.main import build_login
 from antarest.storage.main import build_storage
 
@@ -128,7 +129,8 @@ def flask_app(config_file: Path) -> Flask:
         response.content_type = "application/json"
         return response, e.code
 
-    build_storage(application, config, db_session)
+    storage = build_storage(application, config)
+    build_launcher(application, config, db_session, service_storage=storage)
     build_login(application, config, db_session)
     build_swagger(application)
 
