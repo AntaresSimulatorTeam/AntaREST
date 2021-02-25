@@ -30,6 +30,14 @@ class JobResultRepository:
         jobs: List[JobResult] = self.session.query(JobResult).all()
         return jobs
 
+    def find_by_study(self, study_id: str) -> List[JobResult]:
+        job: List[JobResult] = (
+            self.session.query(JobResult)
+            .filter(JobResult.study_id == study_id)
+            .all()
+        )
+        return job
+
     def delete(self, id: str) -> None:
         g = self.session.query(JobResult).get(id)
         self.session.delete(g)

@@ -18,8 +18,10 @@ def test_job_result() -> None:
     Base.metadata.create_all(engine)
 
     repo = JobResultRepository(session=session)
+    study_id = str(uuid4())
     a = JobResult(
         id=str(uuid4()),
+        study_id=study_id,
         job_status=JobStatus.SUCCESS,
         msg="Hello, World!",
         exit_code=0,
@@ -36,12 +38,18 @@ def test_job_result() -> None:
     c = repo.get(a.id)
     assert a == c
 
+    d = repo.find_by_study(study_id)
+    assert len(d) == 1
+    assert a == d[0]
+
     repo.delete(a.id)
     assert repo.get(a.id) is None
 
+    assert len(repo.find_by_study(study_id)) == 0
+
 
 @pytest.mark.unit_test
-def test_save():
+def test_update_object():
     engine = create_engine("sqlite:///:memory:", echo=True)
     session = scoped_session(
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -63,5 +71,6 @@ def test_save():
         exit_code=1,
     )
 
-    repo.save(a)
-    repo.save(b)
+    c = repo.save(a)
+    d = repo.save(b)
+    assert c != d

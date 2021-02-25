@@ -12,6 +12,7 @@ import SingleStudyView from './Pages/SingleStudyView';
 import LoginWrapper from './LoginWrapper';
 import theme, { TOOLBAR_HEIGHT } from './theme';
 import SwaggerDoc from './Pages/SwaggerDoc';
+import JobManagement from './Pages/JobManagement';
 
 const reduxStore = createStore();
 
@@ -31,6 +32,9 @@ const App: React.FC<{}> = () => (
                   </Route>
                   <Route path="/study/:studyId" key="module">
                     <SingleStudyView />
+                  </Route>
+                  <Route path="/jobs" key="module">
+                    <JobManagement />
                   </Route>
                   <Route path="/swagger">
                     <SwaggerDoc />

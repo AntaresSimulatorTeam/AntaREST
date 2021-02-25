@@ -1,5 +1,6 @@
 import React from 'react';
 import moment from 'moment';
+import { useSnackbar } from 'notistack';
 import { makeStyles, Button, createStyles, Theme, Card, CardContent, Typography, Grid, CardActions } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +9,7 @@ import { Link } from 'react-router-dom';
 import { connect, ConnectedProps } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { StudyMetadata } from '../../../common/types';
-import { deleteStudy as callDeleteStudy, getExportUrl } from '../../../services/api/study';
+import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy, getExportUrl } from '../../../services/api/study';
 import { removeStudies } from '../../../ducks/study';
 import DownloadLink from '../../ui/DownloadLink';
 
@@ -62,9 +63,20 @@ type PropTypes = PropsFromRedux & OwnProps;
 
 const StudyBlockSummaryView = (props: PropTypes) => {
   const classes = useStyles();
+  const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
   const [t] = useTranslation();
   const { study, removeStudy } = props;
+
+  const launchStudy = async () => {
+    try {
+      await callLaunchStudy(study.id);
+      enqueueSnackbar(t('studymanager:studylaunched', { studyname: study.name }), { variant: 'success' });
+    } catch (e) {
+      enqueueSnackbar(t('studymanager:failtorunstudy'), { variant: 'error' });
+      logError('Failed to launch study', study, e);
+    }
+  };
 
   const deleteStudy = async () => {
     // eslint-disable-next-line no-alert
@@ -73,6 +85,7 @@ const StudyBlockSummaryView = (props: PropTypes) => {
         await callDeleteStudy(study.id);
         removeStudy(study.id);
       } catch (e) {
+        enqueueSnackbar(t('studymanager:failtodeletestudy'), { variant: 'error' });
         logError('Failed to delete study', study, e);
       }
     }
@@ -82,7 +95,7 @@ const StudyBlockSummaryView = (props: PropTypes) => {
     <div>
       <Card className={classes.root}>
         <CardContent>
-          <Link className={classes.title} to={`/study/${study.id}`}>
+          <Link className={classes.title} to={`/study/${encodeURI(study.id)}`}>
             <Typography className={classes.title} component="h3">
               {study.name}
             </Typography>
@@ -111,6 +124,7 @@ const StudyBlockSummaryView = (props: PropTypes) => {
         </CardContent>
         <CardActions>
           <div style={{ width: '100%' }}>
+            <Button size="small" style={{ color: theme.palette.secondary.main }} onClick={launchStudy}>{t('main:launch')}</Button>
             <DownloadLink url={getExportUrl(study.id, true, false)}><Button size="small" style={{ color: theme.palette.primary.light }}>{t('main:export')}</Button></DownloadLink>
             <DownloadLink url={getExportUrl(study.id, false, false)}><Button size="small" style={{ color: theme.palette.primary.light }}>{t('main:archive')}</Button></DownloadLink>
             <Button size="small" style={{ float: 'right', color: theme.palette.error.main }} onClick={deleteStudy}>{t('main:delete')}</Button>
