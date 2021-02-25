@@ -7,6 +7,7 @@ from flask import Blueprint, send_file, request, jsonify, Response
 
 from antarest.common.auth import Auth
 from antarest.common.config import Config
+from antarest.login.model import User
 from antarest.storage.service import StorageService
 from antarest import __version__
 
@@ -45,7 +46,7 @@ def create_utils_routes(
         methods=["GET"],
     )
     @auth.protected()
-    def get_file(path: str) -> Any:
+    def get_file(path: str, user: User) -> Any:
         """
         Get file
         ---
@@ -78,7 +79,7 @@ def create_utils_routes(
         methods=["POST"],
     )
     @auth.protected()
-    def post_file(path: str) -> Any:
+    def post_file(path: str, user: User) -> Any:
         """
         Post file
         ---

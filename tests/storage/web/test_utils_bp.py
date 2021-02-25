@@ -21,6 +21,7 @@ def test_version() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
+        session=Mock(),
         config=Config(
             {
                 "_internal": {"resources_path": Path()},

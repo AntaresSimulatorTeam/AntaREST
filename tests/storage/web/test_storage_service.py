@@ -7,6 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.common.config import Config
+from antarest.login.model import User, Role
 from antarest.storage.business.storage_service_parameters import (
     StorageServiceParameters,
 )
@@ -56,6 +57,7 @@ def test_get(tmp_path: str, project_path) -> None:
 
     storage_service = build_storage(
         application=Mock(),
+        session=Mock(),
         config=Config(
             {
                 "_internal": {"resources_path": project_path / "resources"},
@@ -94,6 +96,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     # Test & Verify
     storage_service = build_storage(
         application=Mock(),
+        session=Mock(),
         config=Config(
             {
                 "_internal": {"resources_path": project_path / "resources"},
@@ -122,6 +125,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     # Test & Verify
     storage_service = build_storage(
         application=Mock(),
+        session=Mock(),
         config=Config(
             {
                 "_internal": {"resources_path": project_path / "resources"},
@@ -360,7 +364,8 @@ def test_import_study(tmp_path: Path, storage_service_builder) -> None:
     study_factory.create_from_fs.return_value = None, study
 
     storage_service = storage_service_builder(
-        study_factory=study_factory, path_studies=tmp_path
+        study_factory=study_factory,
+        path_studies=tmp_path,
     )
 
     filepath_zip = shutil.make_archive(
@@ -370,8 +375,12 @@ def test_import_study(tmp_path: Path, storage_service_builder) -> None:
 
     path_zip = Path(filepath_zip)
 
+    params = StorageServiceParameters(
+        user=User(id=0, name="user", role=Role.ADMIN)
+    )
+
     with path_zip.open("rb") as input_file:
-        uuid = storage_service.import_study(input_file)
+        uuid = storage_service.import_study(input_file, params)
 
     storage_service.assert_study_exist(uuid)
     storage_service.assert_study_not_exist(name)

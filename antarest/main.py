@@ -128,10 +128,7 @@ def flask_app(config_file: Path) -> Flask:
         response.content_type = "application/json"
         return response, e.code
 
-    build_storage(
-        application,
-        config,
-    )
+    build_storage(application, config, db_session)
     build_login(application, config, db_session)
     build_swagger(application)
 

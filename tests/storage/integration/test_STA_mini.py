@@ -3,6 +3,7 @@ import json
 import shutil
 from http import HTTPStatus
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from flask import Flask
@@ -22,6 +23,7 @@ def assert_url_content(
     app = Flask(__name__)
     build_storage(
         app,
+        session=Mock(),
         storage_service=storage_service,
         config=Config(
             {
@@ -355,6 +357,7 @@ def test_sta_mini_copy(storage_service) -> None:
     app = Flask(__name__)
     build_storage(
         app,
+        session=Mock(),
         storage_service=storage_service,
         config=Config(
             {
@@ -465,6 +468,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         storage_service=storage_service,
+        session=Mock(),
         config=Config(
             {
                 "_internal": {
@@ -493,6 +497,7 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
     app = Flask(__name__)
     build_storage(
         app,
+        session=Mock(),
         storage_service=storage_service,
         config=Config(
             {
@@ -534,6 +539,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         storage_service=storage_service,
+        session=Mock(),
         config=Config(
             {
                 "_internal": {

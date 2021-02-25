@@ -17,6 +17,7 @@ def assert_url_content(storage_service: StorageService, url: str) -> bytes:
     app = Flask(__name__)
     build_storage(
         app,
+        session=Mock(),
         storage_service=storage_service,
         config=Config(
             {
@@ -54,7 +55,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         }
     )
 
-    service = build_storage(Mock(), config)
+    service = build_storage(Mock(), config, session=Mock())
 
     data = assert_url_content(service, url="/studies/STA-mini/export")
     assert_data(data)
@@ -78,7 +79,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
         }
     )
 
-    service = build_storage(Mock(), config)
+    service = build_storage(Mock(), config, Mock())
 
     data = assert_url_content(
         service, url="/studies/STA-mini/export?no-output"

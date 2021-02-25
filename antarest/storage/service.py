@@ -1,14 +1,18 @@
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import List, IO
 
 from antarest.common.custom_types import JSON
+from antarest.login.model import User
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.storage_service_parameters import (
     StorageServiceParameters,
 )
 from antarest.storage.business.study_service import StudyService
+from antarest.storage.model import Metadata
+from antarest.storage.repository.metadata import StudyMetadataRepository
 
 
 class StorageService:
@@ -17,10 +21,12 @@ class StorageService:
         study_service: StudyService,
         importer_service: ImporterService,
         exporter_service: ExporterService,
+        repository: StudyMetadataRepository,
     ):
         self.study_service = study_service
         self.importer_service = importer_service
         self.exporter_service = exporter_service
+        self.repository = repository
 
     def get(self, route: str, parameters: StorageServiceParameters) -> JSON:
         return self.study_service.get(route, parameters)
@@ -66,8 +72,23 @@ class StorageService:
     def upload_matrix(self, path: str, data: bytes) -> None:
         self.importer_service.upload_matrix(path, data)
 
-    def import_study(self, stream: IO[bytes]) -> str:
-        return self.importer_service.import_study(stream)
+    def import_study(
+        self, stream: IO[bytes], params: StorageServiceParameters
+    ) -> str:
+        uuid = self.importer_service.import_study(stream)
+        info = self.study_service.get_study_information(uuid)["antares"]
+        meta = Metadata(
+            id=uuid,
+            name=info["caption"],
+            version=info["version"],
+            author=info["author"],
+            created_at=datetime.fromtimestamp(info["created"]),
+            updated_at=datetime.fromtimestamp(info["lastsave"]),
+            users=[params.user],
+        )
+
+        self.repository.save(meta)
+        return uuid
 
     def import_output(self, uuid: str, stream: IO[bytes]) -> JSON:
         return self.importer_service.import_output(uuid, stream)

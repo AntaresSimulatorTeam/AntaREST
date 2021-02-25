@@ -10,10 +10,12 @@ from flask import (
     send_file,
     Blueprint,
 )
+from flask_jwt_extended import get_jwt_identity
 from werkzeug.exceptions import BadRequest
 
 from antarest.common.auth import Auth
 from antarest.common.config import Config
+from antarest.login.model import User
 from antarest.storage.service import StorageService
 from antarest.storage.business.storage_service_parameters import (
     StorageServiceParameters,
@@ -48,7 +50,7 @@ def create_study_routes(
 
     @bp.route("/studies", methods=["GET"])
     @auth.protected()
-    def get_studies() -> Any:
+    def get_studies(user: User) -> Any:
         """
         Get Studies
         ---
@@ -67,7 +69,7 @@ def create_study_routes(
 
     @bp.route("/studies", methods=["POST"])
     @auth.protected()
-    def import_study() -> Any:
+    def import_study(user: User) -> Any:
         """
         Import Study
         ---
@@ -89,7 +91,9 @@ def create_study_routes(
 
         zip_binary = io.BytesIO(request.files["study"].read())
 
-        uuid = storage_service.import_study(zip_binary)
+        params = StorageServiceParameters(user=user)
+
+        uuid = storage_service.import_study(zip_binary, params)
         content = "/studies/" + uuid
         code = HTTPStatus.CREATED.value
 
@@ -100,7 +104,7 @@ def create_study_routes(
         methods=["GET"],
     )
     @auth.protected()
-    def get_study(path: str) -> Any:
+    def get_study(path: str, user: User) -> Any:
         """
         Read data
         ---
@@ -135,7 +139,7 @@ def create_study_routes(
         methods=["POST"],
     )
     @auth.protected()
-    def copy_study(uuid: str) -> Any:
+    def copy_study(uuid: str, user: User) -> Any:
         """
         Copy study
         ---
@@ -191,7 +195,7 @@ def create_study_routes(
         methods=["POST"],
     )
     @auth.protected()
-    def create_study(name: str) -> Any:
+    def create_study(name: str, user: User) -> Any:
         """
         Create study name
         ---
@@ -224,7 +228,7 @@ def create_study_routes(
 
     @bp.route("/studies/<string:uuid>/export", methods=["GET"])
     @auth.protected()
-    def export_study(uuid: str) -> Any:
+    def export_study(uuid: str, user: User) -> Any:
         """
         Export Study
         ---
@@ -281,7 +285,7 @@ def create_study_routes(
 
     @bp.route("/studies/<string:uuid>", methods=["DELETE"])
     @auth.protected()
-    def delete_study(uuid: str) -> Any:
+    def delete_study(uuid: str, user: User) -> Any:
         """
         Delete study
         ---
@@ -312,7 +316,7 @@ def create_study_routes(
 
     @bp.route("/studies/<path:path>", methods=["POST"])
     @auth.protected()
-    def edit_study(path: str) -> Any:
+    def edit_study(path: str, user: User) -> Any:
         """
         Update data
         ---
@@ -352,7 +356,7 @@ def create_study_routes(
         methods=["POST"],
     )
     @auth.protected()
-    def import_output(uuid: str) -> Any:
+    def import_output(uuid: str, user: User) -> Any:
         """
         Import Output
         ---

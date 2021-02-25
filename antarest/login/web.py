@@ -76,12 +76,12 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     @bp.route("/users", methods=["GET"])
     @auth.protected(roles=[Role.ADMIN])
-    def users_get_all() -> Any:
+    def users_get_all(user: User) -> Any:
         return jsonify([u.to_dict() for u in service.get_all_users()])
 
     @bp.route("/users/<int:id>", methods=["GET"])
     @auth.protected(roles=[Role.ADMIN])
-    def users_get_id(id: int) -> Any:
+    def users_get_id(id: int, user: User) -> Any:
         user = service.get_user(id)
         if user:
             return jsonify(user.to_dict())
@@ -90,24 +90,24 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     @bp.route("/users", methods=["POST"])
     @auth.protected(roles=[Role.ADMIN])
-    def users_create() -> Any:
+    def users_create(user: User) -> Any:
         user = User.from_dict(json.loads(request.data))
         return jsonify(service.save_user(user).to_dict())
 
     @bp.route("/users/<int:id>", methods=["DELETE"])
     @auth.protected(roles=[Role.ADMIN])
-    def users_delete(id: int) -> Any:
+    def users_delete(id: int, user: User) -> Any:
         service.delete_user(id)
         return jsonify(id), 200
 
     @bp.route("/groups", methods=["GET"])
     @auth.protected(roles=[Role.ADMIN])
-    def groups_get_all() -> Any:
+    def groups_get_all(user: User) -> Any:
         return jsonify([g.to_dict() for g in service.get_all_groups()])
 
     @bp.route("/groups/<int:id>", methods=["GET"])
     @auth.protected(roles=[Role.ADMIN])
-    def groups_get_id(id: int) -> Any:
+    def groups_get_id(id: int, user: User) -> Any:
         group = service.get_group(id)
         if group:
             return jsonify(group.to_dict())
@@ -116,19 +116,19 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     @bp.route("/groups", methods=["POST"])
     @auth.protected(roles=[Role.ADMIN])
-    def groups_create() -> Any:
+    def groups_create(user: User) -> Any:
         group = Group.from_dict(json.loads(request.data))
         return jsonify(service.save_group(group).to_dict())
 
     @bp.route("/groups/<int:id>", methods=["DELETE"])
     @auth.protected(roles=[Role.ADMIN])
-    def groups_delete(id: int) -> Any:
+    def groups_delete(id: int, user: User) -> Any:
         service.delete_group(id)
         return jsonify(id), 200
 
     @bp.route("/protected")
     @auth.protected()
-    def protected() -> Any:
+    def protected(user: User) -> Any:
         return f"user id={get_jwt_identity()}"
 
     return bp

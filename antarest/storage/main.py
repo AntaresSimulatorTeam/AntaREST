@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 from flask import Flask
+from sqlalchemy.orm import Session
 
 from antarest.common.config import Config
 from antarest.storage.business.exporter_service import ExporterService
@@ -11,6 +12,7 @@ from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
 )
 from antarest.storage.repository.filesystem.factory import StudyFactory
+from antarest.storage.repository.metadata import StudyMetadataRepository
 from antarest.storage.service import StorageService
 from antarest.storage.web.studies_blueprint import create_study_routes
 from antarest.storage.web.utils_blueprint import create_utils_routes
@@ -19,6 +21,7 @@ from antarest.storage.web.utils_blueprint import create_utils_routes
 def build_storage(
     application: Flask,
     config: Config,
+    session: Session,
     study_factory: Optional[StudyFactory] = None,
     exporter: Optional[Exporter] = None,
     storage_service: Optional[StorageService] = None,
@@ -50,6 +53,7 @@ def build_storage(
         study_service=study_service,
         importer_service=importer_service,
         exporter_service=exporter_service,
+        repository=StudyMetadataRepository(session=session),
     )
 
     application.register_blueprint(
