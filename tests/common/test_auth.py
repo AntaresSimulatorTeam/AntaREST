@@ -7,7 +7,7 @@ from antarest.login.model import Role, User
 
 def build(security_disabled: bool = False, role: str = Role.USER) -> Auth:
     get_identity = Mock()
-    get_identity.return_value = {"role": role}
+    get_identity.return_value = {id: 0, "name": "admin", "role": role}
 
     config = Config({"security": {"disabled": security_disabled}})
 

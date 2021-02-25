@@ -48,7 +48,7 @@ def assert_with_errors(
     url = url[len("/studies/") :]
     print(url)
     assert (
-        storage_service.get(route=url, parameters=StorageServiceParameters())
+        storage_service.get(route=url, params=StorageServiceParameters())
         == expected_output
     )
 

@@ -43,7 +43,7 @@ class Auth:
                 belong = belong or user["role"] in (roles or [])
 
                 if belong:
-                    return fn(user=user, *args, **kwargs)
+                    return fn(user=User.from_dict(user), *args, **kwargs)
                 else:
                     return "User unauthorized", 403
 

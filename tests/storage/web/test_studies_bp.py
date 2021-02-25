@@ -31,7 +31,7 @@ def test_server() -> None:
     mock_service = Mock()
     mock_service.get.return_value = {}
 
-    parameters = StorageServiceParameters(ADMIN)
+    parameters = StorageServiceParameters(user=ADMIN)
 
     app = Flask(__name__)
     build_storage(
@@ -102,14 +102,14 @@ def test_server_with_parameters() -> None:
     client = app.test_client()
     result = client.get("/studies/study1?depth=4")
 
-    parameters = StorageServiceParameters(depth=4)
+    parameters = StorageServiceParameters(depth=4, user=ADMIN)
 
     assert result.status_code == 200
     mock_storage_service.get.assert_called_once_with("study1", parameters)
 
     result = client.get("/studies/study2?depth=WRONG_TYPE")
 
-    excepted_parameters = StorageServiceParameters()
+    excepted_parameters = StorageServiceParameters(user=ADMIN)
 
     assert result.status_code == 200
     mock_storage_service.get.assert_called_with("study2", excepted_parameters)

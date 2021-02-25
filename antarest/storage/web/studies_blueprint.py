@@ -32,7 +32,7 @@ def sanitize_study_name(name: str) -> str:
 
 
 def _construct_parameters(params: Any, user: User) -> StorageServiceParameters:
-    request_parameters = StorageServiceParameters(user)
+    request_parameters = StorageServiceParameters(user=user)
     request_parameters.depth = params.get(
         "depth", request_parameters.depth, type=int
     )

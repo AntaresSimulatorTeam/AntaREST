@@ -35,7 +35,7 @@ class StorageService:
 
     def get(self, route: str, params: StorageServiceParameters) -> JSON:
         uuid, _, _ = self.study_service.extract_info_from_url(route)
-        self._check_user_permission(params.user, uuid)
+        # self._check_user_permission(params.user, uuid)
 
         return self.study_service.get(route, params)
 

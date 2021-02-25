@@ -37,7 +37,7 @@ def assert_with_errors(
     assert res == new
 
     res = storage_service.get(
-        route=url, parameters=StorageServiceParameters(depth=-1)
+        route=url, params=StorageServiceParameters(depth=-1)
     )
     assert res == new
 
