@@ -10,8 +10,9 @@ import { initStudies } from '../../ducks/study';
 import { getStudies } from '../../services/api/study';
 import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
 import StudySearchTool from '../../components/StudySearchTool';
+import { StudyMetadata } from '../../common/types';
 
-const logError = debug('antares:app:error');
+const logError = debug('antares:studymanagement:error');
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -39,7 +40,9 @@ type PropTypes = ReduxProps;
 const StudyManagement = (props: PropTypes) => {
   const { studies, loadStudies } = props;
   const classes = useStyles();
+  const [filteredStudies, setFilteredStudies] = useState<StudyMetadata[]>(studies);
   const [loaded, setLoaded] = useState(true);
+
   const init = async () => {
     setLoaded(false);
     try {
@@ -61,10 +64,10 @@ const StudyManagement = (props: PropTypes) => {
     <div className={classes.root}>
       <div className={classes.header}>
         <StudyCreationTools />
-        <StudySearchTool setLoading={(isLoading) => setLoaded(!isLoading)} />
+        <StudySearchTool setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
       </div>
       {!loaded && <MainContentLoader />}
-      {loaded && studies && <StudyListing studies={studies} />}
+      {loaded && studies && <StudyListing studies={filteredStudies} />}
     </div>
   );
 };

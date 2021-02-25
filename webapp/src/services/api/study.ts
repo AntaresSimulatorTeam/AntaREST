@@ -72,8 +72,9 @@ export interface LaunchJob {
   exitCode: number;
 }
 
-export const getStudyJobs = async (sid: string): Promise<LaunchJob[]> => {
-  const res = await client.get(`/launcher/jobs?study=${sid}`);
+export const getStudyJobs = async (sid?: string): Promise<LaunchJob[]> => {
+  const query = sid ? `?study=${sid}` : '';
+  const res = await client.get(`/launcher/jobs${query}`);
   const data = await res.data;
   return data.jobs.map((j: any) => ({
     id: j.id,

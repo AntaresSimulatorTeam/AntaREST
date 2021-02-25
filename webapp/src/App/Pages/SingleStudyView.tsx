@@ -51,7 +51,7 @@ const SingleStudyView = () => {
   };
 
   const renderStatus = () => {
-    if (studyJobs && !!studyJobs.find((j) => j.status === 'JobStatus.PENDING')) {
+    if (studyJobs && !!studyJobs.find((j) => j.status === 'JobStatus.RUNNING')) {
       return (
         <PulsingDot style={{ height: '0.5em',
           width: '0.5em',

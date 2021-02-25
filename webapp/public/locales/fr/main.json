@@ -9,5 +9,8 @@
   "import": "Importer",
   "allStudies": "Toutes les études",
   "loginError": "Echec de l'authentification",
-  "launch": "Lancer"
+  "launch": "Lancer",
+  "studies": "Etudes",
+  "jobs": "Tâches",
+  "unknown": "Inconnu"
 }

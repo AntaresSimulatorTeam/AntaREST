@@ -71,6 +71,7 @@ const StudyBlockSummaryView = (props: PropTypes) => {
   const launchStudy = async () => {
     try {
       await callLaunchStudy(study.id);
+      enqueueSnackbar(t('studymanager:studylaunched', { studyname: study.name }), { variant: 'success' });
     } catch (e) {
       enqueueSnackbar(t('studymanager:failtorunstudy'), { variant: 'error' });
       logError('Failed to launch study', study, e);
@@ -94,7 +95,7 @@ const StudyBlockSummaryView = (props: PropTypes) => {
     <div>
       <Card className={classes.root}>
         <CardContent>
-          <Link className={classes.title} to={`/study/${study.id}`}>
+          <Link className={classes.title} to={`/study/${encodeURI(study.id)}`}>
             <Typography className={classes.title} component="h3">
               {study.name}
             </Typography>

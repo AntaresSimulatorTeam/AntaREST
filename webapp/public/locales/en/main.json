@@ -9,5 +9,8 @@
   "import": "Import",
   "allStudies": "All studies",
   "loginError": "Failed to authenticate",
-  "launch": "Launch"
+  "launch": "Launch",
+  "studies": "Studies",
+  "jobs": "Jobs",
+  "unknown": "Unkown"
 }

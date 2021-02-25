@@ -5,5 +5,6 @@
   "searchstudy": "Search studies",
   "failtoretrievestudies": "Failed to retrieve studies",
   "failtodeletestudy": "Failed to delete study",
-  "failtorunstudy": "Failed to run study"
+  "failtorunstudy": "Failed to run study",
+  "studylaunched": "{{studyname}} launched !"
 }

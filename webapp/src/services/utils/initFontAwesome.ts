@@ -9,6 +9,8 @@ import {
   faCodeBranch,
   faFileAlt,
   faFileCode,
+  faCalendarCheck,
+  faCalendar,
 } from '@fortawesome/free-solid-svg-icons';
 
 
@@ -21,5 +23,7 @@ export default function (): void {
     faGithub,
     faFileAlt,
     faFileCode,
+    faCalendarCheck,
+    faCalendar,
   );
 }
