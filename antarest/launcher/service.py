@@ -56,7 +56,7 @@ class LauncherService:
 
         raise JobNotFound()
 
-    def get_jobs(self, study_uid: Optional[str]) -> List[JobResult]:
+    def get_jobs(self, study_uid: Optional[str] = None) -> List[JobResult]:
         if study_uid is not None:
             job_results = self.repository.find_by_study(study_uid)
         else:
