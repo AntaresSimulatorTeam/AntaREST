@@ -40,13 +40,11 @@ def test_get_studies_uuid():
     assert ["A", "C"] == studies
 
 
-def test_import():
+def test_save_metadata():
     # Mock
     repository = Mock()
 
     uuid = str(uuid4())
-    importer = Mock()
-    importer.import_study.return_value = uuid
 
     study_service = Mock()
     study_service.get_study_information.return_value = {
@@ -60,9 +58,7 @@ def test_import():
     }
 
     # Input
-    params = StorageServiceParameters(
-        user=User(id=0, name="user", role=Role.USER)
-    )
+    user = User(id=0, name="user", role=Role.USER)
 
     # Expected
     metadata = Metadata(
@@ -72,17 +68,17 @@ def test_import():
         author="AUTHOR",
         created_at=datetime.fromtimestamp(1234),
         updated_at=datetime.fromtimestamp(9876),
-        users=[params.user],
+        users=[user],
     )
 
     service = StorageService(
         study_service=study_service,
-        importer_service=importer,
+        importer_service=Mock(),
         exporter_service=Mock(),
         repository=repository,
     )
 
-    assert uuid == service.import_study(stream=None, params=params)
+    service._save_metadata(uuid, user)
     repository.save.assert_called_once_with(metadata)
 
 

@@ -37,12 +37,11 @@ def assert_with_errors(
 ) -> None:
     url = url[len("/studies/") :]
     print(url)
-    res = storage_service.edit_study(route=url, new=new)
+    params = StorageServiceParameters(depth=-1, user=ADMIN)
+    res = storage_service.edit_study(route=url, new=new, params=params)
     assert res == new
 
-    res = storage_service.get(
-        route=url, params=StorageServiceParameters(depth=-1, user=ADMIN)
-    )
+    res = storage_service.get(route=url, params=params)
     assert res == new
 
 

@@ -8,6 +8,9 @@ from flask import Blueprint, send_file, request, jsonify, Response
 from antarest.common.auth import Auth
 from antarest.common.config import Config
 from antarest.login.model import User
+from antarest.storage.business.storage_service_parameters import (
+    StorageServiceParameters,
+)
 from antarest.storage.service import StorageService
 from antarest import __version__
 
@@ -101,7 +104,8 @@ def create_utils_routes(
         """
 
         data = request.files["matrix"].read()
-        storage_service.upload_matrix(path, data)
+        params = StorageServiceParameters(user=user)
+        storage_service.upload_matrix(path, data, params)
         output = b""
         code = HTTPStatus.NO_CONTENT.value
 

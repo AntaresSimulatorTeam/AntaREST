@@ -6,6 +6,9 @@ from antarest.common.config import Config
 from antarest.launcher.factory_launcher import FactoryLauncher
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
+from antarest.storage.business.storage_service_parameters import (
+    StorageServiceParameters,
+)
 from antarest.storage.service import StorageService
 
 
@@ -32,11 +35,13 @@ class LauncherService:
         self.repository.save(job_result)
 
     def run_study(self, study_uuid: str) -> UUID:
+        # TODO use true parameters from user request
+        params = StorageServiceParameters()
         study_info = self.storage_service.get_study_information(
-            uuid=study_uuid
+            uuid=study_uuid, params=params
         )
         study_version = study_info["antares"]["version"]
-        study_path = self.storage_service.get_study_path(study_uuid)
+        study_path = self.storage_service.get_study_path(study_uuid, params)
         job_uuid: UUID = self.launcher.run_study(study_path, study_version)
 
         self.repository.save(

@@ -179,9 +179,12 @@ def create_study_routes(
             destination_study_name
         )
 
+        params = StorageServiceParameters(user=user)
+
         destination_uuid = storage_service.copy_study(
             src_uuid=source_uuid_sanitized,
             dest_study_name=destination_name_sanitized,
+            params=params,
         )
         content = "/studies/" + destination_uuid
         code = HTTPStatus.CREATED.value
@@ -217,7 +220,8 @@ def create_study_routes(
         """
         name_sanitized = sanitize_study_name(name)
 
-        uuid = storage_service.create_study(name_sanitized)
+        params = StorageServiceParameters(user=user)
+        uuid = storage_service.create_study(name_sanitized, params)
 
         content = "/studies/" + uuid
         code = HTTPStatus.CREATED.value
@@ -270,8 +274,9 @@ def create_study_routes(
             or request.args["no-output"] == "false"
         )
 
+        params = StorageServiceParameters(user=user)
         content = storage_service.export_study(
-            uuid_sanitized, compact, outputs
+            uuid_sanitized, params, compact, outputs
         )
 
         return send_file(
@@ -306,7 +311,8 @@ def create_study_routes(
         """
         uuid_sanitized = sanitize_uuid(uuid)
 
-        storage_service.delete_study(uuid_sanitized)
+        params = StorageServiceParameters(user=user)
+        storage_service.delete_study(uuid_sanitized, params)
         content = ""
         code = HTTPStatus.NO_CONTENT.value
 
@@ -343,7 +349,8 @@ def create_study_routes(
         if not new:
             raise BadRequest("empty body not authorized")
 
-        storage_service.edit_study(path, new)
+        params = StorageServiceParameters(user=user)
+        storage_service.edit_study(path, new, params)
         content = ""
         code = HTTPStatus.NO_CONTENT.value
 
@@ -384,8 +391,9 @@ def create_study_routes(
 
         zip_binary = io.BytesIO(request.files["output"].read())
 
+        params = StorageServiceParameters(user=user)
         content = str(
-            storage_service.import_output(uuid_sanitized, zip_binary)
+            storage_service.import_output(uuid_sanitized, zip_binary, params)
         )
         code = HTTPStatus.ACCEPTED.value
 

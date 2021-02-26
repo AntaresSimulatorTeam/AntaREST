@@ -460,7 +460,8 @@ def notest_sta_mini_with_wrong_output_folder(
 @pytest.mark.integration_test
 def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 
-    path_study = storage_service.get_study_path("STA-mini")
+    params = StorageServiceParameters(user=ADMIN)
+    path_study = storage_service.get_study_path("STA-mini", params)
     sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
@@ -492,7 +493,10 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 @pytest.mark.integration_test
 def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
 
-    zip_study_stream = storage_service.export_study("STA-mini", compact=True)
+    params = StorageServiceParameters(user=ADMIN)
+    zip_study_stream = storage_service.export_study(
+        "STA-mini", compact=True, params=params
+    )
 
     app = Flask(__name__)
     build_storage(
@@ -521,9 +525,10 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
 
 @pytest.mark.integration_test
 def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
+    params = StorageServiceParameters(user=ADMIN)
 
     path_study_output = (
-        storage_service.get_study_path("STA-mini")
+        storage_service.get_study_path("STA-mini", params)
         / "output"
         / "20201014-1422eco-hello"
     )

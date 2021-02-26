@@ -39,15 +39,6 @@ class StorageService:
 
         return self.study_service.get(route, params)
 
-    def assert_study_exist(self, uuid: str) -> None:
-        self.study_service.check_study_exist(uuid)
-
-    def assert_study_not_exist(self, uuid: str) -> None:
-        self.study_service.assert_study_not_exist(uuid)
-
-    def is_study_existing(self, uuid: str) -> bool:
-        return self.study_service.is_study_existing(uuid)
-
     def _get_study_uuids(self, params: StorageServiceParameters) -> List[str]:
         uuids = self.study_service.get_study_uuids()
         return [
@@ -65,36 +56,91 @@ class StorageService:
             for uuid in uuids
         }
 
-    def get_study_information(self, uuid: str) -> JSON:
+    def get_study_information(
+        self, uuid: str, params: StorageServiceParameters
+    ) -> JSON:
+        self._check_user_permission(params.user, uuid)
         return self.study_service.get_study_information(uuid)
 
-    def get_study_path(self, uuid: str) -> Path:
+    def get_study_path(
+        self, uuid: str, params: StorageServiceParameters
+    ) -> Path:
+        self._check_user_permission(params.user, uuid)
         return self.study_service.get_study_path(uuid)
 
-    def create_study(self, study_name: str) -> str:
-        return self.study_service.create_study(study_name)
+    def create_study(
+        self, study_name: str, params: StorageServiceParameters
+    ) -> str:
+        uuid = self.study_service.create_study(study_name)
+        self._save_metadata(uuid, params.user)
+        return uuid
 
-    def copy_study(self, src_uuid: str, dest_study_name: str) -> str:
-        return self.study_service.copy_study(src_uuid, dest_study_name)
+    def copy_study(
+        self,
+        src_uuid: str,
+        dest_study_name: str,
+        params: StorageServiceParameters,
+    ) -> str:
+        self._check_user_permission(params.user, src_uuid)
+        uuid = self.study_service.copy_study(src_uuid, dest_study_name)
+        self._save_metadata(uuid, params.user)
+
+        return uuid
 
     def export_study(
-        self, name: str, compact: bool = False, outputs: bool = True
+        self,
+        uuid: str,
+        params: StorageServiceParameters,
+        compact: bool = False,
+        outputs: bool = True,
     ) -> BytesIO:
-        return self.exporter_service.export_study(name, compact, outputs)
+        self._check_user_permission(params.user, uuid)
+        return self.exporter_service.export_study(uuid, compact, outputs)
 
-    def delete_study(self, name: str) -> None:
-        self.study_service.delete_study(name)
+    def delete_study(
+        self, uuid: str, params: StorageServiceParameters
+    ) -> None:
+        self._check_user_permission(params.user, uuid)
+        self.study_service.delete_study(uuid)
 
-    def delete_output(self, uuid: str, output_name: str) -> None:
+    def delete_output(
+        self, uuid: str, output_name: str, params: StorageServiceParameters
+    ) -> None:
+        self._check_user_permission(params.user, uuid)
         self.study_service.delete_output(uuid, output_name)
 
-    def upload_matrix(self, path: str, data: bytes) -> None:
+    def upload_matrix(
+        self, path: str, data: bytes, params: StorageServiceParameters
+    ) -> None:
+        uuid, _, _ = self.study_service.extract_info_from_url(path)
+        self._check_user_permission(params.user, uuid)
         self.importer_service.upload_matrix(path, data)
 
     def import_study(
         self, stream: IO[bytes], params: StorageServiceParameters
     ) -> str:
         uuid = self.importer_service.import_study(stream)
+        self._save_metadata(uuid, params.user)
+        return uuid
+
+    def import_output(
+        self, uuid: str, stream: IO[bytes], params: StorageServiceParameters
+    ) -> JSON:
+        res = self.importer_service.import_output(uuid, stream)
+        self._save_metadata(uuid, params.user)
+        return res
+
+    def edit_study(
+        self, route: str, new: JSON, params: StorageServiceParameters
+    ) -> JSON:
+        uuid, _, _ = self.study_service.extract_info_from_url(route)
+        self._check_user_permission(params.user, uuid)
+        return self.study_service.edit_study(route, new)
+
+    def _save_metadata(self, uuid: str, user: Optional[User]) -> None:
+        if not user:
+            raise UserHasNotPermissionError
+
         info = self.study_service.get_study_information(uuid)["antares"]
         meta = Metadata(
             id=uuid,
@@ -103,16 +149,9 @@ class StorageService:
             author=info["author"],
             created_at=datetime.fromtimestamp(info["created"]),
             updated_at=datetime.fromtimestamp(info["lastsave"]),
-            users=[params.user],
+            users=[user],
         )
         self.repository.save(meta)
-        return uuid
-
-    def import_output(self, uuid: str, stream: IO[bytes]) -> JSON:
-        return self.importer_service.import_output(uuid, stream)
-
-    def edit_study(self, route: str, new: JSON) -> JSON:
-        return self.study_service.edit_study(route, new)
 
     def _check_user_permission(
         self, user: Optional[User], uuid: str, raising: bool = True
