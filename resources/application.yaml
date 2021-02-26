@@ -1,5 +1,5 @@
 security:
-  disabled: true
+  disabled: false
   jwt:
     key: super-secret
   login:
@@ -10,7 +10,7 @@ db:
   url: "sqlite:///database.db"
 
 storage:
-  studies: /tmp/Antares_Simulator_Examples
+  studies: examples/studies/
 
 launcher:
   default: local

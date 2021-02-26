@@ -10,11 +10,15 @@ from flask import Flask
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
+from antarest.login.model import User, Role
 from antarest.storage.main import build_storage
 from antarest.storage.service import StorageService
 from antarest.storage.business.storage_service_parameters import (
     StorageServiceParameters,
 )
+from tests.storage.web.test_studies_bp import ADMIN
+
+ADMIN = User(id=0, name="admin", role=Role.ADMIN)
 
 
 def assert_url_content(
@@ -46,11 +50,8 @@ def assert_with_errors(
     storage_service: StorageService, url: str, expected_output: dict
 ) -> None:
     url = url[len("/studies/") :]
-    print(url)
-    assert (
-        storage_service.get(route=url, params=StorageServiceParameters())
-        == expected_output
-    )
+    params = StorageServiceParameters(user=ADMIN)
+    assert storage_service.get(route=url, params=params) == expected_output
 
 
 @pytest.mark.integration_test
@@ -381,7 +382,7 @@ def test_sta_mini_copy(storage_service) -> None:
 
     destination_folder = url_destination.split("/")[2]
 
-    parameters = StorageServiceParameters(depth=-1)
+    parameters = StorageServiceParameters(depth=-1, user=ADMIN)
     data_source = storage_service.get(source_study_name, parameters)
     data_destination = storage_service.get(destination_folder, parameters)
 
