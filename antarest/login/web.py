@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -130,5 +131,10 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
     @auth.protected()
     def protected() -> Any:
         return f"user id={get_jwt_identity()}"
+
+    @bp.route("/auth")
+    @auth.protected()
+    def auth_needed() -> Any:
+        return "ok"
 
     return bp

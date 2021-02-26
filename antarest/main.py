@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import sys
 import webbrowser
@@ -75,10 +76,28 @@ def get_local_path() -> Path:
         return Path(os.path.abspath(""))
 
 
+def configure_logger(config: ConfigYaml) -> None:
+    logging_path = config["logging.path"]
+    logging_level = (
+        config["logging.level"]
+        if config["logging.level"] is not None
+        else "INFO"
+    )
+    logging_format = (
+        config["logging.format"]
+        if config["logging.format"] is not None
+        else "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    logging.basicConfig(
+        filename=logging_path, format=logging_format, level=logging_level
+    )
+
+
 def flask_app(config_file: Path) -> Flask:
     res = get_local_path() / "resources"
     config = ConfigYaml(res=res, file=config_file)
 
+    configure_logger(config)
     # Database
     engine = create_engine(config["db.url"], echo=config["debug"])
     Base.metadata.create_all(engine)
