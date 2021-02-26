@@ -28,7 +28,7 @@ class Metadata(DTO, Base):  # type: ignore
     author = Column(String(255))
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
-    users = relationship("User", secondary=users_metadata)
+    users = relationship("User", secondary=lambda: users_metadata, cascade="")
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Metadata):
@@ -43,3 +43,6 @@ class Metadata(DTO, Base):  # type: ignore
             and other.updated_at == self.updated_at
             and other.users == self.users
         )
+
+    def __str__(self) -> str:
+        return f"Metadata(name={self.name}, version={self.version}, users={[str(u)+',' for u in self.users]}"

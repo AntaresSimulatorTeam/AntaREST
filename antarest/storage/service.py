@@ -1,10 +1,10 @@
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import List, IO
+from typing import List, IO, Optional
 
 from antarest.common.custom_types import JSON
-from antarest.login.model import User
+from antarest.login.model import User, Role
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.storage_service_parameters import (
@@ -35,7 +35,8 @@ class StorageService:
 
     def get(self, route: str, params: StorageServiceParameters) -> JSON:
         uuid, _, _ = self.study_service.extract_info_from_url(route)
-        # self._check_user_permission(params.user, uuid)
+
+        self._check_user_permission(params.user, uuid)
 
         return self.study_service.get(route, params)
 
@@ -94,7 +95,6 @@ class StorageService:
             updated_at=datetime.fromtimestamp(info["lastsave"]),
             users=[params.user],
         )
-
         self.repository.save(meta)
         return uuid
 
@@ -104,7 +104,13 @@ class StorageService:
     def edit_study(self, route: str, new: JSON) -> JSON:
         return self.study_service.edit_study(route, new)
 
-    def _check_user_permission(self, user: User, uuid: str) -> None:
+    def _check_user_permission(self, user: Optional[User], uuid: str) -> None:
+        if not user:
+            raise UserHasNotPermissionError()
+
+        if user.role == Role.ADMIN:
+            return
+
         md = self.repository.get(uuid)
         if not md:
             raise StudyNotFoundError(uuid)

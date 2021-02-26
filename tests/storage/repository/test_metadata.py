@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
 
 from antarest.common.persistence import Base
+from antarest.login.model import User, Role
 from antarest.storage.model import Metadata
 from antarest.storage.repository.metadata import StudyMetadataRepository
 
@@ -15,6 +16,8 @@ def test_cyclelife():
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
 
+    user = User(id=0, name="admin", role=Role.ADMIN)
+
     Base.metadata.create_all(engine)
     repo = StudyMetadataRepository(session=sess)
     a = Metadata(
@@ -23,6 +26,7 @@ def test_cyclelife():
         author="John Smith",
         created_at=datetime.now(),
         updated_at=datetime.now(),
+        users=[user],
     )
     b = Metadata(
         name="b",
@@ -30,6 +34,7 @@ def test_cyclelife():
         author="Morpheus",
         created_at=datetime.now(),
         updated_at=datetime.now(),
+        users=[user],
     )
 
     a = repo.save(a)
