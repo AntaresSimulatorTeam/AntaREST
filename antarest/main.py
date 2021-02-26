@@ -15,7 +15,7 @@ from werkzeug.exceptions import HTTPException
 
 from antarest import __version__
 from antarest.common.auth import Auth
-from antarest.common.config import ConfigYaml
+from antarest.common.config import ConfigYaml, Config
 from antarest.common.persistence import Base
 from antarest.common.reverse_proxy import ReverseProxyMiddleware
 from antarest.common.swagger import build_swagger
@@ -76,7 +76,7 @@ def get_local_path() -> Path:
         return Path(os.path.abspath(""))
 
 
-def configure_logger(config: ConfigYaml) -> None:
+def configure_logger(config: Config) -> None:
     logging_path = config["logging.path"]
     logging_level = (
         config["logging.level"]
