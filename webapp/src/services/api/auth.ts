@@ -15,7 +15,7 @@ export const initRawAxiosClient = (config: Config): void => {
 
 export const needAuth = async (): Promise<boolean> => {
   try {
-    await client.get('/users');
+    await client.get('/auth');
     return Promise.resolve(false);
   } catch (e) {
     const { status } = e.response;
