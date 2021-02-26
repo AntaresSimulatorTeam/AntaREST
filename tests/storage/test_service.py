@@ -13,6 +13,33 @@ from antarest.storage.service import StorageService, UserHasNotPermissionError
 from antarest.storage.web.exceptions import StudyNotFoundError
 
 
+def test_get_studies_uuid():
+    bob = User(id=1, name="bob")
+    alice = User(id=2, name="alice")
+
+    # Mock
+    repository = Mock()
+    repository.get.side_effect = [
+        Metadata(id="A", users=[bob]),
+        Metadata(id="B", users=[alice]),
+        Metadata(id="C", users=[bob]),
+    ]
+
+    study_service = Mock()
+    study_service.get_study_uuids.return_value = ["A", "B", "C"]
+
+    service = StorageService(
+        study_service=study_service,
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        repository=repository,
+    )
+
+    studies = service._get_study_uuids(StorageServiceParameters(user=bob))
+
+    assert ["A", "C"] == studies
+
+
 def test_import():
     # Mock
     repository = Mock()
@@ -75,10 +102,12 @@ def test_check_user_permission():
     repository.get.return_value = None
     with pytest.raises(StudyNotFoundError):
         service._check_user_permission(user, uuid)
+    assert not service._check_user_permission(user, uuid, raising=False)
 
     repository.get.return_value = Metadata(id=uuid, users=[])
     with pytest.raises(UserHasNotPermissionError):
         service._check_user_permission(user, uuid)
+    assert not service._check_user_permission(user, uuid, raising=False)
 
     repository.get.return_value = Metadata(id=uuid, users=[user])
-    service._check_user_permission(user, uuid)
+    assert service._check_user_permission(user, uuid)

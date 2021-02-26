@@ -16,7 +16,6 @@ from antarest.storage.service import StorageService
 from antarest.storage.business.storage_service_parameters import (
     StorageServiceParameters,
 )
-from tests.storage.web.test_studies_bp import ADMIN
 
 ADMIN = User(id=0, name="admin", role=Role.ADMIN)
 

@@ -61,7 +61,8 @@ def create_study_routes(
         tags:
           - Manage Studies
         """
-        available_studies = storage_service.get_studies_information()
+        params = StorageServiceParameters(user=user)
+        available_studies = storage_service.get_studies_information(params)
         return jsonify(available_studies), HTTPStatus.OK.value
 
     @bp.route("/studies", methods=["POST"])

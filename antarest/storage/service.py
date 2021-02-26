@@ -35,7 +35,6 @@ class StorageService:
 
     def get(self, route: str, params: StorageServiceParameters) -> JSON:
         uuid, _, _ = self.study_service.extract_info_from_url(route)
-
         self._check_user_permission(params.user, uuid)
 
         return self.study_service.get(route, params)
@@ -49,11 +48,22 @@ class StorageService:
     def is_study_existing(self, uuid: str) -> bool:
         return self.study_service.is_study_existing(uuid)
 
-    def get_study_uuids(self) -> List[str]:
-        return self.study_service.get_study_uuids()
+    def _get_study_uuids(self, params: StorageServiceParameters) -> List[str]:
+        uuids = self.study_service.get_study_uuids()
+        return [
+            uuid
+            for uuid in uuids
+            if self._check_user_permission(params.user, uuid, raising=False)
+        ]
 
-    def get_studies_information(self) -> JSON:
-        return self.study_service.get_studies_information()
+    def get_studies_information(
+        self, params: StorageServiceParameters
+    ) -> JSON:
+        uuids = self._get_study_uuids(params)
+        return {
+            uuid: self.study_service.get_study_information(uuid)
+            for uuid in uuids
+        }
 
     def get_study_information(self, uuid: str) -> JSON:
         return self.study_service.get_study_information(uuid)
@@ -104,15 +114,27 @@ class StorageService:
     def edit_study(self, route: str, new: JSON) -> JSON:
         return self.study_service.edit_study(route, new)
 
-    def _check_user_permission(self, user: Optional[User], uuid: str) -> None:
-        if not user:
-            raise UserHasNotPermissionError()
+    def _check_user_permission(
+        self, user: Optional[User], uuid: str, raising: bool = True
+    ) -> bool:
+        def check(user: Optional[User], uuid: str) -> None:
+            if not user:
+                raise UserHasNotPermissionError()
 
-        if user.role == Role.ADMIN:
-            return
+            if user.role == Role.ADMIN:
+                return
 
-        md = self.repository.get(uuid)
-        if not md:
-            raise StudyNotFoundError(uuid)
-        if user not in md.users:
-            raise UserHasNotPermissionError()
+            md = self.repository.get(uuid)
+            if not md:
+                raise StudyNotFoundError(uuid)
+
+            if user not in md.users:
+                raise UserHasNotPermissionError()
+
+        try:
+            check(user, uuid)
+            return True
+        except Exception as e:
+            if raising:
+                raise e
+            return False
