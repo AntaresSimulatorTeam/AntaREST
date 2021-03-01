@@ -14,7 +14,7 @@ from flask_jwt_extended import (  # type: ignore
 
 from antarest.common.auth import Auth
 from antarest.common.config import Config
-from antarest.login.model import User, Group, Role
+from antarest.login.model import User, Group, Role, Password
 from antarest.login.service import LoginService
 
 
@@ -179,7 +179,22 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
     @bp.route("/users", methods=["POST"])
     @auth.protected(roles=[Role.ADMIN])
     def users_create(user: User) -> Any:
+        data = json.loads(request.data)
+        u = User(
+            name=data["name"],
+            password=Password(data["password"]),
+            role=data.get("role", ""),
+        )
+
+        return jsonify(service.save_user(u).to_dict())
+
+    @bp.route("/users/<int:id>", methods=["POST"])
+    @auth.protected(roles=[Role.ADMIN])
+    def users_update(id: int, user: User) -> Any:
         u = User.from_dict(json.loads(request.data))
+        if id != u.id:
+            return "Id in path must be same id in body", 400
+
         return jsonify(service.save_user(u).to_dict())
 
     @bp.route("/users/<int:id>", methods=["DELETE"])

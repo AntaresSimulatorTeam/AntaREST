@@ -190,9 +190,10 @@ def test_user_id() -> None:
 
 @pytest.mark.unit_test
 def test_user_create() -> None:
-    user = User(id=1, name="a", role=Role.USER, password=Password("b"))
+    user = User(name="a", role=Role.USER, password=Password("b"))
+    user_id = User(id=0, name="a", role=Role.USER, password=Password("b"))
     service = Mock()
-    service.save_user.return_value = user
+    service.save_user.return_value = user_id
 
     app = create_app(service)
     client = app.test_client()
@@ -203,6 +204,26 @@ def test_user_create() -> None:
     )
 
     assert res.status_code == 200
+    service.save_user.assert_called_once_with(user)
+    assert res.json == user_id.to_dict()
+
+
+@pytest.mark.unit_test
+def test_user_save() -> None:
+    user = User(id=0, name="a", role=Role.USER, password=Password("b"))
+    service = Mock()
+    service.save_user.return_value = user
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.post(
+        "/users/0",
+        headers=create_auth_token(app, Role.ADMIN),
+        json={"id": 0, "name": "a", "role": "USER"},
+    )
+
+    assert res.status_code == 200
+    service.save_user.assert_called_once_with(user)
     assert res.json == user.to_dict()
 
 

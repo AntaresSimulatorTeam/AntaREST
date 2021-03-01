@@ -64,7 +64,9 @@ class User(DTO, Base):  # type: ignore
 
     @staticmethod
     def from_dict(data: JSON) -> "User":
-        return User(id=data.get("id"), name=data["name"], role=data["role"])
+        return User(
+            id=data.get("id"), name=data["name"], role=data.get("role", "")
+        )
 
     def to_dict(self) -> JSON:
         return {"id": self.id, "name": self.name, "role": self.role}
