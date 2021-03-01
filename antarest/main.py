@@ -116,7 +116,7 @@ def flask_app(config_file: Path) -> Flask:
     ] = Auth.REFRESH_TOKEN_DURATION
     application.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
 
-    @application.route("/", methods=["GET", "POST"])
+    @application.route("/", methods=["GET"])
     def home() -> Any:
         """
         Home ui

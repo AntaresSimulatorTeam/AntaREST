@@ -145,3 +145,4 @@ html/
 # CI build
 resources/webapp/
 resources/templates/index.html
+resources/commit_id
