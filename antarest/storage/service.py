@@ -126,8 +126,8 @@ class StorageService:
     def import_output(
         self, uuid: str, stream: IO[bytes], params: StorageServiceParameters
     ) -> JSON:
+        self._check_user_permission(params.user, uuid)
         res = self.importer_service.import_output(uuid, stream)
-        self._save_metadata(uuid, params.user)
         return res
 
     def edit_study(
