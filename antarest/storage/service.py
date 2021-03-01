@@ -173,6 +173,7 @@ class StorageService:
             if not md:
                 # TODO be sure we let any user access to an fantom study
                 logger.warning(f"Study {uuid} not found in metadata db")
+                return
 
             if user not in md.users:
                 raise UserHasNotPermissionError()
