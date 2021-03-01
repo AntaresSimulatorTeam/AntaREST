@@ -1,7 +1,10 @@
+import logging
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import List, IO, Optional
+
+import werkzeug
 
 from antarest.common.custom_types import JSON
 from antarest.login.model import User, Role
@@ -16,7 +19,7 @@ from antarest.storage.repository.metadata import StudyMetadataRepository
 from antarest.storage.web.exceptions import StudyNotFoundError
 
 
-class UserHasNotPermissionError(Exception):
+class UserHasNotPermissionError(werkzeug.exceptions.Forbidden):
     pass
 
 
@@ -165,6 +168,8 @@ class StorageService:
 
             md = self.repository.get(uuid)
             if not md:
+                logging.warning(f"Study {uuid} not found in metadata db")
+                # TODO don't raise error. Study can be added manually by user
                 raise StudyNotFoundError(uuid)
 
             if user not in md.users:

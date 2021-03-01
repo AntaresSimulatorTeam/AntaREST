@@ -92,8 +92,8 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
     @bp.route("/users", methods=["POST"])
     @auth.protected(roles=[Role.ADMIN])
     def users_create(user: User) -> Any:
-        user = User.from_dict(json.loads(request.data))
-        return jsonify(service.save_user(user).to_dict())
+        u = User.from_dict(json.loads(request.data))
+        return jsonify(service.save_user(u).to_dict())
 
     @bp.route("/users/<int:id>", methods=["DELETE"])
     @auth.protected(roles=[Role.ADMIN])
@@ -134,7 +134,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     @bp.route("/auth")
     @auth.protected()
-    def auth_needed() -> Any:
+    def auth_needed(user: User) -> Any:
         return "ok"
 
     return bp
