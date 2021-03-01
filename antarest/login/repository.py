@@ -1,4 +1,4 @@
-from typing import Dict, Optional, List, Generator, Any
+from typing import Optional, List
 
 from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
@@ -46,6 +46,12 @@ class UserRepository:
                     role=Role.ADMIN,
                     password=Password(config["security.login.admin.pwd"]),
                 )
+            )
+            self.save(
+                User(name="alice", role=Role.USER, password=Password("alice"))
+            )
+            self.save(
+                User(name="bob", role=Role.USER, password=Password("bob"))
             )
         elif not admin_user.password.check(config["security.login.admin.pwd"]):  # type: ignore
             admin_user.password = Password(config["security.login.admin.pwd"])  # type: ignore

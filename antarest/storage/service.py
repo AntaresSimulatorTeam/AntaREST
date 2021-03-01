@@ -1,328 +1,187 @@
-import copy
-import json
-import os
-import shutil
-import time
+import logging
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import List, IO, Tuple, Any
-from uuid import uuid4
-from zipfile import ZipFile, BadZipFile
+from typing import List, IO, Optional
 
-from antarest.common.config import Config
+import werkzeug
+
 from antarest.common.custom_types import JSON
-from antarest.storage.repository.antares_io.exporter.export_file import (
-    Exporter,
+from antarest.login.model import User, Role
+from antarest.storage.business.exporter_service import ExporterService
+from antarest.storage.business.importer_service import ImporterService
+from antarest.storage.business.storage_service_parameters import (
+    StorageServiceParameters,
 )
-from antarest.storage.repository.antares_io.reader import IniReader
-from antarest.storage.repository.filesystem.config.model import StudyConfig
-from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.web.exceptions import (
-    StudyNotFoundError,
-    StudyAlreadyExistError,
-    BadOutputError,
-    IncorrectPathError,
-    BadZipBinary,
-    StudyValidationError,
-)
+from antarest.storage.business.study_service import StudyService
+from antarest.storage.model import Metadata
+from antarest.storage.repository.metadata import StudyMetadataRepository
+from antarest.storage.web.exceptions import StudyNotFoundError
 
 
-class StorageServiceParameters:
-    def __init__(self, depth: int = 3) -> None:
-        self.depth = depth
+logger = logging.getLogger(__name__)
 
-    def __eq__(self, other: Any) -> bool:
-        return (
-            isinstance(other, type(self)) and self.__dict__ == other.__dict__
-        )
 
-    def __str__(self) -> str:
-        return "{}({})".format(
-            type(self).__name__,
-            ", ".join(
-                [
-                    "{}={} ({})".format(
-                        k, str(self.__dict__[k]), type(self.__dict__[k])
-                    )
-                    for k in sorted(self.__dict__)
-                ]
-            ),
-        )
-
-    def __repr__(self) -> str:
-        return self.__str__()
+class UserHasNotPermissionError(werkzeug.exceptions.Forbidden):
+    pass
 
 
 class StorageService:
     def __init__(
-        self, study_factory: StudyFactory, exporter: Exporter, config: Config
+        self,
+        study_service: StudyService,
+        importer_service: ImporterService,
+        exporter_service: ExporterService,
+        repository: StudyMetadataRepository,
     ):
-        self.study_factory = study_factory
-        self.exporter = exporter
-        self.path_to_studies = Path(config["storage.studies"])
-        self.path_resources = Path(config["_internal.resources_path"])
+        self.study_service = study_service
+        self.importer_service = importer_service
+        self.exporter_service = exporter_service
+        self.repository = repository
 
-    def get(self, route: str, parameters: StorageServiceParameters) -> JSON:
-        uuid, url, study_path = self._extract_info_from_url(route)
-        self.assert_study_exist(uuid)
+    def get(self, route: str, params: StorageServiceParameters) -> JSON:
+        uuid, _, _ = self.study_service.extract_info_from_url(route)
+        self._check_user_permission(params.user, uuid)
 
-        _, study = self.study_factory.create_from_fs(study_path)
-        parts = [item for item in url.split("/") if item]
+        return self.study_service.get(route, params)
 
-        data = study.get(parts, depth=parameters.depth)
-        del study
-        return data
-
-    def assert_study_exist(self, uuid: str) -> None:
-        if not self.is_study_existing(uuid):
-            raise StudyNotFoundError(
-                f"Study with the uuid {uuid} does not exist."
-            )
-
-    def assert_study_not_exist(self, uuid: str) -> None:
-        if self.is_study_existing(uuid):
-            raise StudyAlreadyExistError(
-                f"A study already exist with the uuid {uuid}."
-            )
-
-    def is_study_existing(self, uuid: str) -> bool:
-        return uuid in self.get_study_uuids()
-
-    def get_study_uuids(self) -> List[str]:
-        studies_list = [
-            path.name
-            for path in self.path_to_studies.iterdir()
-            if (path / "study.antares").is_file()
+    def _get_study_uuids(self, params: StorageServiceParameters) -> List[str]:
+        uuids = self.study_service.get_study_uuids()
+        return [
+            uuid
+            for uuid in uuids
+            if self._check_user_permission(params.user, uuid, raising=False)
         ]
 
-        # sorting needed for test
-        return sorted(studies_list)
-
-    def get_studies_information(self) -> JSON:
+    def get_studies_information(
+        self, params: StorageServiceParameters
+    ) -> JSON:
+        uuids = self._get_study_uuids(params)
         return {
-            uuid: self.get_study_information(uuid)
-            for uuid in self.get_study_uuids()
+            uuid: self.study_service.get_study_information(uuid)
+            for uuid in uuids
         }
 
-    def get_study_information(self, uuid: str) -> JSON:
-        config = StudyConfig(study_path=self.path_to_studies / uuid)
-        study = self.study_factory.create_from_config(config)
-        return study.get(url=["study"])
+    def get_study_information(
+        self, uuid: str, params: StorageServiceParameters
+    ) -> JSON:
+        self._check_user_permission(params.user, uuid)
+        return self.study_service.get_study_information(uuid)
 
-    def get_study_path(self, uuid: str) -> Path:
-        return self.path_to_studies / uuid
+    def get_study_path(
+        self, uuid: str, params: StorageServiceParameters
+    ) -> Path:
+        self._check_user_permission(params.user, uuid)
+        return self.study_service.get_study_path(uuid)
 
-    def create_study(self, study_name: str) -> str:
-
-        empty_study_zip = self.path_resources / "empty-study.zip"
-
-        uuid = StorageService.generate_uuid()
-
-        path_study = self.get_study_path(uuid)
-        path_study.mkdir()
-
-        with ZipFile(empty_study_zip) as zip_output:
-            zip_output.extractall(path=path_study)
-
-        study_data = self.get(
-            uuid, parameters=StorageServiceParameters(depth=10)
-        )
-        StorageService._update_antares_info(study_name, study_data)
-
-        _, study = self.study_factory.create_from_fs(path_study)
-        study.save(study_data)
-
+    def create_study(
+        self, study_name: str, params: StorageServiceParameters
+    ) -> str:
+        uuid = self.study_service.create_study(study_name)
+        self._save_metadata(uuid, params.user)
         return uuid
 
-    def copy_study(self, src_uuid: str, dest_study_name: str) -> str:
+    def copy_study(
+        self,
+        src_uuid: str,
+        dest_study_name: str,
+        params: StorageServiceParameters,
+    ) -> str:
+        self._check_user_permission(params.user, src_uuid)
+        uuid = self.study_service.copy_study(src_uuid, dest_study_name)
+        self._save_metadata(uuid, params.user)
 
-        uuid, url, study_path = self._extract_info_from_url(src_uuid)
-        self.assert_study_exist(uuid)
-
-        config, study = self.study_factory.create_from_fs(study_path)
-        data_source = study.get()
-        del study
-
-        uuid = StorageService.generate_uuid()
-        config.path = self.get_study_path(uuid)
-        data_destination = copy.deepcopy(data_source)
-
-        StorageService._update_antares_info(dest_study_name, data_destination)
-        if "output" in data_destination:
-            del data_destination["output"]
-        config.outputs = {}
-
-        study = self.study_factory.create_from_config(config)
-        study.save(data_destination)
-        del study
         return uuid
 
     def export_study(
-        self, name: str, compact: bool = False, outputs: bool = True
+        self,
+        uuid: str,
+        params: StorageServiceParameters,
+        compact: bool = False,
+        outputs: bool = True,
     ) -> BytesIO:
-        path_study = self.path_to_studies / name
+        self._check_user_permission(params.user, uuid)
+        return self.exporter_service.export_study(uuid, compact, outputs)
 
-        self.assert_study_exist(name)
+    def delete_study(
+        self, uuid: str, params: StorageServiceParameters
+    ) -> None:
+        self._check_user_permission(params.user, uuid)
+        self.study_service.delete_study(uuid)
 
-        if compact:
-            config, study = self.study_factory.create_from_fs(
-                path=self.path_to_studies / name
-            )
+    def delete_output(
+        self, uuid: str, output_name: str, params: StorageServiceParameters
+    ) -> None:
+        self._check_user_permission(params.user, uuid)
+        self.study_service.delete_output(uuid, output_name)
 
-            if not outputs:
-                config.outputs = dict()
-                study = self.study_factory.create_from_config(config)
+    def upload_matrix(
+        self, path: str, data: bytes, params: StorageServiceParameters
+    ) -> None:
+        uuid, _, _ = self.study_service.extract_info_from_url(path)
+        self._check_user_permission(params.user, uuid)
+        self.importer_service.upload_matrix(path, data)
 
-            data = study.get()
-            del study
-            return self.exporter.export_compact(path_study, data)
-        else:
-            return self.exporter.export_file(path_study, outputs)
-
-    def delete_study(self, name: str) -> None:
-        self.assert_study_exist(name)
-        study_path = self.get_study_path(name)
-        shutil.rmtree(study_path)
-
-    def delete_output(self, uuid: str, output_name: str) -> None:
-        output_path = self.path_to_studies / uuid / "output" / output_name
-        shutil.rmtree(output_path, ignore_errors=True)
-
-    def upload_matrix(self, path: str, data: bytes) -> None:
-
-        relative_path_matrix = Path(path)
-        uuid = relative_path_matrix.parts[0]
-
-        self.assert_study_exist(uuid)
-        StorageService.assert_path_can_be_matrix(relative_path_matrix)
-
-        path_matrix = self.path_to_studies / relative_path_matrix
-
-        path_matrix.write_bytes(data)
-
-    def import_study(self, stream: IO[bytes]) -> str:
-        uuid = StorageService.generate_uuid()
-        path_study = Path(self.path_to_studies) / uuid
-        path_study.mkdir()
-        StorageService.extract_zip(stream, path_study)
-
-        data_file = path_study / "data.json"
-
-        # If compact study generate tree and launch save with data.json
-        if data_file.is_file() and (path_study / "res").is_dir():
-            with open(data_file) as file:
-                data = json.load(file)
-                _, study = self.study_factory.create_from_json(
-                    path_study, data
-                )
-                study.save(data)
-            del study
-            shutil.rmtree(path_study / "res")
-            os.remove(str(data_file.absolute()))
-
-        data = self.get(uuid, parameters=StorageServiceParameters(depth=-1))
-        if data is None:
-            self.delete_study(uuid)
-            return ""  # TODO return exception
-
+    def import_study(
+        self, stream: IO[bytes], params: StorageServiceParameters
+    ) -> str:
+        uuid = self.importer_service.import_study(stream)
+        self._save_metadata(uuid, params.user)
         return uuid
 
-    def import_output(self, uuid: str, stream: IO[bytes]) -> JSON:
-        path_output = (
-            Path(self.path_to_studies) / uuid / "output" / "imported_output"
+    def import_output(
+        self, uuid: str, stream: IO[bytes], params: StorageServiceParameters
+    ) -> JSON:
+        self._check_user_permission(params.user, uuid)
+        res = self.importer_service.import_output(uuid, stream)
+        return res
+
+    def edit_study(
+        self, route: str, new: JSON, params: StorageServiceParameters
+    ) -> JSON:
+        uuid, _, _ = self.study_service.extract_info_from_url(route)
+        self._check_user_permission(params.user, uuid)
+        return self.study_service.edit_study(route, new)
+
+    def _save_metadata(self, uuid: str, user: Optional[User]) -> None:
+        if not user:
+            raise UserHasNotPermissionError
+
+        info = self.study_service.get_study_information(uuid)["antares"]
+        meta = Metadata(
+            id=uuid,
+            name=info["caption"],
+            version=info["version"],
+            author=info["author"],
+            created_at=datetime.fromtimestamp(info["created"]),
+            updated_at=datetime.fromtimestamp(info["lastsave"]),
+            users=[user],
         )
-        path_output.mkdir()
-        StorageService.extract_zip(stream, path_output)
+        self.repository.save(meta)
 
-        ini_reader = IniReader()
-        info_antares_output = ini_reader.read(
-            path_output / "info.antares-output"
-        )["general"]
+    def _check_user_permission(
+        self, user: Optional[User], uuid: str, raising: bool = True
+    ) -> bool:
+        def check(user: Optional[User], uuid: str) -> None:
+            if not user:
+                raise UserHasNotPermissionError()
 
-        date = datetime.fromtimestamp(
-            int(info_antares_output["timestamp"])
-        ).strftime("%Y%m%d-%H%M")
+            if user.role == Role.ADMIN:
+                return
 
-        mode = "eco" if info_antares_output["mode"] == "Economy" else "adq"
-        name = (
-            f"-{info_antares_output['name']}"
-            if info_antares_output["name"]
-            else ""
-        )
+            md = self.repository.get(uuid)
+            if not md:
+                # TODO be sure we let any user access to an fantom study
+                logger.warning(f"Study {uuid} not found in metadata db")
+                return
 
-        output_name = f"{date}{mode}{name}"
-        path_output.rename(Path(path_output.parent, output_name))
+            if user not in md.users:
+                raise UserHasNotPermissionError()
 
-        output_id = (
-            sorted(os.listdir(path_output.parent)).index(output_name) + 1
-        )
-
-        data = self.get(
-            f"{uuid}/output/{output_id}",
-            parameters=StorageServiceParameters(depth=-1),
-        )
-
-        if data is None:
-            self.delete_output(uuid, "imported_output")
-            raise BadOutputError("The output provided is not conform.")
-
-        return data
-
-    def edit_study(self, route: str, new: JSON) -> JSON:
-        # Get data
-        uuid, url, study_path = self._extract_info_from_url(route)
-        self.assert_study_exist(uuid)
-
-        _, study = self.study_factory.create_from_fs(study_path)
-        study.save(new, url.split("/"))
-        del study
-        return new
-
-    @staticmethod
-    def check_antares_version(study: JSON) -> None:
-
-        version = study["study"]["antares"]["version"]
-        major_version = int(version / 100)
-
-        if major_version < 7:
-            raise StudyValidationError(
-                "The API do not handle study with antares version inferior to 7"
-            )
-
-    @staticmethod
-    def generate_uuid() -> str:
-        return str(uuid4())
-
-    @staticmethod
-    def extract_zip(stream: IO[bytes], dst: Path) -> None:
         try:
-            with ZipFile(stream) as zip_output:
-                zip_output.extractall(path=dst)
-        except BadZipFile:
-            raise BadZipBinary("Only zip file are allowed.")
-
-    @staticmethod
-    def assert_path_can_be_matrix(path: Path) -> None:
-        if path.suffix != ".txt":
-            raise IncorrectPathError(
-                f"{path} is not a valid path for a matrix (use txt extension)."
-            )
-
-    @staticmethod
-    def _update_antares_info(study_name: str, study_data: JSON) -> None:
-        # TODO return value rather than change implicitly
-        info_antares = study_data["study"]["antares"]
-
-        info_antares["caption"] = study_name
-        current_time = int(time.time())
-        info_antares["created"] = current_time
-        info_antares["lastsave"] = current_time
-
-    def _extract_info_from_url(self, route: str) -> Tuple[str, str, Path]:
-        route_parts = route.split("/")
-        uuid = route_parts[0]
-        url = "/".join(route_parts[1:])
-        study_path = self.path_to_studies / uuid
-
-        return uuid, url, study_path
+            check(user, uuid)
+            return True
+        except Exception as e:
+            if raising:
+                raise e
+            return False

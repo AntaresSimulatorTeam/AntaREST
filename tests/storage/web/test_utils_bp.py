@@ -15,16 +15,18 @@ from antarest.storage.main import build_storage
 def test_version() -> None:
 
     mock_storage_service = Mock()
-    mock_storage_service.path_resources = Path("/")
+    mock_storage_service.study_service.path_resources = Path("/")
 
     app = Flask(__name__)
     build_storage(
         app,
         storage_service=mock_storage_service,
+        session=Mock(),
         config=Config(
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
+                "storage": {"studies": Path()},
             }
         ),
     )

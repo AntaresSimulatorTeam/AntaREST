@@ -17,13 +17,17 @@ def assert_url_content(storage_service: StorageService, url: str) -> bytes:
     app = Flask(__name__)
     build_storage(
         app,
+        session=Mock(),
         storage_service=storage_service,
         config=Config(
             {
                 "_internal": {
-                    "resources_path": storage_service.path_resources
+                    "resources_path": storage_service.study_service.path_resources
                 },
                 "security": {"disabled": True},
+                "storage": {
+                    "studies": storage_service.study_service.path_to_studies
+                },
             }
         ),
     )
@@ -43,16 +47,15 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
     with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
-    service = StorageService(
-        study_factory=StudyFactory(),
-        exporter=Exporter(),
-        config=Config(
-            {
-                "_internal": {"resources_path": Path()},
-                "storage": {"studies": path_studies},
-            }
-        ),
+    config = Config(
+        {
+            "_internal": {"resources_path": Path()},
+            "security": {"disabled": True},
+            "storage": {"studies": path_studies},
+        }
     )
+
+    service = build_storage(Mock(), config, session=Mock())
 
     data = assert_url_content(service, url="/studies/STA-mini/export")
     assert_data(data)
@@ -68,17 +71,15 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
     with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
-    service = StorageService(
-        study_factory=StudyFactory(),
-        exporter=Exporter(),
-        config=Config(
-            {
-                "_internal": {"resources_path": Path()},
-                "security": {"disabled": True},
-                "storage": {"studies": path_studies},
-            }
-        ),
+    config = Config(
+        {
+            "_internal": {"resources_path": Path()},
+            "security": {"disabled": True},
+            "storage": {"studies": path_studies},
+        }
     )
+
+    service = build_storage(Mock(), config, Mock())
 
     data = assert_url_content(
         service, url="/studies/STA-mini/export?no-output"

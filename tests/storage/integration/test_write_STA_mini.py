@@ -4,8 +4,15 @@ import pytest
 from flask import Flask
 
 from antarest.common.custom_types import SUB_JSON
+from antarest.login.model import User, Role
 from antarest.storage.main import build_storage
-from antarest.storage.service import StorageServiceParameters, StorageService
+from antarest.storage.service import StorageService
+from antarest.storage.business.storage_service_parameters import (
+    StorageServiceParameters,
+)
+
+
+ADMIN = User(id=0, name="admin", role=Role.ADMIN)
 
 
 def assert_url_content(
@@ -15,7 +22,7 @@ def assert_url_content(
     build_storage(
         app,
         storage_service=storage_service,
-        res=storage_service.path_resources,
+        res=storage_service.study_service.path_resources,
     )
     client = app.test_client()
     res = client.post(url, data=json.dumps(url))
@@ -30,12 +37,11 @@ def assert_with_errors(
 ) -> None:
     url = url[len("/studies/") :]
     print(url)
-    res = storage_service.edit_study(route=url, new=new)
+    params = StorageServiceParameters(depth=-1, user=ADMIN)
+    res = storage_service.edit_study(route=url, new=new, params=params)
     assert res == new
 
-    res = storage_service.get(
-        route=url, parameters=StorageServiceParameters(depth=-1)
-    )
+    res = storage_service.get(route=url, params=params)
     assert res == new
 
 

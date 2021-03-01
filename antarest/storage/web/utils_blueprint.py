@@ -7,6 +7,10 @@ from flask import Blueprint, send_file, request, jsonify, Response
 
 from antarest.common.auth import Auth
 from antarest.common.config import Config
+from antarest.login.model import User
+from antarest.storage.business.storage_service_parameters import (
+    StorageServiceParameters,
+)
 from antarest.storage.service import StorageService
 from antarest import __version__
 
@@ -45,7 +49,7 @@ def create_utils_routes(
         methods=["GET"],
     )
     @auth.protected()
-    def get_file(path: str) -> Any:
+    def get_file(path: str, user: User) -> Any:
         """
         Get file
         ---
@@ -68,7 +72,7 @@ def create_utils_routes(
         """
 
         try:
-            file_path = storage_service.path_to_studies / path
+            file_path = storage_service.study_service.path_to_studies / path
             return send_file(file_path.absolute())
         except FileNotFoundError:
             return f"{path} not found", HTTPStatus.NOT_FOUND.value
@@ -78,7 +82,7 @@ def create_utils_routes(
         methods=["POST"],
     )
     @auth.protected()
-    def post_file(path: str) -> Any:
+    def post_file(path: str, user: User) -> Any:
         """
         Post file
         ---
@@ -100,7 +104,8 @@ def create_utils_routes(
         """
 
         data = request.files["matrix"].read()
-        storage_service.upload_matrix(path, data)
+        params = StorageServiceParameters(user=user)
+        storage_service.upload_matrix(path, data, params)
         output = b""
         code = HTTPStatus.NO_CONTENT.value
 
@@ -134,7 +139,7 @@ def create_utils_routes(
         """
         version_data = {"version": __version__}
 
-        commit_id = get_commit_id(storage_service.path_resources)
+        commit_id = get_commit_id(storage_service.study_service.path_resources)
         if commit_id is not None:
             version_data["gitcommit"] = commit_id
 

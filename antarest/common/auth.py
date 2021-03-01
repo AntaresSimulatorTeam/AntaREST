@@ -5,6 +5,7 @@ from typing import List, Optional, Dict, Any, Callable, Tuple
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity  # type: ignore
 
 from antarest.common.config import Config
+from antarest.login.model import User, Role
 
 
 class Auth:
@@ -32,7 +33,8 @@ class Auth:
             @wraps(fn)
             def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
                 if self.disabled:
-                    return fn(*args, **kwargs)
+                    admin = User(id=0, name="admin", role=Role.ADMIN)
+                    return fn(user=admin, *args, **kwargs)
 
                 self.verify()
                 user: Dict[str, Any] = self.get_identity()
@@ -41,7 +43,7 @@ class Auth:
                 belong = belong or user["role"] in (roles or [])
 
                 if belong:
-                    return fn(*args, **kwargs)
+                    return fn(user=User.from_dict(user), *args, **kwargs)
                 else:
                     return "User unauthorized", 403
 
