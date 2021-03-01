@@ -3,17 +3,23 @@ from uuid import UUID
 
 from flask import Blueprint, jsonify, request
 
+from antarest.common.auth import Auth
+from antarest.common.config import Config
 from antarest.launcher.service import LauncherService
+from antarest.login.model import User
 
 
-def create_launcher_api(service: LauncherService) -> Blueprint:
+def create_launcher_api(service: LauncherService, config: Config) -> Blueprint:
     bp = Blueprint(
         "create_launcher_api",
         __name__,
     )
 
+    auth = Auth(config)
+
     @bp.route("/launcher/run/<string:study_id>", methods=["POST"])
-    def run(study_id: str) -> Any:
+    @auth.protected()
+    def run(study_id: str, user: User) -> Any:
         """
         Run study
         ---
@@ -46,10 +52,11 @@ def create_launcher_api(service: LauncherService) -> Blueprint:
         tags:
           - Run Studies
         """
-        return jsonify({"job_id": service.run_study(study_id)})
+        return jsonify({"job_id": service.run_study(study_id, user)})
 
     @bp.route("/launcher/jobs", methods=["GET"])
-    def get_job() -> Any:
+    @auth.protected()
+    def get_job(user: User) -> Any:
         """
         Retrieve jobs
         ---
@@ -103,7 +110,8 @@ def create_launcher_api(service: LauncherService) -> Blueprint:
         return jsonify([job.to_dict() for job in service.get_jobs(study_id)])
 
     @bp.route("/launcher/jobs/<uuid:job_id>", methods=["GET"])
-    def get_result(job_id: UUID) -> Any:
+    @auth.protected()
+    def get_result(job_id: UUID, user: User) -> Any:
         """
         Retrieve job info from job id
         ---

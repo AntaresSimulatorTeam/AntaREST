@@ -27,4 +27,6 @@ def build_launcher(
         )
 
     if service_launcher:
-        application.register_blueprint(create_launcher_api(service_launcher))
+        application.register_blueprint(
+            create_launcher_api(service_launcher, config)
+        )
