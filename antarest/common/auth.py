@@ -33,6 +33,10 @@ class Auth:
 
         return None
 
+    @staticmethod
+    def invalidate() -> None:
+        g.pop("user", None)
+
     def protected(
         self,
         roles: Optional[List[str]] = None,

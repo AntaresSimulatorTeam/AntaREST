@@ -131,7 +131,7 @@ def flask_app(config_file: Path) -> Flask:
 
     @application.teardown_appcontext
     def shutdown_session(exception: Any = None) -> None:
-        g.pop("user", None)
+        Auth.invalidate()
         db_session.remove()
 
     @application.errorhandler(HTTPException)
