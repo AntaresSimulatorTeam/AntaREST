@@ -40,6 +40,53 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     @bp.route("/login", methods=["POST"])
     def login() -> Any:
+        """
+        Login
+        ---
+        responses:
+          '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/definitions/UserCredentials'
+            description: Successful operation
+          '400':
+            description: Invalid request
+          '401':
+            description: Unauthenticated User
+          '403':
+            description: Unauthorized
+        consumes:
+            - application/x-www-form-urlencoded
+        parameters:
+        - in: body
+          name: body
+          required: true
+          description: user credentials
+          schema:
+            id: User
+            required:
+                - username
+                - password
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+        definitions:
+            - schema:
+                id: UserCredentials
+                properties:
+                  user:
+                    type: string
+                    description: User name
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+        tags:
+          - User
+        """
         username = request.form.get("username") or request.json.get("username")
         password = request.form.get("password") or request.json.get("password")
 
@@ -63,6 +110,46 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
     @bp.route("/refresh", methods=["POST"])
     @jwt_required(refresh=True)  # type: ignore
     def refresh() -> Any:
+        """
+        Refresh access token
+        ---
+        responses:
+          '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/definitions/UserCredentials'
+            description: Successful operation
+          '400':
+            description: Invalid request
+          '401':
+            description: Unauthenticated User
+          '403':
+            description: Unauthorized
+        consumes:
+            - application/x-www-form-urlencoded
+        parameters:
+        - in: header
+          name: Authorization
+          required: true
+          description: refresh token
+          schema:
+            type: string
+            description: (Bearer {token}) Refresh token received from login or previous refreshes
+        definitions:
+            - schema:
+                id: UserCredentials
+                properties:
+                  user:
+                    type: string
+                    description: User name
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+        tags:
+          - User
+        """
         identity = get_jwt_identity()
         user = service.get_user(identity["id"])
         if user:

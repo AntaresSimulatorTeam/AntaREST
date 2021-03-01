@@ -76,7 +76,7 @@ export const getStudyJobs = async (sid?: string): Promise<LaunchJob[]> => {
   const query = sid ? `?study=${sid}` : '';
   const res = await client.get(`/launcher/jobs${query}`);
   const data = await res.data;
-  return data.jobs.map((j: any) => ({
+  return data.map((j: any) => ({
     id: j.id,
     studyId: j.study_id,
     status: j.status,

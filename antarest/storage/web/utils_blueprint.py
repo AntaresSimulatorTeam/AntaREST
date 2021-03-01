@@ -112,6 +112,26 @@ def create_utils_routes(
 
     @bp.route("/version", methods=["GET"])
     def version() -> Any:
+        """
+        Get application version
+        ---
+        responses:
+          '200':
+            content:
+              application/json:
+                schema:
+                    type: object
+                    properties:
+                        version:
+                            type: string
+                            description: Semantic version
+                        gitcommit:
+                            type: string
+                            description: Build version (git commit id)
+            description: Successful operation
+        tags:
+          - Misc
+        """
         version_data = {"version": __version__}
 
         commit_id = get_commit_id(storage_service.path_resources)
