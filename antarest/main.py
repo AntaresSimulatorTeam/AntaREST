@@ -6,7 +6,7 @@ from numbers import Number
 from pathlib import Path
 from typing import Tuple, Any
 
-from flask import Flask, render_template, json
+from flask import Flask, render_template, json, g
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 from werkzeug.exceptions import HTTPException
@@ -131,6 +131,7 @@ def flask_app(config_file: Path) -> Flask:
 
     @application.teardown_appcontext
     def shutdown_session(exception: Any = None) -> None:
+        g.pop("user", None)
         db_session.remove()
 
     @application.errorhandler(HTTPException)

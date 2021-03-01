@@ -49,7 +49,7 @@ def create_utils_routes(
         methods=["GET"],
     )
     @auth.protected()
-    def get_file(path: str, user: User) -> Any:
+    def get_file(path: str) -> Any:
         """
         Get file
         ---
@@ -82,7 +82,7 @@ def create_utils_routes(
         methods=["POST"],
     )
     @auth.protected()
-    def post_file(path: str, user: User) -> Any:
+    def post_file(path: str) -> Any:
         """
         Post file
         ---
@@ -104,7 +104,7 @@ def create_utils_routes(
         """
 
         data = request.files["matrix"].read()
-        params = StorageServiceParameters(user=user)
+        params = StorageServiceParameters(user=Auth.get_current_user())
         storage_service.upload_matrix(path, data, params)
         output = b""
         code = HTTPStatus.NO_CONTENT.value

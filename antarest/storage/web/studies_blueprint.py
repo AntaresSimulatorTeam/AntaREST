@@ -14,7 +14,6 @@ from werkzeug.exceptions import BadRequest
 
 from antarest.common.auth import Auth
 from antarest.common.config import Config
-from antarest.login.model import User
 from antarest.storage.service import StorageService
 from antarest.storage.business.storage_service_parameters import (
     StorageServiceParameters,
@@ -31,8 +30,8 @@ def sanitize_study_name(name: str) -> str:
     return sanitize_uuid(name)
 
 
-def _construct_parameters(params: Any, user: User) -> StorageServiceParameters:
-    request_parameters = StorageServiceParameters(user=user)
+def _construct_parameters(params: Any) -> StorageServiceParameters:
+    request_parameters = StorageServiceParameters(user=Auth.get_current_user())
     request_parameters.depth = params.get(
         "depth", request_parameters.depth, type=int
     )
@@ -47,7 +46,7 @@ def create_study_routes(
 
     @bp.route("/studies", methods=["GET"])
     @auth.protected()
-    def get_studies(user: User) -> Any:
+    def get_studies() -> Any:
         """
         Get Studies
         ---
@@ -61,13 +60,13 @@ def create_study_routes(
         tags:
           - Manage Studies
         """
-        params = StorageServiceParameters(user=user)
+        params = StorageServiceParameters(user=Auth.get_current_user())
         available_studies = storage_service.get_studies_information(params)
         return jsonify(available_studies), HTTPStatus.OK.value
 
     @bp.route("/studies", methods=["POST"])
     @auth.protected()
-    def import_study(user: User) -> Any:
+    def import_study() -> Any:
         """
         Import Study
         ---
@@ -89,7 +88,7 @@ def create_study_routes(
 
         zip_binary = io.BytesIO(request.files["study"].read())
 
-        params = StorageServiceParameters(user=user)
+        params = StorageServiceParameters(user=Auth.get_current_user())
 
         uuid = storage_service.import_study(zip_binary, params)
         content = "/studies/" + uuid
@@ -102,7 +101,7 @@ def create_study_routes(
         methods=["GET"],
     )
     @auth.protected()
-    def get_study(path: str, user: User) -> Any:
+    def get_study(path: str) -> Any:
         """
         Read data
         ---
@@ -127,7 +126,7 @@ def create_study_routes(
         tags:
           - Manage Data inside Study
         """
-        parameters = _construct_parameters(request.args, user)
+        parameters = _construct_parameters(request.args)
         output = storage_service.get(path, parameters)
 
         return jsonify(output), 200
@@ -137,7 +136,7 @@ def create_study_routes(
         methods=["POST"],
     )
     @auth.protected()
-    def copy_study(uuid: str, user: User) -> Any:
+    def copy_study(uuid: str) -> Any:
         """
         Copy study
         ---
@@ -179,7 +178,7 @@ def create_study_routes(
             destination_study_name
         )
 
-        params = StorageServiceParameters(user=user)
+        params = StorageServiceParameters(user=Auth.get_current_user())
 
         destination_uuid = storage_service.copy_study(
             src_uuid=source_uuid_sanitized,
@@ -196,7 +195,7 @@ def create_study_routes(
         methods=["POST"],
     )
     @auth.protected()
-    def create_study(name: str, user: User) -> Any:
+    def create_study(name: str) -> Any:
         """
         Create study name
         ---
@@ -220,7 +219,7 @@ def create_study_routes(
         """
         name_sanitized = sanitize_study_name(name)
 
-        params = StorageServiceParameters(user=user)
+        params = StorageServiceParameters(user=Auth.get_current_user())
         uuid = storage_service.create_study(name_sanitized, params)
 
         content = "/studies/" + uuid
@@ -230,7 +229,7 @@ def create_study_routes(
 
     @bp.route("/studies/<string:uuid>/export", methods=["GET"])
     @auth.protected()
-    def export_study(uuid: str, user: User) -> Any:
+    def export_study(uuid: str) -> Any:
         """
         Export Study
         ---
@@ -274,7 +273,7 @@ def create_study_routes(
             or request.args["no-output"] == "false"
         )
 
-        params = StorageServiceParameters(user=user)
+        params = StorageServiceParameters(user=Auth.get_current_user())
         content = storage_service.export_study(
             uuid_sanitized, params, compact, outputs
         )
@@ -288,7 +287,7 @@ def create_study_routes(
 
     @bp.route("/studies/<string:uuid>", methods=["DELETE"])
     @auth.protected()
-    def delete_study(uuid: str, user: User) -> Any:
+    def delete_study(uuid: str) -> Any:
         """
         Delete study
         ---
@@ -311,7 +310,7 @@ def create_study_routes(
         """
         uuid_sanitized = sanitize_uuid(uuid)
 
-        params = StorageServiceParameters(user=user)
+        params = StorageServiceParameters(user=Auth.get_current_user())
         storage_service.delete_study(uuid_sanitized, params)
         content = ""
         code = HTTPStatus.NO_CONTENT.value
@@ -320,7 +319,7 @@ def create_study_routes(
 
     @bp.route("/studies/<path:path>", methods=["POST"])
     @auth.protected()
-    def edit_study(path: str, user: User) -> Any:
+    def edit_study(path: str) -> Any:
         """
         Update data
         ---
@@ -349,7 +348,7 @@ def create_study_routes(
         if not new:
             raise BadRequest("empty body not authorized")
 
-        params = StorageServiceParameters(user=user)
+        params = StorageServiceParameters(user=Auth.get_current_user())
         storage_service.edit_study(path, new, params)
         content = ""
         code = HTTPStatus.NO_CONTENT.value
@@ -361,7 +360,7 @@ def create_study_routes(
         methods=["POST"],
     )
     @auth.protected()
-    def import_output(uuid: str, user: User) -> Any:
+    def import_output(uuid: str) -> Any:
         """
         Import Output
         ---
@@ -391,7 +390,7 @@ def create_study_routes(
 
         zip_binary = io.BytesIO(request.files["output"].read())
 
-        params = StorageServiceParameters(user=user)
+        params = StorageServiceParameters(user=Auth.get_current_user())
         content = str(
             storage_service.import_output(uuid_sanitized, zip_binary, params)
         )

@@ -15,7 +15,7 @@ def create_app(service: Mock) -> Flask:
     build_launcher(
         app,
         service_launcher=service,
-        config=Config({}),
+        config=Config({"security": {"disabled": True}}),
         db_session=Mock(),
     )
     return app

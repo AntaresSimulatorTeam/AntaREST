@@ -1,7 +1,8 @@
 from datetime import timedelta
 from functools import wraps
-from typing import List, Optional, Dict, Any, Callable, Tuple
+from typing import List, Optional, Dict, Any, Callable, Tuple, cast
 
+from flask import g
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity  # type: ignore
 
 from antarest.common.config import Config
@@ -25,6 +26,13 @@ class Auth:
         self.verify = verify
         self.get_identity = get_identity
 
+    @staticmethod
+    def get_current_user() -> Optional[User]:
+        if "user" in g:
+            return cast(User, g.user)
+
+        return None
+
     def protected(
         self,
         roles: Optional[List[str]] = None,
@@ -34,7 +42,8 @@ class Auth:
             def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
                 if self.disabled:
                     admin = User(id=0, name="admin", role=Role.ADMIN)
-                    return fn(user=admin, *args, **kwargs)
+                    g.user = admin
+                    return fn(*args, **kwargs)
 
                 self.verify()
                 user: Dict[str, Any] = self.get_identity()
@@ -43,7 +52,8 @@ class Auth:
                 belong = belong or user["role"] in (roles or [])
 
                 if belong:
-                    return fn(user=User.from_dict(user), *args, **kwargs)
+                    g.user = User.from_dict(user)
+                    return fn(*args, **kwargs)
                 else:
                     return "User unauthorized", 403
 
