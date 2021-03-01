@@ -171,9 +171,8 @@ class StorageService:
 
             md = self.repository.get(uuid)
             if not md:
+                # TODO be sure we let any user access to an fantom study
                 logger.warning(f"Study {uuid} not found in metadata db")
-                # TODO don't raise error. Study can be added manually by user
-                raise StudyNotFoundError(uuid)
 
             if user not in md.users:
                 raise UserHasNotPermissionError()

@@ -95,11 +95,6 @@ def test_check_user_permission():
         repository=repository,
     )
 
-    repository.get.return_value = None
-    with pytest.raises(StudyNotFoundError):
-        service._check_user_permission(user, uuid)
-    assert not service._check_user_permission(user, uuid, raising=False)
-
     repository.get.return_value = Metadata(id=uuid, users=[])
     with pytest.raises(UserHasNotPermissionError):
         service._check_user_permission(user, uuid)
