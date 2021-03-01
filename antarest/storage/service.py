@@ -19,6 +19,9 @@ from antarest.storage.repository.metadata import StudyMetadataRepository
 from antarest.storage.web.exceptions import StudyNotFoundError
 
 
+logger = logging.getLogger(__name__)
+
+
 class UserHasNotPermissionError(werkzeug.exceptions.Forbidden):
     pass
 
@@ -168,7 +171,7 @@ class StorageService:
 
             md = self.repository.get(uuid)
             if not md:
-                logging.warning(f"Study {uuid} not found in metadata db")
+                logger.warning(f"Study {uuid} not found in metadata db")
                 # TODO don't raise error. Study can be added manually by user
                 raise StudyNotFoundError(uuid)
 
