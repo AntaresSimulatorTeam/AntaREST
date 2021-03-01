@@ -79,9 +79,9 @@ def test_jobs() -> None:
     client = app.test_client()
     res = client.get(f"/launcher/jobs?study={str(study_id)}")
     assert res.status_code == 200
-    assert res.json == {"jobs": [result.to_dict()]}
+    assert res.json == [result.to_dict()]
 
     res = client.get(f"/launcher/jobs")
     assert res.status_code == 200
-    assert res.json == {"jobs": [result.to_dict()]}
+    assert res.json == [result.to_dict()]
     service.get_jobs.assert_has_calls([call(str(study_id)), call(None)])

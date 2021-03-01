@@ -100,9 +100,7 @@ def create_launcher_api(service: LauncherService) -> Blueprint:
         if "study" in request.args:
             study_id = request.args["study"]
 
-        return jsonify(
-            [job.to_dict() for job in service.get_jobs(study_id)]
-        )
+        return jsonify([job.to_dict() for job in service.get_jobs(study_id)])
 
     @bp.route("/launcher/jobs/<uuid:job_id>", methods=["GET"])
     def get_result(job_id: UUID) -> Any:
