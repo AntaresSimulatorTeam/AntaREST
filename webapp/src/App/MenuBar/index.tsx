@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useTranslation } from 'react-i18next';
 import logo from './logo.png';
+import UserBadge from '../../components/UserBadge';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -62,6 +63,9 @@ const MenuBar = () => {
           <a href="https://github.com/AntaresSimulatorTeam/AntaREST" target="_blank" rel="noopener noreferrer">
             <FontAwesomeIcon size="2x" icon={['fab', 'github']} />
           </a>
+        </div>
+        <div className={classes.altmenuitem}>
+          <UserBadge />
         </div>
       </Toolbar>
     </AppBar>

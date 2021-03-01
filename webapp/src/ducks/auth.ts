@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 /* eslint-disable @typescript-eslint/camelcase */
-import { Action, AnyAction } from 'redux';
+import { Action } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import jwt_decode from 'jwt-decode';
 import lodash from 'lodash';
@@ -55,11 +55,16 @@ export const loginUser = (user: UserInfo): ThunkAction<void, AppState, unknown, 
   });
 };
 
-export const logoutAction = (): Action => ({
+export interface LogoutAction extends Action {
+  type: 'AUTH/LOGOUT';
+}
+
+export const logoutAction = (): LogoutAction => ({
   type: 'AUTH/LOGOUT',
 });
 
-type AuthAction = LoginAction | AnyAction;
+
+type AuthAction = LoginAction | LogoutAction;
 
 /** ******************************************* */
 /* Selectors                                    */
@@ -77,8 +82,10 @@ export default (state = initialState, action: AuthAction): AuthState => {
         ...state,
         user: action.payload,
       };
-    case 'AUTH/LOGOUT':
+    case 'AUTH/LOGOUT': {
+      setAuth(undefined);
       return {};
+    }
     default:
       return state;
   }

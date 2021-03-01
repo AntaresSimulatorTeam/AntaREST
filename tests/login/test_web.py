@@ -2,7 +2,7 @@ import base64
 import json
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 from unittest.mock import Mock
 
 import pytest
@@ -17,8 +17,7 @@ from antarest.login.main import build_login
 from antarest.login.model import User, Role, Password, Group
 
 
-def create_app(service: Mock) -> Flask:
-
+def create_app(service: Mock, auth_disabled=False) -> Flask:
     app = Flask(__name__)
     app.config["SECRET_KEY"] = "super-secret"
     app.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
@@ -29,7 +28,7 @@ def create_app(service: Mock) -> Flask:
         config=Config(
             {
                 "_internal": {"resources_path": Path()},
-                "security": {"disabled": False},
+                "security": {"disabled": auth_disabled},
             }
         ),
         db_session=Mock(),
@@ -59,6 +58,24 @@ def create_auth_token(
             identity=User(id=0, name="admin", role=role).to_dict(),
         )
         return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.mark.unit_test
+def test_auth_needed() -> None:
+    service = Mock()
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.get("/auth", headers=create_auth_token(app, Role.ADMIN))
+    assert res.status_code == 200
+
+    res = client.get("/auth")
+    assert res.status_code == 401
+
+    app = create_app(service, True)
+    client = app.test_client()
+    res = client.get("/auth")
+    assert res.status_code == 200
 
 
 @pytest.mark.unit_test
