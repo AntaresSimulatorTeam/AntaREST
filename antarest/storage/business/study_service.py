@@ -8,8 +8,8 @@ from antarest.common.custom_types import JSON
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.business.storage_service_parameters import (
-    StorageServiceParameters,
+from antarest.common.requests import (
+    RequestParameters,
 )
 from antarest.storage.web.exceptions import (
     StudyNotFoundError,
@@ -60,14 +60,14 @@ class StudyService:
         # sorting needed for test
         return sorted(studies_list)
 
-    def get(self, route: str, parameters: StorageServiceParameters) -> JSON:
+    def get(self, route: str, depth: int) -> JSON:
         uuid, url, study_path = self.extract_info_from_url(route)
         self.check_study_exist(uuid)
 
         _, study = self.study_factory.create_from_fs(study_path)
         parts = [item for item in url.split("/") if item]
 
-        data = study.get(parts, depth=parameters.depth)
+        data = study.get(parts, depth=depth)
         del study
         return data
 
@@ -96,9 +96,7 @@ class StudyService:
         with ZipFile(empty_study_zip) as zip_output:
             zip_output.extractall(path=path_study)
 
-        study_data = self.get(
-            uuid, parameters=StorageServiceParameters(depth=10)
-        )
+        study_data = self.get(uuid, 10)
         StorageServiceUtils.update_antares_info(study_name, study_data)
 
         _, study = self.study_factory.create_from_fs(path_study)

@@ -1,17 +1,21 @@
 from pathlib import Path
-from unittest.mock import Mock, call
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pytest
 
+from antarest.login.auth import Auth
 from antarest.common.config import Config
+from antarest.login.model import User
+from antarest.common.requests import RequestParameters
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
-from antarest.storage.service import StorageService
 
 
 @pytest.mark.unit_test
-def test_service_run_study():
+@patch.object(Auth, "get_current_user")
+def test_service_run_study(get_current_user_mock):
+    get_current_user_mock.return_value = None
     storage_service_mock = Mock()
     storage_service_mock.get_study_information.return_value = {
         "antares": {"version": "42"}
@@ -37,7 +41,10 @@ def test_service_run_study():
         factory_launcher=factory_launcher_mock,
     )
 
-    job_id = launcher_service.run_study("study_uuid")
+    job_id = launcher_service.run_study(
+        "study_uuid",
+        RequestParameters(user=User(id=0, name="admin", role="ADMIN")),
+    )
 
     assert job_id == uuid
     repository.save.assert_called_once_with(running)

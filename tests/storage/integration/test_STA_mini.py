@@ -13,8 +13,8 @@ from antarest.common.custom_types import JSON
 from antarest.login.model import User, Role
 from antarest.storage.main import build_storage
 from antarest.storage.service import StorageService
-from antarest.storage.business.storage_service_parameters import (
-    StorageServiceParameters,
+from antarest.common.requests import (
+    RequestParameters,
 )
 
 ADMIN = User(id=0, name="admin", role=Role.ADMIN)
@@ -49,8 +49,11 @@ def assert_with_errors(
     storage_service: StorageService, url: str, expected_output: dict
 ) -> None:
     url = url[len("/studies/") :]
-    params = StorageServiceParameters(user=ADMIN)
-    assert storage_service.get(route=url, params=params) == expected_output
+    params = RequestParameters(user=ADMIN)
+    assert (
+        storage_service.get(route=url, depth=3, params=params)
+        == expected_output
+    )
 
 
 @pytest.mark.integration_test
@@ -381,9 +384,9 @@ def test_sta_mini_copy(storage_service) -> None:
 
     destination_folder = url_destination.split("/")[2]
 
-    parameters = StorageServiceParameters(depth=-1, user=ADMIN)
-    data_source = storage_service.get(source_study_name, parameters)
-    data_destination = storage_service.get(destination_folder, parameters)
+    parameters = RequestParameters(user=ADMIN)
+    data_source = storage_service.get(source_study_name, -1, parameters)
+    data_destination = storage_service.get(destination_folder, -1, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
     assert link_url_source == "file/STA-mini/input/links/de/fr.txt"
@@ -460,7 +463,7 @@ def notest_sta_mini_with_wrong_output_folder(
 @pytest.mark.integration_test
 def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 
-    params = StorageServiceParameters(user=ADMIN)
+    params = RequestParameters(user=ADMIN)
     path_study = storage_service.get_study_path("STA-mini", params)
     sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
@@ -493,7 +496,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 @pytest.mark.integration_test
 def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
 
-    params = StorageServiceParameters(user=ADMIN)
+    params = RequestParameters(user=ADMIN)
     zip_study_stream = storage_service.export_study(
         "STA-mini", compact=True, params=params
     )
@@ -525,7 +528,7 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
 
 @pytest.mark.integration_test
 def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
-    params = StorageServiceParameters(user=ADMIN)
+    params = RequestParameters(user=ADMIN)
 
     path_study_output = (
         storage_service.get_study_path("STA-mini", params)

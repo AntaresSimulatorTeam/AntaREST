@@ -10,8 +10,8 @@ from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.study_service import StudyService
 from antarest.storage.repository.antares_io.reader import IniReader
 from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.business.storage_service_parameters import (
-    StorageServiceParameters,
+from antarest.common.requests import (
+    RequestParameters,
 )
 from antarest.storage.web.exceptions import BadOutputError
 
@@ -59,9 +59,7 @@ class ImporterService:
             shutil.rmtree(path_study / "res")
             os.remove(str(data_file.absolute()))
 
-        data = self.study_service.get(
-            uuid, parameters=StorageServiceParameters(depth=-1)
-        )
+        data = self.study_service.get(uuid, -1)
         if data is None:
             self.study_service.delete_study(uuid)
             return ""  # TODO return exception
@@ -100,7 +98,7 @@ class ImporterService:
 
         data = self.study_service.get(
             f"{uuid}/output/{output_id}",
-            parameters=StorageServiceParameters(depth=-1),
+            -1,
         )
 
         if data is None:

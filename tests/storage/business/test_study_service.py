@@ -1,27 +1,15 @@
-import io
-import shutil
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
 
 import pytest
 
-from antarest.common.config import Config
-from antarest.login.model import User, Role
-from antarest.storage.business.storage_service_parameters import (
-    StorageServiceParameters,
+from antarest.common.requests import (
+    RequestParameters,
 )
-from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.study_service import StudyService
-from antarest.storage.main import build_storage
-from antarest.storage.repository.filesystem.config.model import (
-    StudyConfig,
-)
 from antarest.storage.web.exceptions import (
-    BadZipBinary,
-    IncorrectPathError,
     StudyNotFoundError,
-    StudyValidationError,
 )
 
 
@@ -62,11 +50,7 @@ def test_get(tmp_path: str, project_path) -> None:
         path_resources=project_path / "resources",
     )
 
-    parameters = StorageServiceParameters(depth=2)
-
-    output = study_service.get(
-        route=f"study2.py/{sub_route}", parameters=parameters
-    )
+    output = study_service.get(route=f"study2.py/{sub_route}", depth=2)
 
     assert output == data
 

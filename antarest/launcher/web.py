@@ -3,16 +3,22 @@ from uuid import UUID
 
 from flask import Blueprint, jsonify, request
 
+from antarest.login.auth import Auth
+from antarest.common.config import Config
+from antarest.common.requests import RequestParameters
 from antarest.launcher.service import LauncherService
 
 
-def create_launcher_api(service: LauncherService) -> Blueprint:
+def create_launcher_api(service: LauncherService, config: Config) -> Blueprint:
     bp = Blueprint(
         "create_launcher_api",
         __name__,
     )
 
+    auth = Auth(config)
+
     @bp.route("/launcher/run/<string:study_id>", methods=["POST"])
+    @auth.protected()
     def run(study_id: str) -> Any:
         """
         Run study
@@ -46,9 +52,11 @@ def create_launcher_api(service: LauncherService) -> Blueprint:
         tags:
           - Run Studies
         """
-        return jsonify({"job_id": service.run_study(study_id)})
+        params = RequestParameters(user=Auth.get_current_user())
+        return jsonify({"job_id": service.run_study(study_id, params)})
 
     @bp.route("/launcher/jobs", methods=["GET"])
+    @auth.protected()
     def get_job() -> Any:
         """
         Retrieve jobs
@@ -103,6 +111,7 @@ def create_launcher_api(service: LauncherService) -> Blueprint:
         return jsonify([job.to_dict() for job in service.get_jobs(study_id)])
 
     @bp.route("/launcher/jobs/<uuid:job_id>", methods=["GET"])
+    @auth.protected()
     def get_result(job_id: UUID) -> Any:
         """
         Retrieve job info from job id

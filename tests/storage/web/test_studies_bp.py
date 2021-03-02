@@ -4,14 +4,12 @@ import shutil
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Callable
 from unittest.mock import Mock, call
 
 import pytest
 from flask import Flask
 from markupsafe import Markup
 
-from antarest import __version__
 from antarest.common.config import Config
 from antarest.login.model import User, Role
 from antarest.storage.main import build_storage
@@ -19,12 +17,12 @@ from antarest.storage.web.exceptions import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
 )
-from antarest.storage.business.storage_service_parameters import (
-    StorageServiceParameters,
+from antarest.common.requests import (
+    RequestParameters,
 )
 
 ADMIN = User(id=0, name="admin", role=Role.ADMIN)
-PARAMS = StorageServiceParameters(user=ADMIN)
+PARAMS = RequestParameters(user=ADMIN)
 
 
 @pytest.mark.unit_test
@@ -49,7 +47,7 @@ def test_server() -> None:
     client.get("/studies/study1/settings/general/params")
 
     mock_service.get.assert_called_once_with(
-        "study1/settings/general/params", PARAMS
+        "study1/settings/general/params", 3, PARAMS
     )
 
 
@@ -101,17 +99,19 @@ def test_server_with_parameters() -> None:
     client = app.test_client()
     result = client.get("/studies/study1?depth=4")
 
-    parameters = StorageServiceParameters(depth=4, user=ADMIN)
+    parameters = RequestParameters(user=ADMIN)
 
     assert result.status_code == 200
-    mock_storage_service.get.assert_called_once_with("study1", parameters)
+    mock_storage_service.get.assert_called_once_with("study1", 4, parameters)
 
     result = client.get("/studies/study2?depth=WRONG_TYPE")
 
-    excepted_parameters = StorageServiceParameters(user=ADMIN)
+    excepted_parameters = RequestParameters(user=ADMIN)
 
     assert result.status_code == 200
-    mock_storage_service.get.assert_called_with("study2", excepted_parameters)
+    mock_storage_service.get.assert_called_with(
+        "study2", 3, excepted_parameters
+    )
 
 
 @pytest.mark.unit_test

@@ -6,8 +6,8 @@ from antarest.common.config import Config
 from antarest.launcher.factory_launcher import FactoryLauncher
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
-from antarest.storage.business.storage_service_parameters import (
-    StorageServiceParameters,
+from antarest.common.requests import (
+    RequestParameters,
 )
 from antarest.storage.service import StorageService
 
@@ -34,9 +34,7 @@ class LauncherService:
         job_result.completion_date = datetime.utcnow()
         self.repository.save(job_result)
 
-    def run_study(self, study_uuid: str) -> UUID:
-        # TODO use true parameters from user request
-        params = StorageServiceParameters()
+    def run_study(self, study_uuid: str, params: RequestParameters) -> UUID:
         study_info = self.storage_service.get_study_information(
             uuid=study_uuid, params=params
         )
