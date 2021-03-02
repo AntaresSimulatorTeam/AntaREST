@@ -7,8 +7,8 @@ from antarest.common.custom_types import SUB_JSON
 from antarest.login.model import User, Role
 from antarest.storage.main import build_storage
 from antarest.storage.service import StorageService
-from antarest.storage.business.storage_service_parameters import (
-    StorageServiceParameters,
+from antarest.common.requests import (
+    RequestParameters,
 )
 
 
@@ -37,11 +37,11 @@ def assert_with_errors(
 ) -> None:
     url = url[len("/studies/") :]
     print(url)
-    params = StorageServiceParameters(depth=-1, user=ADMIN)
+    params = RequestParameters(user=ADMIN)
     res = storage_service.edit_study(route=url, new=new, params=params)
     assert res == new
 
-    res = storage_service.get(route=url, params=params)
+    res = storage_service.get(route=url, depth=-1, params=params)
     assert res == new
 
 

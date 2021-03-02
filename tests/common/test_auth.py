@@ -2,9 +2,9 @@ from unittest.mock import Mock
 
 from flask import Flask
 
-from antarest.common.auth import Auth
+from antarest.login.auth import Auth
 from antarest.common.config import Config
-from antarest.login.model import Role, User
+from antarest.login.model import Role
 
 
 def create_app() -> Flask:

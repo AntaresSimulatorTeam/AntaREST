@@ -3,9 +3,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 
 from antarest.common.config import Config
+from antarest.login.repository import UserRepository, GroupRepository
 from antarest.common.persistence import Base
 from antarest.login.model import User, Role, Password, Group
-from antarest.login.repository import UserRepository, GroupRepository
 
 
 @pytest.mark.unit_test

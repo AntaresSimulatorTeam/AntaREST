@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Optional
 
 from dataclasses import dataclass
 
@@ -6,6 +6,5 @@ from antarest.login.model import User
 
 
 @dataclass
-class StorageServiceParameters:
-    depth: int = 3
+class RequestParameters:
     user: Optional[User] = None

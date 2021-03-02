@@ -6,13 +6,13 @@ from numbers import Number
 from pathlib import Path
 from typing import Tuple, Any
 
-from flask import Flask, render_template, json, g
+from flask import Flask, render_template, json
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 from werkzeug.exceptions import HTTPException
 
 from antarest import __version__
-from antarest.common.auth import Auth
+from antarest.login.auth import Auth
 from antarest.common.config import ConfigYaml, Config
 from antarest.common.persistence import Base
 from antarest.common.reverse_proxy import ReverseProxyMiddleware

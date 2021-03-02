@@ -5,12 +5,11 @@ from uuid import uuid4
 import pytest
 
 from antarest.login.model import User, Role
-from antarest.storage.business.storage_service_parameters import (
-    StorageServiceParameters,
+from antarest.common.requests import (
+    RequestParameters,
 )
 from antarest.storage.model import Metadata
 from antarest.storage.service import StorageService, UserHasNotPermissionError
-from antarest.storage.web.exceptions import StudyNotFoundError
 
 
 def test_get_studies_uuid():
@@ -35,7 +34,7 @@ def test_get_studies_uuid():
         repository=repository,
     )
 
-    studies = service._get_study_uuids(StorageServiceParameters(user=bob))
+    studies = service._get_study_uuids(RequestParameters(user=bob))
 
     assert ["A", "C"] == studies
 

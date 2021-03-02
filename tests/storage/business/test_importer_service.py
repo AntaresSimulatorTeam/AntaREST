@@ -5,13 +5,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.login.model import User, Role
 from antarest.storage.business.importer_service import ImporterService
-from antarest.storage.business.storage_service_parameters import (
-    StorageServiceParameters,
-)
 from antarest.storage.web.exceptions import (
-    StudyNotFoundError,
     IncorrectPathError,
     BadZipBinary,
 )

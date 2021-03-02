@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Optional
 
 from flask import Flask

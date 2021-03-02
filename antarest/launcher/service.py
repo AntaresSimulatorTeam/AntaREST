@@ -2,14 +2,12 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from antarest.common.auth import Auth
 from antarest.common.config import Config
 from antarest.launcher.factory_launcher import FactoryLauncher
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
-from antarest.login.model import User
-from antarest.storage.business.storage_service_parameters import (
-    StorageServiceParameters,
+from antarest.common.requests import (
+    RequestParameters,
 )
 from antarest.storage.service import StorageService
 
@@ -36,8 +34,7 @@ class LauncherService:
         job_result.completion_date = datetime.utcnow()
         self.repository.save(job_result)
 
-    def run_study(self, study_uuid: str) -> UUID:
-        params = StorageServiceParameters(user=Auth.get_current_user())
+    def run_study(self, study_uuid: str, params: RequestParameters) -> UUID:
         study_info = self.storage_service.get_study_information(
             uuid=study_uuid, params=params
         )

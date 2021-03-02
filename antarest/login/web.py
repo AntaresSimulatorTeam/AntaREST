@@ -1,10 +1,7 @@
 import json
-import logging
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-from flask import Blueprint, request, jsonify, render_template
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import (  # type: ignore
     create_access_token,
     get_jwt_identity,
@@ -12,7 +9,7 @@ from flask_jwt_extended import (  # type: ignore
     jwt_required,
 )
 
-from antarest.common.auth import Auth
+from antarest.login.auth import Auth
 from antarest.common.config import Config
 from antarest.login.model import User, Group, Role, Password
 from antarest.login.service import LoginService

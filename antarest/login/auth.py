@@ -1,6 +1,6 @@
 from datetime import timedelta
 from functools import wraps
-from typing import List, Optional, Dict, Any, Callable, Tuple, cast
+from typing import List, Optional, Dict, Any, Callable, cast
 
 from flask import g
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity  # type: ignore

@@ -5,6 +5,8 @@ import pytest
 from flask import Flask
 
 from antarest.common.config import Config
+from antarest.login.model import User
+from antarest.common.requests import RequestParameters
 from antarest.launcher.main import build_launcher
 from antarest.launcher.model import JobResult, JobStatus
 
@@ -35,7 +37,9 @@ def test_run() -> None:
 
     assert res.status_code == 200
     assert res.json == {"job_id": str(job)}
-    service.run_study.assert_called_once_with(study)
+    service.run_study.assert_called_once_with(
+        study, RequestParameters(User(id=0, name="admin", role="ADMIN"))
+    )
 
 
 @pytest.mark.unit_test
