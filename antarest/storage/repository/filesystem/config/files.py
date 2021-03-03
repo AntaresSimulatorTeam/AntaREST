@@ -13,6 +13,7 @@ from antarest.storage.repository.filesystem.config.model import (
     Simulation,
     Link,
     Set,
+    transform_name_to_id,
 )
 
 
@@ -46,7 +47,7 @@ class ConfigPathBuilder:
     @staticmethod
     def _parse_areas(root: Path) -> Dict[str, Area]:
         areas = (root / "input/areas/list.txt").read_text().split("\n")
-        areas = [a.lower() for a in areas if a != ""]
+        areas = [transform_name_to_id(a) for a in areas if a != ""]
         return {a: ConfigPathBuilder.parse_area(root, a) for a in areas}
 
     @staticmethod
@@ -102,7 +103,7 @@ class ConfigPathBuilder:
         list_ini = IniReader().read(
             root / f"input/thermal/clusters/{area}/list.ini"
         )
-        return [key.lower() for key in list(list_ini.keys())]
+        return [transform_name_to_id(key) for key in list(list_ini.keys())]
 
     @staticmethod
     def _parse_links(root: Path, area: str) -> Dict[str, Link]:
