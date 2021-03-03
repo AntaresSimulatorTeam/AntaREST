@@ -135,7 +135,7 @@ def fix_study_root(study_path: Path) -> None:
         new_root = root_path / contents[0]
         if sub_root_path is None:
             sub_root_path = root_path / str(uuid4())
-            shutil.move(new_root, sub_root_path)
+            shutil.move(str(new_root), str(sub_root_path))
             new_root = sub_root_path
 
         logger.debug(f"Searching study root in {new_root}")
