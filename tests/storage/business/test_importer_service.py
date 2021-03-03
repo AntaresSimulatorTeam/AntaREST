@@ -1,3 +1,4 @@
+import os
 import shutil
 from pathlib import Path
 import io
@@ -5,10 +6,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.storage.business.importer_service import ImporterService
+from antarest.storage.business.importer_service import (
+    ImporterService,
+    fix_study_root,
+)
 from antarest.storage.web.exceptions import (
     IncorrectPathError,
     BadZipBinary,
+    StudyValidationError,
 )
 
 
@@ -67,3 +72,29 @@ def test_import_study(tmp_path: Path, storage_service_builder) -> None:
 
     with pytest.raises(BadZipBinary):
         importer_service.import_study(io.BytesIO(b""))
+
+
+@pytest.mark.unit_test
+def test_fix_root(tmp_path: Path):
+    name = "my-study"
+    study_path = tmp_path / name
+    study_nested_root = study_path / "nested" / "real_root"
+    os.makedirs(study_nested_root)
+    (study_nested_root / "antares.study").touch()
+    # when the study path is a single file
+    with pytest.raises(StudyValidationError):
+        fix_study_root(study_nested_root / "antares.study")
+
+    shutil.rmtree(study_path)
+    study_path = tmp_path / name
+    study_nested_root = study_path / "nested" / "real_root"
+    os.makedirs(study_nested_root)
+    (study_nested_root / "antares.study").touch()
+    os.mkdir(study_nested_root / "input")
+
+    fix_study_root(study_path)
+    study_files = os.listdir(study_path)
+    assert len(study_files) == 2
+    assert "antares.study" in study_files and "input" in study_files
+
+    shutil.rmtree(study_path)
