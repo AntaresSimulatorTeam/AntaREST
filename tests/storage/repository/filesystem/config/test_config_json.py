@@ -20,13 +20,25 @@ def build_empty_json() -> JSON:
             "bindingconstraints": {"bindingconstraints": {}},
             "links": {},
             "thermal": {"clusters": {}},
-        }
+        },
+        "settings": {"generaldata": {}},
     }
+
+
+def test_parse_parameters() -> None:
+    study_path = Path()
+    # Setup json
+    json = build_empty_json()
+    json["settings"]["generaldata"] = {"output": {"storenewset": True}}
+    config = StudyConfig(study_path=study_path, store_new_set=True)
+
+    # Test
+    assert ConfigJsonBuilder.build(study_path, json) == config
 
 
 def test_parse_bindings() -> None:
     study_path = Path()
-    # Setup josn
+    # Setup json
     json = build_empty_json()
     json["input"]["bindingconstraints"]["bindingconstraints"] = {
         "bindA": {"id": "bindA"},

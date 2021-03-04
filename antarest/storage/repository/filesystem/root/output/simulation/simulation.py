@@ -48,9 +48,6 @@ class OutputSimulation(FolderNode):
             ),
         }
         if self.simulation.error:
-            children["ts-numbers"] = OutputSimulationTsNumbers(
-                config.next_file("ts-numbers")
-            )
             children["annualSystemCost"] = OutputSimulationAnnualSystemCost(
                 config.next_file("annualSystemCost.txt")
             )
@@ -62,6 +59,11 @@ class OutputSimulation(FolderNode):
             ] = OutputSimulationSimulationComments(
                 config.next_file("simulation-comments.txt")
             )
+
+            if config.store_new_set:
+                children["ts-numbers"] = OutputSimulationTsNumbers(
+                    config.next_file("ts-numbers")
+                )
 
             if self.simulation.mode == "economy":
                 children["economy"] = OutputSimulationMode(

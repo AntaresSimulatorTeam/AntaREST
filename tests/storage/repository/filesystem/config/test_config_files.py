@@ -24,7 +24,23 @@ def build_empty_files(tmp: Path) -> Path:
     (study_path / "input/links").mkdir(parents=True)
     (study_path / "input/thermal/clusters").mkdir(parents=True)
 
+    (study_path / "settings").mkdir(parents=True)
+
     return study_path
+
+
+def test_parse_output_parmeters(tmp_path) -> None:
+    study = build_empty_files(tmp_path)
+    content = """
+    [output]
+    synthesis = true
+    storenewset = true
+    archives =
+    """
+    (study / "settings/generaldata.ini").write_text(content)
+
+    config = StudyConfig(study_path=study, store_new_set=True)
+    assert ConfigPathBuilder.build(study) == config
 
 
 def test_parse_bindings(tmp_path: Path) -> None:
