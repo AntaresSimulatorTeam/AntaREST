@@ -62,6 +62,7 @@ class Simulation(DTO):
         nbyears: int,
         synthesis: bool,
         by_year: bool,
+        error: bool,
     ):
         self.name = name
         self.date = date
@@ -69,6 +70,7 @@ class Simulation(DTO):
         self.nbyears = nbyears
         self.synthesis = synthesis
         self.by_year = by_year
+        self.error = error
 
     def get_file(self) -> str:
         modes = {"economy": "eco", "adequacy": "adq"}

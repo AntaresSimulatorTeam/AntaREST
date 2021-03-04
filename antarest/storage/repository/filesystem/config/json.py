@@ -69,6 +69,7 @@ class ConfigJsonBuilder:
             nbyears=nbyears,
             by_year=by_year,
             synthesis=synthesis,
+            error="checkIntegrity" in json,
         )
 
     @staticmethod

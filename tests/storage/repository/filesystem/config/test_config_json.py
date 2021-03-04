@@ -57,6 +57,7 @@ def test_parse_outputs() -> None:
                     "date": "2020.12.20 - 14: 56",
                 }
             },
+            "checkIntegrity": 42,
         }
     }
 
@@ -70,6 +71,7 @@ def test_parse_outputs() -> None:
                 nbyears=1,
                 synthesis=True,
                 by_year=True,
+                error=True,
             )
         },
     )

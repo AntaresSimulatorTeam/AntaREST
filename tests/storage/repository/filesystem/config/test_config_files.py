@@ -47,13 +47,11 @@ def test_parse_bindings(tmp_path: Path) -> None:
 
 def test_parse_outputs(tmp_path: Path) -> None:
     study_path = build_empty_files(tmp_path)
-    (study_path / "output/20201220-1456eco-hello/about-the-study").mkdir(
-        parents=True
-    )
-    file = (
-        study_path
-        / "output/20201220-1456eco-hello/about-the-study/parameters.ini"
-    )
+    output_path = study_path / "output/20201220-1456eco-hello/"
+    output_path.mkdir(parents=True)
+
+    (output_path / "about-the-study").mkdir()
+    file = output_path / "about-the-study/parameters.ini"
     content = """
     [general]
     nbyears = 1
@@ -63,6 +61,8 @@ def test_parse_outputs(tmp_path: Path) -> None:
     synthesis = true
     """
     file.write_text(content)
+
+    (output_path / "checkIntegrity.txt").touch()
 
     config = StudyConfig(
         study_path,
@@ -74,6 +74,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
                 nbyears=1,
                 synthesis=True,
                 by_year=True,
+                error=True,
             )
         },
     )

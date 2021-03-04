@@ -75,7 +75,12 @@ class ConfigPathBuilder:
             nbyears=nbyears,
             by_year=by_year,
             synthesis=synthesis,
+            error=(path / "checkIntegrity.txt").exists(),
         )
+
+    @staticmethod
+    def _parse_log_error(path: Path):
+        file = path / "simulation.log"
 
     @staticmethod
     def _parse_parameters(path: Path) -> Tuple[int, bool, bool]:

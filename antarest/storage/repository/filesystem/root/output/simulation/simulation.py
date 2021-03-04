@@ -40,18 +40,6 @@ class OutputSimulation(FolderNode):
             "about-the-study": OutputSimulationAbout(
                 config.next_file("about-the-study")
             ),
-            "ts-numbers": OutputSimulationTsNumbers(
-                config.next_file("ts-numbers")
-            ),
-            "annualSystemCost": OutputSimulationAnnualSystemCost(
-                config.next_file("annualSystemCost.txt")
-            ),
-            "checkIntegrity": OutputSimulationCheckIntegrity(
-                config.next_file("checkIntegrity.txt")
-            ),
-            "simulation-comments": OutputSimulationSimulationComments(
-                config.next_file("simulation-comments.txt")
-            ),
             "simulation": OutputSimulationSimulationLog(
                 config.next_file("simulation.log")
             ),
@@ -59,14 +47,30 @@ class OutputSimulation(FolderNode):
                 config.next_file("info.antares-output")
             ),
         }
-        if self.simulation.mode == "economy":
-            children["economy"] = OutputSimulationMode(
-                config.next_file("economy"), self.simulation
+        if self.simulation.error:
+            children["ts-numbers"] = OutputSimulationTsNumbers(
+                config.next_file("ts-numbers")
+            )
+            children["annualSystemCost"] = OutputSimulationAnnualSystemCost(
+                config.next_file("annualSystemCost.txt")
+            )
+            children["checkIntegrity"] = OutputSimulationCheckIntegrity(
+                config.next_file("checkIntegrity.txt")
+            )
+            children[
+                "simulation-comments"
+            ] = OutputSimulationSimulationComments(
+                config.next_file("simulation-comments.txt")
             )
 
-        elif self.simulation.mode == "adequacy":
-            children["adequacy"] = OutputSimulationMode(
-                config.next_file("adequacy"), self.simulation
-            )
+            if self.simulation.mode == "economy":
+                children["economy"] = OutputSimulationMode(
+                    config.next_file("economy"), self.simulation
+                )
+
+            elif self.simulation.mode == "adequacy":
+                children["adequacy"] = OutputSimulationMode(
+                    config.next_file("adequacy"), self.simulation
+                )
 
         return children
