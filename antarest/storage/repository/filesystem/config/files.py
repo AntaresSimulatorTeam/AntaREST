@@ -19,13 +19,24 @@ from antarest.storage.repository.filesystem.config.model import (
 class ConfigPathBuilder:
     @staticmethod
     def build(study_path: Path) -> "StudyConfig":
+        (sns,) = ConfigPathBuilder._parse_parameters(study_path)
+
         return StudyConfig(
             study_path=study_path,
             areas=ConfigPathBuilder._parse_areas(study_path),
             sets=ConfigPathBuilder._parse_sets(study_path),
             outputs=ConfigPathBuilder._parse_outputs(study_path),
             bindings=ConfigPathBuilder._parse_bindings(study_path),
+            store_new_set=sns,
         )
+
+    @staticmethod
+    def _parse_parameters(path: Path) -> Tuple[bool]:
+        general = IniReader().read(path / "settings/generaldata.ini")
+        store_new_set: bool = general.get("output", {}).get(
+            "storenewset", False
+        )
+        return (store_new_set,)
 
     @staticmethod
     def _parse_bindings(root: Path) -> List[str]:
@@ -67,7 +78,11 @@ class ConfigPathBuilder:
         regex: Any = re.search(
             "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", path.name
         )
-        nbyears, by_year, synthesis = ConfigPathBuilder._parse_parameters(path)
+        (
+            nbyears,
+            by_year,
+            synthesis,
+        ) = ConfigPathBuilder._parse_outputs_parameters(path)
         return Simulation(
             date=regex.group(1),
             mode=modes[regex.group(2)],
@@ -75,10 +90,11 @@ class ConfigPathBuilder:
             nbyears=nbyears,
             by_year=by_year,
             synthesis=synthesis,
+            error=not (path / "checkIntegrity.txt").exists(),
         )
 
     @staticmethod
-    def _parse_parameters(path: Path) -> Tuple[int, bool, bool]:
+    def _parse_outputs_parameters(path: Path) -> Tuple[int, bool, bool]:
         par: JSON = IniReader().read(path / "about-the-study/parameters.ini")
         return (
             par["general"]["nbyears"],
