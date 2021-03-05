@@ -32,7 +32,7 @@ class RawFileNode(INode[str, str, str]):
             self.config.path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(path, self.config.path)
 
-    def validate(
+    def check_errors(
         self, data: str, url: Optional[List[str]] = None
     ) -> List[str]:
         if not self.config.path.exists():

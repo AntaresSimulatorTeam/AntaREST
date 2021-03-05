@@ -21,10 +21,10 @@ def test_validate(tmp_path: Path) -> None:
     file.touch()
 
     node = RawFileNode(config=StudyConfig(study_path=file))
-    assert node.validate(data=None) == []
+    assert node.check_errors(data=None) == []
 
     node = RawFileNode(config=StudyConfig(study_path=tmp_path / "nofile"))
-    assert "not exist" in node.validate(data=None)[0]
+    assert "not exist" in node.check_errors(data=None)[0]
 
 
 def test_save(tmp_path: Path) -> None:

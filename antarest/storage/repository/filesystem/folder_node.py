@@ -59,14 +59,14 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
             for key in data:
                 children[key].save(data[key])
 
-    def validate(
+    def check_errors(
         self, data: JSON, url: Optional[List[str]] = None
     ) -> List[str]:
         children = self.build(self.config)
 
         if url and url != [""]:
             (name,), sub_url = self.extract_child(children, url)
-            return children[name].validate(data, sub_url)
+            return children[name].check_errors(data, sub_url)
         else:
             msg: List[str] = list()
             for key in data:
@@ -75,7 +75,7 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
                         f"key={key} not in {list(children.keys())} for {self.__class__.__name__}"
                     ]
                 else:
-                    msg += children[key].validate(data[key])
+                    msg += children[key].check_errors(data[key])
             return msg
 
     def extract_child(

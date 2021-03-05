@@ -59,7 +59,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             json = cast(JSON, data)
         self.writer.write(json, self.path)
 
-    def validate(
+    def check_errors(
         self, data: JSON, url: Optional[List[str]] = None
     ) -> List[str]:
         errors = list()

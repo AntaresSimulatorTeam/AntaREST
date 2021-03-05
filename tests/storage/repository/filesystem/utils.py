@@ -20,7 +20,7 @@ class TestSubNode(INode[int, int, int]):
     def save(self, data: int, url: Optional[List[str]] = None) -> None:
         self.value = data
 
-    def validate(
+    def check_errors(
         self, data: int, url: Optional[List[str]] = None
     ) -> List[str]:
         return []
