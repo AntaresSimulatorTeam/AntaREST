@@ -45,5 +45,7 @@ class BucketNode(FolderNode):
         os.chdir(current_dir)
         return children
 
-    def validate(self, data: JSON) -> None:
-        pass  # no validation for bucket node
+    def validate(
+        self, data: JSON, url: Optional[List[str]] = None
+    ) -> List[str]:
+        return []

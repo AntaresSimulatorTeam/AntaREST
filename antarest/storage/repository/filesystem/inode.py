@@ -23,7 +23,7 @@ class INode(ABC, Generic[G, S, V]):
         pass
 
     @abstractmethod
-    def validate(self, data: V) -> None:
+    def validate(self, data: V, url: Optional[List[str]] = None) -> List[str]:
         pass
 
 

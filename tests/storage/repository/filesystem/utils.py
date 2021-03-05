@@ -20,8 +20,10 @@ class TestSubNode(INode[int, int, int]):
     def save(self, data: int, url: Optional[List[str]] = None) -> None:
         self.value = data
 
-    def validate(self, data: int) -> None:
-        pass
+    def validate(
+        self, data: int, url: Optional[List[str]] = None
+    ) -> List[str]:
+        return []
 
 
 class TestMiddleNode(FolderNode):

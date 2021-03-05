@@ -49,6 +49,23 @@ def test_get_depth():
     assert tree.get(depth=1) == expected
 
 
+def test_validate():
+    config = Mock()
+    config.path.exist.return_value = True
+    tree = TestMiddleNode(
+        config=config,
+        children={"childA": build_tree(), "childB": build_tree()},
+    )
+
+    assert tree.validate(data={"wrongChild": {}}) == [
+        "key=wrongChild not in ['childA', 'childB'] for TestMiddleNode"
+    ]
+    assert tree.validate(data={"wrongChild": {}}, url=["childA"]) == [
+        "key=wrongChild not in ['input', 'output'] for TestMiddleNode"
+    ]
+    assert tree.validate(data={"childA": {"input": 42, "output": 42}}) == []
+
+
 @pytest.mark.unit_test
 def test_save():
     tree = build_tree()

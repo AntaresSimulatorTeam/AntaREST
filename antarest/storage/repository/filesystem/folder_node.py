@@ -44,7 +44,6 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
                 name: node.get(depth=depth - 1) if depth - 1 != 0 else {}
                 for name, node in children.items()
             }
-            self.validate(json)
             return json
 
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
@@ -55,20 +54,29 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
             (name,), sub_url = self.extract_child(children, url)
             return children[name].save(data, sub_url)
         else:
-            self.validate(data)
             if not self.config.path.exists():
                 self.config.path.mkdir()
             for key in data:
                 children[key].save(data[key])
 
-    def validate(self, data: JSON) -> None:
+    def validate(
+        self, data: JSON, url: Optional[List[str]] = None
+    ) -> List[str]:
         children = self.build(self.config)
 
-        for key in data:
-            if key not in children:
-                raise ValueError(
-                    f"key={key} not in {list(children.keys())} for {self.__class__.__name__}"
-                )
+        if url and url != [""]:
+            (name,), sub_url = self.extract_child(children, url)
+            return children[name].validate(data, sub_url)
+        else:
+            msg: List[str] = list()
+            for key in data:
+                if key not in children:
+                    msg += [
+                        f"key={key} not in {list(children.keys())} for {self.__class__.__name__}"
+                    ]
+                else:
+                    msg += children[key].validate(data[key])
+            return msg
 
     def extract_child(
         self, children: TREE, url: List[str]

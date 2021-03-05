@@ -40,7 +40,6 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             json = self.reader.read(self.path)
         except Exception as e:
             raise IniReaderError(self.__class__.__name__, str(e))
-        # TODO self.validate(json)
         if len(url) == 2:
             json = json[url[0]][url[1]]
         elif len(url) == 1:
@@ -58,24 +57,32 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             json[url[0]] = data
         else:
             json = cast(JSON, data)
-        # TODO self.validate(json)
         self.writer.write(json, self.path)
 
-    def validate(self, data: JSON) -> None:
+    def validate(
+        self, data: JSON, url: Optional[List[str]] = None
+    ) -> List[str]:
+        errors = list()
         for section, params in self.types.items():
             if section not in data:
-                raise ValueError(
+                errors.append(
                     f"section {section} not in {self.__class__.__name__}"
                 )
-            self._validate_param(section, params, data[section])
+            else:
+                self._validate_param(section, params, data[section], errors)
 
-    def _validate_param(self, section: str, params: Any, data: JSON) -> None:
+        return errors
+
+    def _validate_param(
+        self, section: str, params: Any, data: JSON, errors: List[str]
+    ) -> None:
         for param, typing in params.items():
             if param not in data:
-                raise ValueError(
+                errors.append(
                     f"param {param} of section {section} not in {self.__class__.__name__}"
                 )
-            if not isinstance(data[param], typing):
-                raise ValueError(
-                    f"param {param} of section {section} in {self.__class__.__name__} bad type"
-                )
+            else:
+                if not isinstance(data[param], typing):
+                    errors.append(
+                        f"param {param} of section {section} in {self.__class__.__name__} bad type"
+                    )
