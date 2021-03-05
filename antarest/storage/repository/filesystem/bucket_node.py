@@ -46,6 +46,9 @@ class BucketNode(FolderNode):
         return children
 
     def check_errors(
-        self, data: JSON, url: Optional[List[str]] = None
+        self,
+        data: JSON,
+        url: Optional[List[str]] = None,
+        raising: bool = False,
     ) -> List[str]:
         return []

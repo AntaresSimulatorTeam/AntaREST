@@ -60,23 +60,29 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
                 children[key].save(data[key])
 
     def check_errors(
-        self, data: JSON, url: Optional[List[str]] = None
+        self,
+        data: JSON,
+        url: Optional[List[str]] = None,
+        raising: bool = False,
     ) -> List[str]:
         children = self.build(self.config)
 
         if url and url != [""]:
             (name,), sub_url = self.extract_child(children, url)
-            return children[name].check_errors(data, sub_url)
+            return children[name].check_errors(data, sub_url, raising)
         else:
-            msg: List[str] = list()
+            errors: List[str] = list()
             for key in data:
                 if key not in children:
-                    msg += [
-                        f"key={key} not in {list(children.keys())} for {self.__class__.__name__}"
-                    ]
+                    msg = f"key={key} not in {list(children.keys())} for {self.__class__.__name__}"
+                    if raising:
+                        raise ValueError(msg)
+                    errors += [msg]
                 else:
-                    msg += children[key].check_errors(data[key])
-            return msg
+                    errors += children[key].check_errors(
+                        data[key], raising=raising
+                    )
+            return errors
 
     def extract_child(
         self, children: TREE, url: List[str]

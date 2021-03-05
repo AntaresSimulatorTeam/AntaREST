@@ -60,9 +60,13 @@ def test_validate():
     assert tree.check_errors(data={"wrongChild": {}}) == [
         "key=wrongChild not in ['childA', 'childB'] for TestMiddleNode"
     ]
+    with pytest.raises(ValueError):
+        tree.check_errors(data={"wrongChild": {}}, raising=True)
+
     assert tree.check_errors(data={"wrongChild": {}}, url=["childA"]) == [
         "key=wrongChild not in ['input', 'output'] for TestMiddleNode"
     ]
+
     assert (
         tree.check_errors(data={"childA": {"input": 42, "output": 42}}) == []
     )

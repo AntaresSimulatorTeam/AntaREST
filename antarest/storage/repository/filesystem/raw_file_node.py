@@ -33,10 +33,13 @@ class RawFileNode(INode[str, str, str]):
             shutil.copyfile(path, self.config.path)
 
     def check_errors(
-        self, data: str, url: Optional[List[str]] = None
+        self, data: str, url: Optional[List[str]] = None, raising: bool = False
     ) -> List[str]:
         if not self.config.path.exists():
-            return [f"{self.config.path} not exist"]
+            msg = f"{self.config.path} not exist"
+            if raising:
+                raise ValueError(msg)
+            return [msg]
         return []
 
     def _assert_url(self, url: Optional[List[str]] = None) -> None:

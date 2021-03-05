@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.raw_file_node import RawFileNode
 
@@ -25,6 +27,9 @@ def test_validate(tmp_path: Path) -> None:
 
     node = RawFileNode(config=StudyConfig(study_path=tmp_path / "nofile"))
     assert "not exist" in node.check_errors(data=None)[0]
+
+    with pytest.raises(ValueError):
+        node.check_errors(data=None, raising=True)
 
 
 def test_save(tmp_path: Path) -> None:

@@ -60,29 +60,42 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self.writer.write(json, self.path)
 
     def check_errors(
-        self, data: JSON, url: Optional[List[str]] = None
+        self,
+        data: JSON,
+        url: Optional[List[str]] = None,
+        raising: bool = False,
     ) -> List[str]:
         errors = list()
         for section, params in self.types.items():
             if section not in data:
-                errors.append(
-                    f"section {section} not in {self.__class__.__name__}"
-                )
+                msg = f"section {section} not in {self.__class__.__name__}"
+                if raising:
+                    raise ValueError(msg)
+                errors.append(msg)
             else:
-                self._validate_param(section, params, data[section], errors)
+                self._validate_param(
+                    section, params, data[section], errors, raising
+                )
 
         return errors
 
     def _validate_param(
-        self, section: str, params: Any, data: JSON, errors: List[str]
+        self,
+        section: str,
+        params: Any,
+        data: JSON,
+        errors: List[str],
+        raising: bool,
     ) -> None:
         for param, typing in params.items():
             if param not in data:
-                errors.append(
-                    f"param {param} of section {section} not in {self.__class__.__name__}"
-                )
+                msg = f"param {param} of section {section} not in {self.__class__.__name__}"
+                if raising:
+                    raise ValueError(msg)
+                errors.append(msg)
             else:
                 if not isinstance(data[param], typing):
-                    errors.append(
-                        f"param {param} of section {section} in {self.__class__.__name__} bad type"
-                    )
+                    msg = f"param {param} of section {section} in {self.__class__.__name__} bad type"
+                    if raising:
+                        raise ValueError(msg)
+                    errors.append(msg)

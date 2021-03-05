@@ -21,7 +21,7 @@ class TestSubNode(INode[int, int, int]):
         self.value = data
 
     def check_errors(
-        self, data: int, url: Optional[List[str]] = None
+        self, data: int, url: Optional[List[str]] = None, raising: bool = False
     ) -> List[str]:
         return []
 

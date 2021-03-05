@@ -69,6 +69,8 @@ def test_validate_section():
     assert node.check_errors(data=data) == [
         "section wrong-section not in IniFileNode"
     ]
+    with pytest.raises(ValueError):
+        node.check_errors(data, raising=True)
 
     node = IniFileNode(
         config=StudyConfig(Path()), types={"section": {"wrong-params": 42}}
@@ -76,6 +78,8 @@ def test_validate_section():
     assert node.check_errors(data=data) == [
         "param wrong-params of section section not in IniFileNode"
     ]
+    with pytest.raises(ValueError):
+        node.check_errors(data, raising=True)
 
     node = IniFileNode(
         config=StudyConfig(Path()), types={"section": {"params": str}}
