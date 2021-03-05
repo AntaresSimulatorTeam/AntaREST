@@ -83,7 +83,7 @@ def test_parse_outputs() -> None:
                 nbyears=1,
                 synthesis=True,
                 by_year=True,
-                error=True,
+                error=False,
             )
         },
     )

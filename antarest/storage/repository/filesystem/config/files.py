@@ -90,7 +90,7 @@ class ConfigPathBuilder:
             nbyears=nbyears,
             by_year=by_year,
             synthesis=synthesis,
-            error=(path / "checkIntegrity.txt").exists(),
+            error=not (path / "checkIntegrity.txt").exists(),
         )
 
     @staticmethod

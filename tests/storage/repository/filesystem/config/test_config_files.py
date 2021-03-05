@@ -90,7 +90,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
                 nbyears=1,
                 synthesis=True,
                 by_year=True,
-                error=True,
+                error=False,
             )
         },
     )

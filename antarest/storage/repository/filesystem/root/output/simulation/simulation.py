@@ -47,7 +47,7 @@ class OutputSimulation(FolderNode):
                 config.next_file("info.antares-output")
             ),
         }
-        if self.simulation.error:
+        if not self.simulation.error:
             children["annualSystemCost"] = OutputSimulationAnnualSystemCost(
                 config.next_file("annualSystemCost.txt")
             )
