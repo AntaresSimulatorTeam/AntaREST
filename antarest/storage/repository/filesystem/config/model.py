@@ -133,7 +133,7 @@ class StudyConfig(DTO):
 def transform_name_to_id(name: str) -> str:
     """This transformation was taken from the cpp Antares Simulator.."""
     duppl = False
-    id = ""
+    study_id = ""
     for c in name:
         if (
             (c >= "a" and c <= "z")
@@ -147,11 +147,11 @@ def transform_name_to_id(name: str) -> str:
             or c == "&"
             or c == " "
         ):
-            id += c
+            study_id += c
             duppl = False
         else:
             if not duppl:
-                id += " "
+                study_id += " "
                 duppl = True
 
-    return id.strip().lower()
+    return study_id.strip().lower()

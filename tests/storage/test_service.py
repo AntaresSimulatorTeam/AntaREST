@@ -8,7 +8,7 @@ from antarest.login.model import User, Role
 from antarest.common.requests import (
     RequestParameters,
 )
-from antarest.storage.model import Metadata
+from antarest.storage.model import Metadata, StudyContentStatus
 from antarest.storage.service import StorageService, UserHasNotPermissionError
 
 
@@ -67,6 +67,7 @@ def test_save_metadata():
         author="AUTHOR",
         created_at=datetime.fromtimestamp(1234),
         updated_at=datetime.fromtimestamp(9876),
+        content_status=StudyContentStatus.VALID,
         users=[user],
     )
 

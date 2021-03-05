@@ -42,6 +42,11 @@ class StudyService:
                 f"Study with the uuid {uuid} does not exist."
             )
 
+    def check_errors(self, uuid: str) -> List[str]:
+        path = self.get_study_path(uuid)
+        _, study = self.study_factory.create_from_fs(path)
+        return study.check_errors(study.get())
+
     def assert_study_not_exist(self, uuid: str) -> None:
         if self.is_study_existing(uuid):
             raise StudyAlreadyExistError(
