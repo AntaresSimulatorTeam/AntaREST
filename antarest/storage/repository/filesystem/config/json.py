@@ -8,6 +8,7 @@ from antarest.storage.repository.filesystem.config.model import (
     Simulation,
     Link,
     Set,
+    transform_name_to_id,
 )
 
 
@@ -48,7 +49,9 @@ class ConfigJsonBuilder:
     @staticmethod
     def _parse_areas(json: JSON) -> Dict[str, Area]:
         areas = list(json["input"]["areas"])
-        areas = [a for a in areas if a not in ["sets", "list"]]
+        areas = [
+            transform_name_to_id(a) for a in areas if a not in ["sets", "list"]
+        ]
         return {a: ConfigJsonBuilder._parse_area(json, a) for a in areas}
 
     @staticmethod
@@ -110,7 +113,9 @@ class ConfigJsonBuilder:
             return list()
 
         list_ini = json["input"]["thermal"]["clusters"][area]["list"]
-        return list(list_ini.keys())
+        return [
+            transform_name_to_id(thermal) for thermal in list(list_ini.keys())
+        ]
 
     @staticmethod
     def _parse_links(json: JSON, area: str) -> Dict[str, Link]:

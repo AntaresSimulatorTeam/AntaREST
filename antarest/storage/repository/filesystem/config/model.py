@@ -137,3 +137,30 @@ class StudyConfig(DTO):
         if area in self.sets:
             return self.sets[area].filters_year
         return self.areas[area].filters_year
+
+
+def transform_name_to_id(name: str) -> str:
+    """This transformation was taken from the cpp Antares Simulator.."""
+    duppl = False
+    study_id = ""
+    for c in name:
+        if (
+            (c >= "a" and c <= "z")
+            or (c >= "A" and c <= "Z")
+            or (c >= "0" and c <= "9")
+            or c == "_"
+            or c == "-"
+            or c == "("
+            or c == ")"
+            or c == ","
+            or c == "&"
+            or c == " "
+        ):
+            study_id += c
+            duppl = False
+        else:
+            if not duppl:
+                study_id += " "
+                duppl = True
+
+    return study_id.strip().lower()

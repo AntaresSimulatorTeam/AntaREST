@@ -14,7 +14,7 @@ from antarest.common.requests import (
     RequestParameters,
 )
 from antarest.storage.business.study_service import StudyService
-from antarest.storage.model import Metadata
+from antarest.storage.model import Metadata, StudyContentStatus
 from antarest.storage.repository.metadata import StudyMetadataRepository
 
 logger = logging.getLogger(__name__)
@@ -116,7 +116,12 @@ class StorageService:
         self, stream: IO[bytes], params: RequestParameters
     ) -> str:
         uuid = self.importer_service.import_study(stream)
-        self._save_metadata(uuid, params.user)
+        status = (
+            StudyContentStatus.ERROR
+            if self.study_service.check_errors(uuid)
+            else StudyContentStatus.VALID
+        )
+        self._save_metadata(uuid, params.user, content_status=status)
         return uuid
 
     def import_output(
@@ -133,7 +138,12 @@ class StorageService:
         self._check_user_permission(params.user, uuid)
         return self.study_service.edit_study(route, new)
 
-    def _save_metadata(self, uuid: str, user: Optional[User]) -> None:
+    def _save_metadata(
+        self,
+        uuid: str,
+        user: Optional[User],
+        content_status: StudyContentStatus = StudyContentStatus.VALID,
+    ) -> None:
         if not user:
             raise UserHasNotPermissionError
 
@@ -145,6 +155,7 @@ class StorageService:
             author=info["author"],
             created_at=datetime.fromtimestamp(info["created"]),
             updated_at=datetime.fromtimestamp(info["lastsave"]),
+            content_status=content_status,
             users=[user],
         )
         self.repository.save(meta)

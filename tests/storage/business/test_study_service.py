@@ -58,6 +58,21 @@ def test_get(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
+def test_check_errors():
+    study = Mock()
+    study.check_errors.return_value = ["Hello"]
+
+    factory = Mock()
+    factory.create_from_fs.return_value = None, study
+
+    study_service = StudyService(
+        path_to_studies=Path(), study_factory=factory, path_resources=Path()
+    )
+
+    assert study_service.check_errors("study") == ["Hello"]
+
+
+@pytest.mark.unit_test
 def test_assert_study_exist(tmp_path: str, project_path) -> None:
 
     tmp = Path(tmp_path)

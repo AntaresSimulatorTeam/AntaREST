@@ -62,6 +62,34 @@ def test_get_depth(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
+def test_validate_section():
+    data = {"section": {"params": 42}}
+
+    node = IniFileNode(config=StudyConfig(Path()), types={"wrong-section": {}})
+    assert node.check_errors(data=data) == [
+        "section wrong-section not in IniFileNode"
+    ]
+    with pytest.raises(ValueError):
+        node.check_errors(data, raising=True)
+
+    node = IniFileNode(
+        config=StudyConfig(Path()), types={"section": {"wrong-params": 42}}
+    )
+    assert node.check_errors(data=data) == [
+        "param wrong-params of section section not in IniFileNode"
+    ]
+    with pytest.raises(ValueError):
+        node.check_errors(data, raising=True)
+
+    node = IniFileNode(
+        config=StudyConfig(Path()), types={"section": {"params": str}}
+    )
+    assert node.check_errors(data=data) == [
+        "param params of section section in IniFileNode bad type"
+    ]
+
+
+@pytest.mark.unit_test
 def test_save(tmp_path: str) -> None:
     path = Path(tmp_path) / "test.ini"
 

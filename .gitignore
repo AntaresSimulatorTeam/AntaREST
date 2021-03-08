@@ -146,4 +146,5 @@ html/
 resources/webapp/
 resources/templates/index.html
 resources/commit_id
-/examples/studies/001 One node - passive/
+/examples/studies/
+
