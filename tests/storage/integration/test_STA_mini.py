@@ -3,14 +3,21 @@ import json
 import shutil
 from http import HTTPStatus
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from flask import Flask
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
+from antarest.login.model import User, Role
 from antarest.storage.main import build_storage
-from antarest.storage.service import StorageServiceParameters, StorageService
+from antarest.storage.service import StorageService
+from antarest.common.requests import (
+    RequestParameters,
+)
+
+ADMIN = User(id=0, name="admin", role=Role.ADMIN)
 
 
 def assert_url_content(
@@ -19,8 +26,19 @@ def assert_url_content(
     app = Flask(__name__)
     build_storage(
         app,
+        session=Mock(),
         storage_service=storage_service,
-        config=Config({"main": {"res": storage_service.path_resources}}),
+        config=Config(
+            {
+                "_internal": {
+                    "resources_path": storage_service.study_service.path_resources
+                },
+                "security": {"disabled": True},
+                "storage": {
+                    "studies": storage_service.study_service.path_to_studies
+                },
+            }
+        ),
     )
     client = app.test_client()
     res = client.get(url)
@@ -31,9 +49,9 @@ def assert_with_errors(
     storage_service: StorageService, url: str, expected_output: dict
 ) -> None:
     url = url[len("/studies/") :]
-    print(url)
+    params = RequestParameters(user=ADMIN)
     assert (
-        storage_service.get(route=url, parameters=StorageServiceParameters())
+        storage_service.get(route=url, depth=3, params=params)
         == expected_output
     )
 
@@ -342,8 +360,19 @@ def test_sta_mini_copy(storage_service) -> None:
     app = Flask(__name__)
     build_storage(
         app,
+        session=Mock(),
         storage_service=storage_service,
-        config=Config({"main": {"res": storage_service.path_resources}}),
+        config=Config(
+            {
+                "_internal": {
+                    "resources_path": storage_service.study_service.path_resources
+                },
+                "security": {"disabled": True},
+                "storage": {
+                    "studies": storage_service.study_service.path_to_studies
+                },
+            }
+        ),
     )
     client = app.test_client()
     result = client.post(
@@ -355,9 +384,9 @@ def test_sta_mini_copy(storage_service) -> None:
 
     destination_folder = url_destination.split("/")[2]
 
-    parameters = StorageServiceParameters(depth=-1)
-    data_source = storage_service.get(source_study_name, parameters)
-    data_destination = storage_service.get(destination_folder, parameters)
+    parameters = RequestParameters(user=ADMIN)
+    data_source = storage_service.get(source_study_name, -1, parameters)
+    data_destination = storage_service.get(destination_folder, -1, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
     assert link_url_source == "file/STA-mini/input/links/de/fr.txt"
@@ -434,7 +463,8 @@ def notest_sta_mini_with_wrong_output_folder(
 @pytest.mark.integration_test
 def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 
-    path_study = storage_service.get_study_path("STA-mini")
+    params = RequestParameters(user=ADMIN)
+    path_study = storage_service.get_study_path("STA-mini", params)
     sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
@@ -442,7 +472,18 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": storage_service.path_resources}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {
+                    "resources_path": storage_service.study_service.path_resources
+                },
+                "security": {"disabled": True},
+                "storage": {
+                    "studies": storage_service.study_service.path_to_studies
+                },
+            }
+        ),
     )
     client = app.test_client()
 
@@ -455,13 +496,27 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 @pytest.mark.integration_test
 def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
 
-    zip_study_stream = storage_service.export_study("STA-mini", compact=True)
+    params = RequestParameters(user=ADMIN)
+    zip_study_stream = storage_service.export_study(
+        "STA-mini", compact=True, params=params
+    )
 
     app = Flask(__name__)
     build_storage(
         app,
+        session=Mock(),
         storage_service=storage_service,
-        config=Config({"main": {"res": storage_service.path_resources}}),
+        config=Config(
+            {
+                "_internal": {
+                    "resources_path": storage_service.study_service.path_resources
+                },
+                "security": {"disabled": True},
+                "storage": {
+                    "studies": storage_service.study_service.path_to_studies
+                },
+            }
+        ),
     )
     client = app.test_client()
     result = client.post(
@@ -473,9 +528,10 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
 
 @pytest.mark.integration_test
 def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
+    params = RequestParameters(user=ADMIN)
 
     path_study_output = (
-        storage_service.get_study_path("STA-mini")
+        storage_service.get_study_path("STA-mini", params)
         / "output"
         / "20201014-1422eco-hello"
     )
@@ -491,7 +547,18 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": storage_service.path_resources}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {
+                    "resources_path": storage_service.study_service.path_resources
+                },
+                "security": {"disabled": True},
+                "storage": {
+                    "studies": storage_service.study_service.path_to_studies
+                },
+            }
+        ),
     )
     client = app.test_client()
 

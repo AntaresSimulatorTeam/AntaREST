@@ -17,7 +17,7 @@ i18n
   .init({
     fallbackLng: 'fr',
     backend: {
-      loadPath: "./locales/{{lng}}/{{ns}}.json",
+      loadPath: () => '/locales/{{lng}}/{{ns}}.json',
     },
     react: {
       useSuspense: false,
@@ -29,6 +29,7 @@ i18n
     ns: [
       'main',
       'studymanager',
+      'jobs',
     ],
     defaultNS: 'main',
   });

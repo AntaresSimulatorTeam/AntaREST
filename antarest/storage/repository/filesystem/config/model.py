@@ -62,6 +62,7 @@ class Simulation(DTO):
         nbyears: int,
         synthesis: bool,
         by_year: bool,
+        error: bool,
     ):
         self.name = name
         self.date = date
@@ -69,6 +70,7 @@ class Simulation(DTO):
         self.nbyears = nbyears
         self.synthesis = synthesis
         self.by_year = by_year
+        self.error = error
 
     def get_file(self) -> str:
         modes = {"economy": "eco", "adequacy": "adq"}
@@ -84,6 +86,7 @@ class StudyConfig(DTO):
         sets: Optional[Dict[str, Set]] = None,
         outputs: Optional[Dict[int, Simulation]] = None,
         bindings: Optional[List[str]] = None,
+        store_new_set: bool = False,
     ):
         self.root_path = study_path
         self.path = study_path
@@ -91,10 +94,18 @@ class StudyConfig(DTO):
         self.sets = sets or dict()
         self.outputs = outputs or dict()
         self.bindings = bindings or list()
+        self.store_new_set = store_new_set
 
     def next_file(self, name: str) -> "StudyConfig":
-        copy = deepcopy(self)
-        copy.path = copy.path / name
+        copy = StudyConfig(
+            self.root_path,
+            self.areas,
+            self.sets,
+            self.outputs,
+            self.bindings,
+            self.store_new_set,
+        )
+        copy.path = self.path / name
         return copy
 
     def area_names(self) -> List[str]:
@@ -126,3 +137,30 @@ class StudyConfig(DTO):
         if area in self.sets:
             return self.sets[area].filters_year
         return self.areas[area].filters_year
+
+
+def transform_name_to_id(name: str) -> str:
+    """This transformation was taken from the cpp Antares Simulator.."""
+    duppl = False
+    study_id = ""
+    for c in name:
+        if (
+            (c >= "a" and c <= "z")
+            or (c >= "A" and c <= "Z")
+            or (c >= "0" and c <= "9")
+            or c == "_"
+            or c == "-"
+            or c == "("
+            or c == ")"
+            or c == ","
+            or c == "&"
+            or c == " "
+        ):
+            study_id += c
+            duppl = False
+        else:
+            if not duppl:
+                study_id += " "
+                duppl = True
+
+    return study_id.strip().lower()

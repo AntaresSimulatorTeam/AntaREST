@@ -1,4 +1,4 @@
-from antarest.login.model import User, Password
+from antarest.login.model import Password
 
 
 def test_password():

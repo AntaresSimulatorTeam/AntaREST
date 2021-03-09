@@ -5,10 +5,12 @@ from typing import Any, Optional
 
 from flask import Blueprint, send_file, request, jsonify, Response
 
-from antarest.storage.service import StorageService
-from antarest.storage.web.html_exception import (
-    stop_and_return_on_html_exception,
+from antarest.login.auth import Auth
+from antarest.common.config import Config
+from antarest.common.requests import (
+    RequestParameters,
 )
+from antarest.storage.service import StorageService
 from antarest import __version__
 
 
@@ -35,13 +37,17 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
     return commit_id
 
 
-def create_utils_routes(storage_service: StorageService) -> Blueprint:
+def create_utils_routes(
+    storage_service: StorageService, config: Config
+) -> Blueprint:
     bp = Blueprint("create_utils", __name__)
+    auth = Auth(config)
 
     @bp.route(
         "/file/<path:path>",
         methods=["GET"],
     )
+    @auth.protected()
     def get_file(path: str) -> Any:
         """
         Get file
@@ -65,7 +71,7 @@ def create_utils_routes(storage_service: StorageService) -> Blueprint:
         """
 
         try:
-            file_path = storage_service.path_to_studies / path
+            file_path = storage_service.study_service.path_to_studies / path
             return send_file(file_path.absolute())
         except FileNotFoundError:
             return f"{path} not found", HTTPStatus.NOT_FOUND.value
@@ -74,7 +80,7 @@ def create_utils_routes(storage_service: StorageService) -> Blueprint:
         "/file/<path:path>",
         methods=["POST"],
     )
-    @stop_and_return_on_html_exception
+    @auth.protected()
     def post_file(path: str) -> Any:
         """
         Post file
@@ -97,7 +103,8 @@ def create_utils_routes(storage_service: StorageService) -> Blueprint:
         """
 
         data = request.files["matrix"].read()
-        storage_service.upload_matrix(path, data)
+        params = RequestParameters(user=Auth.get_current_user())
+        storage_service.upload_matrix(path, data, params)
         output = b""
         code = HTTPStatus.NO_CONTENT.value
 
@@ -109,9 +116,29 @@ def create_utils_routes(storage_service: StorageService) -> Blueprint:
 
     @bp.route("/version", methods=["GET"])
     def version() -> Any:
+        """
+        Get application version
+        ---
+        responses:
+          '200':
+            content:
+              application/json:
+                schema:
+                    type: object
+                    properties:
+                        version:
+                            type: string
+                            description: Semantic version
+                        gitcommit:
+                            type: string
+                            description: Build version (git commit id)
+            description: Successful operation
+        tags:
+          - Misc
+        """
         version_data = {"version": __version__}
 
-        commit_id = get_commit_id(storage_service.path_resources)
+        commit_id = get_commit_id(storage_service.study_service.path_resources)
         if commit_id is not None:
             version_data["gitcommit"] = commit_id
 

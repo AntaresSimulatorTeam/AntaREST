@@ -24,6 +24,8 @@ class Config:
 
         data = deepcopy(self.data)
         for p in parts:
+            if p not in data:
+                return None
             data = data[p]
         return data
 
@@ -31,5 +33,6 @@ class Config:
 class ConfigYaml(Config):
     def __init__(self, file: Path, res: Optional[Path] = None):
         data = yaml.safe_load(open(file))
-        data["main"]["res"] = res
+        data["_internal"] = {}
+        data["_internal"]["resources_path"] = res
         Config.__init__(self, data)

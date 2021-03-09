@@ -1,12 +1,14 @@
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 
 from antarest.common.config import Config
+from antarest.login.repository import UserRepository, GroupRepository
 from antarest.common.persistence import Base
 from antarest.login.model import User, Role, Password, Group
-from antarest.login.repository import UserRepository, GroupRepository
 
 
+@pytest.mark.unit_test
 def test_users():
     engine = create_engine("sqlite:///:memory:", echo=True)
     session = scoped_session(
@@ -15,7 +17,8 @@ def test_users():
     Base.metadata.create_all(engine)
 
     repo = UserRepository(
-        config=Config({"login": {"admin": {"pwd": "admin"}}}), session=session
+        config=Config({"security": {"login": {"admin": {"pwd": "admin"}}}}),
+        session=session,
     )
     a = User(
         name="a",
@@ -37,6 +40,7 @@ def test_users():
     assert repo.get(a.id) is None
 
 
+@pytest.mark.unit_test
 def test_groups():
     engine = create_engine("sqlite:///:memory:", echo=True)
     session = scoped_session(

@@ -1,14 +1,21 @@
-main:
+security:
+  disabled: true
   jwt:
     key: super-secret
-  db:
-    url: "sqlite:///database.db"
+  login:
+    admin:
+      pwd: admin
 
-login:
-  admin:
-    pwd: admin
+db:
+  url: "sqlite:///database.db"
 
 storage:
-  studies: examples/studies
+  studies: examples/studies/
+
+launcher:
+  default: local
+  local:
+    binaries:
+      700: path/to/700
 
 debug: true

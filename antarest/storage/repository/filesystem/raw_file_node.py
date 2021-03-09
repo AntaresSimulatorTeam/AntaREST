@@ -14,7 +14,6 @@ class RawFileNode(INode[str, str, str]):
 
     def get(self, url: Optional[List[str]] = None, depth: int = -1) -> str:
         self._assert_url(url)
-        self.validate("")
 
         file_path = "/".join(self.config.path.absolute().parts)
         root_path = "/".join(self.config.root_path.parent.absolute().parts)
@@ -33,9 +32,15 @@ class RawFileNode(INode[str, str, str]):
             self.config.path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(path, self.config.path)
 
-    def validate(self, data: str) -> None:
+    def check_errors(
+        self, data: str, url: Optional[List[str]] = None, raising: bool = False
+    ) -> List[str]:
         if not self.config.path.exists():
-            raise ValueError(f"{self.config.path} not exist")
+            msg = f"{self.config.path} not exist"
+            if raising:
+                raise ValueError(msg)
+            return [msg]
+        return []
 
     def _assert_url(self, url: Optional[List[str]] = None) -> None:
         url = url or []

@@ -1,0 +1,298 @@
+{
+	"info": {
+		"_postman_id": "70d128df-e519-4ae4-9a07-a9966f9474ca",
+		"name": "antaREST",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "import",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "study",
+							"type": "file",
+							"src": "/Users/francoisjolain/projects/cloud/api-iso-antares/examples/studies/STA-mini-gitignore/Archive.zip"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{hostname}}/studies",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"studies"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "studies/<id>/study",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{hostname}}/studies/c4382be0-cd5b-4367-84c1-d95a9b8b39e3/study",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"studies",
+						"c4382be0-cd5b-4367-84c1-d95a9b8b39e3",
+						"study"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all studies",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{hostname}}/studies",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"studies"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Copy",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{hostname}}/studies/4d5f503d-9187-4ec3-8447-33176c47f62c/copy?dest=hello",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"studies",
+						"4d5f503d-9187-4ec3-8447-33176c47f62c",
+						"copy"
+					],
+					"query": [
+						{
+							"key": "dest",
+							"value": "hello"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{hostname}}/studies/hello",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"studies",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Export",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{hostname}}/studies/34e4c38d-b231-4c32-8438-44aa6dc5848b/export",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"studies",
+						"34e4c38d-b231-4c32-8438-44aa6dc5848b",
+						"export"
+					],
+					"query": [
+						{
+							"key": "compact",
+							"value": null,
+							"disabled": true
+						},
+						{
+							"key": "no-output",
+							"value": null,
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{hostname}}/studies/34e4c38d-b231-4c32-8438-44aa6dc5848b",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"studies",
+						"34e4c38d-b231-4c32-8438-44aa6dc5848b"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Edit",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "\"Neo\"",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{hostname}}/studies/c4382be0-cd5b-4367-84c1-d95a9b8b39e3/study/antares/author",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"studies",
+						"c4382be0-cd5b-4367-84c1-d95a9b8b39e3",
+						"study",
+						"antares",
+						"author"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Import output",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "output",
+							"type": "file",
+							"src": "/Users/francoisjolain/projects/cloud/api-iso-antares/examples/studies/STA-mini-gitignore/output/20201014-1422eco-hello.zip"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{hostname}}/studies/c4382be0-cd5b-4367-84c1-d95a9b8b39e3/output",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"studies",
+						"c4382be0-cd5b-4367-84c1-d95a9b8b39e3",
+						"output"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{currentAccessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"hostname = pm.variables.get(\"hostname\")",
+					"user = pm.variables.get(\"user\")",
+					"",
+					"const echoPostRequest = {",
+					"  url: hostname+'/login',",
+					"  method: 'POST',",
+					"  header: 'Content-Type:application/json',",
+					"  body: {",
+					"    mode: 'application/json',",
+					"    raw: JSON.stringify(",
+					"        {",
+					"        \tusername:user,",
+					"        \tpassword:user",
+					"        })",
+					"  }",
+					"};",
+					"",
+					"pm.sendRequest(echoPostRequest, function (err, res) {",
+					"    console.log(err ? err : res.json());",
+					"        if (err === null) {",
+					"            console.log('Saving the token and expiry date')",
+					"            var responseJson = res.json();",
+					"            pm.environment.set('currentAccessToken', responseJson.access_token)",
+					"        }",
+					"    });"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "user",
+			"value": "alice"
+		},
+		{
+			"key": "hostname",
+			"value": "localhost:8080"
+		}
+	]
+}

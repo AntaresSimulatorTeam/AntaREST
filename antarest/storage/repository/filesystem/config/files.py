@@ -13,19 +13,31 @@ from antarest.storage.repository.filesystem.config.model import (
     Simulation,
     Link,
     Set,
+    transform_name_to_id,
 )
 
 
 class ConfigPathBuilder:
     @staticmethod
     def build(study_path: Path) -> "StudyConfig":
+        (sns,) = ConfigPathBuilder._parse_parameters(study_path)
+
         return StudyConfig(
             study_path=study_path,
             areas=ConfigPathBuilder._parse_areas(study_path),
             sets=ConfigPathBuilder._parse_sets(study_path),
             outputs=ConfigPathBuilder._parse_outputs(study_path),
             bindings=ConfigPathBuilder._parse_bindings(study_path),
+            store_new_set=sns,
         )
+
+    @staticmethod
+    def _parse_parameters(path: Path) -> Tuple[bool]:
+        general = IniReader().read(path / "settings/generaldata.ini")
+        store_new_set: bool = general.get("output", {}).get(
+            "storenewset", False
+        )
+        return (store_new_set,)
 
     @staticmethod
     def _parse_bindings(root: Path) -> List[str]:
@@ -46,7 +58,7 @@ class ConfigPathBuilder:
     @staticmethod
     def _parse_areas(root: Path) -> Dict[str, Area]:
         areas = (root / "input/areas/list.txt").read_text().split("\n")
-        areas = [a.lower() for a in areas if a != ""]
+        areas = [transform_name_to_id(a) for a in areas if a != ""]
         return {a: ConfigPathBuilder.parse_area(root, a) for a in areas}
 
     @staticmethod
@@ -67,7 +79,11 @@ class ConfigPathBuilder:
         regex: Any = re.search(
             "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", path.name
         )
-        nbyears, by_year, synthesis = ConfigPathBuilder._parse_parameters(path)
+        (
+            nbyears,
+            by_year,
+            synthesis,
+        ) = ConfigPathBuilder._parse_outputs_parameters(path)
         return Simulation(
             date=regex.group(1),
             mode=modes[regex.group(2)],
@@ -75,10 +91,11 @@ class ConfigPathBuilder:
             nbyears=nbyears,
             by_year=by_year,
             synthesis=synthesis,
+            error=not (path / "checkIntegrity.txt").exists(),
         )
 
     @staticmethod
-    def _parse_parameters(path: Path) -> Tuple[int, bool, bool]:
+    def _parse_outputs_parameters(path: Path) -> Tuple[int, bool, bool]:
         par: JSON = IniReader().read(path / "about-the-study/parameters.ini")
         return (
             par["general"]["nbyears"],
@@ -102,7 +119,7 @@ class ConfigPathBuilder:
         list_ini = IniReader().read(
             root / f"input/thermal/clusters/{area}/list.ini"
         )
-        return list(list_ini.keys())
+        return [transform_name_to_id(key) for key in list(list_ini.keys())]
 
     @staticmethod
     def _parse_links(root: Path, area: str) -> Dict[str, Link]:

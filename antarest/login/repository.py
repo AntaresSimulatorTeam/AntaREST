@@ -1,5 +1,6 @@
-from typing import Dict, Optional, List, Generator, Any
+from typing import Optional, List
 
+from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
@@ -11,7 +12,11 @@ class GroupRepository:
         self.session = session
 
     def save(self, group: Group) -> Group:
-        self.session.add(group)
+        res = self.session.query(exists().where(Group.id == group.id)).scalar()
+        if res:
+            self.session.merge(group)
+        else:
+            self.session.add(group)
         self.session.commit()
         return group
 
@@ -39,15 +44,25 @@ class UserRepository:
                 User(
                     name="admin",
                     role=Role.ADMIN,
-                    password=Password(config["login.admin.pwd"]),
+                    password=Password(config["security.login.admin.pwd"]),
                 )
             )
-        elif not admin_user.password.check(config["login.admin.pwd"]):  # type: ignore
-            admin_user.password = Password(config["login.admin.pwd"])  # type: ignore
+            self.save(
+                User(name="alice", role=Role.USER, password=Password("alice"))
+            )
+            self.save(
+                User(name="bob", role=Role.USER, password=Password("bob"))
+            )
+        elif not admin_user.password.check(config["security.login.admin.pwd"]):  # type: ignore
+            admin_user.password = Password(config["security.login.admin.pwd"])  # type: ignore
             self.save(admin_user)
 
     def save(self, user: User) -> User:
-        self.session.add(user)
+        res = self.session.query(exists().where(User.id == user.id)).scalar()
+        if res:
+            self.session.merge(user)
+        else:
+            self.session.add(user)
         self.session.commit()
         return user
 

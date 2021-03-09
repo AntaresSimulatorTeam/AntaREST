@@ -4,20 +4,25 @@ import shutil
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Callable
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 from flask import Flask
+from markupsafe import Markup
 
-from antarest import __version__
 from antarest.common.config import Config
+from antarest.login.model import User, Role
 from antarest.storage.main import build_storage
-from antarest.storage.web.html_exception import (
+from antarest.storage.web.exceptions import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
 )
-from antarest.storage.service import StorageServiceParameters
+from antarest.common.requests import (
+    RequestParameters,
+)
+
+ADMIN = User(id=0, name="admin", role=Role.ADMIN)
+PARAMS = RequestParameters(user=ADMIN)
 
 
 @pytest.mark.unit_test
@@ -25,19 +30,24 @@ def test_server() -> None:
     mock_service = Mock()
     mock_service.get.return_value = {}
 
-    parameters = StorageServiceParameters()
-
     app = Flask(__name__)
     build_storage(
         app,
         storage_service=mock_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
     client.get("/studies/study1/settings/general/params")
 
     mock_service.get.assert_called_once_with(
-        "study1/settings/general/params", parameters
+        "study1/settings/general/params", 3, PARAMS
     )
 
 
@@ -50,7 +60,14 @@ def test_404() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/studies/study1/settings/general/params")
@@ -70,22 +87,31 @@ def test_server_with_parameters() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/studies/study1?depth=4")
 
-    parameters = StorageServiceParameters(depth=4)
+    parameters = RequestParameters(user=ADMIN)
 
     assert result.status_code == 200
-    mock_storage_service.get.assert_called_once_with("study1", parameters)
+    mock_storage_service.get.assert_called_once_with("study1", 4, parameters)
 
     result = client.get("/studies/study2?depth=WRONG_TYPE")
 
-    excepted_parameters = StorageServiceParameters()
+    excepted_parameters = RequestParameters(user=ADMIN)
 
     assert result.status_code == 200
-    mock_storage_service.get.assert_called_with("study2", excepted_parameters)
+    mock_storage_service.get.assert_called_with(
+        "study2", 3, excepted_parameters
+    )
 
 
 @pytest.mark.unit_test
@@ -94,13 +120,21 @@ def test_matrix(tmp_path: str, storage_service_builder) -> None:
     (tmp / "study1").mkdir()
     (tmp / "study1" / "matrix").write_text("toto")
 
-    storage_service = storage_service_builder(path_studies=tmp)
+    storage_service = Mock()
+    storage_service.study_service.path_to_studies = tmp
 
     app = Flask(__name__)
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
     result_right = client.get("/file/study1/matrix")
@@ -128,7 +162,14 @@ def test_create_study(
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
 
@@ -136,7 +177,7 @@ def test_create_study(
 
     assert result_right.status_code == HTTPStatus.CREATED.value
     assert json.loads(result_right.data) == "/studies/my-uuid"
-    storage_service.create_study.assert_called_once_with("study2")
+    storage_service.create_study.assert_called_once_with("study2", PARAMS)
 
 
 @pytest.mark.unit_test
@@ -162,7 +203,14 @@ def test_import_study_zipped(
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
 
@@ -188,14 +236,23 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
 
     result = client.post("/studies/existing-study/copy?dest=study-copied")
 
     storage_service.copy_study.assert_called_with(
-        src_uuid="existing-study", dest_study_name="study-copied"
+        src_uuid="existing-study",
+        dest_study_name="study-copied",
+        params=PARAMS,
     )
     assert result.status_code == HTTPStatus.CREATED.value
 
@@ -215,7 +272,14 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/studies")
@@ -227,7 +291,16 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
 def test_server_health() -> None:
     app = Flask(__name__)
     build_storage(
-        app, storage_service=Mock(), config=Config({"main": {"res": Path()}})
+        app,
+        storage_service=Mock(),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/health")
@@ -244,19 +317,26 @@ def test_export_files() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/studies/name/export")
 
     assert result.data == b"Hello"
     mock_storage_service.export_study.assert_called_once_with(
-        "name", False, True
+        "name", PARAMS, False, True
     )
 
 
 @pytest.mark.unit_test
-def test_export_compact() -> None:
+def test_export_params() -> None:
 
     mock_storage_service = Mock()
     mock_storage_service.export_study.return_value = BytesIO(b"Hello")
@@ -265,14 +345,32 @@ def test_export_compact() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
     result = client.get("/studies/name/export?compact")
 
     assert result.data == b"Hello"
-    mock_storage_service.export_study.assert_called_once_with(
-        "name", True, True
+
+    client.get("/studies/name/export?compact&no-output")
+    client.get("/studies/name/export?compact=true&no-output=true")
+    client.get("/studies/name/export?compact=false&no-output=false")
+    client.get("/studies/name/export?no-output=false")
+    mock_storage_service.export_study.assert_has_calls(
+        [
+            call(Markup("name"), PARAMS, True, True),
+            call(Markup("name"), PARAMS, True, False),
+            call(Markup("name"), PARAMS, True, False),
+            call(Markup("name"), PARAMS, False, True),
+            call(Markup("name"), PARAMS, False, True),
+        ]
     )
 
 
@@ -285,12 +383,19 @@ def test_delete_study() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
     client.delete("/studies/name")
 
-    mock_storage_service.delete_study.assert_called_once_with("name")
+    mock_storage_service.delete_study.assert_called_once_with("name", PARAMS)
 
 
 @pytest.mark.unit_test
@@ -301,7 +406,14 @@ def test_import_matrix() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
 
@@ -311,7 +423,9 @@ def test_import_matrix() -> None:
         "/file/" + path, data={"matrix": (data, "matrix.txt")}
     )
 
-    mock_storage_service.upload_matrix.assert_called_once_with(path, b"hello")
+    mock_storage_service.upload_matrix.assert_called_once_with(
+        path, b"hello", PARAMS
+    )
     assert result.status_code == HTTPStatus.NO_CONTENT.value
 
 
@@ -327,7 +441,14 @@ def test_import_matrix_with_wrong_path() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
 
@@ -351,13 +472,20 @@ def test_edit_study() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
     client.post("/studies/my-uuid/url/to/change", data=data)
 
     mock_storage_service.edit_study.assert_called_once_with(
-        "my-uuid/url/to/change", {"Hello": "World"}
+        "my-uuid/url/to/change", {"Hello": "World"}, PARAMS
     )
 
 
@@ -371,7 +499,14 @@ def test_edit_study_fail() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        config=Config({"main": {"res": Path()}}),
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"studies": Path()},
+            }
+        ),
     )
     client = app.test_client()
     res = client.post("/studies/my-uuid/url/to/change", data=data)

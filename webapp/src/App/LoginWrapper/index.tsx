@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { PropsWithChildren, useState, useEffect } from 'react';
 import Particles from 'react-particles-js';
 import { useTranslation } from 'react-i18next';
@@ -5,14 +6,19 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { createStyles, makeStyles, Theme, Typography, TextField, Button } from '@material-ui/core';
 import { ConnectedProps, connect } from 'react-redux';
 import { useForm } from 'react-hook-form';
+import debug from 'debug';
 import { AppState } from '../reducers';
-import { loginUser } from '../../ducks/auth';
-import { login as loginRequest, needAuth } from '../../services/api/auth';
+import { loginUser, logoutAction } from '../../ducks/auth';
+import { login as loginRequest, needAuth, refresh } from '../../services/api/auth';
 import particlesConf from './particles.json';
 import logo from './antarestlogo.png';
 import './particles.css';
 import GlobalPageLoadingError from '../../components/ui/GlobalPageLoadingError';
 import AppLoader from '../../components/ui/loaders/AppLoader';
+import { updateRefreshInterceptor } from '../../services/api/client';
+import { UserInfo } from '../../common/types';
+
+const logError = debug('antares:loginwrapper:error');
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -62,6 +68,7 @@ const mapState = (state: AppState) => ({
 
 const mapDispatch = ({
   login: loginUser,
+  logout: logoutAction,
 });
 
 const connector = connect(mapState, mapDispatch);
@@ -77,7 +84,7 @@ const LoginWrapper = (props: PropsWithChildren<PropTypes>) => {
   const [loginError, setLoginError] = useState<string>();
   const [t] = useTranslation();
   const { children } = props;
-  const { user, login } = props;
+  const { user, login, logout } = props;
 
   const onSubmit = async (data: Inputs) => {
     setStatus('loading');
@@ -99,13 +106,23 @@ const LoginWrapper = (props: PropsWithChildren<PropTypes>) => {
   useEffect(() => {
     (async () => {
       try {
+        if (user) {
+          updateRefreshInterceptor(async (): Promise<UserInfo|undefined> => {
+            try {
+              return refresh(user, login, logout);
+            } catch (e) {
+              logError('Failed to refresh token');
+            }
+            return undefined;
+          });
+        }
         const res = await needAuth();
         setAuthRequired(res);
       } catch (e) {
         setConnexionError(true);
       }
     })();
-  }, []);
+  }, [user]);
 
   if (authRequired === undefined) {
     return <AppLoader />;

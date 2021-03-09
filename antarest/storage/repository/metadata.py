@@ -10,11 +10,12 @@ class StudyMetadataRepository:
         self.session = session
 
     def save(self, metadata: Metadata) -> Metadata:
+        metadata.users = [self.session.merge(u) for u in metadata.users]
         self.session.add(metadata)
         self.session.commit()
         return metadata
 
-    def get(self, id: int) -> Optional[Metadata]:
+    def get(self, id: str) -> Optional[Metadata]:
         metadata: Metadata = self.session.query(Metadata).get(id)
         return metadata
 
@@ -22,7 +23,7 @@ class StudyMetadataRepository:
         metadatas: List[Metadata] = self.session.query(Metadata).all()
         return metadatas
 
-    def delete(self, id: int) -> None:
+    def delete(self, id: str) -> None:
         u: Metadata = self.session.query(Metadata).get(id)
         self.session.delete(u)
         self.session.commit()

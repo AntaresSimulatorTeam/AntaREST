@@ -23,7 +23,9 @@ class INode(ABC, Generic[G, S, V]):
         pass
 
     @abstractmethod
-    def validate(self, data: V) -> None:
+    def check_errors(
+        self, data: V, url: Optional[List[str]] = None, raising: bool = False
+    ) -> List[str]:
         pass
 
 

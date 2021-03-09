@@ -8,19 +8,29 @@ from antarest.storage.repository.filesystem.config.model import (
     Simulation,
     Link,
     Set,
+    transform_name_to_id,
 )
 
 
 class ConfigJsonBuilder:
     @staticmethod
     def build(study_path: Path, json: JSON) -> "StudyConfig":
+        (sns,) = ConfigJsonBuilder._parse_parameters(json)
         return StudyConfig(
             study_path=study_path,
             areas=ConfigJsonBuilder._parse_areas(json),
             sets=ConfigJsonBuilder._parse_sets(json),
             outputs=ConfigJsonBuilder._parse_outputs(json),
             bindings=ConfigJsonBuilder._parse_bindings(json),
+            store_new_set=sns,
         )
+
+    @staticmethod
+    def _parse_parameters(json: JSON) -> Tuple[bool]:
+        general = json.get("settings", {}).get("generaldata", {})
+        store_new_set = general.get("output", {}).get("storenewset", False)
+
+        return (store_new_set,)
 
     @staticmethod
     def _parse_bindings(json: JSON) -> List[str]:
@@ -39,7 +49,9 @@ class ConfigJsonBuilder:
     @staticmethod
     def _parse_areas(json: JSON) -> Dict[str, Area]:
         areas = list(json["input"]["areas"])
-        areas = [a for a in areas if a not in ["sets", "list"]]
+        areas = [
+            transform_name_to_id(a) for a in areas if a not in ["sets", "list"]
+        ]
         return {a: ConfigJsonBuilder._parse_area(json, a) for a in areas}
 
     @staticmethod
@@ -55,7 +67,11 @@ class ConfigJsonBuilder:
 
     @staticmethod
     def _parse_simulation(json: JSON) -> "Simulation":
-        nbyears, by_year, synthesis = ConfigJsonBuilder._parse_parameters(
+        (
+            nbyears,
+            by_year,
+            synthesis,
+        ) = ConfigJsonBuilder._parse_output_parameters(
             json["about-the-study"]["parameters"]
         )
         info = json["info"]["general"]
@@ -69,10 +85,11 @@ class ConfigJsonBuilder:
             nbyears=nbyears,
             by_year=by_year,
             synthesis=synthesis,
+            error="checkIntegrity" not in json,
         )
 
     @staticmethod
-    def _parse_parameters(json: JSON) -> Tuple[int, bool, bool]:
+    def _parse_output_parameters(json: JSON) -> Tuple[int, bool, bool]:
         return (
             json["general"]["nbyears"],
             json["general"]["year-by-year"],
@@ -96,7 +113,9 @@ class ConfigJsonBuilder:
             return list()
 
         list_ini = json["input"]["thermal"]["clusters"][area]["list"]
-        return list(list_ini.keys())
+        return [
+            transform_name_to_id(thermal) for thermal in list(list_ini.keys())
+        ]
 
     @staticmethod
     def _parse_links(json: JSON, area: str) -> Dict[str, Link]:

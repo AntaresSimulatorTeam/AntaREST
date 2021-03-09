@@ -4,5 +4,6 @@ PyYAML==5.3.1
 werkzeug
 gunicorn==20.0.4
 flask-swagger==0.2.14
-flask-jwt-extended
+flask-jwt-extended==4.0.2
 sqlalchemy
+dataclasses
