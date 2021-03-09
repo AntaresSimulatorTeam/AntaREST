@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from antarest.login.model import User, Role
+from antarest.login.model import User, Role, Group
 from antarest.common.requests import (
     RequestParameters,
 )
@@ -58,6 +58,7 @@ def test_save_metadata():
 
     # Input
     user = User(id=0, name="user", role=Role.USER)
+    group = Group(id=2, name="group")
 
     # Expected
     metadata = Metadata(
@@ -68,7 +69,8 @@ def test_save_metadata():
         created_at=datetime.fromtimestamp(1234),
         updated_at=datetime.fromtimestamp(9876),
         content_status=StudyContentStatus.VALID,
-        users=[user],
+        owner=user,
+        groups=[group],
     )
 
     service = StorageService(
@@ -78,13 +80,15 @@ def test_save_metadata():
         repository=repository,
     )
 
-    service._save_metadata(uuid, user)
+    service._save_metadata(uuid, owner=user, group=group)
     repository.save.assert_called_once_with(metadata)
 
 
 def test_check_user_permission():
     uuid = str(uuid4())
-    user = User(id=0)
+    group = Group(id=0)
+    good = User(id=0, groups=[group])
+    wrong = User(id=2)
 
     repository = Mock()
 
@@ -95,10 +99,26 @@ def test_check_user_permission():
         repository=repository,
     )
 
-    repository.get.return_value = Metadata(id=uuid, users=[])
+    # wrong owner
+    repository.get.return_value = Metadata(id=uuid, owner=wrong)
     with pytest.raises(UserHasNotPermissionError):
-        service._check_user_permission(user, uuid)
-    assert not service._check_user_permission(user, uuid, raising=False)
+        service._check_user_permission(good, uuid)
+    assert not service._check_user_permission(good, uuid, raising=False)
 
-    repository.get.return_value = Metadata(id=uuid, users=[user])
-    assert service._check_user_permission(user, uuid)
+    # good owner
+    repository.get.return_value = Metadata(id=uuid, owner=good)
+    assert service._check_user_permission(good, uuid)
+
+    # wrong group
+    repository.get.return_value = Metadata(
+        id=uuid, owner=wrong, groups=[Group(id=2)]
+    )
+    with pytest.raises(UserHasNotPermissionError):
+        service._check_user_permission(good, uuid)
+    assert not service._check_user_permission(good, uuid, raising=False)
+
+    # good group
+    repository.get.return_value = Metadata(
+        id=uuid, owner=wrong, groups=[group]
+    )
+    assert service._check_user_permission(good, uuid)

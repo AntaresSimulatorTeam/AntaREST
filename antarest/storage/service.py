@@ -7,7 +7,7 @@ from typing import List, IO, Optional
 import werkzeug
 
 from antarest.common.custom_types import JSON
-from antarest.login.model import User, Role
+from antarest.login.model import User, Role, Group
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.common.requests import (
@@ -121,7 +121,7 @@ class StorageService:
             if self.study_service.check_errors(uuid)
             else StudyContentStatus.VALID
         )
-        self._save_metadata(uuid, params.user, content_status=status)
+        self._save_metadata(uuid, owner=params.user, content_status=status)
         return uuid
 
     def import_output(
@@ -141,10 +141,11 @@ class StorageService:
     def _save_metadata(
         self,
         uuid: str,
-        user: Optional[User],
+        owner: Optional[User] = None,
         content_status: StudyContentStatus = StudyContentStatus.VALID,
+        group: Optional[Group] = None,
     ) -> None:
-        if not user:
+        if not owner and not group:
             raise UserHasNotPermissionError
 
         info = self.study_service.get_study_information(uuid)["antares"]
@@ -156,8 +157,11 @@ class StorageService:
             created_at=datetime.fromtimestamp(info["created"]),
             updated_at=datetime.fromtimestamp(info["lastsave"]),
             content_status=content_status,
-            users=[user],
         )
+        if owner:
+            meta.owner = owner
+        if group:
+            meta.groups = [group]
         self.repository.save(meta)
 
     def _check_user_permission(
@@ -176,7 +180,15 @@ class StorageService:
                 logger.warning(f"Study {uuid} not found in metadata db")
                 return
 
-            if user not in md.users:
+            is_owner = user == md.owner
+
+            inside_group = (
+                md.groups
+                and user.groups
+                and any(g in md.groups for g in user.groups)
+            )
+
+            if not is_owner and not inside_group:
                 raise UserHasNotPermissionError()
 
         try:
