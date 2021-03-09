@@ -19,9 +19,9 @@ def test_get_studies_uuid():
     # Mock
     repository = Mock()
     repository.get.side_effect = [
-        Metadata(id="A", users=[bob]),
-        Metadata(id="B", users=[alice]),
-        Metadata(id="C", users=[bob]),
+        Metadata(id="A", owner=bob),
+        Metadata(id="B", owner=alice),
+        Metadata(id="C", owner=bob),
     ]
 
     study_service = Mock()
@@ -58,7 +58,7 @@ def test_save_metadata():
 
     # Input
     user = User(id=0, name="user", role=Role.USER)
-    group = Group(id=2, name="group")
+    group = Group(id="my-group", name="group")
 
     # Expected
     metadata = Metadata(
@@ -86,7 +86,7 @@ def test_save_metadata():
 
 def test_check_user_permission():
     uuid = str(uuid4())
-    group = Group(id=0)
+    group = Group(id="my-group")
     good = User(id=0, groups=[group])
     wrong = User(id=2)
 
@@ -111,7 +111,7 @@ def test_check_user_permission():
 
     # wrong group
     repository.get.return_value = Metadata(
-        id=uuid, owner=wrong, groups=[Group(id=2)]
+        id=uuid, owner=wrong, groups=[Group(id="wrong")]
     )
     with pytest.raises(UserHasNotPermissionError):
         service._check_user_permission(good, uuid)

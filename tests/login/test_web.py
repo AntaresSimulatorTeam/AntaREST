@@ -242,7 +242,7 @@ def test_user_delete() -> None:
 @pytest.mark.unit_test
 def test_groups_fail() -> None:
     service = Mock()
-    service.get_all_groups.return_value = [Group(id=1, name="group")]
+    service.get_all_groups.return_value = [Group(id="my-group", name="group")]
 
     app = create_app(service)
     client = app.test_client()
@@ -253,30 +253,30 @@ def test_groups_fail() -> None:
 @pytest.mark.unit_test
 def test_group() -> None:
     service = Mock()
-    service.get_all_groups.return_value = [Group(id=1, name="group")]
+    service.get_all_groups.return_value = [Group(id="my-group", name="group")]
 
     app = create_app(service)
     client = app.test_client()
     res = client.get("/groups", headers=create_auth_token(app, Role.ADMIN))
     assert res.status_code == 200
-    assert res.json == [Group(id=1, name="group").to_dict()]
+    assert res.json == [Group(id="my-group", name="group").to_dict()]
 
 
 @pytest.mark.unit_test
 def test_group_id() -> None:
     service = Mock()
-    service.get_group.return_value = Group(id=1, name="group")
+    service.get_group.return_value = Group(id="my-group", name="group")
 
     app = create_app(service)
     client = app.test_client()
     res = client.get("/groups/1", headers=create_auth_token(app, Role.ADMIN))
     assert res.status_code == 200
-    assert res.json == Group(id=1, name="group").to_dict()
+    assert res.json == Group(id="my-group", name="group").to_dict()
 
 
 @pytest.mark.unit_test
 def test_group_create() -> None:
-    group = Group(id=1, name="group")
+    group = Group(id="my-group", name="group")
     service = Mock()
     service.save_group.return_value = group
 

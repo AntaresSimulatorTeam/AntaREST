@@ -18,7 +18,7 @@ def test_cyclelife():
     )
 
     user = User(id=0, name="admin", role=Role.ADMIN)
-    group = Group(id=0, name="group")
+    group = Group(id="my-group", name="group")
     Base.metadata.create_all(engine)
 
     repo = StudyMetadataRepository(session=sess)
