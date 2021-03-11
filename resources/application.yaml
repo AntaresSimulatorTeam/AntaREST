@@ -10,7 +10,17 @@ db:
   url: "sqlite:///database.db"
 
 storage:
-  studies: examples/studies/
+  workspaces:
+    diese:
+      path: examples/studies/diese
+      groups:
+        - diese
+    spher:
+      path: examples/studies/spher
+      groups:
+        - spher
+    default:
+      path: examples/studies/
 
 launcher:
   default: local
