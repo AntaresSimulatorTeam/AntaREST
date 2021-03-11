@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, IO, Optional
 
 import werkzeug
+import uuid
 
 from antarest.common.custom_types import JSON
 from antarest.login.model import User, Role, Group
@@ -38,10 +39,10 @@ class StorageService:
         self.repository = repository
 
     def get(self, route: str, depth: int, params: RequestParameters) -> JSON:
-        uuid, _, _ = self.study_service.extract_info_from_url(route)
-        self._check_user_permission(params.user, uuid)
+        uuid, _ = self.study_service.extract_info_from_url(route)
+        md = self._check_user_permission(params.user, uuid)
 
-        return self.study_service.get(route, depth)
+        return self.study_service.get(md, route, depth)
 
     def _get_study_uuids(self, params: RequestParameters) -> List[str]:
         uuids = self.study_service.get_study_uuids()
@@ -61,16 +62,20 @@ class StorageService:
     def get_study_information(
         self, uuid: str, params: RequestParameters
     ) -> JSON:
-        self._check_user_permission(params.user, uuid)
-        return self.study_service.get_study_information(uuid)
+        md = self._check_user_permission(params.user, uuid)
+        return self.study_service.get_study_information(md)
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
-        self._check_user_permission(params.user, uuid)
-        return self.study_service.get_study_path(uuid)
+        md = self._check_user_permission(params.user, uuid)
+        return self.study_service.get_study_path(md)
 
     def create_study(self, study_name: str, params: RequestParameters) -> str:
-        uuid = self.study_service.create_study(study_name)
-        self._save_metadata(uuid, params.user)
+        md = Metadata(
+            id=uuid.uuid4(),
+
+        )
+        md = self.study_service.create_study(Metadata(id=))
+        self._save_metadata(md, params.user)
         return uuid
 
     def copy_study(
@@ -166,19 +171,18 @@ class StorageService:
 
     def _check_user_permission(
         self, user: Optional[User], uuid: str, raising: bool = True
-    ) -> bool:
-        def check(user: Optional[User], uuid: str) -> None:
+    ) -> Metadata:
+        def check(user: Optional[User], uuid: str) -> Metadata:
             if not user:
                 raise UserHasNotPermissionError()
 
-            if user.role == Role.ADMIN:
-                return
-
             md = self.repository.get(uuid)
             if not md:
-                # TODO be sure we let any user access to an fantom study
                 logger.warning(f"Study {uuid} not found in metadata db")
-                return
+                raise UserHasNotPermissionError()
+
+            if user.role == Role.ADMIN:
+                return md
 
             is_owner = user == md.owner
 
@@ -191,10 +195,11 @@ class StorageService:
             if not is_owner and not inside_group:
                 raise UserHasNotPermissionError()
 
+            return md
+
         try:
-            check(user, uuid)
-            return True
+            return check(user, uuid)
         except Exception as e:
             if raising:
                 raise e
-            return False
+            return None

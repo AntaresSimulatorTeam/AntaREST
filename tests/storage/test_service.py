@@ -106,8 +106,9 @@ def test_check_user_permission():
     assert not service._check_user_permission(good, uuid, raising=False)
 
     # good owner
-    repository.get.return_value = Metadata(id=uuid, owner=good)
-    assert service._check_user_permission(good, uuid)
+    md = Metadata(id=uuid, owner=good)
+    repository.get.return_value = md
+    assert service._check_user_permission(good, uuid) == md
 
     # wrong group
     repository.get.return_value = Metadata(
@@ -118,7 +119,6 @@ def test_check_user_permission():
     assert not service._check_user_permission(good, uuid, raising=False)
 
     # good group
-    repository.get.return_value = Metadata(
-        id=uuid, owner=wrong, groups=[group]
-    )
-    assert service._check_user_permission(good, uuid)
+    md = Metadata(id=uuid, owner=wrong, groups=[group])
+    repository.get.return_value = md
+    assert service._check_user_permission(good, uuid) == md
