@@ -25,12 +25,10 @@ logger = logging.getLogger(__name__)
 class ImporterService:
     def __init__(
         self,
-        config: Config,
         study_service: StudyService,
         study_factory: StudyFactory,
     ):
         self.study_service = study_service
-        self.config = config
         self.study_factory = study_factory
 
     def upload_matrix(

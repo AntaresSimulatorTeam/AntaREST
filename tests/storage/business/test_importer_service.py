@@ -36,7 +36,6 @@ def test_upload_matrix(tmp_path: Path, storage_service_builder) -> None:
     (study_path / "study.antares").touch()
 
     importer_service = ImporterService(
-        config=Config(),
         study_service=build_storage_service(tmp_path, study_uuid),
         study_factory=Mock(),
     )
@@ -68,7 +67,6 @@ def test_import_study(tmp_path: Path, storage_service_builder) -> None:
     study_factory.create_from_fs.return_value = None, study
 
     importer_service = ImporterService(
-        config=Config(),
         study_service=build_storage_service(tmp_path, "other-study"),
         study_factory=study_factory,
     )
