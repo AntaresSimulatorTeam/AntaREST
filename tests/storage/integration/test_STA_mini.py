@@ -3,7 +3,7 @@ import json
 import shutil
 from http import HTTPStatus
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 from flask import Flask
@@ -348,13 +348,6 @@ def test_sta_mini_copy(storage_service) -> None:
     source_study_name = "STA-mini"
     destination_study_name = "copy-STA-mini"
 
-    repo = Mock()
-    repo.get.return_value = (
-        Metadata(id=source_study_name, workspace="default"),
-    )
-
-    storage_service.repository = repo
-
     app = Flask(__name__)
     build_storage(
         app,
@@ -375,8 +368,6 @@ def test_sta_mini_copy(storage_service) -> None:
     parameters = RequestParameters(user=ADMIN)
     data_source = storage_service.get(source_study_name, -1, parameters)
     data_destination = storage_service.get(destination_folder, -1, parameters)
-
-    repo.get.assert_called_once_with(None)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
     assert link_url_source == "file/STA-mini/input/links/de/fr.txt"

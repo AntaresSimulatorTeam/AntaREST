@@ -41,7 +41,7 @@ def storage_service(
 
     md = Metadata(id="STA-mini", workspace="default")
     repo = Mock()
-    repo.get.return_value = md
+    repo.get.side_effect = lambda name: Metadata(id=name, workspace="default")
 
     config = Config(
         {

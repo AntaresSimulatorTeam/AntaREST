@@ -7,5 +7,5 @@ class Watcher:
         self.service = service
         self.config = config
 
-    def init(self):
-        pass
+    def init(self) -> None:
+        return None
