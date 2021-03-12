@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -71,12 +72,11 @@ class StorageService:
 
     def create_study(self, study_name: str, params: RequestParameters) -> str:
         md = Metadata(
-            id=uuid.uuid4(),
-
+            id=str(uuid.uuid4()), name=study_name, workspace="default"
         )
-        md = self.study_service.create_study(Metadata(id=))
+        md = self.study_service.create_study(md)
         self._save_metadata(md, params.user)
-        return uuid
+        return str(md.id)
 
     def copy_study(
         self,
@@ -84,11 +84,16 @@ class StorageService:
         dest_study_name: str,
         params: RequestParameters,
     ) -> str:
-        self._check_user_permission(params.user, src_uuid)
-        uuid = self.study_service.copy_study(src_uuid, dest_study_name)
-        self._save_metadata(uuid, params.user)
+        src_md = self._check_user_permission(params.user, src_uuid)
 
-        return uuid
+        dest_md = deepcopy(src_md)
+        dest_md.id = str(uuid.uuid4())
+        dest_md.name = dest_study_name
+
+        md = self.study_service.copy_study(src_md, dest_md)
+        self._save_metadata(md, params.user)
+
+        return str(md.id)
 
     def export_study(
         self,
@@ -97,23 +102,23 @@ class StorageService:
         compact: bool = False,
         outputs: bool = True,
     ) -> BytesIO:
-        self._check_user_permission(params.user, uuid)
-        return self.exporter_service.export_study(uuid, compact, outputs)
+        md = self._check_user_permission(params.user, uuid)
+        return self.exporter_service.export_study(md, compact, outputs)
 
     def delete_study(self, uuid: str, params: RequestParameters) -> None:
-        self._check_user_permission(params.user, uuid)
-        self.study_service.delete_study(uuid)
+        md = self._check_user_permission(params.user, uuid)
+        self.study_service.delete_study(md)
 
     def delete_output(
         self, uuid: str, output_name: str, params: RequestParameters
     ) -> None:
-        self._check_user_permission(params.user, uuid)
-        self.study_service.delete_output(uuid, output_name)
+        md = self._check_user_permission(params.user, uuid)
+        self.study_service.delete_output(md, output_name)
 
     def upload_matrix(
         self, path: str, data: bytes, params: RequestParameters
     ) -> None:
-        uuid, _, _ = self.study_service.extract_info_from_url(path)
+        uuid, _ = self.study_service.extract_info_from_url(path)
         self._check_user_permission(params.user, uuid)
         self.importer_service.upload_matrix(path, data)
 
@@ -126,7 +131,7 @@ class StorageService:
             if self.study_service.check_errors(uuid)
             else StudyContentStatus.VALID
         )
-        self._save_metadata(uuid, owner=params.user, content_status=status)
+        self._save_metadata(md, owner=params.user, content_status=status)
         return uuid
 
     def import_output(
