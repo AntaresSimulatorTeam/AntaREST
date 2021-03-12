@@ -207,4 +207,4 @@ class StorageService:
         except Exception as e:
             if raising:
                 raise e
-            return None
+            return None  # type: ignore

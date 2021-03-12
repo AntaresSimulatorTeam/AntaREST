@@ -12,6 +12,7 @@ from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.login.model import User, Role
 from antarest.storage.main import build_storage
+from antarest.storage.model import Metadata
 from antarest.storage.service import StorageService
 from antarest.common.requests import (
     RequestParameters,
@@ -28,17 +29,7 @@ def assert_url_content(
         app,
         session=Mock(),
         storage_service=storage_service,
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
     res = client.get(url)
@@ -357,22 +348,19 @@ def test_sta_mini_copy(storage_service) -> None:
     source_study_name = "STA-mini"
     destination_study_name = "copy-STA-mini"
 
+    repo = Mock()
+    repo.get.return_value = (
+        Metadata(id=source_study_name, workspace="default"),
+    )
+
+    storage_service.repository = repo
+
     app = Flask(__name__)
     build_storage(
         app,
         session=Mock(),
         storage_service=storage_service,
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
     result = client.post(
@@ -387,6 +375,8 @@ def test_sta_mini_copy(storage_service) -> None:
     parameters = RequestParameters(user=ADMIN)
     data_source = storage_service.get(source_study_name, -1, parameters)
     data_destination = storage_service.get(destination_folder, -1, parameters)
+
+    repo.get.assert_called_once_with(None)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
     assert link_url_source == "file/STA-mini/input/links/de/fr.txt"
@@ -473,17 +463,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         session=Mock(),
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
 
@@ -506,17 +486,7 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
         app,
         session=Mock(),
         storage_service=storage_service,
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
     result = client.post(
@@ -548,17 +518,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         session=Mock(),
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
 

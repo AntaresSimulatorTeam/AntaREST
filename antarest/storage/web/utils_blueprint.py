@@ -70,8 +70,9 @@ def create_utils_routes(
 
         """
 
+        # TODO get path from workspace
         try:
-            file_path = storage_service.study_service.path_to_studies / path
+            file_path = storage_service.study_service.path_to_studies / path  # type: ignore
             return send_file(file_path.absolute())
         except FileNotFoundError:
             return f"{path} not found", HTTPStatus.NOT_FOUND.value

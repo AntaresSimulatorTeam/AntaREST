@@ -39,7 +39,7 @@ def test_server() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -65,7 +65,7 @@ def test_404() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -92,7 +92,7 @@ def test_server_with_parameters() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -132,7 +132,7 @@ def test_matrix(tmp_path: str, storage_service_builder) -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -167,7 +167,7 @@ def test_create_study(
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -208,7 +208,7 @@ def test_import_study_zipped(
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -241,7 +241,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -277,7 +277,7 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -298,7 +298,7 @@ def test_server_health() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -322,7 +322,7 @@ def test_export_files() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -350,7 +350,7 @@ def test_export_params() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -388,7 +388,7 @@ def test_delete_study() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -411,7 +411,7 @@ def test_import_matrix() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -446,7 +446,7 @@ def test_import_matrix_with_wrong_path() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -477,7 +477,7 @@ def test_edit_study() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
@@ -504,7 +504,7 @@ def test_edit_study_fail() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )

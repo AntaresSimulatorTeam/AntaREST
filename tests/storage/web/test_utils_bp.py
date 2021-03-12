@@ -26,7 +26,7 @@ def test_version() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"studies": Path()},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
             }
         ),
     )
