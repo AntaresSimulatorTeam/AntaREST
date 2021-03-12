@@ -7,7 +7,6 @@ from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.study_service import StudyService
 from antarest.storage.model import Metadata
 from antarest.storage.repository.filesystem.config.model import StudyConfig
-from antarest.storage.web.exceptions import StudyNotFoundError
 
 
 def build_storage_service(workspace: Path, uuid: str) -> StudyService:

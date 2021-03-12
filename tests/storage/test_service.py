@@ -16,13 +16,13 @@ def test_get_studies_uuid():
     bob = User(id=1, name="bob")
     alice = User(id=2, name="alice")
 
+    a = Metadata(id="A", owner=bob)
+    b = Metadata(id="B", owner=alice)
+    c = Metadata(id="C", owner=bob)
+
     # Mock
     repository = Mock()
-    repository.get.side_effect = [
-        Metadata(id="A", owner=bob),
-        Metadata(id="B", owner=alice),
-        Metadata(id="C", owner=bob),
-    ]
+    repository.get.side_effect = [a, b, c]
 
     study_service = Mock()
     study_service.get_study_uuids.return_value = ["A", "B", "C"]
@@ -34,9 +34,9 @@ def test_get_studies_uuid():
         repository=repository,
     )
 
-    studies = service._get_study_uuids(RequestParameters(user=bob))
+    studies = service._get_study_metadatas(RequestParameters(user=bob))
 
-    assert ["A", "C"] == studies
+    assert [a, c] == studies
 
 
 def test_save_metadata():
@@ -69,6 +69,7 @@ def test_save_metadata():
         created_at=datetime.fromtimestamp(1234),
         updated_at=datetime.fromtimestamp(9876),
         content_status=StudyContentStatus.VALID,
+        workspace="default",
         owner=user,
         groups=[group],
     )
@@ -80,7 +81,9 @@ def test_save_metadata():
         repository=repository,
     )
 
-    service._save_metadata(uuid, owner=user, group=group)
+    service._save_metadata(
+        Metadata(id=uuid, workspace="default"), owner=user, group=group
+    )
     repository.save.assert_called_once_with(metadata)
 
 
