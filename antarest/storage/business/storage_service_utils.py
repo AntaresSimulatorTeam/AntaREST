@@ -1,3 +1,4 @@
+import re
 import time
 from pathlib import Path
 from typing import IO, Tuple
@@ -28,6 +29,10 @@ class StorageServiceUtils:
     @staticmethod
     def generate_uuid() -> str:
         return str(uuid4())
+
+    @staticmethod
+    def sanitize(uuid: str) -> str:
+        return re.sub(r"[^0-9-]", "_", uuid)
 
     @staticmethod
     def extract_zip(stream: IO[bytes], dst: Path) -> None:

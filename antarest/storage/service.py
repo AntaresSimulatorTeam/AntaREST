@@ -190,7 +190,10 @@ class StorageService:
 
         md = self.repository.get(uuid)
         if not md:
-            logger.warning(f"Study %s not found in metadata db", uuid)
+            logger.warning(
+                f"Study %s not found in metadata db",
+                StorageServiceUtils.sanitize(uuid),
+            )
             raise UserHasNotPermissionError()
 
         if user.role == Role.ADMIN:
