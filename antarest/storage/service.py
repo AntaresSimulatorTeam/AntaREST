@@ -42,7 +42,7 @@ class StorageService:
 
     def get(self, route: str, depth: int, params: RequestParameters) -> JSON:
         uuid, url = StorageServiceUtils.extract_info_from_url(route)
-        md = self._check_user_permission(params.user, uuid)
+        md = self._get_metadata_according_permission(params.user, uuid)
 
         return self.study_service.get(md, url, depth)
 
@@ -52,7 +52,9 @@ class StorageService:
         metadatas: List[Metadata] = list()
 
         for uuid in self.study_service.get_study_uuids():
-            md = self._check_user_permission(params.user, uuid, raising=False)
+            md = self._get_metadata_according_permission_no_raising(
+                params.user, uuid
+            )
             if md:
                 metadatas.append(md)
         return metadatas
@@ -66,11 +68,11 @@ class StorageService:
     def get_study_information(
         self, uuid: str, params: RequestParameters
     ) -> JSON:
-        md = self._check_user_permission(params.user, uuid)
+        md = self._get_metadata_according_permission(params.user, uuid)
         return self.study_service.get_study_information(md)
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
-        md = self._check_user_permission(params.user, uuid)
+        md = self._get_metadata_according_permission(params.user, uuid)
         return self.study_service.get_study_path(md)
 
     def create_study(self, study_name: str, params: RequestParameters) -> str:
@@ -85,7 +87,7 @@ class StorageService:
         dest_study_name: str,
         params: RequestParameters,
     ) -> str:
-        src_md = self._check_user_permission(params.user, src_uuid)
+        src_md = self._get_metadata_according_permission(params.user, src_uuid)
 
         dest_md = deepcopy(src_md)
         dest_md.id = str(uuid4())
@@ -103,29 +105,29 @@ class StorageService:
         compact: bool = False,
         outputs: bool = True,
     ) -> BytesIO:
-        md = self._check_user_permission(params.user, uuid)
+        md = self._get_metadata_according_permission(params.user, uuid)
         return self.exporter_service.export_study(md, compact, outputs)
 
     def delete_study(self, uuid: str, params: RequestParameters) -> None:
-        md = self._check_user_permission(params.user, uuid)
+        md = self._get_metadata_according_permission(params.user, uuid)
         self.study_service.delete_study(md)
 
     def delete_output(
         self, uuid: str, output_name: str, params: RequestParameters
     ) -> None:
-        md = self._check_user_permission(params.user, uuid)
+        md = self._get_metadata_according_permission(params.user, uuid)
         self.study_service.delete_output(md, output_name)
 
     def get_matrix(self, route: str, params: RequestParameters) -> bytes:
         uuid, path = StorageServiceUtils.extract_info_from_url(route)
-        md = self._check_user_permission(params.user, uuid)
+        md = self._get_metadata_according_permission(params.user, uuid)
         return self.exporter_service.get_matrix(md, path)
 
     def upload_matrix(
         self, path: str, data: bytes, params: RequestParameters
     ) -> None:
         uuid, _ = StorageServiceUtils.extract_info_from_url(path)
-        md = self._check_user_permission(params.user, uuid)
+        md = self._get_metadata_according_permission(params.user, uuid)
         self.importer_service.upload_matrix(md, path, data)
 
     def import_study(
@@ -144,7 +146,7 @@ class StorageService:
     def import_output(
         self, uuid: str, stream: IO[bytes], params: RequestParameters
     ) -> JSON:
-        md = self._check_user_permission(params.user, uuid)
+        md = self._get_metadata_according_permission(params.user, uuid)
         res = self.importer_service.import_output(md, stream)
         return res
 
@@ -152,7 +154,7 @@ class StorageService:
         self, route: str, new: JSON, params: RequestParameters
     ) -> JSON:
         uuid, url = StorageServiceUtils.extract_info_from_url(route)
-        md = self._check_user_permission(params.user, uuid)
+        md = self._get_metadata_according_permission(params.user, uuid)
         return self.study_service.edit_study(md, url, new)
 
     def _save_metadata(
@@ -180,37 +182,36 @@ class StorageService:
             metadata.groups = [group]
         self.repository.save(metadata)
 
-    def _check_user_permission(
-        self, user: Optional[User], uuid: str, raising: bool = True
+    def _get_metadata_according_permission(
+        self, user: Optional[User], uuid: str
     ) -> Metadata:
-        def check(user: Optional[User], uuid: str) -> Metadata:
-            if not user:
-                raise UserHasNotPermissionError()
+        if not user:
+            raise UserHasNotPermissionError()
 
-            md = self.repository.get(uuid)
-            if not md:
-                logger.warning(f"Study {uuid} not found in metadata db")
-                raise UserHasNotPermissionError()
+        md = self.repository.get(uuid)
+        if not md:
+            logger.warning(f"Study %s not found in metadata db", uuid)
+            raise UserHasNotPermissionError()
 
-            if user.role == Role.ADMIN:
-                return md
-
-            is_owner = user == md.owner
-
-            inside_group = (
-                md.groups
-                and user.groups
-                and any(g in md.groups for g in user.groups)
-            )
-
-            if not is_owner and not inside_group:
-                raise UserHasNotPermissionError()
-
+        if user.role == Role.ADMIN:
             return md
 
+        is_owner = user == md.owner
+        inside_group = (
+            md.groups
+            and user.groups
+            and any(g in md.groups for g in user.groups)
+        )
+
+        if not is_owner and not inside_group:
+            raise UserHasNotPermissionError()
+
+        return md
+
+    def _get_metadata_according_permission_no_raising(
+        self, user: Optional[User], uuid: str
+    ) -> Optional[Metadata]:
         try:
-            return check(user, uuid)
-        except Exception as e:
-            if raising:
-                raise e
-            return None  # type: ignore
+            return self._get_metadata_according_permission(user, uuid)
+        except UserHasNotPermissionError:
+            return None
