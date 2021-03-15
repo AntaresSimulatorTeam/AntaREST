@@ -29,3 +29,13 @@ launcher:
       700: path/to/700
 
 debug: true
+
+logging:
+  level: INFO
+#  path: /tmp/antarest.log
+#  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+#eventbus:
+#  redis:
+#    host: localhost
+#    port: 6379

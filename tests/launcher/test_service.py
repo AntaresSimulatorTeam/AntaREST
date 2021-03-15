@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import pytest
 
+from antarest.common.interfaces.eventbus import Event, EventType
 from antarest.login.auth import Auth
 from antarest.common.config import Config
 from antarest.login.model import User
@@ -28,6 +29,8 @@ def test_service_run_study(get_current_user_mock):
     factory_launcher_mock = Mock()
     factory_launcher_mock.build_launcher.return_value = launcher_mock
 
+    event_bus = Mock()
+
     running = JobResult(
         id=str(uuid), study_id="study_uuid", job_status=JobStatus.RUNNING
     )
@@ -39,6 +42,7 @@ def test_service_run_study(get_current_user_mock):
         storage_service=storage_service_mock,
         repository=repository,
         factory_launcher=factory_launcher_mock,
+        event_bus=event_bus,
     )
 
     job_id = launcher_service.run_study(
@@ -48,6 +52,12 @@ def test_service_run_study(get_current_user_mock):
 
     assert job_id == uuid
     repository.save.assert_called_once_with(running)
+    event_bus.push.assert_called_once_with(
+        Event(
+            EventType.STUDY_JOB_STARTED,
+            {"jid": str(uuid), "sid": "study_uuid"},
+        )
+    )
 
 
 @pytest.mark.unit_test
@@ -70,10 +80,12 @@ def test_service_get_result_from_launcher():
         storage_service=Mock(),
         repository=repository,
         factory_launcher=factory_launcher_mock,
+        event_bus=Mock(),
     )
 
+    job_id = uuid4()
     assert (
-        launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
+        launcher_service.get_result(job_uuid=job_id) == fake_execution_result
     )
 
 
@@ -98,6 +110,7 @@ def test_service_get_result_from_database():
         storage_service=Mock(),
         repository=repository,
         factory_launcher=factory_launcher_mock,
+        event_bus=Mock(),
     )
 
     assert (
@@ -129,6 +142,7 @@ def test_service_get_jobs_from_database():
         storage_service=Mock(),
         repository=repository,
         factory_launcher=factory_launcher_mock,
+        event_bus=Mock(),
     )
 
     study_id = uuid4()

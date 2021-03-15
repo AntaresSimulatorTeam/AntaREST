@@ -1,6 +1,6 @@
 import enum
 import uuid
-from typing import Any
+from typing import Any, Dict
 
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -65,3 +65,6 @@ class Metadata(DTO, Base):  # type: ignore
 
     def __str__(self) -> str:
         return f"Metadata(name={self.name}, version={self.version}, owner={self.owner}, groups={[str(u)+',' for u in self.groups]}"
+
+    def to_json_summary(self) -> Any:
+        return {"id": self.id, "name": self.name, "workspace": self.workspace}
