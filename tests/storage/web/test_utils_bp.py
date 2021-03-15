@@ -37,3 +37,31 @@ def test_version() -> None:
 
     assert result.status_code == HTTPStatus.OK.value
     assert json.loads(result.data)["version"] == __version__
+
+
+@pytest.mark.unit_test
+def test_get_matrix() -> None:
+
+    mock_storage_service = Mock()
+    mock_storage_service.get_matrix.return_value = b"Hello World"
+
+    app = Flask(__name__)
+    build_storage(
+        app,
+        storage_service=mock_storage_service,
+        session=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {"workspaces": {"default": {"path": Path()}}},
+            }
+        ),
+    )
+    client = app.test_client()
+
+    path = "/file/my-study/matrix.txt"
+    result = client.get(path)
+
+    assert result.status_code == HTTPStatus.OK.value
+    assert result.data == b"Hello World"

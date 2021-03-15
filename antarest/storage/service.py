@@ -115,6 +115,11 @@ class StorageService:
         md = self._check_user_permission(params.user, uuid)
         self.study_service.delete_output(md, output_name)
 
+    def get_matrix(self, route: str, params: RequestParameters) -> bytes:
+        uuid, path = self.study_service.extract_info_from_url(route)
+        md = self._check_user_permission(params.user, uuid)
+        return self.exporter_service.get_matrix(md, path)
+
     def upload_matrix(
         self, path: str, data: bytes, params: RequestParameters
     ) -> None:

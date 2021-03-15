@@ -17,7 +17,7 @@ def build_storage_service(workspace: Path, uuid: str) -> StudyService:
 
 
 @pytest.mark.unit_test
-def test_export_file(tmp_path: Path, storage_service_builder):
+def test_export_file(tmp_path: Path):
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -42,7 +42,7 @@ def test_export_file(tmp_path: Path, storage_service_builder):
 
 
 @pytest.mark.unit_test
-def test_export_compact_file(tmp_path: Path, storage_service_builder):
+def test_export_compact_file(tmp_path: Path):
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -77,3 +77,19 @@ def test_export_compact_file(tmp_path: Path, storage_service_builder):
         StudyConfig(study_path=study_path)
     )
     exporter.export_compact.assert_called_once_with(study_path, 42)
+
+
+@pytest.mark.unit_test
+def test_export_matrix(tmp_path: Path) -> None:
+    file = tmp_path / "file.txt"
+    file.write_bytes(b"Hello World")
+
+    service = Mock()
+    service.get_study_path.return_value = tmp_path
+
+    exporter = ExporterService(
+        study_service=service, study_factory=Mock(), exporter=Mock()
+    )
+
+    md = Metadata(id="id", workspace="default")
+    assert exporter.get_matrix(md, "file.txt") == b"Hello World"
