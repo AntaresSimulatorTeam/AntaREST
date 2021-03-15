@@ -63,9 +63,7 @@ def test_get(tmp_path: str, project_path) -> None:
     )
 
     metadata = Metadata(id="study2.py", workspace="default")
-    output = study_service.get(
-        metadata=metadata, route=f"study2.py/{sub_route}", depth=2
-    )
+    output = study_service.get(metadata=metadata, url=sub_route, depth=2)
 
     assert output == data
 
@@ -294,7 +292,7 @@ def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
     )
 
     # Input
-    url = "my-uuid/url/to/change"
+    url = "url/to/change"
     new = {"Hello": "World"}
 
     md = Metadata(id="my-uuid", workspace="default")

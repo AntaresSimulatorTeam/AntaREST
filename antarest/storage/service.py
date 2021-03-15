@@ -15,6 +15,7 @@ from antarest.storage.business.importer_service import ImporterService
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.study_service import StudyService
 from antarest.storage.model import Metadata, StudyContentStatus
 from antarest.storage.repository.metadata import StudyMetadataRepository
@@ -40,10 +41,10 @@ class StorageService:
         self.repository = repository
 
     def get(self, route: str, depth: int, params: RequestParameters) -> JSON:
-        uuid, _ = self.study_service.extract_info_from_url(route)
+        uuid, url = StorageServiceUtils.extract_info_from_url(route)
         md = self._check_user_permission(params.user, uuid)
 
-        return self.study_service.get(md, route, depth)
+        return self.study_service.get(md, url, depth)
 
     def _get_study_metadatas(
         self, params: RequestParameters
@@ -116,14 +117,14 @@ class StorageService:
         self.study_service.delete_output(md, output_name)
 
     def get_matrix(self, route: str, params: RequestParameters) -> bytes:
-        uuid, path = self.study_service.extract_info_from_url(route)
+        uuid, path = StorageServiceUtils.extract_info_from_url(route)
         md = self._check_user_permission(params.user, uuid)
         return self.exporter_service.get_matrix(md, path)
 
     def upload_matrix(
         self, path: str, data: bytes, params: RequestParameters
     ) -> None:
-        uuid, _ = self.study_service.extract_info_from_url(path)
+        uuid, _ = StorageServiceUtils.extract_info_from_url(path)
         md = self._check_user_permission(params.user, uuid)
         self.importer_service.upload_matrix(md, path, data)
 
@@ -150,9 +151,9 @@ class StorageService:
     def edit_study(
         self, route: str, new: JSON, params: RequestParameters
     ) -> JSON:
-        uuid, _ = self.study_service.extract_info_from_url(route)
+        uuid, url = StorageServiceUtils.extract_info_from_url(route)
         md = self._check_user_permission(params.user, uuid)
-        return self.study_service.edit_study(md, route, new)
+        return self.study_service.edit_study(md, url, new)
 
     def _save_metadata(
         self,

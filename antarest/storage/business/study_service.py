@@ -30,13 +30,6 @@ class StudyService:
         self.study_factory: StudyFactory = study_factory
         self.path_resources: Path = path_resources
 
-    def extract_info_from_url(self, route: str) -> Tuple[str, str]:
-        route_parts = route.split("/")
-        uuid = route_parts[0]
-        url = "/".join(route_parts[1:])
-
-        return uuid, url
-
     def check_study_exist(self, metadata: Metadata) -> None:
         if not self.is_study_existing(metadata):
             raise StudyNotFoundError(
@@ -71,11 +64,7 @@ class StudyService:
         # sorting needed for test
         return sorted(studies_list)
 
-    def get(self, metadata: Metadata, route: str, depth: int) -> JSON:
-        (
-            uuid,
-            url,
-        ) = self.extract_info_from_url(route)
+    def get(self, metadata: Metadata, url: str, depth: int) -> JSON:
         self.check_study_exist(metadata)
         study_path = self.get_study_path(metadata)
 
@@ -90,12 +79,6 @@ class StudyService:
         config = StudyConfig(study_path=self.get_study_path(metadata))
         study = self.study_factory.create_from_config(config)
         return study.get(url=["study"])
-
-    # def get_studies_information(self) -> JSON:
-    #     return {
-    #         uuid: self.get_study_information(uuid)
-    #         for uuid in self.get_study_uuids()
-    #     }
 
     def get_workspace_path(self, workspace: str) -> Path:
         return Path(self.config[f"storage.workspaces.{workspace}.path"])
@@ -151,9 +134,8 @@ class StudyService:
         output_path = self.get_study_path(metadata) / "output" / output_name
         shutil.rmtree(output_path, ignore_errors=True)
 
-    def edit_study(self, metadata: Metadata, route: str, new: JSON) -> JSON:
+    def edit_study(self, metadata: Metadata, url: str, new: JSON) -> JSON:
         # Get data
-        uuid, url = self.extract_info_from_url(route)
         self.check_study_exist(metadata)
 
         study_path = self.get_study_path(metadata)

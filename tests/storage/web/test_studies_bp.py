@@ -115,37 +115,6 @@ def test_server_with_parameters() -> None:
 
 
 @pytest.mark.unit_test
-def test_matrix(tmp_path: str, storage_service_builder) -> None:
-    tmp = Path(tmp_path)
-    (tmp / "study1").mkdir()
-    (tmp / "study1" / "matrix").write_text("toto")
-
-    storage_service = Mock()
-    storage_service.study_service.path_to_studies = tmp
-
-    app = Flask(__name__)
-    build_storage(
-        app,
-        storage_service=storage_service,
-        session=Mock(),
-        config=Config(
-            {
-                "_internal": {"resources_path": Path()},
-                "security": {"disabled": True},
-                "storage": {"workspaces": {"default": {"path": Path()}}},
-            }
-        ),
-    )
-    client = app.test_client()
-    result_right = client.get("/file/study1/matrix")
-
-    assert result_right.data == b"toto"
-
-    result_wrong = client.get("/file/study1/WRONG_MATRIX")
-    assert result_wrong.status_code == 404
-
-
-@pytest.mark.unit_test
 def test_create_study(
     tmp_path: str, storage_service_builder, project_path
 ) -> None:

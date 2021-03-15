@@ -70,7 +70,7 @@ class ImporterService:
             else:
                 fix_study_root(path_study)
 
-            data = self.study_service.get(metadata, metadata.id, -1)
+            data = self.study_service.get(metadata, url="", depth=-1)
             if data is None:
                 self.study_service.delete_study(metadata)
                 raise StudyValidationError("Fail to import study")
@@ -114,7 +114,7 @@ class ImporterService:
 
         data = self.study_service.get(
             metadata,
-            f"{metadata.id}/output/{output_id}",
+            f"output/{output_id}",
             -1,
         )
 

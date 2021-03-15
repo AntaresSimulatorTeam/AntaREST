@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from typing import IO
+from typing import IO, Tuple
 from uuid import uuid4
 from zipfile import ZipFile, BadZipFile
 
@@ -53,3 +53,11 @@ class StorageServiceUtils:
         current_time = int(time.time())
         info_antares["created"] = current_time
         info_antares["lastsave"] = current_time
+
+    @staticmethod
+    def extract_info_from_url(route: str) -> Tuple[str, str]:
+        route_parts = route.split("/")
+        uuid = route_parts[0]
+        url = "/".join(route_parts[1:])
+
+        return uuid, url
