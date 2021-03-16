@@ -10,7 +10,8 @@ class StudyMetadataRepository:
         self.session = session
 
     def save(self, metadata: Metadata) -> Metadata:
-        metadata.users = [self.session.merge(u) for u in metadata.users]
+        metadata.groups = [self.session.merge(g) for g in metadata.groups]
+        metadata.owner = self.session.merge(metadata.owner)
         self.session.add(metadata)
         self.session.commit()
         return metadata

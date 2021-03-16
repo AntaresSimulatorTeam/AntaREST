@@ -3,7 +3,7 @@ import json
 import shutil
 from http import HTTPStatus
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 from flask import Flask
@@ -12,6 +12,7 @@ from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.login.model import User, Role
 from antarest.storage.main import build_storage
+from antarest.storage.model import Metadata
 from antarest.storage.service import StorageService
 from antarest.common.requests import (
     RequestParameters,
@@ -28,17 +29,7 @@ def assert_url_content(
         app,
         session=Mock(),
         storage_service=storage_service,
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
     res = client.get(url)
@@ -362,17 +353,7 @@ def test_sta_mini_copy(storage_service) -> None:
         app,
         session=Mock(),
         storage_service=storage_service,
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
     result = client.post(
@@ -473,17 +454,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         session=Mock(),
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
 
@@ -506,17 +477,7 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
         app,
         session=Mock(),
         storage_service=storage_service,
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
     result = client.post(
@@ -548,17 +509,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         session=Mock(),
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
 

@@ -22,28 +22,29 @@ def build_storage(
     application: Flask,
     config: Config,
     session: Session,
+    metadata_repository: Optional[StudyMetadataRepository] = None,
     study_factory: Optional[StudyFactory] = None,
     exporter: Optional[Exporter] = None,
     storage_service: Optional[StorageService] = None,
 ) -> StorageService:
 
-    path_to_studies = Path(config["storage.studies"])
     path_resources = Path(config["_internal.resources_path"])
     study_factory = study_factory or StudyFactory()
     exporter = exporter or Exporter()
+    metadata_repository = metadata_repository or StudyMetadataRepository(
+        session=session
+    )
 
     study_service = StudyService(
-        path_to_studies=path_to_studies,
+        config=config,
         study_factory=study_factory,
         path_resources=path_resources,
     )
     importer_service = ImporterService(
-        path_to_studies=path_to_studies,
         study_service=study_service,
         study_factory=study_factory,
     )
     exporter_service = ExporterService(
-        path_to_studies=path_to_studies,
         study_service=study_service,
         study_factory=study_factory,
         exporter=exporter,
@@ -53,7 +54,7 @@ def build_storage(
         study_service=study_service,
         importer_service=importer_service,
         exporter_service=exporter_service,
-        repository=StudyMetadataRepository(session=session),
+        repository=metadata_repository,
     )
 
     application.register_blueprint(

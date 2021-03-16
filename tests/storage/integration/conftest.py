@@ -9,6 +9,7 @@ from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.study_service import StudyService
 from antarest.storage.main import build_storage
+from antarest.storage.model import Metadata
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
 )
@@ -38,11 +39,15 @@ def storage_service(
     with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
+    md = Metadata(id="STA-mini", workspace="default")
+    repo = Mock()
+    repo.get.side_effect = lambda name: Metadata(id=name, workspace="default")
+
     config = Config(
         {
             "_internal": {"resources_path": path_resources},
             "security": {"disabled": True},
-            "storage": {"studies": path_studies},
+            "storage": {"workspaces": {"default": {"path": path_studies}}},
         }
     )
 
@@ -50,6 +55,7 @@ def storage_service(
         application=Mock(),
         session=Mock(),
         config=config,
+        metadata_repository=repo,
     )
 
     return storage_service
