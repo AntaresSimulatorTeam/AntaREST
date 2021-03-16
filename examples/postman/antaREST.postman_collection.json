@@ -49,14 +49,15 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{hostname}}/studies/c4382be0-cd5b-4367-84c1-d95a9b8b39e3/study",
+					"raw": "{{hostname}}/studies/Case study tp/output/3",
 					"host": [
 						"{{hostname}}"
 					],
 					"path": [
 						"studies",
-						"c4382be0-cd5b-4367-84c1-d95a9b8b39e3",
-						"study"
+						"Case study tp",
+						"output",
+						"3"
 					]
 				}
 			},
@@ -225,6 +226,37 @@
 						"studies",
 						"c4382be0-cd5b-4367-84c1-d95a9b8b39e3",
 						"output"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create User",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": null
+			},
+			"response": []
+		},
+		{
+			"name": "Get file",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{hostname}}/file/4747e40d-1d2f-434b-b45d-f2ab432702c7/output/20201014-1425eco-goodbye/about-the-study/links.txt",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"file",
+						"4747e40d-1d2f-434b-b45d-f2ab432702c7",
+						"output",
+						"20201014-1425eco-goodbye",
+						"about-the-study",
+						"links.txt"
 					]
 				}
 			},

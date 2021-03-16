@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey  # type: ignore
@@ -84,7 +85,12 @@ class User(DTO, Base):  # type: ignore
 class Group(DTO, Base):  # type: ignore
     __tablename__ = "groups"
 
-    id = Column(Integer, Sequence("group_id_seq"), primary_key=True)
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+        unique=True,
+    )
     name = Column(String(255))
     users = relationship(
         "User", secondary=users_groups, back_populates="groups"

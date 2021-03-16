@@ -4,12 +4,20 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.storage.business.exporter_service import ExporterService
+from antarest.storage.business.study_service import StudyService
+from antarest.storage.model import Metadata
 from antarest.storage.repository.filesystem.config.model import StudyConfig
-from antarest.storage.web.exceptions import StudyNotFoundError
+
+
+def build_storage_service(workspace: Path, uuid: str) -> StudyService:
+    service = Mock()
+    service.get_workspace_path.return_value = workspace
+    service.get_study_path.return_value = workspace / uuid
+    return service
 
 
 @pytest.mark.unit_test
-def test_export_file(tmp_path: Path, storage_service_builder):
+def test_export_file(tmp_path: Path):
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -22,19 +30,19 @@ def test_export_file(tmp_path: Path, storage_service_builder):
     study_service.check_study_exist.return_value = None
 
     exporter_service = ExporterService(
-        path_to_studies=tmp_path,
-        study_service=study_service,
+        study_service=build_storage_service(tmp_path, name),
         study_factory=Mock(),
         exporter=exporter,
     )
 
     # Test good study
-    assert b"Hello" == exporter_service.export_study(name)
+    md = Metadata(id=name, workspace="default")
+    assert b"Hello" == exporter_service.export_study(md)
     exporter.export_file.assert_called_once_with(study_path, True)
 
 
 @pytest.mark.unit_test
-def test_export_compact_file(tmp_path: Path, storage_service_builder):
+def test_export_compact_file(tmp_path: Path):
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -55,17 +63,33 @@ def test_export_compact_file(tmp_path: Path, storage_service_builder):
     factory.create_from_config.return_value = study_service
 
     exporter_service = ExporterService(
-        path_to_studies=tmp_path,
-        study_service=study_service,
+        study_service=build_storage_service(tmp_path, name),
         study_factory=factory,
         exporter=exporter,
     )
 
+    md = Metadata(id=name, workspace="default")
     assert b"Hello" == exporter_service.export_study(
-        name, compact=True, outputs=False
+        md, compact=True, outputs=False
     )
 
     factory.create_from_config.assert_called_once_with(
         StudyConfig(study_path=study_path)
     )
     exporter.export_compact.assert_called_once_with(study_path, 42)
+
+
+@pytest.mark.unit_test
+def test_export_matrix(tmp_path: Path) -> None:
+    file = tmp_path / "file.txt"
+    file.write_bytes(b"Hello World")
+
+    service = Mock()
+    service.get_study_path.return_value = tmp_path
+
+    exporter = ExporterService(
+        study_service=service, study_factory=Mock(), exporter=Mock()
+    )
+
+    md = Metadata(id="id", workspace="default")
+    assert exporter.get_matrix(md, "file.txt") == b"Hello World"

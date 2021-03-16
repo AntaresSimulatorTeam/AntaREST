@@ -1,11 +1,13 @@
 import copy
 import shutil
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from zipfile import ZipFile
 
+from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
+from antarest.storage.model import Metadata
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.common.requests import (
@@ -20,54 +22,45 @@ from antarest.storage.web.exceptions import (
 class StudyService:
     def __init__(
         self,
-        path_to_studies: Path,
+        config: Config,
         study_factory: StudyFactory,
         path_resources: Path,
     ):
-        self.path_to_studies: Path = path_to_studies
+        self.config: Config = config
         self.study_factory: StudyFactory = study_factory
         self.path_resources: Path = path_resources
 
-    def extract_info_from_url(self, route: str) -> Tuple[str, str, Path]:
-        route_parts = route.split("/")
-        uuid = route_parts[0]
-        url = "/".join(route_parts[1:])
-        study_path = self.path_to_studies / uuid
-
-        return uuid, url, study_path
-
-    def check_study_exist(self, uuid: str) -> None:
-        if not self.is_study_existing(uuid):
+    def check_study_exists(self, metadata: Metadata) -> None:
+        if not self.study_exists(metadata):
             raise StudyNotFoundError(
-                f"Study with the uuid {uuid} does not exist."
+                f"Study with the uuid {metadata.id} does not exist."
             )
 
-    def check_errors(self, uuid: str) -> List[str]:
-        path = self.get_study_path(uuid)
+    def check_errors(self, metadata: Metadata) -> List[str]:
+        path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(path)
         return study.check_errors(study.get())
 
-    def assert_study_not_exist(self, uuid: str) -> None:
-        if self.is_study_existing(uuid):
-            raise StudyAlreadyExistError(
-                f"A study already exist with the uuid {uuid}."
-            )
+    def study_exists(self, metadata: Metadata) -> bool:
+        return (self.get_study_path(metadata) / "study.antares").is_file()
 
-    def is_study_existing(self, uuid: str) -> bool:
-        return uuid in self.get_study_uuids()
+    def get_study_uuids(self, workspace: Optional[str] = None) -> List[str]:
+        folders: List[Path] = []
+        if workspace:
+            folders = list(self.get_workspace_path(workspace).iterdir())
+        else:
+            for w in self.config["storage.workspaces"]:
+                folders += list(self.get_workspace_path(w).iterdir())
 
-    def get_study_uuids(self) -> List[str]:
         studies_list = [
-            path.name
-            for path in self.path_to_studies.iterdir()
-            if (path / "study.antares").is_file()
+            path.name for path in folders if (path / "study.antares").is_file()
         ]
         # sorting needed for test
         return sorted(studies_list)
 
-    def get(self, route: str, depth: int) -> JSON:
-        uuid, url, study_path = self.extract_info_from_url(route)
-        self.check_study_exist(uuid)
+    def get(self, metadata: Metadata, url: str = "", depth: int = 3) -> JSON:
+        self.check_study_exists(metadata)
+        study_path = self.get_study_path(metadata)
 
         _, study = self.study_factory.create_from_fs(study_path)
         parts = [item for item in url.split("/") if item]
@@ -76,54 +69,47 @@ class StudyService:
         del study
         return data
 
-    def get_study_information(self, uuid: str) -> JSON:
-        config = StudyConfig(study_path=self.path_to_studies / uuid)
+    def get_study_information(self, metadata: Metadata) -> JSON:
+        config = StudyConfig(study_path=self.get_study_path(metadata))
         study = self.study_factory.create_from_config(config)
         return study.get(url=["study"])
 
-    def get_studies_information(self) -> JSON:
-        return {
-            uuid: self.get_study_information(uuid)
-            for uuid in self.get_study_uuids()
-        }
+    def get_workspace_path(self, workspace: str) -> Path:
+        return Path(self.config[f"storage.workspaces.{workspace}.path"])
 
-    def get_study_path(self, uuid: str) -> Path:
-        return self.path_to_studies / uuid
+    def get_study_path(self, metadata: Metadata) -> Path:
+        path: Path = self.get_workspace_path(metadata.workspace) / metadata.id
+        return path
 
-    def create_study(self, study_name: str) -> str:
+    def create_study(self, metadata: Metadata) -> Metadata:
         empty_study_zip = self.path_resources / "empty-study.zip"
 
-        uuid = StorageServiceUtils.generate_uuid()
-
-        path_study = self.get_study_path(uuid)
+        path_study = self.get_study_path(metadata)
         path_study.mkdir()
 
         with ZipFile(empty_study_zip) as zip_output:
             zip_output.extractall(path=path_study)
 
-        study_data = self.get(uuid, 10)
-        StorageServiceUtils.update_antares_info(study_name, study_data)
+        study_data = self.get(metadata, url="", depth=10)
+        StorageServiceUtils.update_antares_info(metadata, study_data)
 
         _, study = self.study_factory.create_from_fs(path_study)
         study.save(study_data)
 
-        return uuid
+        return metadata
 
-    def copy_study(self, src_uuid: str, dest_study_name: str) -> str:
-        uuid, url, study_path = self.extract_info_from_url(src_uuid)
-        self.check_study_exist(uuid)
+    def copy_study(self, src_meta: Metadata, dest_meta: Metadata) -> Metadata:
+        self.check_study_exists(src_meta)
+        src_path = self.get_study_path(src_meta)
 
-        config, study = self.study_factory.create_from_fs(study_path)
+        config, study = self.study_factory.create_from_fs(src_path)
         data_source = study.get()
         del study
 
-        uuid = StorageServiceUtils.generate_uuid()
-        config.path = self.get_study_path(uuid)
+        config.path = self.get_study_path(dest_meta)
         data_destination = copy.deepcopy(data_source)
 
-        StorageServiceUtils.update_antares_info(
-            dest_study_name, data_destination
-        )
+        StorageServiceUtils.update_antares_info(dest_meta, data_destination)
         if "output" in data_destination:
             del data_destination["output"]
         config.outputs = {}
@@ -131,22 +117,22 @@ class StudyService:
         study = self.study_factory.create_from_config(config)
         study.save(data_destination)
         del study
-        return uuid
+        return dest_meta
 
-    def delete_study(self, name: str) -> None:
-        self.check_study_exist(name)
-        study_path = self.get_study_path(name)
+    def delete_study(self, metadata: Metadata) -> None:
+        self.check_study_exists(metadata)
+        study_path = self.get_study_path(metadata)
         shutil.rmtree(study_path)
 
-    def delete_output(self, uuid: str, output_name: str) -> None:
-        output_path = self.path_to_studies / uuid / "output" / output_name
+    def delete_output(self, metadata: Metadata, output_name: str) -> None:
+        output_path = self.get_study_path(metadata) / "output" / output_name
         shutil.rmtree(output_path, ignore_errors=True)
 
-    def edit_study(self, route: str, new: JSON) -> JSON:
+    def edit_study(self, metadata: Metadata, url: str, new: JSON) -> JSON:
         # Get data
-        uuid, url, study_path = self.extract_info_from_url(route)
-        self.check_study_exist(uuid)
+        self.check_study_exists(metadata)
 
+        study_path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(study_path)
         study.save(new, url.split("/"))
         del study

@@ -5,6 +5,7 @@ from zipfile import ZipFile
 from flask import Flask
 
 from antarest.common.config import Config
+from antarest.storage.model import Metadata
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
 )
@@ -19,17 +20,7 @@ def assert_url_content(storage_service: StorageService, url: str) -> bytes:
         app,
         session=Mock(),
         storage_service=storage_service,
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
     res = client.get(url)
@@ -51,11 +42,20 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         {
             "_internal": {"resources_path": Path()},
             "security": {"disabled": True},
-            "storage": {"studies": path_studies},
+            "storage": {"workspaces": {"default": {"path": path_studies}}},
         }
     )
 
-    service = build_storage(Mock(), config, session=Mock())
+    md = Metadata(id="STA-mini", workspace="default")
+    repo = Mock()
+    repo.get.return_value = md
+
+    service = build_storage(
+        application=Mock(),
+        config=config,
+        session=Mock(),
+        metadata_repository=repo,
+    )
 
     data = assert_url_content(service, url="/studies/STA-mini/export")
     assert_data(data)
@@ -75,11 +75,20 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
         {
             "_internal": {"resources_path": Path()},
             "security": {"disabled": True},
-            "storage": {"studies": path_studies},
+            "storage": {"workspaces": {"default": {"path": path_studies}}},
         }
     )
 
-    service = build_storage(Mock(), config, Mock())
+    md = Metadata(id="STA-mini", workspace="default")
+    repo = Mock()
+    repo.get.return_value = md
+
+    service = build_storage(
+        application=Mock(),
+        config=config,
+        session=Mock(),
+        metadata_repository=repo,
+    )
 
     data = assert_url_content(
         service, url="/studies/STA-mini/export?no-output"

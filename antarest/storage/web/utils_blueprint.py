@@ -71,8 +71,8 @@ def create_utils_routes(
         """
 
         try:
-            file_path = storage_service.study_service.path_to_studies / path
-            return send_file(file_path.absolute())
+            params = RequestParameters(user=Auth.get_current_user())
+            return storage_service.get_matrix(path, params)
         except FileNotFoundError:
             return f"{path} not found", HTTPStatus.NOT_FOUND.value
 
