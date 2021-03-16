@@ -51,13 +51,15 @@ class StorageService:
     def _get_study_metadatas(
         self, params: RequestParameters
     ) -> List[Metadata]:
-        metadatas: List[Metadata] = list()
 
-        for uuid in self.study_service.get_study_uuids():
-            md = self._get_metadata(uuid)
-            if self._assert_permission(params.user, md, raising=False):
-                metadatas.append(md)
-        return metadatas
+        return list(
+            filter(
+                lambda md: self._assert_permission(
+                    params.user, md, raising=False
+                ),
+                self.repository.get_all(),
+            )
+        )
 
     def get_studies_information(self, params: RequestParameters) -> JSON:
         return {
@@ -116,6 +118,7 @@ class StorageService:
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
         self.study_service.delete_study(md)
+        self.repository.delete(md.id)
 
     def delete_output(
         self, uuid: str, output_name: str, params: RequestParameters

@@ -22,10 +22,9 @@ def test_get_studies_uuid():
 
     # Mock
     repository = Mock()
-    repository.get.side_effect = [a, b, c]
+    repository.get_all.return_value = [a, b, c]
 
     study_service = Mock()
-    study_service.get_study_uuids.return_value = ["A", "B", "C"]
 
     service = StorageService(
         study_service=study_service,
