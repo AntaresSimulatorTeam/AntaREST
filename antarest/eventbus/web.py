@@ -18,16 +18,16 @@ def configure_websockets(
         # TODO use event permissions to only send to specified rooms
         socketio.emit("all", dataclasses.asdict(event))
 
-    @socketio.on("connect")
+    @socketio.on("connect")  # type: ignore
     def test_connect() -> None:
         if not config["security.disabled"]:
-            token = request.event["args"][1]["token"]
+            token = request.event["args"][1]["token"]  # type: ignore
             user = Auth.get_user_from_token(token)
             if user is None:
                 # TODO check auth and subscribe to rooms
                 raise ConnectionRefusedError("unauthorized!")
 
-    @socketio.on("disconnect")
+    @socketio.on("disconnect")  # type: ignore
     def test_disconnect() -> None:
         print("Client disconnected")
 

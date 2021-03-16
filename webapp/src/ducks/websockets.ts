@@ -5,6 +5,7 @@ import { ThunkAction } from 'redux-thunk';
 import socketIOClient from 'socket.io-client';
 import { UserInfo } from '../common/types';
 import { AppState } from '../App/reducers';
+import { getConfig } from '../services/config';
 
 
 /** ******************************************* */
@@ -31,7 +32,8 @@ export interface ConnectAction extends Action {
 }
 
 export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, unknown, ConnectAction> => (dispatch, getState): void => {
-  const socket = socketIOClient('ws://localhost:8080', { transports: ['websocket'], auth: { token: user?.accessToken } });
+  const config = getConfig();
+  const socket = socketIOClient(config.wsUrl + config.wsEndpoint, { transports: ['websocket'], auth: { token: user?.accessToken } });
   const { websockets } = getState();
   websockets.listeners.forEach((l) => {
     socket.on('all', l);

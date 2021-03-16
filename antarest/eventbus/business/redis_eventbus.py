@@ -1,18 +1,17 @@
 import json
 import logging
-
-from dataclasses import dataclass
-
 import dataclasses
 import redis
-from typing import Any, List, Optional
 
+from typing import Any, List, Optional
+from dataclasses import dataclass
 from redis.client import Redis
 
 from antarest.common.interfaces.eventbus import Event
 from antarest.eventbus.business.interfaces import IEventBusBackend
 
 logger = logging.getLogger(__name__)
+REDIS_STORE_KEY = "events"
 
 
 @dataclass
@@ -36,10 +35,12 @@ class RedisEventBus(IEventBusBackend):
             else redis.Redis(host=redis_conf.host, port=redis_conf.port, db=0)
         )
         self.pubsub = self.redis.pubsub()
-        self.pubsub.subscribe("events")
+        self.pubsub.subscribe(REDIS_STORE_KEY)
 
     def push_event(self, event: Event) -> None:
-        self.redis.publish("events", json.dumps(dataclasses.asdict(event)))
+        self.redis.publish(
+            REDIS_STORE_KEY, json.dumps(dataclasses.asdict(event))
+        )
 
     def get_events(self) -> List[Event]:
         try:
@@ -52,4 +53,5 @@ class RedisEventBus(IEventBusBackend):
         return []
 
     def clear_events(self) -> None:
+        # Nothing to do
         pass

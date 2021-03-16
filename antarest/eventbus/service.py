@@ -1,9 +1,8 @@
 import logging
-from typing import List, Callable, Optional, Dict
-from uuid import uuid4
-
 import threading
 import time
+from typing import List, Callable, Optional, Dict
+from uuid import uuid4
 
 from antarest.common.interfaces.eventbus import Event, IEventBus
 from antarest.eventbus.business.interfaces import IEventBusBackend

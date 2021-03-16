@@ -48,6 +48,7 @@ class IEventBus(ABC):
 
 class DummyEventBusService(IEventBus):
     def push(self, event: Event) -> None:
+        # Noop
         pass
 
     def add_listener(
@@ -58,7 +59,9 @@ class DummyEventBusService(IEventBus):
         return ""
 
     def remove_listener(self, listener_id: str) -> None:
+        # Noop
         pass
 
     def start(self, threaded: bool = True) -> None:
+        # Noop
         pass

@@ -1,6 +1,6 @@
 import enum
 import uuid
-from typing import Any, Dict
+from typing import Any
 
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
