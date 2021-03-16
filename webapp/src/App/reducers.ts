@@ -8,12 +8,14 @@ import auth, { AuthState, logoutAction, persistState as persistAuthState } from 
 import { setLogoutInterceptor } from '../services/api/client';
 import upload, { UploadState } from '../ducks/upload';
 import global, { GlobalState } from '../ducks/global';
+import websockets, { WebsocketState } from '../ducks/websockets';
 
 const reducers = combineReducers({
   global,
   study,
   auth,
   upload,
+  websockets,
 });
 
 export type AppState = CombinedState<{
@@ -21,6 +23,7 @@ export type AppState = CombinedState<{
   study: StudyState;
   auth: AuthState;
   upload: UploadState;
+  websockets: WebsocketState;
 }>;
 
 export default function createMainStore(): Store<AppState> {

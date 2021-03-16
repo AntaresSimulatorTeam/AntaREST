@@ -22,5 +22,5 @@ def build_eventbus(
         autostart,
     )
 
-    configure_websockets(application, eventbus)
+    configure_websockets(application, config, eventbus)
     return eventbus

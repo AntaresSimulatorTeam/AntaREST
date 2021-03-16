@@ -1,7 +1,6 @@
 import axios, { AxiosResponse, AxiosRequestConfig } from 'axios';
 import debug from 'debug';
 import Cookies from 'js-cookie';
-import socketIOClient from 'socket.io-client';
 import { Config } from '../config';
 import { UserInfo } from '../../common/types';
 
@@ -27,8 +26,6 @@ export const setLogoutInterceptor = (logoutCallback: () => void): void => {
 
 export const initAxiosClient = (config: Config): void => {
   client.defaults.baseURL = `${config.baseUrl}${config.restEndpoint}`;
-  const socket = socketIOClient('ws://localhost:8080', { transports: ['websocket'] });
-  socket.on('all', (ev: any) => console.log(ev));
 };
 
 export const setAuth = (token: string | undefined): void => {

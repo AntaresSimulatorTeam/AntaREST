@@ -38,11 +38,6 @@ def build_storage(
         session=session
     )
 
-    if event_bus:
-        event_bus.add_listener(
-            lambda e: logging.getLogger(__name__).info(str(e))
-        )
-
     study_service = StudyService(
         config=config,
         study_factory=study_factory,
