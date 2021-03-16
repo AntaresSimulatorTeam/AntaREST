@@ -6,19 +6,16 @@ from numbers import Number
 from pathlib import Path
 from typing import Tuple, Any
 
-import dataclasses
 from gevent import monkey  # type: ignore
 
 monkey.patch_all()
 
 from flask import Flask, render_template, json, request
-from flask_socketio import SocketIO  # type: ignore
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 from werkzeug.exceptions import HTTPException
 
 from antarest import __version__
-from antarest.common.interfaces.eventbus import IEventBus, Event
 from antarest.eventbus.main import build_eventbus
 from antarest.login.auth import Auth
 from antarest.common.config import ConfigYaml, Config
@@ -99,17 +96,6 @@ def configure_logger(config: Config) -> None:
     )
 
 
-def configure_websockets(application: Flask, event_bus: IEventBus) -> None:
-    socketio = SocketIO(async_mode="gevent", cors_allowed_origins="*")
-    socketio.init_app(application)
-    application.socketio = socketio
-
-    def send_event_to_ws(event: Event) -> None:
-        socketio.emit("all", dataclasses.asdict(event))
-
-    event_bus.add_listener(send_event_to_ws)
-
-
 def flask_app(config_file: Path) -> Flask:
     res = get_local_path() / "resources"
     config = ConfigYaml(res=res, file=config_file)
@@ -169,8 +155,7 @@ def flask_app(config_file: Path) -> Flask:
         response.content_type = "application/json"
         return response, e.code
 
-    event_bus = build_eventbus(config)
-    configure_websockets(application, event_bus)
+    event_bus = build_eventbus(application, config)
     storage = build_storage(
         application, config, db_session, event_bus=event_bus
     )

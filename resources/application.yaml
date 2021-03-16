@@ -35,6 +35,8 @@ logging:
 #  path: /tmp/antarest.log
 #  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
+# Uncomment these lines to use redis as a backend for the eventbus
+# It is required to use redis when using this application on multiple workers in a preforked model like gunicorn for instance
 #eventbus:
 #  redis:
 #    host: localhost

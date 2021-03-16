@@ -1,6 +1,7 @@
 import time
 from datetime import datetime, timedelta
 from typing import Callable
+from unittest.mock import Mock, MagicMock
 
 import pytest
 import redis
@@ -21,16 +22,16 @@ def autoretry(func: Callable[..., bool], timeout: int) -> None:
 
 def test_service_factory():
     config = Config()
-    event_bus = build_eventbus(config, autostart=False)
+    event_bus = build_eventbus(MagicMock(), config, autostart=False)
     assert event_bus.backend.__class__.__name__ == "LocalEventBus"
     config = Config({"eventbus": {"redis": {"host": "localhost"}}})
     with pytest.raises(redis.exceptions.ConnectionError):
         # this error implies that this is the redis one...
-        build_eventbus(config, autostart=False)
+        build_eventbus(MagicMock(), config, autostart=False)
 
 
 def test_lifecycle():
-    event_bus = build_eventbus(Config(), autostart=True)
+    event_bus = build_eventbus(MagicMock(), Config(), autostart=True)
     test_bucket = []
     lid = event_bus.add_listener(lambda event: test_bucket.append(event))
     event = Event("test", "foo")
