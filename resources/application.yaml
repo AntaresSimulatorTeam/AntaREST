@@ -11,14 +11,6 @@ db:
 
 storage:
   workspaces:
-    diese:
-      path: examples/studies/diese
-      groups:
-        - diese
-    spher:
-      path: examples/studies/spher
-      groups:
-        - spher
     default:
       path: examples/studies/
 

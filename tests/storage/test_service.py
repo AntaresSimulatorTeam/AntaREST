@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import Mock
 from uuid import uuid4
 
@@ -37,6 +38,35 @@ def test_get_studies_uuid():
     studies = service._get_study_metadatas(RequestParameters(user=bob))
 
     assert [a, c] == studies
+
+
+def test_create_study_from_filewatcher():
+    repository = Mock()
+    repository.save.side_effect = lambda x: x
+
+    service = StorageService(
+        study_service=Mock(),
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        repository=repository,
+    )
+
+    expected = Metadata(
+        id="folder",
+        name="folder",
+        owner=User(id=0, name="admin"),
+        content_status=StudyContentStatus.WARNING,
+        workspace="default",
+        groups=[Group(id="my-group")],
+    )
+
+    md = service.create_study_from_watcher(
+        folder=Path("folder"),
+        workspace="default",
+        groups=[Group(id="my-group")],
+    )
+
+    assert md == expected
 
 
 def test_save_metadata():

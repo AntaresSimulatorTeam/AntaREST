@@ -83,6 +83,20 @@ class StorageService:
         self._save_metadata(md, params.user)
         return str(md.id)
 
+    def create_study_from_watcher(
+        self, folder: Path, workspace: str, groups: List[Group]
+    ) -> Metadata:
+        md = Metadata(
+            id=folder.name,
+            name=folder.name,
+            workspace=workspace,
+            groups=groups,
+            owner=User(id=0, name="admin"),
+        )
+
+        md.content_status = self._analyse_study(md)
+        return self.repository.save(md)
+
     def copy_study(
         self,
         src_uuid: str,
@@ -143,11 +157,7 @@ class StorageService:
     ) -> str:
         md = Metadata(id=str(uuid4()), workspace="default")
         md = self.importer_service.import_study(md, stream)
-        status = (
-            StudyContentStatus.ERROR
-            if self.study_service.check_errors(md)
-            else StudyContentStatus.VALID
-        )
+        status = self._analyse_study(md)
         self._save_metadata(md, owner=params.user, content_status=status)
         return str(md.id)
 
@@ -233,3 +243,13 @@ class StorageService:
                 return False
 
         return True
+
+    def _analyse_study(self, metadata: Metadata) -> StudyContentStatus:
+        try:
+            if self.study_service.check_errors(metadata):
+                return StudyContentStatus.WARNING
+            else:
+                return StudyContentStatus.VALID
+        except Exception as e:
+            logger.error(e)
+            return StudyContentStatus.ERROR
