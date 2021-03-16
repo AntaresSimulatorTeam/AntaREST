@@ -30,8 +30,8 @@ class StudyService:
         self.study_factory: StudyFactory = study_factory
         self.path_resources: Path = path_resources
 
-    def check_study_exist(self, metadata: Metadata) -> None:
-        if not self.is_study_existing(metadata):
+    def check_study_exists(self, metadata: Metadata) -> None:
+        if not self.study_exists(metadata):
             raise StudyNotFoundError(
                 f"Study with the uuid {metadata.id} does not exist."
             )
@@ -41,14 +41,8 @@ class StudyService:
         _, study = self.study_factory.create_from_fs(path)
         return study.check_errors(study.get())
 
-    def assert_study_not_exist(self, metadata: Metadata) -> None:
-        if self.is_study_existing(metadata):
-            raise StudyAlreadyExistError(
-                f"A study already exist with the uuid {metadata.id}."
-            )
-
-    def is_study_existing(self, metadata: Metadata) -> bool:
-        return metadata.id in self.get_study_uuids(metadata.workspace)
+    def study_exists(self, metadata: Metadata) -> bool:
+        return (self.get_study_path(metadata) / "study.antares").is_file()
 
     def get_study_uuids(self, workspace: Optional[str] = None) -> List[str]:
         folders: List[Path] = []
@@ -64,8 +58,8 @@ class StudyService:
         # sorting needed for test
         return sorted(studies_list)
 
-    def get(self, metadata: Metadata, url: str, depth: int) -> JSON:
-        self.check_study_exist(metadata)
+    def get(self, metadata: Metadata, url: str = "", depth: int = 3) -> JSON:
+        self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
 
         _, study = self.study_factory.create_from_fs(study_path)
@@ -96,7 +90,7 @@ class StudyService:
         with ZipFile(empty_study_zip) as zip_output:
             zip_output.extractall(path=path_study)
 
-        study_data = self.get(metadata, metadata.id, 10)
+        study_data = self.get(metadata, url="", depth=10)
         StorageServiceUtils.update_antares_info(metadata, study_data)
 
         _, study = self.study_factory.create_from_fs(path_study)
@@ -105,7 +99,7 @@ class StudyService:
         return metadata
 
     def copy_study(self, src_meta: Metadata, dest_meta: Metadata) -> Metadata:
-        self.check_study_exist(src_meta)
+        self.check_study_exists(src_meta)
         src_path = self.get_study_path(src_meta)
 
         config, study = self.study_factory.create_from_fs(src_path)
@@ -126,7 +120,7 @@ class StudyService:
         return dest_meta
 
     def delete_study(self, metadata: Metadata) -> None:
-        self.check_study_exist(metadata)
+        self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         shutil.rmtree(study_path)
 
@@ -136,7 +130,7 @@ class StudyService:
 
     def edit_study(self, metadata: Metadata, url: str, new: JSON) -> JSON:
         # Get data
-        self.check_study_exist(metadata)
+        self.check_study_exists(metadata)
 
         study_path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(study_path)

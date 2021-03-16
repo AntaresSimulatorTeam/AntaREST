@@ -37,7 +37,7 @@ class ImporterService:
 
         relative_path_matrix = Path(path)
 
-        self.study_service.check_study_exist(metadata)
+        self.study_service.check_study_exists(metadata)
         StorageServiceUtils.assert_path_can_be_matrix(relative_path_matrix)
 
         path_matrix = (

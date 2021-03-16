@@ -110,7 +110,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     )
 
     metadata = Metadata(id=study_name, workspace="default")
-    study_service.check_study_exist(metadata)
+    study_service.check_study_exists(metadata)
 
 
 @pytest.mark.unit_test
@@ -136,7 +136,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
     metadata = Metadata(id=study_name, workspace="default")
     with pytest.raises(StudyNotFoundError):
-        study_service.check_study_exist(metadata)
+        study_service.check_study_exists(metadata)
 
 
 @pytest.mark.unit_test

@@ -26,7 +26,7 @@ class ExporterService:
     ) -> BytesIO:
         path_study = self.study_service.get_study_path(metadata)
 
-        self.study_service.check_study_exist(metadata)
+        self.study_service.check_study_exists(metadata)
 
         if compact:
             config, study = self.study_factory.create_from_fs(path=path_study)

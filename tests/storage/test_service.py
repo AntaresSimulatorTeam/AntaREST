@@ -87,7 +87,7 @@ def test_save_metadata():
     repository.save.assert_called_once_with(metadata)
 
 
-def test_check_user_permission():
+def test_assert_permission():
     uuid = str(uuid4())
     group = Group(id="my-group")
     good = User(id=0, groups=[group])
@@ -104,28 +104,21 @@ def test_check_user_permission():
 
     # wrong owner
     repository.get.return_value = Metadata(id=uuid, owner=wrong)
+    md = service._get_metadata(uuid)
     with pytest.raises(UserHasNotPermissionError):
-        service._get_metadata_according_permission(good, uuid)
-    assert not service._get_metadata_according_permission_no_raising(
-        good, uuid
-    )
+        service._assert_permission(good, md)
+    assert not service._assert_permission(good, md, raising=False)
 
     # good owner
     md = Metadata(id=uuid, owner=good)
-    repository.get.return_value = md
-    assert service._get_metadata_according_permission(good, uuid) == md
+    assert service._assert_permission(good, md)
 
     # wrong group
-    repository.get.return_value = Metadata(
-        id=uuid, owner=wrong, groups=[Group(id="wrong")]
-    )
+    md = Metadata(id=uuid, owner=wrong, groups=[Group(id="wrong")])
     with pytest.raises(UserHasNotPermissionError):
-        service._get_metadata_according_permission(good, uuid)
-    assert not service._get_metadata_according_permission_no_raising(
-        good, uuid
-    )
+        service._assert_permission(good, md)
+    assert not service._assert_permission(good, md, raising=False)
 
     # good group
     md = Metadata(id=uuid, owner=wrong, groups=[group])
-    repository.get.return_value = md
-    assert service._get_metadata_according_permission(good, uuid) == md
+    assert service._assert_permission(good, md)
