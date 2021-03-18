@@ -17,6 +17,7 @@ import GlobalPageLoadingError from '../../components/ui/GlobalPageLoadingError';
 import AppLoader from '../../components/ui/loaders/AppLoader';
 import { updateRefreshInterceptor } from '../../services/api/client';
 import { UserInfo } from '../../common/types';
+import { reconnectWebsocket } from '../../ducks/websockets';
 
 const logError = debug('antares:loginwrapper:error');
 
@@ -69,6 +70,7 @@ const mapState = (state: AppState) => ({
 const mapDispatch = ({
   login: loginUser,
   logout: logoutAction,
+  reconnectWs: reconnectWebsocket,
 });
 
 const connector = connect(mapState, mapDispatch);
@@ -84,7 +86,7 @@ const LoginWrapper = (props: PropsWithChildren<PropTypes>) => {
   const [loginError, setLoginError] = useState<string>();
   const [t] = useTranslation();
   const { children } = props;
-  const { user, login, logout } = props;
+  const { user, login, logout, reconnectWs } = props;
 
   const onSubmit = async (data: Inputs) => {
     setStatus('loading');
@@ -118,6 +120,7 @@ const LoginWrapper = (props: PropsWithChildren<PropTypes>) => {
         }
         const res = await needAuth();
         setAuthRequired(res);
+        reconnectWs(user);
       } catch (e) {
         setConnexionError(true);
       }

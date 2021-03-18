@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -5,6 +6,7 @@ from flask import Flask
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
+from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.study_service import StudyService
@@ -26,6 +28,7 @@ def build_storage(
     study_factory: Optional[StudyFactory] = None,
     exporter: Optional[Exporter] = None,
     storage_service: Optional[StorageService] = None,
+    event_bus: IEventBus = DummyEventBusService(),
 ) -> StorageService:
 
     path_resources = Path(config["_internal.resources_path"])
@@ -55,6 +58,7 @@ def build_storage(
         importer_service=importer_service,
         exporter_service=exporter_service,
         repository=metadata_repository,
+        event_bus=event_bus,
     )
 
     application.register_blueprint(

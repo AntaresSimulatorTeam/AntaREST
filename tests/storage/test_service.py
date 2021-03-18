@@ -31,6 +31,7 @@ def test_get_studies_uuid():
         importer_service=Mock(),
         exporter_service=Mock(),
         repository=repository,
+        event_bus=Mock(),
     )
 
     studies = service._get_study_metadatas(RequestParameters(user=bob))
@@ -78,6 +79,7 @@ def test_save_metadata():
         importer_service=Mock(),
         exporter_service=Mock(),
         repository=repository,
+        event_bus=Mock(),
     )
 
     service._save_metadata(
@@ -99,6 +101,7 @@ def test_assert_permission():
         importer_service=Mock(),
         exporter_service=Mock(),
         repository=repository,
+        event_bus=Mock(),
     )
 
     # wrong owner

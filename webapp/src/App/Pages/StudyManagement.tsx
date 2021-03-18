@@ -11,6 +11,7 @@ import { getStudies } from '../../services/api/study';
 import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
 import StudySearchTool from '../../components/StudySearchTool';
 import { StudyMetadata } from '../../common/types';
+import { addListener, removeListener } from '../../ducks/websockets';
 
 const logError = debug('antares:studymanagement:error');
 
@@ -31,6 +32,8 @@ const mapState = (state: AppState) => ({
 
 const mapDispatch = ({
   loadStudies: initStudies,
+  addWsListener: addListener,
+  removeWsListener: removeListener,
 });
 
 const connector = connect(mapState, mapDispatch);
@@ -38,7 +41,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const StudyManagement = (props: PropTypes) => {
-  const { studies, loadStudies } = props;
+  const { studies, loadStudies, addWsListener, removeWsListener } = props;
   const classes = useStyles();
   const [filteredStudies, setFilteredStudies] = useState<StudyMetadata[]>(studies);
   const [loaded, setLoaded] = useState(true);
@@ -55,8 +58,14 @@ const StudyManagement = (props: PropTypes) => {
     }
   };
 
+  const listen = (ev: any) => {
+    console.log(ev);
+  };
+
   useEffect(() => {
+    addWsListener(listen);
     init();
+    return () => removeWsListener(listen);
   }, []);
 
 
