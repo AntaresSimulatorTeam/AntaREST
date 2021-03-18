@@ -10,8 +10,8 @@ export interface Config {
   baseUrl: string;
   applicationHome: string;
   restEndpoint: string;
+  wsUrl: string;
   wsEndpoint: string;
-  wsUrl?: string;
   hidden: boolean;
   downloadHostUrl?: string;
 }
@@ -20,7 +20,8 @@ let config: Config = {
   baseUrl: '',
   applicationHome: '',
   restEndpoint: '/',
-  wsEndpoint: '/ws',
+  wsUrl: '',
+  wsEndpoint: '/',
   hidden: false,
 };
 
@@ -32,6 +33,7 @@ if (process.env.NODE_ENV === 'development') {
   localStorage.setItem('debug', 'antares:*');
 } else {
   config.baseUrl = `${window.location.origin}`;
+  config.wsUrl = `ws${window.location.protocol === 'https:' ? 's' : ''}://${window.location.host}`;
 //  config.hidden = true;
 }
 

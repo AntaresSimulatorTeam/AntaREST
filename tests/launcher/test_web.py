@@ -5,6 +5,7 @@ import pytest
 from flask import Flask
 
 from antarest.common.config import Config
+from antarest.common.interfaces.eventbus import Event, EventType
 from antarest.login.model import User
 from antarest.common.requests import RequestParameters
 from antarest.launcher.main import build_launcher

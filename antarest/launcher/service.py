@@ -3,6 +3,12 @@ from typing import List, Optional
 from uuid import UUID
 
 from antarest.common.config import Config
+from antarest.common.interfaces.eventbus import (
+    IEventBus,
+    Event,
+    EventType,
+    DummyEventBusService,
+)
 from antarest.launcher.factory_launcher import FactoryLauncher
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
@@ -22,17 +28,25 @@ class LauncherService:
         config: Config,
         storage_service: StorageService,
         repository: JobResultRepository,
+        event_bus: IEventBus,
         factory_launcher: FactoryLauncher = FactoryLauncher(),
     ) -> None:
         self.config = config
         self.storage_service = storage_service
         self.repository = repository
+        self.event_bus = event_bus
         self.launcher = factory_launcher.build_launcher(config)
         self.launcher.add_callback(self.update)
 
     def update(self, job_result: JobResult) -> None:
         job_result.completion_date = datetime.utcnow()
         self.repository.save(job_result)
+        self.event_bus.push(
+            Event(
+                EventType.STUDY_JOB_COMPLETED,
+                {"jid": str(job_result.id), "sid": job_result.study_id},
+            )
+        )
 
     def run_study(self, study_uuid: str, params: RequestParameters) -> UUID:
         study_info = self.storage_service.get_study_information(
@@ -47,6 +61,12 @@ class LauncherService:
                 id=str(job_uuid),
                 study_id=study_uuid,
                 job_status=JobStatus.RUNNING,
+            )
+        )
+        self.event_bus.push(
+            Event(
+                EventType.STUDY_JOB_STARTED,
+                {"jid": str(job_uuid), "sid": study_uuid},
             )
         )
 

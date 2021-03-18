@@ -1,7 +1,7 @@
 import copy
 import shutil
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Optional
 from zipfile import ZipFile
 
 from antarest.common.config import Config
@@ -10,13 +10,7 @@ from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.model import Metadata
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.common.requests import (
-    RequestParameters,
-)
-from antarest.storage.web.exceptions import (
-    StudyNotFoundError,
-    StudyAlreadyExistError,
-)
+from antarest.storage.web.exceptions import StudyNotFoundError
 
 
 class StudyService:

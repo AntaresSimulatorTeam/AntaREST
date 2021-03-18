@@ -1,7 +1,7 @@
 from io import BytesIO
 from pathlib import Path
 
-from antarest.common.config import Config
+from antarest.common.interfaces.eventbus import IEventBus
 from antarest.storage.business.study_service import StudyService
 from antarest.storage.model import Metadata
 from antarest.storage.repository.antares_io.exporter.export_file import (
