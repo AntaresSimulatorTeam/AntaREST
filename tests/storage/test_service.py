@@ -9,7 +9,7 @@ from antarest.login.model import User, Role, Group
 from antarest.common.requests import (
     RequestParameters,
 )
-from antarest.storage.model import Metadata, StudyContentStatus
+from antarest.storage.model import Metadata, StudyContentStatus, StudyFolder
 from antarest.storage.service import StorageService, UserHasNotPermissionError
 
 
@@ -40,9 +40,21 @@ def test_get_studies_uuid():
     assert [a, c] == studies
 
 
-def test_create_study_from_filewatcher():
+def test_sync_studies_from_disk():
+    ma = Metadata(id="a", path="a")
+    fa = StudyFolder(path=Path("a"), workspace="", groups=[])
+    mb = Metadata(id="b", path="b")
+    mc = Metadata(
+        id="c",
+        path="c",
+        name="c",
+        content_status=StudyContentStatus.WARNING,
+        workspace="default",
+    )
+    fc = StudyFolder(path=Path("c"), workspace="default", groups=[])
+
     repository = Mock()
-    repository.save.side_effect = lambda x: x
+    repository.get_all.side_effect = [[ma, mb], [ma]]
 
     service = StorageService(
         study_service=Mock(),
@@ -51,22 +63,10 @@ def test_create_study_from_filewatcher():
         repository=repository,
     )
 
-    expected = Metadata(
-        id="folder",
-        name="folder",
-        owner=User(id=0, name="admin"),
-        content_status=StudyContentStatus.WARNING,
-        workspace="default",
-        groups=[Group(id="my-group")],
-    )
+    service.sync_studies_on_disk([fa, fc])
 
-    md = service.create_study_from_watcher(
-        folder=Path("folder"),
-        workspace="default",
-        groups=[Group(id="my-group")],
-    )
-
-    assert md == expected
+    repository.delete.assert_called_once_with(mb.id)
+    repository.save.assert_called_once_with(mc)
 
 
 def test_save_metadata():

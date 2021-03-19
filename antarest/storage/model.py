@@ -1,12 +1,14 @@
 import enum
 import uuid
-from typing import Any
+from pathlib import Path
+from typing import Any, List
 
+from dataclasses import dataclass
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.common.persistence import DTO, Base
-from antarest.login.model import User
+from antarest.login.model import User, Group
 
 groups_metadata = Table(
     "group_metadata",
@@ -67,3 +69,10 @@ class Metadata(DTO, Base):  # type: ignore
 
     def __str__(self) -> str:
         return f"Metadata(name={self.name}, version={self.version}, owner={self.owner}, groups={[str(u)+',' for u in self.groups]}"
+
+
+@dataclass
+class StudyFolder:
+    path: Path
+    workspace: str
+    groups: List[Group]

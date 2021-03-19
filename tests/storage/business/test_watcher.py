@@ -1,4 +1,5 @@
 from pathlib import Path
+from time import sleep
 from unittest.mock import Mock, call
 
 import pytest
@@ -6,6 +7,7 @@ import pytest
 from antarest.common.config import Config
 from antarest.login.model import Group
 from antarest.storage.business.watcher import Watcher
+from antarest.storage.model import StudyFolder
 
 
 def build_config(root: Path) -> Config:
@@ -25,7 +27,7 @@ def build_config(root: Path) -> Config:
 
 
 @pytest.mark.unit_test
-def test_init(tmp_path: Path):
+def test_scan(tmp_path: Path):
     default = tmp_path / "default"
     default.mkdir()
     a = default / "studyA"
@@ -41,11 +43,21 @@ def test_init(tmp_path: Path):
     service = Mock()
     watcher = Watcher(build_config(tmp_path), service)
 
-    watcher.init()
+    watcher._scan()
 
-    service.create_study_from_watcher.assert_has_calls(
+    service.sync_studies_on_disk.assert_called_once_with(
         [
-            call(a, "default", [Group(id="toto")]),
-            call(c, "diese", [Group(id="tata")]),
+            StudyFolder(a, "default", [Group(id="toto")]),
+            StudyFolder(c, "diese", [Group(id="tata")]),
         ]
     )
+
+
+@pytest.mark.unit_test
+def test_get_lock():
+    watcher = Watcher(config=Config(), service=Mock())
+
+    assert not watcher._get_lock()
+
+    sleep(Watcher.DELAY + 1)
+    assert watcher._get_lock()

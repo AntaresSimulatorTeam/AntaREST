@@ -59,7 +59,7 @@ def build_storage(
     )
 
     watcher = Watcher(config=config, service=storage_service)
-    watcher.init()
+    watcher.start()
 
     application.register_blueprint(
         create_study_routes(storage_service, config)

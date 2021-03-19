@@ -17,7 +17,7 @@ from antarest.common.requests import (
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.study_service import StudyService
-from antarest.storage.model import Metadata, StudyContentStatus
+from antarest.storage.model import Metadata, StudyContentStatus, StudyFolder
 from antarest.storage.repository.metadata import StudyMetadataRepository
 from antarest.storage.web.exceptions import StudyNotFoundError
 
@@ -83,20 +83,29 @@ class StorageService:
         self._save_metadata(md, params.user)
         return str(md.id)
 
-    def create_study_from_watcher(
-        self, folder: Path, workspace: str, groups: List[Group]
-    ) -> Metadata:
-        md = Metadata(
-            id=folder.name,
-            name=folder.name,
-            path=str(folder),
-            workspace=workspace,
-            groups=groups,
-            owner=User(id=0, name="admin"),
-        )
+    def sync_studies_on_disk(self, folders: List[StudyFolder]) -> None:
 
-        md.content_status = self._analyse_study(md)
-        return self.repository.save(md)
+        # delete orphan studies on database
+        paths = [str(f.path) for f in folders]
+        for md in self.repository.get_all():
+            if md.path not in paths:
+                self.repository.delete(md.id)
+
+        # Add new studies
+        paths = [md.path for md in self.repository.get_all()]
+        for folder in folders:
+            if str(folder.path) not in paths:
+                md = Metadata(
+                    id=folder.path.name,
+                    name=folder.path.name,
+                    path=str(folder.path),
+                    workspace=folder.workspace,
+                    owner=User(id=0),
+                    groups=folder.groups,
+                )
+
+                md.content_status = self._analyse_study(md)
+                self.repository.save(md)
 
     def copy_study(
         self,
