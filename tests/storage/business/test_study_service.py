@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
@@ -198,7 +199,7 @@ def test_create_study(
     metadata = Metadata(id="study1", workspace="default")
     md = study_service.create_study(metadata)
 
-    assert md.path == f"{tmp_path}/study1"
+    assert md.path == f"{tmp_path}{os.sep}study1"
     path_study = path_studies / md.id
     assert path_study.exists()
 
@@ -253,7 +254,7 @@ def test_copy_study(
     dest_md = Metadata(id="study2", workspace="default")
     md = study_service.copy_study(src_md, dest_md)
 
-    assert str(md.path) == f"{tmp_path}/study2"
+    assert str(md.path) == f"{tmp_path}{os.sep}study2"
     study.get.assert_called_once_with()
 
 
