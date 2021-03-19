@@ -50,6 +50,7 @@ def test_sync_studies_from_disk():
         name="c",
         content_status=StudyContentStatus.WARNING,
         workspace="default",
+        owner=User(id=0),
     )
     fc = StudyFolder(path=Path("c"), workspace="default", groups=[])
 

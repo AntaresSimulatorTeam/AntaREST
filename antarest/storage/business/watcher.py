@@ -3,6 +3,7 @@ import threading
 from pathlib import Path
 from time import time, sleep
 from typing import List
+from filelock import FileLock
 from dataclasses import dataclass
 
 from antarest.common.config import Config
@@ -15,12 +16,13 @@ logger = logging.getLogger(__name__)
 
 
 class Watcher:
-    LOCK = Path("watcher.lock")
+    LOCK = Path("watcher")
     DELAY = 1
 
     def __init__(self, config: Config, service: StorageService):
         self.service = service
         self.config = config
+        self._get_lock()
 
         self.thread = (
             threading.Thread(target=self._loop) if self._get_lock() else None
@@ -31,7 +33,20 @@ class Watcher:
             self.thread.start()
 
     def _get_lock(self) -> bool:
-        return True
+        with FileLock(f"{Watcher.LOCK}.lock"):
+            start = (
+                int(f"0{Watcher.LOCK.read_text()}")
+                if Watcher.LOCK.exists()
+                else 0
+            )
+            now = int(time())
+            if now - start > Watcher.DELAY:
+                Watcher.LOCK.write_text(str(now))
+                logger.info("Watcher get lock")
+                return True
+            else:
+                logger.info("Watcher doesn't get lock")
+                return False
 
     def _loop(self) -> None:
         while True:

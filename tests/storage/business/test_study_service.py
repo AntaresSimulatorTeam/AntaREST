@@ -253,7 +253,7 @@ def test_copy_study(
     dest_md = Metadata(id="study2", workspace="default")
     md = study_service.copy_study(src_md, dest_md)
 
-    assert md == f"{tmp_path}/study2"
+    assert str(md.path) == f"{tmp_path}/study2"
     study.get.assert_called_once_with()
 
 
