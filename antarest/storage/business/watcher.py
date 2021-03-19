@@ -3,8 +3,7 @@ import threading
 from pathlib import Path
 from time import time, sleep
 from typing import List
-from filelock import FileLock
-from dataclasses import dataclass
+from filelock import FileLock  # type: ignore
 
 from antarest.common.config import Config
 from antarest.login.model import Group
