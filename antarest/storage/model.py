@@ -39,6 +39,7 @@ class Metadata(DTO, Base):  # type: ignore
     content_status = Column(Enum(StudyContentStatus))
     public = Column(Boolean(), default=False)
     workspace = Column(String(255), default="default")
+    path = Column(String(255))
     owner_id = Column(Integer, ForeignKey(User.id))
     owner = relationship(User, uselist=False)
     groups = relationship(
@@ -59,6 +60,7 @@ class Metadata(DTO, Base):  # type: ignore
             and other.content_status == self.content_status
             and other.public == self.public
             and other.workspace == self.workspace
+            and other.path == self.path
             and other.owner == self.owner
             and other.groups == self.groups
         )

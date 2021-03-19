@@ -78,6 +78,7 @@ class ImporterService:
             shutil.rmtree(path_study)
             raise e
 
+        metadata.path = str(path_study)
         return metadata
 
     def import_output(self, metadata: Metadata, stream: IO[bytes]) -> JSON:

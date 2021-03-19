@@ -89,6 +89,7 @@ class StorageService:
         md = Metadata(
             id=folder.name,
             name=folder.name,
+            path=str(folder),
             workspace=workspace,
             groups=groups,
             owner=User(id=0, name="admin"),

@@ -96,6 +96,7 @@ class StudyService:
         _, study = self.study_factory.create_from_fs(path_study)
         study.save(study_data)
 
+        metadata.path = str(path_study)
         return metadata
 
     def copy_study(self, src_meta: Metadata, dest_meta: Metadata) -> Metadata:
@@ -106,7 +107,8 @@ class StudyService:
         data_source = study.get()
         del study
 
-        config.path = self.get_study_path(dest_meta)
+        dest_meta.path = self.get_study_path(dest_meta)
+        config.path = dest_meta.path
         data_destination = copy.deepcopy(data_source)
 
         StorageServiceUtils.update_antares_info(dest_meta, data_destination)
