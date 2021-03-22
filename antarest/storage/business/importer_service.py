@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
+from antarest.common.interfaces.eventbus import IEventBus
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.study_service import StudyService
 from antarest.storage.model import Metadata

@@ -9,6 +9,7 @@ import werkzeug
 from uuid import uuid4
 
 from antarest.common.custom_types import JSON
+from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.login.model import User, Role, Group
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
@@ -35,11 +36,13 @@ class StorageService:
         importer_service: ImporterService,
         exporter_service: ExporterService,
         repository: StudyMetadataRepository,
+        event_bus: IEventBus,
     ):
         self.study_service = study_service
         self.importer_service = importer_service
         self.exporter_service = exporter_service
         self.repository = repository
+        self.event_bus = event_bus
 
     def get(self, route: str, depth: int, params: RequestParameters) -> JSON:
         uuid, url = StorageServiceUtils.extract_info_from_url(route)
@@ -51,13 +54,15 @@ class StorageService:
     def _get_study_metadatas(
         self, params: RequestParameters
     ) -> List[Metadata]:
-        metadatas: List[Metadata] = list()
 
-        for uuid in self.study_service.get_study_uuids():
-            md = self._get_metadata(uuid)
-            if self._assert_permission(params.user, md, raising=False):
-                metadatas.append(md)
-        return metadatas
+        return list(
+            filter(
+                lambda md: self._assert_permission(
+                    params.user, md, raising=False
+                ),
+                self.repository.get_all(),
+            )
+        )
 
     def get_studies_information(self, params: RequestParameters) -> JSON:
         return {
@@ -81,6 +86,9 @@ class StorageService:
         md = Metadata(id=str(uuid4()), name=study_name, workspace="default")
         md = self.study_service.create_study(md)
         self._save_metadata(md, params.user)
+        self.event_bus.push(
+            Event(EventType.STUDY_CREATED, md.to_json_summary())
+        )
         return str(md.id)
 
     def sync_studies_on_disk(self, folders: List[StudyFolder]) -> None:
@@ -122,7 +130,9 @@ class StorageService:
 
         md = self.study_service.copy_study(src_md, dest_md)
         self._save_metadata(md, params.user)
-
+        self.event_bus.push(
+            Event(EventType.STUDY_CREATED, md.to_json_summary())
+        )
         return str(md.id)
 
     def export_study(
@@ -140,6 +150,10 @@ class StorageService:
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
         self.study_service.delete_study(md)
+        self.repository.delete(md.id)
+        self.event_bus.push(
+            Event(EventType.STUDY_DELETED, md.to_json_summary())
+        )
 
     def delete_output(
         self, uuid: str, output_name: str, params: RequestParameters
@@ -147,6 +161,9 @@ class StorageService:
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
         self.study_service.delete_output(md, output_name)
+        self.event_bus.push(
+            Event(EventType.STUDY_EDITED, md.to_json_summary())
+        )
 
     def get_matrix(self, route: str, params: RequestParameters) -> bytes:
         uuid, path = StorageServiceUtils.extract_info_from_url(route)
@@ -161,6 +178,9 @@ class StorageService:
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
         self.importer_service.upload_matrix(md, path, data)
+        self.event_bus.push(
+            Event(EventType.STUDY_EDITED, md.to_json_summary())
+        )
 
     def import_study(
         self, stream: IO[bytes], params: RequestParameters
@@ -169,6 +189,9 @@ class StorageService:
         md = self.importer_service.import_study(md, stream)
         status = self._analyse_study(md)
         self._save_metadata(md, owner=params.user, content_status=status)
+        self.event_bus.push(
+            Event(EventType.STUDY_CREATED, md.to_json_summary())
+        )
         return str(md.id)
 
     def import_output(
@@ -185,7 +208,11 @@ class StorageService:
         uuid, url = StorageServiceUtils.extract_info_from_url(route)
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
-        return self.study_service.edit_study(md, url, new)
+        updated = self.study_service.edit_study(md, url, new)
+        self.event_bus.push(
+            Event(EventType.STUDY_EDITED, md.to_json_summary())
+        )
+        return updated
 
     def _save_metadata(
         self,

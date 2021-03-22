@@ -4,6 +4,7 @@ from flask import Flask
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
+from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.launcher.repository import JobResultRepository
 from antarest.launcher.service import LauncherService
 from antarest.launcher.web import create_launcher_api
@@ -16,6 +17,7 @@ def build_launcher(
     db_session: Session,
     service_storage: Optional[StorageService] = None,
     service_launcher: Optional[LauncherService] = None,
+    event_bus: IEventBus = DummyEventBusService(),
 ) -> None:
 
     if service_storage and not service_launcher:
@@ -24,6 +26,7 @@ def build_launcher(
             config=config,
             storage_service=service_storage,
             repository=repository,
+            event_bus=event_bus,
         )
 
     if service_launcher:

@@ -13,7 +13,7 @@ from antarest.storage.model import Metadata, StudyContentStatus, StudyFolder
 from antarest.storage.service import StorageService, UserHasNotPermissionError
 
 
-def test_get_studies_uuid():
+def test_get_studies_uuid() -> None:
     bob = User(id=1, name="bob")
     alice = User(id=2, name="alice")
 
@@ -23,16 +23,16 @@ def test_get_studies_uuid():
 
     # Mock
     repository = Mock()
-    repository.get.side_effect = [a, b, c]
+    repository.get_all.return_value = [a, b, c]
 
     study_service = Mock()
-    study_service.get_study_uuids.return_value = ["A", "B", "C"]
 
     service = StorageService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
         repository=repository,
+        event_bus=Mock(),
     )
 
     studies = service._get_study_metadatas(RequestParameters(user=bob))
@@ -40,7 +40,7 @@ def test_get_studies_uuid():
     assert [a, c] == studies
 
 
-def test_sync_studies_from_disk():
+def test_sync_studies_from_disk() -> None:
     ma = Metadata(id="a", path="a")
     fa = StudyFolder(path=Path("a"), workspace="", groups=[])
     mb = Metadata(id="b", path="b")
@@ -62,6 +62,7 @@ def test_sync_studies_from_disk():
         importer_service=Mock(),
         exporter_service=Mock(),
         repository=repository,
+        event_bus=Mock(),
     )
 
     service.sync_studies_on_disk([fa, fc])
@@ -70,7 +71,7 @@ def test_sync_studies_from_disk():
     repository.save.assert_called_once_with(mc)
 
 
-def test_save_metadata():
+def test_save_metadata() -> None:
     # Mock
     repository = Mock()
 
@@ -110,6 +111,7 @@ def test_save_metadata():
         importer_service=Mock(),
         exporter_service=Mock(),
         repository=repository,
+        event_bus=Mock(),
     )
 
     service._save_metadata(
@@ -118,7 +120,7 @@ def test_save_metadata():
     repository.save.assert_called_once_with(metadata)
 
 
-def test_assert_permission():
+def test_assert_permission() -> None:
     uuid = str(uuid4())
     group = Group(id="my-group")
     good = User(id=0, groups=[group])
@@ -131,6 +133,7 @@ def test_assert_permission():
         importer_service=Mock(),
         exporter_service=Mock(),
         repository=repository,
+        event_bus=Mock(),
     )
 
     # wrong owner

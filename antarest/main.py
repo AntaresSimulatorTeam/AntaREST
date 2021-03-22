@@ -6,12 +6,17 @@ from numbers import Number
 from pathlib import Path
 from typing import Tuple, Any
 
-from flask import Flask, render_template, json
+from gevent import monkey  # type: ignore
+
+monkey.patch_all()
+
+from flask import Flask, render_template, json, request
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 from werkzeug.exceptions import HTTPException
 
 from antarest import __version__
+from antarest.eventbus.main import build_eventbus
 from antarest.login.auth import Auth
 from antarest.common.config import ConfigYaml, Config
 from antarest.common.persistence import Base
@@ -107,6 +112,7 @@ def flask_app(config_file: Path) -> Flask:
         __name__, static_url_path="/static", static_folder=str(res / "webapp")
     )
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
+
     application.config["SECRET_KEY"] = config["security.jwt.key"]
     application.config["JWT_ACCESS_TOKEN_EXPIRES"] = Auth.ACCESS_TOKEN_DURATION
     application.config[
@@ -149,9 +155,18 @@ def flask_app(config_file: Path) -> Flask:
         response.content_type = "application/json"
         return response, e.code
 
-    storage = build_storage(application, config, db_session)
-    build_launcher(application, config, db_session, service_storage=storage)
-    build_login(application, config, db_session)
+    event_bus = build_eventbus(application, config)
+    storage = build_storage(
+        application, config, db_session, event_bus=event_bus
+    )
+    build_launcher(
+        application,
+        config,
+        db_session,
+        service_storage=storage,
+        event_bus=event_bus,
+    )
+    build_login(application, config, db_session, event_bus=event_bus)
     build_swagger(application)
 
     return application
@@ -164,4 +179,5 @@ if __name__ == "__main__":
         print(__version__)
         sys.exit()
     else:
-        flask_app(config_file).run(debug=False, host="0.0.0.0", port=8080)
+        app = flask_app(config_file)
+        app.socketio.run(app, debug=False, host="0.0.0.0", port=8080)

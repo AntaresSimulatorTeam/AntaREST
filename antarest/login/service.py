@@ -1,14 +1,21 @@
 from typing import Optional, List
 
 from antarest.common.custom_types import JSON
+from antarest.common.interfaces.eventbus import IEventBus
 from antarest.login.model import User, Group
 from antarest.login.repository import UserRepository, GroupRepository
 
 
 class LoginService:
-    def __init__(self, user_repo: UserRepository, group_repo: GroupRepository):
+    def __init__(
+        self,
+        user_repo: UserRepository,
+        group_repo: GroupRepository,
+        event_bus: IEventBus,
+    ):
         self.users = user_repo
         self.groups = group_repo
+        self.event_bus = event_bus
 
     def save_group(self, group: Group) -> Group:
         return self.groups.save(group)

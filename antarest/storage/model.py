@@ -70,6 +70,9 @@ class Metadata(DTO, Base):  # type: ignore
     def __str__(self) -> str:
         return f"Metadata(name={self.name}, version={self.version}, owner={self.owner}, groups={[str(u)+',' for u in self.groups]}"
 
+    def to_json_summary(self) -> Any:
+        return {"id": self.id, "name": self.name, "workspace": self.workspace}
+
 
 @dataclass
 class StudyFolder:

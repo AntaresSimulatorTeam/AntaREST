@@ -3,7 +3,7 @@ from functools import wraps
 from typing import List, Optional, Dict, Any, Callable, cast
 
 from flask import g
-from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity  # type: ignore
+from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, decode_token  # type: ignore
 
 from antarest.common.config import Config
 from antarest.login.model import User, Role
@@ -32,6 +32,11 @@ class Auth:
             return cast(User, g.user)
 
         return None
+
+    @staticmethod
+    def get_user_from_token(token: str) -> Optional[User]:
+        token_data = decode_token(token)
+        return User.from_dict(token_data["sub"])
 
     @staticmethod
     def invalidate() -> None:
