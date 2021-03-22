@@ -21,17 +21,19 @@ class Watcher:
     def __init__(self, config: Config, service: StorageService):
         self.service = service
         self.config = config
-        self._get_lock()
 
         self.thread = (
-            threading.Thread(target=self._loop) if self._get_lock() else None
+            threading.Thread(target=self._loop)
+            if Watcher._get_lock()
+            else None
         )
 
     def start(self) -> None:
         if self.thread:
             self.thread.start()
 
-    def _get_lock(self) -> bool:
+    @staticmethod
+    def _get_lock() -> bool:
         with FileLock(f"{Watcher.LOCK}.lock"):
             start = (
                 int(f"0{Watcher.LOCK.read_text()}")

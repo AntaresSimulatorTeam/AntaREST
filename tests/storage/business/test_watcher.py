@@ -1,3 +1,4 @@
+from multiprocessing import Pool
 from pathlib import Path
 from time import sleep
 from unittest.mock import Mock, call
@@ -53,11 +54,12 @@ def test_scan(tmp_path: Path):
     )
 
 
+def process(x: int) -> bool:
+    return Watcher._get_lock()
+
+
 @pytest.mark.unit_test
 def test_get_lock():
-    watcher = Watcher(config=Config(), service=Mock())
-
-    assert not watcher._get_lock()
-
-    sleep(Watcher.DELAY + 1)
-    assert watcher._get_lock()
+    pool = Pool(processes=4)
+    res = sum(pool.map(process, range(4)))
+    assert res == 1
