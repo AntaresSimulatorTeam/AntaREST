@@ -72,7 +72,7 @@ class StudyService:
         return Path(self.config[f"storage.workspaces.{workspace}.path"])
 
     def get_study_path(self, metadata: Metadata) -> Path:
-        path: Path = self.get_workspace_path(metadata.workspace) / metadata.id
+        path: Path = Path(metadata.path)
         return path
 
     def create_study(self, metadata: Metadata) -> Metadata:
