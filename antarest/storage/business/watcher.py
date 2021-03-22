@@ -72,6 +72,7 @@ class Watcher:
                     return folders
             except Exception as e:
                 logger.error(f"Failed to scan dir {path}", exc_info=e)
+                return []
 
         studies: List[StudyFolder] = list()
         for name, workspace in self.config["storage.workspaces"].items():
