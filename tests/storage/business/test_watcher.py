@@ -60,6 +60,6 @@ def process(x: int) -> bool:
 
 @pytest.mark.unit_test
 def test_get_lock():
-    pool = Pool(processes=4)
+    pool = Pool()
     res = sum(pool.map(process, range(4)))
     assert res == 1
