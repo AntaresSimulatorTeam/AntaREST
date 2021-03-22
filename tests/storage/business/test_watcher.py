@@ -31,7 +31,10 @@ def build_config(root: Path) -> Config:
 def clean_files() -> None:
     if Watcher.LOCK.exists():
         os.remove(Watcher.LOCK)
-        os.remove(f"{Watcher.LOCK}.lock")
+
+    lock = f"{Watcher.LOCK.absolute()}.lock"
+    if os.path.exists(lock):
+        os.remove(lock)
 
 
 @pytest.mark.unit_test
