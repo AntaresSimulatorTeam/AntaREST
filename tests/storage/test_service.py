@@ -9,7 +9,12 @@ from antarest.login.model import User, Role, Group
 from antarest.common.requests import (
     RequestParameters,
 )
-from antarest.storage.model import Metadata, StudyContentStatus, StudyFolder
+from antarest.storage.model import (
+    Metadata,
+    StudyContentStatus,
+    StudyFolder,
+    DEFAULT_WORKSPACE_NAME,
+)
 from antarest.storage.service import StorageService, UserHasNotPermissionError
 
 
@@ -49,10 +54,12 @@ def test_sync_studies_from_disk() -> None:
         path="c",
         name="c",
         content_status=StudyContentStatus.WARNING,
-        workspace="default",
+        workspace=DEFAULT_WORKSPACE_NAME,
         owner=User(id=0),
     )
-    fc = StudyFolder(path=Path("c"), workspace="default", groups=[])
+    fc = StudyFolder(
+        path=Path("c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
+    )
 
     repository = Mock()
     repository.get_all.side_effect = [[ma, mb], [ma]]
@@ -69,6 +76,54 @@ def test_sync_studies_from_disk() -> None:
 
     repository.delete.assert_called_once_with(mb.id)
     repository.save.assert_called_once()
+
+
+def test_create_study() -> None:
+    # Mock
+    repository = Mock()
+
+    # Input
+    user = User(id=0, name="user", role=Role.USER)
+    group = Group(id="my-group", name="group")
+
+    expected = Metadata(
+        id=str(uuid4()),
+        name="new-study",
+        version="VERSION",
+        author="AUTHOR",
+        created_at=datetime.fromtimestamp(1234),
+        updated_at=datetime.fromtimestamp(9876),
+        content_status=StudyContentStatus.VALID,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=user,
+        groups=[group],
+    )
+
+    study_service = Mock()
+    study_service.get_default_workspace_path.return_value = Path("")
+    study_service.get_study_information.return_value = {
+        "antares": {
+            "caption": "CAPTION",
+            "version": "VERSION",
+            "author": "AUTHOR",
+            "created": 1234,
+            "lastsave": 9876,
+        }
+    }
+    study_service.create_study.return_value = expected
+
+    service = StorageService(
+        study_service=study_service,
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        repository=repository,
+        event_bus=Mock(),
+    )
+
+    service.create_study("new-study", RequestParameters(user))
+
+    study_service.create_study.assert_called_once()
+    repository.save.assert_called_once_with(expected)
 
 
 def test_save_metadata() -> None:
@@ -101,7 +156,7 @@ def test_save_metadata() -> None:
         created_at=datetime.fromtimestamp(1234),
         updated_at=datetime.fromtimestamp(9876),
         content_status=StudyContentStatus.VALID,
-        workspace="default",
+        workspace=DEFAULT_WORKSPACE_NAME,
         owner=user,
         groups=[group],
     )
@@ -115,7 +170,9 @@ def test_save_metadata() -> None:
     )
 
     service._save_metadata(
-        Metadata(id=uuid, workspace="default"), owner=user, group=group
+        Metadata(id=uuid, workspace=DEFAULT_WORKSPACE_NAME),
+        owner=user,
+        group=group,
     )
     repository.save.assert_called_once_with(metadata)
 

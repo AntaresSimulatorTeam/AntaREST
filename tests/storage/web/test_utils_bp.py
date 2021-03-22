@@ -9,6 +9,7 @@ from flask import Flask
 from antarest import __version__
 from antarest.common.config import Config
 from antarest.storage.main import build_storage
+from antarest.storage.model import DEFAULT_WORKSPACE_NAME
 
 
 @pytest.mark.unit_test
@@ -26,7 +27,9 @@ def test_version() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"workspaces": {"default": {"path": Path()}}},
+                "storage": {
+                    "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": Path()}}
+                },
             }
         ),
     )
@@ -54,7 +57,9 @@ def test_get_matrix() -> None:
             {
                 "_internal": {"resources_path": Path()},
                 "security": {"disabled": True},
-                "storage": {"workspaces": {"default": {"path": Path()}}},
+                "storage": {
+                    "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": Path()}}
+                },
             }
         ),
     )

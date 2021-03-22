@@ -9,7 +9,7 @@ from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.study_service import StudyService
 from antarest.storage.main import build_storage
-from antarest.storage.model import Metadata
+from antarest.storage.model import Metadata, DEFAULT_WORKSPACE_NAME
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
 )
@@ -39,16 +39,26 @@ def storage_service(
     with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
-    md = Metadata(id="STA-mini", workspace="default")
+    md = Metadata(
+        id="STA-mini",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(path_studies / "STA-mini"),
+    )
     repo = Mock()
-    repo.get.side_effect = lambda name: Metadata(id=name, workspace="default")
+    repo.get.side_effect = lambda name: Metadata(
+        id=name,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(path_studies / name),
+    )
     repo.get_all.return_value = [md]
 
     config = Config(
         {
             "_internal": {"resources_path": path_resources},
             "security": {"disabled": True},
-            "storage": {"workspaces": {"default": {"path": path_studies}}},
+            "storage": {
+                "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": path_studies}}
+            },
         }
     )
 

@@ -10,6 +10,8 @@ from sqlalchemy.orm import relationship  # type: ignore
 from antarest.common.persistence import DTO, Base
 from antarest.login.model import User, Group
 
+DEFAULT_WORKSPACE_NAME = "default"
+
 groups_metadata = Table(
     "group_metadata",
     Base.metadata,
@@ -40,7 +42,7 @@ class Metadata(DTO, Base):  # type: ignore
     updated_at = Column(DateTime)
     content_status = Column(Enum(StudyContentStatus))
     public = Column(Boolean(), default=False)
-    workspace = Column(String(255), default="default")
+    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
     path = Column(String(255))
     owner_id = Column(Integer, ForeignKey(User.id))
     owner = relationship(User, uselist=False)

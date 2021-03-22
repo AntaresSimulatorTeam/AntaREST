@@ -5,7 +5,7 @@ import pytest
 
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.study_service import StudyService
-from antarest.storage.model import Metadata
+from antarest.storage.model import Metadata, DEFAULT_WORKSPACE_NAME
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 
 
@@ -36,7 +36,7 @@ def test_export_file(tmp_path: Path):
     )
 
     # Test good study
-    md = Metadata(id=name, workspace="default")
+    md = Metadata(id=name, workspace=DEFAULT_WORKSPACE_NAME)
     assert b"Hello" == exporter_service.export_study(md)
     exporter.export_file.assert_called_once_with(study_path, True)
 
@@ -68,7 +68,7 @@ def test_export_compact_file(tmp_path: Path):
         exporter=exporter,
     )
 
-    md = Metadata(id=name, workspace="default")
+    md = Metadata(id=name, workspace=DEFAULT_WORKSPACE_NAME)
     assert b"Hello" == exporter_service.export_study(
         md, compact=True, outputs=False
     )
@@ -91,5 +91,5 @@ def test_export_matrix(tmp_path: Path) -> None:
         study_service=service, study_factory=Mock(), exporter=Mock()
     )
 
-    md = Metadata(id="id", workspace="default")
+    md = Metadata(id="id", workspace=DEFAULT_WORKSPACE_NAME)
     assert exporter.get_matrix(md, "file.txt") == b"Hello World"

@@ -7,7 +7,7 @@ from filelock import FileLock  # type: ignore
 
 from antarest.common.config import Config
 from antarest.login.model import Group
-from antarest.storage.model import StudyFolder
+from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
 from antarest.storage.service import StorageService
 
 
@@ -76,7 +76,7 @@ class Watcher:
 
         studies: List[StudyFolder] = list()
         for name, workspace in self.config["storage.workspaces"].items():
-            if name != "default":
+            if name != DEFAULT_WORKSPACE_NAME:
                 path = Path(workspace["path"])
                 groups = [Group(id=g) for g in workspace.get("groups", [])]
                 studies = studies + rec_scan(path, name, groups)
