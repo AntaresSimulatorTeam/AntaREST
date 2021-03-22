@@ -1,0 +1,5 @@
+
+rm database.db
+rm alembic/versions/*
+alembic revision --autogenerate -m "base"
+alembic upgrade head --sql > migration.sql

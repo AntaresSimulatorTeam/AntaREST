@@ -11,19 +11,20 @@ import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from pydantic.main import BaseModel
-from sqlalchemy import create_engine
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from antarest import __version__
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.web import tags_metadata
+from sqlalchemy import create_engine  # type: ignore
+
+from antarest import __version__
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
 from antarest.login.auth import Auth
@@ -124,7 +125,6 @@ def fastapi_app(
 ) -> FastAPI:
     res = resource_path or get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
-
     configure_logger(config)
 
     logging.getLogger(__name__).info("Initiating application")
@@ -133,9 +133,10 @@ def fastapi_app(
     engine = create_engine(
         config.db_url,
         echo=config.debug,
-        connect_args={"check_same_thread": False},
+#        connect_args={"check_same_thread": False},
     )
-    Base.metadata.create_all(engine)
+    #Base.metadata.create_all(engine)
+    #db.get_current()
 
     application = FastAPI(
         title="AntaREST",
