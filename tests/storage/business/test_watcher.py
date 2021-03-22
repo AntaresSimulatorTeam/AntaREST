@@ -1,3 +1,4 @@
+import os
 from multiprocessing import Pool
 from pathlib import Path
 from time import sleep
@@ -27,8 +28,16 @@ def build_config(root: Path) -> Config:
     )
 
 
+def clean_files() -> None:
+    if Watcher.LOCK.exists():
+        os.remove(Watcher.LOCK)
+        os.remove(f"{Watcher.LOCK}.lock")
+
+
 @pytest.mark.unit_test
 def test_scan(tmp_path: Path):
+    clean_files()
+
     default = tmp_path / "default"
     default.mkdir()
     a = default / "studyA"
@@ -59,6 +68,8 @@ def process(x: int) -> bool:
 
 @pytest.mark.unit_test
 def test_get_lock():
+    clean_files()
+
     pool = Pool()
     res = sum(pool.map(process, range(4)))
     assert res == 1
