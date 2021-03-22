@@ -30,7 +30,7 @@ jobs:
       max-parallel: 9
       matrix:
         os: [windows-latest, ubuntu-latest, macOS-latest]
-        python-version: [ 3.6, 3.7, 3.8 ]
+        python-version: [ 3.6, 3.8 ]
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
