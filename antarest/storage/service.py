@@ -18,7 +18,7 @@ from antarest.common.requests import (
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.study_service import StudyService
-from antarest.storage.model import Metadata, StudyContentStatus
+from antarest.storage.model import Metadata, StudyContentStatus, StudyFolder
 from antarest.storage.repository.metadata import StudyMetadataRepository
 from antarest.storage.web.exceptions import StudyNotFoundError
 
@@ -90,6 +90,41 @@ class StorageService:
             Event(EventType.STUDY_CREATED, md.to_json_summary())
         )
         return str(md.id)
+
+    def sync_studies_on_disk(self, folders: List[StudyFolder]) -> None:
+
+        # delete orphan studies on database
+        paths = [str(f.path) for f in folders]
+        for md in self.repository.get_all():
+            if md.path not in paths:
+                logger.info(
+                    f"Study={md.id} is not present in disk and will be deleted"
+                )
+                self.event_bus.push(
+                    Event(EventType.STUDY_DELETED, md.to_json_summary())
+                )
+                self.repository.delete(md.id)
+
+        # Add new studies
+        paths = [md.path for md in self.repository.get_all()]
+        for folder in folders:
+            if str(folder.path) not in paths:
+                md = Metadata(
+                    id=folder.path.name,
+                    name=folder.path.name,
+                    path=str(folder.path),
+                    workspace=folder.workspace,
+                    owner=User(id=0),
+                    groups=folder.groups,
+                )
+
+                md.content_status = self._analyse_study(md)
+
+                logger.info(f"Study={md.id} appears on disk and will be added")
+                self.event_bus.push(
+                    Event(EventType.STUDY_CREATED, md.to_json_summary())
+                )
+                self.repository.save(md)
 
     def copy_study(
         self,
@@ -163,11 +198,7 @@ class StorageService:
     ) -> str:
         md = Metadata(id=str(uuid4()), workspace="default")
         md = self.importer_service.import_study(md, stream)
-        status = (
-            StudyContentStatus.ERROR
-            if self.study_service.check_errors(md)
-            else StudyContentStatus.VALID
-        )
+        status = self._analyse_study(md)
         self._save_metadata(md, owner=params.user, content_status=status)
         self.event_bus.push(
             Event(EventType.STUDY_CREATED, md.to_json_summary())
@@ -260,3 +291,13 @@ class StorageService:
                 return False
 
         return True
+
+    def _analyse_study(self, metadata: Metadata) -> StudyContentStatus:
+        try:
+            if self.study_service.check_errors(metadata):
+                return StudyContentStatus.WARNING
+            else:
+                return StudyContentStatus.VALID
+        except Exception as e:
+            logger.error(e)
+            return StudyContentStatus.ERROR

@@ -80,7 +80,8 @@ def test_import_study(tmp_path: Path, storage_service_builder) -> None:
 
     md = Metadata(id="other-study", workspace="default")
     with path_zip.open("rb") as input_file:
-        importer_service.import_study(md, input_file)
+        md = importer_service.import_study(md, input_file)
+        assert md.path == f"{tmp_path}{os.sep}other-study"
 
     shutil.rmtree(tmp_path / "other-study")
     with pytest.raises(BadZipBinary):

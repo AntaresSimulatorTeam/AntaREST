@@ -1,12 +1,14 @@
 import enum
 import uuid
-from typing import Any
+from pathlib import Path
+from typing import Any, List
 
+from dataclasses import dataclass
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.common.persistence import DTO, Base
-from antarest.login.model import User
+from antarest.login.model import User, Group
 
 groups_metadata = Table(
     "group_metadata",
@@ -39,6 +41,7 @@ class Metadata(DTO, Base):  # type: ignore
     content_status = Column(Enum(StudyContentStatus))
     public = Column(Boolean(), default=False)
     workspace = Column(String(255), default="default")
+    path = Column(String(255))
     owner_id = Column(Integer, ForeignKey(User.id))
     owner = relationship(User, uselist=False)
     groups = relationship(
@@ -59,6 +62,7 @@ class Metadata(DTO, Base):  # type: ignore
             and other.content_status == self.content_status
             and other.public == self.public
             and other.workspace == self.workspace
+            and other.path == self.path
             and other.owner == self.owner
             and other.groups == self.groups
         )
@@ -68,3 +72,10 @@ class Metadata(DTO, Base):  # type: ignore
 
     def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name, "workspace": self.workspace}
+
+
+@dataclass
+class StudyFolder:
+    path: Path
+    workspace: str
+    groups: List[Group]
