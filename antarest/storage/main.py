@@ -10,6 +10,7 @@ from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.study_service import StudyService
+from antarest.storage.business.watcher import Watcher
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
 )
@@ -60,6 +61,9 @@ def build_storage(
         repository=metadata_repository,
         event_bus=event_bus,
     )
+
+    watcher = Watcher(config=config, service=storage_service)
+    watcher.start()
 
     application.register_blueprint(
         create_study_routes(storage_service, config)

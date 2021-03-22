@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import Mock
 from uuid import uuid4
 
@@ -8,11 +9,11 @@ from antarest.login.model import User, Role, Group
 from antarest.common.requests import (
     RequestParameters,
 )
-from antarest.storage.model import Metadata, StudyContentStatus
+from antarest.storage.model import Metadata, StudyContentStatus, StudyFolder
 from antarest.storage.service import StorageService, UserHasNotPermissionError
 
 
-def test_get_studies_uuid():
+def test_get_studies_uuid() -> None:
     bob = User(id=1, name="bob")
     alice = User(id=2, name="alice")
 
@@ -39,7 +40,38 @@ def test_get_studies_uuid():
     assert [a, c] == studies
 
 
-def test_save_metadata():
+def test_sync_studies_from_disk() -> None:
+    ma = Metadata(id="a", path="a")
+    fa = StudyFolder(path=Path("a"), workspace="", groups=[])
+    mb = Metadata(id="b", path="b")
+    mc = Metadata(
+        id="c",
+        path="c",
+        name="c",
+        content_status=StudyContentStatus.WARNING,
+        workspace="default",
+        owner=User(id=0),
+    )
+    fc = StudyFolder(path=Path("c"), workspace="default", groups=[])
+
+    repository = Mock()
+    repository.get_all.side_effect = [[ma, mb], [ma]]
+
+    service = StorageService(
+        study_service=Mock(),
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        repository=repository,
+        event_bus=Mock(),
+    )
+
+    service.sync_studies_on_disk([fa, fc])
+
+    repository.delete.assert_called_once_with(mb.id)
+    repository.save.assert_called_once_with(mc)
+
+
+def test_save_metadata() -> None:
     # Mock
     repository = Mock()
 
@@ -88,7 +120,7 @@ def test_save_metadata():
     repository.save.assert_called_once_with(metadata)
 
 
-def test_assert_permission():
+def test_assert_permission() -> None:
     uuid = str(uuid4())
     group = Group(id="my-group")
     good = User(id=0, groups=[group])
