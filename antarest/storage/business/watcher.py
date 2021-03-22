@@ -58,14 +58,20 @@ class Watcher:
         def rec_scan(
             path: Path, workspace: str, groups: List[Group]
         ) -> List[StudyFolder]:
-            if (path / "study.antares").exists():
-                logger.info(f"Study {path.name} found in {workspace}")
-                return [StudyFolder(path, workspace, groups)]
-            else:
-                folders: List[StudyFolder] = list()
-                for child in path.iterdir():
-                    folders = folders + rec_scan(child, workspace, groups)
-                return folders
+            try:
+                if (path / "study.antares").exists():
+                    logger.debug(f"Study {path.name} found in {workspace}")
+                    return [StudyFolder(path, workspace, groups)]
+                else:
+                    folders: List[StudyFolder] = list()
+                    if path.is_dir():
+                        for child in path.iterdir():
+                            folders = folders + rec_scan(
+                                child, workspace, groups
+                            )
+                    return folders
+            except Exception as e:
+                logger.error(f"Failed to scan dir {path}", exc_info=e)
 
         studies: List[StudyFolder] = list()
         for name, workspace in self.config["storage.workspaces"].items():

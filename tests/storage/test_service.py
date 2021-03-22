@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pytest
@@ -68,7 +68,7 @@ def test_sync_studies_from_disk() -> None:
     service.sync_studies_on_disk([fa, fc])
 
     repository.delete.assert_called_once_with(mb.id)
-    repository.save.assert_called_once_with(mc)
+    repository.save.assert_called_once()
 
 
 def test_save_metadata() -> None:

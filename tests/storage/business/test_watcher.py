@@ -53,6 +53,10 @@ def test_scan(tmp_path: Path):
     c.mkdir(parents=True)
     (c / "study.antares").touch()
 
+    d = diese / "folder/trash"
+    d.mkdir(parents=True)
+    (d / "trash").touch()
+
     service = Mock()
     watcher = Watcher(build_config(tmp_path), service)
 

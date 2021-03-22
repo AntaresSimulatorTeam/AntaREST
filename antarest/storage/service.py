@@ -110,7 +110,7 @@ class StorageService:
         for folder in folders:
             if str(folder.path) not in paths:
                 md = Metadata(
-                    id=folder.path.name,
+                    id=str(uuid4()),
                     name=folder.path.name,
                     path=str(folder.path),
                     workspace=folder.workspace,
