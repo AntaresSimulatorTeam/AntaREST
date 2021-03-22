@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 
 class Watcher:
     LOCK = Path("watcher")
-    DELAY = 1
+    DELAY = 2
 
     def __init__(self, config: Config, service: StorageService):
         self.service = service
         self.config = config
 
         self.thread = (
-            threading.Thread(target=self._loop)
+            threading.Thread(target=self._loop, daemon=True)
             if Watcher._get_lock()
             else None
         )
@@ -55,14 +55,23 @@ class Watcher:
             sleep(2)
 
     def _scan(self) -> None:
+        def rec_scan(
+            path: Path, workspace: str, groups: List[Group]
+        ) -> List[StudyFolder]:
+            if (path / "study.antares").exists():
+                logger.info(f"Study {path.name} found in {workspace}")
+                return [StudyFolder(path, workspace, groups)]
+            else:
+                folders: List[StudyFolder] = list()
+                for child in path.iterdir():
+                    folders = folders + rec_scan(child, workspace, groups)
+                return folders
+
         studies: List[StudyFolder] = list()
         for name, workspace in self.config["storage.workspaces"].items():
-            path = Path(workspace["path"])
-            groups = [Group(id=g) for g in workspace.get("groups", [])]
-
-            for folder in path.iterdir():
-                if (folder / "study.antares").exists():
-                    logger.info(f"Study {folder.name} found in {name}")
-                    studies.append(StudyFolder(folder, name, groups))
+            if name != "default":
+                path = Path(workspace["path"])
+                groups = [Group(id=g) for g in workspace.get("groups", [])]
+                studies = studies + rec_scan(path, name, groups)
 
         self.service.sync_studies_on_disk(studies)

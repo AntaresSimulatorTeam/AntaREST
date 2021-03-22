@@ -37,8 +37,8 @@ def test_scan(tmp_path: Path):
 
     diese = tmp_path / "diese"
     diese.mkdir()
-    c = diese / "studyC"
-    c.mkdir()
+    c = diese / "folder/studyC"
+    c.mkdir(parents=True)
     (c / "study.antares").touch()
 
     service = Mock()
@@ -48,7 +48,6 @@ def test_scan(tmp_path: Path):
 
     service.sync_studies_on_disk.assert_called_once_with(
         [
-            StudyFolder(a, "default", [Group(id="toto")]),
             StudyFolder(c, "diese", [Group(id="tata")]),
         ]
     )
