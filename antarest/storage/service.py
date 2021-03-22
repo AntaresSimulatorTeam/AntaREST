@@ -97,6 +97,12 @@ class StorageService:
         paths = [str(f.path) for f in folders]
         for md in self.repository.get_all():
             if md.path not in paths:
+                logger.info(
+                    f"Study={md.id} is not present in disk and will be deleted"
+                )
+                self.event_bus.push(
+                    Event(EventType.STUDY_DELETED, md.to_json_summary())
+                )
                 self.repository.delete(md.id)
 
         # Add new studies
@@ -113,6 +119,11 @@ class StorageService:
                 )
 
                 md.content_status = self._analyse_study(md)
+
+                logger.info(f"Study={md.id} appears on disk and will be added")
+                self.event_bus.push(
+                    Event(EventType.STUDY_CREATED, md.to_json_summary())
+                )
                 self.repository.save(md)
 
     def copy_study(
