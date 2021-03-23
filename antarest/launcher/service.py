@@ -7,14 +7,13 @@ from antarest.common.interfaces.eventbus import (
     IEventBus,
     Event,
     EventType,
-    DummyEventBusService,
 )
-from antarest.launcher.factory_launcher import FactoryLauncher
-from antarest.launcher.model import JobResult, JobStatus
-from antarest.launcher.repository import JobResultRepository
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.launcher.business.factory_launcher import FactoryLauncher
+from antarest.launcher.model import JobResult, JobStatus
+from antarest.launcher.repository import JobResultRepository
 from antarest.storage.service import StorageService
 
 
@@ -35,8 +34,9 @@ class LauncherService:
         self.storage_service = storage_service
         self.repository = repository
         self.event_bus = event_bus
-        self.launcher = factory_launcher.build_launcher(config)
-        self.launcher.add_callback(self.update)
+        self.launchers = factory_launcher.build_launcher(config)
+        for _, launcher in self.launchers.items():
+            launcher.add_callback(self.update)
 
     def update(self, job_result: JobResult) -> None:
         job_result.completion_date = datetime.utcnow()
@@ -48,13 +48,17 @@ class LauncherService:
             )
         )
 
-    def run_study(self, study_uuid: str, params: RequestParameters) -> UUID:
+    def run_study(
+        self, study_uuid: str, params: RequestParameters, launcher: str
+    ) -> UUID:
         study_info = self.storage_service.get_study_information(
             uuid=study_uuid, params=params
         )
         study_version = study_info["antares"]["version"]
         study_path = self.storage_service.get_study_path(study_uuid, params)
-        job_uuid: UUID = self.launcher.run_study(study_path, study_version)
+        job_uuid: UUID = self.launchers[launcher].run_study(
+            study_path, study_version
+        )
 
         self.repository.save(
             JobResult(
