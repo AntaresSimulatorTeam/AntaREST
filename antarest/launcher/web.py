@@ -3,10 +3,10 @@ from uuid import UUID
 
 from flask import Blueprint, jsonify, request
 
-from antarest.login.auth import Auth
 from antarest.common.config import Config
 from antarest.common.requests import RequestParameters
 from antarest.launcher.service import LauncherService
+from antarest.login.auth import Auth
 
 
 def create_launcher_api(service: LauncherService, config: Config) -> Blueprint:
@@ -52,8 +52,11 @@ def create_launcher_api(service: LauncherService, config: Config) -> Blueprint:
         tags:
           - Run Studies
         """
+        engine = config["launcher.default"]
+        if "engine" in request.args:
+            engine = request.args["engine"]
         params = RequestParameters(user=Auth.get_current_user())
-        return jsonify({"job_id": service.run_study(study_id, params)})
+        return jsonify({"job_id": service.run_study(study_id, params, engine)})
 
     @bp.route("/launcher/jobs", methods=["GET"])
     @auth.protected()

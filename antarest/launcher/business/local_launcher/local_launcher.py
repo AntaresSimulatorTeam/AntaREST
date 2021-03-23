@@ -5,7 +5,7 @@ from typing import Callable, List, Any
 from uuid import UUID, uuid4
 
 from antarest.common.config import Config
-from antarest.launcher.ilauncher import ILauncher
+from antarest.launcher.business.ilauncher import ILauncher
 from antarest.launcher.model import JobResult, JobStatus
 
 

@@ -1,12 +1,12 @@
-import platform
-from time import sleep, time
 from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
 
 from antarest.common.config import Config
-from antarest.launcher.local_launcher import LocalLauncher
+from antarest.launcher.business.local_launcher.local_launcher import (
+    LocalLauncher,
+)
 from antarest.launcher.model import JobResult, JobStatus
 
 
