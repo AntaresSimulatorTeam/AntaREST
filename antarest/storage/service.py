@@ -9,7 +9,6 @@ import werkzeug
 from uuid import uuid4
 
 from antarest.common.custom_types import JSON
-from antarest.common.exceptions import StudyTypeUnsupported
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.login.model import User, Role, Group
 from antarest.storage.business.exporter_service import ExporterService
@@ -27,7 +26,10 @@ from antarest.storage.model import (
     RawStudy,
 )
 from antarest.storage.repository.metadata import StudyMetadataRepository
-from antarest.storage.web.exceptions import StudyNotFoundError
+from antarest.storage.web.exceptions import (
+    StudyNotFoundError,
+    StudyTypeUnsupported,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +59,7 @@ class StorageService:
         self._assert_permission(params.user, md)
 
         if isinstance(md, RawStudy):
-            return self.study_service.get(cast(md, RawStudy), url, depth)
+            return self.study_service.get(md, url, depth)
 
         raise StudyTypeUnsupported(
             f"Study {uuid} with type {md.type} not recognized"
@@ -90,7 +92,7 @@ class StorageService:
                 f"Study {uuid} with type {md.type} not recognized"
             )
 
-        return self.study_service.get_study_information(cast(md, RawStudy))
+        return self.study_service.get_study_information(md)
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
         md = self._get_metadata(uuid)
@@ -101,7 +103,7 @@ class StorageService:
                 f"Study {uuid} with type {md.type} not recognized"
             )
 
-        return self.study_service.get_study_path(cast(md, RawStudy))
+        return self.study_service.get_study_path(md)
 
     def create_study(self, study_name: str, params: RequestParameters) -> str:
         sid = str(uuid4())
@@ -197,9 +199,7 @@ class StorageService:
                 f"Study {uuid} with type {md.type} not recognized"
             )
 
-        return self.exporter_service.export_study(
-            cast(RawStudy, md), compact, outputs
-        )
+        return self.exporter_service.export_study(md, compact, outputs)
 
     def delete_study(self, uuid: str, params: RequestParameters) -> None:
         md = self._get_metadata(uuid)
@@ -209,7 +209,7 @@ class StorageService:
                 f"Study {uuid} with type {md.type} not recognized"
             )
 
-        self.study_service.delete_study(cast(RawStudy, md))
+        self.study_service.delete_study(md)
         self.repository.delete(md.id)
         self.event_bus.push(
             Event(EventType.STUDY_DELETED, md.to_json_summary())
@@ -225,7 +225,7 @@ class StorageService:
                 f"Study {uuid} with type {md.type} not recognized"
             )
 
-        self.study_service.delete_output(cast(RawStudy, md), output_name)
+        self.study_service.delete_output(md, output_name)
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, md.to_json_summary())
         )
@@ -239,7 +239,7 @@ class StorageService:
                 f"Study {uuid} with type {md.type} not recognized"
             )
 
-        return self.exporter_service.get_matrix(cast(RawStudy, md), path)
+        return self.exporter_service.get_matrix(md, path)
 
     def upload_matrix(
         self, path: str, data: bytes, params: RequestParameters
@@ -252,7 +252,7 @@ class StorageService:
                 f"Study {uuid} with type {md.type} not recognized"
             )
 
-        self.importer_service.upload_matrix(cast(RawStudy, md), path, data)
+        self.importer_service.upload_matrix(md, path, data)
 
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, md.to_json_summary())
@@ -282,7 +282,7 @@ class StorageService:
                 f"Study {uuid} with type {md.type} not recognized"
             )
 
-        res = self.importer_service.import_output(cast(RawStudy, md), stream)
+        res = self.importer_service.import_output(md, stream)
         return res
 
     def edit_study(
@@ -296,7 +296,7 @@ class StorageService:
                 f"Study {uuid} with type {md.type} not recognized"
             )
 
-        updated = self.study_service.edit_study(cast(RawStudy, md), url, new)
+        updated = self.study_service.edit_study(md, url, new)
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, md.to_json_summary())
         )
