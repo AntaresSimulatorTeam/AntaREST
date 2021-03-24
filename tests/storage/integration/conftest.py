@@ -7,9 +7,9 @@ import pytest
 from antarest.common.config import Config
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
-from antarest.storage.business.study_service import StudyService
+from antarest.storage.business.raw_study_service import StudyService
 from antarest.storage.main import build_storage
-from antarest.storage.model import Metadata, DEFAULT_WORKSPACE_NAME
+from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
 )
@@ -39,13 +39,13 @@ def storage_service(
     with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
-    md = Metadata(
+    md = RawStudy(
         id="STA-mini",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / "STA-mini"),
     )
     repo = Mock()
-    repo.get.side_effect = lambda name: Metadata(
+    repo.get.side_effect = lambda name: RawStudy(
         id=name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / name),

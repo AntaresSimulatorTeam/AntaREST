@@ -3,12 +3,13 @@ from copy import deepcopy
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import List, IO, Optional
+from typing import List, IO, Optional, cast
 
 import werkzeug
 from uuid import uuid4
 
 from antarest.common.custom_types import JSON
+from antarest.common.exceptions import StudyTypeUnsupported
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.login.model import User, Role, Group
 from antarest.storage.business.exporter_service import ExporterService
@@ -17,12 +18,13 @@ from antarest.common.requests import (
     RequestParameters,
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.business.study_service import StudyService
+from antarest.storage.business.raw_study_service import StudyService
 from antarest.storage.model import (
-    Metadata,
+    Study,
     StudyContentStatus,
     StudyFolder,
     DEFAULT_WORKSPACE_NAME,
+    RawStudy,
 )
 from antarest.storage.repository.metadata import StudyMetadataRepository
 from antarest.storage.web.exceptions import StudyNotFoundError
@@ -54,11 +56,14 @@ class StorageService:
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
 
-        return self.study_service.get(md, url, depth)
+        if isinstance(md, RawStudy):
+            return self.study_service.get(cast(md, RawStudy), url, depth)
 
-    def _get_study_metadatas(
-        self, params: RequestParameters
-    ) -> List[Metadata]:
+        raise StudyTypeUnsupported(
+            f"Study {uuid} with type {md.type} not recognized"
+        )
+
+    def _get_study_metadatas(self, params: RequestParameters) -> List[Study]:
 
         return list(
             filter(
@@ -80,17 +85,28 @@ class StorageService:
     ) -> JSON:
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
-        return self.study_service.get_study_information(md)
+        if not isinstance(md, RawStudy):
+            raise StudyTypeUnsupported(
+                f"Study {uuid} with type {md.type} not recognized"
+            )
+
+        return self.study_service.get_study_information(cast(md, RawStudy))
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
-        return self.study_service.get_study_path(md)
+
+        if not isinstance(md, RawStudy):
+            raise StudyTypeUnsupported(
+                f"Study {uuid} with type {md.type} not recognized"
+            )
+
+        return self.study_service.get_study_path(cast(md, RawStudy))
 
     def create_study(self, study_name: str, params: RequestParameters) -> str:
         sid = str(uuid4())
         study_path = str(self.study_service.get_default_workspace_path() / sid)
-        md = Metadata(
+        md = RawStudy(
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
@@ -121,7 +137,7 @@ class StorageService:
         paths = [md.path for md in self.repository.get_all()]
         for folder in folders:
             if str(folder.path) not in paths:
-                md = Metadata(
+                md = RawStudy(
                     id=str(uuid4()),
                     name=folder.path.name,
                     path=str(folder.path),
@@ -147,6 +163,11 @@ class StorageService:
         src_md = self._get_metadata(src_uuid)
         self._assert_permission(params.user, src_md)
 
+        if not isinstance(src_md, RawStudy):
+            raise StudyTypeUnsupported(
+                f"Study {src_uuid} with type {src_md.type} not recognized"
+            )
+
         dest_md = deepcopy(src_md)
         dest_md.id = str(uuid4())
         dest_md.name = dest_study_name
@@ -171,12 +192,24 @@ class StorageService:
     ) -> BytesIO:
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
-        return self.exporter_service.export_study(md, compact, outputs)
+        if not isinstance(md, RawStudy):
+            raise StudyTypeUnsupported(
+                f"Study {uuid} with type {md.type} not recognized"
+            )
+
+        return self.exporter_service.export_study(
+            cast(RawStudy, md), compact, outputs
+        )
 
     def delete_study(self, uuid: str, params: RequestParameters) -> None:
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
-        self.study_service.delete_study(md)
+        if not isinstance(md, RawStudy):
+            raise StudyTypeUnsupported(
+                f"Study {uuid} with type {md.type} not recognized"
+            )
+
+        self.study_service.delete_study(cast(RawStudy, md))
         self.repository.delete(md.id)
         self.event_bus.push(
             Event(EventType.STUDY_DELETED, md.to_json_summary())
@@ -187,7 +220,12 @@ class StorageService:
     ) -> None:
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
-        self.study_service.delete_output(md, output_name)
+        if not isinstance(md, RawStudy):
+            raise StudyTypeUnsupported(
+                f"Study {uuid} with type {md.type} not recognized"
+            )
+
+        self.study_service.delete_output(cast(RawStudy, md), output_name)
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, md.to_json_summary())
         )
@@ -196,7 +234,12 @@ class StorageService:
         uuid, path = StorageServiceUtils.extract_info_from_url(route)
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
-        return self.exporter_service.get_matrix(md, path)
+        if not isinstance(md, RawStudy):
+            raise StudyTypeUnsupported(
+                f"Study {uuid} with type {md.type} not recognized"
+            )
+
+        return self.exporter_service.get_matrix(cast(RawStudy, md), path)
 
     def upload_matrix(
         self, path: str, data: bytes, params: RequestParameters
@@ -204,7 +247,13 @@ class StorageService:
         uuid, _ = StorageServiceUtils.extract_info_from_url(path)
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
-        self.importer_service.upload_matrix(md, path, data)
+        if not isinstance(md, RawStudy):
+            raise StudyTypeUnsupported(
+                f"Study {uuid} with type {md.type} not recognized"
+            )
+
+        self.importer_service.upload_matrix(cast(RawStudy, md), path, data)
+
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, md.to_json_summary())
         )
@@ -214,7 +263,7 @@ class StorageService:
     ) -> str:
         sid = str(uuid4())
         path = str(self.study_service.get_default_workspace_path() / sid)
-        md = Metadata(id=sid, workspace=DEFAULT_WORKSPACE_NAME, path=path)
+        md = RawStudy(id=sid, workspace=DEFAULT_WORKSPACE_NAME, path=path)
         md = self.importer_service.import_study(md, stream)
         status = self._analyse_study(md)
         self._save_metadata(md, owner=params.user, content_status=status)
@@ -228,7 +277,12 @@ class StorageService:
     ) -> JSON:
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
-        res = self.importer_service.import_output(md, stream)
+        if not isinstance(md, RawStudy):
+            raise StudyTypeUnsupported(
+                f"Study {uuid} with type {md.type} not recognized"
+            )
+
+        res = self.importer_service.import_output(cast(RawStudy, md), stream)
         return res
 
     def edit_study(
@@ -237,7 +291,12 @@ class StorageService:
         uuid, url = StorageServiceUtils.extract_info_from_url(route)
         md = self._get_metadata(uuid)
         self._assert_permission(params.user, md)
-        updated = self.study_service.edit_study(md, url, new)
+        if not isinstance(md, RawStudy):
+            raise StudyTypeUnsupported(
+                f"Study {uuid} with type {md.type} not recognized"
+            )
+
+        updated = self.study_service.edit_study(cast(RawStudy, md), url, new)
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, md.to_json_summary())
         )
@@ -245,7 +304,7 @@ class StorageService:
 
     def _save_metadata(
         self,
-        metadata: Metadata,
+        metadata: RawStudy,
         owner: Optional[User] = None,
         content_status: StudyContentStatus = StudyContentStatus.VALID,
         group: Optional[Group] = None,
@@ -268,7 +327,7 @@ class StorageService:
             metadata.groups = [group]
         self.repository.save(metadata)
 
-    def _get_metadata(self, uuid: str) -> Metadata:
+    def _get_metadata(self, uuid: str) -> Study:
 
         md = self.repository.get(uuid)
         if not md:
@@ -283,7 +342,7 @@ class StorageService:
     def _assert_permission(
         self,
         user: Optional[User],
-        md: Optional[Metadata],
+        md: Optional[Study],
         raising: bool = True,
     ) -> bool:
         if not user:
@@ -310,7 +369,7 @@ class StorageService:
 
         return True
 
-    def _analyse_study(self, metadata: Metadata) -> StudyContentStatus:
+    def _analyse_study(self, metadata: RawStudy) -> StudyContentStatus:
         try:
             if self.study_service.check_errors(metadata):
                 return StudyContentStatus.WARNING

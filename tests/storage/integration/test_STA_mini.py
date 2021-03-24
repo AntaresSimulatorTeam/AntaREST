@@ -12,7 +12,7 @@ from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.login.model import User, Role
 from antarest.storage.main import build_storage
-from antarest.storage.model import Metadata
+from antarest.storage.model import Study
 from antarest.storage.service import StorageService
 from antarest.common.requests import (
     RequestParameters,

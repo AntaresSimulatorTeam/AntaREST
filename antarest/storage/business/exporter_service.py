@@ -2,8 +2,8 @@ from io import BytesIO
 from pathlib import Path
 
 from antarest.common.interfaces.eventbus import IEventBus
-from antarest.storage.business.study_service import StudyService
-from antarest.storage.model import Metadata
+from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.model import Study
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
 )
@@ -22,7 +22,7 @@ class ExporterService:
         self.exporter = exporter
 
     def export_study(
-        self, metadata: Metadata, compact: bool = False, outputs: bool = True
+        self, metadata: Study, compact: bool = False, outputs: bool = True
     ) -> BytesIO:
         path_study = self.study_service.get_study_path(metadata)
 
@@ -41,6 +41,6 @@ class ExporterService:
         else:
             return self.exporter.export_file(path_study, outputs)
 
-    def get_matrix(self, metadata: Metadata, path: str) -> bytes:
+    def get_matrix(self, metadata: Study, path: str) -> bytes:
         file = self.study_service.get_study_path(metadata) / path
         return file.read_bytes()

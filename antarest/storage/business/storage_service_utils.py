@@ -6,7 +6,7 @@ from uuid import uuid4
 from zipfile import ZipFile, BadZipFile
 
 from antarest.common.custom_types import JSON
-from antarest.storage.model import Metadata
+from antarest.storage.model import Study
 from antarest.storage.web.exceptions import (
     StudyValidationError,
     BadZipBinary,
@@ -50,7 +50,7 @@ class StorageServiceUtils:
             )
 
     @staticmethod
-    def update_antares_info(metadata: Metadata, study_data: JSON) -> None:
+    def update_antares_info(metadata: Study, study_data: JSON) -> None:
         # TODO return value rather than change implicitly
         info_antares = study_data["study"]["antares"]
 

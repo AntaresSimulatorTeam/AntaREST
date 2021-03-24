@@ -10,10 +10,11 @@ from antarest.common.requests import (
     RequestParameters,
 )
 from antarest.storage.model import (
-    Metadata,
+    Study,
     StudyContentStatus,
     StudyFolder,
     DEFAULT_WORKSPACE_NAME,
+    RawStudy,
 )
 from antarest.storage.service import StorageService, UserHasNotPermissionError
 
@@ -22,9 +23,9 @@ def test_get_studies_uuid() -> None:
     bob = User(id=1, name="bob")
     alice = User(id=2, name="alice")
 
-    a = Metadata(id="A", owner=bob)
-    b = Metadata(id="B", owner=alice)
-    c = Metadata(id="C", owner=bob)
+    a = Study(id="A", owner=bob)
+    b = Study(id="B", owner=alice)
+    c = Study(id="C", owner=bob)
 
     # Mock
     repository = Mock()
@@ -46,10 +47,10 @@ def test_get_studies_uuid() -> None:
 
 
 def test_sync_studies_from_disk() -> None:
-    ma = Metadata(id="a", path="a")
+    ma = RawStudy(id="a", path="a")
     fa = StudyFolder(path=Path("a"), workspace="", groups=[])
-    mb = Metadata(id="b", path="b")
-    mc = Metadata(
+    mb = RawStudy(id="b", path="b")
+    mc = RawStudy(
         id="c",
         path="c",
         name="c",
@@ -86,7 +87,7 @@ def test_create_study() -> None:
     user = User(id=0, name="user", role=Role.USER)
     group = Group(id="my-group", name="group")
 
-    expected = Metadata(
+    expected = RawStudy(
         id=str(uuid4()),
         name="new-study",
         version="VERSION",
@@ -148,7 +149,7 @@ def test_save_metadata() -> None:
     group = Group(id="my-group", name="group")
 
     # Expected
-    metadata = Metadata(
+    metadata = RawStudy(
         id=uuid,
         name="CAPTION",
         version="VERSION",
@@ -170,7 +171,7 @@ def test_save_metadata() -> None:
     )
 
     service._save_metadata(
-        Metadata(id=uuid, workspace=DEFAULT_WORKSPACE_NAME),
+        RawStudy(id=uuid, workspace=DEFAULT_WORKSPACE_NAME),
         owner=user,
         group=group,
     )
@@ -194,22 +195,22 @@ def test_assert_permission() -> None:
     )
 
     # wrong owner
-    repository.get.return_value = Metadata(id=uuid, owner=wrong)
+    repository.get.return_value = Study(id=uuid, owner=wrong)
     md = service._get_metadata(uuid)
     with pytest.raises(UserHasNotPermissionError):
         service._assert_permission(good, md)
     assert not service._assert_permission(good, md, raising=False)
 
     # good owner
-    md = Metadata(id=uuid, owner=good)
+    md = Study(id=uuid, owner=good)
     assert service._assert_permission(good, md)
 
     # wrong group
-    md = Metadata(id=uuid, owner=wrong, groups=[Group(id="wrong")])
+    md = Study(id=uuid, owner=wrong, groups=[Group(id="wrong")])
     with pytest.raises(UserHasNotPermissionError):
         service._assert_permission(good, md)
     assert not service._assert_permission(good, md, raising=False)
 
     # good group
-    md = Metadata(id=uuid, owner=wrong, groups=[group])
+    md = Study(id=uuid, owner=wrong, groups=[group])
     assert service._assert_permission(good, md)

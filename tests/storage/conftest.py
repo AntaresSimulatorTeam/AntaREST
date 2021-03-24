@@ -9,9 +9,9 @@ import pytest
 from antarest.common.config import Config
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
-from antarest.storage.business.study_service import StudyService
+from antarest.storage.business.raw_study_service import StudyService
 from antarest.storage.main import build_storage
-from antarest.storage.model import Metadata, DEFAULT_WORKSPACE_NAME
+from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME
 from antarest.storage.service import StorageService
 
 project_dir: Path = Path(__file__).parent.parent.parent

@@ -5,7 +5,7 @@ from zipfile import ZipFile
 from flask import Flask
 
 from antarest.common.config import Config
-from antarest.storage.model import Metadata, DEFAULT_WORKSPACE_NAME
+from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
 )
@@ -48,7 +48,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         }
     )
 
-    md = Metadata(
+    md = RawStudy(
         id="STA-mini",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / "STA-mini"),
@@ -87,7 +87,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
         }
     )
 
-    md = Metadata(
+    md = RawStudy(
         id="STA-mini",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / "STA-mini"),
