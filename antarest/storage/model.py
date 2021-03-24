@@ -16,7 +16,7 @@ groups_metadata = Table(
     "group_metadata",
     Base.metadata,
     Column("group_id", Integer, ForeignKey("groups.id")),
-    Column("metadata_id", Integer, ForeignKey("metadata.id")),
+    Column("study_id", Integer, ForeignKey("study.id")),
 )
 
 
@@ -26,8 +26,9 @@ class StudyContentStatus(enum.Enum):
     ERROR = "ERROR"
 
 
-class Metadata(DTO, Base):  # type: ignore
-    __tablename__ = "metadata"
+@dataclass
+class Study(Base):  # type: ignore
+    __tablename__ = "study"
 
     id = Column(
         String(36),
@@ -36,44 +37,43 @@ class Metadata(DTO, Base):  # type: ignore
         unique=True,
     )
     name = Column(String(255))
+    type = Column(String(50))
     version = Column(String(255))
     author = Column(String(255))
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
-    content_status = Column(Enum(StudyContentStatus))
     public = Column(Boolean(), default=False)
-    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
-    path = Column(String(255))
     owner_id = Column(Integer, ForeignKey(User.id))
     owner = relationship(User, uselist=False)
     groups = relationship(
         "Group", secondary=lambda: groups_metadata, cascade=""
     )
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Metadata):
-            return False
-
-        return bool(
-            other.id == self.id
-            and other.name == self.name
-            and other.version == self.version
-            and other.author == self.author
-            and other.created_at == self.created_at
-            and other.updated_at == self.updated_at
-            and other.content_status == self.content_status
-            and other.public == self.public
-            and other.workspace == self.workspace
-            and other.path == self.path
-            and other.owner == self.owner
-            and other.groups == self.groups
-        )
+    __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
     def __str__(self) -> str:
         return f"Metadata(id={self.id}, name={self.name}, version={self.version}, owner={self.owner}, groups={[str(u)+',' for u in self.groups]}"
 
     def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name, "workspace": self.workspace}
+
+
+@dataclass
+class RawStudy(Study):
+    __tablename__ = "rawstudy"
+
+    id = Column(
+        String(36),
+        ForeignKey("study.id"),
+        primary_key=True,
+    )
+    content_status = Column(Enum(StudyContentStatus))
+    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
+    path = Column(String(255))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "rawstudy",
+    }
 
 
 @dataclass

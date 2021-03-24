@@ -10,8 +10,8 @@ from antarest.common.requests import (
     RequestParameters,
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.business.study_service import StudyService
-from antarest.storage.model import Metadata, DEFAULT_WORKSPACE_NAME
+from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.web.exceptions import (
     StudyNotFoundError,
 )
@@ -68,7 +68,7 @@ def test_get(tmp_path: str, project_path) -> None:
         path_resources=project_path / "resources",
     )
 
-    metadata = Metadata(
+    metadata = RawStudy(
         id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
     )
     output = study_service.get(metadata=metadata, url=sub_route, depth=2)
@@ -92,7 +92,7 @@ def test_check_errors():
         path_resources=Path(),
     )
 
-    metadata = Metadata(
+    metadata = RawStudy(
         id="study",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(study_service.get_default_workspace_path() / "study"),
@@ -121,7 +121,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
         path_resources=project_path / "resources",
     )
 
-    metadata = Metadata(
+    metadata = RawStudy(
         id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2)
     )
     study_service.check_study_exists(metadata)
@@ -148,7 +148,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         path_resources=project_path / "resources",
     )
 
-    metadata = Metadata(
+    metadata = RawStudy(
         id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2)
     )
     with pytest.raises(StudyNotFoundError):
@@ -211,7 +211,7 @@ def test_create_study(
         path_resources=project_path / "resources",
     )
 
-    metadata = Metadata(
+    metadata = RawStudy(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(study_service.get_default_workspace_path() / "study1"),
@@ -269,10 +269,10 @@ def test_copy_study(
         path_resources=Path(),
     )
 
-    src_md = Metadata(
+    src_md = RawStudy(
         id=source_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
     )
-    dest_md = Metadata(
+    dest_md = RawStudy(
         id="study2",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(study_service.get_default_workspace_path() / "study2"),
@@ -297,7 +297,7 @@ def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
         path_resources=Path(),
     )
 
-    md = Metadata(
+    md = RawStudy(
         id=name, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path)
     )
     study_service.delete_study(md)
@@ -325,7 +325,7 @@ def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
     url = "url/to/change"
     new = {"Hello": "World"}
 
-    md = Metadata(
+    md = RawStudy(
         id="my-uuid",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(tmp_path / "my-uuid"),
