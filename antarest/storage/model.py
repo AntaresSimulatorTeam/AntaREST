@@ -10,6 +10,8 @@ from sqlalchemy.orm import relationship  # type: ignore
 from antarest.common.persistence import DTO, Base
 from antarest.login.model import User, Group
 
+DEFAULT_WORKSPACE_NAME = "default"
+
 groups_metadata = Table(
     "group_metadata",
     Base.metadata,
@@ -40,7 +42,7 @@ class Metadata(DTO, Base):  # type: ignore
     updated_at = Column(DateTime)
     content_status = Column(Enum(StudyContentStatus))
     public = Column(Boolean(), default=False)
-    workspace = Column(String(255), default="default")
+    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
     path = Column(String(255))
     owner_id = Column(Integer, ForeignKey(User.id))
     owner = relationship(User, uselist=False)
@@ -68,7 +70,7 @@ class Metadata(DTO, Base):  # type: ignore
         )
 
     def __str__(self) -> str:
-        return f"Metadata(name={self.name}, version={self.version}, owner={self.owner}, groups={[str(u)+',' for u in self.groups]}"
+        return f"Metadata(id={self.id}, name={self.name}, version={self.version}, owner={self.owner}, groups={[str(u)+',' for u in self.groups]}"
 
     def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name, "workspace": self.workspace}

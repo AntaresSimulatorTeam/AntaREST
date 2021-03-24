@@ -7,7 +7,7 @@ from filelock import FileLock  # type: ignore
 
 from antarest.common.config import Config
 from antarest.login.model import Group
-from antarest.storage.model import StudyFolder
+from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
 from antarest.storage.service import StorageService
 
 
@@ -58,18 +58,25 @@ class Watcher:
         def rec_scan(
             path: Path, workspace: str, groups: List[Group]
         ) -> List[StudyFolder]:
-            if (path / "study.antares").exists():
-                logger.info(f"Study {path.name} found in {workspace}")
-                return [StudyFolder(path, workspace, groups)]
-            else:
-                folders: List[StudyFolder] = list()
-                for child in path.iterdir():
-                    folders = folders + rec_scan(child, workspace, groups)
-                return folders
+            try:
+                if (path / "study.antares").exists():
+                    logger.debug(f"Study {path.name} found in {workspace}")
+                    return [StudyFolder(path, workspace, groups)]
+                else:
+                    folders: List[StudyFolder] = list()
+                    if path.is_dir():
+                        for child in path.iterdir():
+                            folders = folders + rec_scan(
+                                child, workspace, groups
+                            )
+                    return folders
+            except Exception as e:
+                logger.error(f"Failed to scan dir {path}", exc_info=e)
+                return []
 
         studies: List[StudyFolder] = list()
         for name, workspace in self.config["storage.workspaces"].items():
-            if name != "default":
+            if name != DEFAULT_WORKSPACE_NAME:
                 path = Path(workspace["path"])
                 groups = [Group(id=g) for g in workspace.get("groups", [])]
                 studies = studies + rec_scan(path, name, groups)

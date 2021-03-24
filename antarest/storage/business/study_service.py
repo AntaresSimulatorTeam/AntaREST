@@ -7,7 +7,7 @@ from zipfile import ZipFile
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.model import Metadata
+from antarest.storage.model import Metadata, DEFAULT_WORKSPACE_NAME
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.web.exceptions import StudyNotFoundError
@@ -71,8 +71,11 @@ class StudyService:
     def get_workspace_path(self, workspace: str) -> Path:
         return Path(self.config[f"storage.workspaces.{workspace}.path"])
 
+    def get_default_workspace_path(self) -> Path:
+        return self.get_workspace_path(DEFAULT_WORKSPACE_NAME)
+
     def get_study_path(self, metadata: Metadata) -> Path:
-        path: Path = self.get_workspace_path(metadata.workspace) / metadata.id
+        path: Path = Path(metadata.path)
         return path
 
     def create_study(self, metadata: Metadata) -> Metadata:

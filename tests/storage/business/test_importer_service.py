@@ -12,7 +12,7 @@ from antarest.storage.business.importer_service import (
     fix_study_root,
 )
 from antarest.storage.business.study_service import StudyService
-from antarest.storage.model import Metadata
+from antarest.storage.model import Metadata, DEFAULT_WORKSPACE_NAME
 from antarest.storage.web.exceptions import (
     IncorrectPathError,
     BadZipBinary,
@@ -42,7 +42,7 @@ def test_upload_matrix(tmp_path: Path, storage_service_builder) -> None:
 
     study_url = study_uuid + "/"
     matrix_path = "WRONG_MATRIX_PATH"
-    md = Metadata(id=study_uuid, workspace="default")
+    md = Metadata(id=study_uuid, workspace=DEFAULT_WORKSPACE_NAME)
     with pytest.raises(IncorrectPathError):
         importer_service.upload_matrix(md, study_url + matrix_path, b"")
 
@@ -78,7 +78,7 @@ def test_import_study(tmp_path: Path, storage_service_builder) -> None:
 
     path_zip = Path(filepath_zip)
 
-    md = Metadata(id="other-study", workspace="default")
+    md = Metadata(id="other-study", workspace=DEFAULT_WORKSPACE_NAME)
     with path_zip.open("rb") as input_file:
         md = importer_service.import_study(md, input_file)
         assert md.path == f"{tmp_path}{os.sep}other-study"

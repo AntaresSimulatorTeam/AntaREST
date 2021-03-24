@@ -9,7 +9,7 @@ import pytest
 from antarest.common.config import Config
 from antarest.login.model import Group
 from antarest.storage.business.watcher import Watcher
-from antarest.storage.model import StudyFolder
+from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
 
 
 def build_config(root: Path) -> Config:
@@ -17,7 +17,7 @@ def build_config(root: Path) -> Config:
         {
             "storage": {
                 "workspaces": {
-                    "default": {
+                    DEFAULT_WORKSPACE_NAME: {
                         "path": str(root / "default"),
                         "groups": ["toto"],
                     },
@@ -52,6 +52,10 @@ def test_scan(tmp_path: Path):
     c = diese / "folder/studyC"
     c.mkdir(parents=True)
     (c / "study.antares").touch()
+
+    d = diese / "folder/trash"
+    d.mkdir(parents=True)
+    (d / "trash").touch()
 
     service = Mock()
     watcher = Watcher(build_config(tmp_path), service)
