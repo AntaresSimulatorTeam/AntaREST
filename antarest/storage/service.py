@@ -18,7 +18,12 @@ from antarest.common.requests import (
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.study_service import StudyService
-from antarest.storage.model import Metadata, StudyContentStatus, StudyFolder
+from antarest.storage.model import (
+    Metadata,
+    StudyContentStatus,
+    StudyFolder,
+    DEFAULT_WORKSPACE_NAME,
+)
 from antarest.storage.repository.metadata import StudyMetadataRepository
 from antarest.storage.web.exceptions import StudyNotFoundError
 
@@ -83,7 +88,14 @@ class StorageService:
         return self.study_service.get_study_path(md)
 
     def create_study(self, study_name: str, params: RequestParameters) -> str:
-        md = Metadata(id=str(uuid4()), name=study_name, workspace="default")
+        sid = str(uuid4())
+        study_path = str(self.study_service.get_default_workspace_path() / sid)
+        md = Metadata(
+            id=sid,
+            name=study_name,
+            workspace=DEFAULT_WORKSPACE_NAME,
+            path=study_path,
+        )
         md = self.study_service.create_study(md)
         self._save_metadata(md, params.user)
         self.event_bus.push(
@@ -110,7 +122,7 @@ class StorageService:
         for folder in folders:
             if str(folder.path) not in paths:
                 md = Metadata(
-                    id=folder.path.name,
+                    id=str(uuid4()),
                     name=folder.path.name,
                     path=str(folder.path),
                     workspace=folder.workspace,
@@ -138,6 +150,10 @@ class StorageService:
         dest_md = deepcopy(src_md)
         dest_md.id = str(uuid4())
         dest_md.name = dest_study_name
+        dest_md.workspace = DEFAULT_WORKSPACE_NAME
+        dest_md.path = str(
+            self.study_service.get_default_workspace_path() / dest_md.id
+        )
 
         md = self.study_service.copy_study(src_md, dest_md)
         self._save_metadata(md, params.user)
@@ -196,7 +212,9 @@ class StorageService:
     def import_study(
         self, stream: IO[bytes], params: RequestParameters
     ) -> str:
-        md = Metadata(id=str(uuid4()), workspace="default")
+        sid = str(uuid4())
+        path = str(self.study_service.get_default_workspace_path() / sid)
+        md = Metadata(id=sid, workspace=DEFAULT_WORKSPACE_NAME, path=path)
         md = self.importer_service.import_study(md, stream)
         status = self._analyse_study(md)
         self._save_metadata(md, owner=params.user, content_status=status)

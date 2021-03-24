@@ -9,8 +9,9 @@ from antarest.common.config import Config
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.study_service import StudyService
-from antarest.storage.model import Metadata
+from antarest.storage.model import Metadata, DEFAULT_WORKSPACE_NAME
 from antarest.storage.web.exceptions import (
     StudyNotFoundError,
 )
@@ -20,7 +21,11 @@ def build_config(study_path: Path):
     return Config(
         {
             "storage": {
-                "workspaces": {"default": {"path": str(study_path.absolute())}}
+                "workspaces": {
+                    DEFAULT_WORKSPACE_NAME: {
+                        "path": str(study_path.absolute())
+                    }
+                }
             }
         }
     )
@@ -63,7 +68,9 @@ def test_get(tmp_path: str, project_path) -> None:
         path_resources=project_path / "resources",
     )
 
-    metadata = Metadata(id="study2.py", workspace="default")
+    metadata = Metadata(
+        id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
+    )
     output = study_service.get(metadata=metadata, url=sub_route, depth=2)
 
     assert output == data
@@ -85,7 +92,11 @@ def test_check_errors():
         path_resources=Path(),
     )
 
-    metadata = Metadata(id="study", workspace="default")
+    metadata = Metadata(
+        id="study",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(study_service.get_default_workspace_path() / "study"),
+    )
     assert study_service.check_errors(metadata) == ["Hello"]
 
 
@@ -110,7 +121,9 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
         path_resources=project_path / "resources",
     )
 
-    metadata = Metadata(id=study_name, workspace="default")
+    metadata = Metadata(
+        id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2)
+    )
     study_service.check_study_exists(metadata)
 
 
@@ -135,7 +148,9 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         path_resources=project_path / "resources",
     )
 
-    metadata = Metadata(id=study_name, workspace="default")
+    metadata = Metadata(
+        id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2)
+    )
     with pytest.raises(StudyNotFoundError):
         study_service.check_study_exists(metadata)
 
@@ -196,7 +211,11 @@ def test_create_study(
         path_resources=project_path / "resources",
     )
 
-    metadata = Metadata(id="study1", workspace="default")
+    metadata = Metadata(
+        id="study1",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(study_service.get_default_workspace_path() / "study1"),
+    )
     md = study_service.create_study(metadata)
 
     assert md.path == f"{tmp_path}{os.sep}study1"
@@ -250,8 +269,14 @@ def test_copy_study(
         path_resources=Path(),
     )
 
-    src_md = Metadata(id=source_name, workspace="default")
-    dest_md = Metadata(id="study2", workspace="default")
+    src_md = Metadata(
+        id=source_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
+    )
+    dest_md = Metadata(
+        id="study2",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(study_service.get_default_workspace_path() / "study2"),
+    )
     md = study_service.copy_study(src_md, dest_md)
 
     assert str(md.path) == f"{tmp_path}{os.sep}study2"
@@ -272,7 +297,9 @@ def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
         path_resources=Path(),
     )
 
-    md = Metadata(id=name, workspace="default")
+    md = Metadata(
+        id=name, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path)
+    )
     study_service.delete_study(md)
 
     assert not study_path.exists()
@@ -298,7 +325,11 @@ def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
     url = "url/to/change"
     new = {"Hello": "World"}
 
-    md = Metadata(id="my-uuid", workspace="default")
+    md = Metadata(
+        id="my-uuid",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(tmp_path / "my-uuid"),
+    )
     res = study_service.edit_study(md, url, new)
 
     assert new == res
