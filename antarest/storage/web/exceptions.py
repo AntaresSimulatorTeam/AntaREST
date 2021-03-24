@@ -19,6 +19,11 @@ class StudyValidationError(exceptions.UnprocessableEntity):
         super().__init__(message)
 
 
+class StudyTypeUnsupported(exceptions.UnprocessableEntity):
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
 class BadOutputError(exceptions.UnprocessableEntity):
     def __init__(self, message: str) -> None:
         super().__init__(message)

@@ -7,7 +7,7 @@ from zipfile import ZipFile
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.model import Metadata, DEFAULT_WORKSPACE_NAME
+from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.web.exceptions import StudyNotFoundError
@@ -24,18 +24,18 @@ class StudyService:
         self.study_factory: StudyFactory = study_factory
         self.path_resources: Path = path_resources
 
-    def check_study_exists(self, metadata: Metadata) -> None:
+    def check_study_exists(self, metadata: RawStudy) -> None:
         if not self.study_exists(metadata):
             raise StudyNotFoundError(
                 f"Study with the uuid {metadata.id} does not exist."
             )
 
-    def check_errors(self, metadata: Metadata) -> List[str]:
+    def check_errors(self, metadata: RawStudy) -> List[str]:
         path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(path)
         return study.check_errors(study.get())
 
-    def study_exists(self, metadata: Metadata) -> bool:
+    def study_exists(self, metadata: RawStudy) -> bool:
         return (self.get_study_path(metadata) / "study.antares").is_file()
 
     def get_study_uuids(self, workspace: Optional[str] = None) -> List[str]:
@@ -52,7 +52,7 @@ class StudyService:
         # sorting needed for test
         return sorted(studies_list)
 
-    def get(self, metadata: Metadata, url: str = "", depth: int = 3) -> JSON:
+    def get(self, metadata: RawStudy, url: str = "", depth: int = 3) -> JSON:
         self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
 
@@ -63,7 +63,7 @@ class StudyService:
         del study
         return data
 
-    def get_study_information(self, metadata: Metadata) -> JSON:
+    def get_study_information(self, metadata: RawStudy) -> JSON:
         config = StudyConfig(study_path=self.get_study_path(metadata))
         study = self.study_factory.create_from_config(config)
         return study.get(url=["study"])
@@ -74,11 +74,11 @@ class StudyService:
     def get_default_workspace_path(self) -> Path:
         return self.get_workspace_path(DEFAULT_WORKSPACE_NAME)
 
-    def get_study_path(self, metadata: Metadata) -> Path:
+    def get_study_path(self, metadata: RawStudy) -> Path:
         path: Path = Path(metadata.path)
         return path
 
-    def create_study(self, metadata: Metadata) -> Metadata:
+    def create_study(self, metadata: RawStudy) -> RawStudy:
         empty_study_zip = self.path_resources / "empty-study.zip"
 
         path_study = self.get_study_path(metadata)
@@ -96,7 +96,7 @@ class StudyService:
         metadata.path = str(path_study)
         return metadata
 
-    def copy_study(self, src_meta: Metadata, dest_meta: Metadata) -> Metadata:
+    def copy_study(self, src_meta: RawStudy, dest_meta: RawStudy) -> RawStudy:
         self.check_study_exists(src_meta)
         src_path = self.get_study_path(src_meta)
 
@@ -118,16 +118,16 @@ class StudyService:
         del study
         return dest_meta
 
-    def delete_study(self, metadata: Metadata) -> None:
+    def delete_study(self, metadata: RawStudy) -> None:
         self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         shutil.rmtree(study_path)
 
-    def delete_output(self, metadata: Metadata, output_name: str) -> None:
+    def delete_output(self, metadata: RawStudy, output_name: str) -> None:
         output_path = self.get_study_path(metadata) / "output" / output_name
         shutil.rmtree(output_path, ignore_errors=True)
 
-    def edit_study(self, metadata: Metadata, url: str, new: JSON) -> JSON:
+    def edit_study(self, metadata: RawStudy, url: str, new: JSON) -> JSON:
         # Get data
         self.check_study_exists(metadata)
 
