@@ -149,7 +149,7 @@ def test_save_metadata() -> None:
     group = Group(id="my-group", name="group")
 
     # Expected
-    metadata = RawStudy(
+    study = RawStudy(
         id=uuid,
         name="CAPTION",
         version="VERSION",
@@ -170,12 +170,12 @@ def test_save_metadata() -> None:
         event_bus=Mock(),
     )
 
-    service._save_metadata(
+    service._save_study(
         RawStudy(id=uuid, workspace=DEFAULT_WORKSPACE_NAME),
         owner=user,
         group=group,
     )
-    repository.save.assert_called_once_with(metadata)
+    repository.save.assert_called_once_with(study)
 
 
 def test_assert_permission() -> None:
@@ -196,21 +196,21 @@ def test_assert_permission() -> None:
 
     # wrong owner
     repository.get.return_value = Study(id=uuid, owner=wrong)
-    md = service._get_metadata(uuid)
+    study = service._get_study(uuid)
     with pytest.raises(UserHasNotPermissionError):
-        service._assert_permission(good, md)
-    assert not service._assert_permission(good, md, raising=False)
+        service._assert_permission(good, study)
+    assert not service._assert_permission(good, study, raising=False)
 
     # good owner
-    md = Study(id=uuid, owner=good)
-    assert service._assert_permission(good, md)
+    study = Study(id=uuid, owner=good)
+    assert service._assert_permission(good, study)
 
     # wrong group
-    md = Study(id=uuid, owner=wrong, groups=[Group(id="wrong")])
+    study = Study(id=uuid, owner=wrong, groups=[Group(id="wrong")])
     with pytest.raises(UserHasNotPermissionError):
-        service._assert_permission(good, md)
-    assert not service._assert_permission(good, md, raising=False)
+        service._assert_permission(good, study)
+    assert not service._assert_permission(good, study, raising=False)
 
     # good group
-    md = Study(id=uuid, owner=wrong, groups=[group])
-    assert service._assert_permission(good, md)
+    study = Study(id=uuid, owner=wrong, groups=[group])
+    assert service._assert_permission(good, study)

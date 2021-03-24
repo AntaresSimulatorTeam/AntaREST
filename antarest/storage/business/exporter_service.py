@@ -22,11 +22,11 @@ class ExporterService:
         self.exporter = exporter
 
     def export_study(
-        self, metadata: Study, compact: bool = False, outputs: bool = True
+        self, study: Study, compact: bool = False, outputs: bool = True
     ) -> BytesIO:
-        path_study = self.study_service.get_study_path(metadata)
+        path_study = self.study_service.get_study_path(study)
 
-        self.study_service.check_study_exists(metadata)
+        self.study_service.check_study_exists(study)
 
         if compact:
             config, study = self.study_factory.create_from_fs(path=path_study)

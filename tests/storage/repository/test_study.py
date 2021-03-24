@@ -13,7 +13,7 @@ from antarest.storage.model import (
     DEFAULT_WORKSPACE_NAME,
     StudyContentStatus,
 )
-from antarest.storage.repository.metadata import StudyMetadataRepository
+from antarest.storage.repository.study import StudyMetadataRepository
 
 
 def test_cyclelife():
