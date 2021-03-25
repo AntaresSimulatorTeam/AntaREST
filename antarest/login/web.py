@@ -160,12 +160,12 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
             return "Token invalid", 403
 
     @bp.route("/users", methods=["GET"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def users_get_all() -> Any:
         return jsonify([u.to_dict() for u in service.get_all_users()])
 
     @bp.route("/users/<int:id>", methods=["GET"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def users_get_id(id: int) -> Any:
         u = service.get_user(id)
         if u:
@@ -174,7 +174,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
             return "", 404
 
     @bp.route("/users", methods=["POST"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def users_create() -> Any:
         data = json.loads(request.data)
         u = User(
@@ -186,7 +186,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
         return jsonify(service.save_user(u).to_dict())
 
     @bp.route("/users/<int:id>", methods=["POST"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def users_update(id: int) -> Any:
         u = User.from_dict(json.loads(request.data))
         if id != u.id:
@@ -195,7 +195,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
         return jsonify(service.save_user(u).to_dict())
 
     @bp.route("/users/<int:id>", methods=["DELETE"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def users_delete(id: int) -> Any:
         service.delete_user(id)
         return jsonify(id), 200
@@ -206,7 +206,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
         return jsonify([g.to_dict() for g in service.get_all_groups()])
 
     @bp.route("/groups/<int:id>", methods=["GET"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def groups_get_id(id: int) -> Any:
         group = service.get_group(id)
         if group:
@@ -215,15 +215,39 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
             return f"Group {id} not found", 404
 
     @bp.route("/groups", methods=["POST"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def groups_create() -> Any:
         group = Group.from_dict(json.loads(request.data))
         return jsonify(service.save_group(group).to_dict())
 
     @bp.route("/groups/<int:id>", methods=["DELETE"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def groups_delete(id: int) -> Any:
         service.delete_group(id)
+        return jsonify(id), 200
+
+    @bp.route("/roles", methods=["GET"])
+    @auth.protected()
+    def roles_get_all() -> Any:
+        user = request.args.get("user", type=int, default=None)
+        group = request.args.get("group", default=None)
+        return jsonify(
+            [
+                r.to_dict()
+                for r in service.get_all_roles(user=user, group=group)
+            ]
+        )
+
+    @bp.route("/roles", methods=["POST"])
+    @auth.protected()
+    def role_create() -> Any:
+        role = Role.from_dict(json.loads(request.data))
+        return jsonify(service.save_role(role).to_dict())
+
+    @bp.route("/roles/<int:id>", methods=["DELETE"])
+    @auth.protected()
+    def roles_delete(id: int) -> Any:
+        service.delete_role(id)
         return jsonify(id), 200
 
     @bp.route("/protected")

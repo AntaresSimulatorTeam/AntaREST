@@ -303,4 +303,69 @@ def test_group_delete() -> None:
     )
 
     assert res.status_code == 200
-    service.delete_group.assert_called_once_with(0)
+    service.delete_role.assert_called_once_with(0)
+
+
+@pytest.mark.unit_test
+def test_roles_fail() -> None:
+    service = Mock()
+    service.get_all_roles.return_value = [Role(id="my-role", name="role")]
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.get("/roles", headers=create_auth_token(app))
+    assert res.status_code == 403
+
+
+@pytest.mark.unit_test
+def test_role() -> None:
+    service = Mock()
+    service.get_all_roles.return_value = [Role(id="my-role", name="role")]
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.get("/roles", headers=create_auth_token(app, Role.ADMIN))
+    assert res.status_code == 200
+    assert res.json == [Role(id="my-role", name="role").to_dict()]
+
+
+@pytest.mark.unit_test
+def test_role_id() -> None:
+    service = Mock()
+    service.get_role.return_value = Role(id="my-role", name="role")
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.get("/roles/1", headers=create_auth_token(app, Role.ADMIN))
+    assert res.status_code == 200
+    assert res.json == Role(id="my-role", name="role").to_dict()
+
+
+@pytest.mark.unit_test
+def test_role_create() -> None:
+    role = Role(id="my-role", name="role")
+    service = Mock()
+    service.save_role.return_value = role
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.post(
+        "/roles",
+        headers=create_auth_token(app, Role.ADMIN),
+        json={"name": "role"},
+    )
+
+    assert res.status_code == 200
+    assert res.json == role.to_dict()
+
+
+@pytest.mark.unit_test
+def test_role_delete() -> None:
+    service = Mock()
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.delete("/roles/0", headers=create_auth_token(app, Role.ADMIN))
+
+    assert res.status_code == 200
+    service.delete_role.assert_called_once_with(0)
