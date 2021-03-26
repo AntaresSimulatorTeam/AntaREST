@@ -312,7 +312,7 @@ class StorageService:
     def _save_study(
         self,
         study: RawStudy,
-        owner: Optional[User] = None,
+        owner: Optional[JWTUser] = None,
         content_status: StudyContentStatus = StudyContentStatus.VALID,
         group: Optional[Group] = None,
     ) -> None:
@@ -329,7 +329,7 @@ class StorageService:
         study.content_status = content_status
 
         if owner:
-            study.owner = owner
+            study.owner = User(id=owner.id)
         if group:
             study.groups = [group]
         self.repository.save(study)

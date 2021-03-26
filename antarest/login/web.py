@@ -9,6 +9,7 @@ from flask_jwt_extended import (  # type: ignore
     jwt_required,
 )
 
+from antarest.common.jwt import JWTUser
 from antarest.login.auth import Auth
 from antarest.common.config import Config
 from antarest.login.model import User, Group, Role, Password
@@ -24,7 +25,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     auth = Auth(config)
 
-    def generate_tokens(user: User) -> Any:
+    def generate_tokens(user: JWTUser) -> Any:
         access_token = create_access_token(identity=user.to_dict())
         refresh_token = create_refresh_token(identity=user.to_dict())
         return jsonify(
@@ -206,7 +207,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     @bp.route("/groups/<int:id>", methods=["GET"])
     @auth.protected()
-    def groups_get_id(id: int) -> Any:
+    def groups_get_id(id: str) -> Any:
         group = service.get_group(id)
         if group:
             return jsonify(group.to_dict())
@@ -221,7 +222,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     @bp.route("/groups/<int:id>", methods=["DELETE"])
     @auth.protected()
-    def groups_delete(id: int) -> Any:
+    def groups_delete(id: str) -> Any:
         service.delete_group(id)
         return jsonify(id), 200
 

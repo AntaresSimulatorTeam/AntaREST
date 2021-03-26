@@ -46,8 +46,9 @@ class LoginService:
 
     def authenticate(self, name: str, pwd: str) -> Optional[JWTUser]:
         user = self.users.get_by_name(name)
-        if user and user.password.check(pwd):
+        if user and user.password.check(pwd):  # type: ignore
             return self.get_jwt(user.id)
+        return None
 
     def get_jwt(self, user_id: int) -> Optional[JWTUser]:
         user = self.get_user(user_id)
@@ -60,6 +61,8 @@ class LoginService:
                     for r in self.get_all_roles(user=user_id)
                 ],
             )
+
+        return None
 
     # SADMIN
     def get_all_groups(self) -> List[Group]:
