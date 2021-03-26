@@ -2,6 +2,7 @@ from typing import Optional, List
 
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus
+from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.login.model import User, Group, Role
 from antarest.login.repository import (
     UserRepository,
@@ -43,12 +44,22 @@ class LoginService:
     def get_user(self, id: int) -> Optional[User]:
         return self.users.get(id)
 
-    def authenticate(self, name: str, pwd: str) -> Optional[User]:
+    def authenticate(self, name: str, pwd: str) -> Optional[JWTUser]:
         user = self.users.get_by_name(name)
-        return user if user and user.password.check(pwd) else None  # type: ignore
+        if user and user.password.check(pwd):
+            return self.get_jwt(user.id)
 
-    def identify(self, payload: JSON) -> Optional[User]:
-        return self.get_user(payload["identity"])
+    def get_jwt(self, user_id: int) -> Optional[JWTUser]:
+        user = self.get_user(user_id)
+        if user:
+            return JWTUser(
+                id=user.id,
+                name=user.name,
+                groups=[
+                    JWTGroup(id=r.group.id, name=r.group.name, role=r.type)
+                    for r in self.get_all_roles(user=user_id)
+                ],
+            )
 
     # SADMIN
     def get_all_groups(self) -> List[Group]:
@@ -62,9 +73,9 @@ class LoginService:
     def get_all_roles(
         self, user: Optional[int] = None, group: Optional[str] = None
     ) -> List[Role]:
-        if not user and group:
+        if user is None and group is not None:
             return self.roles.get_all_by_group(group)
-        if user and not group:
+        if user is not None and group is None:
             return self.roles.get_all_by_user(user)
 
         raise ValueError("choice either user or group not both or none")

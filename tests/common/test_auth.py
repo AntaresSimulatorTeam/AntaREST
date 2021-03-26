@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 from flask import Flask
 
+from antarest.common.jwt import JWTRole
 from antarest.login.auth import Auth
 from antarest.common.config import Config
 from antarest.login.model import Role
@@ -12,9 +13,19 @@ def create_app() -> Flask:
     return app
 
 
-def build(security_disabled: bool = False, role: str = Role.USER) -> Auth:
+def build(security_disabled: bool = False, admin: bool = False) -> Auth:
     get_identity = Mock()
-    get_identity.return_value = {id: 0, "name": "admin", "role": role}
+    get_identity.return_value = {
+        "id": 0,
+        "name": "user",
+        "groups": [
+            {
+                "id": "admin" if admin else "group",
+                "name": "group",
+                "role": JWTRole.ADMIN,
+            }
+        ],
+    }
 
     config = Config({"security": {"disabled": security_disabled}})
 
@@ -33,11 +44,11 @@ def test_local() -> None:
     assert code == 200
 
 
-def test_role_matched() -> None:
-    auth = build(security_disabled=False, role=Role.ADMIN)
+def test_admin_matched() -> None:
+    auth = build(security_disabled=False, admin=True)
 
     with create_app().app_context():
-        res, code = auth.protected(roles=[Role.ADMIN])(endpoint)()
+        res, code = auth.protected(admin=True)(endpoint)()
     assert code == 200
 
 
@@ -45,7 +56,7 @@ def test_fail() -> None:
     auth = build(security_disabled=False)
 
     with create_app().app_context():
-        res, code = auth.protected(roles=[Role.ADMIN])(endpoint)()
+        res, code = auth.protected(admin=True)(endpoint)()
     assert code == 403
 
 

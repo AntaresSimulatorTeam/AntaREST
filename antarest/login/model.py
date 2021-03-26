@@ -2,7 +2,7 @@ import uuid
 from typing import Any, List
 
 from dataclasses import dataclass
-from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey  # type: ignore
+from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey, Enum  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from werkzeug.security import (
@@ -11,6 +11,7 @@ from werkzeug.security import (
 )
 
 from antarest.common.custom_types import JSON
+from antarest.common.jwt import JWTRole
 from antarest.common.persistence import DTO, Base
 
 users_groups = Table(
@@ -96,7 +97,7 @@ class Group(Base):  # type: ignore
 class Role(Base):  # type: ignore
     __tablename__ = "roles"
 
-    type = Column(String(25))
+    type = Column(Enum(JWTRole))
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     group_id = Column(String(36), ForeignKey("groups.id"), primary_key=True)
     user = relationship("User")

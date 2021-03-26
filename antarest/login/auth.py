@@ -6,7 +6,7 @@ from flask import g
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, decode_token  # type: ignore
 
 from antarest.common.config import Config
-from antarest.login.model import User, Role
+from antarest.common.jwt import JWTUser, JWTGroup, JWTRole
 
 
 class Auth:
@@ -27,41 +27,48 @@ class Auth:
         self.get_identity = get_identity
 
     @staticmethod
-    def get_current_user() -> Optional[User]:
+    def get_current_user() -> Optional[JWTUser]:
         if "user" in g:
-            return cast(User, g.user)
+            return cast(JWTUser, g.user)
 
         return None
 
     @staticmethod
-    def get_user_from_token(token: str) -> Optional[User]:
+    def get_user_from_token(token: str) -> Optional[JWTUser]:
         token_data = decode_token(token)
-        return User.from_dict(token_data["sub"])
+        return JWTUser.from_dict(token_data["sub"])
 
     @staticmethod
     def invalidate() -> None:
         g.pop("user", None)
 
     def protected(
-        self,
-        roles: Optional[List[str]] = None,
+        self, admin: bool = False
     ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         def auth_nested(fn: Callable[..., Any]) -> Callable[..., Any]:
             @wraps(fn)
             def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
                 if self.disabled:
-                    admin = User(id=0, name="admin", role=Role.ADMIN)
-                    g.user = admin
+                    a = JWTUser(
+                        id=0,
+                        name="admin",
+                        groups=[
+                            JWTGroup(
+                                id="admin", name="admin", role=JWTRole.ADMIN
+                            )
+                        ],
+                    )
+                    g.user = a
                     return fn(*args, **kwargs)
 
                 self.verify()
-                user: Dict[str, Any] = self.get_identity()
+                user = JWTUser.from_dict(self.get_identity())
 
-                belong = roles is None
-                belong = belong or user["role"] in (roles or [])
+                if not admin:
+                    return fn(*args, **kwargs)
 
-                if belong:
-                    g.user = User.from_dict(user)
+                if user.is_admin():
+                    g.user = user
                     return fn(*args, **kwargs)
                 else:
                     return "User unauthorized", 403

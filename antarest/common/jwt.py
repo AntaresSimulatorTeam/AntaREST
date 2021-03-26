@@ -6,8 +6,7 @@ from dataclasses import dataclass
 from antarest.common.custom_types import JSON
 
 
-@dataclass
-class Role(Enum):
+class JWTRole(Enum):
     ADMIN = "admin"
     RUNNER = "runner"
     WRITER = "writer"
@@ -15,31 +14,31 @@ class Role(Enum):
 
 
 @dataclass
-class Group:
+class JWTGroup:
     id: str
     name: str
-    role: Role
+    role: JWTRole
 
     @staticmethod
-    def from_dict(data: JSON) -> "Group":
-        return Group(id=data["id"], name=data["name"], role=data["role"])
+    def from_dict(data: JSON) -> "JWTGroup":
+        return JWTGroup(id=data["id"], name=data["name"], role=data["role"])
 
     def to_dict(self) -> JSON:
         return {"id": self.id, "name": self.name, "role": self.role}
 
 
 @dataclass
-class User:
+class JWTUser:
     id: int
     name: str
-    groups: List[Group]
+    groups: List[JWTGroup]
 
     @staticmethod
-    def from_dict(data: JSON) -> "User":
-        return User(
+    def from_dict(data: JSON) -> "JWTUser":
+        return JWTUser(
             id=data["id"],
             name=data["name"],
-            groups=[Group.from_dict(g) for g in data["groups"]],
+            groups=[JWTGroup.from_dict(g) for g in data["groups"]],
         )
 
     def to_dict(self) -> JSON:
@@ -48,3 +47,6 @@ class User:
             "name": self.name,
             "groups": [g.to_dict() for g in self.groups],
         }
+
+    def is_admin(self) -> bool:
+        return "admin" in [g.id for g in self.groups]
