@@ -180,7 +180,6 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
         u = User(
             name=data["name"],
             password=Password(data["password"]),
-            role=data.get("role", ""),
         )
 
         return jsonify(service.save_user(u).to_dict())
@@ -201,7 +200,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
         return jsonify(id), 200
 
     @bp.route("/groups", methods=["GET"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def groups_get_all() -> Any:
         return jsonify([g.to_dict() for g in service.get_all_groups()])
 
@@ -244,11 +243,11 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
         role = Role.from_dict(json.loads(request.data))
         return jsonify(service.save_role(role).to_dict())
 
-    @bp.route("/roles/<int:id>", methods=["DELETE"])
+    @bp.route("/roles/<string:group>/<int:user>", methods=["DELETE"])
     @auth.protected()
-    def roles_delete(id: int) -> Any:
-        service.delete_role(id)
-        return jsonify(id), 200
+    def roles_delete(user: int, group: str) -> Any:
+        service.delete_role(user, group)
+        return jsonify((user, group)), 200
 
     @bp.route("/protected")
     @auth.protected()

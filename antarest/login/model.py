@@ -113,7 +113,7 @@ class Role(Base):  # type: ignore
 
     def to_dict(self) -> JSON:
         return {
-            "type": self.type,
+            "type": str(self.type),
             "user": self.user.to_dict(),
             "group": self.group.to_dict(),
         }

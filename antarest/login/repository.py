@@ -4,12 +4,14 @@ from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
+from antarest.common.jwt import JWTRole
 from antarest.login.model import User, Role, Password, Group
 
 
 class GroupRepository:
     def __init__(self, session: Session):
         self.session = session
+        self.save(Group(id="admin", name="admin"))
 
     def save(self, group: Group) -> Group:
         res = self.session.query(exists().where(Group.id == group.id)).scalar()
@@ -82,6 +84,9 @@ class UserRepository:
 class RoleRepository:
     def __init__(self, session: Session):
         self.session = session
+        self.save(
+            Role(type=JWTRole.ADMIN, user=User(id=1), group=Group(id="admin"))
+        )
 
     def save(self, role: Role) -> Role:
         role.group = self.session.merge(role.group)

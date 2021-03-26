@@ -24,7 +24,7 @@ class JWTGroup:
         return JWTGroup(id=data["id"], name=data["name"], role=data["role"])
 
     def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name, "role": self.role}
+        return {"id": self.id, "name": self.name, "role": str(self.role)}
 
 
 @dataclass
