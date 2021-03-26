@@ -50,7 +50,7 @@ class Auth:
             def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
                 if self.disabled:
                     a = JWTUser(
-                        id=0,
+                        id=1,
                         name="admin",
                         groups=[
                             JWTGroup(

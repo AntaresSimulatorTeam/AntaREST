@@ -141,9 +141,7 @@ def test_refresh() -> None:
     client = app.test_client()
     res = client.post(
         "/refresh",
-        headers=create_auth_token(
-            app, role=Role.ADMIN, type=TokenType.REFRESH
-        ),
+        headers=create_auth_token(app, type=TokenType.REFRESH),
     )
 
     assert res.status_code == 200
@@ -152,7 +150,6 @@ def test_refresh() -> None:
 
     data = b64 + "==="  # fix padding issue
     identity = json.loads(base64.b64decode(data))["sub"]
-    assert Role.USER == identity["role"]
 
 
 @pytest.mark.unit_test

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from antarest.common.custom_types import JSON
 
@@ -30,8 +30,8 @@ class JWTGroup:
 @dataclass
 class JWTUser:
     id: int
-    name: str
-    groups: List[JWTGroup]
+    name: str = ""
+    groups: List[JWTGroup] = field(default_factory=lambda: list())
 
     @staticmethod
     def from_dict(data: JSON) -> "JWTUser":

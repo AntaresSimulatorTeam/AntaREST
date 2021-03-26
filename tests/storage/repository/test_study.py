@@ -22,7 +22,7 @@ def test_cyclelife():
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
 
-    user = User(id=0, name="admin", role=Role.ADMIN)
+    user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
     Base.metadata.create_all(engine)
 
@@ -64,7 +64,7 @@ def test_study_inheritance():
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
 
-    user = User(id=0, name="admin", role=Role.ADMIN)
+    user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
     Base.metadata.create_all(engine)
 

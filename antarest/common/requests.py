@@ -2,9 +2,9 @@ from typing import Optional
 
 from dataclasses import dataclass
 
-from antarest.login.model import User
+from antarest.common.jwt import JWTUser
 
 
 @dataclass
 class RequestParameters:
-    user: Optional[User] = None
+    user: Optional[JWTUser] = None

@@ -10,7 +10,7 @@ from flask import Flask
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
-from antarest.login.model import User, Role
+from antarest.common.jwt import JWTUser, JWTGroup, JWTRole
 from antarest.storage.main import build_storage
 from antarest.storage.model import Study
 from antarest.storage.service import StorageService
@@ -18,7 +18,11 @@ from antarest.common.requests import (
     RequestParameters,
 )
 
-ADMIN = User(id=0, name="admin", role=Role.ADMIN)
+ADMIN = JWTUser(
+    id=1,
+    name="admin",
+    groups=[JWTGroup(id="admin", name="admin", role=JWTRole.ADMIN)],
+)
 
 
 def assert_url_content(

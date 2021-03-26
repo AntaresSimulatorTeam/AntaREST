@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.common.jwt import JWTUser
 from antarest.login.model import User, Role, Group
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
@@ -347,7 +348,7 @@ class StorageService:
 
     def _assert_permission(
         self,
-        user: Optional[User],
+        user: Optional[JWTUser],
         study: Optional[Study],
         raising: bool = True,
     ) -> bool:
@@ -357,14 +358,16 @@ class StorageService:
         if not study:
             raise ValueError("Metadata is None")
 
-        if user.role == Role.ADMIN:
+        if user.is_admin():
             return True
 
-        is_owner = user == study.owner
+        is_owner = user.id == study.owner.id
+
+        study_group_id = [g.id for g in study.groups]
         inside_group = (
             study.groups
             and user.groups
-            and any(g in study.groups for g in user.groups)
+            and any(g.id in study_group_id for g in user.groups)
         )
 
         if not is_owner and not inside_group:
