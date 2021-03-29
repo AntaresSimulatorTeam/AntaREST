@@ -19,7 +19,7 @@ def build_eventbus(
 
     eventbus = EventBusService(
         RedisEventBus(event_bus_config.redis)
-        if event_bus_config.redis is not None
+        if event_bus_config is not None and event_bus_config.redis is not None
         else LocalEventBus(),
         autostart,
     )

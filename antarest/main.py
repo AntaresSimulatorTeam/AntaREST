@@ -8,8 +8,6 @@ from typing import Tuple, Any
 
 from gevent import monkey  # type: ignore
 
-from antarest.login.config import get_config as get_security_config
-
 monkey.patch_all()
 
 from flask import Flask, render_template, json, request
@@ -114,13 +112,6 @@ def flask_app(config_file: Path) -> Flask:
         __name__, static_url_path="/static", static_folder=str(res / "webapp")
     )
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
-
-    application.config["SECRET_KEY"] = get_security_config(config).jwt.key
-    application.config["JWT_ACCESS_TOKEN_EXPIRES"] = Auth.ACCESS_TOKEN_DURATION
-    application.config[
-        "JWT_REFRESH_TOKEN_EXPIRES"
-    ] = Auth.REFRESH_TOKEN_DURATION
-    application.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
 
     @application.route("/", methods=["GET"])
     def home() -> Any:

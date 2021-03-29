@@ -2,32 +2,11 @@ import json
 from unittest.mock import Mock
 
 import dataclasses
-import pytest
 
 from antarest.common.interfaces.eventbus import Event
 from antarest.eventbus.business.redis_eventbus import (
-    parse_config,
     RedisEventBus,
 )
-
-
-def test_conf():
-    config = {"host": "localhost", "port": 5555}
-    redis_config = parse_config(config)
-    assert redis_config.port == 5555
-    assert redis_config.host == "localhost"
-
-    config = {"host": "localhost"}
-    redis_config = parse_config(config)
-    assert redis_config.port == 6379
-
-    config = {}
-    with pytest.raises(TypeError):
-        parse_config(config)
-
-    config = {"host": "localhost", "foo": "bar"}
-    with pytest.raises(TypeError):
-        parse_config(config)
 
 
 def test_lifecycle():

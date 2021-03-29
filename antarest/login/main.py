@@ -11,6 +11,7 @@ from antarest.login.repository import (
     GroupRepository,
     RoleRepository,
 )
+from antarest.login.auth import Auth
 from antarest.login.config import get_config
 from antarest.login.service import LoginService
 from antarest.login.web import create_login_api
@@ -24,8 +25,18 @@ def build_login(
     event_bus: IEventBus = DummyEventBusService(),
 ) -> None:
 
+    security_config = get_config(config)
+    if security_config.jwt:
+        application.config["SECRET_KEY"] = security_config.jwt.key
+
+    application.config["JWT_ACCESS_TOKEN_EXPIRES"] = Auth.ACCESS_TOKEN_DURATION
+    application.config[
+        "JWT_REFRESH_TOKEN_EXPIRES"
+    ] = Auth.REFRESH_TOKEN_DURATION
+    application.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
+
     if service is None:
-        user_repo = UserRepository(get_config(config), db_session)
+        user_repo = UserRepository(security_config, db_session)
         group_repo = GroupRepository(db_session)
         role_repo = RoleRepository(db_session)
         service = LoginService(
