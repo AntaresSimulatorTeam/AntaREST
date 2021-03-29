@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 
 from antarest.common.jwt import JWTUser, JWTGroup, JWTRole
-from antarest.login.model import User, Role, Group
+from antarest.login.model import User, RoleType, Group
 from antarest.common.requests import (
     RequestParameters,
 )

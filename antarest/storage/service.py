@@ -11,11 +11,12 @@ from uuid import uuid4
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.common.jwt import JWTUser
-from antarest.login.model import User, Role, Group
+from antarest.login.model import User, RoleType, Group
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.common.requests import (
     RequestParameters,
+    UserHasNotPermissionError,
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.raw_study_service import StudyService
@@ -33,10 +34,6 @@ from antarest.storage.web.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-class UserHasNotPermissionError(werkzeug.exceptions.Forbidden):
-    pass
 
 
 class StorageService:
@@ -358,7 +355,7 @@ class StorageService:
         if not study:
             raise ValueError("Metadata is None")
 
-        if user.is_admin():
+        if user.is_site_admin():
             return True
 
         is_owner = user.id == study.owner.id

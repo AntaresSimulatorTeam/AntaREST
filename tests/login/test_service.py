@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
-from antarest.common.jwt import JWTRole, JWTUser, JWTGroup
-from antarest.login.model import User, Password, Role, Group
+from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.login.model import User, Password, RoleType, Group, Role
 from antarest.login.service import LoginService
 
 
@@ -23,13 +23,13 @@ def test_authenticate():
 
     roles = Mock()
     roles.get_all_by_user.return_value = [
-        Role(type=JWTRole.READER, group=Group(id="group", name="group"))
+        Role(type=RoleType.READER, group=Group(id="group", name="group"))
     ]
 
     exp = JWTUser(
         id=0,
         name="linus",
-        groups=[JWTGroup(id="group", name="group", role=JWTRole.READER)],
+        groups=[JWTGroup(id="group", name="group", role=RoleType.READER)],
     )
 
     service = LoginService(

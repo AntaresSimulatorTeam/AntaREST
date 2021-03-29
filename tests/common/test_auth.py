@@ -5,7 +5,7 @@ from flask import Flask
 from antarest.common.jwt import JWTRole
 from antarest.login.auth import Auth
 from antarest.common.config import Config
-from antarest.login.model import Role
+from antarest.login.model import RoleType
 
 
 def create_app() -> Flask:

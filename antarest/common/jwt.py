@@ -1,23 +1,18 @@
 from enum import Enum
-from typing import List
+from typing import List, Union
 
 from dataclasses import dataclass, field
 
 from antarest.common.custom_types import JSON
-
-
-class JWTRole(Enum):
-    ADMIN = "admin"
-    RUNNER = "runner"
-    WRITER = "writer"
-    READER = "reader"
+from antarest.common.roles import RoleType
+from antarest.login.model import Group, User
 
 
 @dataclass
 class JWTGroup:
     id: str
     name: str
-    role: JWTRole
+    role: RoleType
 
     @staticmethod
     def from_dict(data: JSON) -> "JWTGroup":
@@ -48,5 +43,17 @@ class JWTUser:
             "groups": [g.to_dict() for g in self.groups],
         }
 
-    def is_admin(self) -> bool:
+    def is_site_admin(self) -> bool:
         return "admin" in [g.id for g in self.groups]
+
+    def is_group_admin(self, groups: Union[Group, List[Group]]) -> bool:
+        if isinstance(groups, Group):
+            return any(
+                g.id == groups.id and g.role == RoleType.ADMIN
+                for g in self.groups
+            )
+
+        return any(self.is_group_admin(g) for g in groups)
+
+    def is_himself(self, user: User) -> bool:
+        return bool(self.id == user.id)

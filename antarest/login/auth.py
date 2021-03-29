@@ -6,7 +6,8 @@ from flask import g
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, decode_token  # type: ignore
 
 from antarest.common.config import Config
-from antarest.common.jwt import JWTUser, JWTGroup, JWTRole
+from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.roles import RoleType
 
 
 class Auth:
@@ -54,7 +55,7 @@ class Auth:
                         name="admin",
                         groups=[
                             JWTGroup(
-                                id="admin", name="admin", role=JWTRole.ADMIN
+                                id="admin", name="admin", role=RoleType.ADMIN
                             )
                         ],
                     )
@@ -67,7 +68,7 @@ class Auth:
                 if not admin:
                     return fn(*args, **kwargs)
 
-                if user.is_admin():
+                if user.is_site_admin():
                     g.user = user
                     return fn(*args, **kwargs)
                 else:

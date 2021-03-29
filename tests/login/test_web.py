@@ -13,9 +13,12 @@ from flask_jwt_extended import (
 )
 
 from antarest.common.config import Config
-from antarest.common.jwt import JWTUser, JWTGroup, JWTRole
+from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.requests import RequestParameters
 from antarest.login.main import build_login
-from antarest.login.model import User, Role, Password, Group
+from antarest.login.model import User, RoleType, Password, Group, Role
+
+PARAMS = RequestParameters()
 
 
 def create_app(service: Mock, auth_disabled=False) -> Flask:
@@ -59,7 +62,7 @@ def create_auth_token(
                 id=0,
                 name="admin",
                 groups=[
-                    JWTGroup(id="group", name="group", role=JWTRole.ADMIN)
+                    JWTGroup(id="group", name="group", role=RoleType.ADMIN)
                 ],
             ).to_dict(),
         )
@@ -195,7 +198,7 @@ def test_user_create() -> None:
     )
 
     assert res.status_code == 200
-    service.save_user.assert_called_once_with(user)
+    service.save_user.assert_called_once_with(user, PARAMS)
     assert res.json == user_id.to_dict()
 
 
@@ -214,7 +217,7 @@ def test_user_save() -> None:
     )
 
     assert res.status_code == 200
-    service.save_user.assert_called_once_with(user)
+    service.save_user.assert_called_once_with(user, PARAMS)
     assert res.json == user.to_dict()
 
 
@@ -227,7 +230,7 @@ def test_user_delete() -> None:
     res = client.delete("/users/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
-    service.delete_user.assert_called_once_with(0)
+    service.delete_user.assert_called_once_with(0, PARAMS)
 
 
 @pytest.mark.unit_test
@@ -281,7 +284,7 @@ def test_group_delete() -> None:
     res = client.delete("/groups/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
-    service.delete_group.assert_called_once_with(0)
+    service.delete_group.assert_called_once_with(0, PARAMS)
 
 
 @pytest.mark.unit_test
@@ -289,14 +292,14 @@ def test_role() -> None:
     role = Role(
         user=User(id=0, name="n"),
         group=Group(id="g", name="n"),
-        type=JWTRole.ADMIN,
+        type=RoleType.ADMIN,
     )
     service = Mock()
-    service.get_all_roles.return_value = [role]
+    service.get_all_roles_in_group.return_value = [role]
 
     app = create_app(service)
     client = app.test_client()
-    res = client.get("/roles?group=g", headers=create_auth_token(app))
+    res = client.get("/roles/group/g", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json == [role.to_dict()]
 
@@ -306,7 +309,7 @@ def test_role_create() -> None:
     role = Role(
         user=User(id=0, name="n"),
         group=Group(id="g", name="n"),
-        type=JWTRole.ADMIN,
+        type=RoleType.ADMIN,
     )
     service = Mock()
     service.save_role.return_value = role
@@ -332,4 +335,4 @@ def test_role_delete() -> None:
     res = client.delete("/roles/group/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
-    service.delete_role.assert_called_once_with(0, "group")
+    service.delete_role.assert_called_once_with(0, "group", PARAMS)

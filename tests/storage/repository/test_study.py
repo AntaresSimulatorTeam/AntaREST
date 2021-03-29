@@ -5,7 +5,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
 
 from antarest.common.config import Config
 from antarest.common.persistence import Base
-from antarest.login.model import User, Role, Group
+from antarest.login.model import User, RoleType, Group
 from antarest.login.repository import UserRepository
 from antarest.storage.model import (
     Study,

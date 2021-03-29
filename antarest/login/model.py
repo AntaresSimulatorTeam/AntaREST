@@ -11,7 +11,7 @@ from werkzeug.security import (
 )
 
 from antarest.common.custom_types import JSON
-from antarest.common.jwt import JWTRole
+from antarest.common.roles import RoleType
 from antarest.common.persistence import DTO, Base
 
 users_groups = Table(
@@ -97,14 +97,14 @@ class Group(Base):  # type: ignore
 class Role(Base):  # type: ignore
     __tablename__ = "roles"
 
-    type = Column(Enum(JWTRole))
+    type = Column(Enum(RoleType))
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     group_id = Column(String(36), ForeignKey("groups.id"), primary_key=True)
     user = relationship("User")
     group = relationship("Group")
 
     @staticmethod
-    def from_dict(data: JSON) -> "Role":
+    def from_dict(data: JSON) -> "RoleType":
         return Role(
             type=data["type"],
             user=User.from_dict(data["user"]),

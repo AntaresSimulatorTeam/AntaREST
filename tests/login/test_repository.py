@@ -9,7 +9,7 @@ from antarest.login.repository import (
     RoleRepository,
 )
 from antarest.common.persistence import Base
-from antarest.login.model import User, Role, Password, Group
+from antarest.login.model import User, RoleType, Password, Group, Role
 
 
 @pytest.mark.unit_test
@@ -74,7 +74,7 @@ def test_roles():
 
     repo = RoleRepository(session=session)
 
-    a = Role(type="ADMIN", user=User(id=0), group=Group(id="group"))
+    a = Role(type=RoleType.ADMIN, user=User(id=0), group=Group(id="group"))
 
     a = repo.save(a)
     assert a == repo.get(user=0, group="group")
