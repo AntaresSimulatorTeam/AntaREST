@@ -11,6 +11,7 @@ from antarest.login.repository import (
     GroupRepository,
     RoleRepository,
 )
+from antarest.login.config import get_config
 from antarest.login.service import LoginService
 from antarest.login.web import create_login_api
 
@@ -24,7 +25,7 @@ def build_login(
 ) -> None:
 
     if service is None:
-        user_repo = UserRepository(config, db_session)
+        user_repo = UserRepository(get_config(config), db_session)
         group_repo = GroupRepository(db_session)
         role_repo = RoleRepository(db_session)
         service = LoginService(

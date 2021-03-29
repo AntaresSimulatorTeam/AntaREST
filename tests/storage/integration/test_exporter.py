@@ -14,13 +14,15 @@ from antarest.storage.main import build_storage
 from antarest.storage.service import StorageService
 
 
-def assert_url_content(storage_service: StorageService, url: str) -> bytes:
+def assert_url_content(
+    config: Config, storage_service: StorageService, url: str
+) -> bytes:
     app = Flask(__name__)
     build_storage(
         app,
         session=Mock(),
         storage_service=storage_service,
-        config=storage_service.study_service.config,
+        config=config,
     )
     client = app.test_client()
     res = client.get(url)
@@ -31,7 +33,7 @@ def assert_data(data: bytes):
     assert len(data) > 0 and b"<!DOCTYPE HTML PUBLIC" not in data
 
 
-def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
+def test_exporter_file(config, tmp_path: Path, sta_mini_zip_path: Path):
 
     path_studies = tmp_path / "studies"
 
@@ -63,14 +65,18 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         metadata_repository=repo,
     )
 
-    data = assert_url_content(service, url="/studies/STA-mini/export")
+    data = assert_url_content(config, service, url="/studies/STA-mini/export")
     assert_data(data)
 
-    data = assert_url_content(service, url="/studies/STA-mini/export?compact")
+    data = assert_url_content(
+        config, service, url="/studies/STA-mini/export?compact"
+    )
     assert_data(data)
 
 
-def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
+def test_exporter_file_no_output(
+    config, tmp_path: Path, sta_mini_zip_path: Path
+):
 
     path_studies = tmp_path / "studies"
 
@@ -103,11 +109,11 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
     )
 
     data = assert_url_content(
-        service, url="/studies/STA-mini/export?no-output"
+        config, service, url="/studies/STA-mini/export?no-output"
     )
     assert_data(data)
 
     data = assert_url_content(
-        service, url="/studies/STA-mini/export?compact&no-output"
+        config, service, url="/studies/STA-mini/export?compact&no-output"
     )
     assert_data(data)

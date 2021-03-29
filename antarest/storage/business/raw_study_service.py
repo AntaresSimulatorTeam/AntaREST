@@ -7,6 +7,7 @@ from zipfile import ZipFile
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
+from antarest.storage.config import get_config, StorageConfig
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.factory import StudyFactory
@@ -20,7 +21,7 @@ class StudyService:
         study_factory: StudyFactory,
         path_resources: Path,
     ):
-        self.config: Config = config
+        self.config: StorageConfig = get_config(config)
         self.study_factory: StudyFactory = study_factory
         self.path_resources: Path = path_resources
 
@@ -43,7 +44,7 @@ class StudyService:
         if workspace:
             folders = list(self.get_workspace_path(workspace).iterdir())
         else:
-            for w in self.config["storage.workspaces"]:
+            for w in self.config.workspaces:
                 folders += list(self.get_workspace_path(w).iterdir())
 
         studies_list = [
@@ -69,7 +70,7 @@ class StudyService:
         return study.get(url=["study"])
 
     def get_workspace_path(self, workspace: str) -> Path:
-        return Path(self.config[f"storage.workspaces.{workspace}.path"])
+        return Path(self.config.workspaces[workspace].path)
 
     def get_default_workspace_path(self) -> Path:
         return self.get_workspace_path(DEFAULT_WORKSPACE_NAME)

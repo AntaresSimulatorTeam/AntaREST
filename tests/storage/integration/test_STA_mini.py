@@ -27,14 +27,17 @@ ADMIN = JWTUser(
 
 
 def assert_url_content(
-    storage_service: StorageService, url: str, expected_output: str
+    config: Config,
+    storage_service: StorageService,
+    url: str,
+    expected_output: str,
 ) -> None:
     app = Flask(__name__)
     build_storage(
         app,
         session=Mock(),
         storage_service=storage_service,
-        config=storage_service.study_service.config,
+        config=config,
     )
     client = app.test_client()
     res = client.get(url)
@@ -83,9 +86,10 @@ def test_sta_mini_settings(storage_service, url: str, expected_output: str):
     ],
 )
 def test_sta_mini_layers_layers(
-    storage_service, url: str, expected_output: str
+    config: Config, storage_service, url: str, expected_output: str
 ):
     assert_url_content(
+        config=config,
         storage_service=storage_service,
         url=url,
         expected_output=expected_output,
@@ -130,9 +134,10 @@ def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
     ],
 )
 def test_sta_mini_study_antares(
-    storage_service, url: str, expected_output: str
+    config: Config, storage_service, url: str, expected_output: str
 ):
     assert_url_content(
+        config=config,
         storage_service=storage_service,
         url=url,
         expected_output=expected_output,
@@ -348,7 +353,7 @@ def test_sta_mini_output(storage_service, url: str, expected_output: str):
 
 
 @pytest.mark.integration_test
-def test_sta_mini_copy(storage_service) -> None:
+def test_sta_mini_copy(config, storage_service) -> None:
 
     source_study_name = "STA-mini"
     destination_study_name = "copy-STA-mini"
@@ -358,7 +363,7 @@ def test_sta_mini_copy(storage_service) -> None:
         app,
         session=Mock(),
         storage_service=storage_service,
-        config=storage_service.study_service.config,
+        config=config,
     )
     client = app.test_client()
     result = client.post(
@@ -409,7 +414,7 @@ def test_sta_mini_copy(storage_service) -> None:
 
 
 @pytest.mark.integration_test
-def test_sta_mini_list_studies(storage_service) -> None:
+def test_sta_mini_list_studies(config: Config, storage_service) -> None:
     expected_output = {
         "STA-mini": {
             "antares": {
@@ -423,6 +428,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
     }
     url = "/studies"
     assert_url_content(
+        config=config,
         storage_service=storage_service,
         url=url,
         expected_output=expected_output,
@@ -447,7 +453,7 @@ def notest_sta_mini_with_wrong_output_folder(
 
 
 @pytest.mark.integration_test
-def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
+def test_sta_mini_import(tmp_path: Path, config, storage_service) -> None:
 
     params = RequestParameters(user=ADMIN)
     path_study = storage_service.get_study_path("STA-mini", params)
@@ -459,7 +465,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         session=Mock(),
-        config=storage_service.study_service.config,
+        config=config,
     )
     client = app.test_client()
 
@@ -470,7 +476,9 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 
 
 @pytest.mark.integration_test
-def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
+def test_sta_mini_import_compact(
+    tmp_path: Path, config, storage_service
+) -> None:
 
     params = RequestParameters(user=ADMIN)
     zip_study_stream = storage_service.export_study(
@@ -482,7 +490,7 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
         app,
         session=Mock(),
         storage_service=storage_service,
-        config=storage_service.study_service.config,
+        config=config,
     )
     client = app.test_client()
     result = client.post(
@@ -493,7 +501,9 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
 
 
 @pytest.mark.integration_test
-def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
+def test_sta_mini_import_output(
+    tmp_path: Path, config, storage_service
+) -> None:
     params = RequestParameters(user=ADMIN)
 
     path_study_output = (
@@ -514,7 +524,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         session=Mock(),
-        config=storage_service.study_service.config,
+        config=config,
     )
     client = app.test_client()
 

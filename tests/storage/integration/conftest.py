@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import cast
 from unittest.mock import Mock
 from zipfile import ZipFile
 
@@ -8,6 +9,7 @@ from antarest.common.config import Config
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.config import StorageConfig
 from antarest.storage.main import build_storage
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.repository.antares_io.exporter.export_file import (
@@ -28,13 +30,31 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 
 
 @pytest.fixture
+def config(tmp_path: str, project_path: Path):
+    path_studies = Path(tmp_path) / "studies"
+    path_resources = project_path / "resources"
+    config = Config(
+        {
+            "_internal": {"resources_path": path_resources},
+            "security": {"disabled": True},
+            "storage": {
+                "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": path_studies}}
+            },
+        }
+    )
+    return config
+
+
+@pytest.fixture
 def storage_service(
-    tmp_path: str, project_path: Path, sta_mini_zip_path: Path
+    config: Config, tmp_path: str, project_path: Path, sta_mini_zip_path: Path
 ) -> StorageService:
 
-    path_studies = Path(tmp_path) / "studies"
-
-    path_resources = project_path / "resources"
+    path_studies = (
+        cast(StorageConfig, config["storage"])
+        .workspaces[DEFAULT_WORKSPACE_NAME]
+        .path
+    )
 
     with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
@@ -51,16 +71,6 @@ def storage_service(
         path=str(path_studies / name),
     )
     repo.get_all.return_value = [md]
-
-    config = Config(
-        {
-            "_internal": {"resources_path": path_resources},
-            "security": {"disabled": True},
-            "storage": {
-                "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": path_studies}}
-            },
-        }
-    )
 
     storage_service = build_storage(
         application=Mock(),

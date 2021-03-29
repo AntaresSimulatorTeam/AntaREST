@@ -8,6 +8,7 @@ from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, decode_t
 from antarest.common.config import Config
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.roles import RoleType
+from antarest.login.config import get_config
 
 
 class Auth:
@@ -23,7 +24,7 @@ class Auth:
         ] = get_jwt_identity,  # Test only
     ):
 
-        self.disabled = config["security.disabled"]
+        self.disabled = get_config(config).disabled
         self.verify = verify
         self.get_identity = get_identity
 

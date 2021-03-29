@@ -3,9 +3,9 @@ from typing import Optional, List
 from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
-from antarest.common.config import Config
 from antarest.common.roles import RoleType
-from antarest.login.model import User, Password, Group, Role
+from antarest.login.config import SecurityConfig
+from antarest.login.model import User, Role, Password, Group
 
 
 class GroupRepository:
@@ -37,7 +37,7 @@ class GroupRepository:
 
 
 class UserRepository:
-    def __init__(self, config: Config, session: Session) -> None:
+    def __init__(self, config: SecurityConfig, session: Session) -> None:
         self.session = session
         # init seed admin user from conf
         admin_user = self.get_by_name("admin")
@@ -45,11 +45,11 @@ class UserRepository:
             self.save(
                 User(
                     name="admin",
-                    password=Password(config["security.login.admin.pwd"]),
+                    password=Password(config.login.admin.pwd),
                 )
             )
-        elif not admin_user.password.check(config["security.login.admin.pwd"]):  # type: ignore
-            admin_user.password = Password(config["security.login.admin.pwd"])  # type: ignore
+        elif not admin_user.password.check(config.login.admin.pwd):  # type: ignore
+            admin_user.password = Password(config.login.admin.pwd)  # type: ignore
             self.save(admin_user)
 
     def save(self, user: User) -> User:

@@ -39,12 +39,12 @@ class Config:
         if env in os.environ:
             return os.environ[env]
 
-        data = deepcopy(self.data)
+        data = self.data
         for p in parts:
             if p not in data:
                 return None
             data = data[p]
-        return data
+        return deepcopy(data)
 
 
 class ConfigYaml(Config):

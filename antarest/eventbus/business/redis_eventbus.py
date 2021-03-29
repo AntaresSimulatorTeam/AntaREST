@@ -9,26 +9,19 @@ from redis.client import Redis
 
 from antarest.common.interfaces.eventbus import Event
 from antarest.eventbus.business.interfaces import IEventBusBackend
+from antarest.eventbus.config import RedisConfig
 
 logger = logging.getLogger(__name__)
 REDIS_STORE_KEY = "events"
 
 
-@dataclass
-class RedisConfig:
-    host: str
-    port: int = 6379
-
-
-def parse_config(redis_config: Any) -> RedisConfig:
-    return RedisConfig(**redis_config)
-
-
 class RedisEventBus(IEventBusBackend):
     def __init__(
-        self, redis_conf_dict: Any, redis_client: Optional[Redis] = None
+        self,
+        redis_conf_dict: RedisConfig,
+        redis_client: Optional[Redis] = None,
     ) -> None:
-        redis_conf = parse_config(redis_conf_dict)
+        redis_conf = redis_conf_dict
         self.redis = (
             redis_client
             if redis_client is not None

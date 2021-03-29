@@ -1,10 +1,13 @@
 import dataclasses
+from typing import cast
+
 from flask import Flask, request
 from flask_socketio import SocketIO, join_room, emit  # type: ignore
 
 from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import IEventBus, Event
 from antarest.login.auth import Auth
+from antarest.login.config import SecurityConfig
 
 
 def configure_websockets(
@@ -20,7 +23,7 @@ def configure_websockets(
 
     @socketio.on("connect")  # type: ignore
     def test_connect() -> None:
-        if not config["security.disabled"]:
+        if not cast(SecurityConfig, config["security"]).disabled:
             token = request.event["args"][1]["token"]  # type: ignore
             user = Auth.get_user_from_token(token)
             if user is None:

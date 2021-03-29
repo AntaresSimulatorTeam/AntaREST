@@ -8,6 +8,8 @@ from typing import Tuple, Any
 
 from gevent import monkey  # type: ignore
 
+from antarest.login.config import get_config as get_security_config
+
 monkey.patch_all()
 
 from flask import Flask, render_template, json, request
@@ -15,7 +17,7 @@ from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 from werkzeug.exceptions import HTTPException
 
-from antarest import __version__
+from antarest import __version__, login
 from antarest.eventbus.main import build_eventbus
 from antarest.login.auth import Auth
 from antarest.common.config import ConfigYaml, Config
@@ -113,7 +115,7 @@ def flask_app(config_file: Path) -> Flask:
     )
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
 
-    application.config["SECRET_KEY"] = config["security.jwt.key"]
+    application.config["SECRET_KEY"] = get_security_config(config).jwt.key
     application.config["JWT_ACCESS_TOKEN_EXPIRES"] = Auth.ACCESS_TOKEN_DURATION
     application.config[
         "JWT_REFRESH_TOKEN_EXPIRES"

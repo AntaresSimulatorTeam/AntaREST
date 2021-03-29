@@ -7,6 +7,7 @@ from filelock import FileLock  # type: ignore
 
 from antarest.common.config import Config
 from antarest.login.model import Group
+from antarest.storage.config import get_config
 from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
 from antarest.storage.service import StorageService
 
@@ -20,7 +21,7 @@ class Watcher:
 
     def __init__(self, config: Config, service: StorageService):
         self.service = service
-        self.config = config
+        self.config = get_config(config)
 
         self.thread = (
             threading.Thread(target=self._loop, daemon=True)
@@ -75,10 +76,10 @@ class Watcher:
                 return []
 
         studies: List[StudyFolder] = list()
-        for name, workspace in self.config["storage.workspaces"].items():
+        for name, workspace in self.config.workspaces.items():
             if name != DEFAULT_WORKSPACE_NAME:
-                path = Path(workspace["path"])
-                groups = [Group(id=g) for g in workspace.get("groups", [])]
+                path = Path(workspace.path)
+                groups = [Group(id=g) for g in workspace.groups]
                 studies = studies + rec_scan(path, name, groups)
 
         self.service.sync_studies_on_disk(studies)

@@ -8,6 +8,7 @@ from antarest.login.repository import (
     GroupRepository,
     RoleRepository,
 )
+from antarest.login.config import get_config
 from antarest.common.persistence import Base
 from antarest.login.model import User, RoleType, Password, Group, Role
 
@@ -21,7 +22,9 @@ def test_users():
     Base.metadata.create_all(engine)
 
     repo = UserRepository(
-        config=Config({"security": {"login": {"admin": {"pwd": "admin"}}}}),
+        config=get_config(
+            Config({"security": {"login": {"admin": {"pwd": "admin"}}}})
+        ),
         session=session,
     )
     a = User(
