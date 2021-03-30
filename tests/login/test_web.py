@@ -18,7 +18,13 @@ from antarest.common.requests import RequestParameters
 from antarest.login.main import build_login
 from antarest.login.model import User, RoleType, Password, Group, Role
 
-PARAMS = RequestParameters()
+PARAMS = RequestParameters(
+    user=JWTUser(
+        id=0,
+        name="admin",
+        groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
+    )
+)
 
 
 def create_app(service: Mock, auth_disabled=False) -> Flask:
@@ -281,6 +287,7 @@ def test_group_delete() -> None:
 
     app = create_app(service)
     client = app.test_client()
+    print(create_auth_token(app))
     res = client.delete("/groups/0", headers=create_auth_token(app))
 
     assert res.status_code == 200

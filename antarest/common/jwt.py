@@ -16,10 +16,14 @@ class JWTGroup:
 
     @staticmethod
     def from_dict(data: JSON) -> "JWTGroup":
-        return JWTGroup(id=data["id"], name=data["name"], role=data["role"])
+        return JWTGroup(
+            id=data["id"],
+            name=data["name"],
+            role=RoleType.from_dict(data["role"]),
+        )
 
     def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name, "role": str(self.role)}
+        return {"id": self.id, "name": self.name, "role": self.role.to_dict()}
 
 
 @dataclass

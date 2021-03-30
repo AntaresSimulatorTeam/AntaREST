@@ -66,6 +66,7 @@ class Auth:
                 user = JWTUser.from_dict(self.get_identity())
 
                 if not admin:
+                    g.user = user
                     return fn(*args, **kwargs)
 
                 if user.is_site_admin():
