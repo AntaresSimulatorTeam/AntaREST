@@ -12,8 +12,8 @@ from flask_jwt_extended import (  # type: ignore
 from antarest.common.jwt import JWTUser
 from antarest.common.requests import RequestParameters
 from antarest.login.auth import Auth
-from antarest.common.config import Config
-from antarest.login.model import User, Group, Password, Role
+from antarest.common.config import Config, get_common_config
+from antarest.login.model import User, Group, Role, Password
 from antarest.login.service import LoginService
 
 
@@ -21,7 +21,9 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
     bp = Blueprint(
         "create_login_api",
         __name__,
-        template_folder=str(config["_internal.resources_path"] / "templates"),
+        template_folder=str(
+            get_common_config(config).resources_path / "templates"
+        ),
     )
 
     auth = Auth(config)

@@ -5,7 +5,7 @@ from typing import Optional
 from flask import Flask
 from sqlalchemy.orm import Session  # type: ignore
 
-from antarest.common.config import Config
+from antarest.common.config import Config, get_common_config
 from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
@@ -32,7 +32,7 @@ def build_storage(
     event_bus: IEventBus = DummyEventBusService(),
 ) -> StorageService:
 
-    path_resources = Path(config["_internal.resources_path"])
+    path_resources = get_common_config(config).resources_path
     study_factory = study_factory or StudyFactory()
     exporter = exporter or Exporter()
     metadata_repository = metadata_repository or StudyMetadataRepository(

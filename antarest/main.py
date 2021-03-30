@@ -8,6 +8,8 @@ from typing import Tuple, Any
 
 from gevent import monkey  # type: ignore
 
+from antarest.common.logger import configure_logger
+
 monkey.patch_all()
 
 from flask import Flask, render_template, json, request
@@ -77,23 +79,6 @@ def get_local_path() -> Path:
         return Path(sys._MEIPASS)  # type: ignore
     except Exception:
         return Path(os.path.abspath(""))
-
-
-def configure_logger(config: Config) -> None:
-    logging_path = config["logging.path"]
-    logging_level = (
-        config["logging.level"]
-        if config["logging.level"] is not None
-        else "INFO"
-    )
-    logging_format = (
-        config["logging.format"]
-        if config["logging.format"] is not None
-        else "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    logging.basicConfig(
-        filename=logging_path, format=logging_format, level=logging_level
-    )
 
 
 def flask_app(config_file: Path) -> Flask:

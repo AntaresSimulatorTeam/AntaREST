@@ -1,15 +1,16 @@
 import os
 from copy import deepcopy
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Dict, Type, TypeVar, Callable, cast
 
 import yaml
 from dataclasses_json import DataClassJsonMixin  # type: ignore
+from dataclasses_json.api import dataclass_json
 
 from antarest.common.custom_types import JSON
 
 config_definitions: Dict[str, Type[DataClassJsonMixin]] = {}
-T = TypeVar("T", bound=DataClassJsonMixin)
 
 
 class Config:
@@ -54,7 +55,16 @@ class ConfigYaml(Config):
         Config.__init__(self, data)
 
 
+T = TypeVar("T", bound=DataClassJsonMixin)
+
+
 def register_config(key: str, class_name: Type[T]) -> Callable[[Config], T]:
+    """
+    Register a typed config
+    @param key The root key of the typed config in the global yaml config
+    @param class_name The dataclass type of the subconfig. This class must be annotated with @dataclass_json and @dataclass
+    @return an accessor that retrieve the typed sub config from global config object
+    """
     global config_definitions
     config_definitions[key] = class_name
 
@@ -62,3 +72,12 @@ def register_config(key: str, class_name: Type[T]) -> Callable[[Config], T]:
         return cast(T, config[key])
 
     return _get_config
+
+
+@dataclass_json
+@dataclass
+class CommonConfig:
+    resources_path: Path
+
+
+get_common_config = register_config("_internal", CommonConfig)
