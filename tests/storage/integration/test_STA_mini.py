@@ -10,7 +10,8 @@ from flask import Flask
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
-from antarest.common.jwt import JWTUser, JWTGroup, JWTRole
+from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.roles import RoleType
 from antarest.storage.main import build_storage
 from antarest.storage.model import Study
 from antarest.storage.service import StorageService
@@ -21,7 +22,7 @@ from antarest.common.requests import (
 ADMIN = JWTUser(
     id=1,
     name="admin",
-    groups=[JWTGroup(id="admin", name="admin", role=JWTRole.ADMIN)],
+    groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
 )
 
 

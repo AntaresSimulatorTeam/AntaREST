@@ -11,7 +11,7 @@ from uuid import uuid4
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.common.jwt import JWTUser
-from antarest.login.model import User, RoleType, Group
+from antarest.login.model import User, Group
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.common.requests import (

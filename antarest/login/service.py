@@ -9,7 +9,7 @@ from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.login.model import User, Group, RoleType
+from antarest.login.model import User, Group, Role
 from antarest.login.repository import (
     UserRepository,
     GroupRepository,
@@ -57,7 +57,7 @@ class LoginService:
             raise UserHasNotPermissionError()
 
     # SADMIN, GADMIN (own group)
-    def save_role(self, role: RoleType, params: RequestParameters) -> RoleType:
+    def save_role(self, role: Role, params: RequestParameters) -> Role:
         if params.user and any(
             (
                 params.user.is_site_admin(),
@@ -141,7 +141,7 @@ class LoginService:
     # SADMIN, GADMIN (own group)
     def get_all_roles_in_group(
         self, group: str, params: RequestParameters
-    ) -> List[RoleType]:
+    ) -> List[Role]:
         if params.user and any(
             (
                 params.user.is_site_admin(),

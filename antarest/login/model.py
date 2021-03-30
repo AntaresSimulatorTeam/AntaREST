@@ -104,16 +104,16 @@ class Role(Base):  # type: ignore
     group = relationship("Group")
 
     @staticmethod
-    def from_dict(data: JSON) -> "RoleType":
+    def from_dict(data: JSON) -> "Role":
         return Role(
-            type=data["type"],
+            type=RoleType.from_dict(data["type"]),
             user=User.from_dict(data["user"]),
             group=Group.from_dict(data["group"]),
         )
 
     def to_dict(self) -> JSON:
         return {
-            "type": str(self.type),
+            "type": self.type.to_dict(),
             "user": self.user.to_dict(),
             "group": self.group.to_dict(),
         }

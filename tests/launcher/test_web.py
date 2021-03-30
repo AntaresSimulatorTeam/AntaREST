@@ -6,8 +6,9 @@ from flask import Flask
 
 from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import Event, EventType
-from antarest.common.jwt import JWTUser, JWTGroup, JWTRole
+from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import RequestParameters
+from antarest.common.roles import RoleType
 from antarest.launcher.main import build_launcher
 from antarest.launcher.model import JobResult, JobStatus
 
@@ -15,7 +16,7 @@ from antarest.launcher.model import JobResult, JobStatus
 ADMIN = JWTUser(
     id=1,
     name="admin",
-    groups=[JWTGroup(id="admin", name="admin", role=JWTRole.ADMIN)],
+    groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
 )
 
 

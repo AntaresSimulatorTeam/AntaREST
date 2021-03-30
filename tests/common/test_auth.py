@@ -2,7 +2,6 @@ from unittest.mock import Mock
 
 from flask import Flask
 
-from antarest.common.jwt import JWTRole
 from antarest.login.auth import Auth
 from antarest.common.config import Config
 from antarest.login.model import RoleType
@@ -22,7 +21,7 @@ def build(security_disabled: bool = False, admin: bool = False) -> Auth:
             {
                 "id": "admin" if admin else "group",
                 "name": "group",
-                "role": JWTRole.ADMIN,
+                "role": RoleType.ADMIN.to_dict(),
             }
         ],
     }

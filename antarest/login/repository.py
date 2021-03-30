@@ -4,7 +4,8 @@ from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
-from antarest.login.model import User, RoleType, Password, Group, Role
+from antarest.common.roles import RoleType
+from antarest.login.model import User, Password, Group, Role
 
 
 class GroupRepository:
@@ -87,30 +88,30 @@ class RoleRepository:
             Role(type=RoleType.ADMIN, user=User(id=1), group=Group(id="admin"))
         )
 
-    def save(self, role: RoleType) -> RoleType:
+    def save(self, role: Role) -> Role:
         role.group = self.session.merge(role.group)
         role.user = self.session.merge(role.user)
         self.session.add(role)
         self.session.commit()
         return role
 
-    def get(self, user: int, group: str) -> Optional[RoleType]:
-        role: RoleType = self.session.query(RoleType).get((user, group))
+    def get(self, user: int, group: str) -> Optional[Role]:
+        role: Role = self.session.query(Role).get((user, group))
         return role
 
-    def get_all_by_user(self, user: int) -> List[RoleType]:
-        roles: List[RoleType] = (
-            self.session.query(RoleType).filter_by(user_id=user).all()
+    def get_all_by_user(self, user: int) -> List[Role]:
+        roles: List[Role] = (
+            self.session.query(Role).filter_by(user_id=user).all()
         )
         return roles
 
-    def get_all_by_group(self, group: str) -> List[RoleType]:
-        roles: List[RoleType] = (
-            self.session.query(RoleType).filter_by(group_id=group).all()
+    def get_all_by_group(self, group: str) -> List[Role]:
+        roles: List[Role] = (
+            self.session.query(Role).filter_by(group_id=group).all()
         )
         return roles
 
     def delete(self, user: int, group: str) -> None:
-        r = self.session.query(RoleType).get((user, group))
+        r = self.session.query(Role).get((user, group))
         self.session.delete(r)
         self.session.commit()

@@ -11,7 +11,8 @@ from flask import Flask
 from markupsafe import Markup
 
 from antarest.common.config import Config
-from antarest.common.jwt import JWTUser, JWTGroup, JWTRole
+from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.roles import RoleType
 from antarest.storage.main import build_storage
 from antarest.storage.model import DEFAULT_WORKSPACE_NAME
 from antarest.storage.web.exceptions import (
@@ -25,7 +26,7 @@ from antarest.common.requests import (
 ADMIN = JWTUser(
     id=1,
     name="admin",
-    groups=[JWTGroup(id="admin", name="admin", role=JWTRole.ADMIN)],
+    groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
 )
 PARAMS = RequestParameters(user=ADMIN)
 

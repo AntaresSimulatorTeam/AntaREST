@@ -5,8 +5,9 @@ from uuid import uuid4
 
 import pytest
 
-from antarest.common.jwt import JWTUser, JWTGroup, JWTRole
-from antarest.login.model import User, RoleType, Group
+from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.roles import RoleType
+from antarest.login.model import User, Group
 from antarest.common.requests import (
     RequestParameters,
 )
@@ -183,7 +184,7 @@ def test_save_metadata() -> None:
 
 def test_assert_permission() -> None:
     uuid = str(uuid4())
-    group = JWTGroup(id="my-group", name="g", role=JWTRole.ADMIN)
+    group = JWTGroup(id="my-group", name="g", role=RoleType.ADMIN)
     jwt = JWTUser(id=0, groups=[group])
     good = User(id=0)
     wrong = User(id=2)
