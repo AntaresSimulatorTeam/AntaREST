@@ -10,11 +10,13 @@ from uuid import uuid4
 
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.login.model import User, Role, Group
+from antarest.common.jwt import JWTUser
+from antarest.login.model import User, Group
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.common.requests import (
     RequestParameters,
+    UserHasNotPermissionError,
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.raw_study_service import StudyService
@@ -32,10 +34,6 @@ from antarest.storage.web.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-class UserHasNotPermissionError(werkzeug.exceptions.Forbidden):
-    pass
 
 
 class StorageService:
@@ -311,7 +309,7 @@ class StorageService:
     def _save_study(
         self,
         study: RawStudy,
-        owner: Optional[User] = None,
+        owner: Optional[JWTUser] = None,
         content_status: StudyContentStatus = StudyContentStatus.VALID,
         group: Optional[Group] = None,
     ) -> None:
@@ -328,7 +326,7 @@ class StorageService:
         study.content_status = content_status
 
         if owner:
-            study.owner = owner
+            study.owner = User(id=owner.id)
         if group:
             study.groups = [group]
         self.repository.save(study)
@@ -347,7 +345,7 @@ class StorageService:
 
     def _assert_permission(
         self,
-        user: Optional[User],
+        user: Optional[JWTUser],
         study: Optional[Study],
         raising: bool = True,
     ) -> bool:
@@ -357,14 +355,16 @@ class StorageService:
         if not study:
             raise ValueError("Metadata is None")
 
-        if user.role == Role.ADMIN:
+        if user.is_site_admin():
             return True
 
-        is_owner = user == study.owner
+        is_owner = user.id == study.owner.id
+
+        study_group_id = [g.id for g in study.groups]
         inside_group = (
             study.groups
             and user.groups
-            and any(g in study.groups for g in user.groups)
+            and any(g.id in study_group_id for g in user.groups)
         )
 
         if not is_owner and not inside_group:

@@ -9,9 +9,11 @@ from flask_jwt_extended import (  # type: ignore
     jwt_required,
 )
 
+from antarest.common.jwt import JWTUser
+from antarest.common.requests import RequestParameters
 from antarest.login.auth import Auth
 from antarest.common.config import Config
-from antarest.login.model import User, Group, Role, Password
+from antarest.login.model import User, Group, Password, Role
 from antarest.login.service import LoginService
 
 
@@ -24,7 +26,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     auth = Auth(config)
 
-    def generate_tokens(user: User) -> Any:
+    def generate_tokens(user: JWTUser) -> Any:
         access_token = create_access_token(identity=user.to_dict())
         refresh_token = create_refresh_token(identity=user.to_dict())
         return jsonify(
@@ -148,7 +150,8 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
           - User
         """
         identity = get_jwt_identity()
-        user = service.get_user(identity["id"])
+        params = RequestParameters(user=Auth.get_current_user())
+        user = service.get_user(identity["id"], params=params)
         if user:
             resp = generate_tokens(user)
 
@@ -160,71 +163,107 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
             return "Token invalid", 403
 
     @bp.route("/users", methods=["GET"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def users_get_all() -> Any:
-        return jsonify([u.to_dict() for u in service.get_all_users()])
+        params = RequestParameters(user=Auth.get_current_user())
+        return jsonify([u.to_dict() for u in service.get_all_users(params)])
 
     @bp.route("/users/<int:id>", methods=["GET"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def users_get_id(id: int) -> Any:
-        u = service.get_user(id)
+        params = RequestParameters(user=Auth.get_current_user())
+        u = service.get_user(id, params)
         if u:
             return jsonify(u.to_dict())
         else:
             return "", 404
 
     @bp.route("/users", methods=["POST"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def users_create() -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
         data = json.loads(request.data)
         u = User(
             name=data["name"],
             password=Password(data["password"]),
-            role=data.get("role", ""),
         )
 
-        return jsonify(service.save_user(u).to_dict())
+        return jsonify(service.save_user(u, params).to_dict())
 
     @bp.route("/users/<int:id>", methods=["POST"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def users_update(id: int) -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
         u = User.from_dict(json.loads(request.data))
+
         if id != u.id:
             return "Id in path must be same id in body", 400
 
-        return jsonify(service.save_user(u).to_dict())
+        return jsonify(service.save_user(u, params).to_dict())
 
     @bp.route("/users/<int:id>", methods=["DELETE"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def users_delete(id: int) -> Any:
-        service.delete_user(id)
+        params = RequestParameters(user=Auth.get_current_user())
+        service.delete_user(id, params)
         return jsonify(id), 200
 
     @bp.route("/groups", methods=["GET"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def groups_get_all() -> Any:
-        return jsonify([g.to_dict() for g in service.get_all_groups()])
+        params = RequestParameters(user=Auth.get_current_user())
+        return jsonify([g.to_dict() for g in service.get_all_groups(params)])
 
     @bp.route("/groups/<int:id>", methods=["GET"])
-    @auth.protected(roles=[Role.ADMIN])
-    def groups_get_id(id: int) -> Any:
-        group = service.get_group(id)
+    @auth.protected()
+    def groups_get_id(id: str) -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        group = service.get_group(id, params)
         if group:
             return jsonify(group.to_dict())
         else:
             return f"Group {id} not found", 404
 
     @bp.route("/groups", methods=["POST"])
-    @auth.protected(roles=[Role.ADMIN])
+    @auth.protected()
     def groups_create() -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
         group = Group.from_dict(json.loads(request.data))
-        return jsonify(service.save_group(group).to_dict())
+        return jsonify(service.save_group(group, params).to_dict())
 
     @bp.route("/groups/<int:id>", methods=["DELETE"])
-    @auth.protected(roles=[Role.ADMIN])
-    def groups_delete(id: int) -> Any:
-        service.delete_group(id)
+    @auth.protected()
+    def groups_delete(id: str) -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        service.delete_group(id, params)
         return jsonify(id), 200
+
+    @bp.route("/roles/group/<string:group>", methods=["GET"])
+    @auth.protected()
+    def roles_get_all(group: str) -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        return jsonify(
+            [
+                r.to_dict()
+                for r in service.get_all_roles_in_group(
+                    group=group, params=params
+                )
+            ]
+        )
+
+    @bp.route("/roles", methods=["POST"])
+    @auth.protected()
+    def role_create() -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        role = Role.from_dict(json.loads(request.data))
+        return jsonify(service.save_role(role, params).to_dict())
+
+    @bp.route("/roles/<string:group>/<int:user>", methods=["DELETE"])
+    @auth.protected()
+    def roles_delete(user: int, group: str) -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        service.delete_role(user, group, params)
+        return jsonify((user, group)), 200
 
     @bp.route("/protected")
     @auth.protected()

@@ -1,7 +1,8 @@
 import uuid
-from typing import Any
+from typing import Any, List
 
-from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey  # type: ignore
+from dataclasses import dataclass
+from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey, Enum  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from werkzeug.security import (
@@ -10,6 +11,7 @@ from werkzeug.security import (
 )
 
 from antarest.common.custom_types import JSON
+from antarest.common.roles import RoleType
 from antarest.common.persistence import DTO, Base
 
 users_groups = Table(
@@ -18,11 +20,6 @@ users_groups = Table(
     Column("user_id", Integer, ForeignKey("users.id")),
     Column("group_id", Integer, ForeignKey("groups.id")),
 )
-
-
-class Role:
-    ADMIN: str = "ADMIN"
-    USER: str = "USER"
 
 
 class Password:
@@ -44,16 +41,13 @@ class Password:
         return self.__str__()
 
 
-class User(DTO, Base):  # type: ignore
+@dataclass
+class User(Base):  # type: ignore
     __tablename__ = "users"
 
     id = Column(Integer, Sequence("user_id_seq"), primary_key=True)
     name = Column(String(255))
-    role = Column(String(255))
     _pwd = Column(String(255))
-    groups = relationship(
-        "Group", secondary=users_groups, back_populates="users"
-    )
 
     @hybrid_property
     def password(self) -> Password:
@@ -65,24 +59,19 @@ class User(DTO, Base):  # type: ignore
 
     @staticmethod
     def from_dict(data: JSON) -> "User":
-        return User(
-            id=data.get("id"), name=data["name"], role=data.get("role", "")
-        )
+        return User(id=data.get("id"), name=data["name"])
 
     def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name, "role": self.role}
+        return {"id": self.id, "name": self.name}
 
     def __eq__(self, o: Any) -> bool:
         if not isinstance(o, User):
             return False
-        return bool(
-            (o.id == self.id)
-            and (o.name == self.name)
-            and (o.role == self.role)
-        )
+        return bool((o.id == self.id) and (o.name == self.name))
 
 
-class Group(DTO, Base):  # type: ignore
+@dataclass
+class Group(Base):  # type: ignore
     __tablename__ = "groups"
 
     id = Column(
@@ -92,26 +81,39 @@ class Group(DTO, Base):  # type: ignore
         unique=True,
     )
     name = Column(String(255))
-    users = relationship(
-        "User", secondary=users_groups, back_populates="groups"
-    )
 
     @staticmethod
     def from_dict(data: JSON) -> "Group":
         return Group(
             id=data.get("id"),
             name=data["name"],
-            users=[u.from_dict(u) for u in data.get("users", list())],
+        )
+
+    def to_dict(self) -> JSON:
+        return {"id": self.id, "name": self.name}
+
+
+@dataclass
+class Role(Base):  # type: ignore
+    __tablename__ = "roles"
+
+    type = Column(Enum(RoleType))
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    group_id = Column(String(36), ForeignKey("groups.id"), primary_key=True)
+    user = relationship("User")
+    group = relationship("Group")
+
+    @staticmethod
+    def from_dict(data: JSON) -> "Role":
+        return Role(
+            type=RoleType.from_dict(data["type"]),
+            user=User.from_dict(data["user"]),
+            group=Group.from_dict(data["group"]),
         )
 
     def to_dict(self) -> JSON:
         return {
-            "id": self.id,
-            "name": self.name,
-            "users": [u.to_dict() for u in self.users],
+            "type": self.type.to_dict(),
+            "user": self.user.to_dict(),
+            "group": self.group.to_dict(),
         }
-
-    def __eq__(self, o: Any) -> bool:
-        if not isinstance(o, Group):
-            return False
-        return bool((o.id == self.id) and (o.name == self.name))

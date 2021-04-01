@@ -4,7 +4,8 @@ import pytest
 from flask import Flask
 
 from antarest.common.custom_types import SUB_JSON
-from antarest.login.model import User, Role
+from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.roles import RoleType
 from antarest.storage.main import build_storage
 from antarest.storage.service import StorageService
 from antarest.common.requests import (
@@ -12,7 +13,11 @@ from antarest.common.requests import (
 )
 
 
-ADMIN = User(id=0, name="admin", role=Role.ADMIN)
+ADMIN = JWTUser(
+    id=1,
+    name="admin",
+    groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
+)
 
 
 def assert_with_errors(

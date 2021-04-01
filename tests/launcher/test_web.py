@@ -6,10 +6,18 @@ from flask import Flask
 
 from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import Event, EventType
-from antarest.login.model import User
+from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import RequestParameters
+from antarest.common.roles import RoleType
 from antarest.launcher.main import build_launcher
 from antarest.launcher.model import JobResult, JobStatus
+
+
+ADMIN = JWTUser(
+    id=1,
+    name="admin",
+    groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
+)
 
 
 def create_app(service: Mock) -> Flask:
@@ -38,9 +46,7 @@ def test_run() -> None:
 
     assert res.status_code == 200
     assert res.json == {"job_id": str(job)}
-    service.run_study.assert_called_once_with(
-        study, RequestParameters(User(id=0, name="admin", role="ADMIN"))
-    )
+    service.run_study.assert_called_once_with(study, RequestParameters(ADMIN))
 
 
 @pytest.mark.unit_test
