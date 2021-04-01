@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 
 from antarest.common.interfaces.eventbus import Event, EventType
+from antarest.common.jwt import JWTUser
 from antarest.login.auth import Auth
 from antarest.common.config import Config
 from antarest.login.model import User
@@ -47,7 +48,7 @@ def test_service_run_study(get_current_user_mock):
 
     job_id = launcher_service.run_study(
         "study_uuid",
-        RequestParameters(user=User(id=0, name="admin", role="ADMIN")),
+        RequestParameters(user=JWTUser(id=0, name="admin")),
     )
 
     assert job_id == uuid

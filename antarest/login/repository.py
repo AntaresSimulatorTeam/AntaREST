@@ -4,12 +4,14 @@ from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
-from antarest.login.model import User, Role, Password, Group
+from antarest.common.roles import RoleType
+from antarest.login.model import User, Password, Group, Role
 
 
 class GroupRepository:
-    def __init__(self, config: Config, session: Session):
+    def __init__(self, session: Session):
         self.session = session
+        self.save(Group(id="admin", name="admin"))
 
     def save(self, group: Group) -> Group:
         res = self.session.query(exists().where(Group.id == group.id)).scalar()
@@ -20,7 +22,7 @@ class GroupRepository:
         self.session.commit()
         return group
 
-    def get(self, id: int) -> Optional[Group]:
+    def get(self, id: str) -> Optional[Group]:
         group: Group = self.session.query(Group).get(id)
         return group
 
@@ -28,7 +30,7 @@ class GroupRepository:
         groups: List[Group] = self.session.query(Group).all()
         return groups
 
-    def delete(self, id: int) -> None:
+    def delete(self, id: str) -> None:
         g = self.session.query(Group).get(id)
         self.session.delete(g)
         self.session.commit()
@@ -43,15 +45,8 @@ class UserRepository:
             self.save(
                 User(
                     name="admin",
-                    role=Role.ADMIN,
                     password=Password(config["security.login.admin.pwd"]),
                 )
-            )
-            self.save(
-                User(name="alice", role=Role.USER, password=Password("alice"))
-            )
-            self.save(
-                User(name="bob", role=Role.USER, password=Password("bob"))
             )
         elif not admin_user.password.check(config["security.login.admin.pwd"]):  # type: ignore
             admin_user.password = Password(config["security.login.admin.pwd"])  # type: ignore
@@ -81,4 +76,40 @@ class UserRepository:
     def delete(self, id: int) -> None:
         u: User = self.session.query(User).get(id)
         self.session.delete(u)
+        self.session.commit()
+
+
+class RoleRepository:
+    def __init__(self, session: Session):
+        self.session = session
+        self.save(
+            Role(type=RoleType.ADMIN, user=User(id=1), group=Group(id="admin"))
+        )
+
+    def save(self, role: Role) -> Role:
+        role.group = self.session.merge(role.group)
+        role.user = self.session.merge(role.user)
+        self.session.add(role)
+        self.session.commit()
+        return role
+
+    def get(self, user: int, group: str) -> Optional[Role]:
+        role: Role = self.session.query(Role).get((user, group))
+        return role
+
+    def get_all_by_user(self, user: int) -> List[Role]:
+        roles: List[Role] = (
+            self.session.query(Role).filter_by(user_id=user).all()
+        )
+        return roles
+
+    def get_all_by_group(self, group: str) -> List[Role]:
+        roles: List[Role] = (
+            self.session.query(Role).filter_by(group_id=group).all()
+        )
+        return roles
+
+    def delete(self, user: int, group: str) -> None:
+        r = self.session.query(Role).get((user, group))
+        self.session.delete(r)
         self.session.commit()
