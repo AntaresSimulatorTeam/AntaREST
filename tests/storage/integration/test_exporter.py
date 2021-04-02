@@ -4,7 +4,12 @@ from zipfile import ZipFile
 
 from flask import Flask
 
-from antarest.common.config import Config
+from antarest.common.config import (
+    Config,
+    SecurityConfig,
+    StorageConfig,
+    WorkspaceConfig,
+)
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
@@ -39,13 +44,13 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         zip_output.extractall(path=path_studies)
 
     config = Config(
-        {
-            "_internal": {"resources_path": Path()},
-            "security": {"disabled": True},
-            "storage": {
-                "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": path_studies}}
-            },
-        }
+        resources_path=Path(),
+        security=SecurityConfig(disable=True),
+        storage=StorageConfig(
+            workspaces={
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
+            }
+        ),
     )
 
     md = RawStudy(
@@ -78,13 +83,13 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
         zip_output.extractall(path=path_studies)
 
     config = Config(
-        {
-            "_internal": {"resources_path": Path()},
-            "security": {"disabled": True},
-            "storage": {
-                "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": path_studies}}
-            },
-        }
+        resources_path=Path(),
+        security=SecurityConfig(disable=True),
+        storage=StorageConfig(
+            workspaces={
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
+            }
+        ),
     )
 
     md = RawStudy(

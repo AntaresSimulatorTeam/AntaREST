@@ -111,7 +111,7 @@ class Config:
     db_url: str = ""
     logging: LoggingConfig = LoggingConfig()
     debug: bool = True
-    resources_path: Optional[Path] = None
+    resources_path: Path = Path()
     eventbus: EventBusConfig = EventBusConfig()
 
     @staticmethod
@@ -123,7 +123,7 @@ class Config:
             db_url=data["db"]["url"],
             logging=LoggingConfig.from_dict(data["logging"]),
             debug=data["debug"],
-            resources_path=res,
+            resources_path=res or Path(),
             eventbus=EventBusConfig.from_dict(data["eventbus"])
             if "eventbus" in data
             else EventBusConfig(),

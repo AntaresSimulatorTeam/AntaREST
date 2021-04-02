@@ -6,7 +6,7 @@ from unittest.mock import Mock, call
 
 import pytest
 
-from antarest.common.config import Config
+from antarest.common.config import Config, StorageConfig, WorkspaceConfig
 from antarest.login.model import Group
 from antarest.storage.business.watcher import Watcher
 from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
@@ -14,17 +14,14 @@ from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
 
 def build_config(root: Path) -> Config:
     return Config(
-        {
-            "storage": {
-                "workspaces": {
-                    DEFAULT_WORKSPACE_NAME: {
-                        "path": str(root / "default"),
-                        "groups": ["toto"],
-                    },
-                    "diese": {"path": str(root / "diese"), "groups": ["tata"]},
-                }
+        storage=StorageConfig(
+            workspaces={
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(
+                    path=root / DEFAULT_WORKSPACE_NAME, groups=["toto"]
+                ),
+                "diese": WorkspaceConfig(path=root / "diese", groups=["tata"]),
             }
-        }
+        )
     )
 
 

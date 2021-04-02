@@ -4,7 +4,12 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.common.config import Config
+from antarest.common.config import (
+    Config,
+    SecurityConfig,
+    StorageConfig,
+    WorkspaceConfig,
+)
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.raw_study_service import StudyService
@@ -53,13 +58,13 @@ def storage_service(
     repo.get_all.return_value = [md]
 
     config = Config(
-        {
-            "_internal": {"resources_path": path_resources},
-            "security": {"disabled": True},
-            "storage": {
-                "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": path_studies}}
-            },
-        }
+        resources_path=path_resources,
+        security=SecurityConfig(disable=True),
+        storage=StorageConfig(
+            workspaces={
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
+            }
+        ),
     )
 
     storage_service = build_storage(

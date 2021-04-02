@@ -75,10 +75,10 @@ class Watcher:
                 return []
 
         studies: List[StudyFolder] = list()
-        for name, workspace in self.config["storage.workspaces"].items():
+        for name, workspace in self.config.storage.workspaces.items():
             if name != DEFAULT_WORKSPACE_NAME:
-                path = Path(workspace["path"])
-                groups = [Group(id=g) for g in workspace.get("groups", [])]
+                path = Path(workspace.path)
+                groups = [Group(id=g) for g in workspace.groups]
                 studies = studies + rec_scan(path, name, groups)
 
         self.service.sync_studies_on_disk(studies)
