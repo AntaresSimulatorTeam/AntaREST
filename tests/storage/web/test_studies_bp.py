@@ -19,7 +19,7 @@ from antarest.common.config import (
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.roles import RoleType
 from antarest.storage.main import build_storage
-from antarest.storage.model import DEFAULT_WORKSPACE_NAME
+from antarest.storage.model import DEFAULT_WORKSPACE_NAME, PublicMode
 from antarest.storage.web.exceptions import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
@@ -428,3 +428,63 @@ def test_edit_study_fail() -> None:
     assert res.status_code == 400
 
     mock_storage_service.edit_study.assert_not_called()
+
+
+@pytest.mark.unit_test
+def test_study_permission_management(
+    tmp_path: Path, storage_service_builder
+) -> None:
+    storage_service = Mock()
+
+    app = Flask(__name__)
+    build_storage(
+        app,
+        storage_service=storage_service,
+        session=Mock(),
+        user_service=Mock(),
+        config=Config(
+            {
+                "_internal": {"resources_path": Path()},
+                "security": {"disabled": True},
+                "storage": {
+                    "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": Path()}}
+                },
+            }
+        ),
+    )
+    client = app.test_client()
+
+    result = client.put("/studies/existing-study/owner/2")
+    storage_service.change_owner.assert_called_with(
+        "existing-study",
+        2,
+        PARAMS,
+    )
+    assert result.status_code == HTTPStatus.OK.value
+
+    result = client.put("/studies/existing-study/groups/group-a")
+    storage_service.add_group.assert_called_with(
+        "existing-study",
+        "group-a",
+        PARAMS,
+    )
+    assert result.status_code == HTTPStatus.OK.value
+
+    result = client.delete("/studies/existing-study/groups/group-b")
+    storage_service.remove_group.assert_called_with(
+        "existing-study",
+        "group-b",
+        PARAMS,
+    )
+    assert result.status_code == HTTPStatus.OK.value
+
+    result = client.put("/studies/existing-study/public_mode/FULL")
+    storage_service.set_public_mode.assert_called_with(
+        "existing-study",
+        PublicMode.FULL,
+        PARAMS,
+    )
+    assert result.status_code == HTTPStatus.OK.value
+
+    result = client.put("/studies/existing-study/public_mode/UNKNOWN")
+    assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR.value

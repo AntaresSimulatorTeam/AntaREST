@@ -337,7 +337,7 @@ class StorageService:
         self._assert_permission(
             params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
         )
-        group = self.user_service.get_group(group_id)
+        group = self.user_service.get_group(group_id, params)
         study.groups = (
             study.groups + group if group not in study.groups else study.groups
         )

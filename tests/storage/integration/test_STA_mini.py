@@ -368,22 +368,17 @@ def test_sta_mini_copy(storage_service) -> None:
     )
 
     assert result.status_code == HTTPStatus.CREATED.value
-    url_destination = result.data.decode("utf-8")
-
-    destination_folder = url_destination.split("/")[2]
+    uuid = result.data.decode("utf-8")
 
     parameters = RequestParameters(user=ADMIN)
     data_source = storage_service.get(source_study_name, -1, parameters)
-    data_destination = storage_service.get(destination_folder, -1, parameters)
+    data_destination = storage_service.get(uuid, -1, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
     assert link_url_source == "file/STA-mini/input/links/de/fr.txt"
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
-    assert (
-        link_url_destination
-        == f"file/{destination_folder}/input/links/de/fr.txt"
-    )
+    assert link_url_destination == f"file/{uuid}/input/links/de/fr.txt"
 
     result_source = client.get(link_url_source)
     matrix_source = result_source.data
@@ -396,9 +391,7 @@ def test_sta_mini_copy(storage_service) -> None:
         if isinstance(data, dict):
             for key, value in data.items():
                 if isinstance(value, str) and value.startswith("file/"):
-                    data[key] = value.replace(
-                        destination_folder, source_study_name
-                    )
+                    data[key] = value.replace(uuid, source_study_name)
                 else:
                     replace_study_name(value)
 

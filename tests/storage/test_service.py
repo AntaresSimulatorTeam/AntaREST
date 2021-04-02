@@ -246,7 +246,9 @@ def test_manage_group() -> None:
         uuid, "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
     )
 
-    user_service.get_group.assert_called_once_with("b")
+    user_service.get_group.assert_called_once_with(
+        "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+    )
     repository.save.assert_called_with(
         Study(id=uuid, owner=alice, groups=[group_a, group_b])
     )
@@ -257,7 +259,9 @@ def test_manage_group() -> None:
     service.add_group(
         uuid, "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
     )
-    user_service.get_group.assert_called_with("b")
+    user_service.get_group.assert_called_with(
+        "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+    )
     repository.save.assert_called_with(
         Study(id=uuid, owner=alice, groups=[group_a, group_b])
     )
@@ -311,6 +315,8 @@ def test_assert_permission() -> None:
     admin = JWTUser(id=1, groups=[admin_group])
     group = JWTGroup(id="my-group", name="g", role=RoleType.ADMIN)
     jwt = JWTUser(id=0, groups=[group])
+    group_2 = JWTGroup(id="my-group-2", name="g2", role=RoleType.RUNNER)
+    jwt_2 = JWTUser(id=3, groups=[group_2])
     good = User(id=0)
     wrong = User(id=2)
 
@@ -369,3 +375,10 @@ def test_assert_permission() -> None:
     assert service._assert_permission(jwt, study, StudyPermissionType.READ)
     assert service._assert_permission(jwt, study, StudyPermissionType.WRITE)
     assert service._assert_permission(jwt, study, StudyPermissionType.RUN)
+
+    # some group roles
+    study = Study(id=uuid, owner=wrong, groups=[Group(id="my-group-2")])
+    assert not service._assert_permission(
+        jwt_2, study, StudyPermissionType.WRITE, raising=False
+    )
+    assert service._assert_permission(jwt_2, study, StudyPermissionType.READ)

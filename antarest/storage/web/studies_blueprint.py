@@ -177,10 +177,9 @@ def create_study_routes(
             dest_study_name=destination_name_sanitized,
             params=params,
         )
-        content = "/studies/" + destination_uuid
         code = HTTPStatus.CREATED.value
 
-        return content, code
+        return destination_uuid, code
 
     @bp.route(
         "/studies/<string:name>",

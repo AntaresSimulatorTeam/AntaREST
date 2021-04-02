@@ -49,7 +49,7 @@ permission_matrix = {
 
 def check_permission(
     user: JWTUser, study: Study, permission: StudyPermissionType
-):
+) -> bool:
     if user.is_site_admin():
         return True
 
@@ -59,7 +59,7 @@ def check_permission(
     global permission_matrix
     study_group_id = [g.id for g in study.groups]
     group_permission = any(
-        role in permission_matrix[permission]["roles"]
+        role in permission_matrix[permission]["roles"]  # type: ignore
         for role in [
             group.role
             for group in (user.groups or [])
@@ -69,4 +69,4 @@ def check_permission(
     if group_permission:
         return True
 
-    return study.public_mode in permission_matrix[permission]["public_modes"]
+    return study.public_mode in permission_matrix[permission]["public_modes"]  # type: ignore
