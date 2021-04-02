@@ -24,6 +24,7 @@ def assert_url_content(storage_service: StorageService, url: str) -> bytes:
     build_storage(
         app,
         session=Mock(),
+        user_service=Mock(),
         storage_service=storage_service,
         config=storage_service.study_service.config,
     )
@@ -45,7 +46,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
 
     config = Config(
         resources_path=Path(),
-        security=SecurityConfig(disable=True),
+        security=SecurityConfig(disabled=True),
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
@@ -65,6 +66,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         application=Mock(),
         config=config,
         session=Mock(),
+        user_service=Mock(),
         metadata_repository=repo,
     )
 
@@ -84,7 +86,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
 
     config = Config(
         resources_path=Path(),
-        security=SecurityConfig(disable=True),
+        security=SecurityConfig(disabled=True),
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
@@ -104,6 +106,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
         application=Mock(),
         config=config,
         session=Mock(),
+        user_service=Mock(),
         metadata_repository=repo,
     )
 

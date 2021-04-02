@@ -11,12 +11,15 @@ from antarest.login.model import User, Group
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.login.service import GroupNotFoundError
+from antarest.storage.business.permissions import StudyPermissionType
 from antarest.storage.model import (
     Study,
     StudyContentStatus,
     StudyFolder,
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
+    PublicMode,
 )
 from antarest.storage.service import StorageService, UserHasNotPermissionError
 
@@ -39,6 +42,7 @@ def test_get_studies_uuid() -> None:
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
+        user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
     )
@@ -73,6 +77,7 @@ def test_sync_studies_from_disk() -> None:
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
+        user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
     )
@@ -121,6 +126,7 @@ def test_create_study() -> None:
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
+        user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
     )
@@ -170,6 +176,7 @@ def test_save_metadata() -> None:
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
+        user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
     )
@@ -182,10 +189,134 @@ def test_save_metadata() -> None:
     repository.save.assert_called_once_with(study)
 
 
+def test_change_owner() -> None:
+    uuid = str(uuid4())
+    alice = User(id=1)
+    bob = User(id=2)
+
+    repository = Mock()
+    user_service = Mock()
+    service = StorageService(
+        study_service=Mock(),
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        user_service=user_service,
+        repository=repository,
+        event_bus=Mock(),
+    )
+
+    repository.get.return_value = Study(id=uuid, owner=alice)
+    user_service.get_user.return_value = bob
+
+    service.change_owner(uuid, 2, RequestParameters(JWTUser(id=1)))
+    user_service.get_user.assert_called_once_with(
+        2, RequestParameters(JWTUser(id=1))
+    )
+    repository.save.assert_called_once_with(Study(id=uuid, owner=bob))
+
+    with pytest.raises(UserHasNotPermissionError):
+        service.change_owner(uuid, 1, RequestParameters(JWTUser(id=1)))
+
+
+def test_manage_group() -> None:
+    uuid = str(uuid4())
+    alice = User(id=1)
+    group_a = Group(id="a", name="Group A")
+    group_b = Group(id="b", name="Group B")
+    group_a_admin = JWTGroup(id="a", name="Group A", role=RoleType.ADMIN)
+
+    repository = Mock()
+    user_service = Mock()
+    service = StorageService(
+        study_service=Mock(),
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        user_service=user_service,
+        repository=repository,
+        event_bus=Mock(),
+    )
+
+    repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a])
+
+    with pytest.raises(UserHasNotPermissionError):
+        service.add_group(uuid, "b", RequestParameters(JWTUser(id=2)))
+
+    user_service.get_group.return_value = group_b
+    service.add_group(
+        uuid, "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+    )
+
+    user_service.get_group.assert_called_once_with(
+        "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+    )
+    repository.save.assert_called_with(
+        Study(id=uuid, owner=alice, groups=[group_a, group_b])
+    )
+
+    repository.get.return_value = Study(
+        id=uuid, owner=alice, groups=[group_a, group_b]
+    )
+    service.add_group(
+        uuid, "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+    )
+    user_service.get_group.assert_called_with(
+        "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+    )
+    repository.save.assert_called_with(
+        Study(id=uuid, owner=alice, groups=[group_a, group_b])
+    )
+
+    repository.get.return_value = Study(
+        id=uuid, owner=alice, groups=[group_a, group_b]
+    )
+    service.remove_group(
+        uuid, "a", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+    )
+    repository.save.assert_called_with(
+        Study(id=uuid, owner=alice, groups=[group_b])
+    )
+
+
+def test_set_public_mode() -> None:
+    uuid = str(uuid4())
+    group_admin = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
+
+    repository = Mock()
+    user_service = Mock()
+    service = StorageService(
+        study_service=Mock(),
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        user_service=user_service,
+        repository=repository,
+        event_bus=Mock(),
+    )
+
+    repository.get.return_value = Study(id=uuid)
+
+    with pytest.raises(UserHasNotPermissionError):
+        service.set_public_mode(
+            uuid, PublicMode.FULL, RequestParameters(JWTUser(id=1))
+        )
+
+    service.set_public_mode(
+        uuid,
+        PublicMode.FULL,
+        RequestParameters(JWTUser(id=1, groups=[group_admin])),
+    )
+    repository.save.assert_called_once_with(
+        Study(id=uuid, public_mode=PublicMode.FULL)
+    )
+
+
 def test_assert_permission() -> None:
     uuid = str(uuid4())
+    admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
+    admin = JWTUser(id=1, groups=[admin_group])
     group = JWTGroup(id="my-group", name="g", role=RoleType.ADMIN)
     jwt = JWTUser(id=0, groups=[group])
+    group_2 = JWTGroup(id="my-group-2", name="g2", role=RoleType.RUNNER)
+    jwt_2 = JWTUser(id=3, groups=[group_2])
     good = User(id=0)
     wrong = User(id=2)
 
@@ -195,6 +326,7 @@ def test_assert_permission() -> None:
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
+        user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
     )
@@ -203,19 +335,50 @@ def test_assert_permission() -> None:
     repository.get.return_value = Study(id=uuid, owner=wrong)
     study = service._get_study(uuid)
     with pytest.raises(UserHasNotPermissionError):
-        service._assert_permission(jwt, study)
-    assert not service._assert_permission(jwt, study, raising=False)
+        service._assert_permission(jwt, study, StudyPermissionType.READ)
+    assert not service._assert_permission(
+        jwt, study, StudyPermissionType.READ, raising=False
+    )
 
     # good owner
     study = Study(id=uuid, owner=good)
-    assert service._assert_permission(jwt, study)
+    assert service._assert_permission(
+        jwt, study, StudyPermissionType.MANAGE_PERMISSIONS
+    )
 
     # wrong group
     study = Study(id=uuid, owner=wrong, groups=[Group(id="wrong")])
     with pytest.raises(UserHasNotPermissionError):
-        service._assert_permission(jwt, study)
-    assert not service._assert_permission(jwt, study, raising=False)
+        service._assert_permission(jwt, study, StudyPermissionType.READ)
+    assert not service._assert_permission(
+        jwt, study, StudyPermissionType.READ, raising=False
+    )
 
     # good group
     study = Study(id=uuid, owner=wrong, groups=[Group(id="my-group")])
-    assert service._assert_permission(jwt, study)
+    assert service._assert_permission(
+        jwt, study, StudyPermissionType.MANAGE_PERMISSIONS
+    )
+
+    # super admin can do whatever he wants..
+    study = Study(id=uuid)
+    assert service._assert_permission(
+        admin, study, StudyPermissionType.MANAGE_PERMISSIONS
+    )
+
+    # when study found in workspace without group
+    study = Study(id=uuid, public_mode=PublicMode.FULL)
+    assert not service._assert_permission(
+        jwt, study, StudyPermissionType.MANAGE_PERMISSIONS, raising=False
+    )
+    assert service._assert_permission(jwt, study, StudyPermissionType.DELETE)
+    assert service._assert_permission(jwt, study, StudyPermissionType.READ)
+    assert service._assert_permission(jwt, study, StudyPermissionType.WRITE)
+    assert service._assert_permission(jwt, study, StudyPermissionType.RUN)
+
+    # some group roles
+    study = Study(id=uuid, owner=wrong, groups=[Group(id="my-group-2")])
+    assert not service._assert_permission(
+        jwt_2, study, StudyPermissionType.WRITE, raising=False
+    )
+    assert service._assert_permission(jwt_2, study, StudyPermissionType.READ)

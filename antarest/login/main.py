@@ -21,7 +21,7 @@ def build_login(
     db_session: Session,
     service: Optional[LoginService] = None,
     event_bus: IEventBus = DummyEventBusService(),
-) -> None:
+) -> LoginService:
 
     if service is None:
         user_repo = UserRepository(config, db_session)
@@ -36,3 +36,4 @@ def build_login(
 
     JWTManager(application)
     application.register_blueprint(create_login_api(service, config))
+    return service

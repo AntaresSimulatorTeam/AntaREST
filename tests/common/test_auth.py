@@ -26,7 +26,7 @@ def build(security_disabled: bool = False, admin: bool = False) -> Auth:
         ],
     }
 
-    config = Config(security=SecurityConfig(disable=security_disabled))
+    config = Config(security=SecurityConfig(disabled=security_disabled))
 
     return Auth(config=config, verify=Mock(), get_identity=get_identity)
 

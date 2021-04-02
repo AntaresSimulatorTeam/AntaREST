@@ -26,6 +26,14 @@ class StudyContentStatus(enum.Enum):
     ERROR = "ERROR"
 
 
+class PublicMode(enum.Enum):
+    NONE = "NONE"
+    READ = "READ"
+    EXECUTE = "EXECUTE"
+    EDIT = "EDIT"
+    FULL = "FULL"
+
+
 @dataclass
 class Study(Base):  # type: ignore
     __tablename__ = "study"
@@ -42,7 +50,7 @@ class Study(Base):  # type: ignore
     author = Column(String(255))
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
-    public = Column(Boolean(), default=False)
+    public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(User.id))
     owner = relationship(User, uselist=False)
     groups = relationship(
