@@ -44,6 +44,7 @@ class UserRepository:
         if admin_user is None:
             self.save(
                 User(
+                    id=1,
                     name="admin",
                     password=Password(config.security.admin_pwd),
                 )
@@ -82,9 +83,14 @@ class UserRepository:
 class RoleRepository:
     def __init__(self, session: Session):
         self.session = session
-        self.save(
-            Role(type=RoleType.ADMIN, user=User(id=1), group=Group(id="admin"))
-        )
+        if self.get(1, "admin") is None:
+            self.save(
+                Role(
+                    type=RoleType.ADMIN,
+                    user=User(id=1),
+                    group=Group(id="admin"),
+                )
+            )
 
     def save(self, role: Role) -> Role:
         role.group = self.session.merge(role.group)
