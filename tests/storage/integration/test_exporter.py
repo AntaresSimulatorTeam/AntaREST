@@ -46,7 +46,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
 
     config = Config(
         resources_path=Path(),
-        security=SecurityConfig(disable=True),
+        security=SecurityConfig(disabled=True),
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
@@ -86,7 +86,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
 
     config = Config(
         resources_path=Path(),
-        security=SecurityConfig(disable=True),
+        security=SecurityConfig(disabled=True),
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)

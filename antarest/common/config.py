@@ -13,14 +13,14 @@ from antarest.common.custom_types import JSON
 class SecurityConfig:
     jwt_key: str = ""
     admin_pwd: str = ""
-    disable: bool = False
+    disabled: bool = False
 
     @staticmethod
     def from_dict(data: JSON) -> "SecurityConfig":
         return SecurityConfig(
             jwt_key=data["jwt"]["key"],
             admin_pwd=data["login"]["admin"]["pwd"],
-            disable=data.get("disable", False),
+            disabled=data.get("disabled", False),
         )
 
 

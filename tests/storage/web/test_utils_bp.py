@@ -19,7 +19,7 @@ from antarest.storage.model import DEFAULT_WORKSPACE_NAME
 
 CONFIG = Config(
     resources_path=Path(),
-    security=SecurityConfig(disable=True),
+    security=SecurityConfig(disabled=True),
     storage=StorageConfig(
         workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=Path())}
     ),

@@ -59,7 +59,7 @@ def storage_service(
 
     config = Config(
         resources_path=path_resources,
-        security=SecurityConfig(disable=True),
+        security=SecurityConfig(disabled=True),
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)

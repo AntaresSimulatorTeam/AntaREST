@@ -38,7 +38,7 @@ PARAMS = RequestParameters(user=ADMIN)
 
 CONFIG = Config(
     resources_path=Path(),
-    security=SecurityConfig(disable=True),
+    security=SecurityConfig(disabled=True),
     storage=StorageConfig(
         workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=Path())}
     ),
@@ -442,15 +442,7 @@ def test_study_permission_management(
         storage_service=storage_service,
         session=Mock(),
         user_service=Mock(),
-        config=Config(
-            {
-                "_internal": {"resources_path": Path()},
-                "security": {"disabled": True},
-                "storage": {
-                    "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": Path()}}
-                },
-            }
-        ),
+        config=CONFIG,
     )
     client = app.test_client()
 

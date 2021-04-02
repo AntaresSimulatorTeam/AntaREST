@@ -37,7 +37,7 @@ def create_app(service: Mock, auth_disabled=False) -> Flask:
         service=service,
         config=Config(
             resources_path=Path(),
-            security=SecurityConfig(disable=auth_disabled),
+            security=SecurityConfig(disabled=auth_disabled),
         ),
         db_session=Mock(),
     )
