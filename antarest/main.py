@@ -18,7 +18,7 @@ from werkzeug.exceptions import HTTPException
 from antarest import __version__
 from antarest.eventbus.main import build_eventbus
 from antarest.login.auth import Auth
-from antarest.common.config import ConfigYaml, Config
+from antarest.common.config import Config
 from antarest.common.persistence import Base
 from antarest.common.reverse_proxy import ReverseProxyMiddleware
 from antarest.common.swagger import build_swagger
@@ -80,16 +80,11 @@ def get_local_path() -> Path:
 
 
 def configure_logger(config: Config) -> None:
-    logging_path = config["logging.path"]
-    logging_level = (
-        config["logging.level"]
-        if config["logging.level"] is not None
-        else "INFO"
-    )
+    logging_path = config.logging.path
+    logging_level = config.logging.level or "INFO"
     logging_format = (
-        config["logging.format"]
-        if config["logging.format"] is not None
-        else "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        config.logging.format
+        or "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     logging.basicConfig(
         filename=logging_path, format=logging_format, level=logging_level
@@ -98,11 +93,11 @@ def configure_logger(config: Config) -> None:
 
 def flask_app(config_file: Path) -> Flask:
     res = get_local_path() / "resources"
-    config = ConfigYaml(res=res, file=config_file)
+    config = Config.from_yaml_file(res=res, file=config_file)
 
     configure_logger(config)
     # Database
-    engine = create_engine(config["db.url"], echo=config["debug"])
+    engine = create_engine(config.db_url, echo=config.debug)
     Base.metadata.create_all(engine)
     db_session = scoped_session(
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -113,7 +108,7 @@ def flask_app(config_file: Path) -> Flask:
     )
     application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
 
-    application.config["SECRET_KEY"] = config["security.jwt.key"]
+    application.config["SECRET_KEY"] = config.security.jwt_key
     application.config["JWT_ACCESS_TOKEN_EXPIRES"] = Auth.ACCESS_TOKEN_DURATION
     application.config[
         "JWT_REFRESH_TOKEN_EXPIRES"

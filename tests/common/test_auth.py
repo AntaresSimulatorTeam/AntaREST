@@ -3,7 +3,7 @@ from unittest.mock import Mock
 from flask import Flask
 
 from antarest.login.auth import Auth
-from antarest.common.config import Config
+from antarest.common.config import Config, SecurityConfig
 from antarest.login.model import RoleType
 
 
@@ -26,7 +26,7 @@ def build(security_disabled: bool = False, admin: bool = False) -> Auth:
         ],
     }
 
-    config = Config({"security": {"disabled": security_disabled}})
+    config = Config(security=SecurityConfig(disable=security_disabled))
 
     return Auth(config=config, verify=Mock(), get_identity=get_identity)
 

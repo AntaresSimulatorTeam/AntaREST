@@ -43,7 +43,7 @@ class StudyService:
         if workspace:
             folders = list(self.get_workspace_path(workspace).iterdir())
         else:
-            for w in self.config["storage.workspaces"]:
+            for w in self.config.storage.workspaces:
                 folders += list(self.get_workspace_path(w).iterdir())
 
         studies_list = [
@@ -69,7 +69,7 @@ class StudyService:
         return study.get(url=["study"])
 
     def get_workspace_path(self, workspace: str) -> Path:
-        return Path(self.config[f"storage.workspaces.{workspace}.path"])
+        return self.config.storage.workspaces[workspace].path
 
     def get_default_workspace_path(self) -> Path:
         return self.get_workspace_path(DEFAULT_WORKSPACE_NAME)

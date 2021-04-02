@@ -32,7 +32,7 @@ def build_storage(
     event_bus: IEventBus = DummyEventBusService(),
 ) -> StorageService:
 
-    path_resources = Path(config["_internal.resources_path"])
+    path_resources = config.resources_path
     study_factory = study_factory or StudyFactory()
     exporter = exporter or Exporter()
     metadata_repository = metadata_repository or StudyMetadataRepository(

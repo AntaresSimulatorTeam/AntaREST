@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 
-from antarest.common.config import Config
+from antarest.common.config import Config, SecurityConfig
 from antarest.login.repository import (
     UserRepository,
     GroupRepository,
@@ -21,7 +21,7 @@ def test_users():
     Base.metadata.create_all(engine)
 
     repo = UserRepository(
-        config=Config({"security": {"login": {"admin": {"pwd": "admin"}}}}),
+        config=Config(security=SecurityConfig(admin_pwd="admin")),
         session=session,
     )
     a = User(
