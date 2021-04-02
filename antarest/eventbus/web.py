@@ -24,7 +24,7 @@ def configure_websockets(
 
     @socketio.on("connect")  # type: ignore
     def test_connect() -> None:
-        if not config.security.disable:
+        if not config.security.disabled:
             try:
                 token = request.event["args"][1]["token"]  # type: ignore
                 user = Auth.get_user_from_token(token)

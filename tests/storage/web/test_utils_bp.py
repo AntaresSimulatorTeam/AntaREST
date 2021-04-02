@@ -19,7 +19,7 @@ from antarest.storage.model import DEFAULT_WORKSPACE_NAME
 
 CONFIG = Config(
     resources_path=Path(),
-    security=SecurityConfig(disable=True),
+    security=SecurityConfig(disabled=True),
     storage=StorageConfig(
         workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=Path())}
     ),
@@ -38,6 +38,7 @@ def test_version() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=Config(),
+        user_service=Mock(),
     )
     client = app.test_client()
 
@@ -60,6 +61,7 @@ def test_get_matrix() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
 

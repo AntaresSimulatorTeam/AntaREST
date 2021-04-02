@@ -19,7 +19,7 @@ from antarest.common.config import (
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.roles import RoleType
 from antarest.storage.main import build_storage
-from antarest.storage.model import DEFAULT_WORKSPACE_NAME
+from antarest.storage.model import DEFAULT_WORKSPACE_NAME, PublicMode
 from antarest.storage.web.exceptions import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
@@ -38,7 +38,7 @@ PARAMS = RequestParameters(user=ADMIN)
 
 CONFIG = Config(
     resources_path=Path(),
-    security=SecurityConfig(disable=True),
+    security=SecurityConfig(disabled=True),
     storage=StorageConfig(
         workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=Path())}
     ),
@@ -56,6 +56,7 @@ def test_server() -> None:
         storage_service=mock_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     client.get("/studies/study1/settings/general/params")
@@ -76,6 +77,7 @@ def test_404() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/studies/study1/settings/general/params")
@@ -97,6 +99,7 @@ def test_server_with_parameters() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/studies/study1?depth=4")
@@ -135,6 +138,7 @@ def test_create_study(
         storage_service=storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
 
@@ -170,6 +174,7 @@ def test_import_study_zipped(
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
 
@@ -197,6 +202,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
         storage_service=storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
 
@@ -227,6 +233,7 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
         storage_service=storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/studies")
@@ -242,6 +249,7 @@ def test_server_health() -> None:
         storage_service=Mock(),
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/health")
@@ -260,6 +268,7 @@ def test_export_files() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/studies/name/export")
@@ -282,6 +291,7 @@ def test_export_params() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/studies/name/export?compact")
@@ -314,6 +324,7 @@ def test_delete_study() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     client.delete("/studies/name")
@@ -331,6 +342,7 @@ def test_import_matrix() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
 
@@ -360,6 +372,7 @@ def test_import_matrix_with_wrong_path() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
 
@@ -385,6 +398,7 @@ def test_edit_study() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     client.post("/studies/my-uuid/url/to/change", data=data)
@@ -406,6 +420,7 @@ def test_edit_study_fail() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     res = client.post("/studies/my-uuid/url/to/change", data=data)
@@ -413,3 +428,55 @@ def test_edit_study_fail() -> None:
     assert res.status_code == 400
 
     mock_storage_service.edit_study.assert_not_called()
+
+
+@pytest.mark.unit_test
+def test_study_permission_management(
+    tmp_path: Path, storage_service_builder
+) -> None:
+    storage_service = Mock()
+
+    app = Flask(__name__)
+    build_storage(
+        app,
+        storage_service=storage_service,
+        session=Mock(),
+        user_service=Mock(),
+        config=CONFIG,
+    )
+    client = app.test_client()
+
+    result = client.put("/studies/existing-study/owner/2")
+    storage_service.change_owner.assert_called_with(
+        "existing-study",
+        2,
+        PARAMS,
+    )
+    assert result.status_code == HTTPStatus.OK.value
+
+    result = client.put("/studies/existing-study/groups/group-a")
+    storage_service.add_group.assert_called_with(
+        "existing-study",
+        "group-a",
+        PARAMS,
+    )
+    assert result.status_code == HTTPStatus.OK.value
+
+    result = client.delete("/studies/existing-study/groups/group-b")
+    storage_service.remove_group.assert_called_with(
+        "existing-study",
+        "group-b",
+        PARAMS,
+    )
+    assert result.status_code == HTTPStatus.OK.value
+
+    result = client.put("/studies/existing-study/public_mode/FULL")
+    storage_service.set_public_mode.assert_called_with(
+        "existing-study",
+        PublicMode.FULL,
+        PARAMS,
+    )
+    assert result.status_code == HTTPStatus.OK.value
+
+    result = client.put("/studies/existing-study/public_mode/UNKNOWN")
+    assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR.value

@@ -23,7 +23,7 @@ class Auth:
         ] = get_jwt_identity,  # Test only
     ):
 
-        self.disabled = config.security.disable
+        self.disabled = config.security.disabled
         self.verify = verify
         self.get_identity = get_identity
 

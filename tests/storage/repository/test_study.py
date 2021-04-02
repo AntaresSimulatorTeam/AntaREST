@@ -12,6 +12,7 @@ from antarest.storage.model import (
     RawStudy,
     DEFAULT_WORKSPACE_NAME,
     StudyContentStatus,
+    PublicMode,
 )
 from antarest.storage.repository.study import StudyMetadataRepository
 
@@ -33,7 +34,7 @@ def test_cyclelife():
         author="John Smith",
         created_at=datetime.now(),
         updated_at=datetime.now(),
-        public=True,
+        public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
     )
@@ -43,7 +44,7 @@ def test_cyclelife():
         author="Morpheus",
         created_at=datetime.now(),
         updated_at=datetime.now(),
-        public=True,
+        public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
     )
@@ -75,7 +76,7 @@ def test_study_inheritance():
         author="John Smith",
         created_at=datetime.now(),
         updated_at=datetime.now(),
-        public=True,
+        public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
         workspace=DEFAULT_WORKSPACE_NAME,
