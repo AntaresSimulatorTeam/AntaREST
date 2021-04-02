@@ -132,7 +132,10 @@ class StorageService:
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
         for study in self.repository.get_all():
-            if isinstance(study, RawStudy) and study.path not in paths:
+            if isinstance(study, RawStudy) and (
+                study.workspace != DEFAULT_WORKSPACE_NAME
+                and study.path not in paths
+            ):
                 logger.info(
                     f"Study={study.id} is not present in disk and will be deleted"
                 )
