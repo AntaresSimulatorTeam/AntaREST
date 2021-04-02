@@ -12,7 +12,7 @@ from flask_jwt_extended import (
     create_refresh_token,
 )
 
-from antarest.common.config import Config
+from antarest.common.config import Config, SecurityConfig
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import RequestParameters
 from antarest.login.main import build_login
@@ -36,10 +36,8 @@ def create_app(service: Mock, auth_disabled=False) -> Flask:
         app,
         service=service,
         config=Config(
-            {
-                "_internal": {"resources_path": Path()},
-                "security": {"disabled": auth_disabled},
-            }
+            resources_path=Path(),
+            security=SecurityConfig(disable=auth_disabled),
         ),
         db_session=Mock(),
     )

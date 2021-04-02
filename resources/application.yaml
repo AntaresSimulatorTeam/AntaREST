@@ -1,5 +1,5 @@
 security:
-  disabled: true
+  disabled: false
   jwt:
     key: super-secret
   login:
@@ -24,6 +24,7 @@ debug: true
 
 logging:
   level: INFO
+
 #  path: /tmp/antarest.log
 #  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
