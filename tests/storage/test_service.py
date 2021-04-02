@@ -11,6 +11,7 @@ from antarest.login.model import User, Group
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.login.service import GroupNotFoundError
 from antarest.storage.business.permissions import StudyPermissionType
 from antarest.storage.model import (
     Study,
@@ -18,6 +19,7 @@ from antarest.storage.model import (
     StudyFolder,
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
+    PublicMode,
 )
 from antarest.storage.service import StorageService, UserHasNotPermissionError
 
@@ -187,8 +189,126 @@ def test_save_metadata() -> None:
     repository.save.assert_called_once_with(study)
 
 
+def test_change_owner() -> None:
+    uuid = str(uuid4())
+    alice = User(id=1)
+    bob = User(id=2)
+
+    repository = Mock()
+    user_service = Mock()
+    service = StorageService(
+        study_service=Mock(),
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        user_service=user_service,
+        repository=repository,
+        event_bus=Mock(),
+    )
+
+    repository.get.return_value = Study(id=uuid, owner=alice)
+    user_service.get_user.return_value = bob
+
+    service.change_owner(uuid, 2, RequestParameters(JWTUser(id=1)))
+    user_service.get_user.assert_called_once_with(
+        2, RequestParameters(JWTUser(id=1))
+    )
+    repository.save.assert_called_once_with(Study(id=uuid, owner=bob))
+
+    with pytest.raises(UserHasNotPermissionError):
+        service.change_owner(uuid, 1, RequestParameters(JWTUser(id=1)))
+
+
+def test_manage_group() -> None:
+    uuid = str(uuid4())
+    alice = User(id=1)
+    group_a = Group(id="a", name="Group A")
+    group_b = Group(id="b", name="Group B")
+    group_a_admin = JWTGroup(id="a", name="Group A", role=RoleType.ADMIN)
+
+    repository = Mock()
+    user_service = Mock()
+    service = StorageService(
+        study_service=Mock(),
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        user_service=user_service,
+        repository=repository,
+        event_bus=Mock(),
+    )
+
+    repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a])
+
+    with pytest.raises(UserHasNotPermissionError):
+        service.add_group(uuid, "b", RequestParameters(JWTUser(id=2)))
+
+    user_service.get_group.return_value = group_b
+    service.add_group(
+        uuid, "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+    )
+
+    user_service.get_group.assert_called_once_with("b")
+    repository.save.assert_called_with(
+        Study(id=uuid, owner=alice, groups=[group_a, group_b])
+    )
+
+    repository.get.return_value = Study(
+        id=uuid, owner=alice, groups=[group_a, group_b]
+    )
+    service.add_group(
+        uuid, "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+    )
+    user_service.get_group.assert_called_with("b")
+    repository.save.assert_called_with(
+        Study(id=uuid, owner=alice, groups=[group_a, group_b])
+    )
+
+    repository.get.return_value = Study(
+        id=uuid, owner=alice, groups=[group_a, group_b]
+    )
+    service.remove_group(
+        uuid, "a", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+    )
+    repository.save.assert_called_with(
+        Study(id=uuid, owner=alice, groups=[group_b])
+    )
+
+
+def test_set_public_mode() -> None:
+    uuid = str(uuid4())
+    group_admin = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
+
+    repository = Mock()
+    user_service = Mock()
+    service = StorageService(
+        study_service=Mock(),
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        user_service=user_service,
+        repository=repository,
+        event_bus=Mock(),
+    )
+
+    repository.get.return_value = Study(id=uuid)
+
+    with pytest.raises(UserHasNotPermissionError):
+        service.set_public_mode(
+            uuid, PublicMode.FULL, RequestParameters(JWTUser(id=1))
+        )
+
+    service.set_public_mode(
+        uuid,
+        PublicMode.FULL,
+        RequestParameters(JWTUser(id=1, groups=[group_admin])),
+    )
+    repository.save.assert_called_once_with(
+        Study(id=uuid, public_mode=PublicMode.FULL)
+    )
+
+
 def test_assert_permission() -> None:
     uuid = str(uuid4())
+    admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
+    admin = JWTUser(id=1, groups=[admin_group])
     group = JWTGroup(id="my-group", name="g", role=RoleType.ADMIN)
     jwt = JWTUser(id=0, groups=[group])
     good = User(id=0)
@@ -233,3 +353,19 @@ def test_assert_permission() -> None:
     assert service._assert_permission(
         jwt, study, StudyPermissionType.MANAGE_PERMISSIONS
     )
+
+    # super admin can do whatever he wants..
+    study = Study(id=uuid)
+    assert service._assert_permission(
+        admin, study, StudyPermissionType.MANAGE_PERMISSIONS
+    )
+
+    # when study found in workspace without group
+    study = Study(id=uuid, public_mode=PublicMode.FULL)
+    assert not service._assert_permission(
+        jwt, study, StudyPermissionType.MANAGE_PERMISSIONS, raising=False
+    )
+    assert service._assert_permission(jwt, study, StudyPermissionType.DELETE)
+    assert service._assert_permission(jwt, study, StudyPermissionType.READ)
+    assert service._assert_permission(jwt, study, StudyPermissionType.WRITE)
+    assert service._assert_permission(jwt, study, StudyPermissionType.RUN)
