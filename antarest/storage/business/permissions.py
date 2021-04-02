@@ -56,7 +56,6 @@ def check_permission(
     if study.owner is not None and user.id == study.owner.id:
         return True
 
-    global permission_matrix
     study_group_id = [g.id for g in study.groups]
     group_permission = any(
         role in permission_matrix[permission]["roles"]  # type: ignore
