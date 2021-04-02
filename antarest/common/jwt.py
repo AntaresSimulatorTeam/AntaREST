@@ -34,10 +34,11 @@ class JWTUser:
 
     @staticmethod
     def from_dict(data: JSON) -> "JWTUser":
+        groups = data["groups"] if "groups" in data else []
         return JWTUser(
             id=data["id"],
             name=data["name"],
-            groups=[JWTGroup.from_dict(g) for g in data["groups"]],
+            groups=[JWTGroup.from_dict(g) for g in groups],
         )
 
     def to_dict(self) -> JSON:

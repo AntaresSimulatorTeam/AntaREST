@@ -142,7 +142,7 @@ def test_expiration() -> None:
 @pytest.mark.unit_test
 def test_refresh() -> None:
     service = Mock()
-    service.get_user.return_value = User(id=0, name="admin")
+    service.get_jwt.return_value = User(id=0, name="admin")
 
     app = create_app(service)
     client = app.test_client()
