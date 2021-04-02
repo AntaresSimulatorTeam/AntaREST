@@ -14,6 +14,7 @@ from werkzeug.exceptions import BadRequest
 
 from antarest.login.auth import Auth
 from antarest.common.config import Config
+from antarest.storage.model import PublicMode
 from antarest.storage.service import StorageService
 from antarest.common.requests import (
     RequestParameters,
@@ -388,5 +389,160 @@ def create_study_routes(
         code = HTTPStatus.ACCEPTED.value
 
         return jsonify(content), code
+
+    @bp.route(
+        "/studies/<string:uuid>/owner/<int:user_id>",
+        methods=["PUT"],
+    )
+    @auth.protected()
+    def change_owner(uuid: str, user_id: int) -> Any:
+        """
+        Change study owner
+        ---
+        responses:
+          '200':
+            content:
+              application/json: {}
+            description: Successful operation
+          '400':
+            description: Invalid request
+        parameters:
+          - in: path
+            name: uuid
+            required: true
+            description: study uuid used by server
+            schema:
+              type: string
+          - in: path
+            name: user_id
+            required: true
+            description: id of the new owner
+            schema:
+              type: number
+        tags:
+          - Manage Permissions
+        """
+        uuid_sanitized = sanitize_uuid(uuid)
+        params = RequestParameters(user=Auth.get_current_user())
+        storage_service.change_owner(uuid_sanitized, user_id, params)
+
+        return "", HTTPStatus.OK
+
+    @bp.route(
+        "/studies/<string:uuid>/groups/<string:group_id>",
+        methods=["PUT"],
+    )
+    @auth.protected()
+    def add_group(uuid: str, group_id: str) -> Any:
+        """
+        Add a group association
+        ---
+        responses:
+          '200':
+            content:
+              application/json: {}
+            description: Successful operation
+          '400':
+            description: Invalid request
+        parameters:
+          - in: path
+            name: uuid
+            required: true
+            description: study uuid used by server
+            schema:
+              type: string
+          - in: path
+            name: group_id
+            required: true
+            description: id of the group to add
+            schema:
+              type: string
+        tags:
+          - Manage Permissions
+        """
+        uuid_sanitized = sanitize_uuid(uuid)
+        params = RequestParameters(user=Auth.get_current_user())
+        storage_service.add_group(uuid_sanitized, group_id, params)
+
+        return "", HTTPStatus.OK
+
+    @bp.route(
+        "/studies/<string:uuid>/groups/<string:group_id>",
+        methods=["DELETE"],
+    )
+    @auth.protected()
+    def remove_group(uuid: str, group_id: str) -> Any:
+        """
+        Remove a group association
+        ---
+        responses:
+          '200':
+            content:
+              application/json: {}
+            description: Successful operation
+          '400':
+            description: Invalid request
+        parameters:
+          - in: path
+            name: uuid
+            required: true
+            description: study uuid used by server
+            schema:
+              type: string
+          - in: path
+            name: group_id
+            required: true
+            description: id of the group to remove
+            schema:
+              type: string
+        tags:
+          - Manage Permissions
+        """
+        uuid_sanitized = sanitize_uuid(uuid)
+
+        params = RequestParameters(user=Auth.get_current_user())
+        storage_service.remove_group(uuid_sanitized, group_id, params)
+
+        return "", HTTPStatus.OK
+
+    @bp.route(
+        "/studies/<string:uuid>/public_mode/<string:mode>",
+        methods=["PUT"],
+    )
+    @auth.protected()
+    def set_public_mode(uuid: str, mode: str) -> Any:
+        """
+        Set study public mode
+        ---
+        responses:
+          '200':
+            content:
+              application/json: {}
+            description: Successful operation
+          '400':
+            description: Invalid request
+        parameters:
+          - in: path
+            name: uuid
+            required: true
+            description: study uuid used by server
+            schema:
+              type: string
+          - in: path
+            name: mode
+            required: true
+            description: public mode
+            schema:
+              type: string
+              enum: [NONE,READ,EXECUTE,EDIT,FULL]
+        tags:
+          - Manage Permissions
+        """
+        uuid_sanitized = sanitize_uuid(uuid)
+        params = RequestParameters(user=Auth.get_current_user())
+        public_mode = PublicMode(mode)
+        storage_service.set_public_mode(uuid_sanitized, public_mode, params)
+
+        return "", HTTPStatus.OK
 
     return bp

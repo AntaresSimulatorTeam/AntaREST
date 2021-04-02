@@ -56,6 +56,7 @@ def test_server() -> None:
         storage_service=mock_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     client.get("/studies/study1/settings/general/params")
@@ -76,6 +77,7 @@ def test_404() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/studies/study1/settings/general/params")
@@ -97,6 +99,7 @@ def test_server_with_parameters() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/studies/study1?depth=4")
@@ -135,6 +138,7 @@ def test_create_study(
         storage_service=storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
 
@@ -170,6 +174,7 @@ def test_import_study_zipped(
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
 
@@ -197,6 +202,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
         storage_service=storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
 
@@ -227,6 +233,7 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
         storage_service=storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/studies")
@@ -242,6 +249,7 @@ def test_server_health() -> None:
         storage_service=Mock(),
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/health")
@@ -260,6 +268,7 @@ def test_export_files() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/studies/name/export")
@@ -282,6 +291,7 @@ def test_export_params() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     result = client.get("/studies/name/export?compact")
@@ -314,6 +324,7 @@ def test_delete_study() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     client.delete("/studies/name")
@@ -331,6 +342,7 @@ def test_import_matrix() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
 
@@ -360,6 +372,7 @@ def test_import_matrix_with_wrong_path() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
 
@@ -385,6 +398,7 @@ def test_edit_study() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     client.post("/studies/my-uuid/url/to/change", data=data)
@@ -406,6 +420,7 @@ def test_edit_study_fail() -> None:
         storage_service=mock_storage_service,
         session=Mock(),
         config=CONFIG,
+        user_service=Mock(),
     )
     client = app.test_client()
     res = client.post("/studies/my-uuid/url/to/change", data=data)

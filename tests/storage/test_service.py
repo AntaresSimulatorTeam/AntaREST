@@ -11,6 +11,7 @@ from antarest.login.model import User, Group
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.storage.business.permissions import StudyPermissionType
 from antarest.storage.model import (
     Study,
     StudyContentStatus,
@@ -39,6 +40,7 @@ def test_get_studies_uuid() -> None:
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
+        user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
     )
@@ -73,6 +75,7 @@ def test_sync_studies_from_disk() -> None:
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
+        user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
     )
@@ -121,6 +124,7 @@ def test_create_study() -> None:
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
+        user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
     )
@@ -170,6 +174,7 @@ def test_save_metadata() -> None:
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
+        user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
     )
@@ -195,6 +200,7 @@ def test_assert_permission() -> None:
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
+        user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
     )
@@ -203,19 +209,27 @@ def test_assert_permission() -> None:
     repository.get.return_value = Study(id=uuid, owner=wrong)
     study = service._get_study(uuid)
     with pytest.raises(UserHasNotPermissionError):
-        service._assert_permission(jwt, study)
-    assert not service._assert_permission(jwt, study, raising=False)
+        service._assert_permission(jwt, study, StudyPermissionType.READ)
+    assert not service._assert_permission(
+        jwt, study, StudyPermissionType.READ, raising=False
+    )
 
     # good owner
     study = Study(id=uuid, owner=good)
-    assert service._assert_permission(jwt, study)
+    assert service._assert_permission(
+        jwt, study, StudyPermissionType.MANAGE_PERMISSIONS
+    )
 
     # wrong group
     study = Study(id=uuid, owner=wrong, groups=[Group(id="wrong")])
     with pytest.raises(UserHasNotPermissionError):
-        service._assert_permission(jwt, study)
-    assert not service._assert_permission(jwt, study, raising=False)
+        service._assert_permission(jwt, study, StudyPermissionType.READ)
+    assert not service._assert_permission(
+        jwt, study, StudyPermissionType.READ, raising=False
+    )
 
     # good group
     study = Study(id=uuid, owner=wrong, groups=[Group(id="my-group")])
-    assert service._assert_permission(jwt, study)
+    assert service._assert_permission(
+        jwt, study, StudyPermissionType.MANAGE_PERMISSIONS
+    )

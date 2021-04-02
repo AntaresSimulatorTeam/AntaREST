@@ -55,6 +55,7 @@ def storage_service_builder() -> Callable:
         session=Mock(),
         path_studies=Path(),
         path_resources=Path(),
+        user_service=Mock(),
     ) -> StorageService:
 
         config = Config(
@@ -71,6 +72,7 @@ def storage_service_builder() -> Callable:
             application=Mock(),
             config=config,
             session=session,
+            user_service=user_service,
             study_factory=study_factory,
             exporter=exporter,
         )

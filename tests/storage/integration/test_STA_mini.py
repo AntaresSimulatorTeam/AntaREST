@@ -33,6 +33,7 @@ def assert_url_content(
     build_storage(
         app,
         session=Mock(),
+        user_service=Mock(),
         storage_service=storage_service,
         config=storage_service.study_service.config,
     )
@@ -357,6 +358,7 @@ def test_sta_mini_copy(storage_service) -> None:
     build_storage(
         app,
         session=Mock(),
+        user_service=Mock(),
         storage_service=storage_service,
         config=storage_service.study_service.config,
     )
@@ -459,6 +461,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         session=Mock(),
+        user_service=Mock(),
         config=storage_service.study_service.config,
     )
     client = app.test_client()
@@ -481,6 +484,7 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         session=Mock(),
+        user_service=Mock(),
         storage_service=storage_service,
         config=storage_service.study_service.config,
     )
@@ -514,6 +518,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         session=Mock(),
+        user_service=Mock(),
         config=storage_service.study_service.config,
     )
     client = app.test_client()

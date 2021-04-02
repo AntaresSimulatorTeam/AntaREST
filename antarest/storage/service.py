@@ -12,11 +12,16 @@ from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.common.jwt import JWTUser
 from antarest.login.model import User, Group
+from antarest.login.service import LoginService
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
+)
+from antarest.storage.business.permissions import (
+    StudyPermissionType,
+    check_permission,
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.raw_study_service import StudyService
@@ -26,6 +31,7 @@ from antarest.storage.model import (
     StudyFolder,
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
+    PublicMode,
 )
 from antarest.storage.repository.study import StudyMetadataRepository
 from antarest.storage.web.exceptions import (
@@ -42,19 +48,21 @@ class StorageService:
         study_service: StudyService,
         importer_service: ImporterService,
         exporter_service: ExporterService,
+        user_service: LoginService,
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
     ):
         self.study_service = study_service
         self.importer_service = importer_service
         self.exporter_service = exporter_service
+        self.user_service = user_service
         self.repository = repository
         self.event_bus = event_bus
 
     def get(self, route: str, depth: int, params: RequestParameters) -> JSON:
         uuid, url = StorageServiceUtils.extract_info_from_url(route)
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
 
         if isinstance(study, RawStudy):
             return self.study_service.get(study, url, depth)
@@ -68,7 +76,7 @@ class StorageService:
         return list(
             filter(
                 lambda study: self._assert_permission(
-                    params.user, study, raising=False
+                    params.user, study, StudyPermissionType.READ, raising=False
                 ),
                 self.repository.get_all(),
             )
@@ -84,7 +92,7 @@ class StorageService:
         self, uuid: str, params: RequestParameters
     ) -> JSON:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(
                 f"Study {uuid} with type {study.type} not recognized"
@@ -94,7 +102,7 @@ class StorageService:
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study)
+        self._assert_permission(params.user, study, StudyPermissionType.RUN)
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(
@@ -148,6 +156,9 @@ class StorageService:
                     workspace=folder.workspace,
                     owner=User(id=0),
                     groups=folder.groups,
+                    public_mode=PublicMode.FULL
+                    if len(folder.groups) == 0
+                    else PublicMode.NONE,
                 )
 
                 study.content_status = self._analyse_study(study)
@@ -167,7 +178,9 @@ class StorageService:
         params: RequestParameters,
     ) -> str:
         src_study = self._get_study(src_uuid)
-        self._assert_permission(params.user, src_study)
+        self._assert_permission(
+            params.user, src_study, StudyPermissionType.READ
+        )
 
         if not isinstance(src_study, RawStudy):
             raise StudyTypeUnsupported(
@@ -197,7 +210,7 @@ class StorageService:
         outputs: bool = True,
     ) -> BytesIO:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(
                 f"Study {uuid} with type {study.type} not recognized"
@@ -207,7 +220,7 @@ class StorageService:
 
     def delete_study(self, uuid: str, params: RequestParameters) -> None:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study)
+        self._assert_permission(params.user, study, StudyPermissionType.DELETE)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(
                 f"Study {uuid} with type {study.type} not recognized"
@@ -223,7 +236,7 @@ class StorageService:
         self, uuid: str, output_name: str, params: RequestParameters
     ) -> None:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study)
+        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(
                 f"Study {uuid} with type {study.type} not recognized"
@@ -237,7 +250,7 @@ class StorageService:
     def get_matrix(self, route: str, params: RequestParameters) -> bytes:
         uuid, path = StorageServiceUtils.extract_info_from_url(route)
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(
                 f"Study {uuid} with type {study.type} not recognized"
@@ -250,7 +263,7 @@ class StorageService:
     ) -> None:
         uuid, _ = StorageServiceUtils.extract_info_from_url(path)
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study)
+        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(
                 f"Study {uuid} with type {study.type} not recognized"
@@ -280,7 +293,7 @@ class StorageService:
         self, uuid: str, stream: IO[bytes], params: RequestParameters
     ) -> JSON:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study)
+        self._assert_permission(params.user, study, StudyPermissionType.RUN)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(
                 f"Study {uuid} with type {study.type} not recognized"
@@ -294,7 +307,7 @@ class StorageService:
     ) -> JSON:
         uuid, url = StorageServiceUtils.extract_info_from_url(route)
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study)
+        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(
                 f"Study {uuid} with type {study.type} not recognized"
@@ -305,6 +318,52 @@ class StorageService:
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
         return updated
+
+    def change_owner(
+        self, study_id: str, owner_id: int, params: RequestParameters
+    ) -> None:
+        study = self._get_study(study_id)
+        self._assert_permission(
+            params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
+        )
+        new_owner = self.user_service.get_user(owner_id, params)
+        study.owner = new_owner
+        self.repository.save(study)
+
+    def add_group(
+        self, study_id: str, group_id: str, params: RequestParameters
+    ) -> None:
+        study = self._get_study(study_id)
+        self._assert_permission(
+            params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
+        )
+        group = self.user_service.get_group(group_id)
+        study.groups = (
+            study.groups + group if group not in study.groups else study.groups
+        )
+        self.repository.save(study)
+
+    def remove_group(
+        self, study_id: str, group_id: str, params: RequestParameters
+    ) -> None:
+        study = self._get_study(study_id)
+        self._assert_permission(
+            params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
+        )
+        study.groups = [
+            group for group in study.groups if group.id != group_id
+        ]
+        self.repository.save(study)
+
+    def set_public_mode(
+        self, study_id: str, mode: PublicMode, params: RequestParameters
+    ) -> None:
+        study = self._get_study(study_id)
+        self._assert_permission(
+            params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
+        )
+        study.public_mode = mode
+        self.repository.save(study)
 
     def _save_study(
         self,
@@ -347,6 +406,7 @@ class StorageService:
         self,
         user: Optional[JWTUser],
         study: Optional[Study],
+        permission_type: StudyPermissionType,
         raising: bool = True,
     ) -> bool:
         if not user:
@@ -355,25 +415,11 @@ class StorageService:
         if not study:
             raise ValueError("Metadata is None")
 
-        if user.is_site_admin():
-            return True
+        ok = check_permission(user, study, permission_type)
+        if raising and not ok:
+            raise UserHasNotPermissionError()
 
-        is_owner = user.id == study.owner.id
-
-        study_group_id = [g.id for g in study.groups]
-        inside_group = (
-            study.groups
-            and user.groups
-            and any(g.id in study_group_id for g in user.groups)
-        )
-
-        if not is_owner and not inside_group:
-            if raising:
-                raise UserHasNotPermissionError()
-            else:
-                return False
-
-        return True
+        return ok
 
     def _analyse_study(self, metadata: RawStudy) -> StudyContentStatus:
         try:

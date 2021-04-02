@@ -151,8 +151,15 @@ def flask_app(config_file: Path) -> Flask:
         return response, e.code
 
     event_bus = build_eventbus(application, config)
-    storage = build_storage(
+    user_service = build_login(
         application, config, db_session, event_bus=event_bus
+    )
+    storage = build_storage(
+        application,
+        config,
+        db_session,
+        user_service=user_service,
+        event_bus=event_bus,
     )
     build_launcher(
         application,
@@ -161,7 +168,6 @@ def flask_app(config_file: Path) -> Flask:
         service_storage=storage,
         event_bus=event_bus,
     )
-    build_login(application, config, db_session, event_bus=event_bus)
     build_swagger(application)
 
     return application
