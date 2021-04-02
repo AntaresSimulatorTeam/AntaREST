@@ -4,7 +4,7 @@ from uuid import uuid4
 import pytest
 from flask import Flask
 
-from antarest.common.config import Config
+from antarest.common.config import Config, SecurityConfig
 from antarest.common.interfaces.eventbus import Event, EventType
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import RequestParameters
@@ -26,7 +26,7 @@ def create_app(service: Mock) -> Flask:
     build_launcher(
         app,
         service_launcher=service,
-        config=Config({"security": {"disabled": True}}),
+        config=Config(security=SecurityConfig(disable=True)),
         db_session=Mock(),
     )
     return app

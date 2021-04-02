@@ -3,25 +3,17 @@ from pathlib import Path
 
 import pytest
 
-from antarest.common.config import ConfigYaml
+from antarest.common.config import Config
 
 
 @pytest.mark.unit_test
 def test_get_yaml(project_path: Path):
-    config = ConfigYaml(file=project_path / "tests/common/test.yaml")
+    config = Config.from_yaml_file(
+        file=project_path / "resources/application.yaml"
+    )
 
-    assert config["main"] == {
-        "bonjour": ["le", "monde"],
-        "hello": "World",
-    }
-    assert config["main.hello"] == "World"
-    assert config["not_existing"] is None
-
-
-@pytest.mark.unit_test
-def test_env_yaml(project_path: Path):
-    config = ConfigYaml(file=project_path / "tests/common/test.yaml")
-
-    assert config["main.hello"] == "World"
-    os.environ["MAIN_HELLO"] = "antarest"
-    assert config["main.hello"] == "antarest"
+    assert config.security.admin_pwd == "admin"
+    assert config.storage.workspaces["default"].path == Path(
+        "examples/studies/"
+    )
+    assert config.logging.level == "INFO"

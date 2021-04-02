@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.common.config import Config
+from antarest.common.config import Config, StorageConfig, WorkspaceConfig
 from antarest.common.requests import (
     RequestParameters,
 )
@@ -19,15 +19,11 @@ from antarest.storage.web.exceptions import (
 
 def build_config(study_path: Path):
     return Config(
-        {
-            "storage": {
-                "workspaces": {
-                    DEFAULT_WORKSPACE_NAME: {
-                        "path": str(study_path.absolute())
-                    }
-                }
+        storage=StorageConfig(
+            workspaces={
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=study_path)
             }
-        }
+        )
     )
 
 

@@ -7,9 +7,23 @@ import pytest
 from flask import Flask
 
 from antarest import __version__
-from antarest.common.config import Config
+from antarest.common.config import (
+    Config,
+    SecurityConfig,
+    StorageConfig,
+    WorkspaceConfig,
+)
 from antarest.storage.main import build_storage
 from antarest.storage.model import DEFAULT_WORKSPACE_NAME
+
+
+CONFIG = Config(
+    resources_path=Path(),
+    security=SecurityConfig(disable=True),
+    storage=StorageConfig(
+        workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=Path())}
+    ),
+)
 
 
 @pytest.mark.unit_test
@@ -23,15 +37,7 @@ def test_version() -> None:
         app,
         storage_service=mock_storage_service,
         session=Mock(),
-        config=Config(
-            {
-                "_internal": {"resources_path": Path()},
-                "security": {"disabled": True},
-                "storage": {
-                    "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": Path()}}
-                },
-            }
-        ),
+        config=Config(),
     )
     client = app.test_client()
 
@@ -53,15 +59,7 @@ def test_get_matrix() -> None:
         app,
         storage_service=mock_storage_service,
         session=Mock(),
-        config=Config(
-            {
-                "_internal": {"resources_path": Path()},
-                "security": {"disabled": True},
-                "storage": {
-                    "workspaces": {DEFAULT_WORKSPACE_NAME: {"path": Path()}}
-                },
-            }
-        ),
+        config=CONFIG,
     )
     client = app.test_client()
 
