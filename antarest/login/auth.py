@@ -64,13 +64,12 @@ class Auth:
 
                 self.verify()
                 user = JWTUser.from_dict(self.get_identity())
+                g.user = user
 
                 if not admin:
-                    g.user = user
                     return fn(*args, **kwargs)
 
                 if user.is_site_admin():
-                    g.user = user
                     return fn(*args, **kwargs)
                 else:
                     return "User unauthorized", 403
