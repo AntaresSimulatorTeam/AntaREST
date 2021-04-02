@@ -150,8 +150,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
           - User
         """
         identity = get_jwt_identity()
-        params = RequestParameters(user=Auth.get_current_user())
-        user = service.get_user(identity["id"], params=params)
+        user = service.get_jwt(identity["id"])
         if user:
             resp = generate_tokens(user)
 
