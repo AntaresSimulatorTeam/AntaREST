@@ -82,8 +82,8 @@ class LoggingConfig:
 
 @dataclass(frozen=True)
 class RedisConfig:
-    host: str = ""
-    port: int = 0
+    host: str = "localhost"
+    port: int = 6379
 
     @staticmethod
     def from_dict(data: JSON) -> "RedisConfig":
@@ -92,14 +92,14 @@ class RedisConfig:
 
 @dataclass(frozen=True)
 class EventBusConfig:
-    redis: RedisConfig = RedisConfig()
+    redis: Optional[RedisConfig] = None
 
     @staticmethod
     def from_dict(data: JSON) -> "EventBusConfig":
         return EventBusConfig(
             redis=RedisConfig.from_dict(data["redis"])
             if "redis" in data
-            else RedisConfig()
+            else None
         )
 
 
