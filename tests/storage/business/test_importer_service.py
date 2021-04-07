@@ -41,7 +41,9 @@ def test_upload_matrix(tmp_path: Path, storage_service_builder) -> None:
     )
 
     matrix_path = "WRONG_MATRIX_PATH"
-    md = RawStudy(id=study_uuid, workspace=DEFAULT_WORKSPACE_NAME, path=study_path)
+    md = RawStudy(
+        id=study_uuid, workspace=DEFAULT_WORKSPACE_NAME, path=study_path
+    )
     with pytest.raises(IncorrectPathError):
         importer_service.upload_matrix(md, matrix_path, b"")
 
