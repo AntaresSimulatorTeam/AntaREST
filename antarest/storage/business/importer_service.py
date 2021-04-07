@@ -12,7 +12,7 @@ from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.raw_study_service import StudyService
-from antarest.storage.model import Study
+from antarest.storage.model import Study, RawStudy
 from antarest.storage.repository.antares_io.reader import IniReader
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.web.exceptions import (
@@ -32,7 +32,7 @@ class ImporterService:
         self.study_service = study_service
         self.study_factory = study_factory
 
-    def upload_matrix(self, metadata: Study, path: str, data: bytes) -> None:
+    def upload_matrix(self, metadata: RawStudy, path: str, data: bytes) -> None:
 
         relative_path_matrix = Path(path)
 
@@ -40,7 +40,7 @@ class ImporterService:
         StorageServiceUtils.assert_path_can_be_matrix(relative_path_matrix)
 
         path_matrix = (
-            self.study_service.get_workspace_path(metadata.workspace)
+            Path(metadata.path)
             / relative_path_matrix
         )
 
