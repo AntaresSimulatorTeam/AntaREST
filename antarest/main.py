@@ -8,7 +8,7 @@ from typing import Tuple, Any
 
 from gevent import monkey  # type: ignore
 
-monkey.patch_all()
+monkey.patch_all(thread=False)
 
 from flask import Flask, render_template, json, request
 from sqlalchemy import create_engine  # type: ignore

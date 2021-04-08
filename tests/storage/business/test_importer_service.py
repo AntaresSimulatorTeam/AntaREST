@@ -40,16 +40,16 @@ def test_upload_matrix(tmp_path: Path, storage_service_builder) -> None:
         study_factory=Mock(),
     )
 
-    study_url = study_uuid + "/"
     matrix_path = "WRONG_MATRIX_PATH"
-    md = RawStudy(id=study_uuid, workspace=DEFAULT_WORKSPACE_NAME)
+    md = RawStudy(
+        id=study_uuid, workspace=DEFAULT_WORKSPACE_NAME, path=study_path
+    )
     with pytest.raises(IncorrectPathError):
-        importer_service.upload_matrix(md, study_url + matrix_path, b"")
+        importer_service.upload_matrix(md, matrix_path, b"")
 
-    study_url = study_uuid + "/"
     matrix_path = "matrix.txt"
     data = b"hello"
-    importer_service.upload_matrix(md, study_url + matrix_path, data)
+    importer_service.upload_matrix(md, matrix_path, data)
     assert (study_path / matrix_path).read_bytes() == data
 
 

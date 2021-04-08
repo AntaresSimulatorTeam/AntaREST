@@ -114,6 +114,10 @@ def create_study_routes(
             schema:
               type: string
             required: true
+          - in: query
+            name: depth
+            schema:
+              type: string
         tags:
           - Manage Data inside Study
         """
