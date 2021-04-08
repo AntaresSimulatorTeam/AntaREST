@@ -89,9 +89,12 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
     ) -> Tuple[List[str], List[str]]:
         names, sub_url = url[0].split(","), url[1:]
         names = list(children.keys()) if names[0] == "*" else names
+        child_class = type(children[names[0]])
         for name in names:
             if name not in children:
                 raise ChildNotFoundError(
                     f"{name} not a children of {self.__class__.__name__}"
                 )
+            if type(children[name]) != child_class:
+                raise FilterError("Filter selection has different classes")
         return names, sub_url
