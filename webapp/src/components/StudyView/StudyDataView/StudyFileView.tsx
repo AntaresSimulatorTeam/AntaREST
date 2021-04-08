@@ -13,11 +13,12 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 }));
 
 interface PropTypes {
+  study: string;
   url: string;
 }
 
 const StudyDataView = (props: PropTypes) => {
-  const { url } = props;
+  const { study, url } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
   const [data, setData] = useState<string>();
@@ -37,7 +38,12 @@ const StudyDataView = (props: PropTypes) => {
   };
 
   useEffect(() => {
-    loadFileData(url);
+    const urlParts = url.split('/');
+    if (urlParts.length < 2) {
+      enqueueSnackbar(<Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, { variant: 'error' });
+      return;
+    }
+    loadFileData(`file/${study}/${urlParts.slice(2).join('/')}`);
   }, [url]);
 
   return (

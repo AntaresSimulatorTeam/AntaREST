@@ -264,7 +264,7 @@ class StorageService:
     def upload_matrix(
         self, path: str, data: bytes, params: RequestParameters
     ) -> None:
-        uuid, _ = StorageServiceUtils.extract_info_from_url(path)
+        uuid, matrix_path = StorageServiceUtils.extract_info_from_url(path)
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.WRITE)
         if not isinstance(study, RawStudy):
@@ -272,7 +272,7 @@ class StorageService:
                 f"Study {uuid} with type {study.type} not recognized"
             )
 
-        self.importer_service.upload_matrix(study, path, data)
+        self.importer_service.upload_matrix(study, matrix_path, data)
 
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, study.to_json_summary())
