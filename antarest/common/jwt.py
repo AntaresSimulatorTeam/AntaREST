@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from antarest.common.custom_types import JSON
 from antarest.common.roles import RoleType
-from antarest.login.model import Group, User
+from antarest.login.model import Group, User, Identity
 
 
 @dataclass
@@ -60,5 +60,5 @@ class JWTUser:
 
         return any(self.is_group_admin(g) for g in groups)
 
-    def is_himself(self, user: User) -> bool:
+    def is_himself(self, user: Identity) -> bool:
         return bool(self.id == user.id)

@@ -9,11 +9,12 @@ from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.login.model import User, Group, Role, BotCreateDTO
+from antarest.login.model import User, Group, Role, BotCreateDTO, Bot
 from antarest.login.repository import (
     UserRepository,
     GroupRepository,
     RoleRepository,
+    BotRepository,
 )
 
 
@@ -29,11 +30,13 @@ class LoginService:
     def __init__(
         self,
         user_repo: UserRepository,
+        bot_repo: BotRepository,
         group_repo: GroupRepository,
         role_repo: RoleRepository,
         event_bus: IEventBus,
     ):
         self.users = user_repo
+        self.bots = bot_repo
         self.groups = group_repo
         self.roles = role_repo
         self.event_bus = event_bus
@@ -57,8 +60,19 @@ class LoginService:
             raise UserHasNotPermissionError()
 
     # User (own user)
-    def save_bot(self, bot: BotCreateDTO):
-        pass
+    def save_bot(self, bot: BotCreateDTO, params: RequestParameters) -> Bot:
+        if params.user and params.user.is_himself(User(id=bot.bot.owner)):
+            role = self.roles.get(params.user.id, bot.group)
+            if role and role.type == bot.role:
+                b = self.bots.save(bot.bot)
+                self.roles.save(
+                    Role(group=Group(id=bot.group), type=bot.role, identity=b)
+                )
+                return b
+            else:
+                raise UserHasNotPermissionError()
+        else:
+            raise UserHasNotPermissionError()
 
     # SADMIN, GADMIN (own group)
     def save_role(self, role: Role, params: RequestParameters) -> Role:

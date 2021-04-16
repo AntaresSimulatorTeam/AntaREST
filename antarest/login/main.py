@@ -10,6 +10,7 @@ from antarest.login.repository import (
     UserRepository,
     GroupRepository,
     RoleRepository,
+    BotRepository,
 )
 from antarest.login.service import LoginService
 from antarest.login.web import create_login_api
@@ -25,10 +26,12 @@ def build_login(
 
     if service is None:
         user_repo = UserRepository(config, db_session)
+        bot_repo = BotRepository(db_session)
         group_repo = GroupRepository(db_session)
         role_repo = RoleRepository(db_session)
         service = LoginService(
             user_repo=user_repo,
+            bot_repo=bot_repo,
             group_repo=group_repo,
             role_repo=role_repo,
             event_bus=event_bus,
