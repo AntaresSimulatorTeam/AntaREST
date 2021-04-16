@@ -9,7 +9,7 @@ from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.login.model import User, Group, Role
+from antarest.login.model import User, Group, Role, BotCreateDTO
 from antarest.login.repository import (
     UserRepository,
     GroupRepository,
@@ -55,6 +55,10 @@ class LoginService:
             return self.users.save(user)
         else:
             raise UserHasNotPermissionError()
+
+    # User (own user)
+    def save_bot(self, bot: BotCreateDTO):
+        pass
 
     # SADMIN, GADMIN (own group)
     def save_role(self, role: Role, params: RequestParameters) -> Role:

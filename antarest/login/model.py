@@ -3,7 +3,7 @@ import uuid
 from typing import Any, List
 
 from dataclasses import dataclass
-from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey, Enum  # type: ignore
+from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from werkzeug.security import (
@@ -58,6 +58,9 @@ class Identity(Base):  # type: ignore
         "polymorphic_on": type,
     }
 
+    def get_impersonator(self) -> int:
+        return int(self.id)
+
 
 @dataclass
 class User(Identity):  # type: ignore
@@ -94,6 +97,34 @@ class User(Identity):  # type: ignore
         if not isinstance(o, User):
             return False
         return bool((o.id == self.id) and (o.name == self.name))
+
+
+@dataclass
+class Bot(Identity):
+    __tablename__ = "bots"
+
+    id = Column(
+        Integer,
+        Sequence("identity_id_seq"),
+        ForeignKey("identities.id"),
+        primary_key=True,
+    )
+    owner = Column(Integer, ForeignKey("users.id"))
+    isAuthor = Column(Boolean(), default=True)
+
+    def get_impersonator(self) -> int:
+        return int(self.id if self.isAuthor else self.owner)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "bots",
+    }
+
+
+@dataclass
+class BotCreateDTO:
+    bot: Bot
+    group: str
+    role: RoleType
 
 
 @dataclass

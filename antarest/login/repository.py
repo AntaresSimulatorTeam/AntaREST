@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
 from antarest.common.roles import RoleType
-from antarest.login.model import User, Password, Group, Role, Identity
+from antarest.login.model import User, Password, Group, Role, Identity, Bot
 
 
 class GroupRepository:
@@ -76,6 +76,33 @@ class UserRepository:
 
     def delete(self, id: int) -> None:
         u: User = self.session.query(User).get(id)
+        self.session.delete(u)
+        self.session.commit()
+
+
+class BotRepository:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def save(self, bot: Bot) -> Bot:
+        res = self.session.query(exists().where(Bot.id == bot.id)).scalar()
+        if res:
+            raise ValueError("Bot already exist")
+        else:
+            self.session.add(bot)
+        self.session.commit()
+        return bot
+
+    def get(self, id: int) -> Optional[Bot]:
+        bot: Bot = self.session.query(Bot).get(id)
+        return bot
+
+    def get_all(self) -> List[Bot]:
+        bots: List[Bot] = self.session.query(Bot).all()
+        return bots
+
+    def delete(self, id: int) -> None:
+        u: Bot = self.session.query(Bot).get(id)
         self.session.delete(u)
         self.session.commit()
 
