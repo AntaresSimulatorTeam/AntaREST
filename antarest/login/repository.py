@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
 from antarest.common.roles import RoleType
-from antarest.login.model import User, Password, Group, Role
+from antarest.login.model import User, Password, Group, Role, Identity
 
 
 class GroupRepository:
@@ -87,14 +87,15 @@ class RoleRepository:
             self.save(
                 Role(
                     type=RoleType.ADMIN,
-                    user=User(id=1),
+                    identity=User(id=1),
                     group=Group(id="admin"),
                 )
             )
 
     def save(self, role: Role) -> Role:
         role.group = self.session.merge(role.group)
-        role.user = self.session.merge(role.user)
+        role.identity = self.session.merge(role.identity)
+
         self.session.add(role)
         self.session.commit()
         return role
@@ -105,7 +106,7 @@ class RoleRepository:
 
     def get_all_by_user(self, user: int) -> List[Role]:
         roles: List[Role] = (
-            self.session.query(Role).filter_by(user_id=user).all()
+            self.session.query(Role).filter_by(identity_id=user).all()
         )
         return roles
 

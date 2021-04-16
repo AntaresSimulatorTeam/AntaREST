@@ -1,3 +1,4 @@
+import enum
 import uuid
 from typing import Any, List
 
@@ -12,14 +13,7 @@ from werkzeug.security import (
 
 from antarest.common.custom_types import JSON
 from antarest.common.roles import RoleType
-from antarest.common.persistence import DTO, Base
-
-users_groups = Table(
-    "users_groups",
-    Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id")),
-    Column("group_id", Integer, ForeignKey("groups.id")),
-)
+from antarest.common.persistence import Base
 
 
 class Password:
@@ -42,12 +36,44 @@ class Password:
 
 
 @dataclass
-class User(Base):  # type: ignore
+class Identity(Base):  # type: ignore
+    __tablename__ = "identities"
+
+    id = Column(Integer, Sequence("identity_id_seq"), primary_key=True)
+    name = Column(String(255))
+    type = Column(String(50))
+
+    @staticmethod
+    def from_dict(data: JSON) -> "Identity":
+        return Identity(
+            id=data["id"],
+            name=data["name"],
+        )
+
+    def to_dict(self) -> JSON:
+        return {"id": self.id, "name": self.name}
+
+    __mapper_args__ = {
+        "polymorphic_identity": "identities",
+        "polymorphic_on": type,
+    }
+
+
+@dataclass
+class User(Identity):  # type: ignore
     __tablename__ = "users"
 
-    id = Column(Integer, Sequence("user_id_seq"), primary_key=True)
-    name = Column(String(255))
+    id = Column(
+        Integer,
+        Sequence("identity_id_seq"),
+        ForeignKey("identities.id"),
+        primary_key=True,
+    )
     _pwd = Column(String(255))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "users",
+    }
 
     @hybrid_property
     def password(self) -> Password:
@@ -98,22 +124,24 @@ class Role(Base):  # type: ignore
     __tablename__ = "roles"
 
     type = Column(Enum(RoleType))
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    identity_id = Column(
+        Integer, ForeignKey("identities.id"), primary_key=True
+    )
     group_id = Column(String(36), ForeignKey("groups.id"), primary_key=True)
-    user = relationship("User")
+    identity = relationship("Identity")
     group = relationship("Group")
 
     @staticmethod
     def from_dict(data: JSON) -> "Role":
         return Role(
             type=RoleType.from_dict(data["type"]),
-            user=User.from_dict(data["user"]),
+            identity=User.from_dict(data["user"]),
             group=Group.from_dict(data["group"]),
         )
 
     def to_dict(self) -> JSON:
         return {
             "type": self.type.to_dict(),
-            "user": self.user.to_dict(),
+            "user": self.identity.to_dict(),
             "group": self.group.to_dict(),
         }

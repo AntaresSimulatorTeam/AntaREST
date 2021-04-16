@@ -295,7 +295,7 @@ def test_group_delete() -> None:
 @pytest.mark.unit_test
 def test_role() -> None:
     role = Role(
-        user=User(id=0, name="n"),
+        identity=User(id=0, name="n"),
         group=Group(id="g", name="n"),
         type=RoleType.ADMIN,
     )
@@ -312,7 +312,7 @@ def test_role() -> None:
 @pytest.mark.unit_test
 def test_role_create() -> None:
     role = Role(
-        user=User(id=0, name="n"),
+        identity=User(id=0, name="n"),
         group=Group(id="g", name="n"),
         type=RoleType.ADMIN,
     )

@@ -84,7 +84,9 @@ def test_save_user():
 
 
 def test_save_role():
-    role = Role(type=RoleType.ADMIN, user=User(id=0), group=Group(id="group"))
+    role = Role(
+        type=RoleType.ADMIN, identity=User(id=0), group=Group(id="group")
+    )
     roles = Mock()
     roles.save.return_value = role
 
@@ -119,7 +121,7 @@ def test_get_user():
     users = Mock()
     users.get.return_value = user
 
-    role = Role(type=RoleType.READER, user=user, group=Group(id="group"))
+    role = Role(type=RoleType.READER, identity=user, group=Group(id="group"))
     roles = Mock()
     roles.get_all_by_user.return_value = [role]
 
