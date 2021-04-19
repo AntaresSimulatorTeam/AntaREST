@@ -55,9 +55,8 @@ class LauncherService:
             uuid=study_uuid, params=params
         )
         study_version = study_info["antares"]["version"]
-        study_path = self.storage_service.get_study_path(study_uuid, params)
         job_uuid: UUID = self.launchers[launcher].run_study(
-            study_path, study_version
+            study_uuid, study_version, params
         )
 
         self.repository.save(

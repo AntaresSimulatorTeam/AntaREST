@@ -4,15 +4,20 @@ from typing import Callable
 from uuid import UUID
 
 from antarest.common.config import Config
+from antarest.common.requests import RequestParameters
 from antarest.launcher.model import JobResult
+from antarest.storage.service import StorageService
 
 
 class ILauncher(ABC):
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, storage_service: StorageService):
         self.config = config
+        self.storage_service = storage_service
 
     @abstractmethod
-    def run_study(self, study_path: Path, version: str) -> UUID:
+    def run_study(
+        self, study_uuid: str, version: str, params: RequestParameters
+    ) -> UUID:
         pass
 
     @abstractmethod

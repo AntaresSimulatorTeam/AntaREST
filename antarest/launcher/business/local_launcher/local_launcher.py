@@ -5,8 +5,10 @@ from typing import Callable, List, Any
 from uuid import UUID, uuid4
 
 from antarest.common.config import Config
+from antarest.common.requests import RequestParameters
 from antarest.launcher.business.ilauncher import ILauncher
 from antarest.launcher.model import JobResult, JobStatus
+from antarest.storage.service import StorageService
 
 
 class StudyVersionNotSupported(Exception):
@@ -14,16 +16,23 @@ class StudyVersionNotSupported(Exception):
 
 
 class LocalLauncher(ILauncher):
-    def __init__(self, config: Config) -> None:
-        super().__init__(config)
+    def __init__(
+        self, config: Config, storage_service: StorageService
+    ) -> None:
+        super().__init__(config, storage_service)
         self.callbacks: List[Callable[[JobResult], None]] = []
 
-    def run_study(self, study_path: Path, version: str) -> UUID:
+    def run_study(
+        self, study_uuid: str, version: str, params: RequestParameters
+    ) -> UUID:
         antares_solver_path = self.config.launcher.binaries[version]
         if antares_solver_path is None:
             raise StudyVersionNotSupported()
         else:
             uuid = uuid4()
+            study_path = self.storage_service.get_study_path(
+                study_uuid, params
+            )
             job = threading.Thread(
                 target=LocalLauncher._compute,
                 args=(self, antares_solver_path, study_path, uuid),
