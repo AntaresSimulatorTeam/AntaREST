@@ -63,7 +63,7 @@ class Identity(Base):  # type: ignore
 
 
 @dataclass
-class User(Identity):  # type: ignore
+class User(Identity):
     __tablename__ = "users"
 
     id = Column(

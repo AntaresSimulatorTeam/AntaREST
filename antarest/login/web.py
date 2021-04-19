@@ -1,6 +1,6 @@
 import json
 from datetime import timedelta
-from typing import Any
+from typing import Any, Optional
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import (  # type: ignore
@@ -30,7 +30,9 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     auth = Auth(config)
 
-    def generate_tokens(user: JWTUser, expire=None) -> Any:
+    def generate_tokens(
+        user: JWTUser, expire: Optional[timedelta] = None
+    ) -> Any:
         access_token = create_access_token(
             identity=user.to_dict(), expires_delta=expire
         )
