@@ -296,6 +296,42 @@ def test_get_all_users():
     )
 
 
+def test_get_all_bots():
+    bots = Mock()
+    bots.get_all.return_value = [Bot(id=0, name="alice")]
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert_permission(
+        test=lambda x: service.get_all_bots(x),
+        values=[(SADMIN, True), (GADMIN, False), (USER3, False)],
+    )
+
+
+def test_get_all_bots_by_owner():
+    bots = Mock()
+    bots.get_all_by_owner.return_value = [Bot(id=0, name="alice")]
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert_permission(
+        test=lambda x: service.get_all_bots_by_owner(3, x),
+        values=[(SADMIN, True), (GADMIN, False), (USER3, True)],
+    )
+
+
 def test_get_all_roles_in_group():
     roles = Mock()
     roles.get_all_by_group.return_value = [Role()]
@@ -336,9 +372,13 @@ def test_delete_user():
     users = Mock()
     users.delete.return_value = User()
 
+    bots = Mock()
+    bots.get_all_by_owner.return_value = [Bot(id=4, owner=3)]
+    bots.get.return_value = Bot(id=4, owner=3)
+
     service = LoginService(
         user_repo=users,
-        bot_repo=Mock(),
+        bot_repo=bots,
         group_repo=Mock(),
         role_repo=Mock(),
         event_bus=Mock(),
@@ -346,6 +386,28 @@ def test_delete_user():
 
     assert_permission(
         test=lambda x: service.delete_user(3, x),
+        values=[(SADMIN, True), (GADMIN, False), (USER3, True)],
+    )
+
+    users.delete.assert_called_with(3)
+    bots.delete.assert_called_with(4)
+
+
+def test_delete_bot():
+    bots = Mock()
+    bots.delete.return_value = Bot()
+    bots.get.return_value = Bot(id=4, owner=3)
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert_permission(
+        test=lambda x: service.delete_bot(3, x),
         values=[(SADMIN, True), (GADMIN, False), (USER3, True)],
     )
 

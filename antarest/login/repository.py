@@ -106,6 +106,10 @@ class BotRepository:
         self.session.delete(u)
         self.session.commit()
 
+    def get_all_by_owner(self, owner: int) -> List[Bot]:
+        bots: List[Bot] = self.session.query(Bot).filter_by(owner=owner).all()
+        return bots
+
 
 class RoleRepository:
     def __init__(self, session: Session):
