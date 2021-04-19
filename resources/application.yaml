@@ -20,6 +20,8 @@ launcher:
   local:
     binaries:
       700: path/to/700
+  slurm:
+    workspace: path/to/workspace
 
 debug: true
 
