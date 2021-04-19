@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 from typing import Any
 
 from flask import Blueprint, request, jsonify
@@ -9,11 +10,14 @@ from flask_jwt_extended import (  # type: ignore
     jwt_required,
 )
 
-from antarest.common.jwt import JWTUser
-from antarest.common.requests import RequestParameters
+from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.requests import (
+    RequestParameters,
+    UserHasNotPermissionError,
+)
 from antarest.login.auth import Auth
 from antarest.common.config import Config
-from antarest.login.model import User, Group, Password, Role
+from antarest.login.model import User, Group, Password, Role, BotCreateDTO
 from antarest.login.service import LoginService
 
 
@@ -26,16 +30,16 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
     auth = Auth(config)
 
-    def generate_tokens(user: JWTUser) -> Any:
-        access_token = create_access_token(identity=user.to_dict())
-        refresh_token = create_refresh_token(identity=user.to_dict())
-        return jsonify(
-            {
-                "user": user.name,
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-            }
+    def generate_tokens(user: JWTUser, expire=None) -> Any:
+        access_token = create_access_token(
+            identity=user.to_dict(), expires_delta=expire
         )
+        refresh_token = create_refresh_token(identity=user.to_dict())
+        return {
+            "user": user.name,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }
 
     @bp.route("/login", methods=["POST"])
     def login() -> Any:
@@ -102,7 +106,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
         resp = generate_tokens(user)
 
         return (
-            resp,
+            jsonify(resp),
             200,
         )
 
@@ -155,7 +159,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
             resp = generate_tokens(user)
 
             return (
-                resp,
+                jsonify(resp),
                 200,
             )
         else:
@@ -189,7 +193,7 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
 
         return jsonify(service.save_user(u, params).to_dict())
 
-    @bp.route("/users/<int:id>", methods=["POST"])
+    @bp.route("/users/<int:id>", methods=["PUT"])
     @auth.protected()
     def users_update(id: int) -> Any:
         params = RequestParameters(user=Auth.get_current_user())
@@ -263,6 +267,35 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
         params = RequestParameters(user=Auth.get_current_user())
         service.delete_role(user, group, params)
         return jsonify((user, group)), 200
+
+    @bp.route("/bots", methods=["POST"])
+    @auth.protected()
+    def bots_create() -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        create = BotCreateDTO.from_dict(json.loads(request.data))
+        bot = service.save_bot(create, params)
+
+        if not bot:
+            return UserHasNotPermissionError()
+
+        group = service.get_group(create.group, params)
+        if not group:
+            return UserHasNotPermissionError()
+
+        jwt = JWTUser(
+            id=bot.get_impersonator(),  # Shit goes real....
+            name=bot.name,
+            groups=[JWTGroup(id=group.id, name=group.name, role=create.role)],
+        )
+        tokens = generate_tokens(jwt, expire=timedelta(days=368 * 200))
+        return tokens["access_token"]
+
+    @bp.route("/bots/<int:id>", methods=["DELETE"])
+    @auth.protected()
+    def bots_delete(id: int) -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        service.delete_bot(id, params)
+        return jsonify(id), 200
 
     @bp.route("/protected")
     @auth.protected()

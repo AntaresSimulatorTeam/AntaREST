@@ -110,14 +110,31 @@ class Bot(Identity):
         primary_key=True,
     )
     owner = Column(Integer, ForeignKey("users.id"))
-    isAuthor = Column(Boolean(), default=True)
+    is_author = Column(Boolean(), default=True)
 
     def get_impersonator(self) -> int:
-        return int(self.id if self.isAuthor else self.owner)
+        return int(self.id if self.is_author else self.owner)
 
     __mapper_args__ = {
         "polymorphic_identity": "bots",
     }
+
+    @staticmethod
+    def from_dict(data: JSON) -> "Bot":
+        return Bot(
+            id=data["id"],
+            name=data["name"],
+            owner=data["owner"],
+            is_author=data["isAuthor"],
+        )
+
+    def to_dict(self) -> JSON:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "owner": self.owner,
+            "isAuthor": self.is_author,
+        }
 
 
 @dataclass
@@ -125,6 +142,21 @@ class BotCreateDTO:
     bot: Bot
     group: str
     role: RoleType
+
+    @staticmethod
+    def from_dict(data: JSON) -> "BotCreateDTO":
+        return BotCreateDTO(
+            bot=Bot.from_dict(data["bot"]),
+            group=data["group"],
+            role=RoleType.from_dict(data["role"]),
+        )
+
+    def to_dict(self) -> JSON:
+        return {
+            "bot": self.bot.to_dict(),
+            "group": self.group,
+            "role": self.role.to_dict(),
+        }
 
 
 @dataclass
