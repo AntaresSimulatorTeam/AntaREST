@@ -15,7 +15,8 @@ from antarest.launcher.model import JobResult, JobStatus
 
 ADMIN = JWTUser(
     id=1,
-    name="admin",
+    impersonator=1,
+    type="users",
     groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
 )
 

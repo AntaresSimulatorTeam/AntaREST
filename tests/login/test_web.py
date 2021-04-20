@@ -29,7 +29,8 @@ from antarest.login.model import (
 PARAMS = RequestParameters(
     user=JWTUser(
         id=0,
-        name="admin",
+        impersonator=0,
+        type="users",
         groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
     )
 )
@@ -72,7 +73,8 @@ def create_auth_token(
             expires_delta=expires_delta,
             identity=JWTUser(
                 id=0,
-                name="admin",
+                impersonator=0,
+                type="users",
                 groups=[
                     JWTGroup(id="group", name="group", role=RoleType.ADMIN)
                 ],

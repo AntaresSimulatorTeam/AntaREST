@@ -37,6 +37,6 @@ def build_login(
             event_bus=event_bus,
         )
 
-    JWTManager(application)
-    application.register_blueprint(create_login_api(service, config))
+    jwt = JWTManager(application)
+    application.register_blueprint(create_login_api(service, config, jwt))
     return service

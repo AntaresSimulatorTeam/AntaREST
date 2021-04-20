@@ -29,7 +29,8 @@ class JWTGroup:
 @dataclass
 class JWTUser:
     id: int
-    name: str = ""
+    type: str
+    impersonator: int
     groups: List[JWTGroup] = field(default_factory=lambda: list())
 
     @staticmethod
@@ -37,14 +38,16 @@ class JWTUser:
         groups = data["groups"] if "groups" in data else []
         return JWTUser(
             id=data["id"],
-            name=data["name"],
+            impersonator=data["impersonator"],
+            type=data["type"],
             groups=[JWTGroup.from_dict(g) for g in groups],
         )
 
     def to_dict(self) -> JSON:
         return {
             "id": self.id,
-            "name": self.name,
+            "impersonator": self.impersonator,
+            "type": self.type,
             "groups": [g.to_dict() for g in self.groups],
         }
 

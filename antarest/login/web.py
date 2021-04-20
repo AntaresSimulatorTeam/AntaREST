@@ -8,6 +8,7 @@ from flask_jwt_extended import (  # type: ignore
     get_jwt_identity,
     create_refresh_token,
     jwt_required,
+    JWTManager,
 )
 
 from antarest.common.jwt import JWTUser, JWTGroup
@@ -21,7 +22,9 @@ from antarest.login.model import User, Group, Password, Role, BotCreateDTO
 from antarest.login.service import LoginService
 
 
-def create_login_api(service: LoginService, config: Config) -> Blueprint:
+def create_login_api(
+    service: LoginService, config: Config, jwt: JWTManager
+) -> Blueprint:
     bp = Blueprint(
         "create_login_api",
         __name__,
@@ -38,10 +41,16 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
         )
         refresh_token = create_refresh_token(identity=user.to_dict())
         return {
-            "user": user.name,
+            "user": user.id,
             "access_token": access_token,
             "refresh_token": refresh_token,
         }
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_is_revoked(jwt_header, jwt_payload):
+        id = jwt_payload["sub"]["id"]
+        type = jwt_payload["sub"]["type"]
+        return type == "bots" and not service.exists_bot(id)
 
     @bp.route("/login", methods=["POST"])
     def login() -> Any:
@@ -285,8 +294,9 @@ def create_login_api(service: LoginService, config: Config) -> Blueprint:
             return UserHasNotPermissionError()
 
         jwt = JWTUser(
-            id=bot.get_impersonator(),  # Shit goes real....
-            name=bot.name,
+            id=bot.id,
+            impersonator=bot.get_impersonator(),
+            type=bot.type,
             groups=[JWTGroup(id=group.id, name=group.name, role=create.role)],
         )
         tokens = generate_tokens(jwt, expire=timedelta(days=368 * 200))

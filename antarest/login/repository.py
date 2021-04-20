@@ -110,6 +110,10 @@ class BotRepository:
         bots: List[Bot] = self.session.query(Bot).filter_by(owner=owner).all()
         return bots
 
+    def exists(self, id: int) -> bool:
+        res: bool = self.session.query(exists().where(Bot.id == id)).scalar()
+        return res
+
 
 class RoleRepository:
     def __init__(self, session: Session):

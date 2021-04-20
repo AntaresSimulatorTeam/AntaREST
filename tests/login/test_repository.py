@@ -64,6 +64,8 @@ def test_bots():
     with pytest.raises(ValueError):
         repo.save(a)
 
+    assert repo.exists(a.id)
+
     repo.delete(a.id)
     assert repo.get(a.id) is None
 

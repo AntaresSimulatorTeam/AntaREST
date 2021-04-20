@@ -48,7 +48,7 @@ def test_get_studies_uuid() -> None:
     )
 
     studies = service._get_study_metadatas(
-        RequestParameters(user=JWTUser(id=1))
+        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users"))
     )
 
     assert [a, c] == studies
@@ -131,7 +131,10 @@ def test_create_study() -> None:
         event_bus=Mock(),
     )
 
-    service.create_study("new-study", RequestParameters(JWTUser(id=0)))
+    service.create_study(
+        "new-study",
+        RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    )
 
     study_service.create_study.assert_called_once()
     repository.save.assert_called_once_with(expected)
@@ -208,14 +211,20 @@ def test_change_owner() -> None:
     repository.get.return_value = Study(id=uuid, owner=alice)
     user_service.get_user.return_value = bob
 
-    service.change_owner(uuid, 2, RequestParameters(JWTUser(id=1)))
+    service.change_owner(
+        uuid, 2, RequestParameters(JWTUser(id=1, impersonator=1, type="users"))
+    )
     user_service.get_user.assert_called_once_with(
-        2, RequestParameters(JWTUser(id=1))
+        2, RequestParameters(JWTUser(id=1, impersonator=1, type="users"))
     )
     repository.save.assert_called_once_with(Study(id=uuid, owner=bob))
 
     with pytest.raises(UserHasNotPermissionError):
-        service.change_owner(uuid, 1, RequestParameters(JWTUser(id=1)))
+        service.change_owner(
+            uuid,
+            1,
+            RequestParameters(JWTUser(id=1, impersonator=1, type="users")),
+        )
 
 
 def test_manage_group() -> None:
@@ -239,15 +248,26 @@ def test_manage_group() -> None:
     repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a])
 
     with pytest.raises(UserHasNotPermissionError):
-        service.add_group(uuid, "b", RequestParameters(JWTUser(id=2)))
+        service.add_group(
+            uuid,
+            "b",
+            RequestParameters(JWTUser(id=2, impersonator=2, type="users")),
+        )
 
     user_service.get_group.return_value = group_b
     service.add_group(
-        uuid, "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+        uuid,
+        "b",
+        RequestParameters(
+            JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])
+        ),
     )
 
     user_service.get_group.assert_called_once_with(
-        "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+        "b",
+        RequestParameters(
+            JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])
+        ),
     )
     repository.save.assert_called_with(
         Study(id=uuid, owner=alice, groups=[group_a, group_b])
@@ -257,10 +277,17 @@ def test_manage_group() -> None:
         id=uuid, owner=alice, groups=[group_a, group_b]
     )
     service.add_group(
-        uuid, "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+        uuid,
+        "b",
+        RequestParameters(
+            JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])
+        ),
     )
     user_service.get_group.assert_called_with(
-        "b", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+        "b",
+        RequestParameters(
+            JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])
+        ),
     )
     repository.save.assert_called_with(
         Study(id=uuid, owner=alice, groups=[group_a, group_b])
@@ -270,7 +297,11 @@ def test_manage_group() -> None:
         id=uuid, owner=alice, groups=[group_a, group_b]
     )
     service.remove_group(
-        uuid, "a", RequestParameters(JWTUser(id=2, groups=[group_a_admin]))
+        uuid,
+        "a",
+        RequestParameters(
+            JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])
+        ),
     )
     repository.save.assert_called_with(
         Study(id=uuid, owner=alice, groups=[group_b])
@@ -296,13 +327,17 @@ def test_set_public_mode() -> None:
 
     with pytest.raises(UserHasNotPermissionError):
         service.set_public_mode(
-            uuid, PublicMode.FULL, RequestParameters(JWTUser(id=1))
+            uuid,
+            PublicMode.FULL,
+            RequestParameters(JWTUser(id=1, impersonator=1, type="users")),
         )
 
     service.set_public_mode(
         uuid,
         PublicMode.FULL,
-        RequestParameters(JWTUser(id=1, groups=[group_admin])),
+        RequestParameters(
+            JWTUser(id=1, impersonator=1, type="users", groups=[group_admin])
+        ),
     )
     repository.save.assert_called_once_with(
         Study(id=uuid, public_mode=PublicMode.FULL)
@@ -312,11 +347,11 @@ def test_set_public_mode() -> None:
 def test_assert_permission() -> None:
     uuid = str(uuid4())
     admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
-    admin = JWTUser(id=1, groups=[admin_group])
+    admin = JWTUser(id=1, impersonator=1, type="users", groups=[admin_group])
     group = JWTGroup(id="my-group", name="g", role=RoleType.ADMIN)
-    jwt = JWTUser(id=0, groups=[group])
+    jwt = JWTUser(id=0, impersonator=0, type="users", groups=[group])
     group_2 = JWTGroup(id="my-group-2", name="g2", role=RoleType.RUNNER)
-    jwt_2 = JWTUser(id=3, groups=[group_2])
+    jwt_2 = JWTUser(id=3, impersonator=3, type="users", groups=[group_2])
     good = User(id=0)
     wrong = User(id=2)
 

@@ -27,7 +27,8 @@ from antarest.login.service import (
 SADMIN = RequestParameters(
     user=JWTUser(
         id=0,
-        name="admin",
+        impersonator=0,
+        type="users",
         groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
     )
 )
@@ -35,7 +36,8 @@ SADMIN = RequestParameters(
 GADMIN = RequestParameters(
     user=JWTUser(
         id=1,
-        name="alice",
+        impersonator=1,
+        type="users",
         groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
     )
 )
@@ -43,7 +45,8 @@ GADMIN = RequestParameters(
 USER3 = RequestParameters(
     user=JWTUser(
         id=3,
-        name="bob",
+        impersonator=3,
+        type="users",
         groups=[JWTGroup(id="group", name="group", role=RoleType.READER)],
     )
 )
@@ -242,7 +245,8 @@ def test_authenticate():
 
     exp = JWTUser(
         id=0,
-        name="linus",
+        impersonator=0,
+        type="users",
         groups=[JWTGroup(id="group", name="group", role=RoleType.READER)],
     )
 

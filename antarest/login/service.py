@@ -136,6 +136,9 @@ class LoginService:
         else:
             raise UserHasNotPermissionError()
 
+    def exists_bot(self, id: int) -> bool:
+        return self.bots.exists(id)
+
     def authenticate(self, name: str, pwd: str) -> Optional[JWTUser]:
         user = self.users.get_by_name(name)
         if user and user.password.check(pwd):  # type: ignore
@@ -147,7 +150,8 @@ class LoginService:
         if user:
             return JWTUser(
                 id=user.id,
-                name=user.name,
+                impersonator=user.get_impersonator(),
+                type=user.type,
                 groups=[
                     JWTGroup(id=r.group.id, name=r.group.name, role=r.type)
                     for r in self.roles.get_all_by_user(user_id)

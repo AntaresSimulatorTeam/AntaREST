@@ -21,7 +21,8 @@ from antarest.common.requests import (
 
 ADMIN = JWTUser(
     id=1,
-    name="admin",
+    impersonator=1,
+    type="users",
     groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
 )
 
