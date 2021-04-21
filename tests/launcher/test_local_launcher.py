@@ -12,7 +12,7 @@ from antarest.launcher.model import JobResult, JobStatus
 
 @pytest.mark.unit_test
 def test_compute():
-    local_launcher = LocalLauncher(Config())
+    local_launcher = LocalLauncher(Config(), storage_service=Mock())
 
     uuid = uuid4()
 

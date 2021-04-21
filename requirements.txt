@@ -1,3 +1,5 @@
+-r antares-launcher/requirements.txt
+flask==1.1.2
 jsonref==0.2
 PyYAML==5.3.1
 filelock==3.0.12
