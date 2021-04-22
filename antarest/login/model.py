@@ -136,26 +136,34 @@ class Bot(Identity):
             "isAuthor": self.is_author,
         }
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Bot):
+            return False
+        return self.to_dict() == other.to_dict()
+
 
 @dataclass
 class BotCreateDTO:
-    bot: Bot
+    name: str
     group: str
     role: RoleType
+    is_author: bool = True
 
     @staticmethod
     def from_dict(data: JSON) -> "BotCreateDTO":
         return BotCreateDTO(
-            bot=Bot.from_dict(data["bot"]),
+            name=data["name"],
             group=data["group"],
             role=RoleType.from_dict(data["role"]),
+            is_author=data.get("isAuthor", True),
         )
 
     def to_dict(self) -> JSON:
         return {
-            "bot": self.bot.to_dict(),
+            "name": self.name,
             "group": self.group,
             "role": self.role.to_dict(),
+            "isAuthor": self.is_author,
         }
 
 

@@ -356,7 +356,7 @@ def test_role_delete() -> None:
 @pytest.mark.unit_test
 def test_bot_create() -> None:
     bot = Bot(id=2, owner=3, name="bot", is_author=False)
-    create = BotCreateDTO(bot=bot, group="group", role=RoleType.ADMIN)
+    create = BotCreateDTO(name="bot", group="group", role=RoleType.ADMIN)
 
     service = Mock()
     service.save_bot.return_value = bot

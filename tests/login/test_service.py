@@ -104,10 +104,9 @@ def test_save_user():
 
 
 def test_save_bot():
-    bot = Bot(id=4, owner=3)
-    bot_create = BotCreateDTO(bot=bot, group="group", role=RoleType.READER)
+    bot_create = BotCreateDTO(name="bot", group="group", role=RoleType.READER)
     bots = Mock()
-    bots.save.return_value = bot
+    bots.save.side_effect = lambda b: b
 
     roles = Mock()
     roles.get.return_value = Role(
@@ -122,17 +121,14 @@ def test_save_bot():
         event_bus=Mock(),
     )
 
-    assert_permission(
-        test=lambda x: service.save_bot(bot_create, x),
-        values=[(GADMIN, False), (USER3, True)],
-    )
+    res = service.save_bot(bot_create, USER3)
+    assert res == Bot(name="bot", is_author=True, owner=3)
 
 
 def test_save_bot_wrong_role():
-    bot = Bot(id=4, owner=3)
-    bot_create = BotCreateDTO(bot=bot, group="group", role=RoleType.ADMIN)
+    bot_create = BotCreateDTO(name="bot", group="group", role=RoleType.ADMIN)
     bots = Mock()
-    bots.save.return_value = bot
+    bots.save.side_effect = lambda b: b
 
     roles = Mock()
     roles.get.return_value = Role(
@@ -149,7 +145,7 @@ def test_save_bot_wrong_role():
 
     assert_permission(
         test=lambda x: service.save_bot(bot_create, x),
-        values=[(GADMIN, False), (USER3, False)],
+        values=[(USER3, False)],
     )
 
 

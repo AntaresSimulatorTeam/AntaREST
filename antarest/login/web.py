@@ -11,6 +11,7 @@ from flask_jwt_extended import (  # type: ignore
     JWTManager,
 )
 
+from antarest.common.custom_types import JSON
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import (
     RequestParameters,
@@ -46,8 +47,8 @@ def create_login_api(
             "refresh_token": refresh_token,
         }
 
-    @jwt.token_in_blocklist_loader
-    def check_if_token_is_revoked(jwt_header, jwt_payload):
+    @jwt.token_in_blocklist_loader  # type: ignore
+    def check_if_token_is_revoked(jwt_header: Any, jwt_payload: JSON) -> bool:
         id = jwt_payload["sub"]["id"]
         type = jwt_payload["sub"]["type"]
         return type == "bots" and not service.exists_bot(id)
@@ -282,6 +283,52 @@ def create_login_api(
     @bp.route("/bots", methods=["POST"])
     @auth.protected()
     def bots_create() -> Any:
+        """
+        Create Bot
+        ---
+        responses:
+          '200':
+            content:
+              application/json:
+                schema:
+                  type: string
+                  description: Bot token API
+            description: Successful operation
+          '400':
+            description: Invalid request
+          '401':
+            description: Unauthenticated User
+          '403':
+            description: Unauthorized
+        consumes:
+            - application/json
+        parameters:
+        - in: body
+          name: body
+          required: true
+          description: Bot
+          schema:
+            id: User
+            required:
+                - name
+                - group
+                - role
+            properties:
+                name:
+                    type: string
+                    description: Bot name
+                isAuthor:
+                    type: boolean
+                    description: Set Bot impersonator between itself or it owner
+                group:
+                    type: string
+                    description: group id linked to bot
+                role:
+                    type: int
+                    description: RoleType used by bot. Should be lower or equals ot owner role type inside same group
+        tags:
+          - Bot
+        """
         params = RequestParameters(user=Auth.get_current_user())
         create = BotCreateDTO.from_dict(json.loads(request.data))
         bot = service.save_bot(create, params)
@@ -305,6 +352,26 @@ def create_login_api(
     @bp.route("/bots/<int:id>", methods=["DELETE"])
     @auth.protected()
     def bots_delete(id: int) -> Any:
+        """
+        Revoke bot
+        ---
+        responses:
+          '200':
+            content:
+              application/json: {}
+            description: Successful operation
+          '400':
+            description: Invalid request
+        parameters:
+          - in: path
+            name: id
+            required: true
+            description: bot id
+            schema:
+              type: int
+        tags:
+          - Bot
+        """
         params = RequestParameters(user=Auth.get_current_user())
         service.delete_bot(id, params)
         return jsonify(id), 200
