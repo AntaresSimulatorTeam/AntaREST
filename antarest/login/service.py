@@ -63,7 +63,7 @@ class LoginService:
     def save_bot(self, bot: BotCreateDTO, params: RequestParameters) -> Bot:
         if params.user and params.user.is_himself(User(id=bot.bot.owner)):
             role = self.roles.get(params.user.id, bot.group)
-            if role and role.type == bot.role:
+            if role and role.type.is_higher_or_equals(bot.role):
                 b = self.bots.save(bot.bot)
                 self.roles.save(
                     Role(group=Group(id=bot.group), type=bot.role, identity=b)

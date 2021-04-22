@@ -111,7 +111,7 @@ def test_save_bot():
 
     roles = Mock()
     roles.get.return_value = Role(
-        identity=Identity(id=3), group=Group(id="group"), type=RoleType.READER
+        identity=Identity(id=3), group=Group(id="group"), type=RoleType.WRITER
     )
 
     service = LoginService(
