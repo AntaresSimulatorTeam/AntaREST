@@ -1,7 +1,5 @@
-import os
-from copy import deepcopy
 from pathlib import Path
-from typing import Any, Optional, List, Dict
+from typing import Optional, List, Dict
 
 import yaml
 from dataclasses import dataclass, field
@@ -89,21 +87,72 @@ class StorageConfig:
 
 
 @dataclass(frozen=True)
+class LocalConfig:
+    binaries: Dict[str, Path] = field(default_factory=lambda: {})
+
+    @staticmethod
+    def from_dict(data: JSON) -> "LocalConfig":
+        return LocalConfig(
+            binaries={v: Path(p) for v, p in data["binaries"].items()},
+        )
+
+
+@dataclass(frozen=True)
+class SlurmConfig:
+    local_workspace: Path = Path()
+    username: str = ""
+    hostname: str = ""
+    port: int = 0
+    private_key_file: Path = Path()
+    key_password: str = ""
+    password: str = ""
+    default_wait_time: int = 0
+    default_time_limit: int = 0
+    default_n_cpu: int = 0
+    default_json_db_name: str = ""
+    slurm_script_path: str = ""
+    db_primary_key: str = ""
+    antares_versions_on_remote_server: List[str] = field(
+        default_factory=lambda: []
+    )
+
+    @staticmethod
+    def from_dict(data: JSON) -> "SlurmConfig":
+        return SlurmConfig(
+            local_workspace=Path(data["local_workspace"]),
+            username=data["username"],
+            hostname=data["hostname"],
+            port=data["port"],
+            private_key_file=data["private_key_file"],
+            key_password=data["key_password"],
+            password=data["password"],
+            default_wait_time=data["default_wait_time"],
+            default_time_limit=data["default_time_limit"],
+            default_n_cpu=data["default_n_cpu"],
+            default_json_db_name=data["default_json_db_name"],
+            slurm_script_path=data["slurm_script_path"],
+            db_primary_key=data["db_primary_key"],
+            antares_versions_on_remote_server=data[
+                "antares_versions_on_remote_server"
+            ],
+        )
+
+
+@dataclass(frozen=True)
 class LauncherConfig:
     """
     Sub config object dedicated to launcher module
     """
-
-    binaries: Dict[str, Path] = field(default_factory=lambda: {})
     default: str = "local"
+    local: LocalConfig = LocalConfig()
+    slurm: SlurmConfig = SlurmConfig()
 
     @staticmethod
     def from_dict(data: JSON) -> "LauncherConfig":
         return LauncherConfig(
-            binaries={
-                v: Path(p) for v, p in data["local"]["binaries"].items()
-            },
             default=data.get("default", "local"),
+            local=LocalConfig.from_dict(data["local"]),
+            slurm=SlurmConfig.from_dict(data["slurm"]),
         )
 
 
