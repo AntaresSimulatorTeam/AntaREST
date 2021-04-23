@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
 from antarest.common.roles import RoleType
-from antarest.login.model import User, Password, Group, Role
+from antarest.login.model import User, Password, Group, Role, Identity, Bot
 
 
 class GroupRepository:
@@ -80,6 +80,41 @@ class UserRepository:
         self.session.commit()
 
 
+class BotRepository:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def save(self, bot: Bot) -> Bot:
+        res = self.session.query(exists().where(Bot.id == bot.id)).scalar()
+        if res:
+            raise ValueError("Bot already exist")
+        else:
+            self.session.add(bot)
+        self.session.commit()
+        return bot
+
+    def get(self, id: int) -> Optional[Bot]:
+        bot: Bot = self.session.query(Bot).get(id)
+        return bot
+
+    def get_all(self) -> List[Bot]:
+        bots: List[Bot] = self.session.query(Bot).all()
+        return bots
+
+    def delete(self, id: int) -> None:
+        u: Bot = self.session.query(Bot).get(id)
+        self.session.delete(u)
+        self.session.commit()
+
+    def get_all_by_owner(self, owner: int) -> List[Bot]:
+        bots: List[Bot] = self.session.query(Bot).filter_by(owner=owner).all()
+        return bots
+
+    def exists(self, id: int) -> bool:
+        res: bool = self.session.query(exists().where(Bot.id == id)).scalar()
+        return res
+
+
 class RoleRepository:
     def __init__(self, session: Session):
         self.session = session
@@ -87,14 +122,15 @@ class RoleRepository:
             self.save(
                 Role(
                     type=RoleType.ADMIN,
-                    user=User(id=1),
+                    identity=User(id=1),
                     group=Group(id="admin"),
                 )
             )
 
     def save(self, role: Role) -> Role:
         role.group = self.session.merge(role.group)
-        role.user = self.session.merge(role.user)
+        role.identity = self.session.merge(role.identity)
+
         self.session.add(role)
         self.session.commit()
         return role
@@ -105,7 +141,7 @@ class RoleRepository:
 
     def get_all_by_user(self, user: int) -> List[Role]:
         roles: List[Role] = (
-            self.session.query(Role).filter_by(user_id=user).all()
+            self.session.query(Role).filter_by(identity_id=user).all()
         )
         return roles
 
