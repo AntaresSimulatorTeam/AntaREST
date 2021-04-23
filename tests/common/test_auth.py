@@ -16,7 +16,8 @@ def build(security_disabled: bool = False, admin: bool = False) -> Auth:
     get_identity = Mock()
     get_identity.return_value = {
         "id": 0,
-        "name": "user",
+        "impersonator": 0,
+        "type": "users",
         "groups": [
             {
                 "id": "admin" if admin else "group",

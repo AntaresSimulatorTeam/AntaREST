@@ -53,7 +53,7 @@ def check_permission(
     if user.is_site_admin():
         return True
 
-    if study.owner is not None and user.id == study.owner.id:
+    if study.owner is not None and user.impersonator == study.owner.id:
         return True
 
     study_group_id = [g.id for g in study.groups]

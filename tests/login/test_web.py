@@ -16,12 +16,21 @@ from antarest.common.config import Config, SecurityConfig
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import RequestParameters
 from antarest.login.main import build_login
-from antarest.login.model import User, RoleType, Password, Group, Role
+from antarest.login.model import (
+    User,
+    RoleType,
+    Password,
+    Group,
+    Role,
+    BotCreateDTO,
+    Bot,
+)
 
 PARAMS = RequestParameters(
     user=JWTUser(
         id=0,
-        name="admin",
+        impersonator=0,
+        type="users",
         groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
     )
 )
@@ -64,7 +73,8 @@ def create_auth_token(
             expires_delta=expires_delta,
             identity=JWTUser(
                 id=0,
-                name="admin",
+                impersonator=0,
+                type="users",
                 groups=[
                     JWTGroup(id="group", name="group", role=RoleType.ADMIN)
                 ],
@@ -214,7 +224,7 @@ def test_user_save() -> None:
 
     app = create_app(service)
     client = app.test_client()
-    res = client.post(
+    res = client.put(
         "/users/0",
         headers=create_auth_token(app),
         json=user.to_dict(),
@@ -295,7 +305,7 @@ def test_group_delete() -> None:
 @pytest.mark.unit_test
 def test_role() -> None:
     role = Role(
-        user=User(id=0, name="n"),
+        identity=User(id=0, name="n"),
         group=Group(id="g", name="n"),
         type=RoleType.ADMIN,
     )
@@ -312,7 +322,7 @@ def test_role() -> None:
 @pytest.mark.unit_test
 def test_role_create() -> None:
     role = Role(
-        user=User(id=0, name="n"),
+        identity=User(id=0, name="n"),
         group=Group(id="g", name="n"),
         type=RoleType.ADMIN,
     )
@@ -341,3 +351,36 @@ def test_role_delete() -> None:
 
     assert res.status_code == 200
     service.delete_role.assert_called_once_with(0, "group", PARAMS)
+
+
+@pytest.mark.unit_test
+def test_bot_create() -> None:
+    bot = Bot(id=2, owner=3, name="bot", is_author=False)
+    create = BotCreateDTO(name="bot", group="group", role=RoleType.ADMIN)
+
+    service = Mock()
+    service.save_bot.return_value = bot
+    service.get_group.return_value = Group(id="group", name="group")
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.post(
+        "/bots",
+        headers=create_auth_token(app),
+        json=create.to_dict(),
+    )
+
+    assert res.status_code == 200
+    assert len(res.data.decode().split(".")) == 3
+
+
+@pytest.mark.unit_test
+def test_bot_delete() -> None:
+    service = Mock()
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.delete("/bots/0", headers=create_auth_token(app))
+
+    assert res.status_code == 200
+    service.delete_bot.assert_called_once_with(0, PARAMS)

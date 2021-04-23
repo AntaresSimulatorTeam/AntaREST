@@ -388,7 +388,7 @@ class StorageService:
         study.content_status = content_status
 
         if owner:
-            study.owner = User(id=owner.id)
+            study.owner = User(id=owner.impersonator)
         if group:
             study.groups = [group]
         self.repository.save(study)

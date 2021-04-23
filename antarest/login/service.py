@@ -9,11 +9,12 @@ from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.login.model import User, Group, Role
+from antarest.login.model import User, Group, Role, BotCreateDTO, Bot, Identity
 from antarest.login.repository import (
     UserRepository,
     GroupRepository,
     RoleRepository,
+    BotRepository,
 )
 
 
@@ -29,11 +30,13 @@ class LoginService:
     def __init__(
         self,
         user_repo: UserRepository,
+        bot_repo: BotRepository,
         group_repo: GroupRepository,
         role_repo: RoleRepository,
         event_bus: IEventBus,
     ):
         self.users = user_repo
+        self.bots = bot_repo
         self.groups = group_repo
         self.roles = role_repo
         self.event_bus = event_bus
@@ -53,6 +56,27 @@ class LoginService:
             (params.user.is_site_admin(), params.user.is_himself(user))
         ):
             return self.users.save(user)
+        else:
+            raise UserHasNotPermissionError()
+
+    # User (own user)
+    def save_bot(self, bot: BotCreateDTO, params: RequestParameters) -> Bot:
+        if params.user:
+            role = self.roles.get(params.user.id, bot.group)
+            if role and role.type.is_higher_or_equals(bot.role):
+                b = self.bots.save(
+                    Bot(
+                        name=bot.name,
+                        is_author=bot.is_author,
+                        owner=params.user.id,
+                    )
+                )
+                self.roles.save(
+                    Role(group=Group(id=bot.group), type=bot.role, identity=b)
+                )
+                return b
+            else:
+                raise UserHasNotPermissionError()
         else:
             raise UserHasNotPermissionError()
 
@@ -104,6 +128,23 @@ class LoginService:
         else:
             raise UserNotFoundError()
 
+    # SADMIN, USER (owner)
+    def get_all_bots_by_owner(
+        self, owner: int, params: RequestParameters
+    ) -> List[Bot]:
+        if params.user and any(
+            (
+                params.user.is_site_admin(),
+                params.user.is_himself(Identity(id=owner)),
+            )
+        ):
+            return self.bots.get_all_by_owner(owner)
+        else:
+            raise UserHasNotPermissionError()
+
+    def exists_bot(self, id: int) -> bool:
+        return self.bots.exists(id)
+
     def authenticate(self, name: str, pwd: str) -> Optional[JWTUser]:
         user = self.users.get_by_name(name)
         if user and user.password.check(pwd):  # type: ignore
@@ -115,7 +156,8 @@ class LoginService:
         if user:
             return JWTUser(
                 id=user.id,
-                name=user.name,
+                impersonator=user.get_impersonator(),
+                type=user.type,
                 groups=[
                     JWTGroup(id=r.group.id, name=r.group.name, role=r.type)
                     for r in self.roles.get_all_by_user(user_id)
@@ -135,6 +177,13 @@ class LoginService:
     def get_all_users(self, params: RequestParameters) -> List[User]:
         if params.user and params.user.is_site_admin():
             return self.users.get_all()
+        else:
+            raise UserHasNotPermissionError()
+
+    # SADMIN
+    def get_all_bots(self, params: RequestParameters) -> List[Bot]:
+        if params.user and params.user.is_site_admin():
+            return self.bots.get_all()
         else:
             raise UserHasNotPermissionError()
 
@@ -169,7 +218,27 @@ class LoginService:
         if params.user and any(
             (params.user.is_site_admin(), params.user.is_himself(User(id=id)))
         ):
+            for b in self.bots.get_all_by_owner(id):
+                self.delete_bot(b.id, params)
             return self.users.delete(id)
+
+        else:
+            raise UserHasNotPermissionError()
+
+    # SADMIN, USER (owner)
+    def delete_bot(self, id: int, params: RequestParameters) -> None:
+        bot = self.bots.get(id)
+        if (
+            params.user
+            and bot
+            and any(
+                (
+                    params.user.is_site_admin(),
+                    params.user.is_himself(Identity(id=bot.owner)),
+                )
+            )
+        ):
+            return self.bots.delete(id)
         else:
             raise UserHasNotPermissionError()
 

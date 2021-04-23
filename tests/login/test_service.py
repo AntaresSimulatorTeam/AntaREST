@@ -8,7 +8,16 @@ from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.login.model import User, Password, RoleType, Group, Role
+from antarest.login.model import (
+    User,
+    Password,
+    RoleType,
+    Group,
+    Role,
+    Bot,
+    BotCreateDTO,
+    Identity,
+)
 from antarest.login.service import (
     LoginService,
     GroupNotFoundError,
@@ -18,7 +27,8 @@ from antarest.login.service import (
 SADMIN = RequestParameters(
     user=JWTUser(
         id=0,
-        name="admin",
+        impersonator=0,
+        type="users",
         groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
     )
 )
@@ -26,7 +36,8 @@ SADMIN = RequestParameters(
 GADMIN = RequestParameters(
     user=JWTUser(
         id=1,
-        name="alice",
+        impersonator=1,
+        type="users",
         groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
     )
 )
@@ -34,7 +45,8 @@ GADMIN = RequestParameters(
 USER3 = RequestParameters(
     user=JWTUser(
         id=3,
-        name="bob",
+        impersonator=3,
+        type="users",
         groups=[JWTGroup(id="group", name="group", role=RoleType.READER)],
     )
 )
@@ -58,7 +70,11 @@ def test_save_group():
     groups.save.return_value = Group(id="group", name="group")
 
     service = LoginService(
-        user_repo=Mock(), group_repo=groups, role_repo=Mock(), event_bus=Mock()
+        user_repo=Mock(),
+        bot_repo=Mock(),
+        group_repo=groups,
+        role_repo=Mock(),
+        event_bus=Mock(),
     )
 
     group = Group(id="group", name="group")
@@ -74,7 +90,11 @@ def test_save_user():
     users.save.return_value = user
 
     service = LoginService(
-        user_repo=users, group_repo=Mock(), role_repo=Mock(), event_bus=Mock()
+        user_repo=users,
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=Mock(),
+        event_bus=Mock(),
     )
 
     assert_permission(
@@ -83,13 +103,65 @@ def test_save_user():
     )
 
 
+def test_save_bot():
+    bot_create = BotCreateDTO(name="bot", group="group", role=RoleType.READER)
+    bots = Mock()
+    bots.save.side_effect = lambda b: b
+
+    roles = Mock()
+    roles.get.return_value = Role(
+        identity=Identity(id=3), group=Group(id="group"), type=RoleType.WRITER
+    )
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=roles,
+        event_bus=Mock(),
+    )
+
+    res = service.save_bot(bot_create, USER3)
+    assert res == Bot(name="bot", is_author=True, owner=3)
+
+
+def test_save_bot_wrong_role():
+    bot_create = BotCreateDTO(name="bot", group="group", role=RoleType.ADMIN)
+    bots = Mock()
+    bots.save.side_effect = lambda b: b
+
+    roles = Mock()
+    roles.get.return_value = Role(
+        identity=Identity(id=3), group=Group(id="group"), type=RoleType.READER
+    )
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=roles,
+        event_bus=Mock(),
+    )
+
+    assert_permission(
+        test=lambda x: service.save_bot(bot_create, x),
+        values=[(USER3, False)],
+    )
+
+
 def test_save_role():
-    role = Role(type=RoleType.ADMIN, user=User(id=0), group=Group(id="group"))
+    role = Role(
+        type=RoleType.ADMIN, identity=User(id=0), group=Group(id="group")
+    )
     roles = Mock()
     roles.save.return_value = role
 
     service = LoginService(
-        user_repo=Mock(), group_repo=Mock(), role_repo=roles, event_bus=Mock()
+        user_repo=Mock(),
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=roles,
+        event_bus=Mock(),
     )
 
     assert_permission(
@@ -104,7 +176,11 @@ def test_get_group():
     groups.get.return_value = group
 
     service = LoginService(
-        user_repo=Mock(), group_repo=groups, role_repo=Mock(), event_bus=Mock()
+        user_repo=Mock(),
+        bot_repo=Mock(),
+        group_repo=groups,
+        role_repo=Mock(),
+        event_bus=Mock(),
     )
 
     assert_permission(
@@ -119,12 +195,16 @@ def test_get_user():
     users = Mock()
     users.get.return_value = user
 
-    role = Role(type=RoleType.READER, user=user, group=Group(id="group"))
+    role = Role(type=RoleType.READER, identity=user, group=Group(id="group"))
     roles = Mock()
     roles.get_all_by_user.return_value = [role]
 
     service = LoginService(
-        user_repo=users, group_repo=Mock(), role_repo=roles, event_bus=Mock()
+        user_repo=users,
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=roles,
+        event_bus=Mock(),
     )
 
     assert_permission(
@@ -139,7 +219,11 @@ def test_authentication_wrong_user():
     users.get_by_name.return_value = None
 
     service = LoginService(
-        user_repo=users, group_repo=Mock(), role_repo=Mock(), event_bus=Mock()
+        user_repo=users,
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=Mock(),
+        event_bus=Mock(),
     )
     assert not service.authenticate("dupond", "pwd")
     users.get_by_name.assert_called_once_with("dupond")
@@ -157,12 +241,17 @@ def test_authenticate():
 
     exp = JWTUser(
         id=0,
-        name="linus",
+        impersonator=0,
+        type="users",
         groups=[JWTGroup(id="group", name="group", role=RoleType.READER)],
     )
 
     service = LoginService(
-        user_repo=users, group_repo=Mock(), role_repo=roles, event_bus=Mock()
+        user_repo=users,
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=roles,
+        event_bus=Mock(),
     )
     assert exp == service.authenticate("dupond", "pwd")
 
@@ -176,7 +265,11 @@ def test_get_all_groups():
     groups.get_all.return_value = [group]
 
     service = LoginService(
-        user_repo=Mock(), group_repo=groups, role_repo=Mock(), event_bus=Mock()
+        user_repo=Mock(),
+        bot_repo=Mock(),
+        group_repo=groups,
+        role_repo=Mock(),
+        event_bus=Mock(),
     )
 
     assert_permission(
@@ -190,7 +283,11 @@ def test_get_all_users():
     users.get_all.return_value = [User(id=0, name="alice")]
 
     service = LoginService(
-        user_repo=users, group_repo=Mock(), role_repo=Mock(), event_bus=Mock()
+        user_repo=users,
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=Mock(),
+        event_bus=Mock(),
     )
 
     assert_permission(
@@ -199,12 +296,52 @@ def test_get_all_users():
     )
 
 
+def test_get_all_bots():
+    bots = Mock()
+    bots.get_all.return_value = [Bot(id=0, name="alice")]
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert_permission(
+        test=lambda x: service.get_all_bots(x),
+        values=[(SADMIN, True), (GADMIN, False), (USER3, False)],
+    )
+
+
+def test_get_all_bots_by_owner():
+    bots = Mock()
+    bots.get_all_by_owner.return_value = [Bot(id=0, name="alice")]
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert_permission(
+        test=lambda x: service.get_all_bots_by_owner(3, x),
+        values=[(SADMIN, True), (GADMIN, False), (USER3, True)],
+    )
+
+
 def test_get_all_roles_in_group():
     roles = Mock()
     roles.get_all_by_group.return_value = [Role()]
 
     service = LoginService(
-        user_repo=Mock(), group_repo=Mock(), role_repo=roles, event_bus=Mock()
+        user_repo=Mock(),
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=roles,
+        event_bus=Mock(),
     )
 
     assert_permission(
@@ -218,7 +355,11 @@ def test_delete_group():
     groups.delete.return_value = Group()
 
     service = LoginService(
-        user_repo=Mock(), group_repo=groups, role_repo=Mock(), event_bus=Mock()
+        user_repo=Mock(),
+        bot_repo=Mock(),
+        group_repo=groups,
+        role_repo=Mock(),
+        event_bus=Mock(),
     )
 
     assert_permission(
@@ -231,12 +372,42 @@ def test_delete_user():
     users = Mock()
     users.delete.return_value = User()
 
+    bots = Mock()
+    bots.get_all_by_owner.return_value = [Bot(id=4, owner=3)]
+    bots.get.return_value = Bot(id=4, owner=3)
+
     service = LoginService(
-        user_repo=users, group_repo=Mock(), role_repo=Mock(), event_bus=Mock()
+        user_repo=users,
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=Mock(),
+        event_bus=Mock(),
     )
 
     assert_permission(
         test=lambda x: service.delete_user(3, x),
+        values=[(SADMIN, True), (GADMIN, False), (USER3, True)],
+    )
+
+    users.delete.assert_called_with(3)
+    bots.delete.assert_called_with(4)
+
+
+def test_delete_bot():
+    bots = Mock()
+    bots.delete.return_value = Bot()
+    bots.get.return_value = Bot(id=4, owner=3)
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert_permission(
+        test=lambda x: service.delete_bot(3, x),
         values=[(SADMIN, True), (GADMIN, False), (USER3, True)],
     )
 
@@ -246,7 +417,11 @@ def test_delete_role():
     roles.delete.return_value = Role()
 
     service = LoginService(
-        user_repo=Mock(), group_repo=Mock(), role_repo=roles, event_bus=Mock()
+        user_repo=Mock(),
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=roles,
+        event_bus=Mock(),
     )
 
     assert_permission(

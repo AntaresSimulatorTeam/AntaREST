@@ -4,18 +4,18 @@ __all__ = ["RoleType"]
 
 
 class RoleType(enum.Enum):
-    ADMIN = 1
-    RUNNER = 2
-    WRITER = 3
-    READER = 4
+    ADMIN = 40
+    RUNNER = 30
+    WRITER = 20
+    READER = 10
 
     @staticmethod
     def from_dict(value: int) -> "RoleType":
         mapping = {
-            1: RoleType.ADMIN,
-            2: RoleType.RUNNER,
-            3: RoleType.WRITER,
-            4: RoleType.READER,
+            40: RoleType.ADMIN,
+            30: RoleType.RUNNER,
+            20: RoleType.WRITER,
+            10: RoleType.READER,
         }
 
         if value in mapping:
@@ -25,3 +25,6 @@ class RoleType(enum.Enum):
 
     def to_dict(self) -> int:
         return int(self.value)
+
+    def is_higher_or_equals(self, other: "RoleType") -> bool:
+        return int(self.value) >= int(other.value)

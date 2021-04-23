@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from antarest.common.custom_types import JSON
 from antarest.common.roles import RoleType
-from antarest.login.model import Group, User
+from antarest.login.model import Group, User, Identity
 
 
 @dataclass
@@ -29,7 +29,8 @@ class JWTGroup:
 @dataclass
 class JWTUser:
     id: int
-    name: str = ""
+    type: str
+    impersonator: int
     groups: List[JWTGroup] = field(default_factory=lambda: list())
 
     @staticmethod
@@ -37,14 +38,16 @@ class JWTUser:
         groups = data["groups"] if "groups" in data else []
         return JWTUser(
             id=data["id"],
-            name=data["name"],
+            impersonator=data["impersonator"],
+            type=data["type"],
             groups=[JWTGroup.from_dict(g) for g in groups],
         )
 
     def to_dict(self) -> JSON:
         return {
             "id": self.id,
-            "name": self.name,
+            "impersonator": self.impersonator,
+            "type": self.type,
             "groups": [g.to_dict() for g in self.groups],
         }
 
@@ -60,5 +63,5 @@ class JWTUser:
 
         return any(self.is_group_admin(g) for g in groups)
 
-    def is_himself(self, user: User) -> bool:
+    def is_himself(self, user: Identity) -> bool:
         return bool(self.id == user.id)
