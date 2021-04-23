@@ -221,6 +221,22 @@ class StorageService:
 
         return self.exporter_service.export_study(study, compact, outputs)
 
+    def export_study_flat(
+        self,
+        uuid: str,
+        params: RequestParameters,
+        dest: Path,
+        outputs: bool = True,
+    ) -> None:
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(
+                f"Study {uuid} with type {study.type} not recognized"
+            )
+
+        return self.exporter_service.export_study_flat(study, dest, outputs)
+
     def delete_study(self, uuid: str, params: RequestParameters) -> None:
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.DELETE)

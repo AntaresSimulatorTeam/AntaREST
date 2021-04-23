@@ -97,8 +97,13 @@ class SlurmLauncher(ILauncher):
     ) -> UUID:
         arguments = self._init_launcher_arguments()
         antares_launcher_parameters = self._init_launcher_parameters()
+        self.storage_service.get_study_information(study_uuid, params)
+        dest = arguments.studies_in_dir / uuid4()
 
         # export study
+        self.storage_service.export_study_flat(
+            study_uuid, params, dest, outputs=False
+        )
         self._export_study_to_studies_in_directory(
             study_uuid, arguments.studies_in, params
         )

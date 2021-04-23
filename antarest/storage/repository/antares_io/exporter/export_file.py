@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import re
+import shutil
 import uuid
 from io import BytesIO
 from pathlib import Path
@@ -27,6 +28,17 @@ class Exporter:
         os.chdir(current_dir)
         data.seek(0)
         return data
+
+    def export_flat(
+        self,
+        path_study: Path,
+        dest: Path,
+        outputs: bool = False,
+    ) -> None:
+        ignore_patterns = (
+            shutil.ignore_patterns("output") if not outputs else None
+        )
+        shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
 
     def export_compact(self, path_study: Path, data: JSON) -> BytesIO:
         zip = BytesIO()
