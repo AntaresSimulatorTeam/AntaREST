@@ -114,8 +114,8 @@ class UserLdap(Identity):
     }
 
     @staticmethod
-    def from_dict(data: JSON) -> "User":
-        return User(id=data.get("id"), name=data["name"])
+    def from_dict(data: JSON) -> "UserLdap":
+        return UserLdap(id=data.get("id"), name=data["name"])
 
     def to_dict(self) -> JSON:
         return {"id": self.id, "name": self.name}
