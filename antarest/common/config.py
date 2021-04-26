@@ -14,6 +14,7 @@ class SecurityConfig:
     jwt_key: str = ""
     admin_pwd: str = ""
     disabled: bool = False
+    ldap_url: str = ""
 
     @staticmethod
     def from_dict(data: JSON) -> "SecurityConfig":
@@ -21,6 +22,7 @@ class SecurityConfig:
             jwt_key=data["jwt"]["key"],
             admin_pwd=data["login"]["admin"]["pwd"],
             disabled=data.get("disabled", False),
+            ldap_url=data.get("ldapUrl", ""),
         )
 
 
