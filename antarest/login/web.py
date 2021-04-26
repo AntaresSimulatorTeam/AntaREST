@@ -19,7 +19,14 @@ from antarest.common.requests import (
 )
 from antarest.login.auth import Auth
 from antarest.common.config import Config
-from antarest.login.model import User, Group, Password, Role, BotCreateDTO
+from antarest.login.model import (
+    User,
+    Group,
+    Password,
+    Role,
+    BotCreateDTO,
+    UserCreateDTO,
+)
 from antarest.login.service import LoginService
 
 
@@ -197,10 +204,10 @@ def create_login_api(
     @auth.protected()
     def users_create() -> Any:
         params = RequestParameters(user=Auth.get_current_user())
-        data = json.loads(request.data)
+        create_user = UserCreateDTO.from_dict(json.loads(request.data))
         u = User(
-            name=data["name"],
-            password=Password(data["password"]),
+            name=create_user.name,
+            password=Password(create_user.password),
         )
 
         return jsonify(service.save_user(u, params).to_dict())

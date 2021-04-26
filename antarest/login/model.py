@@ -168,6 +168,19 @@ class BotCreateDTO:
 
 
 @dataclass
+class UserCreateDTO:
+    name: str
+    password: str
+
+    @staticmethod
+    def from_dict(data: JSON) -> "UserCreateDTO":
+        return UserCreateDTO(name=data["name"], password=data["password"])
+
+    def to_dict(self) -> JSON:
+        return {"name": self.name, "password": self.password}
+
+
+@dataclass
 class Group(Base):  # type: ignore
     __tablename__ = "groups"
 

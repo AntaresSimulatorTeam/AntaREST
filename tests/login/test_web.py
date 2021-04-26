@@ -24,6 +24,7 @@ from antarest.login.model import (
     Role,
     BotCreateDTO,
     Bot,
+    UserCreateDTO,
 )
 
 PARAMS = RequestParameters(
@@ -205,10 +206,7 @@ def test_user_create() -> None:
     res = client.post(
         "/users",
         headers=create_auth_token(app),
-        json={
-            "name": "a",
-            "password": "b",
-        },
+        json=UserCreateDTO(name="a", password="b").to_dict(),
     )
 
     assert res.status_code == 200
