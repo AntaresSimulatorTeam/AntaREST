@@ -73,6 +73,8 @@ class LoginService:
             return self.users.save(
                 User(name=create.name, password=Password(create.password))
             )
+        else:
+            raise UserHasNotPermissionError()
 
     # SADMIN, USER (own user)
     def save_user(self, user: User, params: RequestParameters) -> User:
