@@ -17,6 +17,8 @@ from antarest.login.model import (
     Bot,
     BotCreateDTO,
     Identity,
+    UserCreateDTO,
+    UserLdap,
 )
 from antarest.login.service import (
     LoginService,
@@ -74,6 +76,7 @@ def test_save_group():
         bot_repo=Mock(),
         group_repo=groups,
         role_repo=Mock(),
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -82,6 +85,49 @@ def test_save_group():
         test=lambda x: service.save_group(group, x),
         values=[(SADMIN, True), (GADMIN, True), (USER3, False)],
     )
+
+
+def test_create_user():
+    create = UserCreateDTO(name="hello", password="world")
+    ldap = Mock()
+    ldap.save.return_value = None
+
+    users = Mock()
+    users.save.return_value = User(id=3, name="hello")
+
+    service = LoginService(
+        user_repo=users,
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=Mock(),
+        ldap=ldap,
+        event_bus=Mock(),
+    )
+
+    service.create_user(create, param=SADMIN)
+    users.save.assert_called_once_with(
+        User(name="hello", password=Password("world"))
+    )
+
+
+def test_create_user_ldap():
+    create = UserCreateDTO(name="hello", password="world")
+    ldap = Mock()
+    ldap.save.return_value = UserLdap(name="hello")
+
+    users = Mock()
+
+    service = LoginService(
+        user_repo=users,
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=Mock(),
+        ldap=ldap,
+        event_bus=Mock(),
+    )
+
+    service.create_user(create, param=SADMIN)
+    users.save.assert_not_called()
 
 
 def test_save_user():
@@ -94,6 +140,7 @@ def test_save_user():
         bot_repo=Mock(),
         group_repo=Mock(),
         role_repo=Mock(),
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -118,6 +165,7 @@ def test_save_bot():
         bot_repo=bots,
         group_repo=Mock(),
         role_repo=roles,
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -140,6 +188,7 @@ def test_save_bot_wrong_role():
         bot_repo=bots,
         group_repo=Mock(),
         role_repo=roles,
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -161,6 +210,7 @@ def test_save_role():
         bot_repo=Mock(),
         group_repo=Mock(),
         role_repo=roles,
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -180,6 +230,7 @@ def test_get_group():
         bot_repo=Mock(),
         group_repo=groups,
         role_repo=Mock(),
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -195,6 +246,9 @@ def test_get_user():
     users = Mock()
     users.get.return_value = user
 
+    ldap = Mock()
+    ldap.get.return_value = None
+
     role = Role(type=RoleType.READER, identity=user, group=Group(id="group"))
     roles = Mock()
     roles.get_all_by_user.return_value = [role]
@@ -204,6 +258,7 @@ def test_get_user():
         bot_repo=Mock(),
         group_repo=Mock(),
         role_repo=roles,
+        ldap=ldap,
         event_bus=Mock(),
     )
 
@@ -218,11 +273,15 @@ def test_authentication_wrong_user():
     users = Mock()
     users.get_by_name.return_value = None
 
+    ldap = Mock()
+    ldap.get_by_name.return_value = None
+
     service = LoginService(
         user_repo=users,
         bot_repo=Mock(),
         group_repo=Mock(),
         role_repo=Mock(),
+        ldap=ldap,
         event_bus=Mock(),
     )
     assert not service.authenticate("dupond", "pwd")
@@ -233,6 +292,10 @@ def test_authenticate():
     users = Mock()
     users.get_by_name.return_value = User(id=0, password=Password("pwd"))
     users.get.return_value = User(id=0, name="linus")
+
+    ldap = Mock()
+    ldap.get_by_name.return_value = None
+    ldap.get.return_value = None
 
     roles = Mock()
     roles.get_all_by_user.return_value = [
@@ -251,6 +314,7 @@ def test_authenticate():
         bot_repo=Mock(),
         group_repo=Mock(),
         role_repo=roles,
+        ldap=ldap,
         event_bus=Mock(),
     )
     assert exp == service.authenticate("dupond", "pwd")
@@ -269,6 +333,7 @@ def test_get_all_groups():
         bot_repo=Mock(),
         group_repo=groups,
         role_repo=Mock(),
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -282,11 +347,15 @@ def test_get_all_users():
     users = Mock()
     users.get_all.return_value = [User(id=0, name="alice")]
 
+    ldap = Mock()
+    ldap.get_all.return_value = []
+
     service = LoginService(
         user_repo=users,
         bot_repo=Mock(),
         group_repo=Mock(),
         role_repo=Mock(),
+        ldap=ldap,
         event_bus=Mock(),
     )
 
@@ -305,6 +374,7 @@ def test_get_all_bots():
         bot_repo=bots,
         group_repo=Mock(),
         role_repo=Mock(),
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -323,6 +393,7 @@ def test_get_all_bots_by_owner():
         bot_repo=bots,
         group_repo=Mock(),
         role_repo=Mock(),
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -341,6 +412,7 @@ def test_get_all_roles_in_group():
         bot_repo=Mock(),
         group_repo=Mock(),
         role_repo=roles,
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -359,6 +431,7 @@ def test_delete_group():
         bot_repo=Mock(),
         group_repo=groups,
         role_repo=Mock(),
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -381,6 +454,7 @@ def test_delete_user():
         bot_repo=bots,
         group_repo=Mock(),
         role_repo=Mock(),
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -403,6 +477,7 @@ def test_delete_bot():
         bot_repo=bots,
         group_repo=Mock(),
         role_repo=Mock(),
+        ldap=Mock(),
         event_bus=Mock(),
     )
 
@@ -421,6 +496,7 @@ def test_delete_role():
         bot_repo=Mock(),
         group_repo=Mock(),
         role_repo=roles,
+        ldap=Mock(),
         event_bus=Mock(),
     )
 

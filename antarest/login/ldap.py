@@ -5,7 +5,8 @@ from dataclasses import dataclass
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
-from antarest.login.model import UserCreateDTO, Password, UserLdap
+from antarest.login.model import UserCreateDTO, UserLdap
+from antarest.login.repository import UserLdapRepository
 
 
 @dataclass
@@ -44,10 +45,11 @@ class AntaresUser:
 
 
 class LdapService:
-    def __init__(self, config: Config):
+    def __init__(self, users: UserLdapRepository, config: Config):
         self.url = config.security.ldap_url
+        self.users = users
 
-    def auth(self, user: UserCreateDTO) -> Optional[UserLdap]:
+    def save(self, user: UserCreateDTO) -> Optional[UserLdap]:
         if not self.url:
             return None
 
@@ -58,6 +60,19 @@ class LdapService:
             return None
 
         antares_user = AntaresUser.from_json(res.json())
-        return UserLdap(
-            name=f"{antares_user.last_name} {antares_user.first_name}",
-        )
+        user = UserLdap(name=user.name)
+        self.users.save(user)
+
+        return user
+
+    def get(self, id: int) -> Optional[UserLdap]:
+        return self.users.get(id)
+
+    def get_by_name(self, name: str) -> Optional[UserLdap]:
+        return self.users.get_by_name(name)
+
+    def get_all(self) -> List[UserLdap]:
+        return self.users.get_all()
+
+    def delete(self, id: int) -> None:
+        return self.users.delete(id)

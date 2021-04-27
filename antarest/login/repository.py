@@ -107,6 +107,12 @@ class UserLdapRepository:
         userLdap: UserLdap = self.session.query(UserLdap).get(id)
         return userLdap
 
+    def get_by_name(self, name: str) -> Optional[UserLdap]:
+        user: UserLdap = (
+            self.session.query(UserLdap).filter_by(name=name).first()
+        )
+        return user
+
     def get_all(self) -> List[UserLdap]:
         users_ldap: List[UserLdap] = self.session.query(UserLdap).all()
         return users_ldap

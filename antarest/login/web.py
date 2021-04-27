@@ -205,12 +205,8 @@ def create_login_api(
     def users_create() -> Any:
         params = RequestParameters(user=Auth.get_current_user())
         create_user = UserCreateDTO.from_dict(json.loads(request.data))
-        u = User(
-            name=create_user.name,
-            password=Password(create_user.password),
-        )
 
-        return jsonify(service.save_user(u, params).to_dict())
+        return jsonify(service.create_user(create_user, params).to_dict())
 
     @bp.route("/users/<int:id>", methods=["PUT"])
     @auth.protected()

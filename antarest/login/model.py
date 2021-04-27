@@ -90,9 +90,6 @@ class User(Identity):
     def from_dict(data: JSON) -> "User":
         return User(id=data.get("id"), name=data["name"])
 
-    def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name}
-
     def __eq__(self, o: Any) -> bool:
         if not isinstance(o, User):
             return False
@@ -117,11 +114,8 @@ class UserLdap(Identity):
     def from_dict(data: JSON) -> "UserLdap":
         return UserLdap(id=data.get("id"), name=data["name"])
 
-    def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name}
-
     def __eq__(self, o: Any) -> bool:
-        if not isinstance(o, User):
+        if not isinstance(o, UserLdap):
             return False
         return bool((o.id == self.id) and (o.name == self.name))
 

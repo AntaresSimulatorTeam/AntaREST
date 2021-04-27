@@ -1,6 +1,7 @@
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from unittest.mock import Mock
 
 from antarest.common.config import Config, SecurityConfig
 from antarest.login.ldap import AntaresUser, LdapService, AuthDTO
@@ -11,11 +12,8 @@ class MockServerHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if "/auth" in self.path:
             content_length = int(self.headers["Content-Length"])
-            print("data", content_length)
             data = self.rfile.read(content_length)
-            print(data)
             create = AuthDTO.from_json(json.loads(data))
-            print(create)
             antares = AntaresUser(
                 first_name="Smith", last_name=create.user, groups=["group"]
             )
@@ -29,14 +27,16 @@ class MockServerHandler(BaseHTTPRequestHandler):
 
 def test_ldap():
     config = Config(security=SecurityConfig(ldap_url="http://localhost:8868"))
-    ldap = LdapService(config=config)
+    repo = Mock()
+    ldap = LdapService(config=config, users=repo)
 
     # Start server
     httpd = HTTPServer(("localhost", 8868), MockServerHandler)
     server = threading.Thread(None, httpd.handle_request)
     server.start()
 
-    res = ldap.auth(user=UserCreateDTO(name="John", password="pwd"))
+    res = ldap.save(user=UserCreateDTO(name="John", password="pwd"))
 
     assert res
-    assert "John Smith" == res.name
+    assert "John" == res.name
+    repo.save.assert_called_once_with(UserLdap(name="John"))
