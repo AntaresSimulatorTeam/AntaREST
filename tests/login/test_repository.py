@@ -8,9 +8,18 @@ from antarest.login.repository import (
     GroupRepository,
     RoleRepository,
     BotRepository,
+    UserLdapRepository,
 )
 from antarest.common.persistence import Base
-from antarest.login.model import User, RoleType, Password, Group, Role, Bot
+from antarest.login.model import (
+    User,
+    RoleType,
+    Password,
+    Group,
+    Role,
+    Bot,
+    UserLdap,
+)
 
 
 @pytest.mark.unit_test
@@ -38,6 +47,28 @@ def test_users():
     assert a == c
     assert a.password.check("a")
     assert b == repo.get_by_name("b")
+
+    repo.delete(a.id)
+    assert repo.get(a.id) is None
+
+
+@pytest.mark.unit_test
+def test_users_ldap():
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    session = scoped_session(
+        sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    )
+    Base.metadata.create_all(engine)
+
+    repo = UserLdapRepository(
+        session=session,
+    )
+    a = UserLdap(
+        name="a",
+    )
+
+    a = repo.save(a)
+    assert a.id
 
     repo.delete(a.id)
     assert repo.get(a.id) is None

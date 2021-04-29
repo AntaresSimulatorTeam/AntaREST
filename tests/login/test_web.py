@@ -24,6 +24,7 @@ from antarest.login.model import (
     Role,
     BotCreateDTO,
     Bot,
+    UserCreateDTO,
 )
 
 PARAMS = RequestParameters(
@@ -195,24 +196,21 @@ def test_user_id() -> None:
 
 @pytest.mark.unit_test
 def test_user_create() -> None:
-    user = User(name="a", password=Password("b"))
+    user = UserCreateDTO(name="a", password="b")
     user_id = User(id=0, name="a", password=Password("b"))
     service = Mock()
-    service.save_user.return_value = user_id
+    service.create_user.return_value = user_id
 
     app = create_app(service)
     client = app.test_client()
     res = client.post(
         "/users",
         headers=create_auth_token(app),
-        json={
-            "name": "a",
-            "password": "b",
-        },
+        json=user.to_dict(),
     )
 
     assert res.status_code == 200
-    service.save_user.assert_called_once_with(user, PARAMS)
+    service.create_user.assert_called_once_with(user, PARAMS)
     assert res.json == user_id.to_dict()
 
 

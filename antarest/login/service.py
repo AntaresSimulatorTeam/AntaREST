@@ -9,7 +9,17 @@ from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.login.model import User, Group, Role, BotCreateDTO, Bot, Identity
+from antarest.login.ldap import LdapService
+from antarest.login.model import (
+    User,
+    Group,
+    Role,
+    BotCreateDTO,
+    Bot,
+    Identity,
+    UserCreateDTO,
+    Password,
+)
 from antarest.login.repository import (
     UserRepository,
     GroupRepository,
@@ -33,12 +43,14 @@ class LoginService:
         bot_repo: BotRepository,
         group_repo: GroupRepository,
         role_repo: RoleRepository,
+        ldap: LdapService,
         event_bus: IEventBus,
     ):
         self.users = user_repo
         self.bots = bot_repo
         self.groups = group_repo
         self.roles = role_repo
+        self.ldap = ldap
         self.event_bus = event_bus
 
     # SADMIN, GADMIN (own group)
@@ -47,6 +59,20 @@ class LoginService:
             (params.user.is_site_admin(), params.user.is_group_admin(group))
         ):
             return self.groups.save(group)
+        else:
+            raise UserHasNotPermissionError()
+
+    # SADMIN
+    def create_user(
+        self, create: UserCreateDTO, param: RequestParameters
+    ) -> Identity:
+        if param.user and param.user.is_site_admin():
+            user = self.ldap.save(create)
+            if user:
+                return user
+            return self.users.save(
+                User(name=create.name, password=Password(create.password))
+            )
         else:
             raise UserHasNotPermissionError()
 
@@ -111,7 +137,7 @@ class LoginService:
 
     # SADMIN, GADMIN (own group), USER (own user)
     def get_user(self, id: int, params: RequestParameters) -> Optional[User]:
-        user = self.users.get(id)
+        user = self.ldap.get(id) or self.users.get(id)
         if not user:
             raise UserNotFoundError()
 
@@ -146,13 +172,13 @@ class LoginService:
         return self.bots.exists(id)
 
     def authenticate(self, name: str, pwd: str) -> Optional[JWTUser]:
-        user = self.users.get_by_name(name)
+        user = self.ldap.get_by_name(name) or self.users.get_by_name(name)
         if user and user.password.check(pwd):  # type: ignore
             return self.get_jwt(user.id)
         return None
 
     def get_jwt(self, user_id: int) -> Optional[JWTUser]:
-        user = self.users.get(user_id)
+        user = self.ldap.get(user_id) or self.users.get(user_id)
         if user:
             return JWTUser(
                 id=user.id,
@@ -176,7 +202,7 @@ class LoginService:
     # SADMIN
     def get_all_users(self, params: RequestParameters) -> List[User]:
         if params.user and params.user.is_site_admin():
-            return self.users.get_all()
+            return self.ldap.get_all() + self.users.get_all()
         else:
             raise UserHasNotPermissionError()
 
@@ -220,7 +246,9 @@ class LoginService:
         ):
             for b in self.bots.get_all_by_owner(id):
                 self.delete_bot(b.id, params)
-            return self.users.delete(id)
+
+            self.ldap.delete(id)
+            return self.users.delete(id)  # return for test purpose
 
         else:
             raise UserHasNotPermissionError()
