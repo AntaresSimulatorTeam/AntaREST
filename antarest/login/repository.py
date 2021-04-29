@@ -5,7 +5,15 @@ from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
 from antarest.common.roles import RoleType
-from antarest.login.model import User, Password, Group, Role, Identity, Bot
+from antarest.login.model import (
+    User,
+    Password,
+    Group,
+    Role,
+    Identity,
+    Bot,
+    UserLdap,
+)
 
 
 class GroupRepository:
@@ -76,6 +84,41 @@ class UserRepository:
 
     def delete(self, id: int) -> None:
         u: User = self.session.query(User).get(id)
+        self.session.delete(u)
+        self.session.commit()
+
+
+class UserLdapRepository:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def save(self, user_ldap: UserLdap) -> UserLdap:
+        res = self.session.query(
+            exists().where(UserLdap.id == user_ldap.id)
+        ).scalar()
+        if res:
+            self.session.merge(user_ldap)
+        else:
+            self.session.add(user_ldap)
+        self.session.commit()
+        return user_ldap
+
+    def get(self, id: int) -> Optional[UserLdap]:
+        userLdap: UserLdap = self.session.query(UserLdap).get(id)
+        return userLdap
+
+    def get_by_name(self, name: str) -> Optional[UserLdap]:
+        user: UserLdap = (
+            self.session.query(UserLdap).filter_by(name=name).first()
+        )
+        return user
+
+    def get_all(self) -> List[UserLdap]:
+        users_ldap: List[UserLdap] = self.session.query(UserLdap).all()
+        return users_ldap
+
+    def delete(self, id: int) -> None:
+        u: UserLdap = self.session.query(UserLdap).get(id)
         self.session.delete(u)
         self.session.commit()
 
