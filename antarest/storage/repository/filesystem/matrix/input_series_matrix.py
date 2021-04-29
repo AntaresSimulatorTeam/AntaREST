@@ -8,7 +8,7 @@ from antarest.storage.repository.filesystem.inode import INode, TREE
 
 
 class InputSeriesMatrix(INode[JSON, JSON, JSON]):
-    def __init__(self, config: StudyConfig, nb_columns: int):
+    def __init__(self, config: StudyConfig, nb_columns: Optional[int] = None):
         self.config = config
         self.nb_columns = nb_columns
 
@@ -41,7 +41,7 @@ class InputSeriesMatrix(INode[JSON, JSON, JSON]):
             errors.append(
                 f"Input Series Matrix f{self.config.path} not exists"
             )
-        if len(data) != self.nb_columns:
+        if self.nb_columns and len(data) != self.nb_columns:
             errors.append(
                 f"Data was wrong size. expected {self.nb_columns} get {len(data)}"
             )

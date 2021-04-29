@@ -1,5 +1,5 @@
 security:
-  disabled: false
+  disabled: true
   jwt:
     key: super-secret
   login:
@@ -12,8 +12,10 @@ db:
 
 storage:
   workspaces:
-    default:
+    hello:
       path: examples/studies/
+    default:
+      path: .
 
 launcher:
   default: local
