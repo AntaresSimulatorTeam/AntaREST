@@ -21,7 +21,9 @@ class IDateMatrixSerializer(ABC):
     }
 
     @abstractmethod
-    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Series, pd.DataFrame]:
+    def extract_date(
+        self, df: pd.DataFrame
+    ) -> Tuple[pd.DatetimeIndex, pd.DataFrame]:
         pass
 
 
@@ -41,3 +43,34 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
         body = df.drop([node, "daily", "Unnamed: 2", "Unnamed: 3"], axis=1)
 
         return date, body
+
+
+class MonthlyMatrixSerializer(IDateMatrixSerializer):
+    def extract_date(
+        self, df: pd.DataFrame
+    ) -> Tuple[pd.DatetimeIndex, pd.DataFrame]:
+        # Extract left part with date
+        date = df.loc[2:, ["Unnamed: 2"]]
+        date.columns = ["month"]
+        date["month"] = date["month"].map(IDateMatrixSerializer._MONTHS)
+        date["year"] = 2020
+        date["day"] = 1
+        date = pd.DatetimeIndex(pd.to_datetime(date))
+
+        # Extract right part with data
+        node = df.columns[0]
+        body = df.drop([node, "monthly", "Unnamed: 2"], axis=1)
+
+        return date, body
+
+
+class FactoryDateSerializer:
+    @staticmethod
+    def create(freq: str) -> IDateMatrixSerializer:
+        if freq == "daily":
+            return DailyMatrixSerializer()
+        if freq == "monthly":
+            return MonthlyMatrixSerializer()
+        raise NotImplementedError(
+            f"Any date serializer compatible with freq={freq}"
+        )
