@@ -19,7 +19,9 @@ class OutputSimulationModeMcAllLinksItem(FolderNode):
         children: TREE = {}
         for timing in config.get_filters_synthesis(self.area, self.link):
             children[f"values-{timing}"] = Values(
-                config.next_file(f"values-{timing}.txt")
+                config.next_file(f"values-{timing}.txt"), timing
             )
-            children[f"id-{timing}"] = Id(config.next_file(f"id-{timing}.txt"))
+            children[f"id-{timing}"] = Id(
+                config.next_file(f"id-{timing}.txt"), timing
+            )
         return children

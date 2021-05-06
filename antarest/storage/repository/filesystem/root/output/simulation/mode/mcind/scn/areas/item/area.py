@@ -20,12 +20,11 @@ class OutputSimulationModeMcIndScnAreasArea(FolderNode):
 
         for timing in config.get_filters_year(self.area):
             children[f"details-{timing}"] = Details(
-                config.next_file(f"details-{timing}.txt")
+                config.next_file(f"details-{timing}.txt"), timing
             )
 
-        for timing in config.get_filters_year(self.area):
             children[f"values-{timing}"] = Values(
-                config.next_file(f"values-{timing}.txt")
+                config.next_file(f"values-{timing}.txt"), timing
             )
 
         return children

@@ -15,7 +15,7 @@ class OutputSimulationModeMcIndScnLinksItem(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             f"values-{timing}": Values(
-                config.next_file(f"values-{timing}.txt")
+                config.next_file(f"values-{timing}.txt"), timing
             )
             for timing in config.get_filters_year(self.area, self.link)
         }

@@ -28,11 +28,12 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
             )
 
         for timing in filters:
-            children[f"id-{timing}"] = Id(config.next_file(f"id-{timing}.txt"))
+            children[f"id-{timing}"] = Id(
+                config.next_file(f"id-{timing}.txt"), timing
+            )
 
-        for timing in filters:
             children[f"values-{timing}"] = Values(
-                config.next_file(f"values-{timing}.txt")
+                config.next_file(f"values-{timing}.txt"), timing
             )
 
         return children

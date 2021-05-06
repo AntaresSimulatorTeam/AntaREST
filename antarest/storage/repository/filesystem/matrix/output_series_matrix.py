@@ -37,7 +37,7 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
         ).to_list()
 
         matrix = body.iloc[2:].astype(float)
-        matrix.index = date
+        matrix.index = date.astype(str)
         matrix.columns = header
 
         return matrix.to_dict()
