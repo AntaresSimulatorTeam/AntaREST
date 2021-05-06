@@ -1,6 +1,7 @@
+import shutil
 from pathlib import Path
 from typing import Callable, List
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import (
@@ -49,7 +50,7 @@ class SlurmLauncher(ILauncher):
         parser: MainOptionParser = MainOptionParser(main_options_parameters)
         parser.add_basic_arguments()
         parser.add_advanced_arguments()
-        arguments = parser.parse_args()
+        arguments = parser.parse_args([])
 
         arguments.wait_mode = False
         arguments.check_queue = False
@@ -81,35 +82,25 @@ class SlurmLauncher(ILauncher):
         )
         return main_parameters
 
-    def _export_study_to_studies_in_directory(
-        self,
-        study_uuid: str,
-        studies_in_directory: str,
-        params: RequestParameters,
-    ):
-        pass
-
-    def _delete_input_study(self):
-        pass
+    @staticmethod
+    def _delete_input_study(study_path: Path) -> None:
+        shutil.rmtree(study_path)
 
     def run_study(
         self, study_uuid: str, version: str, params: RequestParameters
     ) -> UUID:
         arguments = self._init_launcher_arguments()
         antares_launcher_parameters = self._init_launcher_parameters()
-        self.storage_service.get_study_information(study_uuid, params)
-        dest = arguments.studies_in_dir / uuid4()
+
+        launch_uuid = uuid4()
+
+        study_path = arguments.studies_in_dir / launch_uuid
 
         # export study
         self.storage_service.export_study_flat(
-            study_uuid, params, dest, outputs=False
-        )
-        self._export_study_to_studies_in_directory(
-            study_uuid, arguments.studies_in, params
+            study_uuid, params, study_path, outputs=False
         )
 
-        run_with(arguments, antares_launcher_parameters)
+        run_with(arguments, antares_launcher_parameters, show_banner=False)
 
-        self._delete_input_study()
-
-        # delete exported study
+        self._delete_input_study(study_path)
