@@ -6,4 +6,4 @@ from antarest.storage.repository.filesystem.matrix.input_series_matrix import (
 
 class InputHydroSeriesAreaMod(InputSeriesMatrix):
     def __init__(self, config: StudyConfig):
-        super(InputSeriesMatrix, self).__init__(config)
+        InputSeriesMatrix.__init__(self, config)

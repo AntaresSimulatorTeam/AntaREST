@@ -1,8 +1,8 @@
 from abc import ABC
 
-import pandas as pd
+import pandas as pd  # type: ignore
 
-from typing import Optional, List
+from typing import Optional, List, cast
 
 from antarest.common.custom_types import JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
@@ -40,7 +40,7 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
         matrix.index = date.astype(str)
         matrix.columns = header
 
-        return matrix.to_dict()
+        return cast(JSON, matrix.to_dict())
 
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
         pass

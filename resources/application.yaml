@@ -12,10 +12,8 @@ db:
 
 storage:
   workspaces:
-    hello:
-      path: examples/studies/
     default:
-      path: .
+      path: examples/studies/
 
 launcher:
   default: local
