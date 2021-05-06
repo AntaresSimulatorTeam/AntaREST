@@ -52,7 +52,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> Blueprint:
         tags:
           - Run Studies
         """
-        engine = config["launcher.default"]
+        engine = config.launcher.default
         if "engine" in request.args:
             engine = request.args["engine"]
         params = RequestParameters(user=Auth.get_current_user())
