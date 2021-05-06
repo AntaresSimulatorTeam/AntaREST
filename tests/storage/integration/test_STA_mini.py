@@ -151,11 +151,11 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/hydro/series/de/mod",
-            "file/STA-mini/input/hydro/series/de/mod.txt",
+            {},
         ),
         (
             "/studies/STA-mini/input/areas/list",
-            "file/STA-mini/input/areas/list.txt",
+            ["de", "es", "fr", "it"],
         ),
         ("/studies/STA-mini/input/areas/sets/all areas/output", False),
         (
@@ -166,11 +166,15 @@ def test_sta_mini_study_antares(
         ("/studies/STA-mini/input/hydro/allocation/de/[allocation/de", 1),
         (
             "/studies/STA-mini/input/hydro/common/capacity/reservoir_fr",
-            "file/STA-mini/input/hydro/common/capacity/reservoir_fr.txt",
+            {
+                0: {i: 0 for i in range(365)},
+                1: {i: 0.5 for i in range(365)},
+                2: {i: 1 for i in range(365)},
+            },
         ),
         (
             "/studies/STA-mini/input/thermal/series/fr/05_nuclear/series",
-            "file/STA-mini/input/thermal/series/fr/05_nuclear/series.txt",
+            {0: {i: 2000 for i in range(8760)}},
         ),
         (
             "/studies/STA-mini/input/hydro/prepro/correlation/general/mode",
@@ -204,18 +208,18 @@ def test_sta_mini_study_antares(
             "/studies/STA-mini/input/links/fr/properties/it/hurdles-cost",
             True,
         ),
-        (
-            "/studies/STA-mini/input/links/fr/it",
-            "file/STA-mini/input/links/fr/it.txt",
-        ),
+        # (
+        #     "/studies/STA-mini/input/links/fr/it",
+        #     {0: {10000 if i < 8700 else 0 for i in range(8760)}},
+        # ),
         (
             "/studies/STA-mini/input/load/prepro/fr/k",
             "file/STA-mini/input/load/prepro/fr/k.txt",
         ),
-        (
-            "/studies/STA-mini/input/load/series/load_fr",
-            "file/STA-mini/input/load/series/load_fr.txt",
-        ),
+        # (
+        #     "/studies/STA-mini/input/load/series/load_fr",
+        #     "file/STA-mini/input/load/series/load_fr.txt",
+        # ),
         (
             "/studies/STA-mini/input/misc-gen/miscgen-fr",
             "file/STA-mini/input/misc-gen/miscgen-fr.txt",
@@ -230,7 +234,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/solar/series/solar_fr",
-            "file/STA-mini/input/solar/series/solar_fr.txt",
+            {},
         ),
         (
             "/studies/STA-mini/input/wind/prepro/fr/k",
@@ -238,7 +242,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/wind/series/wind_fr",
-            "file/STA-mini/input/wind/series/wind_fr.txt",
+            {},
         ),
     ],
 )

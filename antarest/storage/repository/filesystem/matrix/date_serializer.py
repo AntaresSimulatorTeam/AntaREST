@@ -27,6 +27,23 @@ class IDateMatrixSerializer(ABC):
         pass
 
 
+class HourlyMatrixSerializer(IDateMatrixSerializer):
+    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
+        # Extract left part with date
+        date = df.loc[2:, ["Unnamed: 2", "Unnamed: 3", "Unnamed: 4"]]
+        date.columns = ["day", "month", "hour"]
+        date["month"] = date["month"].map(IDateMatrixSerializer._MONTHS)
+        date = date["hour"] + " " + date["day"] + "/" + date["month"]
+
+        # Extract right part with data
+        node = df.columns[0]
+        body = df.drop(
+            [node, "hourly", "Unnamed: 2", "Unnamed: 3", "Unnamed 4"], axis=1
+        )
+
+        return date, body
+
+
 class DailyMatrixSerializer(IDateMatrixSerializer):
     def extract_date(
         self, df: pd.DataFrame

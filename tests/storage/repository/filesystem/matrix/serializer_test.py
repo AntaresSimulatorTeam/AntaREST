@@ -5,7 +5,37 @@ import pandas as pd
 from antarest.storage.repository.filesystem.matrix.date_serializer import (
     DailyMatrixSerializer,
     MonthlyMatrixSerializer,
+    HourlyMatrixSerializer,
 )
+
+
+def test_hourly(tmp_path: Path):
+    file = tmp_path / "matrix-daily.txt"
+    content = """
+DE	hourly				01_solar	02_wind_on
+					MWh	MWh
+	index	day	month	hour		
+	1	1	JAN	00:00	0	0
+	2	1	JAN	01:00	100	0
+    """
+    file.write_text(content)
+
+    df = pd.read_csv(file, sep="\t")
+
+    serializer = HourlyMatrixSerializer()
+    date, body = serializer.extract_date(df)
+
+    pd.testing.assert_index_equal(date, [])
+
+    pd.testing.assert_frame_equal(
+        body,
+        pd.DataFrame(
+            data={
+                "01_solar": ["MWh", "EXP", "0", "100"],
+                "02_wind_on": ["MWh", "EXP", "0", "0"],
+            }
+        ),
+    )
 
 
 def test_daily(tmp_path: Path):
