@@ -23,21 +23,19 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
         pass  # End of tree
 
     def get(self, url: Optional[List[str]] = None, depth: int = -1) -> JSON:
-        df = pd.read_csv(self.config.path, sep="\t", skiprows=4)
+        df = pd.read_csv(
+            self.config.path, sep="\t", skiprows=4, na_values="N/A"
+        )
+        df.fillna("", inplace=True)
         date, body = self.date_serializer.extract_date(df)
 
         header = body.iloc[:2]
         header = (
-            header.columns
-            + " - "
-            + header.iloc[1]
-            + " ("
-            + header.iloc[0]
-            + ")"
+            header.columns + "::" + header.iloc[0] + "::" + header.iloc[1]
         ).to_list()
 
         matrix = body.iloc[2:].astype(float)
-        matrix.index = date.astype(str)
+        matrix.index = date
         matrix.columns = header
 
         return cast(JSON, matrix.to_dict())
