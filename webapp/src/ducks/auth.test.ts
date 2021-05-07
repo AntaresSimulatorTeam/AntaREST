@@ -23,11 +23,9 @@ describe('Test reducers', (): void => {
         accessToken: "dummyAccessToken",
         refreshToken: "dummyRefreshToken"
     };
-
     const state : AuthState = {
         user: dummyUserInfo
     }
-
 
     it('should test auth reducer after a dummy action', () : void => {
         
