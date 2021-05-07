@@ -2,7 +2,7 @@ import pandas as pd  # type: ignore
 
 from typing import Optional, List
 
-from pandas.errors import EmptyDataError
+from pandas.errors import EmptyDataError  # type: ignore
 
 from antarest.common.custom_types import JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig

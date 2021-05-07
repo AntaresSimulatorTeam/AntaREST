@@ -38,8 +38,8 @@ def test(tmp_path: Path):
 
     matrix = pd.DataFrame(
         data={
-            "01_solar - EXP (MWh)": [27000, 48000],
-            "02_wind_on - EXP (MWh)": [600, 34400],
+            "01_solar::MWh::EXP": [27000, 48000],
+            "02_wind_on::MWh::EXP": [600, 34400],
         },
         index=pd.to_datetime(["2020/01/01", "2020/01/02"]),
     )
