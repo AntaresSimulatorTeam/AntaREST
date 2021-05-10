@@ -10,10 +10,10 @@ import { UserInfo } from '../common/types';
 
 
 /** ******************************************* */
-/* Test reducers                                */
+/* Test reducer                                 */
 /** ******************************************* */
 
-describe('Test auth reducers', (): void => {
+describe('Test auth reducer', (): void => {
 
     /** ******************************************* */
     /* Variables needed for the tests               */
