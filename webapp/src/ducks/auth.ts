@@ -48,6 +48,8 @@ export interface LoginAction extends Action {
 
 export const loginUser = (user: UserInfo): ThunkAction<void, AppState, unknown, LoginAction> => (dispatch): void => {
   const tokenData = jwt_decode(user.accessToken);
+  console.log('HEY')
+  console.log(tokenData)
   setAuth(user.accessToken);
   dispatch({
     type: 'AUTH/LOGIN',
