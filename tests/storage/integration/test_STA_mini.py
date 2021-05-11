@@ -22,6 +22,7 @@ from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import (
     de_fr_values_hourly,
 )
+from tests.storage.integration.data.input_link import input_link
 
 ADMIN = JWTUser(
     id=1,
@@ -214,16 +215,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/links/fr/it",
-            {
-                0: {i: 100000 for i in range(8760)},
-                1: {i: 100000 for i in range(8760)},
-                2: {i: 0.01 for i in range(8760)},
-                3: {i: 0.01 for i in range(8760)},
-                4: {i: 0 for i in range(8760)},
-                5: {i: 0 for i in range(8760)},
-                6: {i: 0 for i in range(8760)},
-                7: {i: 0 for i in range(8760)},
-            },
+            input_link,
         ),
         (
             "/studies/STA-mini/input/load/prepro/fr/k",
@@ -381,17 +373,10 @@ def test_sta_mini_copy(storage_service) -> None:
     data_destination = storage_service.get(uuid, -1, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
-    assert link_url_source == "file/STA-mini/input/links/de/fr.txt"
+    assert link_url_source == input_link
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
-    assert link_url_destination == f"file/{uuid}/input/links/de/fr.txt"
-
-    result_source = client.get(link_url_source)
-    matrix_source = result_source.data
-    result_destination = client.get(link_url_destination)
-    matrix_destination = result_destination.data
-
-    assert matrix_source == matrix_destination
+    assert link_url_destination == input_link
 
     def replace_study_name(data: JSON) -> None:
         if isinstance(data, dict):

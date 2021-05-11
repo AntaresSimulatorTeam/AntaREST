@@ -18,11 +18,11 @@ class OutputSimulationModeMcAllAreasSet(FolderNode):
         children: TREE = dict()
         for timing in config.get_filters_synthesis(self.set):
             children[f"id-{timing}"] = Id(
-                config.next_file(f"id-{timing}.txt"), timing
+                config.next_file(f"id-{timing}.txt"), timing, self.set
             )
 
             children[f"values-{timing}"] = Values(
-                config.next_file(f"values-{timing}.txt"), timing
+                config.next_file(f"values-{timing}.txt"), timing, self.set
             )
 
         return children

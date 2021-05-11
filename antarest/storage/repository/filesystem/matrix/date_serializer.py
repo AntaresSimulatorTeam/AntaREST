@@ -187,17 +187,17 @@ class AnnualMatrixSerializer(IDateMatrixSerializer):
 
 class FactoryDateSerializer:
     @staticmethod
-    def create(freq: str) -> IDateMatrixSerializer:
+    def create(freq: str, area: str) -> IDateMatrixSerializer:
         if freq == "hourly":
-            return HourlyMatrixSerializer()
+            return HourlyMatrixSerializer(area)
         if freq == "daily":
-            return DailyMatrixSerializer()
+            return DailyMatrixSerializer(area)
         if freq == "weekly":
-            return WeeklyMatrixSerializer()
+            return WeeklyMatrixSerializer(area)
         if freq == "monthly":
-            return MonthlyMatrixSerializer()
+            return MonthlyMatrixSerializer(area)
         if freq == "annual":
-            return AnnualMatrixSerializer()
+            return AnnualMatrixSerializer(area)
 
         raise NotImplementedError(
             f"Any date serializer compatible with freq={freq}"
