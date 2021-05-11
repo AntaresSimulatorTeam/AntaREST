@@ -10,14 +10,21 @@ from antarest.storage.repository.filesystem.inode import INode, TREE
 from antarest.storage.repository.filesystem.matrix.date_serializer import (
     IDateMatrixSerializer,
 )
+from antarest.storage.repository.filesystem.matrix.head_writer import (
+    HeadWriter,
+)
 
 
 class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
     def __init__(
-        self, config: StudyConfig, date_serializer: IDateMatrixSerializer
+        self,
+        config: StudyConfig,
+        date_serializer: IDateMatrixSerializer,
+        head_writer: HeadWriter,
     ):
         self.config = config
         self.date_serializer = date_serializer
+        self.head_writer = head_writer
 
     def build(self, config: StudyConfig) -> TREE:
         pass  # End of tree
@@ -42,7 +49,22 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
         return cast(JSON, matrix.to_dict())
 
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
-        pass
+        df = pd.DataFrame(data)
+
+        headers = df.columns.map(lambda x: x.split("::"))
+        headers = pd.DataFrame(headers.values.tolist()).T
+        matrix = pd.concat([headers, pd.DataFrame(df.values)], axis=0)
+
+        time = self.date_serializer.build_date(df.index)
+        matrix.index = time.index
+        matrix = pd.concat([time, matrix], axis=1)
+
+        head = self.head_writer.build(var=df.columns.size, end=df.index.size)
+        self.config.path.write_text(head)
+
+        matrix.to_csv(
+            open(self.config.path, "a"), sep="\t", index=False, header=False
+        )
 
     def check_errors(
         self,

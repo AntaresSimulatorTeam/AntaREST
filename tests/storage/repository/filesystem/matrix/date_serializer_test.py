@@ -11,7 +11,7 @@ from antarest.storage.repository.filesystem.matrix.date_serializer import (
 )
 
 
-def test_hourly(tmp_path: Path):
+def test_extract_hourly(tmp_path: Path):
     file = tmp_path / "matrix-daily.txt"
     content = """
 DE	hourly				01_solar	02_wind_on
@@ -39,6 +39,24 @@ DE	hourly				01_solar	02_wind_on
             }
         ),
     )
+
+
+def test_build_hourly(tmp_path: Path):
+    exp = pd.DataFrame(
+        {
+            0: ["DE", "", "", "", ""],
+            1: ["hourly", "", "index", 1, 2],
+            2: ["", "", "day", "1", "1"],
+            3: ["", "", "month", "JAN", "JAN"],
+            4: ["", "", "hourly", "00:00", "01:00"],
+        }
+    )
+
+    index = pd.Index(["00:00 1/01", "01:00 1/01"])
+
+    serializer = HourlyMatrixSerializer(area="de")
+    res = serializer.build_date(index)
+    assert exp.values.tolist() == res.values.tolist()
 
 
 def test_daily(tmp_path: Path):

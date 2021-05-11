@@ -1,5 +1,6 @@
+import re
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Tuple, Any, List
 
 import pandas as pd  # type: ignore
 
@@ -19,13 +20,40 @@ class IDateMatrixSerializer(ABC):
         "NOV": "11",
         "DEC": "12",
     }
+    _R_MONTHS = {v: k for k, v in _MONTHS.items()}
+
+    def __init__(self, area: str):
+        self.area = area
 
     @abstractmethod
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
-        pass
+        raise NotImplementedError()
+
+    @abstractmethod
+    def build_date(self, index: pd.Index) -> pd.DataFrame:
+        raise NotImplementedError()
 
 
 class HourlyMatrixSerializer(IDateMatrixSerializer):
+    def build_date(self, index: pd.Index) -> pd.DataFrame:
+        def _map(row: str) -> Tuple[str, int, str, str, str]:
+            h, d, m = re.split("[\s/]", row)
+            return "", 1, d, IDateMatrixSerializer._R_MONTHS[m], h
+
+        items = index.map(_map).tolist()
+        matrix = pd.DataFrame(items)
+        matrix[1] = matrix[1].cumsum()
+
+        headers = pd.DataFrame(
+            [
+                [self.area.upper(), "hourly", "", "", ""],
+                ["", "", "", "", ""],
+                ["", "index", "day", "month", "hourly"],
+            ]
+        )
+
+        return pd.concat([headers, matrix], axis=0)
+
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
         # Extract left part with date
         date = df.loc[2:, ["Unnamed: 2", "Unnamed: 3", "Unnamed: 4"]]
