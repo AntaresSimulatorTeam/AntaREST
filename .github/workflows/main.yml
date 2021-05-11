@@ -75,7 +75,7 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: webapp
-#      - name: Run tests
-#        run: npm run test
-#        working-directory: webapp
+      - name: Run tests
+        run: npm run test
+        working-directory: webapp
 
