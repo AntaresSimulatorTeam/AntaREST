@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
+import {useHistory} from 'react-router'
 import { Button, Popover, ButtonBase, makeStyles, Theme, createStyles } from '@material-ui/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +11,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       width: '160px',
-      height: '160px',
+      height: '240px',
       display: 'flex',
       flexDirection: 'column',
     },
@@ -56,6 +57,7 @@ const UserBadge = (props: PropTypes) => {
   const [t] = useTranslation();
   const classes = useStyles();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const history = useHistory();
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -64,6 +66,14 @@ const UserBadge = (props: PropTypes) => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const settings = () => {
+    // On renvoi vers la route /usersettings
+    history.push('/usersettings');
+
+    // On ferme la fenêtre de menu
+    handleClose();
+  }
 
   const open = Boolean(anchorEl);
 
@@ -97,6 +107,9 @@ const UserBadge = (props: PropTypes) => {
               <div className={classes.username}>{user.user}</div>
             </div>
           </div>
+          <Button className={classes.logoutbutton} onClick={settings} variant="contained" color="primary">
+            {t('main:settings')}
+          </Button>
           <Button className={classes.logoutbutton} onClick={logout} variant="contained" color="primary">
             {t('main:logout')}
           </Button>
@@ -107,3 +120,4 @@ const UserBadge = (props: PropTypes) => {
 };
 
 export default connector(UserBadge);
+

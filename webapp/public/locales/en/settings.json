@@ -1,0 +1,14 @@
+{
+    "users": "Users",
+    "tokens": "Tokens",
+    "groups": "Groups",
+    "usersSearchbarPlaceholder": "Search for users...",
+    "tokensSearchbarPlaceholder": "Search for tokens...",
+    "groupsSearchbarPlaceholder": "Search for groups...",
+    "createUser": "Create user",
+    "createToken": "Create token",
+    "createGroup": "Create group",
+    "groupsError": "Unable to retrieve groups list",
+    "usersError": "Unable to retrieve users list",
+    "tokensError": "Unable to retrieve tokens list"   
+  }
