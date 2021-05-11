@@ -73,6 +73,25 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
 
 
 class DailyMatrixSerializer(IDateMatrixSerializer):
+    def build_date(self, index: pd.Index) -> pd.DataFrame:
+        def _map(row: str) -> Tuple[str, int, str, str]:
+            d, m = row.split("/")
+            return "", 1, d, IDateMatrixSerializer._R_MONTHS[m]
+
+        items = index.map(_map).tolist()
+        matrix = pd.DataFrame(items)
+        matrix[1] = matrix[1].cumsum()
+
+        headers = pd.DataFrame(
+            [
+                [self.area.upper(), "hourly", "", ""],
+                ["", "", "", ""],
+                ["", "index", "day", "month"],
+            ]
+        )
+
+        return pd.concat([headers, matrix], axis=0)
+
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
         # Extract left part with date
         date = df.loc[2:, ["Unnamed: 2", "Unnamed: 3"]]
@@ -88,6 +107,19 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
 
 
 class WeeklyMatrixSerializer(IDateMatrixSerializer):
+    def build_date(self, index: pd.Index) -> pd.DataFrame:
+        matrix = pd.DataFrame({0: [""] * index.size, 1: index.values})
+
+        headers = pd.DataFrame(
+            [
+                [self.area.upper(), "weekly"],
+                ["", ""],
+                ["", "week"],
+            ]
+        )
+
+        return pd.concat([headers, matrix], axis=0)
+
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
         # Extract left part with date
         date = df.loc[2:, ["weekly"]]
@@ -100,6 +132,25 @@ class WeeklyMatrixSerializer(IDateMatrixSerializer):
 
 
 class MonthlyMatrixSerializer(IDateMatrixSerializer):
+    def build_date(self, index: pd.Index) -> pd.DataFrame:
+        matrix = pd.DataFrame(
+            {
+                0: [""] * index.size,
+                1: range(1, index.size + 1),
+                2: index.map(IDateMatrixSerializer._R_MONTHS),
+            }
+        )
+
+        headers = pd.DataFrame(
+            [
+                [self.area.upper(), "monthly", ""],
+                ["", "", ""],
+                ["", "index", "month"],
+            ]
+        )
+
+        return pd.concat([headers, matrix], axis=0)
+
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
         # Extract left part with date
         date = df.loc[2:, ["Unnamed: 2"]]
@@ -114,6 +165,15 @@ class MonthlyMatrixSerializer(IDateMatrixSerializer):
 
 
 class AnnualMatrixSerializer(IDateMatrixSerializer):
+    def build_date(self, index: pd.Index) -> pd.DataFrame:
+        return pd.DataFrame(
+            [
+                [self.area.upper(), "annual"],
+                ["", ""],
+                ["", "Annual"],
+            ]
+        )
+
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
         # Extract left part with date
         date = df.loc[2:, ["annual"]]
