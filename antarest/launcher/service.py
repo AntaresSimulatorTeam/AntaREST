@@ -38,7 +38,11 @@ class LauncherService:
         for _, launcher in self.launchers.items():
             launcher.add_callback(self.update)
 
-    def update(self, job_result: JobResult) -> None:
+    def update(self, job_uuid: str, failed=False) -> None:
+        job_result = self.repository.get(job_uuid)
+        job_result.job_status = (
+            JobStatus.FAILED if failed else JobStatus.SUCCESS
+        )
         job_result.completion_date = datetime.utcnow()
         self.repository.save(job_result)
         self.event_bus.push(

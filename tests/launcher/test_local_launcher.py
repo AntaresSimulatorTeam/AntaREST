@@ -7,7 +7,6 @@ from antarest.common.config import Config
 from antarest.launcher.business.local_launcher.local_launcher import (
     LocalLauncher,
 )
-from antarest.launcher.model import JobResult, JobStatus
 
 
 @pytest.mark.unit_test
@@ -16,13 +15,6 @@ def test_compute():
 
     uuid = uuid4()
 
-    expected_execution_result = JobResult(
-        id=str(uuid),
-        job_status=JobStatus.SUCCESS,
-        msg="Hello, World!",
-        exit_code=0,
-    )
-
     callback = Mock()
     local_launcher.add_callback(callback)
 
@@ -30,4 +22,4 @@ def test_compute():
         antares_solver_path="echo", study_path="Hello, World!", uuid=uuid
     )
 
-    callback.assert_called_once_with(expected_execution_result)
+    callback.assert_called_once_with(str(uuid), False)

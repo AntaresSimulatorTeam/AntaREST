@@ -7,7 +7,6 @@ from uuid import UUID, uuid4
 from antarest.common.config import Config
 from antarest.common.requests import RequestParameters
 from antarest.launcher.business.ilauncher import ILauncher
-from antarest.launcher.model import JobResult, JobStatus
 from antarest.storage.service import StorageService
 
 
@@ -20,7 +19,7 @@ class LocalLauncher(ILauncher):
         self, config: Config, storage_service: StorageService
     ) -> None:
         super().__init__(config, storage_service)
-        self.callbacks: List[Callable[[JobResult], None]] = []
+        self.callbacks: List[Callable[[str, bool], None]] = []
 
     def run_study(
         self, study_uuid: str, version: str, params: RequestParameters
@@ -41,19 +40,8 @@ class LocalLauncher(ILauncher):
             return uuid
 
     def _callback(self, process: Any, uuid: UUID) -> None:
-        if process.returncode == 0:
-            execution_status = JobStatus.SUCCESS
-        else:
-            execution_status = JobStatus.FAILED
-
-        result = JobResult(
-            id=str(uuid),
-            job_status=execution_status,
-            msg=process.stdout.decode("latin-1").rstrip(),
-            exit_code=process.returncode,
-        )
         for callback in self.callbacks:
-            callback(result)
+            callback(str(uuid), (not process.returncode == 0))
 
     def _compute(
         self, antares_solver_path: Path, study_path: Path, uuid: UUID
@@ -66,5 +54,5 @@ class LocalLauncher(ILauncher):
 
         self._callback(process, uuid)
 
-    def add_callback(self, callback: Callable[[JobResult], None]) -> None:
+    def add_callback(self, callback: Callable[[str, bool], None]) -> None:
         self.callbacks.append(callback)

@@ -1,8 +1,11 @@
 import shutil
+import threading
+import time
 from pathlib import Path
-from typing import Callable, List
+from typing import Callable, List, Optional
 from uuid import UUID, uuid4
 
+from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import (
     MainOptionParser,
@@ -11,7 +14,6 @@ from antareslauncher.main_option_parser import (
 from antarest.common.config import Config
 from antarest.common.requests import RequestParameters
 from antarest.launcher.business.ilauncher import ILauncher
-from antarest.launcher.model import JobResult
 from antarest.storage.service import StorageService
 
 
@@ -20,9 +22,25 @@ class SlurmLauncher(ILauncher):
         self, config: Config, storage_service: StorageService
     ) -> None:
         super().__init__(config, storage_service)
-        self.callbacks: List[Callable[[JobResult], None]] = []
+        self.callbacks: List[Callable[[str, bool], None]] = []
+        self.check_state: bool = True
+        self.thread: Optional[threading.Thread] = None
 
-    def add_callback(self, callback: Callable[[JobResult], None]) -> None:
+    def _loop(self) -> None:
+        while self.check_state:
+            self._check_studies_state()
+            time.sleep(2)
+
+    def start(self) -> None:
+        self.check_state = True
+        self.thread = threading.Thread(target=self._loop, daemon=True)
+        self.thread.start()
+
+    def stop(self) -> None:
+        self.check_state = False
+        self.thread = None
+
+    def add_callback(self, callback: Callable[[str], None]) -> None:
         self.callbacks.append(callback)
 
     def _init_launcher_arguments(self):
@@ -86,9 +104,37 @@ class SlurmLauncher(ILauncher):
     def _delete_input_study(study_path: Path) -> None:
         shutil.rmtree(study_path)
 
+    def _callback(self, study) -> None:
+        for callback in self.callbacks:
+            callback(study.name, study.with_error)
+
+    def _check_studies_state(self) -> None:
+        arguments = self._init_launcher_arguments()
+        antares_launcher_parameters = self._init_launcher_parameters()
+
+        run_with(
+            arguments=arguments,
+            parameters=antares_launcher_parameters,
+            show_banner=False,
+        )
+
+        data_repo_tinydb = DataRepoTinydb(
+            database_name=(
+                antares_launcher_parameters.json_dir
+                / antares_launcher_parameters.default_json_db_name
+            ),
+            db_primary_key=antares_launcher_parameters.db_primary_key,
+        )
+
+        study_list = data_repo_tinydb.get_list_of_studies()
+
+        for study in study_list:
+            if study.finished or study.with_error:
+                self._callback(study)
+
     def run_study(
         self, study_uuid: str, version: str, params: RequestParameters
-    ) -> UUID:
+    ) -> UUID:  # TODO: version ?
         arguments = self._init_launcher_arguments()
         antares_launcher_parameters = self._init_launcher_parameters()
 
@@ -103,4 +149,9 @@ class SlurmLauncher(ILauncher):
 
         run_with(arguments, antares_launcher_parameters, show_banner=False)
 
+        if not self.thread:
+            self.start()
+
         self._delete_input_study(study_path)
+
+        return launch_uuid
