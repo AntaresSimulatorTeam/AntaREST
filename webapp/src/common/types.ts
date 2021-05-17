@@ -21,6 +21,24 @@ export interface StudyMetadata {
   version: string;
 }
 
+export interface UserDTO {
+  id: number;
+  name: string;
+}
+
+export type RoleType = 40 | 30 | 20 | 10;
+
+export interface UserGroupInfo {
+  id: number;
+  name: string;
+  role: RoleType;
+}
+
+export interface GroupDTO {
+  id: number;
+  name: string;
+}
+
 export interface UserInfo {
   user: string;
   accessToken: string;
