@@ -1,15 +1,5 @@
 import client from './client';
-
-
-export interface UserDTO {
-  id: number;
-  name: string;
-}
-
-export interface GroupDTO {
-  id: number;
-  name: string;
-}
+import {UserDTO, GroupDTO} from '../../common/types'
 
 export const getUsers = async (): Promise<Array<UserDTO>> => {
   // le client a normalement deja le token (si authentifié)

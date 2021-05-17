@@ -13,7 +13,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    backgroundColor: 'white'
   },
   header: {
     flex: '0 0 80px',
@@ -27,34 +26,21 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flex: '0 0 60%',
     height: '50px',
     border: `2px solid ${theme.palette.primary.main}`,
-    borderRadius: '20px',
-    padding: '0 10px',
+    padding: theme.spacing(2),
     color: theme.palette.primary.main
   },
   searchicon :{
     color: theme.palette.primary.main
   },
-  button: {
-    borderRadius: '20px',
-  },
   main: {
     flex: '1',
     width: '100%',
     display: 'flex',
-    padding: '20px 50%',
+    padding: theme.spacing(2),
     flexFlow: 'column nowrap',
     alignItems: 'center',
     overflowY: 'auto',
-  },
-  item: {
-    flex: 'none',
-    width: '80%',
-    display: 'flex',
-    padding: '20px',
-    flexFlow: 'column nowrap',
-    backgroundColor: 'red',
-    margin: '2px'
-  }  
+  }
 }));
 
 
@@ -86,7 +72,6 @@ const GenericSettingView = (props: PropsWithChildren<PropTypes>) => {
           />
         <Button variant="contained"
                 color="primary" 
-                className={classes.button}
                 onClick={onButtonClick}>
           {buttonValue}
         </Button>     

@@ -1,5 +1,5 @@
 import React from 'react';
-import { makeStyles, createStyles, Theme, Typography, Button } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, Typography, Button, Paper } from '@material-ui/core';
 import CreateIcon from '@material-ui/icons/Create';
 import DeleteIcon from '@material-ui/icons/Delete';
 
@@ -9,16 +9,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         flex: 'none',
         width: '80%',
         display: 'flex',
-        padding: '10px 20px',
+        padding: theme.spacing(2),
         flexFlow: 'row nowrap',
         justifyContent: 'flex-start',
-        borderRadius: '30px',
-        backgroundColor: theme.palette.primary.main,
-        '&:hover':{
-            backgroundColor: theme.palette.primary.dark,
-        },
-        color: 'white',
-        margin: '2px',
+        color: theme.palette.primary.main,
+        margin: theme.spacing(2),
     },
     iconsContainer:
     {
@@ -31,11 +26,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     },
     deleteIcon:
     {
-        color: 'red'
+        color: theme.palette.error.main
     },
     createIcon:
     {
-        color: theme.palette.primary.light,
+        color: theme.palette.primary.main,
     }
 }));
   
@@ -53,7 +48,7 @@ const ItemSettings = (props: PropTypes) => {
     const {id, value, onDeleteCLick, onUpdateClick} = props;
 
     return (
-    <div className={classes.root}>
+    <Paper className={classes.root}>
         <Typography>{value}</Typography>
         <div className={classes.iconsContainer}>
             <Button onClick={() => onUpdateClick(id)}>
@@ -63,7 +58,7 @@ const ItemSettings = (props: PropTypes) => {
                 <DeleteIcon className={classes.deleteIcon}/>
             </Button>
         </div>
-    </div>
+    </Paper>
     );
 
 }

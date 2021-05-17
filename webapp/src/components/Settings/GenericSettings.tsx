@@ -15,17 +15,12 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 interface PropTypes {
     items : {
         [item : string] : () => JSX.Element
-    },
-    userInfos : {
-        username: string,
-        firstname: string,
-        lastname: string
     }
 }
 
 const GenericSettings = (props: PropTypes) => {
 
-  const { items, userInfos } = props;
+  const { items } = props;
   const classes = useStyles();
 
   const navList = Object.keys(items);
@@ -37,7 +32,6 @@ const GenericSettings = (props: PropTypes) => {
   return (
     <div className={classes.root}>
         <NavSettings  
-          userInfos={userInfos}
           currentItem={navState}
           items={navList}
           onItemClick={onItemClick}

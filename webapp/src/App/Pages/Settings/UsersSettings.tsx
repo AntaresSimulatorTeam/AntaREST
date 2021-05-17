@@ -3,9 +3,10 @@ import { connect, ConnectedProps } from 'react-redux';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { AppState } from '../../reducers';
-import GenericSettingView from '../../../components/Settings/GenericSettingView'
-import ItemSettings from '../../../components/Settings/ItemSettings'
-import { getUsers, UserDTO } from '../../../services/api/user';
+import GenericSettingView from '../../../components/Settings/GenericSettingView';
+import ItemSettings from '../../../components/Settings/ItemSettings';
+import { getUsers} from '../../../services/api/user';
+import {UserDTO } from '../../../common/types';
 
 const mapState = (state: AppState) => ({
     user: state.auth.user,
@@ -24,8 +25,8 @@ const UsersSettings = (props: PropTypes) => {
     const {user} = props;
 
     const matchFilter = (input: string) : boolean => {
-      // Recherche extrêmement basique => à modifier éventuellement
-      return (input.substring(0,filter.length) === filter);
+      //Very basic search => possibly modify
+      return (input.search(filter) >= 0);
     }
 
     useEffect(() => {
@@ -50,7 +51,7 @@ const UsersSettings = (props: PropTypes) => {
                           onButtonClick={() => console.log("Button")}>
                           {
                             userList.map((item) => 
-                            item.name && // A enlever, mais une des réponses vaut "null" => A réparer côté back
+                            item.name && // To delete
                             matchFilter(item.name) && 
                                           <ItemSettings key={item.id}
                                             id={item.id}

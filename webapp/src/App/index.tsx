@@ -31,7 +31,7 @@ const App: React.FC<{}> = () => (
                   <Route path="/" exact key="home">
                     <StudyManagement />
                   </Route>
-                  <Route path="/usersettings" exact key="module">
+                  <Route path="/usersettings" exact key="usersettings">
                     <UserSettings />
                   </Route>
                   <Route path="/study/:studyId" key="module">

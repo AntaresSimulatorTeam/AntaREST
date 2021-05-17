@@ -4,7 +4,6 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { AppState } from '../../reducers';
 import GenericSettingView from '../../../components/Settings/GenericSettingView'
-//import ItemSettings from '../../../components/Settings/ItemSettings'
 
 const mapState = (state: AppState) => ({
     user: state.auth.user,
