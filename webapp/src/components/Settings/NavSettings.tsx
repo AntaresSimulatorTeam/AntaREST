@@ -9,20 +9,18 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
       flex: '0 0 20%',
       minWidth: '200px',
       height: '100%',
-      overflow: 'auto',
-      borderRight: `4px solid ${theme.palette.primary.dark}`,
-      backgroundColor: theme.palette.primary.main
+      overflowY: 'auto',
+      overflowX: 'hidden',
     },
     userInfos : {
-      width: '100%',
-      padding: '10px 20px',
+      padding: theme.spacing(1),
       display: 'flex',
       flexDirection: 'column',
-      backgroundColor: theme.palette.primary.dark,
-      color: 'white'
+      alignItems: 'center',
+      color: theme.palette.primary.main
     },
     list: {
-      padding: '10px 20px',
+      padding: theme.spacing(2),
       alignItems: 'center'
     },
     item : {
