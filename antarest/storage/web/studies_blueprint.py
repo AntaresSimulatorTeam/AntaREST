@@ -22,7 +22,7 @@ from antarest.common.requests import (
 
 
 def sanitize_uuid(uuid: str) -> str:
-    return escape(uuid)
+    return str(escape(uuid))
 
 
 def sanitize_study_name(name: str) -> str:

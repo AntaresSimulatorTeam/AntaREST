@@ -64,7 +64,11 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
         self.config.path.write_text(head)
 
         matrix.to_csv(
-            open(self.config.path, "a"), sep="\t", index=False, header=False
+            open(self.config.path, "a", newline="\n"),
+            sep="\t",
+            index=False,
+            header=False,
+            line_terminator="\n",
         )
 
     def check_errors(
