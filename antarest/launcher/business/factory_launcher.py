@@ -8,16 +8,14 @@ from antarest.launcher.business.local_launcher.local_launcher import (
 from antarest.launcher.business.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
 )
+from antarest.storage.service import StorageService
 
 
 class FactoryLauncher:
-    def build_launcher(self, config: Config) -> Dict[str, ILauncher]:
-        dict_launchers = dict()
-        if config["launcher.local"]:
-            dict_launchers["local"] = LocalLauncher(config)
-        if config["launcher.slurm"]:
-            dict_launchers["slurm"] = SlurmLauncher(config)
-        if not dict_launchers:
-            raise NotImplementedError
-        else:
-            return dict_launchers
+    def build_launcher(
+        self, config: Config, storage_service: StorageService
+    ) -> Dict[str, ILauncher]:
+        dict_launchers: Dict[str, ILauncher] = dict()
+        dict_launchers["local"] = LocalLauncher(config, storage_service)
+        dict_launchers["slurm"] = SlurmLauncher(config, storage_service)
+        return dict_launchers

@@ -24,7 +24,7 @@ class LocalLauncher(ILauncher):
     def run_study(
         self, study_uuid: str, version: str, params: RequestParameters
     ) -> UUID:
-        antares_solver_path = self.config.launcher.binaries[version]
+        antares_solver_path = self.config.launcher.local.binaries[version]
         if antares_solver_path is None:
             raise StudyVersionNotSupported()
         else:
