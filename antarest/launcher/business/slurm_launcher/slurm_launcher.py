@@ -1,3 +1,4 @@
+import argparse
 import shutil
 import threading
 import time
@@ -11,6 +12,7 @@ from antareslauncher.main_option_parser import (
     MainOptionParser,
     MainOptionsParameters,
 )
+from antareslauncher.study_dto import StudyDTO
 from antarest.common.config import Config
 from antarest.common.requests import RequestParameters
 from antarest.launcher.business.ilauncher import ILauncher
@@ -40,10 +42,10 @@ class SlurmLauncher(ILauncher):
         self.check_state = False
         self.thread = None
 
-    def add_callback(self, callback: Callable[[str], None]) -> None:
+    def add_callback(self, callback: Callable[[str, bool], None]) -> None:
         self.callbacks.append(callback)
 
-    def _init_launcher_arguments(self):
+    def _init_launcher_arguments(self) -> argparse.Namespace:
         main_options_parameters = MainOptionsParameters(
             default_wait_time=self.config.launcher.slurm.default_wait_time,
             default_time_limit=self.config.launcher.slurm.default_time_limit,
@@ -104,7 +106,7 @@ class SlurmLauncher(ILauncher):
     def _delete_input_study(study_path: Path) -> None:
         shutil.rmtree(study_path)
 
-    def _callback(self, study) -> None:
+    def _callback(self, study: StudyDTO) -> None:
         for callback in self.callbacks:
             callback(study.name, study.with_error)
 

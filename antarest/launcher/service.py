@@ -34,23 +34,26 @@ class LauncherService:
         self.storage_service = storage_service
         self.repository = repository
         self.event_bus = event_bus
-        self.launchers = factory_launcher.build_launcher(config)
+        self.launchers = factory_launcher.build_launcher(
+            config, storage_service
+        )
         for _, launcher in self.launchers.items():
             launcher.add_callback(self.update)
 
-    def update(self, job_uuid: str, failed=False) -> None:
+    def update(self, job_uuid: str, failed: bool = False) -> None:
         job_result = self.repository.get(job_uuid)
-        job_result.job_status = (
-            JobStatus.FAILED if failed else JobStatus.SUCCESS
-        )
-        job_result.completion_date = datetime.utcnow()
-        self.repository.save(job_result)
-        self.event_bus.push(
-            Event(
-                EventType.STUDY_JOB_COMPLETED,
-                {"jid": str(job_result.id), "sid": job_result.study_id},
+        if job_result is not None:
+            job_result.job_status = (
+                JobStatus.FAILED if failed else JobStatus.SUCCESS
             )
-        )
+            job_result.completion_date = datetime.utcnow()
+            self.repository.save(job_result)
+            self.event_bus.push(
+                Event(
+                    EventType.STUDY_JOB_COMPLETED,
+                    {"jid": str(job_result.id), "sid": job_result.study_id},
+                )
+            )
 
     def run_study(
         self, study_uuid: str, params: RequestParameters, launcher: str
