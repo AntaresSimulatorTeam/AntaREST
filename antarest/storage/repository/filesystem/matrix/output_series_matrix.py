@@ -57,6 +57,7 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
 
         time = self.date_serializer.build_date(df.index)
         matrix.index = time.index
+
         matrix = pd.concat([time, matrix], axis=1)
 
         head = self.head_writer.build(var=df.columns.size, end=df.index.size)

@@ -84,7 +84,7 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
 
         headers = pd.DataFrame(
             [
-                [self.area.upper(), "hourly", "", ""],
+                [self.area.upper(), "daily", "", ""],
                 ["", "", "", ""],
                 ["", "index", "day", "month"],
             ]
@@ -169,6 +169,7 @@ class AnnualMatrixSerializer(IDateMatrixSerializer):
         return pd.DataFrame(
             [
                 [self.area.upper(), "annual"],
+                ["", ""],
                 ["", ""],
                 ["", "Annual"],
             ]

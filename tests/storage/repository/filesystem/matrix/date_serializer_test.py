@@ -92,7 +92,7 @@ def test_build_daily(tmp_path: Path):
     exp = pd.DataFrame(
         {
             0: ["DE", "", "", "", ""],
-            1: ["hourly", "", "index", 1, 2],
+            1: ["daily", "", "index", 1, 2],
             2: ["", "", "day", "1", "1"],
             3: ["", "", "month", "JAN", "JAN"],
         }
@@ -225,8 +225,8 @@ DE	annual	01_solar	02_wind_on
 def test_build_annual():
     exp = pd.DataFrame(
         {
-            0: ["DE", "", ""],
-            1: ["annual", "", "Annual"],
+            0: ["DE", "", "", ""],
+            1: ["annual", "", "", "Annual"],
         }
     )
 

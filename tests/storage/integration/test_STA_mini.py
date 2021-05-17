@@ -472,6 +472,7 @@ def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
         storage_service=storage_service,
         config=storage_service.study_service.config,
     )
+
     client = app.test_client()
     result = client.post(
         "/studies", data={"study": (zip_study_stream, "study.zip")}
