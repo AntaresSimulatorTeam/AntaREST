@@ -42,44 +42,6 @@ def test_export_file(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_export_compact_file(tmp_path: Path):
-    name = "my-study"
-    study_path = tmp_path / name
-    study_path.mkdir()
-    (study_path / "study.antares").touch()
-
-    exporter = Mock()
-    exporter.export_compact.return_value = b"Hello"
-
-    study_service = Mock()
-    study_service.check_study_exist.return_value = None
-    study_service.get.return_value = 42
-
-    factory = Mock()
-    factory.create_from_fs.return_value = (
-        StudyConfig(study_path=study_path, outputs={42: "value"}),
-        study_service,
-    )
-    factory.create_from_config.return_value = study_service
-
-    exporter_service = ExporterService(
-        study_service=build_storage_service(tmp_path, name),
-        study_factory=factory,
-        exporter=exporter,
-    )
-
-    md = RawStudy(id=name, workspace=DEFAULT_WORKSPACE_NAME)
-    assert b"Hello" == exporter_service.export_study(
-        md, compact=True, outputs=False
-    )
-
-    factory.create_from_config.assert_called_once_with(
-        StudyConfig(study_path=study_path)
-    )
-    exporter.export_compact.assert_called_once_with(study_path, 42)
-
-
-@pytest.mark.unit_test
 def test_export_matrix(tmp_path: Path) -> None:
     file = tmp_path / "file.txt"
     file.write_bytes(b"Hello World")

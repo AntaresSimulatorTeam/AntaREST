@@ -457,31 +457,6 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 
 
 @pytest.mark.integration_test
-def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
-
-    params = RequestParameters(user=ADMIN)
-    zip_study_stream = storage_service.export_study(
-        "STA-mini", compact=True, params=params
-    )
-
-    app = Flask(__name__)
-    build_storage(
-        app,
-        session=Mock(),
-        user_service=Mock(),
-        storage_service=storage_service,
-        config=storage_service.study_service.config,
-    )
-
-    client = app.test_client()
-    result = client.post(
-        "/studies", data={"study": (zip_study_stream, "study.zip")}
-    )
-
-    assert result.status_code == HTTPStatus.CREATED.value
-
-
-@pytest.mark.integration_test
 def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     params = RequestParameters(user=ADMIN)
 

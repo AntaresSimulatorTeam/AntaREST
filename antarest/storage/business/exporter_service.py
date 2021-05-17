@@ -21,25 +21,12 @@ class ExporterService:
         self.study_factory = study_factory
         self.exporter = exporter
 
-    def export_study(
-        self, metadata: Study, compact: bool = False, outputs: bool = True
-    ) -> BytesIO:
+    def export_study(self, metadata: Study, outputs: bool = True) -> BytesIO:
         path_study = self.study_service.get_study_path(metadata)
 
         self.study_service.check_study_exists(metadata)
 
-        if compact:
-            config, study = self.study_factory.create_from_fs(path=path_study)
-
-            if not outputs:
-                config.outputs = dict()
-                study = self.study_factory.create_from_config(config)
-
-            data = study.get()
-            del study
-            return self.exporter.export_compact(path_study, data)
-        else:
-            return self.exporter.export_file(path_study, outputs)
+        return self.exporter.export_file(path_study, outputs)
 
     def get_matrix(self, metadata: Study, path: str) -> bytes:
         file = self.study_service.get_study_path(metadata) / path

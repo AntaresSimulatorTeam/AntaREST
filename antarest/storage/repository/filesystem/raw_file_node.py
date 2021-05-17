@@ -23,10 +23,7 @@ class RawFileNode(INode[str, str, str]):
     def save(self, data: str, url: Optional[List[str]] = None) -> None:
         self._assert_url(url)
 
-        if "file/" in data:
-            path = self.config.root_path.parent / data[len("file/") :]
-        else:
-            path = self.config.root_path / "res" / data
+        path = self.config.root_path.parent / data[len("file/") :]
 
         if path != self.config.path:
             self.config.path.parent.mkdir(parents=True, exist_ok=True)

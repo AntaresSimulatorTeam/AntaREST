@@ -209,7 +209,6 @@ class StorageService:
         self,
         uuid: str,
         params: RequestParameters,
-        compact: bool = False,
         outputs: bool = True,
     ) -> BytesIO:
         study = self._get_study(uuid)
@@ -219,7 +218,7 @@ class StorageService:
                 f"Study {uuid} with type {study.type} not recognized"
             )
 
-        return self.exporter_service.export_study(study, compact, outputs)
+        return self.exporter_service.export_study(study, outputs)
 
     def delete_study(self, uuid: str, params: RequestParameters) -> None:
         study = self._get_study(uuid)

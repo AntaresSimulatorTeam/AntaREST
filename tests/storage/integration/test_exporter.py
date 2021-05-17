@@ -73,9 +73,6 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
     data = assert_url_content(service, url="/studies/STA-mini/export")
     assert_data(data)
 
-    data = assert_url_content(service, url="/studies/STA-mini/export?compact")
-    assert_data(data)
-
 
 def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
 
@@ -112,10 +109,5 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
 
     data = assert_url_content(
         service, url="/studies/STA-mini/export?no-output"
-    )
-    assert_data(data)
-
-    data = assert_url_content(
-        service, url="/studies/STA-mini/export?compact&no-output"
     )
     assert_data(data)
