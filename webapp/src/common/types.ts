@@ -28,6 +28,12 @@ export interface UserDTO {
 
 export type RoleType = 40 | 30 | 20 | 10;
 
+export interface RoleDTO {
+  group_id: string;
+  user: number;
+  type: RoleType;
+}
+
 export interface UserGroupInfo {
   id: number;
   name: string;
@@ -35,7 +41,7 @@ export interface UserGroupInfo {
 }
 
 export interface GroupDTO {
-  id: number;
+  id: string;
   name: string;
 }
 

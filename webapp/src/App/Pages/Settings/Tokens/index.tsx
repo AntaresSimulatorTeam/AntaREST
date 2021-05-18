@@ -2,8 +2,8 @@ import React, {useEffect} from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { AppState } from '../../reducers';
-import GenericSettingView from '../../../components/Settings/GenericSettingView'
+import { AppState } from '../../../reducers';
+import GenericSettingView from '../../../../components/Settings/GenericSettingView'
 
 const mapState = (state: AppState) => ({
     user: state.auth.user,

@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { AppState } from '../../reducers';
 import {isUserAdmin} from '../../../services/utils'
 import GenericSettings from '../../../components/Settings/GenericSettings'
-import GroupsSettings from './GroupsSettings';
-import TokensSettings from './TokensSettings';
-import UsersSettings from './UsersSettings';
+import GroupsSettings from './Groups';
+import TokensSettings from './Tokens';
+import UsersSettings from './Users';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,

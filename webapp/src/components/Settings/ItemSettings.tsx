@@ -35,11 +35,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 }));
   
 interface PropTypes {
-    id: number,
-    key: number,
+    id: string | number,
+    key: string | number,
     value: string,
-    onDeleteCLick: (id: number) => void,
-    onUpdateClick: (id : number) => void
+    onDeleteCLick: (id: string | number) => void,
+    onUpdateClick: (id : string | number) => void
 }
 
 const ItemSettings = (props: PropTypes) => {
