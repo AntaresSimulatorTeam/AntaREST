@@ -37,7 +37,9 @@ jobs:
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
