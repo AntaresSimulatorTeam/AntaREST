@@ -49,27 +49,31 @@ class LdapService:
         self.url = config.security.ldap_url
         self.users = users
 
-    def save(self, user: UserCreateDTO) -> Optional[UserLdap]:
+    def _fetch(self, name: str, password: str) -> Optional[UserLdap]:
         if not self.url:
             return None
 
-        auth = AuthDTO(user=user.name, password=user.password)
+        auth = AuthDTO(user=name, password=password)
         res = requests.post(url=f"{self.url}/auth", json=auth.to_json())
 
         if res.status_code != 200:
             return None
 
-        antares_user = AntaresUser.from_json(res.json())
-        user = UserLdap(name=user.name)
-        self.users.save(user)
+        antares_user = AntaresUser.from_json(res.json())  # TODO use ldap group
+        return UserLdap(name=name)
 
-        return user
+    def _save(self, user: UserLdap) -> UserLdap:
+        return self.users.save(user)
 
     def get(self, id: int) -> Optional[UserLdap]:
         return self.users.get(id)
 
-    def get_by_name(self, name: str) -> Optional[UserLdap]:
-        return self.users.get_by_name(name)
+    def login(self, name: str, password: str) -> Optional[UserLdap]:
+        user = self._fetch(name, password)
+        if not user:
+            return None
+
+        return self.users.get_by_name(name) or self._save(UserLdap(name=name))
 
     def get_all(self) -> List[UserLdap]:
         return self.users.get_all()

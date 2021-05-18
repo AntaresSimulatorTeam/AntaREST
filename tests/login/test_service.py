@@ -110,26 +110,6 @@ def test_create_user():
     )
 
 
-def test_create_user_ldap():
-    create = UserCreateDTO(name="hello", password="world")
-    ldap = Mock()
-    ldap.save.return_value = UserLdap(name="hello")
-
-    users = Mock()
-
-    service = LoginService(
-        user_repo=users,
-        bot_repo=Mock(),
-        group_repo=Mock(),
-        role_repo=Mock(),
-        ldap=ldap,
-        event_bus=Mock(),
-    )
-
-    service.create_user(create, param=SADMIN)
-    users.save.assert_not_called()
-
-
 def test_save_user():
     user = User(id=3)
     users = Mock()
@@ -274,6 +254,7 @@ def test_authentication_wrong_user():
     users.get_by_name.return_value = None
 
     ldap = Mock()
+    ldap.login.return_value = None
     ldap.get_by_name.return_value = None
 
     service = LoginService(
@@ -294,7 +275,7 @@ def test_authenticate():
     users.get.return_value = User(id=0, name="linus")
 
     ldap = Mock()
-    ldap.get_by_name.return_value = None
+    ldap.login.return_value = None
     ldap.get.return_value = None
 
     roles = Mock()

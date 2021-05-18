@@ -67,9 +67,6 @@ class LoginService:
         self, create: UserCreateDTO, param: RequestParameters
     ) -> Identity:
         if param.user and param.user.is_site_admin():
-            user = self.ldap.save(create)
-            if user:
-                return user
             return self.users.save(
                 User(name=create.name, password=Password(create.password))
             )
@@ -172,7 +169,7 @@ class LoginService:
         return self.bots.exists(id)
 
     def authenticate(self, name: str, pwd: str) -> Optional[JWTUser]:
-        user = self.ldap.get_by_name(name) or self.users.get_by_name(name)
+        user = self.ldap.login(name, pwd) or self.users.get_by_name(name)
         if user and user.password.check(pwd):  # type: ignore
             return self.get_jwt(user.id)
         return None
