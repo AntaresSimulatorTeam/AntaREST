@@ -1,6 +1,7 @@
 from abc import ABC
 
 import pandas as pd  # type: ignore
+import numpy as np  # type: ignore
 
 from typing import Optional, List, cast
 
@@ -38,9 +39,9 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
 
         header = body.iloc[:2]
         header.fillna("", inplace=True)
-        header = (
-            header.columns + "::" + header.iloc[0] + "::" + header.iloc[1]
-        ).to_list()
+        header = np.array(
+            [header.columns, header.iloc[0], header.iloc[1]]
+        ).tolist()
 
         matrix = body.iloc[2:].astype(float)
         matrix.index = date
@@ -51,8 +52,7 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
         df = pd.DataFrame(**data)
 
-        headers = df.columns.map(lambda x: x.split("::"))
-        headers = pd.DataFrame(headers.values.tolist()).T
+        headers = pd.DataFrame(df.columns.values.tolist()).T
         matrix = pd.concat([headers, pd.DataFrame(df.values)], axis=0)
 
         time = self.date_serializer.build_date(df.index)

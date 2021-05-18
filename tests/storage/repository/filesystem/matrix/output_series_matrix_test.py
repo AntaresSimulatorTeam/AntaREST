@@ -30,8 +30,8 @@ def test_get(tmp_path: Path):
 
     matrix = pd.DataFrame(
         data={
-            "01_solar::MWh::EXP": [27000, 48000],
-            "02_wind_on::MWh::EXP": [600, 34400],
+            ("01_solar", "MWh", "EXP"): [27000, 48000],
+            ("02_wind_on", "MWh", "EXP"): [600, 34400],
         },
         index=["01/02", "01/01"],
     )
@@ -61,8 +61,8 @@ def test_save(tmp_path: Path):
 
     matrix = pd.DataFrame(
         data={
-            "01_solar::MWh::EXP": [27000, 48000],
-            "02_wind_on::MWh::EXP": [600, 34400],
+            ("01_solar", "MWh", "EXP"): [27000, 48000],
+            ("02_wind_on", "MWh", "EXP"): [600, 34400],
         },
         index=["01/01", "01/02"],
     )
