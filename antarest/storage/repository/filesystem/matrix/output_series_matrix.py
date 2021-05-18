@@ -85,10 +85,3 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
                 f"Output Series Matrix f{self.config.path} not exists"
             )
         return errors
-
-    def _assert_url(self, url: Optional[List[str]] = None) -> None:
-        url = url or []
-        if len(url) > 0:
-            raise ValueError(
-                f"url should be fully resolved when arrives on {self.__class__.__name__}"
-            )
