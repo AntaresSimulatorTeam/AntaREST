@@ -47,7 +47,8 @@ jobs:
       - name: Fix symlink for windows
         if: matrix.os == 'windows-latest'
         run: |
-          Start-Process -FilePath "$env:comspec" -ArgumentList "/k", "mklink", "/j", "`"antares-launcher\antareslauncher`"","`"antareslauncher`""
+          rm antareslauncher
+          ln -s antares-launcher\antareslauncher antareslauncher
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
