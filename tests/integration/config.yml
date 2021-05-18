@@ -11,6 +11,7 @@ db:
   url: "{{dburl}}"
 
 storage:
+  watcher_lock: false
   workspaces:
     default:
       path: {{default_workspace_path}}
@@ -23,7 +24,7 @@ launcher:
     binaries:
       700: {{launcher_mock}}
 
-debug: true
+debug: false
 
 logging:
   level: INFO

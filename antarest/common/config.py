@@ -41,6 +41,7 @@ class WorkspaceConfig:
 @dataclass(frozen=True)
 class StorageConfig:
     workspaces: Dict[str, WorkspaceConfig] = field(default_factory=lambda: {})
+    watcher_lock: bool = True
 
     @staticmethod
     def from_dict(data: JSON) -> "StorageConfig":
@@ -48,7 +49,8 @@ class StorageConfig:
             workspaces={
                 n: WorkspaceConfig.from_dict(w)
                 for n, w in data["workspaces"].items()
-            }
+            },
+            watcher_lock=data.get("watcher_lock", True),
         )
 
 

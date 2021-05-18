@@ -19,6 +19,7 @@ from antarest.login.model import (
     Identity,
     UserCreateDTO,
     UserLdap,
+    RoleCreationDTO,
 )
 from antarest.login.service import (
     LoginService,
@@ -199,7 +200,7 @@ def test_save_bot_wrong_role():
 
 
 def test_save_role():
-    role = Role(
+    role = RoleCreationDTO(
         type=RoleType.ADMIN, identity=User(id=0), group=Group(id="group")
     )
     roles = Mock()

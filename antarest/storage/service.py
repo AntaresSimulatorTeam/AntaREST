@@ -10,7 +10,8 @@ from uuid import uuid4
 
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.common.jwt import JWTUser
+from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.roles import RoleType
 from antarest.login.model import User, Group
 from antarest.login.service import LoginService
 from antarest.storage.business.exporter_service import ExporterService
@@ -157,7 +158,7 @@ class StorageService:
                     name=folder.path.name,
                     path=str(folder.path),
                     workspace=folder.workspace,
-                    owner=User(id=0),
+                    owner=None,
                     groups=folder.groups,
                     public_mode=PublicMode.FULL
                     if len(folder.groups) == 0
@@ -372,9 +373,8 @@ class StorageService:
         study: RawStudy,
         owner: Optional[JWTUser] = None,
         content_status: StudyContentStatus = StudyContentStatus.VALID,
-        group: Optional[Group] = None,
     ) -> None:
-        if not owner and not group:
+        if not owner:
             raise UserHasNotPermissionError
 
         info = self.study_service.get_study_information(study)["antares"]
@@ -388,8 +388,12 @@ class StorageService:
 
         if owner:
             study.owner = User(id=owner.impersonator)
-        if group:
-            study.groups = [group]
+            groups = [
+                Group(id=group.id, name=group.name)
+                for group in owner.groups
+                if group.role.is_higher_or_equals(RoleType.WRITER)
+            ]
+            study.groups = groups
         self.repository.save(study)
 
     def _get_study(self, uuid: str) -> Study:

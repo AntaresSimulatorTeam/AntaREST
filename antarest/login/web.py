@@ -26,6 +26,7 @@ from antarest.login.model import (
     Role,
     BotCreateDTO,
     UserCreateDTO,
+    RoleCreationDTO,
 )
 from antarest.login.service import LoginService
 
@@ -273,7 +274,7 @@ def create_login_api(
     @auth.protected()
     def role_create() -> Any:
         params = RequestParameters(user=Auth.get_current_user())
-        role = Role.from_dict(json.loads(request.data))
+        role = RoleCreationDTO.from_dict(json.loads(request.data))
         return jsonify(service.save_role(role, params).to_dict())
 
     @bp.route("/roles/<string:group>/<int:user>", methods=["DELETE"])
