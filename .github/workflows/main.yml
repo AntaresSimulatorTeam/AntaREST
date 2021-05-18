@@ -44,7 +44,7 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Test with pytest
         run: |
-          pytest
+          pytest --cov antarest --cov-report xml
       - name: Fix code coverage paths
         if: matrix.os == 'ubuntu-latest'
         run: |
