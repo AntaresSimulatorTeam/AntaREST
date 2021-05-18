@@ -8,7 +8,7 @@ security:
   ldapUrl: ""
 
 db:
-  url: "{{dburl}}"
+  url: {{dburl}}
 
 storage:
   watcher_lock: false
