@@ -373,6 +373,40 @@ def test_bot_create() -> None:
 
 
 @pytest.mark.unit_test
+def test_bot() -> None:
+    bot = Bot(id=0, owner=4, is_author=False)
+    service = Mock()
+    service.get_bot.return_value = bot
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.get("/bots/0", headers=create_auth_token(app))
+    assert res.status_code == 200
+    assert res.json == bot.to_dict()
+
+
+@pytest.mark.unit_test
+def test_all_bots() -> None:
+    bots = [Bot(id=0, owner=4, is_author=False)]
+    service = Mock()
+    service.get_all_bots.return_value = bots
+    service.get_all_bots_by_owner.return_value = bots
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.get("/bots", headers=create_auth_token(app))
+    assert res.status_code == 200
+    assert res.json == [b.to_dict() for b in bots]
+
+    res = client.get("/bots?owner=4", headers=create_auth_token(app))
+    assert res.status_code == 200
+    assert res.json == [b.to_dict() for b in bots]
+
+    service.get_all_bots.assert_called_once()
+    service.get_all_bots_by_owner.assert_called_once()
+
+
+@pytest.mark.unit_test
 def test_bot_delete() -> None:
     service = Mock()
 

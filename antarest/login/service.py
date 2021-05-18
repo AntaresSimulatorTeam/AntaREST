@@ -152,6 +152,23 @@ class LoginService:
             raise UserNotFoundError()
 
     # SADMIN, USER (owner)
+    def get_bot(self, id: int, params: RequestParameters) -> Optional[User]:
+        bot = self.bots.get(id)
+        if (
+            bot
+            and params.user
+            and any(
+                (
+                    params.user.is_site_admin(),
+                    params.user.is_himself(user=Identity(id=bot.owner)),
+                )
+            )
+        ):
+            return bot
+        else:
+            raise UserHasNotPermissionError()
+
+    # SADMIN, USER (owner)
     def get_all_bots_by_owner(
         self, owner: int, params: RequestParameters
     ) -> List[Bot]:

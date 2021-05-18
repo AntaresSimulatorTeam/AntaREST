@@ -249,6 +249,26 @@ def test_get_user():
     )
 
 
+def test_get_bot():
+    bots = Mock()
+    bots.get.return_value = Bot(owner=3)
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=Mock(),
+        ldap=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert_permission(
+        test=lambda x: service.get_bot(3, x),
+        values=[(SADMIN, True), (USER3, True), (GADMIN, False)],
+        error=UserHasNotPermissionError,
+    )
+
+
 def test_authentication_wrong_user():
     users = Mock()
     users.get_by_name.return_value = None

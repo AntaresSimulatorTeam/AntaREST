@@ -352,6 +352,26 @@ def create_login_api(
         tokens = generate_tokens(jwt, expire=timedelta(days=368 * 200))
         return tokens["access_token"]
 
+    @bp.route("/bots/<int:id>", methods=["GET"])
+    @auth.protected()
+    def get_bot(id: int) -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        bot = service.get_bot(id, params)
+        return jsonify(bot.to_dict()), 200
+
+    @bp.route("/bots", methods=["GET"])
+    @auth.protected()
+    def get_all_bots() -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+
+        owner = request.args.get("owner", default=None, type=int)
+        bots = (
+            service.get_all_bots_by_owner(owner, params)
+            if owner
+            else service.get_all_bots(params)
+        )
+        return jsonify([b.to_dict() for b in bots]), 200
+
     @bp.route("/bots/<int:id>", methods=["DELETE"])
     @auth.protected()
     def bots_delete(id: int) -> Any:
