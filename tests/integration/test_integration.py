@@ -1,5 +1,4 @@
 import time
-import logging
 
 from flask import Flask
 
@@ -11,14 +10,18 @@ def test_main(app: Flask):
     admin_credentials = res.json
 
     # check default study presence
-    time.sleep(2)
-    res = client.get(
-        "/studies",
-        headers={
-            "Authorization": f'Bearer {admin_credentials["access_token"]}'
-        },
-    )
-    assert len(res.json) == 1
+    study_count = 0
+    countdown = 10
+    while study_count == 0 or countdown > 0:
+        res = client.get(
+            "/studies",
+            headers={
+                "Authorization": f'Bearer {admin_credentials["access_token"]}'
+            },
+        )
+        time.sleep(1)
+        study_count = len(res.json)
+        countdown -= 1
 
     # create some new users
     # TODO check for bad username or empty password
@@ -171,3 +174,26 @@ def test_main(app: Flask):
         },
     )
     assert len(res.json) == 2
+
+    # running studies
+    # TODO use a local launcher mock instead of using a local launcher with launcher_mock.sh (doesn't work..)
+    studies = [
+        study_id
+        for study_id in res.json
+        if res.json[study_id]["antares"]["caption"] == "STA-mini"
+    ]
+    study_id = studies[0]
+    res = client.post(
+        f"/launcher/run/{study_id}",
+        headers={
+            "Authorization": f'Bearer {fred_credentials["access_token"]}'
+        },
+    )
+    job_id = res.json["job_id"]
+    res = client.get(
+        f"/launcher/jobs?study_id={study_id}",
+        headers={
+            "Authorization": f'Bearer {fred_credentials["access_token"]}'
+        },
+    )
+    assert res.json[0]["id"] == job_id

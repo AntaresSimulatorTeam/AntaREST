@@ -40,7 +40,7 @@ def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
                 dburl=db_url,
                 default_workspace_path=str(default_workspace),
                 ext_workspace_path=str(ext_workspace_path),
-                launcher_mock=str(cur_dir / "launcher_mock.py"),
+                launcher_mock=str(cur_dir / "launcher_mock.sh"),
             )
         )
 
