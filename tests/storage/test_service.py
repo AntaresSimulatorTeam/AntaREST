@@ -193,7 +193,6 @@ def test_save_metadata() -> None:
     service._save_study(
         RawStudy(id=uuid, workspace=DEFAULT_WORKSPACE_NAME),
         owner=jwt,
-        group=group,
     )
     repository.save.assert_called_once_with(study)
 

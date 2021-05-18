@@ -1,5 +1,5 @@
 from werkzeug import exceptions
 
 
-class UserAlreadyExistError(exceptions.Conflict):
+class UserAlreadyExistError(exceptions.BadRequest):
     pass

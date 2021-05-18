@@ -11,6 +11,7 @@ def test_main(app: Flask):
     admin_credentials = res.json
 
     # check default study presence
+    time.sleep(2)
     res = client.get(
         "/studies",
         headers={
@@ -58,7 +59,7 @@ def test_main(app: Flask):
         },
         json={"name": "George", "password": "mypass"},
     )
-    assert res.status_code == 409
+    assert res.status_code == 400
 
     # login with new user
     # TODO mock ldap connector and test user login

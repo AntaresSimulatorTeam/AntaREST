@@ -95,6 +95,7 @@ def test_create_user():
 
     users = Mock()
     users.save.return_value = User(id=3, name="hello")
+    users.get_by_name.return_value = None
 
     service = LoginService(
         user_repo=users,
@@ -117,6 +118,7 @@ def test_create_user_ldap():
     ldap.save.return_value = UserLdap(name="hello")
 
     users = Mock()
+    users.get_by_name.return_value = None
 
     service = LoginService(
         user_repo=users,
@@ -201,15 +203,19 @@ def test_save_bot_wrong_role():
 
 def test_save_role():
     role = RoleCreationDTO(
-        type=RoleType.ADMIN, identity=User(id=0), group=Group(id="group")
+        type=RoleType.ADMIN, identity_id=0, group_id="group"
     )
+    users = Mock()
+    users.get.return_value = User(id=0, name="admin")
+    groups = Mock()
+    groups.get.return_value = Group(id="group", name="some group")
     roles = Mock()
     roles.save.return_value = role
 
     service = LoginService(
-        user_repo=Mock(),
+        user_repo=users,
         bot_repo=Mock(),
-        group_repo=Mock(),
+        group_repo=groups,
         role_repo=roles,
         ldap=Mock(),
         event_bus=Mock(),
