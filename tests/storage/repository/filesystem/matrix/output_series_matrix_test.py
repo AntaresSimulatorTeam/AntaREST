@@ -14,23 +14,12 @@ from antarest.storage.repository.filesystem.matrix.output_series_matrix import (
 
 def test_get(tmp_path: Path):
     file = tmp_path / "matrix-daily.txt"
-    content = """
-    DE	area	de	daily
-    	VARIABLES	BEGIN	END
-    	27	1	7
-
-    DE	daily			01_solar	02_wind_on
-    				MWh	MWh
-    	index	day	month	EXP	EXP
-    	1	01	JAN	27000	600
-    	2	02	JAN	48000	34400
-        """
-    file.write_text(content)
+    file.write_text("\n\n\n\nmock\tfile")
     config = StudyConfig(study_path=file)
 
     serializer = Mock()
     serializer.extract_date.return_value = (
-        pd.DatetimeIndex(pd.to_datetime(["2020/01/01", "2020/01/02"])),
+        pd.Index(["01/02", "01/01"]),
         pd.DataFrame(
             data={
                 "01_solar": ["MWh", "EXP", "27000", "48000"],
@@ -44,11 +33,11 @@ def test_get(tmp_path: Path):
             "01_solar::MWh::EXP": [27000, 48000],
             "02_wind_on::MWh::EXP": [600, 34400],
         },
-        index=pd.to_datetime(["2020/01/01", "2020/01/02"]),
+        index=["01/02", "01/01"],
     )
 
     node = OutputSeriesMatrix(config, serializer, AreaHeadWriter("", ""))
-    assert node.get() == matrix.to_dict()
+    assert node.get() == matrix.to_dict(orient="split")
 
 
 def test_save(tmp_path: Path):
@@ -75,10 +64,10 @@ def test_save(tmp_path: Path):
             "01_solar::MWh::EXP": [27000, 48000],
             "02_wind_on::MWh::EXP": [600, 34400],
         },
-        index=pd.to_datetime(["2020/01/01", "2020/01/02"]),
+        index=["01/01", "01/02"],
     )
 
-    node.save(matrix.to_dict())
+    node.save(matrix.to_dict(orient="split"))
     print(file.read_text())
     assert (
         file.read_text()

@@ -21,6 +21,9 @@ class IDateMatrixSerializer(ABC):
         "DEC": "12",
     }
     _R_MONTHS = {v: k for k, v in _MONTHS.items()}
+    UNM2 = "Unnamed: 2"
+    UNM3 = "Unnamed: 3"
+    UNM4 = "Unnamed: 4"
 
     def __init__(self, area: str):
         self.area = area
@@ -37,8 +40,8 @@ class IDateMatrixSerializer(ABC):
 class HourlyMatrixSerializer(IDateMatrixSerializer):
     def build_date(self, index: pd.Index) -> pd.DataFrame:
         def _map(row: str) -> Tuple[str, int, str, str, str]:
-            h, d, m = re.split("[\s/]", row)
-            return "", 1, d, IDateMatrixSerializer._R_MONTHS[m], h
+            m, d, h = re.split("[\s/]", row)
+            return "", 1, d.strip("0"), IDateMatrixSerializer._R_MONTHS[m], h
 
         items = index.map(_map).tolist()
         matrix = pd.DataFrame(items)
@@ -56,17 +59,35 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
 
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
         # Extract left part with date
-        date = df.loc[2:, ["Unnamed: 2", "Unnamed: 3", "Unnamed: 4"]]
+        date = df.loc[
+            2:,
+            [
+                IDateMatrixSerializer.UNM2,
+                IDateMatrixSerializer.UNM3,
+                IDateMatrixSerializer.UNM4,
+            ],
+        ]
         date.columns = ["day", "month", "hour"]
         date["month"] = date["month"].map(IDateMatrixSerializer._MONTHS)
         date = (
-            date["hour"] + " " + date["day"] + "/" + date["month"].astype(str)
+            date["month"].astype(str)
+            + "/"
+            + date["day"].astype(str).str.zfill(2)
+            + " "
+            + date["hour"]
         )
 
         # Extract right part with data
         node = df.columns[0]
         body = df.drop(
-            [node, "hourly", "Unnamed: 2", "Unnamed: 3", "Unnamed: 4"], axis=1
+            [
+                node,
+                "hourly",
+                IDateMatrixSerializer.UNM2,
+                IDateMatrixSerializer.UNM3,
+                IDateMatrixSerializer.UNM4,
+            ],
+            axis=1,
         )
 
         return pd.Index(date), body
@@ -75,8 +96,8 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
 class DailyMatrixSerializer(IDateMatrixSerializer):
     def build_date(self, index: pd.Index) -> pd.DataFrame:
         def _map(row: str) -> Tuple[str, int, str, str]:
-            d, m = row.split("/")
-            return "", 1, d, IDateMatrixSerializer._R_MONTHS[m]
+            m, d = row.split("/")
+            return "", 1, d.strip("0"), IDateMatrixSerializer._R_MONTHS[m]
 
         items = index.map(_map).tolist()
         matrix = pd.DataFrame(items)
@@ -94,14 +115,28 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
 
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
         # Extract left part with date
-        date = df.loc[2:, ["Unnamed: 2", "Unnamed: 3"]]
+        date = df.loc[
+            2:, [IDateMatrixSerializer.UNM2, IDateMatrixSerializer.UNM3]
+        ]
         date.columns = ["day", "month"]
         date["month"] = date["month"].map(IDateMatrixSerializer._MONTHS)
-        date = date["day"] + "/" + date["month"].astype(str)
+        date = (
+            date["month"].astype(str)
+            + "/"
+            + date["day"].astype(str).str.zfill(2)
+        )
 
         # Extract right part with data
         node = df.columns[0]
-        body = df.drop([node, "daily", "Unnamed: 2", "Unnamed: 3"], axis=1)
+        body = df.drop(
+            [
+                node,
+                "daily",
+                IDateMatrixSerializer.UNM2,
+                IDateMatrixSerializer.UNM3,
+            ],
+            axis=1,
+        )
 
         return pd.Index(date), body
 
@@ -153,13 +188,13 @@ class MonthlyMatrixSerializer(IDateMatrixSerializer):
 
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
         # Extract left part with date
-        date = df.loc[2:, ["Unnamed: 2"]]
+        date = df.loc[2:, [IDateMatrixSerializer.UNM2]]
         date.columns = ["month"]
         date["month"] = date["month"].map(IDateMatrixSerializer._MONTHS)
 
         # Extract right part with data
         node = df.columns[0]
-        body = df.drop([node, "monthly", "Unnamed: 2"], axis=1)
+        body = df.drop([node, "monthly", IDateMatrixSerializer.UNM2], axis=1)
 
         return pd.Index(date["month"]), body
 

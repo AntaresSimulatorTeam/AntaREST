@@ -28,7 +28,9 @@ DE	hourly				01_solar	02_wind_on
     serializer = HourlyMatrixSerializer(area="de")
     date, body = serializer.extract_date(df)
 
-    pd.testing.assert_index_equal(date, pd.Index(["00:00 1/01", "01:00 1/01"]))
+    pd.testing.assert_index_equal(
+        date, pd.Index(["01/01 00:00", "01/01 01:00"])
+    )
 
     pd.testing.assert_frame_equal(
         body,
@@ -52,7 +54,7 @@ def test_build_hourly(tmp_path: Path):
         }
     )
 
-    index = pd.Index(["00:00 1/01", "01:00 1/01"])
+    index = pd.Index(["01/01 00:00", "01/01 01:00"])
 
     serializer = HourlyMatrixSerializer(area="de")
     res = serializer.build_date(index)
@@ -75,7 +77,7 @@ DE	daily			01_solar	02_wind_on
     serializer = DailyMatrixSerializer(area="de")
     date, body = serializer.extract_date(df)
 
-    pd.testing.assert_index_equal(date, pd.Index(["01/01", "02/01"]))
+    pd.testing.assert_index_equal(date, pd.Index(["01/01", "01/02"]))
 
     pd.testing.assert_frame_equal(
         body,
@@ -93,12 +95,12 @@ def test_build_daily(tmp_path: Path):
         {
             0: ["DE", "", "", "", ""],
             1: ["daily", "", "index", 1, 2],
-            2: ["", "", "day", "1", "1"],
+            2: ["", "", "day", "1", "2"],
             3: ["", "", "month", "JAN", "JAN"],
         }
     )
 
-    index = pd.Index(["1/01", "1/01"])
+    index = pd.Index(["01/01", "01/02"])
 
     serializer = DailyMatrixSerializer(area="de")
     res = serializer.build_date(index)

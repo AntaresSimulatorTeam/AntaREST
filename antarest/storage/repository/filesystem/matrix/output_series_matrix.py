@@ -46,10 +46,10 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
         matrix.index = date
         matrix.columns = header
 
-        return cast(JSON, matrix.to_dict())
+        return cast(JSON, matrix.to_dict(orient="split"))
 
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(**data)
 
         headers = df.columns.map(lambda x: x.split("::"))
         headers = pd.DataFrame(headers.values.tolist()).T
