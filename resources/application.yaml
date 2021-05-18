@@ -1,5 +1,5 @@
 security:
-  disabled: false
+  disabled: true
   jwt:
     key: super-secret
   login:

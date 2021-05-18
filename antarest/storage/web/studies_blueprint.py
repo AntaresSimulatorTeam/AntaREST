@@ -22,7 +22,7 @@ from antarest.common.requests import (
 
 
 def sanitize_uuid(uuid: str) -> str:
-    return escape(uuid)
+    return str(escape(uuid))
 
 
 def sanitize_study_name(name: str) -> str:
@@ -243,13 +243,6 @@ def create_study_routes(
           schema:
             type: string
         - in: query
-          name: compact
-          required: false
-          example: false
-          description: select compact format
-          schema:
-            type: boolean
-        - in: query
           name: no-output
           required: false
           example: false
@@ -260,24 +253,19 @@ def create_study_routes(
           - Manage Studies
         """
         uuid_sanitized = sanitize_uuid(uuid)
-        compact: bool = (
-            "compact" in request.args and request.args["compact"] != "false"
-        )
         outputs: bool = (
             "no-output" not in request.args
             or request.args["no-output"] == "false"
         )
 
         params = RequestParameters(user=Auth.get_current_user())
-        content = storage_service.export_study(
-            uuid_sanitized, params, compact, outputs
-        )
+        content = storage_service.export_study(uuid_sanitized, params, outputs)
 
         return send_file(
             content,
             mimetype="application/zip",
             as_attachment=True,
-            attachment_filename=f"{uuid_sanitized}{'-compact' if compact else ''}.zip",
+            attachment_filename=f"{uuid_sanitized}.zip",
         )
 
     @bp.route("/studies/<string:uuid>", methods=["DELETE"])
