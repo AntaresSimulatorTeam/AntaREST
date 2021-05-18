@@ -51,22 +51,7 @@ class ImporterService:
 
         try:
             StorageServiceUtils.extract_zip(stream, path_study)
-
-            data_file = path_study / "data.json"
-
-            # If compact study generate tree and launch save with data.json
-            if data_file.is_file() and (path_study / "res").is_dir():
-                with open(data_file) as file:
-                    data = json.load(file)
-                    _, study = self.study_factory.create_from_json(
-                        path_study, data
-                    )
-                    study.save(data)
-                del study
-                shutil.rmtree(path_study / "res")
-                os.remove(str(data_file.absolute()))
-            else:
-                fix_study_root(path_study)
+            fix_study_root(path_study)
 
             data = self.study_service.get(metadata, url="", depth=-1)
             if data is None:

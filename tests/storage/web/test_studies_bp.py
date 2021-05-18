@@ -276,7 +276,7 @@ def test_export_files() -> None:
 
     assert result.data == b"Hello"
     mock_storage_service.export_study.assert_called_once_with(
-        "name", PARAMS, False, True
+        "name", PARAMS, True
     )
 
 
@@ -295,21 +295,18 @@ def test_export_params() -> None:
         user_service=Mock(),
     )
     client = app.test_client()
-    result = client.get("/studies/name/export?compact")
+    result = client.get("/studies/name/export")
 
     assert result.data == b"Hello"
 
-    client.get("/studies/name/export?compact&no-output")
-    client.get("/studies/name/export?compact=true&no-output=true")
-    client.get("/studies/name/export?compact=false&no-output=false")
+    client.get("/studies/name/export?no-output")
+    client.get("/studies/name/export?no-output=true")
     client.get("/studies/name/export?no-output=false")
     mock_storage_service.export_study.assert_has_calls(
         [
-            call(Markup("name"), PARAMS, True, True),
-            call(Markup("name"), PARAMS, True, False),
-            call(Markup("name"), PARAMS, True, False),
-            call(Markup("name"), PARAMS, False, True),
-            call(Markup("name"), PARAMS, False, True),
+            call(Markup("name"), PARAMS, True),
+            call(Markup("name"), PARAMS, False),
+            call(Markup("name"), PARAMS, False),
         ]
     )
 

@@ -28,5 +28,12 @@ class INode(ABC, Generic[G, S, V]):
     ) -> List[str]:
         pass
 
+    def _assert_url(self, url: Optional[List[str]] = None) -> None:
+        url = url or []
+        if len(url) > 0:
+            raise ValueError(
+                f"url should be fully resolved when arrives on {self.__class__.__name__}"
+            )
+
 
 TREE = Dict[str, INode[Any, Any, Any]]
