@@ -23,6 +23,8 @@ export const useNotif = (): (message: React.ReactNode, options?: OptionsObject |
 
 export const isUserAdmin = (access_token : string) : boolean => {
     const token = jwt_decode(access_token);
+    console.log('YOOOO')
+    console.log(token)
     const adminElm = (token as any).sub.groups.find((elm : UserGroupInfo) => elm.name === 'admin' && elm.role === 40);
     return !!adminElm;
 }
