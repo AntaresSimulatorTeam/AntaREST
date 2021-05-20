@@ -24,7 +24,7 @@ class Watcher:
 
         self.thread = (
             threading.Thread(target=self._loop, daemon=True)
-            if Watcher._get_lock()
+            if not config.storage.watcher_lock or Watcher._get_lock()
             else None
         )
 

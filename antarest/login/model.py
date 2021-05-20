@@ -1,9 +1,10 @@
-import enum
 import uuid
-from typing import Any, List
+from typing import Any
 
 from dataclasses import dataclass
-from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey, Enum, Boolean  # type: ignore
+
+from dataclasses_json import DataClassJsonMixin  # type: ignore
+from sqlalchemy import Column, Integer, Sequence, String, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from werkzeug.security import (
@@ -222,6 +223,13 @@ class Group(Base):  # type: ignore
 
     def to_dict(self) -> JSON:
         return {"id": self.id, "name": self.name}
+
+
+@dataclass
+class RoleCreationDTO(DataClassJsonMixin):  # type: ignore
+    type: RoleType
+    group_id: str
+    identity_id: int
 
 
 @dataclass
