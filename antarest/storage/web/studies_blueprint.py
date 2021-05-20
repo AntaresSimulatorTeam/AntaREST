@@ -68,6 +68,13 @@ def create_study_routes(
             description: Successful operation
           '400':
             description: Invalid request
+        parameters:
+        - in: query
+          name: groups
+          required: false
+          description: list of group id assignment separated by comma
+          schema:
+            type: string
         tags:
           - Manage Studies
         """
@@ -158,6 +165,12 @@ def create_study_routes(
           description: new study name
           schema:
             type: string
+        - in: query
+          name: groups
+          required: false
+          description: list of group id assignment separated by comma
+          schema:
+            type: string
         tags:
           - Manage Studies
 
@@ -212,6 +225,12 @@ def create_study_routes(
             name: name
             required: true
             description: study name asked
+            schema:
+              type: string
+          - in: query
+            name: groups
+            required: false
+            description: list of group id assignment separated by comma
             schema:
               type: string
         tags:
