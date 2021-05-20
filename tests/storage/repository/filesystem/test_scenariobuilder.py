@@ -3,6 +3,7 @@ from pathlib import Path
 from antarest.storage.repository.filesystem.config.model import (
     Area,
     StudyConfig,
+    ThermalCluster,
 )
 from antarest.storage.repository.filesystem.root.settings.scenariobuilder import (
     ScenarioBuilder,
@@ -69,17 +70,17 @@ def test_get(tmp_path: Path):
     path = tmp_path / "file.ini"
     path.write_text(content)
 
-    thermals = {
-        "01_solar": {"enabled": True},
-        "02_wind_on": {"enabled": True},
-        "03_wind_off": {"enabled": True},
-        "04_res": {"enabled": True},
-        "05_nuclear": {"enabled": True},
-        "06_coal": {"enabled": True},
-        "07_gas": {"enabled": True},
-        "08_non-res": {"enabled": True},
-        "09_hydro_pump": {"enabled": True},
-    }
+    thermals = [
+        ThermalCluster(id="01_solar", enabled=True),
+        ThermalCluster(id="02_wind_on", enabled=True),
+        ThermalCluster(id="03_wind_off", enabled=True),
+        ThermalCluster(id="04_res", enabled=True),
+        ThermalCluster(id="05_nuclear", enabled=True),
+        ThermalCluster(id="06_coal", enabled=True),
+        ThermalCluster(id="07_gas", enabled=True),
+        ThermalCluster(id="08_non-res", enabled=True),
+        ThermalCluster(id="09_hydro_pump", enabled=True),
+    ]
 
     areas = {
         n: Area(

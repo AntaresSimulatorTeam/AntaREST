@@ -10,6 +10,7 @@ from antarest.storage.repository.filesystem.config.model import (
     Area,
     Link,
     Set,
+    ThermalCluster,
 )
 
 
@@ -107,7 +108,7 @@ def test_parse_areas() -> None:
         study_path,
         areas={
             "fr": Area(
-                thermals={},
+                thermals=[],
                 links={},
                 filters_year=["hourly", "weekly", "annual"],
                 filters_synthesis=["daily", "monthly"],
@@ -129,11 +130,11 @@ def test_parse_thermal() -> None:
         }
     }
 
-    assert ConfigJsonBuilder._parse_thermal(json, "fr") == {
-        "t1": {"enabled": True},
-        "t2": {"enabled": False},
-        "t3": {"enabled": True},
-    }
+    assert ConfigJsonBuilder._parse_thermal(json, "fr") == [
+        ThermalCluster(id="t1", enabled=True),
+        ThermalCluster(id="t2", enabled=False),
+        ThermalCluster(id="t3", enabled=True),
+    ]
 
 
 def test_parse_links() -> None:

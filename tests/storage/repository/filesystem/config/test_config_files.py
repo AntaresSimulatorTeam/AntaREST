@@ -9,6 +9,7 @@ from antarest.storage.repository.filesystem.config.model import (
     Link,
     Simulation,
     Set,
+    ThermalCluster,
 )
 
 
@@ -127,7 +128,7 @@ def test_parse_area(tmp_path: Path) -> None:
         study_path,
         areas={
             "fr": Area(
-                thermals={},
+                thermals=[],
                 links={},
                 filters_year=["hourly", "weekly", "annual"],
                 filters_synthesis=["daily", "monthly"],
@@ -154,11 +155,11 @@ def test_parse_thermal(tmp_path: Path) -> None:
     """
     (study_path / "input/thermal/clusters/fr/list.ini").write_text(content)
 
-    assert ConfigPathBuilder._parse_thermal(study_path, "fr") == {
-        "t1": {"enabled": True},
-        "t2": {"enabled": False},
-        "t3": {"enabled": True},
-    }
+    assert ConfigPathBuilder._parse_thermal(study_path, "fr") == [
+        ThermalCluster(id="t1", enabled=True),
+        ThermalCluster(id="t2", enabled=False),
+        ThermalCluster(id="t3", enabled=True),
+    ]
 
 
 def test_parse_links(tmp_path: Path) -> None:
