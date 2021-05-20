@@ -121,7 +121,7 @@ class ConfigPathBuilder:
         )
         return {
             transform_name_to_id(key): {
-                "enabled": list_ini.get(key).get("enabled", True)
+                "enabled": list_ini.get(key, {}).get("enabled", True)
             }
             for key in list(list_ini.keys())
         }

@@ -110,7 +110,7 @@ class ConfigJsonBuilder:
     @staticmethod
     def _parse_thermal(json: JSON, area: str) -> Dict[str, Any]:
         if area not in json["input"]["thermal"]["clusters"]:
-            return list()
+            return {}
 
         list_ini = json["input"]["thermal"]["clusters"][area]["list"]
         return {
