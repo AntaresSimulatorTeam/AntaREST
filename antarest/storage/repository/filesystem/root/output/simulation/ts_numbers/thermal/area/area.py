@@ -16,6 +16,6 @@ class OutputSimulationTsNumbersThermalArea(FolderNode):
             thermal: OutputSimulationTsNumbersThermalAreaThermal(
                 config.next_file(thermal + ".txt")
             )
-            for thermal in config.get_thermals(self.area)
+            for thermal in config.get_thermal_names(self.area)
         }
         return children

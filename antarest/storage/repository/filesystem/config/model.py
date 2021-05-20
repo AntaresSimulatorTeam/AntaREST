@@ -1,9 +1,15 @@
 from copy import deepcopy
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 from antarest.common.custom_types import JSON
 from antarest.common.persistence import DTO
+
+
+class ThermalCluster(DTO):
+    def __init__(self, id: str, enabled: bool = True):
+        self.id = id
+        self.enabled = enabled
 
 
 class Link(DTO):
@@ -29,7 +35,7 @@ class Area(DTO):
     def __init__(
         self,
         links: Dict[str, Link],
-        thermals: List[str],
+        thermals: List[ThermalCluster],
         filters_synthesis: List[str],
         filters_year: List[str],
     ):
@@ -114,8 +120,14 @@ class StudyConfig(DTO):
     def set_names(self) -> List[str]:
         return list(self.sets.keys())
 
-    def get_thermals(self, area: str) -> List[str]:
-        return self.areas[area].thermals
+    def get_thermal_names(
+        self, area: str, only_enabled: bool = False
+    ) -> List[str]:
+        return [
+            thermal.id
+            for thermal in self.areas[area].thermals
+            if not only_enabled or thermal.enabled
+        ]
 
     def get_links(self, area: str) -> List[str]:
         return list(self.areas[area].links.keys())

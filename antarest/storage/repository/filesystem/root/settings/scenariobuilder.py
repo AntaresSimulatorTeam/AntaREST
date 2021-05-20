@@ -19,5 +19,5 @@ class ScenarioBuilder(IniFileNode):
         )
 
     def _add_thermal(self, area: str, rules: Dict[str, Type[int]]) -> None:
-        for thermal in self.config.get_thermals(area):
+        for thermal in self.config.get_thermal_names(area):
             rules[f"t,{area},0,{thermal}"] = int
