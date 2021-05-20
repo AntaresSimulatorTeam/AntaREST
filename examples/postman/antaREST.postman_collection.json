@@ -233,10 +233,30 @@
 		},
 		{
 			"name": "Create User",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
 			"request": {
 				"method": "GET",
 				"header": [],
-				"url": null
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"charly\",\n    \"password\": \"charly\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{hostname}}/users",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"users"
+					]
+				}
 			},
 			"response": []
 		},
@@ -257,6 +277,164 @@
 						"20201014-1425eco-goodbye",
 						"about-the-study",
 						"links.txt"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get User",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{hostname}}/users",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get roles",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{hostname}}/roles/group/c756e143-9daf-447f-ae88-ea6d17c94d65",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"roles",
+						"group",
+						"c756e143-9daf-447f-ae88-ea6d17c94d65"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Group",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"my-group\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{hostname}}/groups",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"groups"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add role",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"type\": 30,\n    \"group\": {\"id\": \"c756e143-9daf-447f-ae88-ea6d17c94d65\", \"name\": \"my-group\"},\n    \"user\": {\"id\": 2, \"name\": \"alice\"}\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{hostname}}/roles",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"roles"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"alice\",\n    \"password\": \"alice\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{hostname}}/users",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Bot",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"bobot\",\n    \"group\": \"admin\",\n    \"role\": 10,\n    \"isAuthor\": true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{hostname}}/bots",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"bots"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get bots",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{hostname}}/bots/3",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"bots",
+						"3"
 					]
 				}
 			},
