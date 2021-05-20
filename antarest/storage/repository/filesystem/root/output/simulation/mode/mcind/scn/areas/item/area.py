@@ -20,7 +20,7 @@ class OutputSimulationModeMcIndScnAreasArea(FolderNode):
 
         for timing in config.get_filters_year(self.area):
             # detail files only exists when there is thermal cluster to be detailed
-            if len(config.get_thermals(self.area, only_enabled=True)) > 0:
+            if len(config.get_thermal_names(self.area, only_enabled=True)) > 0:
                 children[f"details-{timing}"] = Details(
                     config.next_file(f"details-{timing}.txt"),
                     timing,

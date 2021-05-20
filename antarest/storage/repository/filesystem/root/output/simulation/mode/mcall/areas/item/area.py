@@ -24,7 +24,7 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
 
         for timing in (
             filters
-            if config.get_thermals(self.area, only_enabled=True)
+            if config.get_thermal_names(self.area, only_enabled=True)
             else []
         ):
             children[f"details-{timing}"] = Details(

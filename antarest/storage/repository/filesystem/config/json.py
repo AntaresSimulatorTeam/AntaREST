@@ -9,6 +9,7 @@ from antarest.storage.repository.filesystem.config.model import (
     Link,
     Set,
     transform_name_to_id,
+    ThermalCluster,
 )
 
 
@@ -108,17 +109,18 @@ class ConfigJsonBuilder:
         )
 
     @staticmethod
-    def _parse_thermal(json: JSON, area: str) -> Dict[str, Any]:
+    def _parse_thermal(json: JSON, area: str) -> List[ThermalCluster]:
         if area not in json["input"]["thermal"]["clusters"]:
-            return {}
+            return []
 
         list_ini = json["input"]["thermal"]["clusters"][area]["list"]
-        return {
-            transform_name_to_id(thermal): {
-                "enabled": list_ini.get(thermal).get("enabled", True)
-            }
+        return [
+            ThermalCluster(
+                transform_name_to_id(thermal),
+                enabled=list_ini.get(thermal).get("enabled", True),
+            )
             for thermal in list(list_ini.keys())
-        }
+        ]
 
     @staticmethod
     def _parse_links(json: JSON, area: str) -> Dict[str, Link]:

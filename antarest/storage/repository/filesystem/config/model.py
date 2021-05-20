@@ -6,6 +6,12 @@ from antarest.common.custom_types import JSON
 from antarest.common.persistence import DTO
 
 
+class ThermalCluster(DTO):
+    def __init__(self, id: str, enabled: bool = True):
+        self.id = id
+        self.enabled = enabled
+
+
 class Link(DTO):
     def __init__(self, filters_synthesis: List[str], filters_year: List[str]):
         self.filters_synthesis = filters_synthesis
@@ -29,7 +35,7 @@ class Area(DTO):
     def __init__(
         self,
         links: Dict[str, Link],
-        thermals: Dict[str, Any],
+        thermals: List[ThermalCluster],
         filters_synthesis: List[str],
         filters_year: List[str],
     ):
@@ -114,12 +120,13 @@ class StudyConfig(DTO):
     def set_names(self) -> List[str]:
         return list(self.sets.keys())
 
-    def get_thermals(self, area: str, only_enabled: bool = False) -> List[str]:
+    def get_thermal_names(
+        self, area: str, only_enabled: bool = False
+    ) -> List[str]:
         return [
-            thermal
+            thermal.id
             for thermal in self.areas[area].thermals
-            if not only_enabled
-            or self.areas[area].thermals[thermal]["enabled"]
+            if not only_enabled or thermal.enabled
         ]
 
     def get_links(self, area: str) -> List[str]:

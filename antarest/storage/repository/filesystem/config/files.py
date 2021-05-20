@@ -14,6 +14,7 @@ from antarest.storage.repository.filesystem.config.model import (
     Link,
     Set,
     transform_name_to_id,
+    ThermalCluster,
 )
 
 
@@ -115,16 +116,17 @@ class ConfigPathBuilder:
         )
 
     @staticmethod
-    def _parse_thermal(root: Path, area: str) -> Dict[str, Any]:
+    def _parse_thermal(root: Path, area: str) -> List[ThermalCluster]:
         list_ini = IniReader().read(
             root / f"input/thermal/clusters/{area}/list.ini"
         )
-        return {
-            transform_name_to_id(key): {
-                "enabled": list_ini.get(key, {}).get("enabled", True)
-            }
+        return [
+            ThermalCluster(
+                transform_name_to_id(key),
+                enabled=list_ini.get(key, {}).get("enabled", True),
+            )
             for key in list(list_ini.keys())
-        }
+        ]
 
     @staticmethod
     def _parse_links(root: Path, area: str) -> Dict[str, Link]:
