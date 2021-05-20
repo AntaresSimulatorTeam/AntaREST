@@ -114,7 +114,7 @@ class StudyConfig(DTO):
     def set_names(self) -> List[str]:
         return list(self.sets.keys())
 
-    def get_thermals(self, area: str, only_enabled: bool = True) -> List[str]:
+    def get_thermals(self, area: str, only_enabled: bool = False) -> List[str]:
         return [
             thermal
             for thermal in self.areas[area].thermals
