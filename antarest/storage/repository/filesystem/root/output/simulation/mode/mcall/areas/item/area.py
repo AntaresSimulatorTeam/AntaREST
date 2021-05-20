@@ -22,7 +22,11 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
 
         filters = config.get_filters_synthesis(self.area)
 
-        for timing in filters if config.get_thermals(self.area) else []:
+        for timing in (
+            filters
+            if config.get_thermal_names(self.area, only_enabled=True)
+            else []
+        ):
             children[f"details-{timing}"] = Details(
                 config.next_file(f"details-{timing}.txt"), timing, self.area
             )

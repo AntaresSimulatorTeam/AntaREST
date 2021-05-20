@@ -14,6 +14,6 @@ class InputThermalSeriesArea(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             ther: InputThermalSeriesAreaThermal(config.next_file(ther))
-            for ther in config.get_thermals(self.area)
+            for ther in config.get_thermal_names(self.area)
         }
         return children

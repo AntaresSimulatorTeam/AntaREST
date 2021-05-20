@@ -19,9 +19,13 @@ class OutputSimulationModeMcIndScnAreasArea(FolderNode):
         children: TREE = dict()
 
         for timing in config.get_filters_year(self.area):
-            children[f"details-{timing}"] = Details(
-                config.next_file(f"details-{timing}.txt"), timing, self.area
-            )
+            # detail files only exists when there is thermal cluster to be detailed
+            if len(config.get_thermal_names(self.area, only_enabled=True)) > 0:
+                children[f"details-{timing}"] = Details(
+                    config.next_file(f"details-{timing}.txt"),
+                    timing,
+                    self.area,
+                )
 
             children[f"values-{timing}"] = Values(
                 config.next_file(f"values-{timing}.txt"), timing, self.area
