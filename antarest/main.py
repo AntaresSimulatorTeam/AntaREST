@@ -4,7 +4,7 @@ import os
 import sys
 from numbers import Number
 from pathlib import Path
-from typing import Tuple, Any
+from typing import Tuple, Any, Optional
 
 from gevent import monkey  # type: ignore
 
@@ -91,8 +91,10 @@ def configure_logger(config: Config) -> None:
     )
 
 
-def flask_app(config_file: Path) -> Flask:
-    res = get_local_path() / "resources"
+def flask_app(
+    config_file: Path, resource_path: Optional[Path] = None
+) -> Flask:
+    res = resource_path or get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
 
     configure_logger(config)

@@ -9,6 +9,7 @@ from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
+from antarest.login.exceptions import UserAlreadyExistError
 from antarest.login.ldap import LdapService
 from antarest.login.model import (
     User,
@@ -19,6 +20,7 @@ from antarest.login.model import (
     Identity,
     UserCreateDTO,
     Password,
+    RoleCreationDTO,
 )
 from antarest.login.repository import (
     UserRepository,
@@ -67,6 +69,8 @@ class LoginService:
         self, create: UserCreateDTO, param: RequestParameters
     ) -> Identity:
         if param.user and param.user.is_site_admin():
+            if self.users.get_by_name(create.name):
+                raise UserAlreadyExistError()
             user = self.ldap.save(create)
             if user:
                 return user
@@ -107,14 +111,21 @@ class LoginService:
             raise UserHasNotPermissionError()
 
     # SADMIN, GADMIN (own group)
-    def save_role(self, role: Role, params: RequestParameters) -> Role:
+    def save_role(
+        self, role: RoleCreationDTO, params: RequestParameters
+    ) -> Role:
+        role_obj = Role(
+            type=role.type,
+            group=self.groups.get(role.group_id),
+            identity=self.users.get(role.identity_id),
+        )
         if params.user and any(
             (
                 params.user.is_site_admin(),
-                params.user.is_group_admin(role.group),
+                params.user.is_group_admin(role_obj.group),
             )
         ):
-            return self.roles.save(role)
+            return self.roles.save(role_obj)
         else:
             raise UserHasNotPermissionError()
 
