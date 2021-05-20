@@ -80,8 +80,10 @@ def create_study_routes(
         zip_binary = io.BytesIO(request.files["study"].read())
 
         params = RequestParameters(user=Auth.get_current_user())
+        groups_arg = request.args.get("groups")
+        group_ids = groups_arg.split(",") if groups_arg is not None else []
 
-        uuid = storage_service.import_study(zip_binary, params)
+        uuid = storage_service.import_study(zip_binary, group_ids, params)
         content = "/studies/" + uuid
         code = HTTPStatus.CREATED.value
 
@@ -163,6 +165,8 @@ def create_study_routes(
 
         source_uuid = uuid
         destination_study_name = request.args.get("dest")
+        groups_arg = request.args.get("groups")
+        group_ids = groups_arg.split(",") if groups_arg is not None else []
 
         if destination_study_name is None:
             content = "Copy operation need a dest query parameter."
@@ -179,6 +183,7 @@ def create_study_routes(
         destination_uuid = storage_service.copy_study(
             src_uuid=source_uuid_sanitized,
             dest_study_name=destination_name_sanitized,
+            group_ids=group_ids,
             params=params,
         )
         code = HTTPStatus.CREATED.value
@@ -213,9 +218,11 @@ def create_study_routes(
           - Manage Studies
         """
         name_sanitized = sanitize_study_name(name)
+        groups_arg = request.args.get("groups")
+        group_ids = groups_arg.split(",") if groups_arg is not None else []
 
         params = RequestParameters(user=Auth.get_current_user())
-        uuid = storage_service.create_study(name_sanitized, params)
+        uuid = storage_service.create_study(name_sanitized, group_ids, params)
 
         content = "/studies/" + uuid
         code = HTTPStatus.CREATED.value

@@ -155,7 +155,7 @@ def test_main(app: Flask):
     res = client.post("/login", data=dict(username="Fred", password="mypass"))
     fred_credentials = res.json
     res = client.post(
-        "/studies/bar",
+        f"/studies/bar?groups={group_id}",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },

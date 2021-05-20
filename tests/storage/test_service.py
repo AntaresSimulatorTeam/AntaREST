@@ -131,12 +131,29 @@ def test_create_study() -> None:
         event_bus=Mock(),
     )
 
+    with pytest.raises(UserHasNotPermissionError):
+        service.create_study(
+            "new-study",
+            ["my-group"],
+            RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        )
+
     service.create_study(
         "new-study",
-        RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        ["my-group"],
+        RequestParameters(
+            JWTUser(
+                id=0,
+                impersonator=0,
+                type="users",
+                groups=[
+                    JWTGroup(id="my-group", name="group", role=RoleType.WRITER)
+                ],
+            )
+        ),
     )
 
-    study_service.create_study.assert_called_once()
+    study_service.create_study.assert_called()
     repository.save.assert_called_once_with(expected)
 
 

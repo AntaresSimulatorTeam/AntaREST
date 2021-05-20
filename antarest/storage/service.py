@@ -112,7 +112,9 @@ class StorageService:
 
         return self.study_service.get_study_path(study)
 
-    def create_study(self, study_name: str, params: RequestParameters) -> str:
+    def create_study(
+        self, study_name: str, group_ids: List[str], params: RequestParameters
+    ) -> str:
         sid = str(uuid4())
         study_path = str(self.study_service.get_default_workspace_path() / sid)
         raw = RawStudy(
@@ -122,7 +124,7 @@ class StorageService:
             path=study_path,
         )
         raw = self.study_service.create_study(raw)
-        self._save_study(raw, params.user)
+        self._save_study(raw, params.user, group_ids)
         self.event_bus.push(
             Event(EventType.STUDY_CREATED, raw.to_json_summary())
         )
@@ -179,6 +181,7 @@ class StorageService:
         self,
         src_uuid: str,
         dest_study_name: str,
+        group_ids: List[str],
         params: RequestParameters,
     ) -> str:
         src_study = self._get_study(src_uuid)
@@ -200,7 +203,7 @@ class StorageService:
         )
 
         study = self.study_service.copy_study(src_study, dest_study)
-        self._save_study(study, params.user)
+        self._save_study(study, params.user, group_ids)
         self.event_bus.push(
             Event(EventType.STUDY_CREATED, study.to_json_summary())
         )
@@ -279,14 +282,22 @@ class StorageService:
         )
 
     def import_study(
-        self, stream: IO[bytes], params: RequestParameters
+        self,
+        stream: IO[bytes],
+        group_ids: List[str],
+        params: RequestParameters,
     ) -> str:
         sid = str(uuid4())
         path = str(self.study_service.get_default_workspace_path() / sid)
         study = RawStudy(id=sid, workspace=DEFAULT_WORKSPACE_NAME, path=path)
         study = self.importer_service.import_study(study, stream)
         status = self._analyse_study(study)
-        self._save_study(study, owner=params.user, content_status=status)
+        self._save_study(
+            study,
+            owner=params.user,
+            group_ids=group_ids,
+            content_status=status,
+        )
         self.event_bus.push(
             Event(EventType.STUDY_CREATED, study.to_json_summary())
         )
@@ -372,6 +383,7 @@ class StorageService:
         self,
         study: RawStudy,
         owner: Optional[JWTUser] = None,
+        group_ids: List[str] = list(),
         content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         if not owner:
@@ -388,12 +400,16 @@ class StorageService:
 
         if owner:
             study.owner = User(id=owner.impersonator)
-            groups = [
-                Group(id=group.id, name=group.name)
-                for group in owner.groups
-                if group.role.is_higher_or_equals(RoleType.WRITER)
-            ]
+            groups = []
+            for gid in group_ids:
+                group = next(filter(lambda g: g.id == gid, owner.groups), None)
+                if group is None or not group.role.is_higher_or_equals(
+                    RoleType.WRITER
+                ):
+                    raise UserHasNotPermissionError()
+                groups.append(Group(id=group.id, name=group.name))
             study.groups = groups
+
         self.repository.save(study)
 
     def _get_study(self, uuid: str) -> Study:
