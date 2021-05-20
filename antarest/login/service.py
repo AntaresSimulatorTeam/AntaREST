@@ -152,7 +152,7 @@ class LoginService:
             raise UserNotFoundError()
 
     # SADMIN, USER (owner)
-    def get_bot(self, id: int, params: RequestParameters) -> Optional[User]:
+    def get_bot(self, id: int, params: RequestParameters) -> Bot:
         bot = self.bots.get(id)
         if (
             bot
