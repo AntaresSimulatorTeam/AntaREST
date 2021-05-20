@@ -71,9 +71,6 @@ class LoginService:
         if param.user and param.user.is_site_admin():
             if self.users.get_by_name(create.name):
                 raise UserAlreadyExistError()
-            user = self.ldap.save(create)
-            if user:
-                return user
             return self.users.save(
                 User(name=create.name, password=Password(create.password))
             )
@@ -166,6 +163,23 @@ class LoginService:
             raise UserNotFoundError()
 
     # SADMIN, USER (owner)
+    def get_bot(self, id: int, params: RequestParameters) -> Bot:
+        bot = self.bots.get(id)
+        if (
+            bot
+            and params.user
+            and any(
+                (
+                    params.user.is_site_admin(),
+                    params.user.is_himself(user=Identity(id=bot.owner)),
+                )
+            )
+        ):
+            return bot
+        else:
+            raise UserHasNotPermissionError()
+
+    # SADMIN, USER (owner)
     def get_all_bots_by_owner(
         self, owner: int, params: RequestParameters
     ) -> List[Bot]:
@@ -183,9 +197,14 @@ class LoginService:
         return self.bots.exists(id)
 
     def authenticate(self, name: str, pwd: str) -> Optional[JWTUser]:
-        user = self.ldap.get_by_name(name) or self.users.get_by_name(name)
-        if user and user.password.check(pwd):  # type: ignore
-            return self.get_jwt(user.id)
+        extern = self.ldap.login(name, pwd)
+        if extern:
+            return self.get_jwt(extern.id)
+
+        intern = self.users.get_by_name(name)
+        if intern and intern.password.check(pwd):  # type: ignore
+            return self.get_jwt(intern.id)
+
         return None
 
     def get_jwt(self, user_id: int) -> Optional[JWTUser]:

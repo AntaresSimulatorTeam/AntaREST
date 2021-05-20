@@ -26,16 +26,18 @@ class MockServerHandler(BaseHTTPRequestHandler):
 
 
 def test_ldap():
-    config = Config(security=SecurityConfig(ldap_url="http://localhost:8868"))
+    config = Config(security=SecurityConfig(ldap_url="http://localhost:8869"))
     repo = Mock()
+    repo.get_by_name.return_value = None
+    repo.save.side_effect = lambda x: x
     ldap = LdapService(config=config, users=repo)
 
     # Start server
-    httpd = HTTPServer(("localhost", 8868), MockServerHandler)
+    httpd = HTTPServer(("localhost", 8869), MockServerHandler)
     server = threading.Thread(None, httpd.handle_request)
     server.start()
 
-    res = ldap.save(user=UserCreateDTO(name="John", password="pwd"))
+    res = ldap.login(name="John", password="pwd")
 
     assert res
     assert "John" == res.name
