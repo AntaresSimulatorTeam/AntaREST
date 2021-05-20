@@ -330,6 +330,36 @@ def test_authenticate():
     roles.get_all_by_user.assert_called_once_with(0)
 
 
+def test_authentication_ldap_user():
+    users = Mock()
+    users.get_by_name.return_value = None
+
+    roles = Mock()
+    roles.get_all_by_user.return_value = []
+
+    ldap = Mock()
+    user = UserLdap(id=10, name="ExtUser")
+    ldap.login.return_value = user
+    ldap.get.return_value = user
+
+    exp = JWTUser(
+        id=10,
+        impersonator=10,
+        type="users_ldap",
+    )
+
+    service = LoginService(
+        user_repo=users,
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=roles,
+        ldap=ldap,
+        event_bus=Mock(),
+    )
+    assert exp == service.authenticate("dupond", "pwd")
+    ldap.get.assert_called_once_with(10)
+
+
 def test_get_all_groups():
     group = Group(id="my-group")
     groups = Mock()

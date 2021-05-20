@@ -197,9 +197,14 @@ class LoginService:
         return self.bots.exists(id)
 
     def authenticate(self, name: str, pwd: str) -> Optional[JWTUser]:
-        user = self.ldap.login(name, pwd) or self.users.get_by_name(name)
-        if user and user.password.check(pwd):  # type: ignore
-            return self.get_jwt(user.id)
+        extern = self.ldap.login(name, pwd)
+        if extern:
+            return self.get_jwt(extern.id)
+
+        intern = self.users.get_by_name(name)
+        if intern and intern.password.check(pwd):  # type: ignore
+            return self.get_jwt(intern.id)
+
         return None
 
     def get_jwt(self, user_id: int) -> Optional[JWTUser]:
