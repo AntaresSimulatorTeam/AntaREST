@@ -120,10 +120,20 @@ def test_parse_areas() -> None:
 def test_parse_thermal() -> None:
     json = build_empty_json()
     json["input"]["thermal"]["clusters"] = {
-        "fr": {"list": {"t1": {}, "t2": {}}}
+        "fr": {
+            "list": {
+                "t1": {},
+                "t2": {"enabled": False},
+                "t3": {"enabled": True},
+            }
+        }
     }
 
-    assert ConfigJsonBuilder._parse_thermal(json, "fr") == ["t1", "t2"]
+    assert ConfigJsonBuilder._parse_thermal(json, "fr") == {
+        "t1": {"enabled": True},
+        "t2": {"enabled": False},
+        "t3": {"enabled": True},
+    }
 
 
 def test_parse_links() -> None:

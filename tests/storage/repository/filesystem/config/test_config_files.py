@@ -146,10 +146,19 @@ def test_parse_thermal(tmp_path: Path) -> None:
     
     [t2]
     name = t2
+    enabled = false
+
+    [t3]
+    name = t3
+    enabled = true
     """
     (study_path / "input/thermal/clusters/fr/list.ini").write_text(content)
 
-    assert ConfigPathBuilder._parse_thermal(study_path, "fr") == ["t1", "t2"]
+    assert ConfigPathBuilder._parse_thermal(study_path, "fr") == {
+        "t1": {"enabled": True},
+        "t2": {"enabled": False},
+        "t3": {"enabled": True},
+    }
 
 
 def test_parse_links(tmp_path: Path) -> None:
