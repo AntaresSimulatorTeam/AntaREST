@@ -71,9 +71,6 @@ class LoginService:
         if param.user and param.user.is_site_admin():
             if self.users.get_by_name(create.name):
                 raise UserAlreadyExistError()
-            user = self.ldap.save(create)
-            if user:
-                return user
             return self.users.save(
                 User(name=create.name, password=Password(create.password))
             )
