@@ -82,6 +82,7 @@ class Watcher:
             path: Path, workspace: str, groups: List[Group]
         ) -> List[StudyFolder]:
             try:
+                sleep(0.2)
                 if (path / "study.antares").exists():
                     logger.debug(f"Study {path.name} found in {workspace}")
                     return [StudyFolder(path, workspace, groups)]

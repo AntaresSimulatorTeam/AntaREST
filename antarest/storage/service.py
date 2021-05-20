@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from time import time
+from time import time, sleep
 from typing import List, IO, Optional, cast
 
 from uuid import uuid4
@@ -226,6 +226,7 @@ class StorageService:
             if isinstance(study, RawStudy)
         ]
         for folder in folders:
+            sleep(0.2)
             if str(folder.path) not in paths:
                 study = RawStudy(
                     id=str(uuid4()),
