@@ -112,27 +112,6 @@ def test_create_user():
     )
 
 
-def test_create_user_ldap():
-    create = UserCreateDTO(name="hello", password="world")
-    ldap = Mock()
-    ldap.save.return_value = UserLdap(name="hello")
-
-    users = Mock()
-    users.get_by_name.return_value = None
-
-    service = LoginService(
-        user_repo=users,
-        bot_repo=Mock(),
-        group_repo=Mock(),
-        role_repo=Mock(),
-        ldap=ldap,
-        event_bus=Mock(),
-    )
-
-    service.create_user(create, param=SADMIN)
-    users.save.assert_not_called()
-
-
 def test_save_user():
     user = User(id=3)
     users = Mock()
@@ -276,11 +255,32 @@ def test_get_user():
     )
 
 
+def test_get_bot():
+    bots = Mock()
+    bots.get.return_value = Bot(owner=3)
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=Mock(),
+        ldap=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert_permission(
+        test=lambda x: service.get_bot(3, x),
+        values=[(SADMIN, True), (USER3, True), (GADMIN, False)],
+        error=UserHasNotPermissionError,
+    )
+
+
 def test_authentication_wrong_user():
     users = Mock()
     users.get_by_name.return_value = None
 
     ldap = Mock()
+    ldap.login.return_value = None
     ldap.get_by_name.return_value = None
 
     service = LoginService(
@@ -301,7 +301,7 @@ def test_authenticate():
     users.get.return_value = User(id=0, name="linus")
 
     ldap = Mock()
-    ldap.get_by_name.return_value = None
+    ldap.login.return_value = None
     ldap.get.return_value = None
 
     roles = Mock()
@@ -328,6 +328,36 @@ def test_authenticate():
 
     users.get_by_name.assert_called_once_with("dupond")
     roles.get_all_by_user.assert_called_once_with(0)
+
+
+def test_authentication_ldap_user():
+    users = Mock()
+    users.get_by_name.return_value = None
+
+    roles = Mock()
+    roles.get_all_by_user.return_value = []
+
+    ldap = Mock()
+    user = UserLdap(id=10, name="ExtUser")
+    ldap.login.return_value = user
+    ldap.get.return_value = user
+
+    exp = JWTUser(
+        id=10,
+        impersonator=10,
+        type="users_ldap",
+    )
+
+    service = LoginService(
+        user_repo=users,
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=roles,
+        ldap=ldap,
+        event_bus=Mock(),
+    )
+    assert exp == service.authenticate("dupond", "pwd")
+    ldap.get.assert_called_once_with(10)
 
 
 def test_get_all_groups():
