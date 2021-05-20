@@ -4,7 +4,8 @@ import pytest
 from flask import Flask
 
 from antarest.common.custom_types import SUB_JSON
-from antarest.login.model import User, Role
+from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.roles import RoleType
 from antarest.storage.main import build_storage
 from antarest.storage.service import StorageService
 from antarest.common.requests import (
@@ -12,24 +13,12 @@ from antarest.common.requests import (
 )
 
 
-ADMIN = User(id=0, name="admin", role=Role.ADMIN)
-
-
-def assert_url_content(
-    storage_service: StorageService, url: str, new: SUB_JSON
-) -> None:
-    app = Flask(__name__)
-    build_storage(
-        app,
-        storage_service=storage_service,
-        res=storage_service.study_service.path_resources,
-    )
-    client = app.test_client()
-    res = client.post(url, data=json.dumps(url))
-    assert json.loads(res.data) == new
-
-    res = client.get(url)
-    assert json.loads(res.data) == new
+ADMIN = JWTUser(
+    id=1,
+    impersonator=1,
+    type="users",
+    groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
+)
 
 
 def assert_with_errors(

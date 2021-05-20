@@ -1,10 +1,12 @@
+import re
 import time
 from pathlib import Path
-from typing import IO
+from typing import IO, Tuple
 from uuid import uuid4
 from zipfile import ZipFile, BadZipFile
 
 from antarest.common.custom_types import JSON
+from antarest.storage.model import Study
 from antarest.storage.web.exceptions import (
     StudyValidationError,
     BadZipBinary,
@@ -29,6 +31,10 @@ class StorageServiceUtils:
         return str(uuid4())
 
     @staticmethod
+    def sanitize(uuid: str) -> str:
+        return re.sub(r"[^0-9-]", "_", uuid)
+
+    @staticmethod
     def extract_zip(stream: IO[bytes], dst: Path) -> None:
         try:
             with ZipFile(stream) as zip_output:
@@ -44,11 +50,19 @@ class StorageServiceUtils:
             )
 
     @staticmethod
-    def update_antares_info(study_name: str, study_data: JSON) -> None:
+    def update_antares_info(metadata: Study, study_data: JSON) -> None:
         # TODO return value rather than change implicitly
         info_antares = study_data["study"]["antares"]
 
-        info_antares["caption"] = study_name
+        info_antares["caption"] = metadata.name
         current_time = int(time.time())
         info_antares["created"] = current_time
         info_antares["lastsave"] = current_time
+
+    @staticmethod
+    def extract_info_from_url(route: str) -> Tuple[str, str]:
+        route_parts = route.split("/")
+        uuid = route_parts[0]
+        url = "/".join(route_parts[1:])
+
+        return uuid, url

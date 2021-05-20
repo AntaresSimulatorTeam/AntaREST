@@ -6,15 +6,25 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.common.config import Config
 from antarest.storage.business.importer_service import (
     ImporterService,
     fix_study_root,
 )
+from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.web.exceptions import (
     IncorrectPathError,
     BadZipBinary,
     StudyValidationError,
 )
+
+
+def build_storage_service(workspace: Path, uuid: str) -> StudyService:
+    service = Mock()
+    service.get_workspace_path.return_value = workspace
+    service.get_study_path.return_value = workspace / uuid
+    return service
 
 
 @pytest.mark.unit_test
@@ -26,18 +36,20 @@ def test_upload_matrix(tmp_path: Path, storage_service_builder) -> None:
     (study_path / "study.antares").touch()
 
     importer_service = ImporterService(
-        path_to_studies=tmp_path, study_service=Mock(), study_factory=Mock()
+        study_service=build_storage_service(tmp_path, study_uuid),
+        study_factory=Mock(),
     )
 
-    study_url = study_uuid + "/"
     matrix_path = "WRONG_MATRIX_PATH"
+    md = RawStudy(
+        id=study_uuid, workspace=DEFAULT_WORKSPACE_NAME, path=study_path
+    )
     with pytest.raises(IncorrectPathError):
-        importer_service.upload_matrix(study_url + matrix_path, b"")
+        importer_service.upload_matrix(md, matrix_path, b"")
 
-    study_url = study_uuid + "/"
     matrix_path = "matrix.txt"
     data = b"hello"
-    importer_service.upload_matrix(study_url + matrix_path, data)
+    importer_service.upload_matrix(md, matrix_path, data)
     assert (study_path / matrix_path).read_bytes() == data
 
 
@@ -55,8 +67,7 @@ def test_import_study(tmp_path: Path, storage_service_builder) -> None:
     study_factory.create_from_fs.return_value = None, study
 
     importer_service = ImporterService(
-        path_to_studies=tmp_path,
-        study_service=Mock(),
+        study_service=build_storage_service(tmp_path, "other-study"),
         study_factory=study_factory,
     )
 
@@ -67,11 +78,14 @@ def test_import_study(tmp_path: Path, storage_service_builder) -> None:
 
     path_zip = Path(filepath_zip)
 
+    md = RawStudy(id="other-study", workspace=DEFAULT_WORKSPACE_NAME)
     with path_zip.open("rb") as input_file:
-        uuid = importer_service.import_study(input_file)
+        md = importer_service.import_study(md, input_file)
+        assert md.path == f"{tmp_path}{os.sep}other-study"
 
+    shutil.rmtree(tmp_path / "other-study")
     with pytest.raises(BadZipBinary):
-        importer_service.import_study(io.BytesIO(b""))
+        importer_service.import_study(md, io.BytesIO(b""))
 
 
 @pytest.mark.unit_test

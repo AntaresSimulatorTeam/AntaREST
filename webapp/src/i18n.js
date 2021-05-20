@@ -30,6 +30,7 @@ i18n
       'main',
       'studymanager',
       'jobs',
+      'settings'
     ],
     defaultNS: 'main',
   });

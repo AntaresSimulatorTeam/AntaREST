@@ -26,6 +26,6 @@ export default createMuiTheme({
     },
     secondary: {
       main: '#ff9800',
-    },
+    }
   },
 });

@@ -1,16 +1,30 @@
+import os
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
 
 import pytest
 
+from antarest.common.config import Config, StorageConfig, WorkspaceConfig
 from antarest.common.requests import (
     RequestParameters,
 )
-from antarest.storage.business.study_service import StudyService
+from antarest.storage.business.storage_service_utils import StorageServiceUtils
+from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.web.exceptions import (
     StudyNotFoundError,
 )
+
+
+def build_config(study_path: Path):
+    return Config(
+        storage=StorageConfig(
+            workspaces={
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=study_path)
+            }
+        )
+    )
 
 
 @pytest.mark.unit_test
@@ -45,12 +59,15 @@ def test_get(tmp_path: str, project_path) -> None:
     study_factory.create_from_fs.return_value = (None, study)
 
     study_service = StudyService(
-        path_to_studies=path_to_studies,
+        config=build_config(path_to_studies),
         study_factory=study_factory,
         path_resources=project_path / "resources",
     )
 
-    output = study_service.get(route=f"study2.py/{sub_route}", depth=2)
+    metadata = RawStudy(
+        id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
+    )
+    output = study_service.get(metadata=metadata, url=sub_route, depth=2)
 
     assert output == data
 
@@ -66,10 +83,17 @@ def test_check_errors():
     factory.create_from_fs.return_value = None, study
 
     study_service = StudyService(
-        path_to_studies=Path(), study_factory=factory, path_resources=Path()
+        config=build_config(Path()),
+        study_factory=factory,
+        path_resources=Path(),
     )
 
-    assert study_service.check_errors("study") == ["Hello"]
+    metadata = RawStudy(
+        id="study",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(study_service.get_default_workspace_path() / "study"),
+    )
+    assert study_service.check_errors(metadata) == ["Hello"]
 
 
 @pytest.mark.unit_test
@@ -88,11 +112,15 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
 
     # Test & Verify
     study_service = StudyService(
-        path_to_studies=path_to_studies,
+        config=build_config(path_to_studies),
         study_factory=Mock(),
         path_resources=project_path / "resources",
     )
-    study_service.check_study_exist(study_name)
+
+    metadata = RawStudy(
+        id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2)
+    )
+    study_service.check_study_exists(metadata)
 
 
 @pytest.mark.unit_test
@@ -111,13 +139,16 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
     # Test & Verify
     study_service = StudyService(
-        path_to_studies=path_to_studies,
+        config=build_config(path_to_studies),
         study_factory=Mock(),
         path_resources=project_path / "resources",
     )
 
+    metadata = RawStudy(
+        id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2)
+    )
     with pytest.raises(StudyNotFoundError):
-        study_service.check_study_exist(study_name)
+        study_service.check_study_exists(metadata)
 
 
 @pytest.mark.unit_test
@@ -148,7 +179,7 @@ def test_find_studies(tmp_path: str, storage_service_builder) -> None:
 
     # Test & Verify
     study_service = StudyService(
-        path_to_studies=path_studies,
+        config=build_config(path_studies),
         study_factory=Mock(),
         path_resources=Path(),
     )
@@ -171,15 +202,20 @@ def test_create_study(
     study_factory.create_from_fs.return_value = (None, study)
 
     study_service = StudyService(
-        path_to_studies=path_studies,
+        config=build_config(path_studies),
         study_factory=study_factory,
         path_resources=project_path / "resources",
     )
 
-    study_name = "study1"
-    uuid = study_service.create_study(study_name)
+    metadata = RawStudy(
+        id="study1",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(study_service.get_default_workspace_path() / "study1"),
+    )
+    md = study_service.create_study(metadata)
 
-    path_study = path_studies / uuid
+    assert md.path == f"{tmp_path}{os.sep}study1"
+    path_study = path_studies / md.id
     assert path_study.exists()
 
     path_study_antares_infos = path_study / "study.antares"
@@ -224,14 +260,22 @@ def test_copy_study(
     url_engine.resolve.return_value = None, None, None
 
     study_service = StudyService(
-        path_to_studies=path_studies,
+        config=build_config(path_studies),
         study_factory=study_factory,
         path_resources=Path(),
     )
 
-    destination_name = "study2"
-    study_service.copy_study(source_name, destination_name)
+    src_md = RawStudy(
+        id=source_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
+    )
+    dest_md = RawStudy(
+        id="study2",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(study_service.get_default_workspace_path() / "study2"),
+    )
+    md = study_service.copy_study(src_md, dest_md)
 
+    assert str(md.path) == f"{tmp_path}{os.sep}study2"
     study.get.assert_called_once_with()
 
 
@@ -244,12 +288,15 @@ def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
     (study_path / "study.antares").touch()
 
     study_service = StudyService(
-        path_to_studies=tmp_path,
+        config=build_config(tmp_path),
         study_factory=Mock(),
         path_resources=Path(),
     )
 
-    study_service.delete_study(name)
+    md = RawStudy(
+        id=name, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path)
+    )
+    study_service.delete_study(md)
 
     assert not study_path.exists()
 
@@ -265,16 +312,21 @@ def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
     study_factory.create_from_fs.return_value = None, study
 
     study_service = StudyService(
-        path_to_studies=tmp_path,
+        config=build_config(tmp_path),
         study_factory=study_factory,
         path_resources=Path(),
     )
 
     # Input
-    url = "my-uuid/url/to/change"
+    url = "url/to/change"
     new = {"Hello": "World"}
 
-    res = study_service.edit_study(url, new)
+    md = RawStudy(
+        id="my-uuid",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(tmp_path / "my-uuid"),
+    )
+    res = study_service.edit_study(md, url, new)
 
     assert new == res
     study.save.assert_called_once_with(new, ["url", "to", "change"])

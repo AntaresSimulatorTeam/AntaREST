@@ -1,6 +1,10 @@
+import uuid
 from typing import Any
 
-from sqlalchemy import Column, Integer, Sequence, String, Table, ForeignKey  # type: ignore
+from dataclasses import dataclass
+
+from dataclasses_json import DataClassJsonMixin  # type: ignore
+from sqlalchemy import Column, Integer, Sequence, String, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from werkzeug.security import (
@@ -9,19 +13,8 @@ from werkzeug.security import (
 )
 
 from antarest.common.custom_types import JSON
-from antarest.common.persistence import DTO, Base
-
-users_groups = Table(
-    "users_groups",
-    Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id")),
-    Column("group_id", Integer, ForeignKey("groups.id")),
-)
-
-
-class Role:
-    ADMIN: str = "ADMIN"
-    USER: str = "USER"
+from antarest.common.roles import RoleType
+from antarest.common.persistence import Base
 
 
 class Password:
@@ -43,16 +36,48 @@ class Password:
         return self.__str__()
 
 
-class User(DTO, Base):  # type: ignore
+@dataclass
+class Identity(Base):  # type: ignore
+    __tablename__ = "identities"
+
+    id = Column(Integer, Sequence("identity_id_seq"), primary_key=True)
+    name = Column(String(255))
+    type = Column(String(50))
+
+    @staticmethod
+    def from_dict(data: JSON) -> "Identity":
+        return Identity(
+            id=data["id"],
+            name=data["name"],
+        )
+
+    def to_dict(self) -> JSON:
+        return {"id": self.id, "name": self.name}
+
+    __mapper_args__ = {
+        "polymorphic_identity": "identities",
+        "polymorphic_on": type,
+    }
+
+    def get_impersonator(self) -> int:
+        return int(self.id)
+
+
+@dataclass
+class User(Identity):
     __tablename__ = "users"
 
-    id = Column(Integer, Sequence("user_id_seq"), primary_key=True)
-    name = Column(String(255))
-    role = Column(String(255))
-    _pwd = Column(String(255))
-    groups = relationship(
-        "Group", secondary=users_groups, back_populates="users"
+    id = Column(
+        Integer,
+        Sequence("identity_id_seq"),
+        ForeignKey("identities.id"),
+        primary_key=True,
     )
+    _pwd = Column(String(255))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "users",
+    }
 
     @hybrid_property
     def password(self) -> Password:
@@ -64,48 +89,172 @@ class User(DTO, Base):  # type: ignore
 
     @staticmethod
     def from_dict(data: JSON) -> "User":
-        return User(
-            id=data.get("id"), name=data["name"], role=data.get("role", "")
-        )
-
-    def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name, "role": self.role}
+        return User(id=data.get("id"), name=data["name"])
 
     def __eq__(self, o: Any) -> bool:
         if not isinstance(o, User):
             return False
-        return bool(
-            (o.id == self.id)
-            and (o.name == self.name)
-            and (o.role == self.role)
-        )
+        return bool((o.id == self.id) and (o.name == self.name))
 
 
-class Group(DTO, Base):  # type: ignore
-    __tablename__ = "groups"
+@dataclass
+class UserLdap(Identity):
+    __tablename__ = "users_ldap"
 
-    id = Column(Integer, Sequence("group_id_seq"), primary_key=True)
-    name = Column(String(255))
-    users = relationship(
-        "User", secondary=users_groups, back_populates="groups"
+    id = Column(
+        Integer,
+        Sequence("identity_id_seq"),
+        ForeignKey("identities.id"),
+        primary_key=True,
     )
+    __mapper_args__ = {
+        "polymorphic_identity": "users_ldap",
+    }
 
     @staticmethod
-    def from_dict(data: JSON) -> "Group":
-        return Group(
-            id=data.get("id"),
+    def from_dict(data: JSON) -> "UserLdap":
+        return UserLdap(id=data.get("id"), name=data["name"])
+
+    def __eq__(self, o: Any) -> bool:
+        if not isinstance(o, UserLdap):
+            return False
+        return bool((o.id == self.id) and (o.name == self.name))
+
+
+@dataclass
+class Bot(Identity):
+    __tablename__ = "bots"
+
+    id = Column(
+        Integer,
+        Sequence("identity_id_seq"),
+        ForeignKey("identities.id"),
+        primary_key=True,
+    )
+    owner = Column(Integer, ForeignKey("users.id"))
+    is_author = Column(Boolean(), default=True)
+
+    def get_impersonator(self) -> int:
+        return int(self.id if self.is_author else self.owner)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "bots",
+    }
+
+    @staticmethod
+    def from_dict(data: JSON) -> "Bot":
+        return Bot(
+            id=data["id"],
             name=data["name"],
-            users=[u.from_dict(u) for u in data.get("users", list())],
+            owner=data["owner"],
+            is_author=data["isAuthor"],
         )
 
     def to_dict(self) -> JSON:
         return {
             "id": self.id,
             "name": self.name,
-            "users": [u.to_dict() for u in self.users],
+            "owner": self.owner,
+            "isAuthor": self.is_author,
         }
 
-    def __eq__(self, o: Any) -> bool:
-        if not isinstance(o, Group):
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Bot):
             return False
-        return bool((o.id == self.id) and (o.name == self.name))
+        return self.to_dict() == other.to_dict()
+
+
+@dataclass
+class BotCreateDTO:
+    name: str
+    group: str
+    role: RoleType
+    is_author: bool = True
+
+    @staticmethod
+    def from_dict(data: JSON) -> "BotCreateDTO":
+        return BotCreateDTO(
+            name=data["name"],
+            group=data["group"],
+            role=RoleType.from_dict(data["role"]),
+            is_author=data.get("isAuthor", True),
+        )
+
+    def to_dict(self) -> JSON:
+        return {
+            "name": self.name,
+            "group": self.group,
+            "role": self.role.to_dict(),
+            "isAuthor": self.is_author,
+        }
+
+
+@dataclass
+class UserCreateDTO:
+    name: str
+    password: str
+
+    @staticmethod
+    def from_dict(data: JSON) -> "UserCreateDTO":
+        return UserCreateDTO(name=data["name"], password=data["password"])
+
+    def to_dict(self) -> JSON:
+        return {"name": self.name, "password": self.password}
+
+
+@dataclass
+class Group(Base):  # type: ignore
+    __tablename__ = "groups"
+
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+        unique=True,
+    )
+    name = Column(String(255))
+
+    @staticmethod
+    def from_dict(data: JSON) -> "Group":
+        return Group(
+            id=data.get("id"),
+            name=data["name"],
+        )
+
+    def to_dict(self) -> JSON:
+        return {"id": self.id, "name": self.name}
+
+
+@dataclass
+class RoleCreationDTO(DataClassJsonMixin):  # type: ignore
+    type: RoleType
+    group_id: str
+    identity_id: int
+
+
+@dataclass
+class Role(Base):  # type: ignore
+    __tablename__ = "roles"
+
+    type = Column(Enum(RoleType))
+    identity_id = Column(
+        Integer, ForeignKey("identities.id"), primary_key=True
+    )
+    group_id = Column(String(36), ForeignKey("groups.id"), primary_key=True)
+    identity = relationship("Identity")
+    group = relationship("Group")
+
+    @staticmethod
+    def from_dict(data: JSON) -> "Role":
+        return Role(
+            type=RoleType.from_dict(data["type"]),
+            identity=User.from_dict(data["user"]),
+            group=Group.from_dict(data["group"]),
+        )
+
+    def to_dict(self) -> JSON:
+        return {
+            "type": self.type.to_dict(),
+            "user": self.identity.to_dict(),
+            "group": self.group.to_dict(),
+        }

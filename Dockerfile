@@ -12,4 +12,4 @@ COPY ./resources /resources
 RUN pip3 install --upgrade pip \
     && pip3 install -r /conf/requirements.txt
 
-ENTRYPOINT gunicorn --config /conf/gunicorn.py antarest.wsgi:app
+ENTRYPOINT gunicorn --config /conf/gunicorn.py --worker-class=geventwebsocket.gunicorn.workers.GeventWebSocketWorker antarest.wsgi:app

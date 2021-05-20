@@ -3,21 +3,33 @@ import json
 import shutil
 from http import HTTPStatus
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 from flask import Flask
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
-from antarest.login.model import User, Role
+from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.roles import RoleType
 from antarest.storage.main import build_storage
+from antarest.storage.model import Study
 from antarest.storage.service import StorageService
 from antarest.common.requests import (
     RequestParameters,
 )
+from tests.storage.integration.data.de_details_hourly import de_details_hourly
+from tests.storage.integration.data.de_fr_values_hourly import (
+    de_fr_values_hourly,
+)
+from tests.storage.integration.data.input_link import input_link
 
-ADMIN = User(id=0, name="admin", role=Role.ADMIN)
+ADMIN = JWTUser(
+    id=1,
+    impersonator=1,
+    type="users",
+    groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
+)
 
 
 def assert_url_content(
@@ -27,18 +39,9 @@ def assert_url_content(
     build_storage(
         app,
         session=Mock(),
+        user_service=Mock(),
         storage_service=storage_service,
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
     res = client.get(url)
@@ -153,11 +156,11 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/hydro/series/de/mod",
-            "file/STA-mini/input/hydro/series/de/mod.txt",
+            {},
         ),
         (
             "/studies/STA-mini/input/areas/list",
-            "file/STA-mini/input/areas/list.txt",
+            ["de", "es", "fr", "it"],
         ),
         ("/studies/STA-mini/input/areas/sets/all areas/output", False),
         (
@@ -168,11 +171,15 @@ def test_sta_mini_study_antares(
         ("/studies/STA-mini/input/hydro/allocation/de/[allocation/de", 1),
         (
             "/studies/STA-mini/input/hydro/common/capacity/reservoir_fr",
-            "file/STA-mini/input/hydro/common/capacity/reservoir_fr.txt",
+            {
+                0: {i: 0 for i in range(365)},
+                1: {i: 0.5 for i in range(365)},
+                2: {i: 1 for i in range(365)},
+            },
         ),
         (
             "/studies/STA-mini/input/thermal/series/fr/05_nuclear/series",
-            "file/STA-mini/input/thermal/series/fr/05_nuclear/series.txt",
+            {0: {i: 2000 for i in range(8760)}},
         ),
         (
             "/studies/STA-mini/input/hydro/prepro/correlation/general/mode",
@@ -208,7 +215,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/links/fr/it",
-            "file/STA-mini/input/links/fr/it.txt",
+            input_link,
         ),
         (
             "/studies/STA-mini/input/load/prepro/fr/k",
@@ -216,7 +223,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/load/series/load_fr",
-            "file/STA-mini/input/load/series/load_fr.txt",
+            {0: {i: (i % 168) * 100 for i in range(8760)}},
         ),
         (
             "/studies/STA-mini/input/misc-gen/miscgen-fr",
@@ -232,7 +239,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/solar/series/solar_fr",
-            "file/STA-mini/input/solar/series/solar_fr.txt",
+            {},
         ),
         (
             "/studies/STA-mini/input/wind/prepro/fr/k",
@@ -240,7 +247,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/wind/series/wind_fr",
-            "file/STA-mini/input/wind/series/wind_fr.txt",
+            {},
         ),
     ],
 )
@@ -293,29 +300,17 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
             "Andrea SGATTONI",
         ),
         (
-            "/studies/STA-mini/output/1/economy/mc-all/areas/de/id-daily",
-            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/areas/de/id-daily.txt",
-        ),
-        (
             "/studies/STA-mini/output/1/economy/mc-all/grid/areas",
             "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/grid/areas.txt",
         ),
         ("/studies/STA-mini/output/1/economy/mc-all/links/de/fr", {}),
         (
             "/studies/STA-mini/output/1/economy/mc-ind/00001/links/de/fr/values-hourly",
-            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/links/de - fr/values-hourly.txt",
+            de_fr_values_hourly,
         ),
         (
             "/studies/STA-mini/output/1/economy/mc-ind/00001/areas/de/details-annual",
-            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual.txt",
-        ),
-        (
-            "/studies/STA-mini/output/1/economy/mc-ind/00001/areas/de/details-annual",
-            "file/STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual.txt",
-        ),
-        (
-            "/studies/STA-mini/output/4/adequacy/mc-all/areas/de/id-daily",
-            "file/STA-mini/output/20201014-1430adq/adequacy/mc-all/areas/de/id-daily.txt",
+            de_details_hourly,
         ),
         (
             "/studies/STA-mini/output/1/ts-numbers/hydro/de",
@@ -361,18 +356,9 @@ def test_sta_mini_copy(storage_service) -> None:
     build_storage(
         app,
         session=Mock(),
+        user_service=Mock(),
         storage_service=storage_service,
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
     result = client.post(
@@ -380,37 +366,23 @@ def test_sta_mini_copy(storage_service) -> None:
     )
 
     assert result.status_code == HTTPStatus.CREATED.value
-    url_destination = result.data.decode("utf-8")
-
-    destination_folder = url_destination.split("/")[2]
+    uuid = result.data.decode("utf-8")
 
     parameters = RequestParameters(user=ADMIN)
     data_source = storage_service.get(source_study_name, -1, parameters)
-    data_destination = storage_service.get(destination_folder, -1, parameters)
+    data_destination = storage_service.get(uuid, -1, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
-    assert link_url_source == "file/STA-mini/input/links/de/fr.txt"
+    assert link_url_source == input_link
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
-    assert (
-        link_url_destination
-        == f"file/{destination_folder}/input/links/de/fr.txt"
-    )
-
-    result_source = client.get(link_url_source)
-    matrix_source = result_source.data
-    result_destination = client.get(link_url_destination)
-    matrix_destination = result_destination.data
-
-    assert matrix_source == matrix_destination
+    assert link_url_destination == input_link
 
     def replace_study_name(data: JSON) -> None:
         if isinstance(data, dict):
             for key, value in data.items():
                 if isinstance(value, str) and value.startswith("file/"):
-                    data[key] = value.replace(
-                        destination_folder, source_study_name
-                    )
+                    data[key] = value.replace(uuid, source_study_name)
                 else:
                     replace_study_name(value)
 
@@ -473,55 +445,13 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         session=Mock(),
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        user_service=Mock(),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
 
     study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
     result = client.post("/studies", data={"study": (study_data, "study.zip")})
-
-    assert result.status_code == HTTPStatus.CREATED.value
-
-
-@pytest.mark.integration_test
-def test_sta_mini_import_compact(tmp_path: Path, storage_service) -> None:
-
-    params = RequestParameters(user=ADMIN)
-    zip_study_stream = storage_service.export_study(
-        "STA-mini", compact=True, params=params
-    )
-
-    app = Flask(__name__)
-    build_storage(
-        app,
-        session=Mock(),
-        storage_service=storage_service,
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
-    )
-    client = app.test_client()
-    result = client.post(
-        "/studies", data={"study": (zip_study_stream, "study.zip")}
-    )
 
     assert result.status_code == HTTPStatus.CREATED.value
 
@@ -548,17 +478,8 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         session=Mock(),
-        config=Config(
-            {
-                "_internal": {
-                    "resources_path": storage_service.study_service.path_resources
-                },
-                "security": {"disabled": True},
-                "storage": {
-                    "studies": storage_service.study_service.path_to_studies
-                },
-            }
-        ),
+        user_service=Mock(),
+        config=storage_service.study_service.config,
     )
     client = app.test_client()
 

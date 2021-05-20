@@ -12,17 +12,18 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 }));
 
 interface PropTypes {
+  study: string;
   type: 'json' | 'file';
   data: string;
 }
 
 const StudyDataView = (props: PropTypes) => {
-  const { type, data } = props;
+  const { study, type, data } = props;
   const classes = useStyles();
 
   const renderData = () => {
     if (type === 'file') {
-      return <StudyFileView url={data} />;
+      return <StudyFileView study={study} url={data} />;
     }
     return <StudyJsonView data={data} />;
   };

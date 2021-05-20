@@ -6,11 +6,17 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.common.config import Config
+from antarest.common.config import (
+    Config,
+    SecurityConfig,
+    StorageConfig,
+    WorkspaceConfig,
+)
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
-from antarest.storage.business.study_service import StudyService
+from antarest.storage.business.raw_study_service import StudyService
 from antarest.storage.main import build_storage
+from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME
 from antarest.storage.service import StorageService
 
 project_dir: Path = Path(__file__).parent.parent.parent
@@ -49,20 +55,24 @@ def storage_service_builder() -> Callable:
         session=Mock(),
         path_studies=Path(),
         path_resources=Path(),
+        user_service=Mock(),
     ) -> StorageService:
 
         config = Config(
-            {
-                "_internal": {"resources_path": path_resources},
-                "security": {"disabled": True},
-                "storage": {"studies": path_studies},
-            }
+            resources_path=path_resources,
+            security=SecurityConfig(disabled=True),
+            storage=StorageConfig(
+                workspaces={
+                    DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
+                }
+            ),
         )
 
         return build_storage(
             application=Mock(),
             config=config,
             session=session,
+            user_service=user_service,
             study_factory=study_factory,
             exporter=exporter,
         )

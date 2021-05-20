@@ -87,7 +87,7 @@ const StudyView = (props: PropTypes) => {
             </div>
             <div className={classes.main}>
               <div className={classes.maincontent}>
-                {elementView && <StudyDataView type={elementView.type} data={elementView.data} />}
+                {elementView && <StudyDataView study={study} type={elementView.type} data={elementView.data} />}
               </div>
             </div>
           </>

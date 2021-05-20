@@ -1,5 +1,6 @@
 import { useSnackbar, OptionsObject } from 'notistack';
-import { StudyMetadataDTO, StudyMetadata } from '../../common/types';
+import jwt_decode from 'jwt-decode';
+import { StudyMetadataDTO, StudyMetadata, UserGroupInfo} from '../../common/types';
 
 export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDTO): StudyMetadata => ({
   id: sid,
@@ -19,5 +20,12 @@ export const useNotif = (): (message: React.ReactNode, options?: OptionsObject |
   const { enqueueSnackbar } = useSnackbar();
   return enqueueSnackbar;
 };
+
+export const isUserAdmin = (access_token : string) : boolean => {
+    const token = jwt_decode(access_token);
+    const adminElm = (token as any).sub.groups.find((elm : UserGroupInfo) => elm.name === 'admin' && elm.role === 40);
+    return !!adminElm;
+}
+
 
 export default {};

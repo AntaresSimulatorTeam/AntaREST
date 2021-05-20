@@ -1,17 +1,22 @@
 import enum
 import uuid
-from typing import Any
+from pathlib import Path
+from typing import Any, List
 
-from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum  # type: ignore
+from dataclasses import dataclass
+from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.common.persistence import DTO, Base
+from antarest.login.model import User, Group
 
-users_metadata = Table(
-    "users_metadata",
+DEFAULT_WORKSPACE_NAME = "default"
+
+groups_metadata = Table(
+    "group_metadata",
     Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id")),
-    Column("metadata_id", Integer, ForeignKey("metadata.id")),
+    Column("group_id", Integer, ForeignKey("groups.id")),
+    Column("study_id", Integer, ForeignKey("study.id")),
 )
 
 
@@ -21,8 +26,17 @@ class StudyContentStatus(enum.Enum):
     ERROR = "ERROR"
 
 
-class Metadata(DTO, Base):  # type: ignore
-    __tablename__ = "metadata"
+class PublicMode(enum.Enum):
+    NONE = "NONE"
+    READ = "READ"
+    EXECUTE = "EXECUTE"
+    EDIT = "EDIT"
+    FULL = "FULL"
+
+
+@dataclass
+class Study(Base):  # type: ignore
+    __tablename__ = "study"
 
     id = Column(
         String(36),
@@ -31,27 +45,47 @@ class Metadata(DTO, Base):  # type: ignore
         unique=True,
     )
     name = Column(String(255))
+    type = Column(String(50))
     version = Column(String(255))
     author = Column(String(255))
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
-    content_status = Column(Enum(StudyContentStatus))
-    users = relationship("User", secondary=lambda: users_metadata, cascade="")
+    public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
+    owner_id = Column(Integer, ForeignKey(User.id))
+    owner = relationship(User, uselist=False)
+    groups = relationship(
+        "Group", secondary=lambda: groups_metadata, cascade=""
+    )
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Metadata):
-            return False
-
-        return bool(
-            other.id == self.id
-            and other.name == self.name
-            and other.version == self.version
-            and other.author == self.author
-            and other.created_at == self.created_at
-            and other.updated_at == self.updated_at
-            and other.content_status == self.content_status
-            and other.users == self.users
-        )
+    __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
     def __str__(self) -> str:
-        return f"Metadata(name={self.name}, version={self.version}, users={[str(u)+',' for u in self.users]}"
+        return f"Metadata(id={self.id}, name={self.name}, version={self.version}, owner={self.owner}, groups={[str(u)+',' for u in self.groups]}"
+
+    def to_json_summary(self) -> Any:
+        return {"id": self.id, "name": self.name, "workspace": self.workspace}
+
+
+@dataclass
+class RawStudy(Study):
+    __tablename__ = "rawstudy"
+
+    id = Column(
+        String(36),
+        ForeignKey("study.id"),
+        primary_key=True,
+    )
+    content_status = Column(Enum(StudyContentStatus))
+    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
+    path = Column(String(255))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "rawstudy",
+    }
+
+
+@dataclass
+class StudyFolder:
+    path: Path
+    workspace: str
+    groups: List[Group]

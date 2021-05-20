@@ -7,9 +7,12 @@ from pathlib import Path
 from typing import IO
 from uuid import uuid4
 
+from antarest.common.config import Config
 from antarest.common.custom_types import JSON
+from antarest.common.interfaces.eventbus import IEventBus
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.business.study_service import StudyService
+from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.model import Study, RawStudy
 from antarest.storage.repository.antares_io.reader import IniReader
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.web.exceptions import (
@@ -23,63 +26,49 @@ logger = logging.getLogger(__name__)
 class ImporterService:
     def __init__(
         self,
-        path_to_studies: Path,
         study_service: StudyService,
         study_factory: StudyFactory,
     ):
         self.study_service = study_service
-        self.path_to_studies = path_to_studies
         self.study_factory = study_factory
 
-    def upload_matrix(self, path: str, data: bytes) -> None:
+    def upload_matrix(
+        self, metadata: RawStudy, path: str, data: bytes
+    ) -> None:
 
         relative_path_matrix = Path(path)
-        uuid = relative_path_matrix.parts[0]
 
-        self.study_service.check_study_exist(uuid)
+        self.study_service.check_study_exists(metadata)
         StorageServiceUtils.assert_path_can_be_matrix(relative_path_matrix)
 
-        path_matrix = self.path_to_studies / relative_path_matrix
+        path_matrix = Path(metadata.path) / relative_path_matrix
 
         path_matrix.write_bytes(data)
 
-    def import_study(self, stream: IO[bytes]) -> str:
-        uuid = StorageServiceUtils.generate_uuid()
-        path_study = Path(self.path_to_studies) / uuid
+    def import_study(self, metadata: Study, stream: IO[bytes]) -> Study:
+        path_study = self.study_service.get_study_path(metadata)
         path_study.mkdir()
 
         try:
             StorageServiceUtils.extract_zip(stream, path_study)
+            fix_study_root(path_study)
 
-            data_file = path_study / "data.json"
-
-            # If compact study generate tree and launch save with data.json
-            if data_file.is_file() and (path_study / "res").is_dir():
-                with open(data_file) as file:
-                    data = json.load(file)
-                    _, study = self.study_factory.create_from_json(
-                        path_study, data
-                    )
-                    study.save(data)
-                del study
-                shutil.rmtree(path_study / "res")
-                os.remove(str(data_file.absolute()))
-            else:
-                fix_study_root(path_study)
-
-            data = self.study_service.get(uuid, -1)
+            data = self.study_service.get(metadata, url="", depth=-1)
             if data is None:
-                self.study_service.delete_study(uuid)
+                self.study_service.delete_study(metadata)
                 raise StudyValidationError("Fail to import study")
         except Exception as e:
             shutil.rmtree(path_study)
             raise e
 
-        return uuid
+        metadata.path = str(path_study)
+        return metadata
 
-    def import_output(self, uuid: str, stream: IO[bytes]) -> JSON:
+    def import_output(self, metadata: Study, stream: IO[bytes]) -> JSON:
         path_output = (
-            Path(self.path_to_studies) / uuid / "output" / "imported_output"
+            self.study_service.get_study_path(metadata)
+            / "output"
+            / "imported_output"
         )
         path_output.mkdir()
         StorageServiceUtils.extract_zip(stream, path_output)
@@ -108,12 +97,13 @@ class ImporterService:
         )
 
         data = self.study_service.get(
-            f"{uuid}/output/{output_id}",
+            metadata,
+            f"output/{output_id}",
             -1,
         )
 
         if data is None:
-            self.study_service.delete_output(uuid, "imported_output")
+            self.study_service.delete_output(metadata, "imported_output")
             raise BadOutputError("The output provided is not conform.")
 
         return data
