@@ -332,7 +332,7 @@ def test_role_create() -> None:
     res = client.post(
         "/roles",
         headers=create_auth_token(app),
-        json=role.to_dict(),
+        json={"type": RoleType.ADMIN.value, "identity_id": 0, "group_id": "g"},
     )
 
     assert res.status_code == 200

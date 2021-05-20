@@ -147,7 +147,7 @@ def test_create_study(
 
     assert result_right.status_code == HTTPStatus.CREATED.value
     assert json.loads(result_right.data) == "/studies/my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", PARAMS)
+    storage_service.create_study.assert_called_once_with("study2", [], PARAMS)
 
 
 @pytest.mark.unit_test
@@ -212,6 +212,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
     storage_service.copy_study.assert_called_with(
         src_uuid="existing-study",
         dest_study_name="study-copied",
+        group_ids=[],
         params=PARAMS,
     )
     assert result.status_code == HTTPStatus.CREATED.value

@@ -1,0 +1,40 @@
+security:
+  disabled: false
+  jwt:
+    key: super-secret
+  login:
+    admin:
+      pwd: admin
+  ldapUrl: ""
+
+db:
+  url: {{dburl}}
+
+storage:
+  watcher_lock: false
+  workspaces:
+    default:
+      path: {{default_workspace_path}}
+    ext:
+      path:  {{ext_workspace_path}}
+
+launcher:
+  default: local
+  local:
+    binaries:
+      700: {{launcher_mock}}
+
+debug: false
+
+logging:
+  level: INFO
+
+#  path: /tmp/antarest.log
+#  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Uncomment these lines to use redis as a backend for the eventbus
+# It is required to use redis when using this application on multiple workers in a preforked model like gunicorn for instance
+#eventbus:
+#  redis:
+#    host: localhost
+#    port: 6379

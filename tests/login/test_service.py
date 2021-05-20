@@ -19,6 +19,7 @@ from antarest.login.model import (
     Identity,
     UserCreateDTO,
     UserLdap,
+    RoleCreationDTO,
 )
 from antarest.login.service import (
     LoginService,
@@ -94,6 +95,7 @@ def test_create_user():
 
     users = Mock()
     users.save.return_value = User(id=3, name="hello")
+    users.get_by_name.return_value = None
 
     service = LoginService(
         user_repo=users,
@@ -179,16 +181,20 @@ def test_save_bot_wrong_role():
 
 
 def test_save_role():
-    role = Role(
-        type=RoleType.ADMIN, identity=User(id=0), group=Group(id="group")
+    role = RoleCreationDTO(
+        type=RoleType.ADMIN, identity_id=0, group_id="group"
     )
+    users = Mock()
+    users.get.return_value = User(id=0, name="admin")
+    groups = Mock()
+    groups.get.return_value = Group(id="group", name="some group")
     roles = Mock()
     roles.save.return_value = role
 
     service = LoginService(
-        user_repo=Mock(),
+        user_repo=users,
         bot_repo=Mock(),
-        group_repo=Mock(),
+        group_repo=groups,
         role_repo=roles,
         ldap=Mock(),
         event_bus=Mock(),
