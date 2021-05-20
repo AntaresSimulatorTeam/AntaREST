@@ -69,17 +69,17 @@ def test_get(tmp_path: Path):
     path = tmp_path / "file.ini"
     path.write_text(content)
 
-    thermals = [
-        "01_solar",
-        "02_wind_on",
-        "03_wind_off",
-        "04_res",
-        "05_nuclear",
-        "06_coal",
-        "07_gas",
-        "08_non-res",
-        "09_hydro_pump",
-    ]
+    thermals = {
+        "01_solar": {"enabled": True},
+        "02_wind_on": {"enabled": True},
+        "03_wind_off": {"enabled": True},
+        "04_res": {"enabled": True},
+        "05_nuclear": {"enabled": True},
+        "06_coal": {"enabled": True},
+        "07_gas": {"enabled": True},
+        "08_non-res": {"enabled": True},
+        "09_hydro_pump": {"enabled": True},
+    }
 
     areas = {
         n: Area(

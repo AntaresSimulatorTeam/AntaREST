@@ -115,11 +115,16 @@ class ConfigPathBuilder:
         )
 
     @staticmethod
-    def _parse_thermal(root: Path, area: str) -> List[str]:
+    def _parse_thermal(root: Path, area: str) -> Dict[str, Any]:
         list_ini = IniReader().read(
             root / f"input/thermal/clusters/{area}/list.ini"
         )
-        return [transform_name_to_id(key) for key in list(list_ini.keys())]
+        return {
+            transform_name_to_id(key): {
+                "enabled": list_ini.get(key).get("enabled", True)
+            }
+            for key in list(list_ini.keys())
+        }
 
     @staticmethod
     def _parse_links(root: Path, area: str) -> Dict[str, Link]:

@@ -127,7 +127,7 @@ def test_parse_area(tmp_path: Path) -> None:
         study_path,
         areas={
             "fr": Area(
-                thermals=[],
+                thermals={},
                 links={},
                 filters_year=["hourly", "weekly", "annual"],
                 filters_synthesis=["daily", "monthly"],
