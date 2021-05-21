@@ -41,6 +41,8 @@ launcher:
     antares_versions_on_remote_server :
       - "610"
       - "700"
+      - "710"
+      - "720"
       - "800"
 
 

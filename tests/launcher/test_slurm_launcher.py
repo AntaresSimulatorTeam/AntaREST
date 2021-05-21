@@ -108,6 +108,6 @@ def test_slurm_launcher_delete_function(tmp_path: str):
     directory_path.mkdir()
     (directory_path / "file.txt").touch()
 
-    slurm_launcher._delete_input_study(directory_path)
+    slurm_launcher._delete_study(directory_path)
 
     assert not directory_path.exists()

@@ -110,6 +110,7 @@ class ImporterService:
         )
         path_output.mkdir()
         StorageServiceUtils.extract_zip(stream, path_output)
+        fix_study_root(path_output)
 
         ini_reader = IniReader()
         info_antares_output = ini_reader.read(

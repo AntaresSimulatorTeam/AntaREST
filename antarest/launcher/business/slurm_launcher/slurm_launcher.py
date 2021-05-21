@@ -1,10 +1,14 @@
 import argparse
+import glob
+import os
 import shutil
 import threading
 import time
+from io import BytesIO
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Dict
 from uuid import UUID, uuid4
+from zipfile import ZipFile, ZIP_DEFLATED
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
@@ -14,7 +18,9 @@ from antareslauncher.main_option_parser import (
 )
 from antareslauncher.study_dto import StudyDTO
 from antarest.common.config import Config
+from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import RequestParameters
+from antarest.common.roles import RoleType
 from antarest.launcher.business.ilauncher import ILauncher
 from antarest.storage.service import StorageService
 
@@ -27,6 +33,7 @@ class SlurmLauncher(ILauncher):
         self.callbacks: List[Callable[[str, bool], None]] = []
         self.check_state: bool = True
         self.thread: Optional[threading.Thread] = None
+        self.job_id_to_study_id: Dict[str, str] = {}
 
     def _loop(self) -> None:
         while self.check_state:
@@ -75,9 +82,6 @@ class SlurmLauncher(ILauncher):
         arguments.wait_mode = False
         arguments.check_queue = False
         arguments.json_ssh_config = None
-        arguments.log_dir = str(
-            (Path(self.config.launcher.slurm.local_workspace / "logs"))
-        )
         arguments.job_id_to_kill = None
         arguments.xpansion_mode = False
         arguments.version = False
@@ -103,12 +107,49 @@ class SlurmLauncher(ILauncher):
         return main_parameters
 
     @staticmethod
-    def _delete_input_study(study_path: Path) -> None:
+    def _delete_study(study_path: Path) -> None:
         shutil.rmtree(study_path)
 
     def _callback(self, study: StudyDTO) -> None:
         for callback in self.callbacks:
             callback(study.name, study.with_error)
+
+    def _export_output(self, output_path) -> BytesIO:
+        data = BytesIO()
+        zipf = ZipFile(data, "w", ZIP_DEFLATED)
+        current_dir = os.getcwd()
+        os.chdir(output_path)
+        for path in glob.glob("**", recursive=True):
+            zipf.write(path, path)
+        zipf.close()
+        os.chdir(current_dir)
+        data.seek(0)
+        return data
+
+    def _import_study_output(self, job_id: str) -> None:
+        study_id = self.job_id_to_study_id[job_id]
+
+        output = self._export_output(
+            self.config.launcher.slurm.local_workspace
+            / "OUTPUT"
+            / job_id
+            / "output"
+        )
+
+        self.storage_service.import_output(
+            study_id,
+            output,
+            params=RequestParameters(
+                JWTUser(
+                    id=1,
+                    impersonator=1,
+                    type="users",
+                    groups=[
+                        JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
+                    ],
+                )
+            ),
+        )
 
     def _check_studies_state(self) -> None:
         arguments = self._init_launcher_arguments()
@@ -130,9 +171,23 @@ class SlurmLauncher(ILauncher):
 
         study_list = data_repo_tinydb.get_list_of_studies()
 
+        all_done = True
+
         for study in study_list:
+            all_done = all_done and (study.finished or study.with_error)
             if study.finished or study.with_error:
                 self._callback(study)
+                self._import_study_output(study.name)
+                data_repo_tinydb.remove_study(study.name)
+                self._delete_study(
+                    self.config.launcher.slurm.local_workspace
+                    / "OUTPUT"
+                    / study.name
+                )
+                del self.job_id_to_study_id[study.name]
+
+        if all_done:
+            self.stop()
 
     def run_study(
         self, study_uuid: str, version: str, params: RequestParameters
@@ -142,7 +197,9 @@ class SlurmLauncher(ILauncher):
 
         launch_uuid = uuid4()
 
-        study_path = arguments.studies_in_dir / launch_uuid
+        study_path = Path(arguments.studies_in) / str(launch_uuid)
+
+        self.job_id_to_study_id[str(launch_uuid)] = study_uuid
 
         # export study
         self.storage_service.export_study_flat(
@@ -154,6 +211,6 @@ class SlurmLauncher(ILauncher):
         if not self.thread:
             self.start()
 
-        self._delete_input_study(study_path)
+        self._delete_study(study_path)
 
         return launch_uuid
