@@ -1,9 +1,10 @@
 import React from 'react';
 import { createStyles, makeStyles, Theme, Button, Paper, Typography } from '@material-ui/core';
+import { useTranslation } from 'react-i18next';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import CloseIcon from '@material-ui/icons/Close';
-import {GroupDTO, RoleType, RoleDTO } from '../../common/types'
+import {GroupDTO, RoleType, UserRoleDTO } from '../../common/types'
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -44,7 +45,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
      alignItems: 'center'
   },
   role: {
-      flex: '0 0 30px',
+      flex: 'none',
+      height: '40px',
       width: '100%',
       margin: theme.spacing(0.1),
       padding: theme.spacing(1),
@@ -63,30 +65,31 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
     groupsList: Array<GroupDTO>;
-    selectedGroupId: string;
-    roleList: Array<RoleDTO>;
-    onChange: (group_id: string) => void;
-    addRole: (groupId: string) => void;
+    selectedGroup: GroupDTO;
+    roleList: Array<UserRoleDTO>;
+    onChange: (group: GroupDTO) => void;
+    addRole: () => void;
     deleteRole: (group_id: string) => void;
-    updateRoleType: (group_id : string, type: RoleType) => void;
+    updateRole: (group_id : string, type: RoleType) => void;
 }
 
 
 const GroupsAssignmentView = (props: PropTypes) => {
 
-  const {groupsList, selectedGroupId, onChange, roleList, addRole, deleteRole, updateRoleType} = props;
+  const {groupsList, selectedGroup, onChange, roleList, addRole, deleteRole, updateRole} = props;
   const classes = useStyles();
+  const [t] = useTranslation();
 
   return (
     <div className={classes.root}>
         <div className={classes.titleBox}>
-            <Typography className={classes.title}>Permissions</Typography>
+            <Typography className={classes.title}>{t('settings:permissionsLabel')}</Typography>
         </div>
         <div className={classes.groupsList}>
             <Select
-            value={selectedGroupId}
-            onChange={(event: React.ChangeEvent<{ value: unknown }>) => onChange(event.target.value as string)}
-            label="Groupname"
+            value={selectedGroup.id}
+            onChange={(event: React.ChangeEvent<{ value: unknown }>) => onChange(groupsList.find((elm) => event.target.value === elm.id) as GroupDTO)}  
+            label={t("settings:groupNameLabel")}
             className={classes.select}>
                 {
                     groupsList.map((item) =>
@@ -96,26 +99,25 @@ const GroupsAssignmentView = (props: PropTypes) => {
             </Select>
             <Button variant="contained"
                     color="primary" 
-                    onClick={() => addRole(selectedGroupId)}>
-                Add
+                    onClick={addRole}>
+                {t("settings:addButton")}
             </Button>
         </div>
         <div className={classes.roleList}>
             {
                 roleList.map((item) => 
-                    <Paper key={item.group_id} className={classes.role}>
-                            <CloseIcon className={classes.close} onClick={() => deleteRole(item.group_id)} />
-                            <Typography>{(groupsList.find((elm) => item.group_id === elm.id) as GroupDTO).name }</Typography>
+                    <Paper key={item.id} className={classes.role}>
+                            <CloseIcon className={classes.close} onClick={() => deleteRole(item.id)} />
+                            <Typography>{item.name }</Typography>
                             <Select
-                                value={item.type}
-                                onChange={(event: React.ChangeEvent<{ value: unknown }>) => updateRoleType(item.group_id, event.target.value as RoleType)}
-                                label="Groupname"
+                                value={item.role}
+                                onChange={(event: React.ChangeEvent<{ value: unknown }>) => updateRole(item.id, event.target.value as RoleType)}
+                                label={t("settings:roleLabel")}
                                 className={classes.select}>
-
-                                <MenuItem value={10}>READER</MenuItem>
-                                <MenuItem value={20}>WRITTER</MenuItem>
-                                <MenuItem value={30}>RUNNER</MenuItem>
-                                <MenuItem value={40}>ADMIN</MenuItem>
+                                <MenuItem value={RoleType.READER}>{t('settings:readerRole')}</MenuItem>
+                                <MenuItem value={RoleType.WRITER}>{t('settings:writerRole')}</MenuItem>
+                                <MenuItem value={RoleType.RUNNER}>{t('settings:runnerRole')}</MenuItem>
+                                <MenuItem value={RoleType.ADMIN}>{t('settings:adminRole')}</MenuItem>
                             </Select>
                     </Paper>
                 )

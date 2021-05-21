@@ -2,6 +2,7 @@ import React from 'react';
 import { makeStyles, createStyles, Theme, Typography, Button, Paper } from '@material-ui/core';
 import CreateIcon from '@material-ui/icons/Create';
 import DeleteIcon from '@material-ui/icons/Delete';
+import {IDType } from '../../common/types'
 
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
@@ -13,7 +14,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         flexFlow: 'row nowrap',
         justifyContent: 'flex-start',
         color: theme.palette.primary.main,
-        margin: theme.spacing(2),
+        margin: theme.spacing(3),
     },
     iconsContainer:
     {
@@ -35,11 +36,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 }));
   
 interface PropTypes {
-    id: string | number,
-    key: string | number,
+    id: IDType,
+    key: IDType,
     value: string,
-    onDeleteCLick: (id: string | number) => void,
-    onUpdateClick: (id : string | number) => void
+    onDeleteCLick: (id: IDType) => void,
+    onUpdateClick: (id : IDType) => void
 }
 
 const ItemSettings = (props: PropTypes) => {

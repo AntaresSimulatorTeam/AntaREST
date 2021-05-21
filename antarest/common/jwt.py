@@ -54,6 +54,11 @@ class JWTUser:
     def is_site_admin(self) -> bool:
         return "admin" in [g.id for g in self.groups]
 
+    def is_super_admin(self) -> bool:
+        return ("admin", RoleType.ADMIN) in [
+            (g.id, g.role) for g in self.groups
+        ]
+
     def is_group_admin(self, groups: Union[Group, List[Group]]) -> bool:
         if isinstance(groups, Group):
             return any(

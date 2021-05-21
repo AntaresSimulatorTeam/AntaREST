@@ -63,7 +63,7 @@ const GenericSettingView = (props: PropsWithChildren<PropTypes>) => {
         <InputBase
             className={classes.searchbar}
             placeholder={placeholder}
-            onChange={(event) => debounce(searchFilter, 200)(event.target.value)} // Mettre le delay dans le fichier de config ?
+            onChange={(event) => debounce(searchFilter, 200)(event.target.value)}
             endAdornment = {(
               <InputAdornment position="start">
                 <SearchIcon className={classes.searchicon} />

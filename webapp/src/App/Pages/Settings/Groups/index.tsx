@@ -6,8 +6,9 @@ import { AppState } from '../../../reducers';
 import GenericSettingView from '../../../../components/Settings/GenericSettingView';
 import ItemSettings from '../../../../components/Settings/ItemSettings';
 import GroupModal from './GroupModal'
-import { getGroups} from '../../../../services/api/user';
-import {GroupDTO } from '../../../../common/types'
+import { getGroups, createGroup, updateGroup, deleteGroup} from '../../../../services/api/user';
+import {GroupDTO, IDType } from '../../../../common/types';
+import ConfirmationModal from '../../../../components/ui/ConfirmationModal'
 
 const mapState = (state: AppState) => ({
     user: state.auth.user,
@@ -24,9 +25,10 @@ const GroupsSettings = (props: PropTypes) => {
 
     // Group modal
     const [openModal, setOpenModal] = useState<boolean>(false);
-    const [isNewGroup, setNewGroup] = useState<boolean>(true);
+    const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
     const [groupList, setGroupList] = useState<GroupDTO[]>([]);
     const [selectedGroup, setActiveGroup] = useState<GroupDTO>();
+    const [idForDeletion, setIdForDeletion] = useState<IDType>('');
     const [filter, setFilter] = useState<string>("");
     const {user} = props;
 
@@ -36,34 +38,79 @@ const GroupsSettings = (props: PropTypes) => {
     }
 
     const createNewGroup = () => {
-      setNewGroup(true)
       setOpenModal(true);
       setActiveGroup(undefined);
     }
 
-    const updateGroup = (group_id: string | number) => {
-      setNewGroup(false);
+    const onUpdateClick = (group_id: IDType) => {
       setActiveGroup(groupList.find((item) => item.id === group_id));
       setOpenModal(true);
     }
 
-    const deleteGroup = (id: string | number) => {
-      // 1) Call backend (Delete)
-      // 2) Delete group locally (from groupList) or reload groupList from Backend ?
+    const onDeleteClick = (id: IDType) => {
+      setIdForDeletion(id);
+      setOpenConfirmationModal(true);
+    }
+
+    const manageGroupDeletion = async () => {
+        try{
+          // 1) Call backend (Delete)
+          const deletedGroupId = await deleteGroup(idForDeletion as string);
+          // 2) Delete group locally from groupList
+          setGroupList(groupList.filter((item) => item.id !== deletedGroupId));
+          console.log(deletedGroupId);
+          enqueueSnackbar(t('settings:onGroupDeleteSuccess'), { variant: 'success' });
+        }
+        catch(e)
+        {
+            enqueueSnackbar(t('settings:onGroupDeleteError'), { variant: 'error' }); 
+        }
+        setIdForDeletion(-1);
+        setOpenConfirmationModal(false);
     }
 
     const onModalClose = () => {
-      // 1) Close UserModal
       setOpenModal(false);
-      // 2) Reload user list ?
     }
+
+    const onModalSave = async (name: string) => {
+      try{
+          if(!!selectedGroup)
+          {
+              // Call backend here
+              const updatedGroup = await updateGroup(selectedGroup.id, name);
+              const tmpList = ([] as GroupDTO[]).concat(groupList);
+              const index = tmpList.findIndex((item) => item.id === selectedGroup.id)
+              if(index >= 0)
+              {
+                tmpList[index].name = updatedGroup.name;
+                setGroupList(tmpList);
+                enqueueSnackbar(t('settings:onGroupUpdate'), { variant: 'success' });
+                console.log(updatedGroup);
+              }  
+          }
+          else
+          {
+              // Call backend here
+              const newGroup = await createGroup(name);
+              setGroupList(groupList.concat(newGroup));
+              setActiveGroup(newGroup);
+              enqueueSnackbar(t('settings:onGroupCreation'), { variant: 'success' });
+              console.log(newGroup);      
+          }
+      }
+      catch(e)
+      {
+          enqueueSnackbar(t('settings:onGroupSaveError'), { variant: 'error' });
+      }
+  }
 
     useEffect(() => {
       const init = async () =>{
 
         try {
           const groups = await getGroups();
-          setGroupList(groups);
+          setGroupList(groups.filter((item) => item.id !== "admin"));
   
         } catch (e) {
           enqueueSnackbar(t('settings:groupsError'), { variant: 'error' });
@@ -80,16 +127,23 @@ const GroupsSettings = (props: PropTypes) => {
                           onButtonClick={createNewGroup}>
                           {
                             groupList.map((item) => 
-                             matchFilter(item.name) && 
+                             matchFilter(item.name) &&
+                             item.id !== 'admin' && 
                                           <ItemSettings key={item.id}
                                             id={item.id}
                                             value={String(item.name)}
-                                            onDeleteCLick={deleteGroup}
-                                            onUpdateClick={updateGroup} />)
+                                            onDeleteCLick={onDeleteClick}
+                                            onUpdateClick={onUpdateClick} />)
                           }
         {openModal && <GroupModal open={openModal}
                                   onClose={onModalClose}
-                                  group={{isNewGroup, item: selectedGroup}}/>}
+                                  onSave={onModalSave}
+                                  group={selectedGroup}/>}
+        {openConfirmationModal && <ConfirmationModal open={openConfirmationModal}
+                                                     title={t('main:confirmationModalTitle')}
+                                                     message={t('settings:deleteGroupConfirmation')}
+                                                     handleYes={manageGroupDeletion}
+                                                     handleNo={() => setOpenConfirmationModal(false)}/>}
       </GenericSettingView>
     );
 

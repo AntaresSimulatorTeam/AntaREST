@@ -27,6 +27,8 @@ from antarest.login.model import (
     BotCreateDTO,
     UserCreateDTO,
     RoleCreationDTO,
+    BotDTO,
+    BotRoleUpdateDTO,
 )
 from antarest.login.service import LoginService
 
@@ -201,6 +203,16 @@ def create_login_api(
         else:
             return "", 404
 
+    @bp.route("/users/infos/<int:id>", methods=["GET"])
+    @auth.protected()
+    def users_get_infos(id: int) -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        u = service.get_user_infos(id, params)
+        if u:
+            return jsonify(u.to_dict())
+        else:
+            return "", 404
+
     @bp.route("/users", methods=["POST"])
     @auth.protected()
     def users_create() -> Any:
@@ -250,7 +262,7 @@ def create_login_api(
         group = Group.from_dict(json.loads(request.data))
         return jsonify(service.save_group(group, params).to_dict())
 
-    @bp.route("/groups/<int:id>", methods=["DELETE"])
+    @bp.route("/groups/<string:id>", methods=["DELETE"])
     @auth.protected()
     def groups_delete(id: str) -> Any:
         params = RequestParameters(user=Auth.get_current_user())
@@ -287,84 +299,29 @@ def create_login_api(
     @bp.route("/bots", methods=["POST"])
     @auth.protected()
     def bots_create() -> Any:
-        """
-        Create Bot
-        ---
-        responses:
-          '200':
-            content:
-              application/json:
-                schema:
-                  type: string
-                  description: Bot token API
-            description: Successful operation
-          '400':
-            description: Invalid request
-          '401':
-            description: Unauthenticated User
-          '403':
-            description: Unauthorized
-        consumes:
-            - application/json
-        parameters:
-        - in: body
-          name: body
-          required: true
-          description: Bot
-          schema:
-            id: User
-            required:
-                - name
-                - group
-                - role
-            properties:
-                name:
-                    type: string
-                    description: Bot name
-                isAuthor:
-                    type: boolean
-                    description: Set Bot impersonator between itself or it owner
-                group:
-                    type: string
-                    description: group id linked to bot
-                role:
-                    type: int
-                    description: RoleType used by bot. Should be lower or equals ot owner role type inside same group
-        tags:
-          - Bot
-        """
         params = RequestParameters(user=Auth.get_current_user())
-        create = BotCreateDTO.from_dict(json.loads(request.data))
+        create = BotDTO.from_dict(json.loads(request.data))
         bot = service.save_bot(create, params)
 
         if not bot:
             return UserHasNotPermissionError()
 
-        group = service.get_group(create.group, params)
-        if not group:
-            return UserHasNotPermissionError()
+        return jsonify(bot.to_dict()), 200
 
-        jwt = JWTUser(
-            id=bot.id,
-            impersonator=bot.get_impersonator(),
-            type=bot.type,
-            groups=[JWTGroup(id=group.id, name=group.name, role=create.role)],
-        )
-        tokens = generate_tokens(jwt, expire=timedelta(days=368 * 200))
-        return tokens["access_token"]
-
-    @bp.route("/bots/<int:id>", methods=["GET"])
+    @bp.route("/bots", methods=["PUT"])
     @auth.protected()
-    def get_bot(id: int) -> Any:
+    def bots_update() -> Any:
         params = RequestParameters(user=Auth.get_current_user())
-        bot = service.get_bot(id, params)
+        create = BotRoleUpdateDTO.from_dict(json.loads(request.data))
+        bot = service.update_bot(create, params)
+        if not bot:
+            return UserHasNotPermissionError()
         return jsonify(bot.to_dict()), 200
 
     @bp.route("/bots", methods=["GET"])
     @auth.protected()
     def get_all_bots() -> Any:
         params = RequestParameters(user=Auth.get_current_user())
-
         owner = request.args.get("owner", default=None, type=int)
         bots = (
             service.get_all_bots_by_owner(owner, params)
@@ -372,6 +329,34 @@ def create_login_api(
             else service.get_all_bots(params)
         )
         return jsonify([b.to_dict() for b in bots]), 200
+
+    @bp.route("/bots/infos/<int:id>", methods=["GET"])
+    @auth.protected()
+    def bots_get_infos(id: int) -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        b = service.get_bots_infos(id, params)
+        if b:
+            return jsonify(b.to_dict())
+        else:
+            return "", 404
+
+    @bp.route("/bots/role", methods=["POST"])
+    @auth.protected()
+    def bots_create_role() -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        create = RoleCreationDTO.from_dict(json.loads(request.data))
+        role = service.save_bot_role(create, params)
+
+        if not role:
+            return UserHasNotPermissionError()
+        return jsonify(role.to_dict()), 200
+
+    @bp.route("/bots/<int:id>", methods=["GET"])
+    @auth.protected()
+    def get_bot(id: int) -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        bot = service.get_bot(id, params)
+        return jsonify(bot.to_dict()), 200
 
     @bp.route("/bots/<int:id>", methods=["DELETE"])
     @auth.protected()

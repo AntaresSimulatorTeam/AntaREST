@@ -1,4 +1,4 @@
-import React, {PropsWithChildren} from 'react';
+import React from 'react';
 import { createStyles, makeStyles, Theme, Button, Paper, Typography } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import Modal from '@material-ui/core/Modal';
@@ -36,20 +36,20 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   content: {
       flex: '1',
-      paddingLeft: theme.spacing(2),
-      paddingRight: theme.spacing(2),
       width: '100%',
       display: 'flex',
       flexFlow: 'column nowrap',
+      justifyContent: 'center',
       alignItems: 'center',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      padding: theme.spacing(3)
   },
   footer: {
     height: '60px',
     width: '100%',
     display: 'flex',
     flexFlow: 'row nowrap',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden'      
   },
@@ -63,14 +63,15 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 interface PropTypes {
     open: boolean;
     title: string;
-    handleClose: () => void;
-    handleSave: () => void;
+    message: string;
+    handleNo: () => void;
+    handleYes: () => void;
 }
 
 
-const GenericModal = (props: PropsWithChildren<PropTypes>) => {
+const ConfirmationModal = (props: PropTypes) => {
 
-  const { title, open, handleClose, handleSave, children } = props;
+  const { title, open, message, handleYes, handleNo} = props;
   const classes = useStyles();
   const [t] = useTranslation();
 
@@ -94,20 +95,22 @@ const GenericModal = (props: PropsWithChildren<PropTypes>) => {
             </Typography>
         </div>
         <div className={classes.content}>
-            {children}
+          <Typography >
+              {message}
+            </Typography>
         </div>
         <div className={classes.footer}>
-        <Button variant="contained"
-                className={classes.button}
-                onClick={handleClose}>
-                {t('settings:cancelButton')}
-        </Button>
-        <Button variant="contained"
-                className={classes.button}
-                color="primary" 
-                onClick={handleSave}>
-                {t('settings:saveButton')}
-        </Button>  
+            <Button variant="contained"
+                    className={classes.button}
+                    onClick={handleNo}>
+                    {t('main:noButton')}
+            </Button>
+            <Button variant="contained"
+                    className={classes.button}
+                    color="primary" 
+                    onClick={handleYes}>
+                    {t('main:yesButton')}
+            </Button>  
         </div>
     </Paper>
     </Fade>
@@ -115,5 +118,5 @@ const GenericModal = (props: PropsWithChildren<PropTypes>) => {
   );
 };
 
-export default GenericModal;
+export default ConfirmationModal;
 

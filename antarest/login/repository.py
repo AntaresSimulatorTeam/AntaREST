@@ -136,6 +136,15 @@ class BotRepository:
         self.session.commit()
         return bot
 
+    def update(self, bot: Bot) -> Bot:
+        res = self.session.query(exists().where(Bot.id == bot.id)).scalar()
+        if res:
+            self.session.merge(bot)
+        else:
+            raise ValueError("Bot doesn't exist")
+        self.session.commit()
+        return bot
+
     def get(self, id: int) -> Optional[Bot]:
         bot: Bot = self.session.query(Bot).get(id)
         return bot

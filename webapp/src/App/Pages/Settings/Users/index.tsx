@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { AppState } from '../../../reducers';
 import GenericSettingView from '../../../../components/Settings/GenericSettingView';
 import ItemSettings from '../../../../components/Settings/ItemSettings';
-import { getUsers} from '../../../../services/api/user';
-import {UserDTO } from '../../../../common/types';
+import { getUsers, deleteUser} from '../../../../services/api/user';
+import {UserDTO, IDType } from '../../../../common/types';
 import UserModal from './UserModal'
+import ConfirmationModal from '../../../../components/ui/ConfirmationModal'
 
 const mapState = (state: AppState) => ({
     user: state.auth.user,
@@ -22,41 +23,54 @@ const UsersSettings = (props: PropTypes) => {
     const [t] = useTranslation();
     const { enqueueSnackbar } = useSnackbar();
     const [userList, setUserList] = useState<UserDTO[]>([]);
+    const [idForDeletion, setIdForDeletion] = useState<IDType>(-1);
     const [filter, setFilter] = useState<string>("");
     const {user} = props;
 
     // User modal
     const [openModal, setOpenModal] = useState<boolean>(false);
-    const [newUser, setNewUser] = useState<boolean>(true);
+    const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
     const [currentUser, setCurrentUser] = useState<UserDTO|undefined>();
 
     const createNewUser = () => {
-          // 1) We want to create a new user
-          setNewUser(true);
-          // 2) Open modal
+          setCurrentUser(undefined);
           setOpenModal(true);
     }
 
-    const updateUser = (id: string | number) => {
-      // 1) We want to update user
-      setNewUser(false);
-      // 2) Set current user id
+    const onUpdateClick = (id: IDType) : void => {
       setCurrentUser(userList.find((item)=> item.id === id));
-      // 3) Open modal
       setOpenModal(true);
-      // 4) Reload user list ?
   }
 
-    const deleteUser = (id: string | number) => {
+  const onDeleteClick = (id: IDType) => {
+    setIdForDeletion(id);
+    setOpenConfirmationModal(true);
+  }
+
+  const manageUserDeletion = async () => {
       // Implement "are you sure ?" modal. Then =>
-      // Call backend for deletion
-      // Reload user list ?
-    }
+      try
+      {
+        const res = await deleteUser(idForDeletion as number);
+        setUserList(userList.filter((item) => item.id !== idForDeletion));
+        console.log(res);
+        enqueueSnackbar(t('settings:onUserDeleteSuccess'), { variant: 'success' });
+      }
+      catch(e)
+      {
+        enqueueSnackbar(t('settings:onUserDeleteError'), { variant: 'error' });
+      }
+      setIdForDeletion(-1);
+      setOpenConfirmationModal(false);
+  }
 
     const onModalClose = () => {
-      // 1) Close UserModal
       setOpenModal(false);
-      // 2) Reload user list ?
+    }
+
+    const onNewUserCreaion = (newUser : UserDTO) : void => {
+      setUserList(userList.concat(newUser));
+      setCurrentUser(newUser);
     }
 
     const matchFilter = (input: string) : boolean => {
@@ -69,8 +83,6 @@ const UsersSettings = (props: PropTypes) => {
 
         try {
           const users = await getUsers();
-          console.log('USER LIST')
-          console.log(users)
           setUserList(users);
   
         } catch (e) {
@@ -89,16 +101,23 @@ const UsersSettings = (props: PropTypes) => {
                           {
                             userList.map((item) => 
                             item.name && // To delete
+                            item.name !== 'admin' && 
                             matchFilter(item.name) && 
                                           <ItemSettings key={item.id}
                                             id={item.id}
                                             value={String(item.name)}
-                                            onDeleteCLick={deleteUser}
-                                            onUpdateClick={updateUser} />)
+                                            onDeleteCLick={onDeleteClick}
+                                            onUpdateClick={onUpdateClick} />)
                           }
         {openModal && <UserModal  open={openModal} // Why 'openModal &&' ? => Because otherwise previous data are still present
-                                  user={{newUser, userInfos: currentUser}}
+                                  userInfos={currentUser}
+                                  onNewUserCreaion={onNewUserCreaion}
                                   onClose={onModalClose} />}
+        {openConfirmationModal && <ConfirmationModal open={openConfirmationModal}
+                                                     title={t('main:confirmationModalTitle')}
+                                                     message={t('settings:deleteUserConfirmation')}
+                                                     handleYes={manageUserDeletion}
+                                                     handleNo={() => setOpenConfirmationModal(false)}/>}
       </GenericSettingView>
 
     );

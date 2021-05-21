@@ -29,7 +29,7 @@ const UserSettings = (props: PropTypes) => {
   useEffect(() => {
 
     // Is admin ?
-    if(user && isUserAdmin(user.accessToken))
+    if(!!user && isUserAdmin(user))
       setAdminStatus(true);
     else
       setAdminStatus(false);
@@ -46,7 +46,8 @@ const UserSettings = (props: PropTypes) => {
     [t('settings:tokens')]: () => <TokensSettings />,
   }
 
-  return (<GenericSettings items={isAdmin ? adminUserData : normalUserData} />)
+  // Why !!user ? => Error otherwise (NavState)
+  return !!user ? (<GenericSettings items={isAdmin ? adminUserData : normalUserData} />) : null;
 };
 
 export default connector(UserSettings);

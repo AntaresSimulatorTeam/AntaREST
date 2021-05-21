@@ -25,6 +25,7 @@ from antarest.login.model import (
     BotCreateDTO,
     Bot,
     UserCreateDTO,
+    BotDTO,
 )
 
 PARAMS = RequestParameters(
@@ -297,7 +298,7 @@ def test_group_delete() -> None:
     res = client.delete("/groups/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
-    service.delete_group.assert_called_once_with(0, PARAMS)
+    service.delete_group.assert_called_once_with("0", PARAMS)
 
 
 @pytest.mark.unit_test
@@ -354,7 +355,7 @@ def test_role_delete() -> None:
 @pytest.mark.unit_test
 def test_bot_create() -> None:
     bot = Bot(id=2, owner=3, name="bot", is_author=False)
-    create = BotCreateDTO(name="bot", group="group", role=RoleType.ADMIN)
+    create = BotDTO(name="bot", is_author=False)
 
     service = Mock()
     service.save_bot.return_value = bot
@@ -369,7 +370,7 @@ def test_bot_create() -> None:
     )
 
     assert res.status_code == 200
-    assert len(res.data.decode().split(".")) == 3
+    assert res.json == bot.to_dict()
 
 
 @pytest.mark.unit_test

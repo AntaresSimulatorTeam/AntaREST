@@ -4,8 +4,9 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import GenericModal from '../../../../components/Settings/GenericModal';
 import GroupsAssignmentView from '../../../../components/Settings/GroupsAssignmentView';
-import { getGroups} from '../../../../services/api/user';
-import {GroupDTO, RoleType, RoleDTO, UserDTO } from '../../../../common/types'
+import { getGroups, getUserInfos} from '../../../../services/api/user';
+import {GroupDTO, RoleType, UserRoleDTO, UserDTO } from '../../../../common/types';
+import {prepareDBForRole, createNewRoles} from './utils';
 
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
@@ -28,10 +29,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
     open: boolean;
-    user: {
-        newUser: boolean;
-        userInfos: UserDTO|undefined;
-    };
+    userInfos?: UserDTO;
+    onNewUserCreaion : (newUser : UserDTO) => void;
     onClose: () => void;
 };
 
@@ -40,112 +39,115 @@ const UserModal = (props: PropTypes) => {
     const classes = useStyles();
     const [t] = useTranslation();
     const { enqueueSnackbar } = useSnackbar();
-    const {open, user, onClose} = props;
-    const [groupList, setGroupList] = useState<GroupDTO[]>([]); // Which type ?
-    const [roleList, setRoleList] = useState<RoleDTO[]>([]); // Which type ? 
+    const {open, userInfos, onNewUserCreaion, onClose} = props;
+    const [groupList, setGroupList] = useState<GroupDTO[]>([]); 
+    const [roleList, setRoleList] = useState<UserRoleDTO[]>([]);
+    const [initialRoleList, setInitialRoleList] = useState<UserRoleDTO[]>([]);
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');   
-    const [selectedGroupId, setActiveGroup] = useState<string>(''); // Current selected group
+    const [selectedGroup, setActiveGroup] = useState<GroupDTO>({id: '', name:''});
 
-    const onChange = (group_id: string) => {
-        
-        setActiveGroup(group_id);
-
-        // Est-ce que l'on connaît déjà tous les groupes 
-        console.log('Change '+group_id)
+    const onChange = (group: GroupDTO) => {
+        setActiveGroup(group);
     }
 
-    const addRole = (groupId: string) => {
-
-        //1) Look if role already add to list
-        if(roleList.find((item) => item.group_id === groupId))
+    const addRoleToList = () => {
+        //1) Look if role is already added to list
+        if(roleList.find((item) => item.id === selectedGroup.id))
             return ;
-
-        //2) Create a new role with empty type
-        const newRole : RoleDTO = {
-            group_id: groupId,
-            user: user && user.newUser && user.userInfos ? user.userInfos.id : -1,
-            type: 10
+        //2) Create a new role with type == READER
+        const newRole : UserRoleDTO = {
+            id: selectedGroup.id,
+            name: selectedGroup.name,
+            role: RoleType.READER // READER by default
         }
-        setRoleList(roleList.concat([newRole]));
         //3) Add the role in roleList
-        console.log('Add role') 
+        setRoleList(roleList.concat([newRole]));
     }
 
-    const deleteRole = (group_id: string) => {
-
-        // Delete group from roleList
-        const tmpList = roleList.filter((item) => item.group_id !== group_id);
+    const deleteRoleFromList = (group_id: string) => {
+        // Delete role from roleList
+        const tmpList = roleList.filter((item) => item.id !== group_id);
         setRoleList(tmpList);
-        console.log('Delete '+group_id)
     }
 
-    const updateRoleType = (group_id : string, type: RoleType) => {
-        
+    // Update Role in roleList
+    const updateRoleFromList = (group_id: string, role : RoleType) => {
         // 1) Find the role
-        const tmpList : RoleDTO[] = ([] as RoleDTO[]).concat(roleList);
-        const index = roleList.findIndex((item) => item.group_id === group_id);
+        const tmpList : UserRoleDTO[] = ([] as UserRoleDTO[]).concat(roleList);
+        const index = roleList.findIndex((item) => item.id === group_id);
         if(index >= 0)
         {
-            tmpList[index].type = type;
+            // 2) Update role in roleList
+            tmpList[index].role = role;
             setRoleList(tmpList);
         }
-
-        // 2) Update the type 
-        console.log('Set Group Role (id: '+group_id+', newType : '+type+')')
     }
 
-    const onSave = () => {
-        if(user.newUser)
-        {
-            // 1) Call backend (create user)
-            // 2) call enqueueSnackbar with green success message
+    const onSave = async () => {
+        try{
+            // 1) Create new user or delete previous role list in DB
+            let tmpUserId = await prepareDBForRole(username,password,initialRoleList,onNewUserCreaion,userInfos);
+            // 2) Create roles
+            await createNewRoles(tmpUserId, roleList);
+            setInitialRoleList(roleList);
+
+            if(!!userInfos)
+                enqueueSnackbar(t('settings:onUserUpdate'), { variant: 'success' });
+            else
+            enqueueSnackbar(t('settings:onUserCreation'), { variant: 'success' });
         }
-        else
+        catch(e)
         {
-             // 1) Call backend (update user roles)
-            // 2) call enqueueSnackbar with green success message           
+            enqueueSnackbar(t('settings:onUserSaveError'), { variant: 'error' });
         }
     }
 
     useEffect(() => {
         const init = async () =>{
-
             try {
-              // 1) Get list of all groups and it to groupList
+              // 1) Get list of all groups and add it to groupList or locally from access_token
               const groups = await getGroups();
-              setGroupList(groups);
+              const filteredGroup = groups.filter((item) => item.id !== "admin");
+              setGroupList(filteredGroup);
 
-              if(groups.length > 0)
-                setActiveGroup(groups[0].id);
-      
-                // 2) If !user.newUser => get list of user roles and update roleList
+              if(filteredGroup.length > 0)
+                setActiveGroup(filteredGroup[0]);
 
-            } catch (e) {
+                // 2) If userInfos exist => get list of user roles and update roleList
+                if(!!userInfos)
+                {
+                    const users =  await getUserInfos(userInfos.id);
+                    const filteredRoles = users.roles.filter((item) => item.id !== "admin")
+                    console.log(filteredRoles)
+                    setRoleList(filteredRoles);
+                    setInitialRoleList(filteredRoles);
+                }
+            }
+            catch (e)
+            {
               enqueueSnackbar(t('settings:groupsError'), { variant: 'error' });
             }
-      
           }
           init();
-    }, [t, enqueueSnackbar])
+    }, [userInfos, t, enqueueSnackbar])
 
     return (
-
         <GenericModal 
         open={open}
         handleClose={onClose}
         handleSave={onSave}
-        title={user.newUser ? 'Create new user' : (user.userInfos ? user.userInfos.name : '')}>
+        title={userInfos ? userInfos.name : t('settings:newUserTitle')}>
             {
-                user.newUser &&
+                !userInfos &&
                 (<div className={classes.infos}>
                     <TextField className={classes.idFields}
                                value={username}
                                onChange={(event) => setUsername(event.target.value as string)}
-                               label="Username"
+                               label={t('settings:usernameLabel')}
                                variant="outlined" />
                     <TextField className={classes.idFields}
-                            label="Password"
+                            label={t('settings:passwordLabel')}
                             value={password}
                             onChange={(event) => setPassword(event.target.value as string)}
                             type="password"
@@ -153,13 +155,14 @@ const UserModal = (props: PropTypes) => {
                 </div>)
 
             }
-          <GroupsAssignmentView groupsList={groupList}
+
+            <GroupsAssignmentView groupsList={groupList}
                                 roleList={roleList}
-                                selectedGroupId={selectedGroupId}
+                                selectedGroup={selectedGroup}
                                 onChange={onChange}
-                                addRole={addRole}
-                                deleteRole={deleteRole}
-                                updateRoleType={updateRoleType} />
+                                addRole={addRoleToList}
+                                deleteRole={deleteRoleFromList}
+                                updateRole={updateRoleFromList} />
       </GenericModal>       
     )
 

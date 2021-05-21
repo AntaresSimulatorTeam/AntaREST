@@ -21,12 +21,14 @@ export interface StudyMetadata {
   version: string;
 }
 
-export interface UserDTO {
-  id: number;
-  name: string;
+export enum RoleType {
+  ADMIN = 40,
+  RUNNER = 30,
+  WRITER =  20,
+  READER = 10
 }
 
-export type RoleType = 40 | 30 | 20 | 10;
+export type IDType = number | string;
 
 export interface RoleDTO {
   group_id: string;
@@ -34,11 +36,23 @@ export interface RoleDTO {
   type: RoleType;
 }
 
-export interface UserGroupInfo {
+export interface UserDTO {
   id: number;
+  name: string;
+}
+
+export interface UserRoleDTO {
+  id: string;
   name: string;
   role: RoleType;
 }
+
+export interface UserInfosDTO {
+  id: number;
+  name: string;
+  roles: Array<UserRoleDTO>
+}
+
 
 export interface GroupDTO {
   id: string;
@@ -47,9 +61,32 @@ export interface GroupDTO {
 
 export interface UserInfo {
   user: string;
+  groups: Array<UserRoleDTO>;
+  id: number;
+  impersonator: number;
+  type: string;
   accessToken: string;
   refreshToken: string;
   expirationDate?: Moment;
 }
+
+export interface TokenDTO {
+  id: number;
+  name: string;
+  owner: number;
+  isAuthor: boolean;
+}
+
+export interface BotDTO {
+  name: string;
+  is_author: boolean;
+}
+
+export interface BotRoleUpdateDTO {
+  id: number;
+  name: string;
+  is_author: boolean;
+}
+
 
 export default {};

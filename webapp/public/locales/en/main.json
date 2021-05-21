@@ -14,5 +14,8 @@
   "launch": "Launch",
   "studies": "Studies",
   "jobs": "Jobs",
-  "unknown": "Unkown"
+  "unknown": "Unkown",
+  "confirmationModalTitle": "Confirmation",
+  "yesButton": "Yes",
+  "noButton": "No"
 }
