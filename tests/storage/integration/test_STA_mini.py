@@ -8,12 +8,10 @@ from unittest.mock import Mock, call
 import pytest
 from flask import Flask
 
-from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.roles import RoleType
 from antarest.storage.main import build_storage
-from antarest.storage.model import Study
 from antarest.storage.service import StorageService
 from antarest.common.requests import (
     RequestParameters,
@@ -22,7 +20,6 @@ from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import (
     de_fr_values_hourly,
 )
-from tests.storage.integration.data.input_link import input_link
 
 ADMIN = JWTUser(
     id=1,
@@ -172,14 +169,18 @@ def test_sta_mini_study_antares(
         (
             "/studies/STA-mini/input/hydro/common/capacity/reservoir_fr",
             {
-                0: {i: 0 for i in range(365)},
-                1: {i: 0.5 for i in range(365)},
-                2: {i: 1 for i in range(365)},
+                "columns": [0, 1, 2],
+                "index": list(range(365)),
+                "data": [[0, 0.5, 1]] * 365,
             },
         ),
         (
             "/studies/STA-mini/input/thermal/series/fr/05_nuclear/series",
-            {0: {i: 2000 for i in range(8760)}},
+            {
+                "columns": [0],
+                "index": list(range(8760)),
+                "data": [[2000]] * 8760,
+            },
         ),
         (
             "/studies/STA-mini/input/hydro/prepro/correlation/general/mode",
@@ -215,7 +216,11 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/links/fr/it",
-            input_link,
+            {
+                "columns": list(range(8)),
+                "index": list(range(8760)),
+                "data": [[100000, 100000, 0.01, 0.01, 0, 0, 0, 0]] * 8760,
+            },
         ),
         (
             "/studies/STA-mini/input/load/prepro/fr/k",
@@ -232,7 +237,11 @@ def test_sta_mini_study_antares(
         ),
         (
             "/studies/STA-mini/input/load/series/load_fr",
-            {0: {i: (i % 168) * 100 for i in range(8760)}},
+            {
+                "columns": [0],
+                "index": list(range(8760)),
+                "data": [[i % 168 * 100] for i in range(8760)],
+            },
         ),
         (
             "/studies/STA-mini/input/misc-gen/miscgen-fr",
@@ -361,6 +370,11 @@ def test_sta_mini_output(storage_service, url: str, expected_output: str):
 
 @pytest.mark.integration_test
 def test_sta_mini_copy(storage_service) -> None:
+    input_link = {
+        "columns": [0],
+        "index": list(range(8760)),
+        "data": [[i % 168 * 100] for i in range(8760)],
+    }
 
     source_study_name = "STA-mini"
     destination_study_name = "copy-STA-mini"

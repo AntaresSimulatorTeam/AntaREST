@@ -33,14 +33,14 @@ class InputSeriesMatrix(INode[SUB_JSON, JSON, JSON]):
                 sep="\t",
                 dtype=float,
                 header=None,
-            ).to_dict()
+            ).to_dict(orient="split")
             return data
         except EmptyDataError:
             return {}
 
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
         self._assert_url(url)
-        pd.DataFrame(data).to_csv(
+        pd.DataFrame(**data).to_csv(
             self.config.path, sep="\t", header=False, index=False
         )
 

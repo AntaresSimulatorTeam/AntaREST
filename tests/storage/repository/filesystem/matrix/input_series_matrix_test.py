@@ -6,7 +6,7 @@ from antarest.storage.repository.filesystem.matrix.input_series_matrix import (
 )
 
 
-def test(tmp_path: Path) -> None:
+def test_get(tmp_path: Path) -> None:
     file = tmp_path / "input.txt"
     content = """
 100000	100000	0.010000	0.010000	0	0	0	0
@@ -19,25 +19,26 @@ def test(tmp_path: Path) -> None:
 
     assert node.get(expanded=True) == "Lazy matrix input"
     assert node.get() == {
-        0: {0: 100000.0, 1: 100000.0},
-        1: {0: 100000.0, 1: 100000.0},
-        2: {0: 0.01, 1: 0.01},
-        3: {0: 0.01, 1: 0.01},
-        4: {0: 0.0, 1: 0.0},
-        5: {0: 0.0, 1: 0.0},
-        6: {0: 0.0, 1: 0.0},
-        7: {0: 0.0, 1: 0.0},
-    }
-    node.save({i: {0: i} for i in range(0, 8)})
-    assert node.get() == {
-        0: {0: 0.0},
-        1: {0: 1.0},
-        2: {0: 2.0},
-        3: {0: 3.0},
-        4: {0: 4.0},
-        5: {0: 5.0},
-        6: {0: 6.0},
-        7: {0: 7.0},
+        "columns": [0, 1, 2, 3, 4, 5, 6, 7],
+        "data": [
+            [100000.0, 100000.0, 0.01, 0.01, 0.0, 0.0, 0.0, 0.0],
+            [100000.0, 100000.0, 0.01, 0.01, 0.0, 0.0, 0.0, 0.0],
+        ],
+        "index": [0, 1],
     }
 
-    assert not node.check_errors({i: {0: i} for i in range(0, 8)})
+
+def test_save(tmp_path: Path) -> None:
+    file = tmp_path / "input.txt"
+    file.write_text("\n")
+
+    config = StudyConfig(study_path=file)
+    node = InputSeriesMatrix(config)
+
+    node.save({"columns": [0, 1], "data": [[1, 2], [3, 4]], "index": [0, 1]})
+    assert (
+        file.read_text()
+        == """1\t2
+3\t4
+"""
+    )
