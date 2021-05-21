@@ -15,7 +15,12 @@ class INode(ABC, Generic[G, S, V]):
         pass
 
     @abstractmethod
-    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> G:
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> G:
         pass
 
     @abstractmethod

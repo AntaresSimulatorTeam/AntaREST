@@ -222,6 +222,15 @@ def test_sta_mini_study_antares(
             "file/STA-mini/input/load/prepro/fr/k.txt",
         ),
         (
+            "/studies/STA-mini/input/load/series",
+            {
+                "load_de": "Lazy matrix input",
+                "load_es": "Lazy matrix input",
+                "load_fr": "Lazy matrix input",
+                "load_it": "Lazy matrix input",
+            },
+        ),
+        (
             "/studies/STA-mini/input/load/series/load_fr",
             {0: {i: (i % 168) * 100 for i in range(8760)}},
         ),
@@ -304,6 +313,10 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
             "file/STA-mini/output/20201014-1422eco-hello/economy/mc-all/grid/areas.txt",
         ),
         ("/studies/STA-mini/output/1/economy/mc-all/links/de/fr", {}),
+        (
+            "/studies/STA-mini/output/1/economy/mc-ind/00001/links/de/fr",
+            {"values-hourly": "Lazy matrix output"},
+        ),
         (
             "/studies/STA-mini/output/1/economy/mc-ind/00001/links/de/fr/values-hourly",
             de_fr_values_hourly,

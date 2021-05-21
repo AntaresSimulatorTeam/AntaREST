@@ -22,26 +22,37 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
     def build(self, config: StudyConfig) -> TREE:
         pass
 
-    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> JSON:
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> JSON:
         children = self.build(self.config)
 
+        # item remain to url forward request
         if url and url != [""]:
             names, sub_url = self.extract_child(children, url)
+            # item is unique in url
             if len(names) == 1:
                 return children[names[0]].get(  # type: ignore
                     sub_url, depth=depth
                 )
+            # many items asked or * asked
             else:
                 return {
                     key: children[key].get(sub_url, depth=depth)
                     for key in names
                 }
 
+        # url request reached, expand downstream according to depth asked
         else:
             if depth == 0:
                 return {}
             json = {
-                name: node.get(depth=depth - 1) if depth - 1 != 0 else {}
+                name: node.get(depth=depth - 1, expanded=True)
+                if depth - 1 != 0
+                else {}
                 for name, node in children.items()
             }
             return json

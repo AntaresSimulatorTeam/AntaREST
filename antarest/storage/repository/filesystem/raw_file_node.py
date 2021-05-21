@@ -12,7 +12,12 @@ class RawFileNode(INode[str, str, str]):
     def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
 
-    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> str:
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> str:
         self._assert_url(url)
 
         file_path = "/".join(self.config.path.absolute().parts)

@@ -4,12 +4,12 @@ from typing import Optional, List
 
 from pandas.errors import EmptyDataError  # type: ignore
 
-from antarest.common.custom_types import JSON
+from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import INode, TREE
 
 
-class InputSeriesMatrix(INode[JSON, JSON, JSON]):
+class InputSeriesMatrix(INode[SUB_JSON, JSON, JSON]):
     def __init__(self, config: StudyConfig, nb_columns: Optional[int] = None):
         self.config = config
         self.nb_columns = nb_columns
@@ -17,8 +17,16 @@ class InputSeriesMatrix(INode[JSON, JSON, JSON]):
     def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
 
-    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> JSON:
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> SUB_JSON:
         self._assert_url(url)
+        if expanded:
+            return "Lazy matrix input"
+
         try:
             data: JSON = pd.read_csv(
                 self.config.path,

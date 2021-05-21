@@ -11,7 +11,12 @@ from antarest.storage.repository.filesystem.raw_file_node import RawFileNode
 
 
 class BucketNode(FolderNode):
-    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> JSON:
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> JSON:
         concat_url = "/".join(url or [])
         return FolderNode.get(self, [concat_url])
 

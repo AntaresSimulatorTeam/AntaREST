@@ -5,7 +5,7 @@ import numpy as np  # type: ignore
 
 from typing import Optional, List, cast
 
-from antarest.common.custom_types import JSON
+from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import INode, TREE
 from antarest.storage.repository.filesystem.matrix.date_serializer import (
@@ -16,7 +16,7 @@ from antarest.storage.repository.filesystem.matrix.head_writer import (
 )
 
 
-class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
+class OutputSeriesMatrix(INode[SUB_JSON, JSON, JSON]):
     def __init__(
         self,
         config: StudyConfig,
@@ -30,7 +30,15 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
     def build(self, config: StudyConfig) -> TREE:
         pass  # End of tree
 
-    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> JSON:
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> SUB_JSON:
+        if expanded:
+            return "Lazy matrix output"
+
         df = pd.read_csv(
             self.config.path, sep="\t", skiprows=4, na_values="N/A"
         )
