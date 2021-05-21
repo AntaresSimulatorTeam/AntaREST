@@ -31,9 +31,6 @@ def test_init_slurm_launcher_arguments():
     assert not arguments.wait_mode
     assert not arguments.check_queue
     assert arguments.json_ssh_config is None
-    assert arguments.log_dir == str(
-        (Path(config.launcher.slurm.local_workspace / "logs"))
-    )
     assert arguments.job_id_to_kill is None
     assert not arguments.xpansion_mode
     assert not arguments.version
@@ -48,7 +45,7 @@ def test_init_slurm_launcher_arguments():
     )
     assert (
         Path(arguments.log_dir)
-        == config.launcher.slurm.local_workspace / "logs"
+        == config.launcher.slurm.local_workspace / "LOGS"
     )
 
 
