@@ -114,7 +114,7 @@ class SlurmLauncher(ILauncher):
         for callback in self.callbacks:
             callback(study.name, study.with_error)
 
-    def _export_output(self, output_path) -> BytesIO:
+    def _export_output(self, output_path: Path) -> BytesIO:
         data = BytesIO()
         zipf = ZipFile(data, "w", ZIP_DEFLATED)
         current_dir = os.getcwd()
