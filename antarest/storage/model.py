@@ -8,7 +8,7 @@ from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enu
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.common.persistence import DTO, Base
-from antarest.login.model import User, Group
+from antarest.login.model import User, Group, Identity
 
 DEFAULT_WORKSPACE_NAME = "default"
 
@@ -51,8 +51,8 @@ class Study(Base):  # type: ignore
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
-    owner_id = Column(Integer, ForeignKey(User.id))
-    owner = relationship(User, uselist=False)
+    owner_id = Column(Integer, ForeignKey(Identity.id))
+    owner = relationship(Identity, uselist=False)
     groups = relationship(
         "Group", secondary=lambda: groups_metadata, cascade=""
     )
