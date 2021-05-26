@@ -399,7 +399,9 @@ class StorageService:
         study.content_status = content_status
 
         if owner:
-            study.owner = User(id=owner.impersonator)
+            study.owner = self.user_service.get_user(
+                owner.impersonator, params=RequestParameters(user=owner)
+            )
             groups = []
             for gid in group_ids:
                 group = next(filter(lambda g: g.id == gid, owner.groups), None)
