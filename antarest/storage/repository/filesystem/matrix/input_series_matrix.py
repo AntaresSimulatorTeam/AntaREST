@@ -29,7 +29,8 @@ class InputSeriesMatrix(INode[SUB_JSON, JSON, JSON]):
     ) -> SUB_JSON:
         self._assert_url(url)
         if expanded:
-            return f"file://{self.config.path.absolute()}"
+            path = str(self.config.path.absolute()).replace("\\", "/")
+            return f"file://{path}"
 
         try:
             data: JSON = pd.read_csv(

@@ -39,7 +39,8 @@ class OutputSeriesMatrix(INode[SUB_JSON, JSON, JSON]):
         expanded: bool = False,
     ) -> SUB_JSON:
         if expanded:
-            return f"file://{self.config.path.absolute()}"
+            path = str(self.config.path.absolute()).replace("\\", "/")
+            return f"file://{path}"
 
         df = pd.read_csv(
             self.config.path, sep="\t", skiprows=4, na_values="N/A"
