@@ -1,6 +1,3 @@
-import glob
-import os
-from pathlib import Path
 from typing import Optional, List
 
 from antarest.common.custom_types import JSON
@@ -11,43 +8,17 @@ from antarest.storage.repository.filesystem.raw_file_node import RawFileNode
 
 
 class BucketNode(FolderNode):
-    def get(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> JSON:
-        concat_url = "/".join(url or [])
-        return FolderNode.get(self, [concat_url])
-
-    def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
-        if not self.config.path.exists():
-            self.config.path.mkdir()
-
-        if url:
-            RawFileNode(config=self.config.next_file(url[0])).save(str(data))
-        else:
-            for file, content in data.items():
-                RawFileNode(config=self.config.next_file(file)).save(
-                    str(content)
-                )
-
     def build(self, config: StudyConfig) -> TREE:
         if not config.path.exists():
             return dict()
 
-        current_dir = os.getcwd()
-        os.chdir(self.config.path)
+        children: TREE = {}
+        for item in config.path.iterdir():
+            if item.is_file():
+                children[item.name] = RawFileNode(config.next_file(item.name))
+            else:
+                children[item.name] = BucketNode(config.next_file(item.name))
 
-        children: TREE = {
-            "/".join(Path(file).parts): RawFileNode(
-                self.config.next_file(file)
-            )
-            for file in glob.glob("**", recursive=True)
-            if Path(file).is_file()
-        }
-
-        os.chdir(current_dir)
         return children
 
     def check_errors(

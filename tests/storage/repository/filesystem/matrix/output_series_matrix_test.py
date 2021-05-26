@@ -37,8 +37,7 @@ def test_get(tmp_path: Path):
     )
 
     node = OutputSeriesMatrix(config, serializer, AreaHeadWriter("", ""))
-    assert node.get() == matrix.to_dict(orient="split")
-    assert "file://" in node.get(expanded=True)
+    assert node.load() == matrix.to_dict(orient="split")
 
 
 def test_save(tmp_path: Path):
@@ -68,7 +67,7 @@ def test_save(tmp_path: Path):
         index=["01/01", "01/02"],
     )
 
-    node.save(matrix.to_dict(orient="split"))
+    node.dump(matrix.to_dict(orient="split"))
     print(file.read_text())
     assert (
         file.read_text()

@@ -7,40 +7,28 @@ from antarest.storage.repository.filesystem.raw_file_node import RawFileNode
 
 
 def test_get(tmp_path: Path) -> None:
-    (tmp_path / "my-study/a/b").mkdir(parents=True)
-    (tmp_path / "my-study/a/b/c").touch()
-    config = StudyConfig(
-        study_path=tmp_path / "my-study", areas=dict(), outputs=dict()
-    )
-    config = config.next_file("a").next_file("b").next_file("c")
+    file = tmp_path / "raw.txt"
+    file.write_text("Hello")
 
-    node = RawFileNode(config=config)
-    assert node.get() == "file/my-study/a/b/c"
+    node = RawFileNode(config=StudyConfig(file))
+    assert node.get() == "Hello"
 
 
 def test_validate(tmp_path: Path) -> None:
-    file = tmp_path / "file"
+    file = tmp_path / "raw.txt"
     file.touch()
 
     node = RawFileNode(config=StudyConfig(study_path=file))
-    assert node.check_errors(data=None) == []
+    assert not node.check_errors("")
 
-    node = RawFileNode(config=StudyConfig(study_path=tmp_path / "nofile"))
-    assert "not exist" in node.check_errors(data=None)[0]
-
-    with pytest.raises(ValueError):
-        node.check_errors(data=None, raising=True)
+    node = RawFileNode(config=StudyConfig(study_path=tmp_path / "fantom.txt"))
+    assert "not exist" in node.check_errors("")[0]
 
 
 def test_save(tmp_path: Path) -> None:
-    (tmp_path / "studyA").mkdir()
-    (tmp_path / "studyA/my-file").write_text("Hello, World")
-    (tmp_path / "studyB").mkdir()
+    file = tmp_path / "raw.txt"
+    file.touch()
 
-    config = StudyConfig(
-        study_path=tmp_path / "studyB", areas=dict(), outputs=dict()
-    ).next_file("my-file")
-    node = RawFileNode(config=config)
-
-    node.save("file/studyA/my-file")
-    assert (tmp_path / "studyB/my-file").read_text() == "Hello, World"
+    node = RawFileNode(config=StudyConfig(study_path=file))
+    node.save("Hello")
+    assert file.read_text() == "Hello"

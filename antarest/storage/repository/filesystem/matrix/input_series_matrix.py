@@ -11,27 +11,24 @@ from pandas.errors import EmptyDataError  # type: ignore
 from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import INode, TREE
+from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 
-class InputSeriesMatrix(INode[SUB_JSON, JSON, JSON]):
+class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
     def __init__(self, config: StudyConfig, nb_columns: Optional[int] = None):
+        super().__init__()
         self.config = config
         self.nb_columns = nb_columns
 
     def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
 
-    def get(
+    def load(
         self,
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
     ) -> SUB_JSON:
-        self._assert_url(url)
-        if expanded:
-            path = str(self.config.path.absolute()).replace("\\", "/")
-            return f"file://{path}"
-
         try:
             data: JSON = pd.read_csv(
                 self.config.path,
@@ -43,15 +40,7 @@ class InputSeriesMatrix(INode[SUB_JSON, JSON, JSON]):
         except EmptyDataError:
             return {}
 
-    def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
-        self._assert_url(url)
-
-        if isinstance(data, str) and "file://" in data:
-            src = Path(data[len("file://") :])
-            if src != self.config.path:
-                shutil.copyfile(src, self.config.path)
-            return None
-
+    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
         df = pd.DataFrame(**data)
         df.to_csv(self.config.path, sep="\t", header=False, index=False)
 

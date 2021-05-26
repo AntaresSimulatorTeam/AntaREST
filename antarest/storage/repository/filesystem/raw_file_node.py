@@ -3,36 +3,26 @@ from typing import List, Optional
 
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import INode, TREE
+from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 
-class RawFileNode(INode[str, str, str]):
+class RawFileNode(LazyNode[str, str, str]):
     def __init__(self, config: StudyConfig):
         self.config = config
 
     def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
 
-    def get(
+    def load(
         self,
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
     ) -> str:
-        self._assert_url(url)
+        return self.config.path.read_text()
 
-        file_path = "/".join(self.config.path.absolute().parts)
-        root_path = "/".join(self.config.root_path.parent.absolute().parts)
-        file_relative = file_path.replace(root_path, "")
-        return f"file{file_relative}"
-
-    def save(self, data: str, url: Optional[List[str]] = None) -> None:
-        self._assert_url(url)
-
-        path = self.config.root_path.parent / data[len("file/") :]
-
-        if path != self.config.path:
-            self.config.path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(path, self.config.path)
+    def dump(self, data: str, url: Optional[List[str]] = None) -> None:
+        self.config.path.write_text(data)
 
     def check_errors(
         self, data: str, url: Optional[List[str]] = None, raising: bool = False
