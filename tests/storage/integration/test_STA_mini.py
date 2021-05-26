@@ -16,6 +16,7 @@ from antarest.storage.service import StorageService
 from antarest.common.requests import (
     RequestParameters,
 )
+from tests.conftest import assert_study
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import (
     de_fr_values_hourly,
@@ -42,7 +43,7 @@ def assert_url_content(
     )
     client = app.test_client()
     res = client.get(url)
-    assert json.loads(res.data) == expected_output
+    assert_study(json.loads(res.data), expected_output)
 
 
 def assert_with_errors(
@@ -50,9 +51,8 @@ def assert_with_errors(
 ) -> None:
     url = url[len("/studies/") :]
     params = RequestParameters(user=ADMIN)
-    assert (
-        storage_service.get(route=url, depth=3, params=params)
-        == expected_output
+    assert_study(
+        storage_service.get(route=url, depth=3, params=params), expected_output
     )
 
 
@@ -229,10 +229,10 @@ def test_sta_mini_study_antares(
         (
             "/studies/STA-mini/input/load/series",
             {
-                "load_de": "Lazy matrix input",
-                "load_es": "Lazy matrix input",
-                "load_fr": "Lazy matrix input",
-                "load_it": "Lazy matrix input",
+                "load_de": "file:///...../input/load/series/load_de.txt",
+                "load_es": "file:///...../input/load/series/load_es.txt",
+                "load_fr": "file:///...../input/load/series/load_fr.txt",
+                "load_it": "file:///...../input/load/series/load_it.txt",
             },
         ),
         (
@@ -324,7 +324,9 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
         ("/studies/STA-mini/output/1/economy/mc-all/links/de/fr", {}),
         (
             "/studies/STA-mini/output/1/economy/mc-ind/00001/links/de/fr",
-            {"values-hourly": "Lazy matrix output"},
+            {
+                "values-hourly": "file://...../economy/mc-inde/0001/links/de - fr/values-hourly.txt"
+            },
         ),
         (
             "/studies/STA-mini/output/1/economy/mc-ind/00001/links/de/fr/values-hourly",
@@ -370,11 +372,7 @@ def test_sta_mini_output(storage_service, url: str, expected_output: str):
 
 @pytest.mark.integration_test
 def test_sta_mini_copy(storage_service) -> None:
-    input_link = {
-        "columns": [0],
-        "index": list(range(8760)),
-        "data": [[i % 168 * 100] for i in range(8760)],
-    }
+    input_link = "input/links/de/fr.txt"
 
     source_study_name = "STA-mini"
     destination_study_name = "copy-STA-mini"
@@ -400,10 +398,10 @@ def test_sta_mini_copy(storage_service) -> None:
     data_destination = storage_service.get(uuid, -1, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
-    assert link_url_source == input_link
+    assert input_link in link_url_source
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
-    assert link_url_destination == input_link
+    assert input_link in link_url_destination
 
     def replace_study_name(data: JSON) -> None:
         if isinstance(data, dict):
@@ -418,7 +416,7 @@ def test_sta_mini_copy(storage_service) -> None:
     data_source["study"] = {}
     data_destination["study"] = {}
 
-    assert data_source == data_destination
+    assert_study(data_source, data_destination)
 
 
 @pytest.mark.integration_test

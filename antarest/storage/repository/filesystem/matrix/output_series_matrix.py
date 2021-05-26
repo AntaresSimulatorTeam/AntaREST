@@ -1,4 +1,6 @@
+import shutil
 from abc import ABC
+from pathlib import Path
 
 import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
@@ -37,7 +39,7 @@ class OutputSeriesMatrix(INode[SUB_JSON, JSON, JSON]):
         expanded: bool = False,
     ) -> SUB_JSON:
         if expanded:
-            return "Lazy matrix output"
+            return f"file://{self.config.path.absolute()}"
 
         df = pd.read_csv(
             self.config.path, sep="\t", skiprows=4, na_values="N/A"
@@ -58,6 +60,14 @@ class OutputSeriesMatrix(INode[SUB_JSON, JSON, JSON]):
         return cast(JSON, matrix.to_dict(orient="split"))
 
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
+        self._assert_url()
+
+        if isinstance(data, str) and "file://" in data:
+            src = Path(data[len("file://") :])
+            if src != self.config.path:
+                shutil.copyfile(src, self.config.path)
+            return None
+
         df = pd.DataFrame(**data)
 
         headers = pd.DataFrame(df.columns.values.tolist()).T

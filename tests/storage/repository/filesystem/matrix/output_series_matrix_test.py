@@ -38,7 +38,7 @@ def test_get(tmp_path: Path):
 
     node = OutputSeriesMatrix(config, serializer, AreaHeadWriter("", ""))
     assert node.get() == matrix.to_dict(orient="split")
-    assert node.get(expanded=True) == "Lazy matrix output"
+    assert "file://" in node.get(expanded=True)
 
 
 def test_save(tmp_path: Path):

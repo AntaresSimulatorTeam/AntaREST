@@ -17,7 +17,8 @@ def test_get(tmp_path: Path) -> None:
     config = StudyConfig(study_path=file)
     node = InputSeriesMatrix(config, nb_columns=8)
 
-    assert node.get(expanded=True) == "Lazy matrix input"
+    assert "file://" in node.get(expanded=True)
+
     assert node.get() == {
         "columns": [0, 1, 2, 3, 4, 5, 6, 7],
         "data": [

@@ -1,3 +1,7 @@
+import os
+import shutil
+from pathlib import Path
+
 import pandas as pd  # type: ignore
 
 from typing import Optional, List
@@ -25,7 +29,7 @@ class InputSeriesMatrix(INode[SUB_JSON, JSON, JSON]):
     ) -> SUB_JSON:
         self._assert_url(url)
         if expanded:
-            return "Lazy matrix input"
+            return f"file://{self.config.path.absolute()}"
 
         try:
             data: JSON = pd.read_csv(
@@ -40,9 +44,15 @@ class InputSeriesMatrix(INode[SUB_JSON, JSON, JSON]):
 
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
         self._assert_url(url)
-        pd.DataFrame(**data).to_csv(
-            self.config.path, sep="\t", header=False, index=False
-        )
+
+        if isinstance(data, str) and "file://" in data:
+            src = Path(data[len("file://") :])
+            if src != self.config.path:
+                shutil.copyfile(src, self.config.path)
+            return None
+
+        df = pd.DataFrame(**data)
+        df.to_csv(self.config.path, sep="\t", header=False, index=False)
 
     def check_errors(
         self,
