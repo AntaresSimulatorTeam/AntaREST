@@ -1,13 +1,16 @@
+import shutil
 from abc import ABC
+from pathlib import Path
 
 import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
 
 from typing import Optional, List, cast
 
-from antarest.common.custom_types import JSON
+from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import INode, TREE
+from antarest.storage.repository.filesystem.lazy_node import LazyNode
 from antarest.storage.repository.filesystem.matrix.date_serializer import (
     IDateMatrixSerializer,
 )
@@ -16,13 +19,14 @@ from antarest.storage.repository.filesystem.matrix.head_writer import (
 )
 
 
-class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
+class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
     def __init__(
         self,
         config: StudyConfig,
         date_serializer: IDateMatrixSerializer,
         head_writer: HeadWriter,
     ):
+        super().__init__()
         self.config = config
         self.date_serializer = date_serializer
         self.head_writer = head_writer
@@ -30,7 +34,13 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
     def build(self, config: StudyConfig) -> TREE:
         pass  # End of tree
 
-    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> JSON:
+    def load(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> SUB_JSON:
+
         df = pd.read_csv(
             self.config.path, sep="\t", skiprows=4, na_values="N/A"
         )
@@ -49,7 +59,7 @@ class OutputSeriesMatrix(INode[JSON, JSON, JSON]):
 
         return cast(JSON, matrix.to_dict(orient="split"))
 
-    def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
+    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
         df = pd.DataFrame(**data)
 
         headers = pd.DataFrame(df.columns.values.tolist()).T
