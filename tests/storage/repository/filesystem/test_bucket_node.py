@@ -7,7 +7,7 @@ from antarest.storage.repository.filesystem.config.model import StudyConfig
 def build_bucket(tmp: Path) -> Path:
     bucket = tmp / "user"
     bucket.mkdir()
-    (bucket / "fileA.txt").touch()
+    (bucket / "fileA.txt").write_text("Content A")
     (bucket / "fileB.txt").touch()
     (bucket / "folder").mkdir()
     (bucket / "folder/fileC.txt").touch()
@@ -16,26 +16,21 @@ def build_bucket(tmp: Path) -> Path:
 
 
 def test_get_bucket(tmp_path: Path):
-    bucket = build_bucket(tmp_path)
+    file = build_bucket(tmp_path)
 
-    expected = {
-        "fileA.txt": "file/user/fileA.txt",
-        "fileB.txt": "file/user/fileB.txt",
-        "folder/fileC.txt": "file/user/folder/fileC.txt",
-    }
+    node = BucketNode(config=StudyConfig(study_path=file))
 
-    node = BucketNode(config=StudyConfig(study_path=bucket))
-
-    assert node.get(["fileA.txt"]) == "file/user/fileA.txt"
-    assert node.get() == expected
+    assert node.get(["fileA.txt"]) == "Content A"
+    bucket = node.get()
+    assert "fileA.txt" in bucket["fileA.txt"]
+    assert "fileB.txt" in bucket["fileB.txt"]
+    assert "fileC.txt" in bucket["folder"]["fileC.txt"]
 
 
 def test_save_bucket(tmp_path: Path):
-    bucket = build_bucket(tmp_path)
+    file = build_bucket(tmp_path)
 
-    (tmp_path / "new.txt").write_text("Hello, World")
+    node = BucketNode(config=StudyConfig(study_path=file))
+    node.save(data={"fileA.txt": "Hello, World"})
 
-    node = BucketNode(config=StudyConfig(study_path=bucket))
-    node.save(data="file/new.txt", url=["fileA.txt"])
-
-    assert (bucket / "fileA.txt").read_text() == "Hello, World"
+    assert (file / "fileA.txt").read_text() == "Hello, World"

@@ -22,29 +22,51 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
     def build(self, config: StudyConfig) -> TREE:
         pass
 
-    def get(self, url: Optional[List[str]] = None, depth: int = -1) -> JSON:
+    def _forward_get(
+        self,
+        url: List[str],
+        depth: int = -1,
+    ) -> JSON:
+        children = self.build(self.config)
+        names, sub_url = self.extract_child(children, url)
+
+        # item is unique in url
+        if len(names) == 1:
+            return children[names[0]].get(  # type: ignore
+                sub_url, depth=depth, expanded=False
+            )
+        # many items asked or * asked
+        else:
+            return {
+                key: children[key].get(sub_url, depth=depth, expanded=False)
+                for key in names
+            }
+
+    def _expand_get(
+        self,
+        depth: int = -1,
+    ) -> JSON:
         children = self.build(self.config)
 
-        if url and url != [""]:
-            names, sub_url = self.extract_child(children, url)
-            if len(names) == 1:
-                return children[names[0]].get(  # type: ignore
-                    sub_url, depth=depth
-                )
-            else:
-                return {
-                    key: children[key].get(sub_url, depth=depth)
-                    for key in names
-                }
+        if depth == 0:
+            return {}
+        return {
+            name: node.get(depth=depth - 1, expanded=True)
+            if depth - 1 != 0
+            else {}
+            for name, node in children.items()
+        }
 
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> JSON:
+        if url and url != [""]:
+            return self._forward_get(url, depth)
         else:
-            if depth == 0:
-                return {}
-            json = {
-                name: node.get(depth=depth - 1) if depth - 1 != 0 else {}
-                for name, node in children.items()
-            }
-            return json
+            return self._expand_get(depth)
 
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
         children = self.build(self.config)
