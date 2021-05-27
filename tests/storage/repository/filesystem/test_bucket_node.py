@@ -18,12 +18,6 @@ def build_bucket(tmp: Path) -> Path:
 def test_get_bucket(tmp_path: Path):
     file = build_bucket(tmp_path)
 
-    expected = {
-        "fileA.txt": "file/user/fileA.txt",
-        "fileB.txt": "file/user/fileB.txt",
-        "folder/fileC.txt": "file/user/folder/fileC.txt",
-    }
-
     node = BucketNode(config=StudyConfig(study_path=file))
 
     assert node.get(["fileA.txt"]) == "Content A"
@@ -37,6 +31,6 @@ def test_save_bucket(tmp_path: Path):
     file = build_bucket(tmp_path)
 
     node = BucketNode(config=StudyConfig(study_path=file))
-    node.save(data="Hello, World", url=["fileA.txt"])
+    node.save(data={"fileA.txt": "Hello, World"})
 
     assert (file / "fileA.txt").read_text() == "Hello, World"

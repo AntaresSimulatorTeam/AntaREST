@@ -534,17 +534,17 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         (
             "/studies/STA-mini/output/1/ts-numbers/hydro/de,fr/",
             {
-                "de": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/de.txt",
-                "fr": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/fr.txt",
+                "de": "size:1x1\n1\n",
+                "fr": "size:1x1\n1\n",
             },
         ),
         (
             "/studies/STA-mini/output/1/ts-numbers/hydro/*/",
             {
-                "de": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/de.txt",
-                "fr": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/fr.txt",
-                "it": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/it.txt",
-                "es": "file/STA-mini/output/20201014-1422eco-hello/ts-numbers/hydro/es.txt",
+                "de": "size:1x1\n1\n",
+                "fr": "size:1x1\n1\n",
+                "it": "size:1x1\n1\n",
+                "es": "size:1x1\n1\n",
             },
         ),
     ],
