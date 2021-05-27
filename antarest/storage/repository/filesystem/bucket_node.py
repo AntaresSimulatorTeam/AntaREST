@@ -8,6 +8,13 @@ from antarest.storage.repository.filesystem.raw_file_node import RawFileNode
 
 
 class BucketNode(FolderNode):
+    def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
+        for key, value in data.items():
+            if isinstance(value, str) and value.startswith("file://"):
+                RawFileNode(self.config.next_file(key)).save(value)
+            elif isinstance(value, dict):
+                BucketNode(self.config.next_file(key)).save(value)
+
     def build(self, config: StudyConfig) -> TREE:
         if not config.path.exists():
             return dict()
