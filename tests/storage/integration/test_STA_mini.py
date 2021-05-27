@@ -201,10 +201,6 @@ def test_sta_mini_study_antares(
             1,
         ),
         (
-            "/studies/STA-mini/input/thermal/prepro/fr/05_nuclear/modulation",
-            "\n".join(["1	1	1	0"] * 8760) + "\n",
-        ),
-        (
             "/studies/STA-mini/input/thermal/areas/unserverdenergycost/de",
             3000.0,
         ),
