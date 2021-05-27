@@ -11,7 +11,7 @@ from antarest.storage.service import StorageService
 from antarest.common.requests import (
     RequestParameters,
 )
-
+from tests.storage.integration.data.de_details_hourly import de_details_hourly
 
 ADMIN = JWTUser(
     id=1,
@@ -146,6 +146,22 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
         ("/studies/STA-mini/input/areas/de/ui/layerX/0", 42),
         ("/studies/STA-mini/input/hydro/allocation/de/[allocation/de", 42),
         (
+            "/studies/STA-mini/input/load/prepro/fr/k",
+            "write something",
+        ),
+        (
+            "/studies/STA-mini/input/load/prepro/fr/k",
+            "",
+        ),
+        (
+            "/studies/STA-mini/input/load/series/load_fr",
+            {
+                "columns": [0],
+                "index": list(range(100)),
+                "data": [[i] for i in range(100)],
+            },
+        ),
+        (
             "/studies/STA-mini/input/hydro/prepro/correlation/general/mode",
             "hourly",
         ),
@@ -190,6 +206,14 @@ def test_sta_mini_input(storage_service, url: str, new: SUB_JSON):
         (
             "/studies/STA-mini/output/1/info/general/version",
             42,
+        ),
+        (
+            "/studies/STA-mini/output/4/simulation-comments",
+            "write something",
+        ),
+        (
+            "/studies/STA-mini/output/1/economy/mc-ind/00001/areas/de/details-annual",
+            de_details_hourly,
         ),
     ],
 )

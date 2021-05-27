@@ -12,7 +12,10 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         pass  # End of root. No build
 
     def get(
-        self, url: Optional[List[str]] = None, depth: int = -1
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
     ) -> List[str]:
         lines = self.config.path.read_text().lower().split("\n")
         return [l.strip() for l in lines if l.strip()]

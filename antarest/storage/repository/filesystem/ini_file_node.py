@@ -31,7 +31,10 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         pass  # end node has nothing to build
 
     def get(
-        self, url: Optional[List[str]] = None, depth: int = -1
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
     ) -> SUB_JSON:
         if depth == 0:
             return {}
