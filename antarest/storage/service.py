@@ -331,13 +331,6 @@ class StorageService:
         updated = self.study_service.edit_study(study, url, new)
 
         self.study_service.edit_study(
-            study, url="study/antares/caption", new=study.name
-        )
-        if study.owner:
-            self.study_service.edit_study(
-                study, url="study/antares/author", new=study.owner.id
-            )
-        self.study_service.edit_study(
             study, url="study/antares/lastsave", new=int(time())
         )
 
@@ -356,6 +349,11 @@ class StorageService:
         new_owner = self.user_service.get_user(owner_id, params)
         study.owner = new_owner
         self.repository.save(study)
+
+        if isinstance(study, RawStudy) and new_owner:
+            self.study_service.edit_study(
+                study, url="study/antares/author", new=new_owner.name
+            )
 
     def add_group(
         self, study_id: str, group_id: str, params: RequestParameters
