@@ -3,6 +3,7 @@ from copy import deepcopy
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+from time import time
 from typing import List, IO, Optional, cast
 
 import werkzeug
@@ -328,6 +329,17 @@ class StorageService:
             )
 
         updated = self.study_service.edit_study(study, url, new)
+
+        self.study_service.edit_study(
+            study, url="study.antares/antares/caption", new=study.name
+        )
+        self.study_service.edit_study(
+            study, url="study.antares/antares/author", new=study.owner.id
+        )
+        self.study_service.edit_study(
+            study, url="study.antares/antares/lastsave", new=int(time())
+        )
+
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
