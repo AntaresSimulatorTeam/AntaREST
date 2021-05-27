@@ -331,19 +331,20 @@ class StorageService:
         updated = self.study_service.edit_study(study, url, new)
 
         self.study_service.edit_study(
-            study, url="study.antares/antares/caption", new=study.name
+            study, url="study/antares/caption", new=study.name
         )
+        if study.owner:
+            self.study_service.edit_study(
+                study, url="study/antares/author", new=study.owner.id
+            )
         self.study_service.edit_study(
-            study, url="study.antares/antares/author", new=study.owner.id
-        )
-        self.study_service.edit_study(
-            study, url="study.antares/antares/lastsave", new=int(time())
+            study, url="study/antares/lastsave", new=int(time())
         )
 
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
-        return updated
+        return cast(JSON, updated)
 
     def change_owner(
         self, study_id: str, owner_id: int, params: RequestParameters
