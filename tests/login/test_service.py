@@ -468,6 +468,7 @@ def test_delete_group():
     groups = Mock()
     groups.delete.return_value = Group()
 
+
     roles = Mock()
     roles.get_all_by_group.return_value = []
 

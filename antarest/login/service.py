@@ -276,8 +276,8 @@ class LoginService:
         ):
             for role in self.roles.get_all_by_group(group=id):
                 self.roles.delete(user=role.identity_id, group=role.group_id)
-
             return self.groups.delete(id)
+ 
         else:
             raise UserHasNotPermissionError()
 

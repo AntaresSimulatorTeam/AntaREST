@@ -24,7 +24,6 @@ const GenericSettings = (props: PropTypes) => {
   const classes = useStyles();
 
   const navList = Object.keys(items);
-  console.log(navList);
   const [navState, setNavState] = useState<string>(navList[0]);
   const onItemClick = (item : string) => {
     setNavState(item);

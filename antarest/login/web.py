@@ -233,6 +233,7 @@ def create_login_api(
         params = RequestParameters(user=Auth.get_current_user())
         return jsonify([g.to_dict() for g in service.get_all_groups(params)])
 
+    
     @bp.route("/groups/<string:id>", methods=["GET"])
     @auth.protected()
     def groups_get_id(id: str) -> Any:
