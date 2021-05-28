@@ -104,8 +104,7 @@ class StudyService:
         data_source = study.get()
         del study
 
-        dest_meta.path = self.get_study_path(dest_meta)
-        config.path = dest_meta.path
+        config.path = Path(dest_meta.path)
         data_destination = copy.deepcopy(data_source)
 
         StorageServiceUtils.update_antares_info(dest_meta, data_destination)

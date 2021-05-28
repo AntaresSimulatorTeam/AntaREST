@@ -201,7 +201,7 @@ def create_study_routes(
         )
         code = HTTPStatus.CREATED.value
 
-        return destination_uuid, code
+        return jsonify(f"/studies/{destination_uuid}"), code
 
     @bp.route(
         "/studies/<string:name>",

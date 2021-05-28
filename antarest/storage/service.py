@@ -199,16 +199,17 @@ class StorageService:
                 f"Study {src_uuid} with type {src_study.type} not recognized"
             )
 
-        dest_study = deepcopy(src_study)
-        dest_study.id = str(uuid4())
-        dest_study.name = dest_study_name
-        dest_study.workspace = DEFAULT_WORKSPACE_NAME
-        dest_study.path = str(
-            self.study_service.get_default_workspace_path() / dest_study.id
+        dest_id = str(uuid4())
+        dest_study = RawStudy(
+            id=dest_id,
+            name=dest_study_name,
+            workspace=DEFAULT_WORKSPACE_NAME,
+            path=str(
+                self.study_service.get_default_workspace_path() / dest_id
+            ),
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
         )
-        date = int(time())
-        dest_study.created_at = date
-        dest_study.updated_at = date
 
         study = self.study_service.copy_study(src_study, dest_study)
         self._save_study(study, params.user, group_ids)

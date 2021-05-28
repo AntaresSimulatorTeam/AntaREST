@@ -95,12 +95,44 @@ def test_main(app: Flask):
     assert len(res.json) == 1
 
     # study creation
-    res = client.post(
+    created = client.post(
         "/studies/foo",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
+    res = client.get(
+        "/studies",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert len(res.json) == 2
+
+    # Study copy
+    copied = client.post(
+        f"{created.json}/copy?dest=copied",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+
+    res = client.get(
+        "/studies",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert len(res.json) == 3
+
+    # Study delete
+    client.delete(
+        f"{copied.json}",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+
     res = client.get(
         "/studies",
         headers={
