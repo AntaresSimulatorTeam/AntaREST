@@ -45,7 +45,7 @@ class ImporterService:
 
         path_matrix.write_bytes(data)
 
-    def import_study(self, metadata: Study, stream: IO[bytes]) -> Study:
+    def import_study(self, metadata: RawStudy, stream: IO[bytes]) -> Study:
         path_study = self.study_service.get_study_path(metadata)
         path_study.mkdir()
 
@@ -57,6 +57,12 @@ class ImporterService:
             if data is None:
                 self.study_service.delete_study(metadata)
                 raise StudyValidationError("Fail to import study")
+
+            StorageServiceUtils.update_antares_info(metadata, data)
+            self.study_service.edit_study(
+                metadata, url="study", new=data["study"]
+            )
+
         except Exception as e:
             shutil.rmtree(path_study)
             raise e

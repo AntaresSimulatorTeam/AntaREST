@@ -118,12 +118,16 @@ class StorageService:
     ) -> str:
         sid = str(uuid4())
         study_path = str(self.study_service.get_default_workspace_path() / sid)
+
         raw = RawStudy(
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=study_path,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
         )
+
         raw = self.study_service.create_study(raw)
         self._save_study(raw, params.user, group_ids)
         self.event_bus.push(
@@ -202,6 +206,9 @@ class StorageService:
         dest_study.path = str(
             self.study_service.get_default_workspace_path() / dest_study.id
         )
+        date = int(time())
+        dest_study.created_at = date
+        dest_study.updated_at = date
 
         study = self.study_service.copy_study(src_study, dest_study)
         self._save_study(study, params.user, group_ids)
@@ -290,7 +297,13 @@ class StorageService:
     ) -> str:
         sid = str(uuid4())
         path = str(self.study_service.get_default_workspace_path() / sid)
-        study = RawStudy(id=sid, workspace=DEFAULT_WORKSPACE_NAME, path=path)
+        study = RawStudy(
+            id=sid,
+            workspace=DEFAULT_WORKSPACE_NAME,
+            path=path,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
         study = self.importer_service.import_study(study, stream)
         status = self._analyse_study(study)
         self._save_study(
@@ -400,13 +413,6 @@ class StorageService:
         if not owner:
             raise UserHasNotPermissionError
 
-        info = self.study_service.get_study_information(study)["antares"]
-
-        study.name = info["caption"]
-        study.version = info["version"]
-        study.author = info["author"]
-        study.created_at = datetime.fromtimestamp(info["created"])
-        study.updated_at = datetime.fromtimestamp(info["lastsave"])
         study.content_status = content_status
 
         if owner:

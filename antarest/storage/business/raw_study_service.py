@@ -91,7 +91,7 @@ class StudyService:
         StorageServiceUtils.update_antares_info(metadata, study_data)
 
         _, study = self.study_factory.create_from_fs(path_study)
-        study.save(study_data)
+        study.save(study_data["study"], url=["study"])
 
         metadata.path = str(path_study)
         return metadata

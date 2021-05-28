@@ -29,6 +29,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
 
         if isinstance(data, str) and "file://" in data:
             src = Path(data[len("file://") :])
+            print(f"{src} == {self.config.path}")
             if src != self.config.path:
                 self.config.path.parent.mkdir(exist_ok=True, parents=True)
                 shutil.copyfile(src, self.config.path)
