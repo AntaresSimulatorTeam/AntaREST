@@ -14,5 +14,8 @@
   "launch": "Lancer",
   "studies": "Etudes",
   "jobs": "Tâches",
-  "unknown": "Inconnu"
+  "unknown": "Inconnu",
+  "confirmationModalTitle": "Confirmation",
+  "yesButton": "Oui",
+  "noButton": "Non"
 }
