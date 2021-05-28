@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { AppState } from '../../reducers';
 import {isUserAdmin} from '../../../services/utils'
 import GenericSettings from '../../../components/Settings/GenericSettings'
-import GroupsSettings from './GroupsSettings';
-import TokensSettings from './TokensSettings';
-import UsersSettings from './UsersSettings';
+import GroupsSettings from './Groups';
+import TokensSettings from './Tokens';
+import UsersSettings from './Users';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -29,7 +29,7 @@ const UserSettings = (props: PropTypes) => {
   useEffect(() => {
 
     // Is admin ?
-    if(user && isUserAdmin(user.accessToken))
+    if(!!user && isUserAdmin(user))
       setAdminStatus(true);
     else
       setAdminStatus(false);
@@ -46,7 +46,8 @@ const UserSettings = (props: PropTypes) => {
     [t('settings:tokens')]: () => <TokensSettings />,
   }
 
-  return (<GenericSettings items={isAdmin ? adminUserData : normalUserData} />)
+  // Why !!user ? => Error otherwise (NavState)
+  return !!user ? (<GenericSettings items={isAdmin ? adminUserData : normalUserData} />) : null;
 };
 
 export default connector(UserSettings);

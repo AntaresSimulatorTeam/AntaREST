@@ -365,18 +365,23 @@ def test_get_all_groups():
     groups = Mock()
     groups.get_all.return_value = [group]
 
+    user = User(id=3, name="name")
+    role = Role(group=group, identity=user)
+    roles = Mock()
+    roles.get_all_by_user.return_value = [role]
+
     service = LoginService(
         user_repo=Mock(),
         bot_repo=Mock(),
         group_repo=groups,
-        role_repo=Mock(),
+        role_repo=roles,
         ldap=Mock(),
         event_bus=Mock(),
     )
 
     assert_permission(
         test=lambda x: service.get_all_groups(x),
-        values=[(SADMIN, True), (GADMIN, False), (USER3, False)],
+        values=[(SADMIN, True), (GADMIN, True), (USER3, True)],
     )
 
 
@@ -463,11 +468,14 @@ def test_delete_group():
     groups = Mock()
     groups.delete.return_value = Group()
 
+    roles = Mock()
+    roles.get_all_by_group.return_value = []
+
     service = LoginService(
         user_repo=Mock(),
         bot_repo=Mock(),
         group_repo=groups,
-        role_repo=Mock(),
+        role_repo=roles,
         ldap=Mock(),
         event_bus=Mock(),
     )
