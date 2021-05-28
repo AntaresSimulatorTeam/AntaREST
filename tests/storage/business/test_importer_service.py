@@ -61,13 +61,19 @@ def test_import_study(tmp_path: Path, storage_service_builder) -> None:
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
+    data = {"study": {"antares": {"version": 700}}}
+
     study = Mock()
-    study.get.return_value = {"study": {"antares": {"version": 700}}}
+    study.get.return_value = data
     study_factory = Mock()
     study_factory.create_from_fs.return_value = None, study
 
+    study_service = Mock()
+    study_service.get.return_value = data
+    study_service.get_study_path.return_value = tmp_path / "other-study"
+
     importer_service = ImporterService(
-        study_service=build_storage_service(tmp_path, "other-study"),
+        study_service=study_service,
         study_factory=study_factory,
     )
 

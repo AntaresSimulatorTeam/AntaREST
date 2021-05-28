@@ -5,7 +5,7 @@ from typing import List, Optional
 from zipfile import ZipFile
 
 from antarest.common.config import Config
-from antarest.common.custom_types import JSON
+from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.repository.filesystem.config.model import StudyConfig
@@ -91,7 +91,7 @@ class StudyService:
         StorageServiceUtils.update_antares_info(metadata, study_data)
 
         _, study = self.study_factory.create_from_fs(path_study)
-        study.save(study_data)
+        study.save(study_data["study"], url=["study"])
 
         metadata.path = str(path_study)
         return metadata
@@ -104,8 +104,7 @@ class StudyService:
         data_source = study.get()
         del study
 
-        dest_meta.path = self.get_study_path(dest_meta)
-        config.path = dest_meta.path
+        config.path = Path(dest_meta.path)
         data_destination = copy.deepcopy(data_source)
 
         StorageServiceUtils.update_antares_info(dest_meta, data_destination)
@@ -127,12 +126,14 @@ class StudyService:
         output_path = self.get_study_path(metadata) / "output" / output_name
         shutil.rmtree(output_path, ignore_errors=True)
 
-    def edit_study(self, metadata: RawStudy, url: str, new: JSON) -> JSON:
+    def edit_study(
+        self, metadata: RawStudy, url: str, new: SUB_JSON
+    ) -> SUB_JSON:
         # Get data
         self.check_study_exists(metadata)
 
         study_path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(study_path)
-        study.save(new, url.split("/"))
+        study.save(new, url.split("/"))  # type: ignore
         del study
         return new
