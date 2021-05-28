@@ -6,6 +6,10 @@ from antarest.storage.model import PublicMode, Study
 
 
 class StudyPermissionType(enum.Enum):
+    """
+    User permission belongs to Study
+    """
+
     READ = "READ"
     RUN = "RUN"
     WRITE = "WRITE"

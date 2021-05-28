@@ -33,6 +33,23 @@ def build_storage(
     storage_service: Optional[StorageService] = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> StorageService:
+    """
+    Storage module linking dependencies.
+
+    Args:
+        application: flask application
+        config: server config
+        session: database session
+        user_service: user service facade
+        metadata_repository: used by testing to inject mock. Let None to use true instantiation
+        study_factory: used by testing to inject mock. Let None to use true instantiation
+        exporter: used by testing to inject mock. Let None to use true instantiation
+        storage_service: used by testing to inject mock. Let None to use true instantiation
+        event_bus: used by testing to inject mock. Let None to use true instantiation
+
+    Returns:
+
+    """
 
     path_resources = config.resources_path
     study_factory = study_factory or StudyFactory()

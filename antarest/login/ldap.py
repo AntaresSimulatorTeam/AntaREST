@@ -11,6 +11,10 @@ from antarest.login.repository import UserLdapRepository
 
 @dataclass
 class AuthDTO:
+    """
+    Input LDAP data
+    """
+
     user: str
     password: str
 
@@ -24,6 +28,10 @@ class AuthDTO:
 
 @dataclass
 class AntaresUser:
+    """
+    Output LDAP data
+    """
+
     first_name: str
     last_name: str
     groups: List[str]
@@ -45,6 +53,10 @@ class AntaresUser:
 
 
 class LdapService:
+    """
+    LDAP facade with connector to ldap server
+    """
+
     def __init__(self, users: UserLdapRepository, config: Config):
         self.url = config.security.ldap_url
         self.users = users

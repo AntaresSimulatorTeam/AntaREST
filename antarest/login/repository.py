@@ -17,6 +17,10 @@ from antarest.login.model import (
 
 
 class GroupRepository:
+    """
+    Database connector to manage Group entity.
+    """
+
     def __init__(self, session: Session):
         self.session = session
         self.save(Group(id="admin", name="admin"))
@@ -45,6 +49,10 @@ class GroupRepository:
 
 
 class UserRepository:
+    """
+    Database connector to manage User entity.
+    """
+
     def __init__(self, config: Config, session: Session) -> None:
         self.session = session
         # init seed admin user from conf
@@ -89,6 +97,10 @@ class UserRepository:
 
 
 class UserLdapRepository:
+    """
+    Database connector to manage UserLdap entity.
+    """
+
     def __init__(self, session: Session) -> None:
         self.session = session
 
@@ -124,6 +136,10 @@ class UserLdapRepository:
 
 
 class BotRepository:
+    """
+    Database connector to manage Bot entity.
+    """
+
     def __init__(self, session: Session) -> None:
         self.session = session
 
@@ -159,6 +175,10 @@ class BotRepository:
 
 
 class RoleRepository:
+    """
+    Database connector to manage Role entity.
+    """
+
     def __init__(self, session: Session):
         self.session = session
         if self.get(1, "admin") is None:

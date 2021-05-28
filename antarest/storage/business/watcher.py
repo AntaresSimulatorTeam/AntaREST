@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 class Watcher:
+    """
+    Files Watcher to listen raw studies changes and trigger a database update.
+    """
+
     LOCK = Path("watcher")
     DELAY = 2
 

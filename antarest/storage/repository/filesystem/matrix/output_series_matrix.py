@@ -20,6 +20,11 @@ from antarest.storage.repository.filesystem.matrix.head_writer import (
 
 
 class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
+    """
+    Generic node to handle output matrix behavior.
+    Node needs a DateSerializer and a HeadWriter to work
+    """
+
     def __init__(
         self,
         config: StudyConfig,

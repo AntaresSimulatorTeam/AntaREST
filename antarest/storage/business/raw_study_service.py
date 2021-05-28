@@ -14,6 +14,12 @@ from antarest.storage.web.exceptions import StudyNotFoundError
 
 
 class RawStudyService:
+    """
+    Manage set of raw studies stored in the workspaces.
+    Instantiate and manage tree struct for each request
+
+    """
+
     def __init__(
         self,
         config: Config,

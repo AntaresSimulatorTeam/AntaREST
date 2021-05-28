@@ -8,6 +8,10 @@ from antarest.storage.repository.filesystem.raw_file_node import RawFileNode
 
 
 class BucketNode(FolderNode):
+    """
+    Node to handle structure free, user purpose folder. BucketNode accept any file or sub folder as children.
+    """
+
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
         for key, value in data.items():
             if isinstance(value, str):

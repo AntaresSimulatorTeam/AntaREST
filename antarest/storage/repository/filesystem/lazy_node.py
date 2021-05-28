@@ -8,6 +8,10 @@ from antarest.storage.repository.filesystem.inode import INode, S, G, V
 
 
 class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
+    """
+    Abstract left with implemented a lazy loading for its daughter implementation.
+    """
+
     def __init__(self) -> None:
         self.config = StudyConfig(study_path=Path())
 

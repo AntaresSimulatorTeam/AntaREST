@@ -11,6 +11,10 @@ from antarest.common.roles import RoleType
 
 
 class Auth:
+    """
+    Context object to retrieve data present in jwt
+    """
+
     ACCESS_TOKEN_DURATION = timedelta(minutes=15)
     REFRESH_TOKEN_DURATION = timedelta(hours=30)
 

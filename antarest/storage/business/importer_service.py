@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 
 class ImporterService:
+    """
+    Import zip study or just output folder
+    """
+
     def __init__(
         self,
         study_service: RawStudyService,

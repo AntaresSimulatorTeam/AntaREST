@@ -19,6 +19,10 @@ from antarest.storage.repository.filesystem.config.model import (
 
 
 class ConfigPathBuilder:
+    """
+    Fetch information need by StudyConfig from filesystem data
+    """
+
     @staticmethod
     def build(study_path: Path) -> "StudyConfig":
         (sns,) = ConfigPathBuilder._parse_parameters(study_path)

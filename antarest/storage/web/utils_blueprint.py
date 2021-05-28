@@ -40,6 +40,16 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
 def create_utils_routes(
     storage_service: StorageService, config: Config
 ) -> Blueprint:
+    """
+    Utility endpoints
+
+    Args:
+        storage_service: storage service facade to handle request
+        config: main server configuration
+
+    Returns:
+
+    """
     bp = Blueprint("create_utils", __name__)
     auth = Auth(config)
 

@@ -39,6 +39,10 @@ class UserNotFoundError(werkzeug.exceptions.NotFound):
 
 
 class LoginService:
+    """
+    Facade module service to handle request to manage user, group and role
+    """
+
     def __init__(
         self,
         user_repo: UserRepository,

@@ -11,6 +11,10 @@ from antarest.storage.repository.filesystem.factory import StudyFactory
 
 
 class ExporterService:
+    """
+    Export study in zip format with or without output folder
+    """
+
     def __init__(
         self,
         study_service: RawStudyService,

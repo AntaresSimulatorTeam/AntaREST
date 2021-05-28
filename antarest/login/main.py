@@ -25,6 +25,19 @@ def build_login(
     service: Optional[LoginService] = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> LoginService:
+    """
+    Login module linking dependency
+
+    Args:
+        application: flask application
+        config: server configuration
+        db_session: database session
+        service: used by testing to inject mock. Let None to use true instantiation
+        event_bus: used by testing to inject mock. Let None to use true instantiation
+
+    Returns: user facade service
+
+    """
 
     if service is None:
         user_repo = UserRepository(config, db_session)

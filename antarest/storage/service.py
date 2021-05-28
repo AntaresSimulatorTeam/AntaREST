@@ -45,6 +45,10 @@ logger = logging.getLogger(__name__)
 
 
 class StorageService:
+    """
+    Storage module facade service to handle studies management.
+    """
+
     def __init__(
         self,
         study_service: RawStudyService,

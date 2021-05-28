@@ -5,6 +5,10 @@ from antarest.common.custom_types import JSON
 
 
 class IniWriter:
+    """
+    Standard .ini writer
+    """
+
     def write(self, data: JSON, path: Path) -> None:
         config_parser = IniConfigParser()
         config_parser.read_dict(data)

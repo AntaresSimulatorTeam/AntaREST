@@ -16,6 +16,10 @@ from antarest.storage.repository.filesystem.root.user import User
 
 
 class Study(FolderNode):
+    """
+    Top level node of antares tree structure
+    """
+
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "Desktop": Desktop(config.next_file("Desktop.ini")),

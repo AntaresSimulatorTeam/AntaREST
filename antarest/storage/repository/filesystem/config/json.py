@@ -14,6 +14,10 @@ from antarest.storage.repository.filesystem.config.model import (
 
 
 class ConfigJsonBuilder:
+    """
+    Fetch information need by StudyConfig from json data
+    """
+
     @staticmethod
     def build(study_path: Path, json: JSON) -> "StudyConfig":
         (sns,) = ConfigJsonBuilder._parse_parameters(json)

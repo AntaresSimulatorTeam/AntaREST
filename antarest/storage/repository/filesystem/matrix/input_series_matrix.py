@@ -15,6 +15,10 @@ from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 
 class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
+    """
+    Generic node to handle input matrix behavior
+    """
+
     def __init__(self, config: StudyConfig, nb_columns: Optional[int] = None):
         super().__init__()
         self.config = config

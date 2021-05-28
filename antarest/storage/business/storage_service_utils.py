@@ -15,6 +15,11 @@ from antarest.storage.web.exceptions import (
 
 
 class StorageServiceUtils:
+    """
+    Useful study tools.
+
+    """
+
     @staticmethod
     def check_antares_version(study: JSON) -> None:
 
