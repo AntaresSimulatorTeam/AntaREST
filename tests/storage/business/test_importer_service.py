@@ -11,7 +11,7 @@ from antarest.storage.business.importer_service import (
     ImporterService,
     fix_study_root,
 )
-from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.web.exceptions import (
     IncorrectPathError,
@@ -20,7 +20,7 @@ from antarest.storage.web.exceptions import (
 )
 
 
-def build_storage_service(workspace: Path, uuid: str) -> StudyService:
+def build_storage_service(workspace: Path, uuid: str) -> RawStudyService:
     service = Mock()
     service.get_workspace_path.return_value = workspace
     service.get_study_path.return_value = workspace / uuid

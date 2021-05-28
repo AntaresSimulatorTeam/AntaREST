@@ -10,7 +10,7 @@ from antarest.common.requests import (
     RequestParameters,
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.web.exceptions import (
     StudyNotFoundError,
@@ -58,7 +58,7 @@ def test_get(tmp_path: str, project_path) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = (None, study)
 
-    study_service = StudyService(
+    study_service = RawStudyService(
         config=build_config(path_to_studies),
         study_factory=study_factory,
         path_resources=project_path / "resources",
@@ -82,7 +82,7 @@ def test_check_errors():
     factory = Mock()
     factory.create_from_fs.return_value = None, study
 
-    study_service = StudyService(
+    study_service = RawStudyService(
         config=build_config(Path()),
         study_factory=factory,
         path_resources=Path(),
@@ -111,7 +111,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     path_to_studies = Path(tmp_path)
 
     # Test & Verify
-    study_service = StudyService(
+    study_service = RawStudyService(
         config=build_config(path_to_studies),
         study_factory=Mock(),
         path_resources=project_path / "resources",
@@ -138,7 +138,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     path_to_studies = Path(tmp_path)
 
     # Test & Verify
-    study_service = StudyService(
+    study_service = RawStudyService(
         config=build_config(path_to_studies),
         study_factory=Mock(),
         path_resources=project_path / "resources",
@@ -178,7 +178,7 @@ def test_find_studies(tmp_path: str, storage_service_builder) -> None:
     study_names = ["study1", "study2"]
 
     # Test & Verify
-    study_service = StudyService(
+    study_service = RawStudyService(
         config=build_config(path_studies),
         study_factory=Mock(),
         path_resources=Path(),
@@ -201,7 +201,7 @@ def test_create_study(
     study_factory = Mock()
     study_factory.create_from_fs.return_value = (None, study)
 
-    study_service = StudyService(
+    study_service = RawStudyService(
         config=build_config(path_studies),
         study_factory=study_factory,
         path_resources=project_path / "resources",
@@ -259,7 +259,7 @@ def test_copy_study(
     url_engine = Mock()
     url_engine.resolve.return_value = None, None, None
 
-    study_service = StudyService(
+    study_service = RawStudyService(
         config=build_config(path_studies),
         study_factory=study_factory,
         path_resources=Path(),
@@ -287,7 +287,7 @@ def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
-    study_service = StudyService(
+    study_service = RawStudyService(
         config=build_config(tmp_path),
         study_factory=Mock(),
         path_resources=Path(),
@@ -311,7 +311,7 @@ def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = None, study
 
-    study_service = StudyService(
+    study_service = RawStudyService(
         config=build_config(tmp_path),
         study_factory=study_factory,
         path_resources=Path(),

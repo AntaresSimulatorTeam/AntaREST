@@ -2,7 +2,7 @@ from io import BytesIO
 from pathlib import Path
 
 from antarest.common.interfaces.eventbus import IEventBus
-from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.model import Study
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
@@ -13,7 +13,7 @@ from antarest.storage.repository.filesystem.factory import StudyFactory
 class ExporterService:
     def __init__(
         self,
-        study_service: StudyService,
+        study_service: RawStudyService,
         study_factory: StudyFactory,
         exporter: Exporter,
     ):

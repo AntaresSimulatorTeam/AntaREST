@@ -13,7 +13,7 @@ from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.web.exceptions import StudyNotFoundError
 
 
-class StudyService:
+class RawStudyService:
     def __init__(
         self,
         config: Config,

@@ -26,7 +26,7 @@ from antarest.storage.business.permissions import (
     check_permission,
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.model import (
     Study,
     StudyContentStatus,
@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 class StorageService:
     def __init__(
         self,
-        study_service: StudyService,
+        study_service: RawStudyService,
         importer_service: ImporterService,
         exporter_service: ExporterService,
         user_service: LoginService,

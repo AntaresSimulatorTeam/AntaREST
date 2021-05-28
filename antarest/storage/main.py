@@ -10,7 +10,7 @@ from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.login.service import LoginService
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
-from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.business.watcher import Watcher
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
@@ -41,7 +41,7 @@ def build_storage(
         session=session
     )
 
-    study_service = StudyService(
+    study_service = RawStudyService(
         config=config,
         study_factory=study_factory,
         path_resources=path_resources,

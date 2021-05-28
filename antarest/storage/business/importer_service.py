@@ -11,7 +11,7 @@ from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.model import Study, RawStudy
 from antarest.storage.repository.antares_io.reader import IniReader
 from antarest.storage.repository.filesystem.factory import StudyFactory
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class ImporterService:
     def __init__(
         self,
-        study_service: StudyService,
+        study_service: RawStudyService,
         study_factory: StudyFactory,
     ):
         self.study_service = study_service
