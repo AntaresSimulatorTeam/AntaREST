@@ -397,7 +397,7 @@ def test_sta_mini_copy(storage_service) -> None:
     )
 
     assert result.status_code == HTTPStatus.CREATED.value
-    uuid = result.data.decode("utf-8")
+    uuid = result.json[len("/studies/") :]
 
     parameters = RequestParameters(user=ADMIN)
     data_source = storage_service.get(source_study_name, -1, parameters)
