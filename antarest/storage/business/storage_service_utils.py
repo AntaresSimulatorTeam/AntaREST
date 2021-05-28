@@ -51,13 +51,11 @@ class StorageServiceUtils:
 
     @staticmethod
     def update_antares_info(metadata: Study, study_data: JSON) -> None:
-        # TODO return value rather than change implicitly
         info_antares = study_data["study"]["antares"]
 
         info_antares["caption"] = metadata.name
-        current_time = int(time.time())
-        info_antares["created"] = current_time
-        info_antares["lastsave"] = current_time
+        info_antares["created"] = metadata.created_at
+        info_antares["lastsave"] = metadata.updated_at
 
     @staticmethod
     def extract_info_from_url(route: str) -> Tuple[str, str]:

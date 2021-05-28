@@ -217,12 +217,13 @@ def test_save_metadata() -> None:
 def test_change_owner() -> None:
     uuid = str(uuid4())
     alice = User(id=1)
-    bob = User(id=2)
+    bob = User(id=2, name="Bob")
 
     repository = Mock()
     user_service = Mock()
+    study_service = Mock()
     service = StorageService(
-        study_service=Mock(),
+        study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
         user_service=user_service,
@@ -230,7 +231,8 @@ def test_change_owner() -> None:
         event_bus=Mock(),
     )
 
-    repository.get.return_value = Study(id=uuid, owner=alice)
+    study = RawStudy(id=uuid, owner=alice)
+    repository.get.return_value = study
     user_service.get_user.return_value = bob
 
     service.change_owner(
@@ -239,7 +241,11 @@ def test_change_owner() -> None:
     user_service.get_user.assert_called_once_with(
         2, RequestParameters(JWTUser(id=1, impersonator=1, type="users"))
     )
-    repository.save.assert_called_once_with(Study(id=uuid, owner=bob))
+    repository.save.assert_called_once_with(RawStudy(id=uuid, owner=bob))
+
+    study_service.edit_study.assert_called_once_with(
+        study, url="study/antares/author", new="Bob"
+    )
 
     with pytest.raises(UserHasNotPermissionError):
         service.change_owner(
