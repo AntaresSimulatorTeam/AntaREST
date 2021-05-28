@@ -3,6 +3,7 @@ from copy import deepcopy
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+from time import time
 from typing import List, IO, Optional, cast
 
 import werkzeug
@@ -117,12 +118,16 @@ class StorageService:
     ) -> str:
         sid = str(uuid4())
         study_path = str(self.study_service.get_default_workspace_path() / sid)
+
         raw = RawStudy(
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=study_path,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
         )
+
         raw = self.study_service.create_study(raw)
         self._save_study(raw, params.user, group_ids)
         self.event_bus.push(
@@ -194,12 +199,16 @@ class StorageService:
                 f"Study {src_uuid} with type {src_study.type} not recognized"
             )
 
-        dest_study = deepcopy(src_study)
-        dest_study.id = str(uuid4())
-        dest_study.name = dest_study_name
-        dest_study.workspace = DEFAULT_WORKSPACE_NAME
-        dest_study.path = str(
-            self.study_service.get_default_workspace_path() / dest_study.id
+        dest_id = str(uuid4())
+        dest_study = RawStudy(
+            id=dest_id,
+            name=dest_study_name,
+            workspace=DEFAULT_WORKSPACE_NAME,
+            path=str(
+                self.study_service.get_default_workspace_path() / dest_id
+            ),
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
         )
 
         study = self.study_service.copy_study(src_study, dest_study)
@@ -289,7 +298,13 @@ class StorageService:
     ) -> str:
         sid = str(uuid4())
         path = str(self.study_service.get_default_workspace_path() / sid)
-        study = RawStudy(id=sid, workspace=DEFAULT_WORKSPACE_NAME, path=path)
+        study = RawStudy(
+            id=sid,
+            workspace=DEFAULT_WORKSPACE_NAME,
+            path=path,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
         study = self.importer_service.import_study(study, stream)
         status = self._analyse_study(study)
         self._save_study(
@@ -328,10 +343,15 @@ class StorageService:
             )
 
         updated = self.study_service.edit_study(study, url, new)
+
+        self.study_service.edit_study(
+            study, url="study/antares/lastsave", new=int(time())
+        )
+
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
-        return updated
+        return cast(JSON, updated)
 
     def change_owner(
         self, study_id: str, owner_id: int, params: RequestParameters
@@ -343,6 +363,11 @@ class StorageService:
         new_owner = self.user_service.get_user(owner_id, params)
         study.owner = new_owner
         self.repository.save(study)
+
+        if isinstance(study, RawStudy) and new_owner:
+            self.study_service.edit_study(
+                study, url="study/antares/author", new=new_owner.name
+            )
 
     def add_group(
         self, study_id: str, group_id: str, params: RequestParameters
@@ -389,13 +414,6 @@ class StorageService:
         if not owner:
             raise UserHasNotPermissionError
 
-        info = self.study_service.get_study_information(study)["antares"]
-
-        study.name = info["caption"]
-        study.version = info["version"]
-        study.author = info["author"]
-        study.created_at = datetime.fromtimestamp(info["created"])
-        study.updated_at = datetime.fromtimestamp(info["lastsave"])
         study.content_status = content_status
 
         if owner:
