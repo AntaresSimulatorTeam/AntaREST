@@ -15,12 +15,12 @@ from antarest.login.model import (
     Group,
     Role,
     Bot,
-    BotCreateDTO,
     Identity,
     UserCreateDTO,
     UserLdap,
     RoleCreationDTO,
     BotDTO,
+    BotRoleUpdateDTO,
 )
 from antarest.login.service import (
     LoginService,
@@ -151,6 +151,30 @@ def test_save_bot():
     assert res == Bot(name="bot", is_author=True, owner=3)
 
 
+def test_update_bot():
+
+    bot_update = BotRoleUpdateDTO(id=3, name="next_name", is_author=True)
+    bots = Mock()
+    bots.save.side_effect = lambda b: b
+    bots.get.return_value = Bot(name="previous_name", is_author=False, owner=3)
+
+    updatedBot = Bot(name="next_name", is_author=True, owner=3)
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=Mock(),
+        ldap=Mock(),
+        event_bus=Mock(),
+    )
+    assert_permission(
+        test=lambda x: service.update_bot(bot_update, x),
+        values=[(SADMIN, True), (GADMIN, False), (USER3, True)],
+    )
+    bots.update.assert_called_with(updatedBot)
+
+
 def test_save_role():
     role = RoleCreationDTO(
         type=RoleType.ADMIN, identity_id=0, group_id="group"
@@ -173,6 +197,46 @@ def test_save_role():
 
     assert_permission(
         test=lambda x: service.save_role(role, x),
+        values=[(SADMIN, True), (GADMIN, True), (USER3, False)],
+    )
+
+
+def test_save_bot_role():
+    role_create = RoleCreationDTO(
+        type=RoleType.ADMIN, identity_id=0, group_id="group"
+    )
+
+    bots = Mock()
+    bot_user3 = Bot(id=0, name="bot", owner=3)
+    bot_user2 = Bot(id=0, name="bot", owner=2)
+    bots.get.return_value = bot_user3
+
+    groups = Mock()
+    group = Group(id="group", name="some group")
+    groups.get.return_value = Group(id="group", name="some group")
+
+    roles = Mock()
+    role = Role(type=role_create.type, group=group, identity=bot_user3)
+    roles.save.return_value = role
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=groups,
+        role_repo=roles,
+        ldap=Mock(),
+        event_bus=Mock(),
+    )
+    # Assertion must succeed
+    assert_permission(
+        test=lambda x: service.save_bot_role(role_create, x),
+        values=[(SADMIN, True), (GADMIN, True), (USER3, True)],
+    )
+
+    # Assertion must fail
+    bots.get.return_value = bot_user2
+    assert_permission(
+        test=lambda x: service.save_bot_role(role_create, x),
         values=[(SADMIN, True), (GADMIN, True), (USER3, False)],
     )
 
