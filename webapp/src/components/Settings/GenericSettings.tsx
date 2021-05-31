@@ -42,4 +42,3 @@ const GenericSettings = (props: PropTypes) => {
 };
 
 export default GenericSettings;
-

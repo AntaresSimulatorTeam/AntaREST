@@ -1,6 +1,7 @@
 from typing import Optional, List
 
 import werkzeug as werkzeug
+from werkzeug.exceptions import BadRequest
 
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus
@@ -57,6 +58,10 @@ class LoginService:
 
     # SADMIN, GADMIN (own group)
     def save_group(self, group: Group, params: RequestParameters) -> Group:
+
+        if self.groups.get_by_name(group.name):
+            raise BadRequest("Group name already exists")
+
         if params.user and any(
             (params.user.is_site_admin(), params.user.is_group_admin(group))
         ):
@@ -224,10 +229,19 @@ class LoginService:
 
     # SADMIN
     def get_all_groups(self, params: RequestParameters) -> List[Group]:
-        if params.user and params.user.is_site_admin():
+        if not params.user:
+            raise UserHasNotPermissionError()
+
+        if params.user.is_site_admin():
             return self.groups.get_all()
         else:
-            raise UserHasNotPermissionError()
+            roles_by_user = self.roles.get_all_by_user(user=params.user.id)
+            groups = []
+            for role in roles_by_user:
+                tmp = self.groups.get(role.group_id)
+                if tmp:
+                    groups.append(tmp)
+            return groups
 
     # SADMIN
     def get_all_users(self, params: RequestParameters) -> List[User]:
@@ -265,6 +279,9 @@ class LoginService:
                 params.user.is_group_admin(Group(id=id)),
             )
         ):
+            for role in self.roles.get_all_by_group(group=id):
+                self.roles.delete(user=role.identity_id, group=role.group_id)
+
             return self.groups.delete(id)
         else:
             raise UserHasNotPermissionError()

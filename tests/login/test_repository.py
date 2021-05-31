@@ -118,6 +118,9 @@ def test_groups():
     assert a.id
     assert a == repo.get(a.id)
 
+    b = repo.get_by_name(a.name)
+    assert b == a
+
     repo.delete(a.id)
     assert repo.get(a.id) is None
 

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import querystring from 'querystring';
 import moment from 'moment';
+import jwt_decode from 'jwt-decode';
 import client from './client';
 import { UserInfo } from '../../common/types';
 import { Config } from '../config';
@@ -33,7 +34,16 @@ export const refresh = async (user: UserInfo, login: (user: UserInfo) => void, l
         Authorization: `Bearer ${user.refreshToken}`,
       } });
       const userInfoDTO = await res.data;
-      const userInfo = { user: userInfoDTO.user, accessToken: userInfoDTO.access_token, refreshToken: userInfoDTO.refresh_token };
+      const tokenData = jwt_decode(userInfoDTO.access_token);
+      const userInfo : UserInfo  = {
+        user: userInfoDTO.user,
+        groups: (tokenData as any).sub.groups,
+        id: (tokenData as any).sub.id,
+        impersonator: (tokenData as any).sub.impersonator,
+        type: (tokenData as any).sub.type,
+        accessToken: userInfoDTO.access_token,
+        refreshToken: userInfoDTO.refresh_token
+      }
       login(userInfo);
       return userInfo;
     } catch (e) {
@@ -52,7 +62,17 @@ export const login = async (
     'Content-Type': 'application/x-www-form-urlencoded',
   } });
   const userInfo = await res.data;
-  return { user: userInfo.user, accessToken: userInfo.access_token, refreshToken: userInfo.refresh_token };
+  const tokenData = jwt_decode(userInfo.access_token);
+  const infos : UserInfo  = {
+    user: userInfo.user,
+    groups: (tokenData as any).sub.groups,
+    id: (tokenData as any).sub.id,
+    impersonator: (tokenData as any).sub.impersonator,
+    type: (tokenData as any).sub.type,
+    accessToken: userInfo.access_token,
+    refreshToken: userInfo.refresh_token
+  }
+  return infos;
 };
 
 export default {};
