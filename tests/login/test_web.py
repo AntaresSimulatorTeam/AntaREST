@@ -297,7 +297,7 @@ def test_group_delete() -> None:
     res = client.delete("/groups/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
-    service.delete_group.assert_called_once_with(0, PARAMS)
+    service.delete_group.assert_called_once_with("0", PARAMS)
 
 
 @pytest.mark.unit_test

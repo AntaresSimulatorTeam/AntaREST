@@ -2,6 +2,7 @@ from typing import Any, Callable, List, Tuple
 from unittest.mock import Mock
 
 import pytest
+from werkzeug.exceptions import BadRequest
 
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import (
@@ -70,6 +71,7 @@ def assert_permission(
 
 def test_save_group():
     groups = Mock()
+    groups.get_by_name.return_value = None
     groups.save.return_value = Group(id="group", name="group")
 
     service = LoginService(
@@ -80,11 +82,19 @@ def test_save_group():
         ldap=Mock(),
         event_bus=Mock(),
     )
-
+    # Case 1 : Group name doesn't exist
     group = Group(id="group", name="group")
     assert_permission(
         test=lambda x: service.save_group(group, x),
         values=[(SADMIN, True), (GADMIN, True), (USER3, False)],
+    )
+
+    # Case 2 : Group name already exists
+    groups.get_by_name.return_value = group
+    assert_permission(
+        test=lambda x: service.save_group(group, x),
+        values=[(SADMIN, False), (GADMIN, False), (USER3, False)],
+        error=BadRequest,
     )
 
 
@@ -365,18 +375,23 @@ def test_get_all_groups():
     groups = Mock()
     groups.get_all.return_value = [group]
 
+    user = User(id=3, name="name")
+    role = Role(group=group, identity=user)
+    roles = Mock()
+    roles.get_all_by_user.return_value = [role]
+
     service = LoginService(
         user_repo=Mock(),
         bot_repo=Mock(),
         group_repo=groups,
-        role_repo=Mock(),
+        role_repo=roles,
         ldap=Mock(),
         event_bus=Mock(),
     )
 
     assert_permission(
         test=lambda x: service.get_all_groups(x),
-        values=[(SADMIN, True), (GADMIN, False), (USER3, False)],
+        values=[(SADMIN, True), (GADMIN, True), (USER3, True)],
     )
 
 
@@ -463,11 +478,14 @@ def test_delete_group():
     groups = Mock()
     groups.delete.return_value = Group()
 
+    roles = Mock()
+    roles.get_all_by_group.return_value = []
+
     service = LoginService(
         user_repo=Mock(),
         bot_repo=Mock(),
         group_repo=groups,
-        role_repo=Mock(),
+        role_repo=roles,
         ldap=Mock(),
         event_bus=Mock(),
     )

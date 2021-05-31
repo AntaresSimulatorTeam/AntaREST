@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from typing import Any, List
 
 from dataclasses import dataclass
 
@@ -254,6 +254,20 @@ class RoleCreationDTO(DataClassJsonMixin):  # type: ignore
     type: RoleType
     group_id: str
     identity_id: int
+
+
+@dataclass
+class RoleDTO(DataClassJsonMixin):  # type: ignore
+    group_id: str
+    group_name: str
+    type: RoleType
+
+
+@dataclass
+class IdentityDTO(DataClassJsonMixin):  # type: ignore
+    id: int
+    name: str
+    roles: List[RoleDTO]
 
 
 @dataclass
