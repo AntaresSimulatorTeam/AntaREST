@@ -13,6 +13,10 @@ from antarest.storage.repository.filesystem.root.study import Study
 
 
 class StudyFactory:
+    """
+    Study Factory. Mainly used in test to inject study mock by dependency injection.
+    """
+
     def create_from_fs(self, path: Path) -> Tuple[StudyConfig, Study]:
         config = ConfigPathBuilder.build(path)
         return config, Study(config)

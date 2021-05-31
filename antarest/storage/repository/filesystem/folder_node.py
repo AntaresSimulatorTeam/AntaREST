@@ -15,6 +15,12 @@ class ChildNotFoundError(Exception):
 
 
 class FolderNode(INode[JSON, JSON, JSON], ABC):
+    """
+    Hub node which forward request deeper in tree according to url. Or expand request according to depth.
+    Its children is set node by node following antares tree structure.
+    Strucuture is implemented in antarest.storage.repository.filesystem.root
+    """
+
     def __init__(self, config: StudyConfig) -> None:
         self.config = config
 

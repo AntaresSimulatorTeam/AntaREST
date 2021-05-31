@@ -18,6 +18,10 @@ from antarest.common.persistence import Base
 
 
 class Password:
+    """
+    Domain Driven Object to force Secure by Design password
+    """
+
     def __init__(self, pwd: str):
         self._pwd: str = (
             pwd if "pbkdf2:sha256:" in pwd else generate_password_hash(pwd)
@@ -38,6 +42,10 @@ class Password:
 
 @dataclass
 class Identity(Base):  # type: ignore
+    """
+    Abstract entity which represent generic user
+    """
+
     __tablename__ = "identities"
 
     id = Column(Integer, Sequence("identity_id_seq"), primary_key=True)
@@ -65,6 +73,10 @@ class Identity(Base):  # type: ignore
 
 @dataclass
 class User(Identity):
+    """
+    Basic user, hosted in this plateform and using UI
+    """
+
     __tablename__ = "users"
 
     id = Column(
@@ -99,6 +111,10 @@ class User(Identity):
 
 @dataclass
 class UserLdap(Identity):
+    """
+    User using UI but hosted on LDAP server
+    """
+
     __tablename__ = "users_ldap"
 
     id = Column(
@@ -123,6 +139,10 @@ class UserLdap(Identity):
 
 @dataclass
 class Bot(Identity):
+    """
+    User hosted in this platform but using ony API (belongs to an user)
+    """
+
     __tablename__ = "bots"
 
     id = Column(
@@ -204,6 +224,10 @@ class UserCreateDTO:
 
 @dataclass
 class Group(Base):  # type: ignore
+    """
+    Group of users
+    """
+
     __tablename__ = "groups"
 
     id = Column(
@@ -248,6 +272,10 @@ class IdentityDTO(DataClassJsonMixin):  # type: ignore
 
 @dataclass
 class Role(Base):  # type: ignore
+    """
+    Enable to link a user to a group with a specific role permission
+    """
+
     __tablename__ = "roles"
 
     type = Column(Enum(RoleType))

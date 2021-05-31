@@ -10,7 +10,7 @@ from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.login.service import LoginService
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
-from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.business.watcher import Watcher
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
@@ -33,6 +33,23 @@ def build_storage(
     storage_service: Optional[StorageService] = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> StorageService:
+    """
+    Storage module linking dependencies.
+
+    Args:
+        application: flask application
+        config: server config
+        session: database session
+        user_service: user service facade
+        metadata_repository: used by testing to inject mock. Let None to use true instantiation
+        study_factory: used by testing to inject mock. Let None to use true instantiation
+        exporter: used by testing to inject mock. Let None to use true instantiation
+        storage_service: used by testing to inject mock. Let None to use true instantiation
+        event_bus: used by testing to inject mock. Let None to use true instantiation
+
+    Returns:
+
+    """
 
     path_resources = config.resources_path
     study_factory = study_factory or StudyFactory()
@@ -41,7 +58,7 @@ def build_storage(
         session=session
     )
 
-    study_service = StudyService(
+    study_service = RawStudyService(
         config=config,
         study_factory=study_factory,
         path_resources=path_resources,

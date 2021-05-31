@@ -35,6 +35,16 @@ from antarest.login.service import LoginService
 def create_login_api(
     service: LoginService, config: Config, jwt: JWTManager
 ) -> Blueprint:
+    """
+    Endpoints login implementation
+    Args:
+        service: login facade service
+        config: server config
+        jwt: jwt manager
+
+    Returns:
+
+    """
     bp = Blueprint(
         "create_login_api",
         __name__,

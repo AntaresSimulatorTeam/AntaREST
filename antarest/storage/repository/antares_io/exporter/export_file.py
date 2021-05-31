@@ -9,6 +9,8 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from antarest.common.custom_types import JSON
 
+# TODO merge with exporter service ?
+
 
 class Exporter:
     def export_file(self, path_study: Path, outputs: bool = True) -> BytesIO:

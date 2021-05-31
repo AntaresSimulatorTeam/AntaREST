@@ -12,6 +12,8 @@ db:
 
 storage:
   workspaces:
+    tmp:
+      path: examples/studies/
     default:
       path: examples/studies/
 

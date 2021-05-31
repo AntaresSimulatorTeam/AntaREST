@@ -91,6 +91,16 @@ def _add_post_edit_study(swagger: JSON) -> None:
 
 
 def _update(swagger: JSON) -> JSON:
+    """
+    Endpoint comments handle swagger spec.
+    However we need openapi 3.0 .
+    So we add a post build method to attach openapi specification.
+    Args:
+        swagger:
+
+    Returns:
+
+    """
     # Set file format version
     del swagger["swagger"]
     swagger["openapi"] = "3.0.0"
@@ -111,6 +121,15 @@ def _update(swagger: JSON) -> JSON:
 
 
 def build_swagger(application: Any) -> None:
+    """
+    Implement swagger specification endpoint.
+    Args:
+        application: flask app
+
+    Returns:
+
+    """
+
     @application.route(  # type: ignore
         "/swagger.json",
         methods=["GET"],

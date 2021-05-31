@@ -11,6 +11,10 @@ from antarest.storage.repository.filesystem.inode import INode, TREE
 
 
 class IniReaderError(Exception):
+    """
+    Left node to handle .ini file behavior
+    """
+
     def __init__(self, name: str, mes: str):
         super(IniReaderError, self).__init__(f"Error read node {name} = {mes}")
 

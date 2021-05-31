@@ -36,6 +36,10 @@ class PublicMode(enum.Enum):
 
 @dataclass
 class Study(Base):  # type: ignore
+    """
+    Standard Study entity
+    """
+
     __tablename__ = "study"
 
     id = Column(
@@ -68,6 +72,10 @@ class Study(Base):  # type: ignore
 
 @dataclass
 class RawStudy(Study):
+    """
+    Study filesystem based entity implementation.
+    """
+
     __tablename__ = "rawstudy"
 
     id = Column(
@@ -86,6 +94,10 @@ class RawStudy(Study):
 
 @dataclass
 class StudyFolder:
+    """
+    DTO used by watcher to keep synchronized studies and workspace organization and database
+    """
+
     path: Path
     workspace: str
     groups: List[Group]

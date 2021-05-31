@@ -11,7 +11,7 @@ from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.model import Study, RawStudy
 from antarest.storage.repository.antares_io.reader import IniReader
 from antarest.storage.repository.filesystem.factory import StudyFactory
@@ -24,9 +24,13 @@ logger = logging.getLogger(__name__)
 
 
 class ImporterService:
+    """
+    Import zip study or just output folder
+    """
+
     def __init__(
         self,
-        study_service: StudyService,
+        study_service: RawStudyService,
         study_factory: StudyFactory,
     ):
         self.study_service = study_service
@@ -35,6 +39,16 @@ class ImporterService:
     def upload_matrix(
         self, metadata: RawStudy, path: str, data: bytes
     ) -> None:
+        """
+        upload content file
+        Args:
+            metadata: study
+            path: file path inside study
+            data: new content file
+
+        Returns:
+
+        """
 
         relative_path_matrix = Path(path)
 
@@ -46,6 +60,15 @@ class ImporterService:
         path_matrix.write_bytes(data)
 
     def import_study(self, metadata: RawStudy, stream: IO[bytes]) -> Study:
+        """
+        Import study
+        Args:
+            metadata: study information
+            stream: study content compressed in zip file
+
+        Returns: new study information.
+
+        """
         path_study = self.study_service.get_study_path(metadata)
         path_study.mkdir()
 
@@ -71,6 +94,15 @@ class ImporterService:
         return metadata
 
     def import_output(self, metadata: Study, stream: IO[bytes]) -> JSON:
+        """
+        Import additional output on a existing study
+        Args:
+            metadata: study
+            stream: new output
+
+        Returns: output imported parsed in json format.
+
+        """
         path_output = (
             self.study_service.get_study_path(metadata)
             / "output"
