@@ -8,6 +8,10 @@ from antarest.common.jwt import JWTUser
 
 @dataclass
 class RequestParameters:
+    """
+    DTO object to handle data inside request to send to service
+    """
+
     user: Optional[JWTUser] = None
 
 

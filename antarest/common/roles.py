@@ -4,6 +4,10 @@ __all__ = ["RoleType"]
 
 
 class RoleType(enum.Enum):
+    """
+    Role type privilege
+    """
+
     ADMIN = 40
     RUNNER = 30
     WRITER = 20
