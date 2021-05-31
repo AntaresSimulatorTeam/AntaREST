@@ -26,6 +26,15 @@ class ExporterService:
         self.exporter = exporter
 
     def export_study(self, metadata: Study, outputs: bool = True) -> BytesIO:
+        """
+        Export and compresse study inside zip
+        Args:
+            metadata: study
+            outputs: ask to integrated output folder inside exportation
+
+        Returns: zip file with study files compressed inside
+
+        """
         path_study = self.study_service.get_study_path(metadata)
 
         self.study_service.check_study_exists(metadata)
@@ -33,5 +42,14 @@ class ExporterService:
         return self.exporter.export_file(path_study, outputs)
 
     def get_matrix(self, metadata: Study, path: str) -> bytes:
+        """
+        Get matrix file content
+        Args:
+            metadata: study with matrix inside
+            path: path inside study
+
+        Returns: content file
+
+        """
         file = self.study_service.get_study_path(metadata) / path
         return file.read_bytes()

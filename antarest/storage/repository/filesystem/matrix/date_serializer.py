@@ -35,10 +35,26 @@ class IDateMatrixSerializer(ABC):
 
     @abstractmethod
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
+        """
+        Extract date from raw columns inside matrix file
+        Args:
+            df: raw matrix from file content
+
+        Returns: (date index, other matrix part)
+
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def build_date(self, index: pd.Index) -> pd.DataFrame:
+        """
+        Format in antares style date index
+        Args:
+            index: date index
+
+        Returns: raw matrix date waith antares style ready to be save on disk
+
+        """
         raise NotImplementedError()
 
 

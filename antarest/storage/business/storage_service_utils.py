@@ -22,6 +22,14 @@ class StorageServiceUtils:
 
     @staticmethod
     def check_antares_version(study: JSON) -> None:
+        """
+        Check if study version is higher or equels to v7
+        Args:
+            study: study
+
+        Returns: none or raise error if incorrect version
+
+        """
 
         version = study["study"]["antares"]["version"]
         major_version = int(version / 100)
@@ -33,14 +41,36 @@ class StorageServiceUtils:
 
     @staticmethod
     def generate_uuid() -> str:
+        """
+        Generate a random study id
+        Returns: uuid
+
+        """
         return str(uuid4())
 
     @staticmethod
     def sanitize(uuid: str) -> str:
+        """
+        Sanitize uuid
+        Args:
+            uuid: study id
+
+        Returns: sanitize id
+
+        """
         return re.sub(r"[^0-9-]", "_", uuid)
 
     @staticmethod
     def extract_zip(stream: IO[bytes], dst: Path) -> None:
+        """
+        Extract zip archive
+        Args:
+            stream: zip file
+            dst: destination path
+
+        Returns:
+
+        """
         try:
             with ZipFile(stream) as zip_output:
                 zip_output.extractall(path=dst)
@@ -49,6 +79,14 @@ class StorageServiceUtils:
 
     @staticmethod
     def assert_path_can_be_matrix(path: Path) -> None:
+        """
+        assert if path point to a matrix
+        Args:
+            path: path to file
+
+        Returns: raise error if not matrix
+
+        """
         if path.suffix != ".txt":
             raise IncorrectPathError(
                 f"{path} is not a valid path for a matrix (use txt extension)."
@@ -56,6 +94,15 @@ class StorageServiceUtils:
 
     @staticmethod
     def update_antares_info(metadata: Study, study_data: JSON) -> None:
+        """
+        Update study.antares data
+        Args:
+            metadata: study information
+            study_data: study data formatted in json
+
+        Returns: none, update is directly apply on study_data
+
+        """
         info_antares = study_data["study"]["antares"]
 
         info_antares["caption"] = metadata.name
@@ -64,6 +111,14 @@ class StorageServiceUtils:
 
     @staticmethod
     def extract_info_from_url(route: str) -> Tuple[str, str]:
+        """
+        Separate study uuid from data path
+        Args:
+            route: url
+
+        Returns: (study, uuid, path inside study)
+
+        """
         route_parts = route.split("/")
         uuid = route_parts[0]
         url = "/".join(route_parts[1:])

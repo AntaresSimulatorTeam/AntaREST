@@ -8,6 +8,16 @@ class HeadWriter(ABC):
 
     @abstractmethod
     def build(self, var: int, end: int, start: int = 1) -> str:
+        """
+        Build matrix header.
+        Args:
+            var: number of variables
+            end: time horizon end
+            start: time horizon start
+
+        Returns: string header ready to save
+
+        """
         raise NotImplementedError()
 
 

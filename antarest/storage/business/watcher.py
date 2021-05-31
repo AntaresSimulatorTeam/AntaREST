@@ -33,11 +33,22 @@ class Watcher:
         )
 
     def start(self) -> None:
+        """
+        Start watching
+        Returns:
+
+        """
         if self.thread:
             self.thread.start()
 
     @staticmethod
     def _get_lock() -> bool:
+        """
+        Force watcher to run only one by access a lock on filesystem.
+
+        Returns: true if watcher get the lock, false else.
+
+        """
         with FileLock(f"{Watcher.LOCK}.lock"):
             start = (
                 int(f"0{Watcher.LOCK.read_text()}")
@@ -59,6 +70,12 @@ class Watcher:
             sleep(2)
 
     def _scan(self) -> None:
+        """
+        Scan recursively list of studies present on disk. Send updated list to storage service.
+        Returns:
+
+        """
+
         def rec_scan(
             path: Path, workspace: str, groups: List[Group]
         ) -> List[StudyFolder]:

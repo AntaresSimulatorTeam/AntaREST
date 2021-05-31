@@ -33,6 +33,11 @@ class Auth:
 
     @staticmethod
     def get_current_user() -> Optional[JWTUser]:
+        """
+        Get logged user.
+        Returns: jwt user data
+
+        """
         if "user" in g:
             return cast(JWTUser, g.user)
 
@@ -40,16 +45,39 @@ class Auth:
 
     @staticmethod
     def get_user_from_token(token: str) -> Optional[JWTUser]:
+        """
+        Extract jwt user data from token
+        Args:
+            token: raw token
+
+        Returns: jwt user data inside token
+
+        """
         token_data = decode_token(token)
         return JWTUser.from_dict(token_data["sub"])
 
     @staticmethod
     def invalidate() -> None:
+        """
+        Revoke all tokens.
+
+        Returns:
+
+        """
         g.pop("user", None)
 
     def protected(
         self, admin: bool = False
     ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        """
+        Decorator used to wrapper authentication over enpoints.
+        Args:
+            admin: accept only admin token
+
+        Returns: nested callable, used to create decorator
+
+        """
+
         def auth_nested(fn: Callable[..., Any]) -> Callable[..., Any]:
             @wraps(fn)
             def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:

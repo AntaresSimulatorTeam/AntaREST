@@ -14,7 +14,15 @@ class IReader(ABC):
 
     @abstractmethod
     def read(self, path: Path) -> JSON:
-        pass
+        """
+        Parse .ini file to json
+        Args:
+            path: .ini file
+
+        Returns: json content
+
+        """
+        raise NotImplementedError()
 
 
 class IniReader(IReader):
