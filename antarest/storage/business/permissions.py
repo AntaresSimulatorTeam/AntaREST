@@ -6,6 +6,10 @@ from antarest.storage.model import PublicMode, Study
 
 
 class StudyPermissionType(enum.Enum):
+    """
+    User permission belongs to Study
+    """
+
     READ = "READ"
     RUN = "RUN"
     WRITE = "WRITE"
@@ -50,6 +54,21 @@ permission_matrix = {
 def check_permission(
     user: JWTUser, study: Study, permission: StudyPermissionType
 ) -> bool:
+    """
+    Check user permission on study. User has permission if
+    - user is site admin
+    - user is the study owner
+    - user has correct role of one group linked to study
+    - study is public
+
+    Args:
+        user: user logged
+        study: study to check
+        permission: user permission to check
+
+    Returns: true if user match permission requirements, false else.
+
+    """
     if user.is_site_admin():
         return True
 

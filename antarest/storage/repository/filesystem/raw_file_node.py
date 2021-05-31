@@ -7,6 +7,10 @@ from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 
 class RawFileNode(LazyNode[str, str, str]):
+    """
+    Basic left which handle text file as like with any parsing / serialization
+    """
+
     def __init__(self, config: StudyConfig):
         self.config = config
 

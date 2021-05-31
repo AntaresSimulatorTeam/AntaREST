@@ -32,6 +32,15 @@ def sanitize_study_name(name: str) -> str:
 def create_study_routes(
     storage_service: StorageService, config: Config
 ) -> Blueprint:
+    """
+    Endpoint implementation for studies management
+    Args:
+        storage_service: storage service facade to handle request
+        config: main server configuration
+
+    Returns:
+
+    """
     bp = Blueprint("create_study_route", __name__)
     auth = Auth(config)
 

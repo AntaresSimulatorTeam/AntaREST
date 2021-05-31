@@ -7,12 +7,20 @@ from antarest.common.persistence import DTO
 
 
 class ThermalCluster(DTO):
+    """
+    Object linked to /input/thermal/clusters/<area>/list.ini
+    """
+
     def __init__(self, id: str, enabled: bool = True):
         self.id = id
         self.enabled = enabled
 
 
 class Link(DTO):
+    """
+    Object linked to /input/links/<link>/properties.ini information
+    """
+
     def __init__(self, filters_synthesis: List[str], filters_year: List[str]):
         self.filters_synthesis = filters_synthesis
         self.filters_year = filters_year
@@ -32,6 +40,10 @@ class Link(DTO):
 
 
 class Area(DTO):
+    """
+    Object linked to /input/<area>/optimization.ini information
+    """
+
     def __init__(
         self,
         links: Dict[str, Link],
@@ -46,6 +58,10 @@ class Area(DTO):
 
 
 class Set(DTO):
+    """
+    Object linked to /inputs/sets.ini information
+    """
+
     ALL = ["hourly", "daily", "weekly", "monthly", "annual"]
 
     def __init__(
@@ -60,6 +76,10 @@ class Set(DTO):
 
 
 class Simulation(DTO):
+    """
+    Object linked to /output/<simulation>/about-the-study/** informations
+    """
+
     def __init__(
         self,
         name: str,
@@ -85,6 +105,10 @@ class Simulation(DTO):
 
 
 class StudyConfig(DTO):
+    """
+    Root object to handle all study parameters which impact tree structure
+    """
+
     def __init__(
         self,
         study_path: Path,

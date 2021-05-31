@@ -11,6 +11,10 @@ from antarest.login.repository import UserLdapRepository
 
 @dataclass
 class AuthDTO:
+    """
+    Input LDAP data
+    """
+
     user: str
     password: str
 
@@ -24,6 +28,10 @@ class AuthDTO:
 
 @dataclass
 class AntaresUser:
+    """
+    Output LDAP data
+    """
+
     first_name: str
     last_name: str
     groups: List[str]
@@ -45,11 +53,24 @@ class AntaresUser:
 
 
 class LdapService:
+    """
+    LDAP facade with connector to ldap server
+    """
+
     def __init__(self, users: UserLdapRepository, config: Config):
         self.url = config.security.ldap_url
         self.users = users
 
     def _fetch(self, name: str, password: str) -> Optional[UserLdap]:
+        """
+        Fetch user from LDAP
+        Args:
+            name: username
+            password: password
+
+        Returns: User if connection success other Noen
+
+        """
         if not self.url:
             return None
 
@@ -63,12 +84,37 @@ class LdapService:
         return UserLdap(name=name)
 
     def _save(self, user: UserLdap) -> UserLdap:
+        """
+        Save user in db
+        Args:
+            user: user to save
+
+        Returns:
+
+        """
         return self.users.save(user)
 
     def get(self, id: int) -> Optional[UserLdap]:
+        """
+        Get User stored in DB
+        Args:
+            id: user id
+
+        Returns: user
+
+        """
         return self.users.get(id)
 
     def login(self, name: str, password: str) -> Optional[UserLdap]:
+        """
+        Try to log user to external LDAP
+        Args:
+            name: username
+            password: password
+
+        Returns: if logging success return a UserLDAP other None
+
+        """
         user = self._fetch(name, password)
         if not user:
             return None
@@ -76,7 +122,21 @@ class LdapService:
         return self.users.get_by_name(name) or self._save(UserLdap(name=name))
 
     def get_all(self) -> List[UserLdap]:
+        """
+        Get all users in DB.
+
+        Returns: list of users
+
+        """
         return self.users.get_all()
 
     def delete(self, id: int) -> None:
+        """
+        Delete user
+        Args:
+            id: user id to delete
+
+        Returns:
+
+        """
         return self.users.delete(id)

@@ -6,6 +6,11 @@ import pandas as pd  # type: ignore
 
 
 class IDateMatrixSerializer(ABC):
+    """
+    Abstract class to handle date index reading and writing for many time frequency.
+    Used by OutputSeriesMatrix
+    """
+
     _MONTHS = {
         "JAN": "01",
         "FEB": "02",
@@ -30,14 +35,34 @@ class IDateMatrixSerializer(ABC):
 
     @abstractmethod
     def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
+        """
+        Extract date from raw columns inside matrix file
+        Args:
+            df: raw matrix from file content
+
+        Returns: (date index, other matrix part)
+
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def build_date(self, index: pd.Index) -> pd.DataFrame:
+        """
+        Format in antares style date index
+        Args:
+            index: date index
+
+        Returns: raw matrix date waith antares style ready to be save on disk
+
+        """
         raise NotImplementedError()
 
 
 class HourlyMatrixSerializer(IDateMatrixSerializer):
+    """
+    Class implementation for hourly index
+    """
+
     def build_date(self, index: pd.Index) -> pd.DataFrame:
         def _map(row: str) -> Tuple[str, int, str, str, str]:
             m, d, h = re.split("[\s/]", row)
@@ -94,6 +119,10 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
 
 
 class DailyMatrixSerializer(IDateMatrixSerializer):
+    """
+    Class implementation for daily index
+    """
+
     def build_date(self, index: pd.Index) -> pd.DataFrame:
         def _map(row: str) -> Tuple[str, int, str, str]:
             m, d = row.split("/")
@@ -142,6 +171,10 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
 
 
 class WeeklyMatrixSerializer(IDateMatrixSerializer):
+    """
+    Class implementation for weekly index
+    """
+
     def build_date(self, index: pd.Index) -> pd.DataFrame:
         matrix = pd.DataFrame({0: [""] * index.size, 1: index.values})
 
@@ -167,6 +200,10 @@ class WeeklyMatrixSerializer(IDateMatrixSerializer):
 
 
 class MonthlyMatrixSerializer(IDateMatrixSerializer):
+    """
+    Class implementation for monthly index
+    """
+
     def build_date(self, index: pd.Index) -> pd.DataFrame:
         matrix = pd.DataFrame(
             {
@@ -200,6 +237,10 @@ class MonthlyMatrixSerializer(IDateMatrixSerializer):
 
 
 class AnnualMatrixSerializer(IDateMatrixSerializer):
+    """
+    Class implementation for annual index
+    """
+
     def build_date(self, index: pd.Index) -> pd.DataFrame:
         return pd.DataFrame(
             [
@@ -222,6 +263,10 @@ class AnnualMatrixSerializer(IDateMatrixSerializer):
 
 
 class FactoryDateSerializer:
+    """
+    Factory to choice correct DateMatrixSerializer according antares time frequency
+    """
+
     @staticmethod
     def create(freq: str, area: str) -> IDateMatrixSerializer:
         if freq == "hourly":

@@ -8,6 +8,10 @@ from antarest.storage.repository.filesystem.inode import INode, S, G, V
 
 
 class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
+    """
+    Abstract left with implemented a lazy loading for its daughter implementation.
+    """
+
     def __init__(self) -> None:
         self.config = StudyConfig(study_path=Path())
 
@@ -43,8 +47,29 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         depth: int = -1,
         expanded: bool = False,
     ) -> G:
+        """
+        Fetch data on disk.
+
+        Args:
+            url: data path to retrieve
+            depth: after url is reached, node expand tree until matches depth asked
+            expanded: context parameter to determine if current node become from a expansion
+
+        Returns:
+
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def dump(self, data: S, url: Optional[List[str]] = None) -> None:
+        """
+        Store data on tree.
+
+        Args:
+            data: new data to save
+            url: data path to change
+
+        Returns:
+
+        """
         raise NotImplementedError()

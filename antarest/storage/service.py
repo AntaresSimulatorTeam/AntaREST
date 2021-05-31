@@ -26,7 +26,7 @@ from antarest.storage.business.permissions import (
     check_permission,
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.business.raw_study_service import StudyService
+from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.model import (
     Study,
     StudyContentStatus,
@@ -45,9 +45,13 @@ logger = logging.getLogger(__name__)
 
 
 class StorageService:
+    """
+    Storage module facade service to handle studies management.
+    """
+
     def __init__(
         self,
-        study_service: StudyService,
+        study_service: RawStudyService,
         importer_service: ImporterService,
         exporter_service: ExporterService,
         user_service: LoginService,
@@ -62,6 +66,16 @@ class StorageService:
         self.event_bus = event_bus
 
     def get(self, route: str, depth: int, params: RequestParameters) -> JSON:
+        """
+        Get study data inside filesystem
+        Args:
+            route: route to follow inside study structure
+            depth: depth to expand tree when route matched
+            params: request parameters
+
+        Returns: data study formatted in json
+
+        """
         uuid, url = StorageServiceUtils.extract_info_from_url(route)
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.READ)
@@ -74,7 +88,6 @@ class StorageService:
         )
 
     def _get_study_metadatas(self, params: RequestParameters) -> List[Study]:
-
         return list(
             filter(
                 lambda study: self._assert_permission(
@@ -85,6 +98,14 @@ class StorageService:
         )
 
     def get_studies_information(self, params: RequestParameters) -> JSON:
+        """
+        Get information for all studies.
+        Args:
+            params: request parameters
+
+        Returns: List of study information
+
+        """
         return {
             study.id: self.study_service.get_study_information(study)
             for study in self._get_study_metadatas(params)
@@ -93,6 +114,15 @@ class StorageService:
     def get_study_information(
         self, uuid: str, params: RequestParameters
     ) -> JSON:
+        """
+        Get study information
+        Args:
+            uuid: study uuid
+            params: request parameters
+
+        Returns: study information
+
+        """
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.READ)
         if not isinstance(study, RawStudy):
@@ -103,6 +133,15 @@ class StorageService:
         return self.study_service.get_study_information(study)
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
+        """
+        Retrieve study path
+        Args:
+            uuid: study uuid
+            params: request parameters
+
+        Returns:
+
+        """
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.RUN)
 
@@ -116,6 +155,16 @@ class StorageService:
     def create_study(
         self, study_name: str, group_ids: List[str], params: RequestParameters
     ) -> str:
+        """
+        Create empty study
+        Args:
+            study_name: study name to set
+            group_ids: group to link to study
+            params: request parameters
+
+        Returns: new study uuid
+
+        """
         sid = str(uuid4())
         study_path = str(self.study_service.get_default_workspace_path() / sid)
 
@@ -136,7 +185,15 @@ class StorageService:
         return str(raw.id)
 
     def sync_studies_on_disk(self, folders: List[StudyFolder]) -> None:
+        """
+        Used by watcher to send list of studies present on filesystem.
 
+        Args:
+            folders: list of studies currently present on folder
+
+        Returns:
+
+        """
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
         for study in self.repository.get_all():
@@ -189,6 +246,18 @@ class StorageService:
         group_ids: List[str],
         params: RequestParameters,
     ) -> str:
+        """
+        Copy study to an other location.
+
+        Args:
+            src_uuid: source study
+            dest_study_name: destination study
+            group_ids: group to attach on new study
+            params: request parameters
+
+        Returns:
+
+        """
         src_study = self._get_study(src_uuid)
         self._assert_permission(
             params.user, src_study, StudyPermissionType.READ
@@ -224,6 +293,16 @@ class StorageService:
         params: RequestParameters,
         outputs: bool = True,
     ) -> BytesIO:
+        """
+        Export study to a zip file.
+        Args:
+            uuid: study id
+            params: request parmeters
+            outputs: integrate output folder in zip file
+
+        Returns: zip file
+
+        """
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.READ)
         if not isinstance(study, RawStudy):
@@ -234,6 +313,15 @@ class StorageService:
         return self.exporter_service.export_study(study, outputs)
 
     def delete_study(self, uuid: str, params: RequestParameters) -> None:
+        """
+        Delete study
+        Args:
+            uuid: study uuid
+            params: request parameters
+
+        Returns:
+
+        """
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.DELETE)
         if not isinstance(study, RawStudy):
@@ -250,6 +338,16 @@ class StorageService:
     def delete_output(
         self, uuid: str, output_name: str, params: RequestParameters
     ) -> None:
+        """
+        Delete specific output simulation in study
+        Args:
+            uuid: study uuid
+            output_name: output simulation name
+            params: request parameters
+
+        Returns:
+
+        """
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.WRITE)
         if not isinstance(study, RawStudy):
@@ -263,6 +361,15 @@ class StorageService:
         )
 
     def get_matrix(self, route: str, params: RequestParameters) -> bytes:
+        """
+        Download matrix
+        Args:
+            route: matrix path
+            params: request parameters
+
+        Returns: raw content file
+
+        """
         uuid, path = StorageServiceUtils.extract_info_from_url(route)
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.READ)
@@ -276,6 +383,16 @@ class StorageService:
     def upload_matrix(
         self, path: str, data: bytes, params: RequestParameters
     ) -> None:
+        """
+        Upload matrix
+        Args:
+            path: matrix path
+            data: raw file content
+            params: request parameters
+
+        Returns:
+
+        """
         uuid, matrix_path = StorageServiceUtils.extract_info_from_url(path)
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.WRITE)
@@ -296,6 +413,17 @@ class StorageService:
         group_ids: List[str],
         params: RequestParameters,
     ) -> str:
+        """
+        Import zipped study.
+
+        Args:
+            stream: zip file
+            group_ids: group to attach to study
+            params: request parameters
+
+        Returns: new study uuid
+
+        """
         sid = str(uuid4())
         path = str(self.study_service.get_default_workspace_path() / sid)
         study = RawStudy(
@@ -321,6 +449,16 @@ class StorageService:
     def import_output(
         self, uuid: str, stream: IO[bytes], params: RequestParameters
     ) -> JSON:
+        """
+        Import specific output simulation inside study
+        Args:
+            uuid: study uuid
+            stream: zip file with simulation folder
+            params: request parameters
+
+        Returns: output simulation json formatted
+
+        """
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.RUN)
         if not isinstance(study, RawStudy):
@@ -334,6 +472,17 @@ class StorageService:
     def edit_study(
         self, route: str, new: JSON, params: RequestParameters
     ) -> JSON:
+        """
+        Replace data inside study.
+
+        Args:
+            route: path data target in study
+            new: new data to replace
+            params: request parameters
+
+        Returns: new data replaced
+
+        """
         uuid, url = StorageServiceUtils.extract_info_from_url(route)
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.WRITE)
@@ -356,6 +505,16 @@ class StorageService:
     def change_owner(
         self, study_id: str, owner_id: int, params: RequestParameters
     ) -> None:
+        """
+        Change study owner
+        Args:
+            study_id: study uuid
+            owner_id: new owner id
+            params: request parameters
+
+        Returns:
+
+        """
         study = self._get_study(study_id)
         self._assert_permission(
             params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
@@ -372,6 +531,17 @@ class StorageService:
     def add_group(
         self, study_id: str, group_id: str, params: RequestParameters
     ) -> None:
+        """
+        Attach new group on study.
+
+        Args:
+            study_id: study uuid
+            group_id: group id to attach
+            params: request parameters
+
+        Returns:
+
+        """
         study = self._get_study(study_id)
         self._assert_permission(
             params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
@@ -385,6 +555,16 @@ class StorageService:
     def remove_group(
         self, study_id: str, group_id: str, params: RequestParameters
     ) -> None:
+        """
+        Detach group on study
+        Args:
+            study_id: study uuid
+            group_id: group to detach
+            params: request parameters
+
+        Returns:
+
+        """
         study = self._get_study(study_id)
         self._assert_permission(
             params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
@@ -397,6 +577,16 @@ class StorageService:
     def set_public_mode(
         self, study_id: str, mode: PublicMode, params: RequestParameters
     ) -> None:
+        """
+        Update public mode permission on study
+        Args:
+            study_id: study uuid
+            mode: new public permission
+            params: request parameters
+
+        Returns:
+
+        """
         study = self._get_study(study_id)
         self._assert_permission(
             params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
@@ -411,6 +601,17 @@ class StorageService:
         group_ids: List[str] = list(),
         content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
+        """
+        Creeate new study with owner, group or content_status.
+        Args:
+            study: study to save
+            owner: new owner
+            group_ids: groups to attach
+            content_status: new content_status
+
+        Returns:
+
+        """
         if not owner:
             raise UserHasNotPermissionError
 
@@ -433,6 +634,14 @@ class StorageService:
         self.repository.save(study)
 
     def _get_study(self, uuid: str) -> Study:
+        """
+        Get study information
+        Args:
+            uuid: study uuid
+
+        Returns: study information
+
+        """
 
         study = self.repository.get(uuid)
         if not study:
@@ -451,6 +660,17 @@ class StorageService:
         permission_type: StudyPermissionType,
         raising: bool = True,
     ) -> bool:
+        """
+        Assert user has permission to edit or read study.
+        Args:
+            user: user logged
+            study: study asked
+            permission_type: level of permission
+            raising: raise error if permission not matched
+
+        Returns: true if permission match, false if not raising.
+
+        """
         if not user:
             raise UserHasNotPermissionError()
 
@@ -464,6 +684,16 @@ class StorageService:
         return ok
 
     def _analyse_study(self, metadata: RawStudy) -> StudyContentStatus:
+        """
+        Analyze study integrity
+        Args:
+            metadata: study to analyze
+
+        Returns: VALID if study has any integrity mistakes.
+        WARNING if studies has mistakes.
+        ERROR if tree was not able to analyse structuree without raise error.
+
+        """
         try:
             if self.study_service.check_errors(metadata):
                 return StudyContentStatus.WARNING

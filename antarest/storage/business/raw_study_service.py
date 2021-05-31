@@ -13,7 +13,13 @@ from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.web.exceptions import StudyNotFoundError
 
 
-class StudyService:
+class RawStudyService:
+    """
+    Manage set of raw studies stored in the workspaces.
+    Instantiate and manage tree struct for each request
+
+    """
+
     def __init__(
         self,
         config: Config,
@@ -25,20 +31,53 @@ class StudyService:
         self.path_resources: Path = path_resources
 
     def check_study_exists(self, metadata: RawStudy) -> None:
+        """
+        Check study on filesystem.
+
+        Args:
+            metadata: study
+
+        Returns: none or raise error if not found
+
+        """
         if not self.study_exists(metadata):
             raise StudyNotFoundError(
                 f"Study with the uuid {metadata.id} does not exist."
             )
 
     def check_errors(self, metadata: RawStudy) -> List[str]:
+        """
+        Check study antares data integrity
+        Args:
+            metadata: study
+
+        Returns: list of non integrity inside study
+
+        """
         path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(path)
         return study.check_errors(study.get())
 
     def study_exists(self, metadata: RawStudy) -> bool:
+        """
+        Check study exist.
+        Args:
+            metadata: study
+
+        Returns: true if study presents in disk, false else.
+
+        """
         return (self.get_study_path(metadata) / "study.antares").is_file()
 
     def get_study_uuids(self, workspace: Optional[str] = None) -> List[str]:
+        """
+        List study presents on disk
+        Args:
+            workspace: specify workspace
+
+        Returns: list of study present in workspace
+
+        """
         folders: List[Path] = []
         if workspace:
             folders = list(self.get_workspace_path(workspace).iterdir())
@@ -53,6 +92,16 @@ class StudyService:
         return sorted(studies_list)
 
     def get(self, metadata: RawStudy, url: str = "", depth: int = 3) -> JSON:
+        """
+        Entry point to fetch data inside study.
+        Args:
+            metadata: study
+            url: path data inside study to reach
+            depth: tree depth to reach after reach data path
+
+        Returns: study data formatted in json
+
+        """
         self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
 
@@ -64,21 +113,59 @@ class StudyService:
         return data
 
     def get_study_information(self, metadata: RawStudy) -> JSON:
+        """
+        Get information present in study.antares file
+        Args:
+            metadata: study
+
+        Returns: study.antares data formatted in json
+
+        """
         config = StudyConfig(study_path=self.get_study_path(metadata))
         study = self.study_factory.create_from_config(config)
         return study.get(url=["study"])
 
     def get_workspace_path(self, workspace: str) -> Path:
+        """
+        Retrieve workspace path from config
+
+        Args:
+            workspace: workspace name
+
+        Returns: path
+
+        """
         return self.config.storage.workspaces[workspace].path
 
     def get_default_workspace_path(self) -> Path:
+        """
+        Get path of default workspace
+        Returns: path
+
+        """
         return self.get_workspace_path(DEFAULT_WORKSPACE_NAME)
 
     def get_study_path(self, metadata: RawStudy) -> Path:
+        """
+        Get study path
+        Args:
+            metadata: study information
+
+        Returns: study path
+
+        """
         path: Path = Path(metadata.path)
         return path
 
     def create_study(self, metadata: RawStudy) -> RawStudy:
+        """
+        Create empty new study
+        Args:
+            metadata: study information
+
+        Returns: new study information
+
+        """
         empty_study_zip = self.path_resources / "empty-study.zip"
 
         path_study = self.get_study_path(metadata)
@@ -97,6 +184,15 @@ class StudyService:
         return metadata
 
     def copy_study(self, src_meta: RawStudy, dest_meta: RawStudy) -> RawStudy:
+        """
+        Copy study to a new destination
+        Args:
+            src_meta: source study
+            dest_meta: destination study
+
+        Returns: destination study
+
+        """
         self.check_study_exists(src_meta)
         src_path = self.get_study_path(src_meta)
 
@@ -118,17 +214,44 @@ class StudyService:
         return dest_meta
 
     def delete_study(self, metadata: RawStudy) -> None:
+        """
+        Delete study
+        Args:
+            metadata: study
+
+        Returns:
+
+        """
         self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         shutil.rmtree(study_path)
 
     def delete_output(self, metadata: RawStudy, output_name: str) -> None:
+        """
+        Delete output folder
+        Args:
+            metadata: study
+            output_name: output simulation
+
+        Returns:
+
+        """
         output_path = self.get_study_path(metadata) / "output" / output_name
         shutil.rmtree(output_path, ignore_errors=True)
 
     def edit_study(
         self, metadata: RawStudy, url: str, new: SUB_JSON
     ) -> SUB_JSON:
+        """
+        Replace data on disk with new
+        Args:
+            metadata: study
+            url: data path to reach
+            new: new data to replace
+
+        Returns: new data replaced
+
+        """
         # Get data
         self.check_study_exists(metadata)
 

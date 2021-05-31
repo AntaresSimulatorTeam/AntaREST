@@ -8,12 +8,28 @@ from antarest.common.custom_types import ELEMENT, JSON
 
 
 class IReader(ABC):
+    """
+    Init file Reader interface
+    """
+
     @abstractmethod
     def read(self, path: Path) -> JSON:
-        pass
+        """
+        Parse .ini file to json
+        Args:
+            path: .ini file
+
+        Returns: json content
+
+        """
+        raise NotImplementedError()
 
 
 class IniReader(IReader):
+    """
+    Standard .ini file reader. Use for general purpose.
+    """
+
     @staticmethod
     def _parse_bool(value: str) -> Optional[bool]:
         value = value.lower()
@@ -67,6 +83,18 @@ class IniConfigParser(configparser.RawConfigParser):
 
 
 class SetsIniReader(IReader):
+    """
+    Custom .ini reader for inputs/sets.ini file.
+    This file has format :
+    ``` python
+    [chap]
+    + = areaA
+    + = areaB
+    ```
+
+    multikey is not compatible with standard .ini readers
+    """
+
     @staticmethod
     def fetch_cleaned_lines(path: Path) -> List[str]:
         return [l for l in path.read_text().split("\n") if l != ""]

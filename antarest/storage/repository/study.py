@@ -6,6 +6,10 @@ from antarest.storage.model import Study
 
 
 class StudyMetadataRepository:
+    """
+    Database connector to manage Study entity
+    """
+
     def __init__(self, session: Session) -> None:
         self.session = session
 

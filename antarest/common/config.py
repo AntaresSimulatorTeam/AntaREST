@@ -11,6 +11,10 @@ from antarest.common.custom_types import JSON
 
 @dataclass(frozen=True)
 class SecurityConfig:
+    """
+    Sub config object dedicated to security
+    """
+
     jwt_key: str = ""
     admin_pwd: str = ""
     disabled: bool = False
@@ -28,6 +32,10 @@ class SecurityConfig:
 
 @dataclass(frozen=True)
 class WorkspaceConfig:
+    """
+    Sub config object dedicated to workspace
+    """
+
     groups: List[str] = field(default_factory=lambda: [])
     path: Path = Path()
 
@@ -40,6 +48,10 @@ class WorkspaceConfig:
 
 @dataclass(frozen=True)
 class StorageConfig:
+    """
+    Sub config object dedicated to storage module
+    """
+
     workspaces: Dict[str, WorkspaceConfig] = field(default_factory=lambda: {})
     watcher_lock: bool = True
 
@@ -56,6 +68,10 @@ class StorageConfig:
 
 @dataclass(frozen=True)
 class LauncherConfig:
+    """
+    Sub config object dedicated to launcher module
+    """
+
     binaries: Dict[str, Path] = field(default_factory=lambda: {})
     default: str = "local"
 
@@ -71,6 +87,10 @@ class LauncherConfig:
 
 @dataclass(frozen=True)
 class LoggingConfig:
+    """
+    Sub config object dedicated to logging
+    """
+
     level: str = "INFO"
     path: Optional[Path] = None
     format: Optional[str] = None
@@ -86,6 +106,10 @@ class LoggingConfig:
 
 @dataclass(frozen=True)
 class RedisConfig:
+    """
+    Sub config object dedicated to redis
+    """
+
     host: str = "localhost"
     port: int = 6379
 
@@ -96,6 +120,10 @@ class RedisConfig:
 
 @dataclass(frozen=True)
 class EventBusConfig:
+    """
+    Sub config object dedicated to eventbus module
+    """
+
     redis: Optional[RedisConfig] = None
 
     @staticmethod
@@ -109,6 +137,10 @@ class EventBusConfig:
 
 @dataclass(frozen=True)
 class Config:
+    """
+    Root server config
+    """
+
     security: SecurityConfig = SecurityConfig()
     storage: StorageConfig = StorageConfig()
     launcher: LauncherConfig = LauncherConfig()
@@ -120,6 +152,16 @@ class Config:
 
     @staticmethod
     def from_dict(data: JSON, res: Optional[Path] = None) -> "Config":
+        """
+        Parse config from dict.
+
+        Args:
+            data: dict struct to parse
+            res: resources path is not present in yaml file.
+
+        Returns:
+
+        """
         return Config(
             security=SecurityConfig.from_dict(data["security"]),
             storage=StorageConfig.from_dict(data["storage"]),
@@ -135,5 +177,15 @@ class Config:
 
     @staticmethod
     def from_yaml_file(file: Path, res: Optional[Path] = None) -> "Config":
+        """
+        Parse config from yaml file.
+
+        Args:
+            file: yaml path
+            res: resources path is not present in yaml file.
+
+        Returns:
+
+        """
         data = yaml.safe_load(open(file))
         return Config.from_dict(data, res)
