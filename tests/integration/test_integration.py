@@ -165,19 +165,30 @@ def test_main(app: Flask):
         },
     )
     group_id = res.json[1]["id"]
+    group_name = res.json[1]["name"]
     res = client.post(
         "/roles",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
-        json={"type": 40, "group_id": group_id, "identity_id": 3},
+        json={
+            "type": 40,
+            "group_id": group_id,
+            "group_name": group_name,
+            "identity_id": 3,
+        },
     )
     res = client.post(
         "/roles",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
-        json={"type": 20, "group_id": group_id, "identity_id": 2},
+        json={
+            "type": 20,
+            "group_id": group_id,
+            "group_name": group_name,
+            "identity_id": 2,
+        },
     )
     # reset login to update credentials
     res = client.post(

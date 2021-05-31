@@ -1,5 +1,5 @@
 import client from './client';
-import {UserDTO, GroupDTO, RoleDTO} from '../../common/types'
+import {UserDTO, GroupDTO, RoleDTO, IdentityDTO} from '../../common/types'
 
 
 /** ******************************************* */
@@ -14,6 +14,11 @@ export const getUsers = async (): Promise<Array<UserDTO>> => {
 export const createNewUser = async (name: string, password: string) : Promise<any> => {
   const data = { name, password };  
   const res = await client.post('/users', data);
+  return res.data;
+}
+
+export const getUserInfos = async (id: number) : Promise<IdentityDTO> => {
+  const res = await client.get(`/users/${id}`);
   return res.data;
 }
 
@@ -61,12 +66,17 @@ export const getAllRolesInGroup = async (group_id : string) : Promise<Array<Role
 
 
 export const createRole = async (role : RoleDTO) : Promise<RoleDTO> => {
-  const data = {group_id: role.group_id, identity_id: role.user_id, type : role.type}
+  const data = role;
   const res = await client.post('/roles', data);
   return res.data;
 }
 
 export const deleteRole = async (role : RoleDTO) : Promise<any> => {
-  const res = await client.delete(`/roles/${role.group_id}/${role.user_id}`);
+  const res = await client.delete(`/roles/${role.group_id}/${role.identity_id}`);
+  return res.data;
+}
+
+export const deleteAllRoles = async (id : number) : Promise<any> => {
+  const res = await client.delete(`/roles/${id}`);
   return res.data;
 }

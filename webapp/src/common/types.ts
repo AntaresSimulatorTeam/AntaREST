@@ -33,7 +33,7 @@ export type IDType = number | string;
 export interface RoleDTO {
   group_id: string;
   group_name: string;
-  user_id: number;
+  identity_id: number;
   type: RoleType;
 }
 
@@ -56,6 +56,12 @@ export interface UserInfo {
   accessToken: string;
   refreshToken: string;
   expirationDate?: Moment;
+}
+
+export interface IdentityDTO {
+  id: number;
+  name: string;
+  roles: Array<RoleDTO>;
 }
 
 

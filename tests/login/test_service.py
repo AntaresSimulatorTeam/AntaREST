@@ -504,11 +504,14 @@ def test_delete_user():
     bots.get_all_by_owner.return_value = [Bot(id=4, owner=3)]
     bots.get.return_value = Bot(id=4, owner=3)
 
+    roles = Mock()
+    roles.get_all_by_user.return_value = []
+
     service = LoginService(
         user_repo=users,
         bot_repo=bots,
         group_repo=Mock(),
-        role_repo=Mock(),
+        role_repo=roles,
         ldap=Mock(),
         event_bus=Mock(),
     )

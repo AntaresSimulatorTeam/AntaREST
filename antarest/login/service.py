@@ -21,7 +21,8 @@ from antarest.login.model import (
     Identity,
     UserCreateDTO,
     Password,
-    RoleCreationDTO,
+    IdentityDTO,
+    RoleDTO,
 )
 from antarest.login.repository import (
     UserRepository,
@@ -151,9 +152,7 @@ class LoginService:
         else:
             raise UserHasNotPermissionError()
 
-    def save_role(
-        self, role: RoleCreationDTO, params: RequestParameters
-    ) -> Role:
+    def save_role(self, role: RoleDTO, params: RequestParameters) -> Role:
         """
         Create / Update role
         Permission: SADMIN, GADMIN (own group)
@@ -232,6 +231,50 @@ class LoginService:
             )
         ):
             return user
+        else:
+            raise UserNotFoundError()
+
+    def get_user_info(
+        self, id: int, params: RequestParameters
+    ) -> Optional[IdentityDTO]:
+        """
+        Get user informations
+        Permission: SADMIN, GADMIN (own group), USER (own user)
+
+        Args:
+            id: user id
+            params: request parameters
+
+        Returns: user informations and roles
+
+        """
+        user = self.ldap.get(id) or self.users.get(id)
+        if not user:
+            raise UserNotFoundError()
+
+        roles = self.roles.get_all_by_user(user.id)
+        groups = [r.group for r in roles]
+
+        if params.user and any(
+            (
+                params.user.is_site_admin(),
+                params.user.is_group_admin(groups),
+                params.user.is_himself(user),
+            )
+        ):
+            return IdentityDTO(
+                id=user.id,
+                name=user.name,
+                roles=[
+                    RoleDTO(
+                        group_id=role.group_id,
+                        group_name=role.group.name,
+                        identity_id=id,
+                        type=role.type.value,
+                    )
+                    for role in roles
+                ],
+            )
         else:
             raise UserNotFoundError()
 
@@ -459,11 +502,17 @@ class LoginService:
             (params.user.is_site_admin(), params.user.is_himself(User(id=id)))
         ):
             for b in self.bots.get_all_by_owner(id):
+                for role in self.roles.get_all_by_user(user=b.id):
+                    self.roles.delete(
+                        user=role.identity_id, group=role.group_id
+                    )
                 self.delete_bot(b.id, params)
 
-            self.ldap.delete(id)
-            return self.users.delete(id)  # return for test purpose
+            for role in self.roles.get_all_by_user(user=id):
+                self.roles.delete(user=role.identity_id, group=role.group_id)
 
+            # self.ldap.delete(id)
+            return self.users.delete(id)  # return for test purpose
         else:
             raise UserHasNotPermissionError()
 
@@ -514,5 +563,32 @@ class LoginService:
             )
         ):
             return self.roles.delete(user, group)
+        else:
+            raise UserHasNotPermissionError()
+
+    def delete_all_roles_from_user(
+        self, id: int, params: RequestParameters
+    ) -> None:
+        """
+        Delete all roles from a specific user
+        Permission: SADMIN, GADMIN (own group)
+        Args:
+            id: user linked to roles
+            params: request parameters
+
+        Returns:
+
+        """
+        roles = self.roles.get_all_by_user(id)
+        groups = [r.group for r in roles]
+
+        if params.user and any(
+            (
+                params.user.is_site_admin(),
+                params.user.is_group_admin(groups),
+            )
+        ):
+            for role in roles:
+                self.roles.delete(role.identity_id, role.group_id)
         else:
             raise UserHasNotPermissionError()

@@ -260,6 +260,7 @@ class RoleCreationDTO(DataClassJsonMixin):  # type: ignore
 class RoleDTO(DataClassJsonMixin):  # type: ignore
     group_id: str
     group_name: str
+    identity_id: int
     type: RoleType
 
 
