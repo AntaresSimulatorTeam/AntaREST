@@ -104,8 +104,9 @@ const UsersSettings = (props: PropTypes) => {
                                           <ItemSettings key={item.id}
                                             id={item.id}
                                             value={String(item.name)}
+                                            view={false}
                                             onDeleteCLick={onDeleteClick}
-                                            onUpdateClick={onUpdateClick} />)
+                                            onActionClick={onUpdateClick} />)
                           }
         {openModal && <UserModal  open={openModal}  // Why 'openModal &&' ? => Otherwise previous data are still present
                                   userInfos={currentUser}

@@ -17,5 +17,6 @@
   "unknown": "Inconnu",
   "confirmationModalTitle": "Confirmation",
   "yesButton": "Oui",
-  "noButton": "Non"
+  "noButton": "Non",
+  "backButton": "Retour"
 }

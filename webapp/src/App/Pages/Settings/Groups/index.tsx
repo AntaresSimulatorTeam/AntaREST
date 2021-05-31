@@ -127,8 +127,9 @@ const GroupsSettings = (props: PropTypes) => {
                                           <ItemSettings key={item.id}
                                             id={item.id}
                                             value={String(item.name)}
+                                            view={false}
                                             onDeleteCLick={onDeleteClick}
-                                            onUpdateClick={onUpdateClick} />)
+                                            onActionClick={onUpdateClick} />)
                           }
         {openModal && <GroupModal open={openModal}
                                   onClose={onModalClose}

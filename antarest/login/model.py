@@ -193,28 +193,15 @@ class Bot(Identity):
         return self.to_dict() == other.to_dict()
 
 
+class BotRoleCreateDTO(BaseModel):
+    group: str
+    role: int
+
+
 class BotCreateDTO(BaseModel):
     name: str
-    group: str
-    role: RoleType
+    roles: List[BotRoleCreateDTO]
     is_author: bool = True
-
-    @staticmethod
-    def from_dict(data: JSON) -> "BotCreateDTO":
-        return BotCreateDTO(
-            name=data["name"],
-            group=data["group"],
-            role=RoleType.from_dict(data["role"]),
-            is_author=data.get("isAuthor", True),
-        )
-
-    def to_dict(self) -> JSON:
-        return {
-            "name": self.name,
-            "group": self.group,
-            "role": self.role.to_dict(),
-            "isAuthor": self.is_author,
-        }
 
 
 class UserCreateDTO(BaseModel):
@@ -272,6 +259,14 @@ class RoleDTO(DataClassJsonMixin):  # type: ignore
 class IdentityDTO(DataClassJsonMixin):  # type: ignore
     id: int
     name: str
+    roles: List[RoleDTO]
+
+
+@dataclass
+class BotIdentityDTO(DataClassJsonMixin):  # type: ignore
+    id: int
+    name: str
+    isAuthor: bool
     roles: List[RoleDTO]
 
 
