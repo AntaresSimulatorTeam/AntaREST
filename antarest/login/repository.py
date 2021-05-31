@@ -34,6 +34,10 @@ class GroupRepository:
         group: Group = self.session.query(Group).get(id)
         return group
 
+    def get_by_name(self, name: str) -> Group:
+        group: Group = self.session.query(Group).filter_by(name=name).first()
+        return group
+
     def get_all(self) -> List[Group]:
         groups: List[Group] = self.session.query(Group).all()
         return groups

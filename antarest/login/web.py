@@ -10,6 +10,7 @@ from flask_jwt_extended import (  # type: ignore
     jwt_required,
     JWTManager,
 )
+from markupsafe import escape
 
 from antarest.common.custom_types import JSON
 from antarest.common.jwt import JWTUser, JWTGroup
@@ -233,7 +234,7 @@ def create_login_api(
         params = RequestParameters(user=Auth.get_current_user())
         return jsonify([g.to_dict() for g in service.get_all_groups(params)])
 
-    @bp.route("/groups/<int:id>", methods=["GET"])
+    @bp.route("/groups/<string:id>", methods=["GET"])
     @auth.protected()
     def groups_get_id(id: str) -> Any:
         params = RequestParameters(user=Auth.get_current_user())
@@ -241,7 +242,7 @@ def create_login_api(
         if group:
             return jsonify(group.to_dict())
         else:
-            return f"Group {id} not found", 404
+            return f"Group {str(escape(id))} not found", 404
 
     @bp.route("/groups", methods=["POST"])
     @auth.protected()
@@ -250,7 +251,7 @@ def create_login_api(
         group = Group.from_dict(json.loads(request.data))
         return jsonify(service.save_group(group, params).to_dict())
 
-    @bp.route("/groups/<int:id>", methods=["DELETE"])
+    @bp.route("/groups/<string:id>", methods=["DELETE"])
     @auth.protected()
     def groups_delete(id: str) -> Any:
         params = RequestParameters(user=Auth.get_current_user())
