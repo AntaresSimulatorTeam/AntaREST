@@ -1,6 +1,6 @@
 from typing import Optional
 
-from flask import Flask
+from fastapi import FastAPI
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
@@ -12,7 +12,7 @@ from antarest.storage.service import StorageService
 
 
 def build_launcher(
-    application: Flask,
+    application: FastAPI,
     config: Config,
     db_session: Session,
     service_storage: Optional[StorageService] = None,
@@ -30,6 +30,6 @@ def build_launcher(
         )
 
     if service_launcher:
-        application.register_blueprint(
+        application.include_router(
             create_launcher_api(service_launcher, config)
         )

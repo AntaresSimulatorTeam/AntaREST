@@ -7,8 +7,9 @@ from pathlib import Path
 from unittest.mock import Mock, call
 
 import pytest
-from flask import Flask
+from fastapi import FastAPI
 from markupsafe import Markup
+from starlette.testclient import TestClient
 
 from antarest.common.config import (
     Config,
@@ -36,7 +37,6 @@ ADMIN = JWTUser(
 )
 PARAMS = RequestParameters(user=ADMIN)
 
-
 CONFIG = Config(
     resources_path=Path(),
     security=SecurityConfig(disabled=True),
@@ -51,7 +51,7 @@ def test_server() -> None:
     mock_service = Mock()
     mock_service.get.return_value = {}
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=mock_service,
@@ -59,7 +59,7 @@ def test_server() -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app)
     client.get("/studies/study1/settings/general/params")
 
     mock_service.get.assert_called_once_with(
@@ -72,7 +72,7 @@ def test_404() -> None:
     mock_storage_service = Mock()
     mock_storage_service.get.side_effect = UrlNotMatchJsonDataError("Test")
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=mock_storage_service,
@@ -80,7 +80,7 @@ def test_404() -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app, raise_server_exceptions=False)
     result = client.get("/studies/study1/settings/general/params")
     assert result.status_code == 404
 
@@ -90,11 +90,10 @@ def test_404() -> None:
 
 @pytest.mark.unit_test
 def test_server_with_parameters() -> None:
-
     mock_storage_service = Mock()
     mock_storage_service.get.return_value = {}
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=mock_storage_service,
@@ -102,7 +101,7 @@ def test_server_with_parameters() -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app)
     result = client.get("/studies/study1?depth=4")
 
     parameters = RequestParameters(user=ADMIN)
@@ -112,9 +111,11 @@ def test_server_with_parameters() -> None:
 
     result = client.get("/studies/study2?depth=WRONG_TYPE")
 
-    excepted_parameters = RequestParameters(user=ADMIN)
+    assert result.status_code == 422
 
-    assert result.status_code == 200
+    result = client.get("/studies/study2")
+
+    excepted_parameters = RequestParameters(user=ADMIN)
     mock_storage_service.get.assert_called_with(
         "study2", 3, excepted_parameters
     )
@@ -124,7 +125,6 @@ def test_server_with_parameters() -> None:
 def test_create_study(
     tmp_path: str, storage_service_builder, project_path
 ) -> None:
-
     path_studies = Path(tmp_path)
     path_study = path_studies / "study1"
     path_study.mkdir()
@@ -133,7 +133,7 @@ def test_create_study(
     storage_service = Mock()
     storage_service.create_study.return_value = "my-uuid"
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=storage_service,
@@ -141,12 +141,12 @@ def test_create_study(
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app)
 
     result_right = client.post("/studies/study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
-    assert json.loads(result_right.data) == "/studies/my-uuid"
+    assert result_right.json() == "/studies/my-uuid"
     storage_service.create_study.assert_called_once_with("study2", [], PARAMS)
 
 
@@ -154,7 +154,6 @@ def test_create_study(
 def test_import_study_zipped(
     tmp_path: Path, storage_service_builder, project_path
 ) -> None:
-
     tmp_path /= "tmp"
     tmp_path.mkdir()
     study_name = "study1"
@@ -169,7 +168,7 @@ def test_import_study_zipped(
     mock_storage_service = Mock()
     mock_storage_service.import_study.return_value = study_name
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=mock_storage_service,
@@ -177,17 +176,16 @@ def test_import_study_zipped(
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app)
 
     result = client.post("/studies")
 
-    assert result.status_code == HTTPStatus.BAD_REQUEST.value
+    assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY.value
 
     study_data = io.BytesIO(path_zip.read_bytes())
-    result = client.post("/studies", data={"study": (study_data, "study.zip")})
+    result = client.post("/studies", files={"study": study_data})
 
-    print(result.data)
-    assert json.loads(result.data) == "/studies/" + study_name
+    assert result.json() == "/studies/" + study_name
     assert result.status_code == HTTPStatus.CREATED.value
     mock_storage_service.import_study.assert_called_once()
 
@@ -197,7 +195,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
     storage_service = Mock()
     storage_service.copy_study.return_value = "/studies/study-copied"
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=storage_service,
@@ -205,7 +203,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app)
 
     result = client.post("/studies/existing-study/copy?dest=study-copied")
 
@@ -220,7 +218,6 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
 
 @pytest.mark.unit_test
 def test_list_studies(tmp_path: str, storage_service_builder) -> None:
-
     studies = {
         "study1": {"antares": {"caption": ""}},
         "study2": {"antares": {"caption": ""}},
@@ -229,7 +226,7 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
     storage_service = Mock()
     storage_service.get_studies_information.return_value = studies
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=storage_service,
@@ -237,15 +234,15 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app)
     result = client.get("/studies")
 
-    assert json.loads(result.data) == studies
+    assert result.json() == studies
 
 
 @pytest.mark.unit_test
 def test_server_health() -> None:
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=Mock(),
@@ -253,18 +250,17 @@ def test_server_health() -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
-    result = client.get("/health")
-    assert result.data == b'{"status":"available"}\n'
+    client = TestClient(app)
+    result = client.get("/health", stream=True)
+    assert result.json() == {"status": "available"}
 
 
 @pytest.mark.unit_test
 def test_export_files() -> None:
-
     mock_storage_service = Mock()
     mock_storage_service.export_study.return_value = BytesIO(b"Hello")
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=mock_storage_service,
@@ -272,10 +268,10 @@ def test_export_files() -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
-    result = client.get("/studies/name/export")
+    client = TestClient(app)
+    result = client.get("/studies/name/export", stream=True)
 
-    assert result.data == b"Hello"
+    assert result.raw.data == b"Hello"
     mock_storage_service.export_study.assert_called_once_with(
         "name", PARAMS, True
     )
@@ -283,11 +279,10 @@ def test_export_files() -> None:
 
 @pytest.mark.unit_test
 def test_export_params() -> None:
-
     mock_storage_service = Mock()
     mock_storage_service.export_study.return_value = BytesIO(b"Hello")
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=mock_storage_service,
@@ -295,29 +290,26 @@ def test_export_params() -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
-    result = client.get("/studies/name/export")
+    client = TestClient(app)
+    result = client.get("/studies/name/export", stream=True)
 
-    assert result.data == b"Hello"
+    assert result.raw.data == b"Hello"
 
-    client.get("/studies/name/export?no-output")
-    client.get("/studies/name/export?no-output=true")
-    client.get("/studies/name/export?no-output=false")
+    client.get("/studies/name/export?no_output=true")
+    client.get("/studies/name/export?no_output=false")
     mock_storage_service.export_study.assert_has_calls(
         [
+            call(Markup("name"), PARAMS, False),
             call(Markup("name"), PARAMS, True),
-            call(Markup("name"), PARAMS, False),
-            call(Markup("name"), PARAMS, False),
         ]
     )
 
 
 @pytest.mark.unit_test
 def test_delete_study() -> None:
-
     mock_storage_service = Mock()
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=mock_storage_service,
@@ -325,7 +317,7 @@ def test_delete_study() -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app)
     client.delete("/studies/name")
 
     mock_storage_service.delete_study.assert_called_once_with("name", PARAMS)
@@ -335,7 +327,7 @@ def test_delete_study() -> None:
 def test_import_matrix() -> None:
     mock_storage_service = Mock()
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=mock_storage_service,
@@ -343,13 +335,11 @@ def test_import_matrix() -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app)
 
     data = io.BytesIO(b"hello")
     path = "path/to/matrix.txt"
-    result = client.post(
-        "/file/" + path, data={"matrix": (data, "matrix.txt")}
-    )
+    result = client.post("/file/" + path, files={"matrix": data})
 
     mock_storage_service.upload_matrix.assert_called_once_with(
         path, b"hello", PARAMS
@@ -359,13 +349,12 @@ def test_import_matrix() -> None:
 
 @pytest.mark.unit_test
 def test_import_matrix_with_wrong_path() -> None:
-
     mock_storage_service = Mock()
     mock_storage_service.upload_matrix = Mock(
         side_effect=IncorrectPathError("")
     )
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=mock_storage_service,
@@ -373,7 +362,7 @@ def test_import_matrix_with_wrong_path() -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app)
 
     data = io.BytesIO(b"hello")
     path = "path/to/matrix.txt"
@@ -391,7 +380,7 @@ def test_edit_study() -> None:
 
     data = json.dumps({"Hello": "World"})
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=mock_storage_service,
@@ -399,7 +388,7 @@ def test_edit_study() -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app)
     client.post("/studies/my-uuid/url/to/change", data=data)
 
     mock_storage_service.edit_study.assert_called_once_with(
@@ -413,7 +402,7 @@ def test_edit_study_fail() -> None:
 
     data = json.dumps({})
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=mock_storage_service,
@@ -421,7 +410,7 @@ def test_edit_study_fail() -> None:
         config=CONFIG,
         user_service=Mock(),
     )
-    client = app.test_client()
+    client = TestClient(app, raise_server_exceptions=False)
     res = client.post("/studies/my-uuid/url/to/change", data=data)
 
     assert res.status_code == 400
@@ -435,7 +424,7 @@ def test_study_permission_management(
 ) -> None:
     storage_service = Mock()
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=storage_service,
@@ -443,7 +432,7 @@ def test_study_permission_management(
         user_service=Mock(),
         config=CONFIG,
     )
-    client = app.test_client()
+    client = TestClient(app, raise_server_exceptions=False)
 
     result = client.put("/studies/existing-study/owner/2")
     storage_service.change_owner.assert_called_with(
@@ -478,4 +467,4 @@ def test_study_permission_management(
     assert result.status_code == HTTPStatus.OK.value
 
     result = client.put("/studies/existing-study/public_mode/UNKNOWN")
-    assert result.status_code == HTTPStatus.INTERNAL_SERVER_ERROR.value
+    assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY.value

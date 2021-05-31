@@ -6,6 +6,6 @@ import FullPageContainer from '../../components/ui/FullPageContainer';
 
 export default () => (
   <FullPageContainer>
-    <SwaggerUI url={`${getConfig().baseUrl}${getConfig().restEndpoint}/swagger.json`} />
+    <SwaggerUI url={`${getConfig().baseUrl}${getConfig().restEndpoint}/openapi.json`} />
   </FullPageContainer>
 );

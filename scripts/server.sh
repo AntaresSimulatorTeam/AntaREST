@@ -7,4 +7,4 @@ cd "$PROJECT_DIR" || exit
 
 source ./venv/bin/activate
 export PYTHONPATH=$PYTHONPATH:.
-python ./antarest/main.py -s "$PROJECT_DIR"/examples/studies
+python ./antarest/main.py -c ./resources/application.yaml

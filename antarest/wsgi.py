@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from antarest.main import flask_app
+from antarest.main import fastapi_app
 
 
 def get_env_var(env_var_name: str) -> str:
@@ -14,6 +14,4 @@ def get_env_var(env_var_name: str) -> str:
 env_var_conf_path = get_env_var("ANTAREST_CONF")
 conf_path = Path(env_var_conf_path)
 
-app = flask_app(conf_path)
-
-app.config["DEBUG"] = False
+app = fastapi_app(conf_path)
