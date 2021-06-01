@@ -14,6 +14,9 @@ class RequestParameters:
 
     user: Optional[JWTUser] = None
 
+    def get_user_id(self) -> str:
+        return str(self.user.id) if self.user else "Unknown"
+
 
 class UserHasNotPermissionError(werkzeug.exceptions.Forbidden):
     pass
