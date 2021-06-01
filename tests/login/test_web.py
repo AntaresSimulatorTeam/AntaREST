@@ -81,7 +81,9 @@ def create_auth_token(
                 ],
             ).to_dict(),
         )
-        return {"Authorization": f"Bearer {token}"}
+        return {
+            "Authorization": f"Bearer {token if isinstance(token, str) else token.decode()}"
+        }
 
 
 @pytest.mark.unit_test
