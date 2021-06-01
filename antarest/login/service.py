@@ -23,6 +23,7 @@ from antarest.login.model import (
     Password,
     IdentityDTO,
     RoleDTO,
+    RoleCreationDTO,
 )
 from antarest.login.repository import (
     UserRepository,
@@ -152,7 +153,9 @@ class LoginService:
         else:
             raise UserHasNotPermissionError()
 
-    def save_role(self, role: RoleDTO, params: RequestParameters) -> Role:
+    def save_role(
+        self, role: RoleCreationDTO, params: RequestParameters
+    ) -> Role:
         """
         Create / Update role
         Permission: SADMIN, GADMIN (own group)
@@ -248,20 +251,8 @@ class LoginService:
         Returns: user informations and roles
 
         """
-        user = self.ldap.get(id) or self.users.get(id)
-        if not user:
-            raise UserNotFoundError()
-
-        roles = self.roles.get_all_by_user(user.id)
-        groups = [r.group for r in roles]
-
-        if params.user and any(
-            (
-                params.user.is_site_admin(),
-                params.user.is_group_admin(groups),
-                params.user.is_himself(user),
-            )
-        ):
+        user = self.get_user(id, params)
+        if user:
             return IdentityDTO(
                 id=user.id,
                 name=user.name,
@@ -272,7 +263,7 @@ class LoginService:
                         identity_id=id,
                         type=role.type.value,
                     )
-                    for role in roles
+                    for role in self.roles.get_all_by_user(user.id)
                 ],
             )
         else:
@@ -502,12 +493,14 @@ class LoginService:
             (params.user.is_site_admin(), params.user.is_himself(User(id=id)))
         ):
             for b in self.bots.get_all_by_owner(id):
+                # TODO : use cascade in the Role model definition
                 for role in self.roles.get_all_by_user(user=b.id):
                     self.roles.delete(
                         user=role.identity_id, group=role.group_id
                     )
                 self.delete_bot(b.id, params)
 
+            # TODO : use cascade in the Role model definition
             for role in self.roles.get_all_by_user(user=id):
                 self.roles.delete(user=role.identity_id, group=role.group_id)
 
@@ -568,7 +561,7 @@ class LoginService:
 
     def delete_all_roles_from_user(
         self, id: int, params: RequestParameters
-    ) -> None:
+    ) -> int:
         """
         Delete all roles from a specific user
         Permission: SADMIN, GADMIN (own group)
@@ -590,5 +583,6 @@ class LoginService:
         ):
             for role in roles:
                 self.roles.delete(role.identity_id, role.group_id)
+            return id
         else:
             raise UserHasNotPermissionError()

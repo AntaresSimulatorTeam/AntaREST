@@ -25,6 +25,7 @@ from antarest.login.model import (
     BotCreateDTO,
     Bot,
     UserCreateDTO,
+    IdentityDTO,
 )
 
 PARAMS = RequestParameters(
@@ -185,13 +186,15 @@ def test_user() -> None:
 @pytest.mark.unit_test
 def test_user_id() -> None:
     service = Mock()
-    service.get_user.return_value = User(id=1, name="user")
+    service.get_user_info.return_value = IdentityDTO(
+        id=1, name="user", roles=[]
+    )
 
     app = create_app(service)
     client = app.test_client()
     res = client.get("/users/1", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert res.json == User(id=1, name="user").to_dict()
+    assert res.json == IdentityDTO(id=1, name="user", roles=[]).to_dict()
 
 
 @pytest.mark.unit_test
@@ -332,16 +335,11 @@ def test_role_create() -> None:
     res = client.post(
         "/roles",
         headers=create_auth_token(app),
-        json={
-            "type": RoleType.ADMIN.value,
-            "identity_id": 0,
-            "group_id": "g",
-            "group_name": "n",
-        },
+        json={"type": RoleType.ADMIN.value, "identity_id": 0, "group_id": "g"},
     )
 
     assert res.status_code == 200
-    # assert res.json == role.to_dict()
+    assert res.json == role.to_dict()
 
 
 @pytest.mark.unit_test
@@ -354,6 +352,18 @@ def test_role_delete() -> None:
 
     assert res.status_code == 200
     service.delete_role.assert_called_once_with(0, "group", PARAMS)
+
+
+@pytest.mark.unit_test
+def test_roles_delete_by_user() -> None:
+    service = Mock()
+
+    app = create_app(service)
+    client = app.test_client()
+    res = client.delete("/users/roles/0", headers=create_auth_token(app))
+
+    assert res.status_code == 200
+    service.delete_all_roles_from_user.assert_called_once_with(0, PARAMS)
 
 
 @pytest.mark.unit_test

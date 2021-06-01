@@ -28,6 +28,7 @@ from antarest.login.model import (
     BotCreateDTO,
     UserCreateDTO,
     RoleDTO,
+    RoleCreationDTO,
 )
 from antarest.login.service import LoginService
 
@@ -238,6 +239,13 @@ def create_login_api(
         service.delete_user(id, params)
         return jsonify(id), 200
 
+    @bp.route("/users/roles/<int:id>", methods=["DELETE"])
+    @auth.protected()
+    def roles_delete_by_user(id: int) -> Any:
+        params = RequestParameters(user=Auth.get_current_user())
+        service.delete_all_roles_from_user(id, params)
+        return jsonify(id), 200
+
     @bp.route("/groups", methods=["GET"])
     @auth.protected()
     def groups_get_all() -> Any:
@@ -285,7 +293,7 @@ def create_login_api(
     @auth.protected()
     def role_create() -> Any:
         params = RequestParameters(user=Auth.get_current_user())
-        role = RoleDTO.from_dict(json.loads(request.data))
+        role = RoleCreationDTO.from_dict(json.loads(request.data))
         return jsonify(service.save_role(role, params).to_dict())
 
     @bp.route("/roles/<string:group>/<int:user>", methods=["DELETE"])
@@ -294,13 +302,6 @@ def create_login_api(
         params = RequestParameters(user=Auth.get_current_user())
         service.delete_role(user, group, params)
         return jsonify((user, group)), 200
-
-    @bp.route("/roles/<int:id>", methods=["DELETE"])
-    @auth.protected()
-    def roles_delete_by_user(id: int) -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
-        service.delete_all_roles_from_user(id, params)
-        return jsonify(id), 200
 
     @bp.route("/bots", methods=["POST"])
     @auth.protected()

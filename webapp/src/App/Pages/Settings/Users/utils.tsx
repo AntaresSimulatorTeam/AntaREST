@@ -1,4 +1,4 @@
-import {RoleDTO, UserDTO } from '../../../../common/types'
+import {RoleCreationDTO, RoleDTO, UserDTO } from '../../../../common/types'
 import { createNewUser, createRole, deleteAllRoles} from '../../../../services/api/user';
 
 export const saveUser = async (username : string,
@@ -25,9 +25,8 @@ export const saveUser = async (username : string,
 
         for(const item of roleList)
         {
-            const role : RoleDTO = {
+            const role : RoleCreationDTO = {
             group_id: item.group_id,
-            group_name: item.group_name,
             identity_id: tmpUserId,
             type: item.type};
             await createRole(role);

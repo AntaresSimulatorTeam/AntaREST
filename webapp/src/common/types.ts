@@ -37,6 +37,12 @@ export interface RoleDTO {
   type: RoleType;
 }
 
+export interface RoleCreationDTO {
+  group_id: string;
+  identity_id: number;
+  type: RoleType; 
+}
+
 export interface UserDTO {
   id: number;
   name: string;

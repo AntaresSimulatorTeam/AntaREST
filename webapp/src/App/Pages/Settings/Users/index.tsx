@@ -69,7 +69,6 @@ const UsersSettings = (props: PropTypes) => {
 
     const onNewUserCreaion = (newUser : UserDTO) : void => {
       setUserList(userList.concat(newUser));
-      setCurrentUser(newUser);
     }
 
     const matchFilter = (input: string) : boolean => {

@@ -127,6 +127,7 @@ const UserModal = (props: PropTypes) => {
           return () => {
             setGroupList([]);
             setRoleList([]);
+            setActiveGroup({id: '', name:''})
           }
     }, [userInfos, t, enqueueSnackbar])
 
