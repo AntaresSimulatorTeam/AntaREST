@@ -62,8 +62,12 @@ def create_login_api(
         refresh_token = create_refresh_token(identity=user.to_dict())
         return {
             "user": user.id,
-            "access_token": access_token,
-            "refresh_token": refresh_token,
+            "access_token": access_token.decode()
+            if isinstance(access_token, bytes)
+            else access_token,
+            "refresh_token": refresh_token.decode()
+            if isinstance(refresh_token, bytes)
+            else refresh_token,
         }
 
     @jwt.token_in_blocklist_loader  # type: ignore

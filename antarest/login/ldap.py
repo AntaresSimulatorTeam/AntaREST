@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 import requests
@@ -7,6 +8,8 @@ from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.login.model import UserCreateDTO, UserLdap
 from antarest.login.repository import UserLdapRepository
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -75,8 +78,14 @@ class LdapService:
             return None
 
         auth = AuthDTO(user=name, password=password)
-        res = requests.post(url=f"{self.url}/auth", json=auth.to_json())
-
+        try:
+            res = requests.post(url=f"{self.url}/auth", json=auth.to_json())
+        except Exception as e:
+            logger.warning(
+                "Failed to retrieve user from external auth service",
+                exc_info=e,
+            )
+            return None
         if res.status_code != 200:
             return None
 
