@@ -81,8 +81,8 @@ class LoginService:
         if params.user and any(
             (params.user.is_site_admin(), params.user.is_group_admin(group))
         ):
-            self.logger.debug(
-                "%s (%d) saved by user %d",
+            self.logger.info(
+                "%s (%d) saved by user %s",
                 group.name,
                 group.id,
                 params.get_user_id(),
@@ -90,7 +90,7 @@ class LoginService:
             return self.groups.save(group)
         else:
             self.logger.error(
-                "user %d has not permission to save group",
+                "user %s has not permission to save group",
                 params.get_user_id(),
             )
             raise UserHasNotPermissionError()
@@ -110,17 +110,17 @@ class LoginService:
         """
         if param.user and param.user.is_site_admin():
             if self.users.get_by_name(create.name):
-                self.logger.debug("user %s already exist", create.name)
+                self.logger.info("user %s already exist", create.name)
                 raise UserAlreadyExistError()
-            self.logger.debug(
-                "user %s created by user %d", create.name, param.get_user_id()
+            self.logger.info(
+                "user %s created by user %s", create.name, param.get_user_id()
             )
             return self.users.save(
                 User(name=create.name, password=Password(create.password))
             )
         else:
             self.logger.error(
-                "User %d has no permission to create user", param.get_user_id()
+                "User %s has no permission to create user", param.get_user_id()
             )
             raise UserHasNotPermissionError()
 
@@ -138,13 +138,13 @@ class LoginService:
         if params.user and any(
             (params.user.is_site_admin(), params.user.is_himself(user))
         ):
-            self.logger.debug(
-                "user %d saved by user %d", user.id, params.get_user_id()
+            self.logger.info(
+                "user %d saved by user %s", user.id, params.get_user_id()
             )
             return self.users.save(user)
         else:
             self.logger.error(
-                "user %d has not permission to save user %d",
+                "user %s has not permission to save user %d",
                 params.get_user_id(),
                 user.id,
             )
@@ -174,8 +174,8 @@ class LoginService:
                 self.roles.save(
                     Role(group=Group(id=bot.group), type=bot.role, identity=b)
                 )
-                self.logger.debug(
-                    "bot %s (%d) created by user %d",
+                self.logger.info(
+                    "bot %s (%d) created by user %s",
                     bot.name,
                     b.id,
                     params.get_user_id(),
@@ -183,13 +183,13 @@ class LoginService:
                 return b
             else:
                 self.logger.error(
-                    "user %d has not permission to create bot",
+                    "user %s has not permission to create bot",
                     params.get_user_id(),
                 )
                 raise UserHasNotPermissionError()
         else:
             self.logger.error(
-                "user %d has not permission to create bot",
+                "user %s has not permission to create bot",
                 params.get_user_id(),
             )
             raise UserHasNotPermissionError()
@@ -218,7 +218,7 @@ class LoginService:
                 params.user.is_group_admin(role_obj.group),
             )
         ):
-            self.logger.debug(
+            self.logger.info(
                 "role (user=%s, group=%s) created by user %s",
                 role.identity_id,
                 role.group_id,
@@ -227,7 +227,7 @@ class LoginService:
             return self.roles.save(role_obj)
         else:
             self.logger.error(
-                "user %d, has not permission to create role (user=%d, group=%d)",
+                "user %s, has not permission to create role (user=%d, group=%s)",
                 params.get_user_id(),
                 role.identity_id,
                 role.group_id,
@@ -260,7 +260,7 @@ class LoginService:
             return group
         else:
             self.logger.error(
-                "group %d not found by user %d", id, params.get_user_id()
+                "group %s not found by user %s", id, params.get_user_id()
             )
             raise GroupNotFoundError()
 
@@ -279,7 +279,7 @@ class LoginService:
         user = self.ldap.get(id) or self.users.get(id)
         if not user:
             self.logger.error(
-                "user %d not found by user %d", id, params.get_user_id()
+                "user %d not found by user %s", id, params.get_user_id()
             )
             raise UserNotFoundError()
 
@@ -295,7 +295,7 @@ class LoginService:
             return user
         else:
             self.logger.error(
-                "user %d not found by user %d", id, params.get_user_id()
+                "user %d not found by user %s", id, params.get_user_id()
             )
             raise UserNotFoundError()
 
@@ -357,7 +357,7 @@ class LoginService:
             return bot
         else:
             self.logger.error(
-                "bot %d not found by user %d", id, params.get_user_id()
+                "bot %d not found by user %s", id, params.get_user_id()
             )
             raise UserHasNotPermissionError()
 
@@ -384,7 +384,7 @@ class LoginService:
             return self.bots.get_all_by_owner(owner)
         else:
             self.logger.error(
-                "user %d has not permission to fetch bots owner=%d",
+                "user %s has not permission to fetch bots owner=%d",
                 params.get_user_id(),
                 owner,
             )
@@ -414,12 +414,12 @@ class LoginService:
         """
         extern = self.ldap.login(name, pwd)
         if extern:
-            self.logger.debug("successful login from ldap user %s", name)
+            self.logger.info("successful login from ldap user %s", name)
             return self.get_jwt(extern.id)
 
         intern = self.users.get_by_name(name)
         if intern and intern.password.check(pwd):  # type: ignore
-            self.logger.debug("successful login from intern user %s", name)
+            self.logger.info("successful login from intern user %s", name)
             return self.get_jwt(intern.id)
 
         self.logger.error("wrong authentication from user %s", name)
@@ -437,7 +437,7 @@ class LoginService:
         """
         user = self.ldap.get(user_id) or self.users.get(user_id)
         if user:
-            self.logger.debug("JWT claimed for user=%d", user_id)
+            self.logger.info("JWT claimed for user=%d", user_id)
             return JWTUser(
                 id=user.id,
                 impersonator=user.get_impersonator(),
@@ -463,7 +463,7 @@ class LoginService:
         """
         if not params.user:
             self.logger.error(
-                "user %d has not permission to get all groups",
+                "user %s has not permission to get all groups",
                 params.get_user_id(),
             )
             raise UserHasNotPermissionError()
@@ -493,7 +493,7 @@ class LoginService:
             return self.ldap.get_all() + self.users.get_all()
         else:
             self.logger.error(
-                "user %d has not permission to get all users",
+                "user %s has not permission to get all users",
                 params.get_user_id(),
             )
             raise UserHasNotPermissionError()
@@ -512,7 +512,7 @@ class LoginService:
             return self.bots.get_all()
         else:
             self.logger.error(
-                "user %d has not permission to get all bots",
+                "user %s has not permission to get all bots",
                 params.get_user_id(),
             )
             raise UserHasNotPermissionError()
@@ -540,7 +540,7 @@ class LoginService:
             return self.roles.get_all_by_group(group)
         else:
             self.logger.error(
-                "user %d has not permission to get all roles in group %s",
+                "user %s has not permission to get all roles in group %s",
                 params.get_user_id(),
                 group,
             )
@@ -566,14 +566,14 @@ class LoginService:
             for role in self.roles.get_all_by_group(group=id):
                 self.roles.delete(user=role.identity_id, group=role.group_id)
 
-            self.logger.debug(
-                "group %s deleted by user %d", id, params.get_user_id()
+            self.logger.info(
+                "group %s deleted by user %s", id, params.get_user_id()
             )
             return self.groups.delete(id)
         else:
             self.logger.error(
-                "user %s has not permission to delete group %d",
-                {params.get_user_id()},
+                "user %s has not permission to delete group %s",
+                params.get_user_id(),
                 id,
             )
             raise UserHasNotPermissionError()
@@ -604,15 +604,15 @@ class LoginService:
             for role in self.roles.get_all_by_user(user=id):
                 self.roles.delete(user=role.identity_id, group=role.group_id)
 
-            self.logger.debug(
-                "user %s deleted by user %d", id, params.get_user_id()
+            self.logger.info(
+                "user %s deleted by user %s", id, params.get_user_id()
             )
             # self.ldap.delete(id)
             return self.users.delete(id)  # return for test purpose
 
         else:
-            self.logger.debug(
-                "user %d has not permission to delete user %d",
+            self.logger.info(
+                "user %s has not permission to delete user %d",
                 params.get_user_id(),
                 id,
             )
@@ -640,13 +640,13 @@ class LoginService:
                 )
             )
         ):
-            self.logger.debug(
-                "bot %d deleted by user %d", id, params.get_user_id()
+            self.logger.info(
+                "bot %d deleted by user %s", id, params.get_user_id()
             )
             return self.bots.delete(id)
         else:
             self.logger.error(
-                "user %d has not permission to delete bot %d",
+                "user %s has not permission to delete bot %d",
                 params.get_user_id(),
                 id,
             )
@@ -672,8 +672,8 @@ class LoginService:
                 params.user.is_group_admin(Group(id=group)),
             )
         ):
-            self.logger.debug(
-                "role (user=%d, group=%s) deleted by %d",
+            self.logger.info(
+                "role (user=%d, group=%s) deleted by %s",
                 user,
                 group,
                 params.get_user_id(),
@@ -681,7 +681,7 @@ class LoginService:
             return self.roles.delete(user, group)
         else:
             self.logger.error(
-                "user %d has not permission to delete role (user=%d, group=%s)",
+                "user %s has not permission to delete role (user=%d, group=%s)",
                 params.get_user_id(),
                 user,
                 group,
