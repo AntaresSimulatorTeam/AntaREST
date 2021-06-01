@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, List
 
 from sqlalchemy import exists  # type: ignore
@@ -24,6 +25,7 @@ class GroupRepository:
     def __init__(self, session: Session):
         self.session = session
         self.save(Group(id="admin", name="admin"))
+        self.logger = logging.Logger(self.__class__.__name__)
 
     def save(self, group: Group) -> Group:
         res = self.session.query(exists().where(Group.id == group.id)).scalar()
@@ -32,6 +34,8 @@ class GroupRepository:
         else:
             self.session.add(group)
         self.session.commit()
+
+        self.logger.debug(f"Group {group.id} saved")
         return group
 
     def get(self, id: str) -> Optional[Group]:
@@ -51,6 +55,8 @@ class GroupRepository:
         self.session.delete(g)
         self.session.commit()
 
+        self.logger.debug(f"Group {id} deleted")
+
 
 class UserRepository:
     """
@@ -59,6 +65,7 @@ class UserRepository:
 
     def __init__(self, config: Config, session: Session) -> None:
         self.session = session
+        self.logger = logging.Logger(self.__class__.__name__)
         # init seed admin user from conf
         admin_user = self.get_by_name("admin")
         if admin_user is None:
@@ -80,6 +87,8 @@ class UserRepository:
         else:
             self.session.add(user)
         self.session.commit()
+
+        self.logger.debug(f"User {user.id} saved")
         return user
 
     def get(self, id: int) -> Optional[User]:
@@ -99,6 +108,8 @@ class UserRepository:
         self.session.delete(u)
         self.session.commit()
 
+        self.logger.debug(f"User {id} deleted")
+
 
 class UserLdapRepository:
     """
@@ -107,6 +118,7 @@ class UserLdapRepository:
 
     def __init__(self, session: Session) -> None:
         self.session = session
+        self.logger = logging.Logger(self.__class__.__name__)
 
     def save(self, user_ldap: UserLdap) -> UserLdap:
         res = self.session.query(
@@ -117,6 +129,8 @@ class UserLdapRepository:
         else:
             self.session.add(user_ldap)
         self.session.commit()
+
+        self.logger.debug(f"User LDAP {user_ldap.id} saved")
         return user_ldap
 
     def get(self, id: int) -> Optional[UserLdap]:
@@ -138,6 +152,8 @@ class UserLdapRepository:
         self.session.delete(u)
         self.session.commit()
 
+        self.logger.debug(f"User LDAP {id} deleted")
+
 
 class BotRepository:
     """
@@ -146,6 +162,7 @@ class BotRepository:
 
     def __init__(self, session: Session) -> None:
         self.session = session
+        self.logger = logging.Logger(self.__class__.__name__)
 
     def save(self, bot: Bot) -> Bot:
         res = self.session.query(exists().where(Bot.id == bot.id)).scalar()
@@ -154,6 +171,8 @@ class BotRepository:
         else:
             self.session.add(bot)
         self.session.commit()
+
+        self.logger.debug(f"Bot {bot.id} saved")
         return bot
 
     def get(self, id: int) -> Optional[Bot]:
@@ -168,6 +187,8 @@ class BotRepository:
         u: Bot = self.session.query(Bot).get(id)
         self.session.delete(u)
         self.session.commit()
+
+        self.logger.debug(f"Bot {id} deleted")
 
     def get_all_by_owner(self, owner: int) -> List[Bot]:
         bots: List[Bot] = self.session.query(Bot).filter_by(owner=owner).all()
@@ -185,6 +206,7 @@ class RoleRepository:
 
     def __init__(self, session: Session):
         self.session = session
+        self.logger = logging.Logger(self.__class__.__name__)
         if self.get(1, "admin") is None:
             self.save(
                 Role(
@@ -200,6 +222,10 @@ class RoleRepository:
 
         self.session.add(role)
         self.session.commit()
+
+        self.logger.debug(
+            f"Role (user={role.identity}, group={role.group} saved"
+        )
         return role
 
     def get(self, user: int, group: str) -> Optional[Role]:
@@ -222,3 +248,5 @@ class RoleRepository:
         r = self.session.query(Role).get((user, group))
         self.session.delete(r)
         self.session.commit()
+
+        self.logger.debug(f"Role (user={user}, group={group} deleted")

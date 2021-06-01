@@ -1,8 +1,11 @@
 import enum
+import logging
 
 from antarest.common.jwt import JWTUser
 from antarest.common.roles import RoleType
 from antarest.storage.model import PublicMode, Study
+
+logger = logging.getLogger(__name__)
 
 
 class StudyPermissionType(enum.Enum):
@@ -70,9 +73,11 @@ def check_permission(
 
     """
     if user.is_site_admin():
+        logger.debug(f"user {user.id} accepted on study {study.id} as admin")
         return True
 
     if study.owner is not None and user.impersonator == study.owner.id:
+        logger.debug(f"user {user.id} accepted on study {study.id} as owner")
         return True
 
     study_group_id = [g.id for g in study.groups]
@@ -85,6 +90,9 @@ def check_permission(
         ]
     )
     if group_permission:
+        logger.debug(
+            f"user {user.id} accepted on study {study.id} as admin of at least one group"
+        )
         return True
 
     return study.public_mode in permission_matrix[permission]["public_modes"]  # type: ignore
