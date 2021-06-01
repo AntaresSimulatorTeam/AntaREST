@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, List
 
 import werkzeug as werkzeug
@@ -108,7 +109,7 @@ class LoginService:
                 self.logger.debug(f"user {create.name} already exist")
                 raise UserAlreadyExistError()
             self.logger.debug(
-                f"user {create.name} created by user {params.get_user_id()}"
+                f"user {create.name} created by user {param.get_user_id()}"
             )
             return self.users.save(
                 User(name=create.name, password=Password(create.password))

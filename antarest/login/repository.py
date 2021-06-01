@@ -24,8 +24,8 @@ class GroupRepository:
 
     def __init__(self, session: Session):
         self.session = session
-        self.save(Group(id="admin", name="admin"))
         self.logger = logging.Logger(self.__class__.__name__)
+        self.save(Group(id="admin", name="admin"))
 
     def save(self, group: Group) -> Group:
         res = self.session.query(exists().where(Group.id == group.id)).scalar()
