@@ -265,6 +265,50 @@ def test_get_user():
     )
 
 
+def test_get_user_info():
+    users = Mock()
+    user_ok = User(id=3, name="user")
+    user_nok = User(id=2, name="user")
+
+    ldap = Mock()
+    ldap.get.return_value = None
+
+    roles = Mock()
+    group_ok = Group(id="group", name="group")
+    group_nok = Group(id="other_group", name="group")
+
+    service = LoginService(
+        user_repo=users,
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=roles,
+        ldap=ldap,
+        event_bus=Mock(),
+    )
+
+    user_id = 3
+    # When GADMIN ok, USER3 is himself
+    users.get.return_value = user_ok
+    roles.get_all_by_user.return_value = [
+        Role(type=RoleType.ADMIN, group=group_ok, identity=user_ok)
+    ]
+    assert_permission(
+        test=lambda x: service.get_user_info(user_id, x),
+        values=[(SADMIN, True), (GADMIN, True), (USER3, True)],
+    )
+
+    # When GADMIN not ok, USER3 is not himself
+    users.get.return_value = user_nok
+    roles.get_all_by_user.return_value = [
+        Role(type=RoleType.ADMIN, group=group_nok, identity=user_nok)
+    ]
+    assert_permission(
+        test=lambda x: service.get_user_info(user_id, x),
+        values=[(SADMIN, True), (GADMIN, False), (USER3, False)],
+        error=UserNotFoundError,
+    )
+
+
 def test_get_bot():
     bots = Mock()
     bots.get.return_value = Bot(owner=3)
@@ -504,11 +548,14 @@ def test_delete_user():
     bots.get_all_by_owner.return_value = [Bot(id=4, owner=3)]
     bots.get.return_value = Bot(id=4, owner=3)
 
+    roles = Mock()
+    roles.get_all_by_user.return_value = []
+
     service = LoginService(
         user_repo=users,
         bot_repo=bots,
         group_repo=Mock(),
-        role_repo=Mock(),
+        role_repo=roles,
         ldap=Mock(),
         event_bus=Mock(),
     )
@@ -558,4 +605,38 @@ def test_delete_role():
     assert_permission(
         test=lambda x: service.delete_role(3, "group", x),
         values=[(SADMIN, True), (GADMIN, True), (USER3, False)],
+    )
+
+
+def test_delete_all_roles():
+    roles = Mock()
+    user = User(id=3, name="user")
+    role_gadmin_ok = Role(
+        group=Group(id="group"), type=RoleType.READER, identity=user
+    )
+    role_gadmin_nok = Role(
+        group=Group(id="other-group"), type=RoleType.READER, identity=user
+    )
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=Mock(),
+        group_repo=Mock(),
+        role_repo=roles,
+        ldap=Mock(),
+        event_bus=Mock(),
+    )
+
+    user_id = 3
+    # GADMIN OK
+    roles.get_all_by_user.return_value = [role_gadmin_ok]
+    assert_permission(
+        test=lambda x: service.delete_all_roles_from_user(user_id, x),
+        values=[(SADMIN, True), (GADMIN, True), (USER3, False)],
+    )
+    # GADMIN NOK
+    roles.get_all_by_user.return_value = [role_gadmin_nok]
+    assert_permission(
+        test=lambda x: service.delete_all_roles_from_user(user_id, x),
+        values=[(SADMIN, True), (GADMIN, False), (USER3, False)],
     )

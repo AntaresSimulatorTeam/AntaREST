@@ -8,13 +8,14 @@ import {GroupDTO, RoleType, RoleDTO } from '../../common/types'
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
-    width: '100%',
-    height: '100%',
+    width: '300px',
+    height: '250px',
     display: 'flex',
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    marginTop: theme.spacing(2),
+    marginTop: theme.spacing(1),
+    padding: theme.spacing(1),
     overflow: 'hidden'
   },
   titleBox: {
@@ -30,7 +31,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'row nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    margin: theme.spacing(1)
   },
   select: {
     margin: theme.spacing(2)
