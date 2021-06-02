@@ -41,7 +41,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 }));
 
 interface ElementView {
-  type: 'json' | 'file';
+  type: 'json' | 'file' | 'matrix';
   data: string;
 }
 

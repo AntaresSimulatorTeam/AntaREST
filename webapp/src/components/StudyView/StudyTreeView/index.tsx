@@ -25,45 +25,58 @@ const isJsonLeaf = (studyDataNode: any) => {
   return false;
 };
 
+
+const getType = (data : any, path: string, itemkey: string) : GetTypeProps | undefined  => {
+  if (typeof data !== 'object')
+  {
+    const tmp = data.split('://');
+    console.log('Path : ',path)
+    console.log('Tmp : ',tmp)
+    if(tmp && tmp.length > 0)
+      return {type: tmp[0] as DataType, icon: 'file-alt', data: `${path}/${itemkey}`};
+    else
+      return {type: 'file', icon: 'file-alt', data: `${path}/${itemkey}`};
+  }
+  if(isJsonLeaf(data))
+    return {type: 'json', icon: 'file-code', data: JSON.stringify(data)};
+  return undefined;
+}
+
+type DataType =  'file' | 'json' | 'matrix';
+
+interface GetTypeProps {
+  type: DataType;
+  icon: 'file-alt' | 'file-code';
+  data: string;
+}
+
 interface ItemPropTypes {
   itemkey: string;
   data: any;
   path?: string;
-  viewer: (type: 'file' | 'json', data: string) => void;
+  viewer: (type: DataType, data: string) => void;
 }
 
 const StudyTreeItem = (props: ItemPropTypes) => {
   const { itemkey, data, path = '/', viewer } = props;
+
   // if not an object then it's a RawFileNode or MatrixNode
   // here we have to decide which viewer to use
-  if (typeof data !== 'object') {
-    return (
-      <TreeItem
-        nodeId={`${path}/${itemkey}`}
-        label={(
-          <div role="button" onClick={() => viewer('file', `${path}/${itemkey}`)}>
-            <FontAwesomeIcon icon="file-alt" />
-            <span style={{ marginLeft: '4px' }}>{itemkey}</span>
-          </div>
-        )}
-      />
-    );
-  }
-
-  // check if this can be considered an leaf to be displayed with the json viewer
-  if (isJsonLeaf(data)) {
-    return (
-      <TreeItem
-        nodeId={`${path}/${itemkey}`}
-        label={(
-          <div role="button" onClick={() => viewer('json', JSON.stringify(data))}>
-            <FontAwesomeIcon icon="file-code" />
-            <span style={{ marginLeft: '4px' }}>{itemkey}</span>
-          </div>
-        )}
-      />
-    );
-  }
+    const params = getType(data, path, itemkey);
+    if(!!params)
+    {
+      return (
+        <TreeItem
+          nodeId={`${path}/${itemkey}`}
+          label={(
+            <div role="button" onClick={() => viewer(params.type, params.data)}>
+              <FontAwesomeIcon icon={params.icon} />
+              <span style={{ marginLeft: '4px' }}>{itemkey}</span>
+            </div>
+          )}
+        />
+      );
+    }
 
   // else this is a folder containing.. stuff (recursion)
   return (
@@ -77,7 +90,7 @@ const StudyTreeItem = (props: ItemPropTypes) => {
 
 interface PropTypes {
   data: any;
-  view: (type: 'file' | 'json', data: string) => void;
+  view: (type: DataType, data: string) => void;
 }
 
 const StudyTreeView = (props: PropTypes) => {

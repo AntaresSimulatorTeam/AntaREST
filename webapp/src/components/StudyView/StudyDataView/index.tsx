@@ -13,7 +13,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
   study: string;
-  type: 'json' | 'file';
+  type: 'json' | 'file' | 'matrix';
   data: string;
 }
 
