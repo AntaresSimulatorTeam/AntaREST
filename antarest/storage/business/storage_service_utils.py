@@ -5,6 +5,8 @@ from typing import IO, Tuple
 from uuid import uuid4
 from zipfile import ZipFile, BadZipFile
 
+from markupsafe import escape
+
 from antarest.common.custom_types import JSON
 from antarest.storage.model import Study
 from antarest.storage.web.exceptions import (
@@ -58,7 +60,7 @@ class StorageServiceUtils:
         Returns: sanitize id
 
         """
-        return re.sub(r"[^0-9-]", "_", uuid)
+        return str(escape(uuid))
 
     @staticmethod
     def extract_zip(stream: IO[bytes], dst: Path) -> None:
@@ -123,7 +125,4 @@ class StorageServiceUtils:
         uuid = route_parts[0]
         url = "/".join(route_parts[1:])
 
-        return (
-            StorageServiceUtils.sanitize(uuid),
-            StorageServiceUtils.sanitize(url),
-        )
+        return uuid, url
