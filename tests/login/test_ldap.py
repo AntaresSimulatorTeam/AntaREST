@@ -3,9 +3,10 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from unittest.mock import Mock
 
-from antarest.common.config import Config, SecurityConfig
-from antarest.login.ldap import AntaresUser, LdapService, AuthDTO
-from antarest.login.model import UserCreateDTO, UserLdap
+from antarest.common.config import Config, SecurityConfig, ExternalAuthConfig
+from antarest.common.roles import RoleType
+from antarest.login.ldap import ExternalUser, LdapService, AuthDTO
+from antarest.login.model import UserCreateDTO, UserLdap, Role, Group
 
 
 class MockServerHandler(BaseHTTPRequestHandler):
@@ -14,8 +15,14 @@ class MockServerHandler(BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             data = self.rfile.read(content_length)
             create = AuthDTO.from_json(json.loads(data))
-            antares = AntaresUser(
-                first_name="Smith", last_name=create.user, groups=["group"]
+            antares = ExternalUser(
+                external_id=create.user,
+                first_name="John",
+                last_name="Smith",
+                groups={
+                    "groupA": "some group name",
+                    "groupB": "some other group name",
+                },
             )
             res = json.dumps(antares.to_json())
 
@@ -26,19 +33,43 @@ class MockServerHandler(BaseHTTPRequestHandler):
 
 
 def test_ldap():
-    config = Config(security=SecurityConfig(ldap_url="http://localhost:8869"))
+    config = Config(
+        security=SecurityConfig(
+            external_auth=ExternalAuthConfig(
+                url="http://localhost:8869", default_group_role=RoleType.WRITER
+            )
+        )
+    )
     repo = Mock()
     repo.get_by_name.return_value = None
     repo.save.side_effect = lambda x: x
-    ldap = LdapService(config=config, users=repo)
+    group_repo = Mock()
+    role_repo = Mock()
+    ldap = LdapService(
+        config=config, users=repo, groups=group_repo, roles=role_repo
+    )
 
     # Start server
     httpd = HTTPServer(("localhost", 8869), MockServerHandler)
     server = threading.Thread(None, httpd.handle_request)
     server.start()
 
-    res = ldap.login(name="John", password="pwd")
+    role_repo.get_all_by_user.return_value = [Role(group_id="groupA")]
+    group_repo.save.side_effect = lambda x: x
+    role_repo.save.side_effect = lambda x: x
+
+    res = ldap.login(name="extid", password="pwd")
 
     assert res
-    assert "John" == res.name
-    repo.save.assert_called_once_with(UserLdap(name="John"))
+    assert "extid" == res.name
+    repo.save.assert_called_once_with(UserLdap(name="extid"))
+    group_repo.save.assert_called_once_with(
+        Group(id="groupB", name="some other group name")
+    )
+    role_repo.save.assert_called_once_with(
+        Role(
+            identity=UserLdap(name="extid"),
+            group=Group(id="groupB", name="some other group name"),
+            type=RoleType.WRITER,
+        )
+    )

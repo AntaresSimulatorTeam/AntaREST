@@ -46,7 +46,9 @@ def build_login(
         role_repo = RoleRepository(db_session)
 
         ldap_repo = UserLdapRepository(db_session)
-        ldap = LdapService(users=ldap_repo, config=config)
+        ldap = LdapService(
+            config=config, users=ldap_repo, groups=group_repo, roles=role_repo
+        )
 
         service = LoginService(
             user_repo=user_repo,

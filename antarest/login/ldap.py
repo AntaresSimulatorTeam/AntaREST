@@ -1,13 +1,17 @@
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import requests
 from dataclasses import dataclass
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
-from antarest.login.model import UserCreateDTO, UserLdap
-from antarest.login.repository import UserLdapRepository
+from antarest.login.model import UserCreateDTO, UserLdap, Group, Role
+from antarest.login.repository import (
+    UserLdapRepository,
+    RoleRepository,
+    GroupRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,25 +34,28 @@ class AuthDTO:
 
 
 @dataclass
-class AntaresUser:
+class ExternalUser:
     """
     Output LDAP data
     """
 
+    external_id: str
     first_name: str
     last_name: str
-    groups: List[str]
+    groups: Dict[str, str]
 
     @staticmethod
-    def from_json(data: JSON) -> "AntaresUser":
-        return AntaresUser(
+    def from_json(id: str, data: JSON) -> "ExternalUser":
+        return ExternalUser(
+            external_id=id,
             first_name=data["firstName"],
             last_name=data["lastName"],
-            groups=data.get("groups", []),
+            groups=data.get("groups", {}),
         )
 
     def to_json(self) -> JSON:
         return {
+            "externalId": self.external_id,
             "firstName": self.first_name,
             "lastName": self.last_name,
             "groups": self.groups,
@@ -60,11 +67,22 @@ class LdapService:
     LDAP facade with connector to ldap server
     """
 
-    def __init__(self, users: UserLdapRepository, config: Config):
-        self.url = config.security.ldap_url
+    def __init__(
+        self,
+        config: Config,
+        users: UserLdapRepository,
+        groups: GroupRepository,
+        roles: RoleRepository,
+    ):
+        self.url = config.security.external_auth.url
         self.users = users
+        self.groups = groups
+        self.roles = roles
+        self.default_role_sync = (
+            config.security.external_auth.default_group_role
+        )
 
-    def _fetch(self, name: str, password: str) -> Optional[UserLdap]:
+    def _fetch(self, name: str, password: str) -> Optional[ExternalUser]:
         """
         Fetch user from LDAP
         Args:
@@ -89,10 +107,9 @@ class LdapService:
         if res.status_code != 200:
             return None
 
-        antares_user = AntaresUser.from_json(res.json())  # TODO use ldap group
-        return UserLdap(name=name)
+        return ExternalUser.from_json(name, res.json())
 
-    def _save(self, user: UserLdap) -> UserLdap:
+    def _save_or_update(self, user: ExternalUser) -> UserLdap:
         """
         Save user in db
         Args:
@@ -101,7 +118,35 @@ class LdapService:
         Returns:
 
         """
-        return self.users.save(user)
+        existing_user = self.users.get_by_name(user.external_id)
+        if not existing_user:
+            existing_user = self.users.save(UserLdap(name=user.external_id))
+
+        existing_roles = self.roles.get_all_by_user(existing_user.id)
+
+        grouprole_to_add = [
+            (group_id, user.groups[group_id])
+            for group_id in user.groups
+            if group_id not in [role.group_id for role in existing_roles]
+        ]
+        for group_id, group_name in grouprole_to_add:
+            logger.info(
+                "Adding user %s role %d to group %s (%s) following ldap sync",
+                existing_user.name,
+                self.default_role_sync,
+                group_id,
+                group_name,
+            )
+            group = self.groups.save(Group(id=group_id, name=group_name))
+            self.roles.save(
+                Role(
+                    identity=existing_user,
+                    group=group,
+                    type=self.default_role_sync,
+                )
+            )
+
+        return existing_user
 
     def get(self, id: int) -> Optional[UserLdap]:
         """
@@ -128,7 +173,7 @@ class LdapService:
         if not user:
             return None
 
-        return self.users.get_by_name(name) or self._save(UserLdap(name=name))
+        return self._save_or_update(user)
 
     def get_all(self) -> List[UserLdap]:
         """

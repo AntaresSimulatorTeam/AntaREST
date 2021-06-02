@@ -5,7 +5,9 @@ security:
   login:
     admin:
       pwd: admin
-  ldapUrl: ""
+  external_auth:
+    url: ""
+    default_group_role: 10
 
 db:
   url: "sqlite:///database.db"

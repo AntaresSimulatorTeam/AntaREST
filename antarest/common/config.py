@@ -7,6 +7,26 @@ import yaml
 from dataclasses import dataclass, field
 
 from antarest.common.custom_types import JSON
+from antarest.common.roles import RoleType
+
+
+@dataclass(frozen=True)
+class ExternalAuthConfig:
+    """
+    Sub config object dedicated to external auth service
+    """
+
+    url: Optional[str] = None
+    default_group_role: RoleType = RoleType.READER
+
+    @staticmethod
+    def from_dict(data: JSON) -> "ExternalAuthConfig":
+        return ExternalAuthConfig(
+            url=data.get("url", None),
+            default_group_role=RoleType.from_dict(
+                data.get("default_group_role", RoleType.READER.value)
+            ),
+        )
 
 
 @dataclass(frozen=True)
@@ -18,7 +38,7 @@ class SecurityConfig:
     jwt_key: str = ""
     admin_pwd: str = ""
     disabled: bool = False
-    ldap_url: str = ""
+    external_auth: ExternalAuthConfig = ExternalAuthConfig()
 
     @staticmethod
     def from_dict(data: JSON) -> "SecurityConfig":
@@ -26,7 +46,9 @@ class SecurityConfig:
             jwt_key=data["jwt"]["key"],
             admin_pwd=data["login"]["admin"]["pwd"],
             disabled=data.get("disabled", False),
-            ldap_url=data.get("ldapUrl", ""),
+            external_auth=ExternalAuthConfig.from_dict(
+                data.get("ldapUrl", {})
+            ),
         )
 
 
