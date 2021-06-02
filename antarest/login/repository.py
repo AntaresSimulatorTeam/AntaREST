@@ -134,8 +134,8 @@ class UserLdapRepository:
         return user_ldap
 
     def get(self, id: int) -> Optional[UserLdap]:
-        userLdap: Optional[UserLdap] = self.session.query(UserLdap).get(id)
-        return userLdap
+        user_ldap: Optional[UserLdap] = self.session.query(UserLdap).get(id)
+        return user_ldap
 
     def get_by_name(self, name: str) -> Optional[UserLdap]:
         user: UserLdap = (
