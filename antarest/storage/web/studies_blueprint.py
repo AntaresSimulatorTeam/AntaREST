@@ -139,6 +139,7 @@ def create_study_routes(
         tags:
           - Manage Data inside Study
         """
+        path = sanitize_uuid(path)
         parameters = RequestParameters(user=Auth.get_current_user())
         depth = request.args.get("depth", 3, type=int)
         output = storage_service.get(path, depth, parameters)
@@ -367,6 +368,7 @@ def create_study_routes(
         if not new:
             raise BadRequest("empty body not authorized")
 
+        path = sanitize_uuid(path)
         params = RequestParameters(user=Auth.get_current_user())
         storage_service.edit_study(path, new, params)
         content = ""
@@ -488,6 +490,7 @@ def create_study_routes(
           - Manage Permissions
         """
         uuid_sanitized = sanitize_uuid(uuid)
+        group_id = sanitize_uuid(group_id)
         params = RequestParameters(user=Auth.get_current_user())
         storage_service.add_group(uuid_sanitized, group_id, params)
 
@@ -526,6 +529,7 @@ def create_study_routes(
           - Manage Permissions
         """
         uuid_sanitized = sanitize_uuid(uuid)
+        group_id = sanitize_uuid(group_id)
 
         params = RequestParameters(user=Auth.get_current_user())
         storage_service.remove_group(uuid_sanitized, group_id, params)
@@ -566,6 +570,8 @@ def create_study_routes(
           - Manage Permissions
         """
         uuid_sanitized = sanitize_uuid(uuid)
+        mode = sanitize_uuid(mode)
+
         params = RequestParameters(user=Auth.get_current_user())
         public_mode = PublicMode(mode)
         storage_service.set_public_mode(uuid_sanitized, public_mode, params)
