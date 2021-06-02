@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, List
 
 from sqlalchemy.orm import Session  # type: ignore
@@ -12,6 +13,7 @@ class StudyMetadataRepository:
 
     def __init__(self, session: Session) -> None:
         self.session = session
+        self.logger = logging.Logger(self.__class__.__name__)
 
     def save(self, metadata: Study) -> Study:
         metadata.groups = [self.session.merge(g) for g in metadata.groups]
@@ -19,6 +21,8 @@ class StudyMetadataRepository:
             metadata.owner = self.session.merge(metadata.owner)
         self.session.add(metadata)
         self.session.commit()
+
+        self.logger.debug(f"save study {metadata.id}")
         return metadata
 
     def get(self, id: str) -> Optional[Study]:
@@ -33,3 +37,5 @@ class StudyMetadataRepository:
         u: Study = self.session.query(Study).get(id)
         self.session.delete(u)
         self.session.commit()
+
+        self.logger.debug(f"delete study {id}")

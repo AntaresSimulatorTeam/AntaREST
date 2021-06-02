@@ -3,6 +3,8 @@ from http import HTTPStatus
 from typing import Any, Callable, Tuple
 from werkzeug import exceptions
 
+from antarest.storage.business.permissions import StudyPermissionType
+
 
 class StudyNotFoundError(exceptions.NotFound):
     def __init__(self, message: str) -> None:
@@ -20,8 +22,8 @@ class StudyValidationError(exceptions.UnprocessableEntity):
 
 
 class StudyTypeUnsupported(exceptions.UnprocessableEntity):
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
+    def __init__(self, uuid: str, type: str) -> None:
+        super().__init__(f"Study {uuid} with type {type} not recognized")
 
 
 class BadOutputError(exceptions.UnprocessableEntity):
