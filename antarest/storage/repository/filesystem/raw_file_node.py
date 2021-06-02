@@ -12,6 +12,7 @@ class RawFileNode(LazyNode[str, str, str]):
     """
 
     def __init__(self, config: StudyConfig):
+        LazyNode.__init__(self, url_prefix="file")
         self.config = config
 
     def build(self, config: StudyConfig) -> TREE:

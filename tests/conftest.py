@@ -49,8 +49,8 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
     elif (
         isinstance(a, str)
         and isinstance(b, str)
-        and "file://" in a
-        and "file://" in b
+        and ("file://" in a or "matrix://" in a)
+        and ("file://" in b or "matrix://" in b)
     ):
         _assert_pointer_path(a, b)
     else:

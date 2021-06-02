@@ -238,10 +238,10 @@ def test_sta_mini_study_antares(
         (
             "/v1/studies/STA-mini/raw?path=input/load/series",
             {
-                "load_de": "file:///...../input/load/series/load_de.txt",
-                "load_es": "file:///...../input/load/series/load_es.txt",
-                "load_fr": "file:///...../input/load/series/load_fr.txt",
-                "load_it": "file:///...../input/load/series/load_it.txt",
+                "load_de": "matrix:///...../input/load/series/load_de.txt",
+                "load_es": "matrix:///...../input/load/series/load_es.txt",
+                "load_fr": "matrix:///...../input/load/series/load_fr.txt",
+                "load_it": "matrix:///...../input/load/series/load_it.txt",
             },
         ),
         (
@@ -345,7 +345,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
         (
             "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/links/de/fr",
             {
-                "values-hourly": "file://...../economy/mc-inde/0001/links/de - fr/values-hourly.txt"
+                "values-hourly": "matrix://...../economy/mc-inde/0001/links/de - fr/values-hourly.txt"
             },
         ),
         (
