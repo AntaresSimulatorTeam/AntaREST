@@ -185,7 +185,7 @@ def create_study_routes(
 
         """
 
-        source_uuid = uuid
+        source_uuid = sanitize_uuid(uuid)
         destination_study_name = request.args.get("dest")
         groups_arg = request.args.get("groups")
         group_ids = groups_arg.split(",") if groups_arg is not None else []
@@ -248,6 +248,7 @@ def create_study_routes(
         name_sanitized = sanitize_study_name(name)
         groups_arg = request.args.get("groups")
         group_ids = groups_arg.split(",") if groups_arg is not None else []
+        group_ids = [sanitize_uuid(gid) for gid in group_ids]
 
         params = RequestParameters(user=Auth.get_current_user())
         uuid = storage_service.create_study(name_sanitized, group_ids, params)
