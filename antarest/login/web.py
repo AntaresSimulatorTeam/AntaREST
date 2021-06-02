@@ -259,12 +259,13 @@ def create_login_api(
     @bp.route("/groups/<string:id>", methods=["GET"])
     @auth.protected()
     def groups_get_id(id: str) -> Any:
+        gid = str(escape(id))
         params = RequestParameters(user=Auth.get_current_user())
-        group = service.get_group(id, params)
+        group = service.get_group(gid, params)
         if group:
             return jsonify(group.to_dict())
         else:
-            return f"Group {str(escape(id))} not found", 404
+            return f"Group {gid} not found", 404
 
     @bp.route("/groups", methods=["POST"])
     @auth.protected()
@@ -276,13 +277,15 @@ def create_login_api(
     @bp.route("/groups/<string:id>", methods=["DELETE"])
     @auth.protected()
     def groups_delete(id: str) -> Any:
+        gid = str(escape(id))
         params = RequestParameters(user=Auth.get_current_user())
-        service.delete_group(id, params)
-        return jsonify(id), 200
+        service.delete_group(gid, params)
+        return jsonify(gid), 200
 
     @bp.route("/roles/group/<string:group>", methods=["GET"])
     @auth.protected()
     def roles_get_all(group: str) -> Any:
+        group = str(escape(group))
         params = RequestParameters(user=Auth.get_current_user())
         return jsonify(
             [
@@ -303,6 +306,7 @@ def create_login_api(
     @bp.route("/roles/<string:group>/<int:user>", methods=["DELETE"])
     @auth.protected()
     def roles_delete(user: int, group: str) -> Any:
+        group = str(escape(group))
         params = RequestParameters(user=Auth.get_current_user())
         service.delete_role(user, group, params)
         return jsonify((user, group)), 200

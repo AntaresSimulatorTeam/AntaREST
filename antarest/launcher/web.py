@@ -2,6 +2,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 from flask import Blueprint, jsonify, request
+from markupsafe import escape
 
 from antarest.login.auth import Auth
 from antarest.common.config import Config
@@ -52,6 +53,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> Blueprint:
         tags:
           - Run Studies
         """
+        study_id = str(escape(study_id))
         params = RequestParameters(user=Auth.get_current_user())
         return jsonify({"job_id": service.run_study(study_id, params)})
 
