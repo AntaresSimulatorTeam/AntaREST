@@ -47,7 +47,7 @@ class SecurityConfig:
             admin_pwd=data["login"]["admin"]["pwd"],
             disabled=data.get("disabled", False),
             external_auth=ExternalAuthConfig.from_dict(
-                data.get("ldapUrl", {})
+                data.get("external_auth", {})
             ),
         )
 
