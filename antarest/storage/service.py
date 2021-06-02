@@ -81,7 +81,7 @@ class StorageService:
 
         if isinstance(study, RawStudy):
             self.logger.info(
-                "study %s data asked by user %d", uuid, params.get_user_id()
+                "study %s data asked by user %s", uuid, params.get_user_id()
             )
             return self.study_service.get(study, url, depth)
 
@@ -107,7 +107,7 @@ class StorageService:
 
         """
         self.logger.info(
-            "studies metadata asked by user %d", params.get_user_id()
+            "studies metadata asked by user %s", params.get_user_id()
         )
         return {
             study.id: self.study_service.get_study_information(study)
@@ -132,7 +132,7 @@ class StorageService:
             raise StudyTypeUnsupported(uuid, study.type)
 
         self.logger.info(
-            "study %s metadata asked by user %d", uuid, params.get_user_id()
+            "study %s metadata asked by user %s", uuid, params.get_user_id()
         )
         return self.study_service.get_study_information(study)
 
@@ -153,7 +153,7 @@ class StorageService:
             raise StudyTypeUnsupported(uuid, study.type)
 
         self.logger.info(
-            "study %s path asked by user %d", uuid, params.get_user_id()
+            "study %s path asked by user %s", uuid, params.get_user_id()
         )
         return self.study_service.get_study_path(study)
 
@@ -189,7 +189,7 @@ class StorageService:
         )
 
         self.logger.info(
-            "study %d created by user %d", raw.id, params.get_user_id()
+            "study %d created by user %s", raw.id, params.get_user_id()
         )
         return str(raw.id)
 
@@ -211,7 +211,7 @@ class StorageService:
                 and study.path not in paths
             ):
                 self.logger.info(
-                    "Study=%d is not present in disk and will be deleted",
+                    "Study=%s is not present in disk and will be deleted",
                     study.id,
                 )
                 self.event_bus.push(
@@ -242,7 +242,7 @@ class StorageService:
                 study.content_status = self._analyse_study(study)
 
                 self.logger.info(
-                    "Study=%d appears on disk and will be added", study.id
+                    "Study=%s appears on disk and will be added", study.id
                 )
                 self.event_bus.push(
                     Event(EventType.STUDY_CREATED, study.to_json_summary())
@@ -295,7 +295,7 @@ class StorageService:
         )
 
         self.logger.info(
-            "study %s copied to %d by user %d",
+            "study %s copied to %s by user %s",
             src_study,
             study.id,
             params.get_user_id(),
@@ -400,7 +400,7 @@ class StorageService:
             raise StudyTypeUnsupported(uuid, study.type)
 
         self.logger.info(
-            "matrix %S asked by user %d", route, params.get_user_id()
+            "matrix %S asked by user %s", route, params.get_user_id()
         )
         return self.exporter_service.get_matrix(study, path)
 
@@ -595,7 +595,7 @@ class StorageService:
         self.repository.save(study)
 
         self.logger.info(
-            "adding group %s to study %d by user %s",
+            "adding group %s to study %s by user %s",
             group_id,
             study_id,
             params.get_user_id(),
