@@ -29,7 +29,10 @@ const StudyDataView = (props: PropTypes) => {
     setLoaded(false);
     try {
       const res = await getFileData(fileUrl);
-      setData(res);
+      // TODO remove the "JSON.stringify" which is just used here to handle the new matrix files
+      // well in fact we could check if this is an object or a string and choose to display a rawfile or matrix viewer
+      setData(JSON.stringify(res));
+      //setData(res);
     } catch (e) {
       enqueueSnackbar(<Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, { variant: 'error' });
     } finally {
@@ -43,7 +46,7 @@ const StudyDataView = (props: PropTypes) => {
       enqueueSnackbar(<Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, { variant: 'error' });
       return;
     }
-    loadFileData(`file/${study}/${urlParts.slice(2).join('/')}`);
+    loadFileData(`studies/${study}/${urlParts.slice(2).join('/')}`);
   }, [url]);
 
   return (
