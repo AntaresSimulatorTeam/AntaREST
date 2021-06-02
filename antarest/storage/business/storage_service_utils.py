@@ -123,4 +123,7 @@ class StorageServiceUtils:
         uuid = route_parts[0]
         url = "/".join(route_parts[1:])
 
-        return uuid, url
+        return (
+            StorageServiceUtils.sanitize(uuid),
+            StorageServiceUtils.sanitize(url),
+        )
