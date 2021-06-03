@@ -84,7 +84,7 @@ class LoginService:
             (params.user.is_site_admin(), params.user.is_group_admin(group))
         ):
             self.logger.info(
-                "%s (%d) saved by user %s",
+                "%s (%s) saved by user %s",
                 group.name,
                 group.id,
                 params.get_user_id(),

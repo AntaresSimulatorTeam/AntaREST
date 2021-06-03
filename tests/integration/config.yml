@@ -5,7 +5,8 @@ security:
   login:
     admin:
       pwd: admin
-  ldapUrl: ""
+  external_auth:
+    url: ""
 
 db:
   url: {{dburl}}
