@@ -1,17 +1,15 @@
 import logging
-from copy import deepcopy
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from time import time
 from typing import List, IO, Optional, cast
 
-import werkzeug
 from uuid import uuid4
 
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.jwt import JWTUser
 from antarest.common.roles import RoleType
 from antarest.login.model import User, Group
 from antarest.login.service import LoginService
@@ -383,7 +381,7 @@ class StorageService:
             params.get_user_id(),
         )
 
-    def get_matrix(self, route: str, params: RequestParameters) -> bytes:
+    def get_matrix(self, route: str, params: RequestParameters) -> BytesIO:
         """
         Download matrix
         Args:

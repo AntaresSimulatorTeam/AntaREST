@@ -3,8 +3,10 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional
 
-from flask import Blueprint, send_file, request, jsonify, Response
+from fastapi import APIRouter, HTTPException, File, Depends
+from starlette.responses import StreamingResponse
 
+from antarest.common.jwt import JWTUser
 from antarest.login.auth import Auth
 from antarest.common.config import Config
 from antarest.common.requests import (
@@ -39,7 +41,7 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
 
 def create_utils_routes(
     storage_service: StorageService, config: Config
-) -> Blueprint:
+) -> APIRouter:
     """
     Utility endpoints
 
@@ -50,114 +52,51 @@ def create_utils_routes(
     Returns:
 
     """
-    bp = Blueprint("create_utils", __name__)
+    bp = APIRouter()
+
     auth = Auth(config)
 
-    @bp.route(
-        "/file/<path:path>",
-        methods=["GET"],
-    )
-    @auth.protected()
-    def get_file(path: str) -> Any:
-        """
-        Get file
-        ---
-        responses:
-            '200':
-              content:
-                application/octet-stream: {}
-              description: Successful operation
-            '404':
-              description: File not found
-        parameters:
-          - in: path
-            name: path
-            required: true
-            schema:
-                type: string
-        tags:
-          - Manage Matrix
-
-        """
-
+    @bp.get("/file/{path:path}", tags=["Manage Matrix"], summary="Get file")
+    def get_file(
+        path: str, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
         try:
-            params = RequestParameters(user=Auth.get_current_user())
-            return storage_service.get_matrix(path, params)
+            params = RequestParameters(user=current_user)
+            return StreamingResponse(storage_service.get_matrix(path, params))
         except FileNotFoundError:
-            return f"{path} not found", HTTPStatus.NOT_FOUND.value
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND.value,
+                detail=f"{path} not found",
+            )
 
-    @bp.route(
-        "/file/<path:path>",
-        methods=["POST"],
+    @bp.post(
+        "/file/{path:path}",
+        status_code=HTTPStatus.NO_CONTENT.value,
+        tags=["Manage Matrix"],
+        summary="Post file",
     )
-    @auth.protected()
-    def post_file(path: str) -> Any:
-        """
-        Post file
-        ---
-        parameters:
-          - in: path
-            name: path
-            required: true
-            schema:
-              type: string
-        responses:
-          '200':
-            content:
-              application/json: {}
-            description: Successful operation
-          '400':
-            description: Invalid request
-        tags:
-          - Manage Matrix
-        """
+    def post_file(
+        path: str,
+        matrix: bytes = File(...),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        storage_service.upload_matrix(path, matrix, params)
 
-        data = request.files["matrix"].read()
-        params = RequestParameters(user=Auth.get_current_user())
-        storage_service.upload_matrix(path, data, params)
-        output = b""
-        code = HTTPStatus.NO_CONTENT.value
+        return ""
 
-        return output, code
-
-    @bp.route("/health", methods=["GET"])
+    @bp.get("/health", tags=["Misc"])
     def health() -> Any:
-        return jsonify({"status": "available"}), 200
+        return {"status": "available"}
 
-    @bp.route("/version", methods=["GET"])
+    @bp.get("/version", tags=["Misc"], summary="Get application version")
     def version() -> Any:
-        """
-        Get application version
-        ---
-        responses:
-          '200':
-            content:
-              application/json:
-                schema:
-                    type: object
-                    properties:
-                        version:
-                            type: string
-                            description: Semantic version
-                        gitcommit:
-                            type: string
-                            description: Build version (git commit id)
-            description: Successful operation
-        tags:
-          - Misc
-        """
         version_data = {"version": __version__}
 
         commit_id = get_commit_id(storage_service.study_service.path_resources)
         if commit_id is not None:
             version_data["gitcommit"] = commit_id
 
-        return jsonify(version_data), HTTPStatus.OK.value
-
-    @bp.after_request
-    def after_request(response: Response) -> Response:
-        header = response.headers
-        header["Access-Control-Allow-Origin"] = "*"
-        return response
+        return version_data
 
     return bp

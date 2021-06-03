@@ -1,20 +1,23 @@
 import uuid
-from typing import Any, List
+from typing import Any, List, Optional
 
 from dataclasses import dataclass
 
+import bcrypt
 from dataclasses_json import DataClassJsonMixin  # type: ignore
+from pydantic.main import BaseModel
 from sqlalchemy import Column, Integer, Sequence, String, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
-from werkzeug.security import (
-    generate_password_hash,
-    check_password_hash,
-)
 
 from antarest.common.custom_types import JSON
 from antarest.common.roles import RoleType
 from antarest.common.persistence import Base
+
+
+class UserInfo(BaseModel):
+    id: int
+    name: str
 
 
 class Password:
@@ -23,15 +26,17 @@ class Password:
     """
 
     def __init__(self, pwd: str):
-        self._pwd: str = (
-            pwd if "pbkdf2:sha256:" in pwd else generate_password_hash(pwd)
+        self._pwd: bytes = (
+            pwd.encode()
+            if "$2b" in pwd
+            else bcrypt.hashpw(pwd.encode(), bcrypt.gensalt())
         )
 
     def get(self) -> str:
-        return self._pwd
+        return self._pwd.decode()
 
     def check(self, pwd: str) -> bool:
-        return check_password_hash(self._pwd, pwd)  # type: ignore
+        return bcrypt.checkpw(pwd.encode(), self._pwd)
 
     def __str__(self) -> str:
         return "*****"
@@ -102,6 +107,10 @@ class User(Identity):
     @staticmethod
     def from_dict(data: JSON) -> "User":
         return User(id=data.get("id"), name=data["name"])
+
+    @staticmethod
+    def from_dto(data: UserInfo) -> "User":
+        return User(id=data.id, name=data.name)
 
     def __eq__(self, o: Any) -> bool:
         if not isinstance(o, User):
@@ -184,8 +193,7 @@ class Bot(Identity):
         return self.to_dict() == other.to_dict()
 
 
-@dataclass
-class BotCreateDTO:
+class BotCreateDTO(BaseModel):
     name: str
     group: str
     role: RoleType
@@ -209,17 +217,14 @@ class BotCreateDTO:
         }
 
 
-@dataclass
-class UserCreateDTO:
+class UserCreateDTO(BaseModel):
     name: str
     password: str
 
-    @staticmethod
-    def from_dict(data: JSON) -> "UserCreateDTO":
-        return UserCreateDTO(name=data["name"], password=data["password"])
 
-    def to_dict(self) -> JSON:
-        return {"name": self.name, "password": self.password}
+class GroupDTO(BaseModel):
+    id: Optional[str] = None
+    name: str
 
 
 @dataclass
@@ -249,8 +254,7 @@ class Group(Base):  # type: ignore
         return {"id": self.id, "name": self.name}
 
 
-@dataclass
-class RoleCreationDTO(DataClassJsonMixin):  # type: ignore
+class RoleCreationDTO(BaseModel):
     type: RoleType
     group_id: str
     identity_id: int

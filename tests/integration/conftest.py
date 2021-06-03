@@ -6,7 +6,7 @@ from zipfile import ZipFile
 import jinja2
 import pytest
 
-from antarest.main import flask_app
+from antarest.main import fastapi_app
 
 
 @pytest.fixture
@@ -44,4 +44,6 @@ def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
             )
         )
 
-    return flask_app(config_path, project_path / "resources")
+    return fastapi_app(
+        config_path, project_path / "resources", mount_front=False
+    )

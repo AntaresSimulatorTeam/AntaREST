@@ -1,8 +1,7 @@
 import logging
 from typing import Optional, List
 
-import werkzeug as werkzeug
-from werkzeug.exceptions import BadRequest
+from fastapi import HTTPException
 
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus
@@ -11,7 +10,6 @@ from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.login.exceptions import UserAlreadyExistError
 from antarest.login.ldap import LdapService
 from antarest.login.model import (
     User,
@@ -34,12 +32,14 @@ from antarest.login.repository import (
 )
 
 
-class GroupNotFoundError(werkzeug.exceptions.NotFound):
-    pass
+class GroupNotFoundError(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(status_code=404, detail="Group not found")
 
 
-class UserNotFoundError(werkzeug.exceptions.NotFound):
-    pass
+class UserNotFoundError(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(status_code=404, detail="User not found")
 
 
 class LoginService:
@@ -76,7 +76,9 @@ class LoginService:
 
         """
         if self.groups.get_by_name(group.name):
-            raise BadRequest("Group name already exists")
+            raise HTTPException(
+                status_code=400, detail="Group name already exists"
+            )
 
         if params.user and any(
             (params.user.is_site_admin(), params.user.is_group_admin(group))
@@ -110,11 +112,10 @@ class LoginService:
         """
         if param.user and param.user.is_site_admin():
             if self.users.get_by_name(create.name):
-                self.logger.info("user %s already exist", create.name)
-                raise UserAlreadyExistError()
-            self.logger.info(
-                "user %s created by user %s", create.name, param.get_user_id()
-            )
+                self.logger.error("user %s already exist", create.name)
+                raise HTTPException(
+                    status_code=400, detail="User already exists"
+                )
             return self.users.save(
                 User(name=create.name, password=Password(create.password))
             )

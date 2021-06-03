@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, List, TypeVar, Generic
+from typing import Any, Callable, Optional, List, TypeVar, Generic, Awaitable
 from dataclasses import dataclass
 
 
@@ -25,7 +25,7 @@ class IEventBus(ABC):
     @abstractmethod
     def add_listener(
         self,
-        listener: Callable[[Event], None],
+        listener: Callable[[Event], Awaitable[None]],
         type_filter: Optional[List[str]] = None,
     ) -> str:
         """
@@ -53,7 +53,7 @@ class DummyEventBusService(IEventBus):
 
     def add_listener(
         self,
-        listener: Callable[[Event], None],
+        listener: Callable[[Event], Awaitable[None]],
         type_filter: Optional[List[str]] = None,
     ) -> str:
         return ""
