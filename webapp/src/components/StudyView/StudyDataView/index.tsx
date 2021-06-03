@@ -21,9 +21,6 @@ interface PropTypes {
 const StudyDataView = (props: PropTypes) => {
   const { study, type, data } = props;
   const classes = useStyles();
-
-  console.log(type);
-  console.log(data);
   const renderData = () => {
     if (type === 'file') {
       return <StudyFileView study={study} url={data} />;

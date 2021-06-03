@@ -6,55 +6,15 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import TreeItem from '@material-ui/lab/TreeItem';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { StudyDataType } from '../../../common/types';
+import {getStudyParams} from './utils'
 
-
-const isJsonLeaf = (studyDataNode: any) => {
-  // this is a non robust guess work
-  const childrenKeys = Object.keys(studyDataNode);
-  for (let index = 0; index < childrenKeys.length; index += 1) {
-    const element = studyDataNode[childrenKeys[index]];
-    // here if one the child of the current node is not an object (so it's a string or an array) and this string is not a file
-    // this means this object is like {"a": "something"} or {"a": ["b","c"]} 
-    // BUT it could be something like {"a": "something", "b": {"c": "file://xxx"}}} so a kind of hybrid between a folder and a leaf node
-    // though I guess this is not possible but i'm not sure...
-    // the idea is that if all children is an object or a "file://", it is to be considered a folder
-    if (typeof element !== 'object' && (typeof element !== 'string' || !(element.startsWith('file://') || element.startsWith('matrix://')))) {
-      return true;
-    }
-  }
-  return false;
-};
-
-
-const getType = (data : any, path: string, itemkey: string) : GetTypeProps | undefined  => {
-  if (typeof data !== 'object')
-  {
-    const tmp = data.split('://');
-    if(tmp && tmp.length > 0)
-      return {type: tmp[0] as DataType, icon: 'file-alt', data: `${path}/${itemkey}`};
-    else
-      return {type: 'file', icon: 'file-alt', data: `${path}/${itemkey}`};
-  }
-  if(isJsonLeaf(data)) {
-    return {type: 'json', icon: 'file-code', data: JSON.stringify(data)};
-  }
-
-  return undefined;
-}
-
-type DataType =  'file' | 'json' | 'matrix';
-
-interface GetTypeProps {
-  type: DataType;
-  icon: 'file-alt' | 'file-code';
-  data: string;
-}
 
 interface ItemPropTypes {
   itemkey: string;
   data: any;
   path?: string;
-  viewer: (type: DataType, data: string) => void;
+  viewer: (type: StudyDataType, data: string) => void;
 }
 
 const StudyTreeItem = (props: ItemPropTypes) => {
@@ -62,7 +22,7 @@ const StudyTreeItem = (props: ItemPropTypes) => {
 
   // if not an object then it's a RawFileNode or MatrixNode
   // here we have to decide which viewer to use
-    const params = getType(data, path, itemkey);
+    const params = getStudyParams(data, path, itemkey);
     if(!!params)
     {
       return (
@@ -90,7 +50,7 @@ const StudyTreeItem = (props: ItemPropTypes) => {
 
 interface PropTypes {
   data: any;
-  view: (type: DataType, data: string) => void;
+  view: (type: StudyDataType, data: string) => void;
 }
 
 const StudyTreeView = (props: PropTypes) => {

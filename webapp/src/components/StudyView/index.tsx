@@ -7,6 +7,7 @@ import { getStudyData } from '../../services/api/study';
 import StudyTreeView from './StudyTreeView';
 import StudyDataView from './StudyDataView';
 import MainContentLoader from '../ui/loaders/MainContentLoader';
+import { StudyDataType } from '../../common/types';
 
 const logError = debug('antares:studyview:error');
 
@@ -41,7 +42,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 }));
 
 interface ElementView {
-  type: 'json' | 'file' | 'matrix';
+  type: StudyDataType;
   data: string;
 }
 
