@@ -53,7 +53,7 @@ const TokenCreationModal = (props: PropTypes) => {
     const [roleList, setRoleList] = useState<Array<RoleDTO>>([]);
     const [tokenName, setTokenName] = useState<string>('');
     const [checked, setChecked] = useState<boolean>(false);
-    const [selectedGroup, setActiveGroup] = useState<GroupDTO>({id: '', name:''});
+    const [selectedGroup, setActiveGroup] = useState<GroupDTO>();
 
     const onChange = (group: GroupDTO) => {
         setActiveGroup(group);
@@ -61,17 +61,17 @@ const TokenCreationModal = (props: PropTypes) => {
 
     const addRoleToList = () => {
         //1) Look if role is already added to list
-        if(roleList.find((item) => item.group_id === selectedGroup.id))
-            return ;
-        //2) Create a new role with type == READER
-        const newRole : RoleDTO = {
-            group_id: selectedGroup.id,
-            group_name: selectedGroup.name,
-            identity_id: -1,
-            type: RoleType.READER // READER by default
+        if (selectedGroup && !roleList.find((item) => item.group_id === selectedGroup.id)) {
+            //2) Create a new role with type == READER
+            const newRole : RoleDTO = {
+                group_id: selectedGroup.id,
+                group_name: selectedGroup.name,
+                identity_id: -1,
+                type: RoleType.READER // READER by default
+            }
+            //3) Add the role in roleList
+            setRoleList(roleList.concat([newRole]));
         }
-        //3) Add the role in roleList
-        setRoleList(roleList.concat([newRole]));
     }
 
     const deleteRoleFromList = (group_id: string) => {
