@@ -13,6 +13,7 @@ from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
+from antarest.common.roles import RoleType
 from antarest.login.auth import Auth
 from antarest.common.config import Config
 from antarest.login.model import (
@@ -239,19 +240,23 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     ) -> Any:
         params = RequestParameters(user=current_user)
         bot = service.save_bot(create, params)
-
-        if not bot:
-            return UserHasNotPermissionError()
-
-        group = service.get_group(create.group, params)
-        if not group:
-            return UserHasNotPermissionError()
+        groups = []
+        for role in create.roles:
+            group = service.get_group(role.group, params)
+            if not group:
+                return UserHasNotPermissionError()
+            jwt_group = JWTGroup(
+                id=group.id,
+                name=group.name,
+                role=RoleType.from_dict(role.role),
+            )
+            groups.append(jwt_group)
 
         jwt = JWTUser(
             id=bot.id,
             impersonator=bot.get_impersonator(),
             type=bot.type,
-            groups=[JWTGroup(id=group.id, name=group.name, role=create.role)],
+            groups=groups,
         )
         tokens = generate_tokens(
             jwt, jwt_manager, expire=timedelta(days=368 * 200)
@@ -260,10 +265,18 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
 
     @bp.get("/bots/{id}", tags=["User"])
     def get_bot(
-        id: int, current_user: JWTUser = Depends(auth.get_current_user)
+        id: int,
+        verbose: Optional[int] = None,
+        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        bot = service.get_bot(id, params)
+        bot = (
+            service.get_bot_info(id, params)
+            if verbose
+            else service.get_bot(id, params)
+        )
+        if not bot:
+            return UserHasNotPermissionError()
         return bot.to_dict()
 
     @bp.get("/bots", tags=["User"])

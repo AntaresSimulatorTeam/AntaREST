@@ -67,7 +67,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
     groupsList: Array<GroupDTO>;
-    selectedGroup: GroupDTO;
+    selectedGroup?: GroupDTO;
     roleList: Array<RoleDTO>;
     onChange: (group: GroupDTO) => void;
     addRole: () => void;
@@ -89,7 +89,7 @@ const GroupsAssignmentView = (props: PropTypes) => {
         </div>
         <div className={classes.groupsList}>
             <Select
-            value={selectedGroup.id}
+            value={selectedGroup?.id}
             onChange={(event: React.ChangeEvent<{ value: unknown }>) => onChange(groupsList.find((elm) => event.target.value === elm.id) as GroupDTO)}  
             label={t("settings:groupNameLabel")}
             className={classes.select}>

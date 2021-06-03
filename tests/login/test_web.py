@@ -24,6 +24,7 @@ from antarest.login.model import (
     Bot,
     UserCreateDTO,
     IdentityDTO,
+    BotRoleCreateDTO,
 )
 from antarest.main import JwtSettings
 
@@ -377,18 +378,21 @@ def test_roles_delete_by_user() -> None:
 @pytest.mark.unit_test
 def test_bot_create() -> None:
     bot = Bot(id=2, owner=3, name="bot", is_author=False)
-    create = BotCreateDTO(name="bot", group="group", role=RoleType.ADMIN)
+    create = BotCreateDTO(
+        name="bot",
+        group="group",
+        roles=[BotRoleCreateDTO(group="group", role=40)],
+    )
 
     service = Mock()
     service.save_bot.return_value = bot
     service.get_group.return_value = Group(id="group", name="group")
 
+    print(create.json())
     app = create_app(service)
     client = TestClient(app)
     res = client.post(
-        "/bots",
-        headers=create_auth_token(app),
-        json=create.to_dict(),
+        "/bots", headers=create_auth_token(app), json=create.dict()
     )
 
     assert res.status_code == 200

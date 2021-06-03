@@ -21,6 +21,7 @@ from antarest.login.model import (
     UserCreateDTO,
     UserLdap,
     RoleCreationDTO,
+    BotRoleCreateDTO,
 )
 from antarest.login.service import (
     LoginService,
@@ -143,7 +144,11 @@ def test_save_user():
 
 
 def test_save_bot():
-    bot_create = BotCreateDTO(name="bot", group="group", role=RoleType.READER)
+    bot_create = BotCreateDTO(
+        name="bot",
+        group="group",
+        roles=[BotRoleCreateDTO(group="group", role=10)],
+    )
     bots = Mock()
     bots.save.side_effect = lambda b: b
 
@@ -166,7 +171,11 @@ def test_save_bot():
 
 
 def test_save_bot_wrong_role():
-    bot_create = BotCreateDTO(name="bot", group="group", role=RoleType.ADMIN)
+    bot_create = BotCreateDTO(
+        name="bot",
+        group="group",
+        roles=[BotRoleCreateDTO(group="group", role=40)],
+    )
     bots = Mock()
     bots.save.side_effect = lambda b: b
 
@@ -232,8 +241,7 @@ def test_get_group():
 
     assert_permission(
         test=lambda x: service.get_group("group", x),
-        values=[(SADMIN, True), (GADMIN, True), (USER3, False)],
-        error=GroupNotFoundError,
+        values=[(SADMIN, True), (GADMIN, True), (USER3, True)],
     )
 
 
@@ -326,6 +334,35 @@ def test_get_bot():
         test=lambda x: service.get_bot(3, x),
         values=[(SADMIN, True), (USER3, True), (GADMIN, False)],
         error=UserHasNotPermissionError,
+    )
+
+
+def test_get_bot_info():
+    bots = Mock()
+    bot = Bot(name="bot", owner=3)
+    bots.get.return_value = bot
+
+    roles = Mock()
+    group = Group(id="group", name="group")
+
+    service = LoginService(
+        user_repo=Mock(),
+        bot_repo=bots,
+        group_repo=Mock(),
+        role_repo=roles,
+        ldap=Mock(),
+        event_bus=Mock(),
+    )
+
+    bot_id = 3
+    # When USER3 is himself
+    bots.get.return_value = bot
+    roles.get_all_by_user.return_value = [
+        Role(type=RoleType.ADMIN, group=group, identity=bot)
+    ]
+    assert_permission(
+        test=lambda x: service.get_bot_info(bot_id, x),
+        values=[(SADMIN, True), (GADMIN, False), (USER3, True)],
     )
 
 
@@ -562,7 +599,7 @@ def test_delete_user():
 
     assert_permission(
         test=lambda x: service.delete_user(3, x),
-        values=[(SADMIN, True), (GADMIN, False), (USER3, True)],
+        values=[(SADMIN, True), (GADMIN, False), (USER3, False)],
     )
 
     users.delete.assert_called_with(3)
@@ -574,11 +611,14 @@ def test_delete_bot():
     bots.delete.return_value = Bot()
     bots.get.return_value = Bot(id=4, owner=3)
 
+    roles = Mock()
+    roles.get_all_by_user.return_value = []
+
     service = LoginService(
         user_repo=Mock(),
         bot_repo=bots,
         group_repo=Mock(),
-        role_repo=Mock(),
+        role_repo=roles,
         ldap=Mock(),
         event_bus=Mock(),
     )
