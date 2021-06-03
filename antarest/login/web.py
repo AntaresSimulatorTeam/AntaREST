@@ -2,17 +2,12 @@ import json
 from datetime import timedelta
 from typing import Any, Optional
 
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import (  # type: ignore
-    create_access_token,
-    get_jwt_identity,
-    create_refresh_token,
-    jwt_required,
-    JWTManager,
-)
+from fastapi import Depends, APIRouter, Form, HTTPException, Query
+from fastapi_jwt_auth import AuthJWT  # type: ignore
 from markupsafe import escape
+from pydantic import BaseModel
+from starlette.responses import JSONResponse
 
-from antarest.common.custom_types import JSON
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import (
     RequestParameters,
@@ -29,13 +24,18 @@ from antarest.login.model import (
     UserCreateDTO,
     RoleDTO,
     RoleCreationDTO,
+    UserInfo,
+    GroupDTO,
 )
 from antarest.login.service import LoginService
 
 
-def create_login_api(
-    service: LoginService, config: Config, jwt: JWTManager
-) -> Blueprint:
+class UserCredentials(BaseModel):
+    username: str
+    password: str
+
+
+def create_login_api(service: LoginService, config: Config) -> APIRouter:
     """
     Endpoints login implementation
     Args:
@@ -46,21 +46,19 @@ def create_login_api(
     Returns:
 
     """
-    bp = Blueprint(
-        "create_login_api",
-        __name__,
-        template_folder=str(config.resources_path / "templates"),
-    )
+    bp = APIRouter()
 
     auth = Auth(config)
 
     def generate_tokens(
-        user: JWTUser, expire: Optional[timedelta] = None
+        user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timedelta] = None
     ) -> Any:
-        access_token = create_access_token(
-            identity=user.to_dict(), expires_delta=expire
+        access_token = jwt_manager.create_access_token(
+            subject=json.dumps(user.to_dict()), expires_time=expire
         )
-        refresh_token = create_refresh_token(identity=user.to_dict())
+        refresh_token = jwt_manager.create_refresh_token(
+            subject=json.dumps(user.to_dict())
+        )
         return {
             "user": user.id,
             "access_token": access_token.decode()
@@ -71,297 +69,175 @@ def create_login_api(
             else refresh_token,
         }
 
-    @jwt.token_in_blocklist_loader  # type: ignore
-    def check_if_token_is_revoked(jwt_header: Any, jwt_payload: JSON) -> bool:
-        id = jwt_payload["sub"]["id"]
-        type = jwt_payload["sub"]["type"]
-        return type == "bots" and not service.exists_bot(id)
+    @AuthJWT.token_in_denylist_loader  # type: ignore
+    def check_if_token_is_revoked(decrypted_token: Any) -> bool:
+        subject = json.loads(decrypted_token["sub"])
+        user_id = subject["id"]
+        token_type = subject["type"]
+        return token_type == "bots" and not service.exists_bot(user_id)
 
-    @bp.route("/login", methods=["POST"])
-    def login() -> Any:
-        """
-        Login
-        ---
-        responses:
-          '200':
-            content:
-              application/json:
-                schema:
-                  $ref: '#/definitions/UserCredentials'
-            description: Successful operation
-          '400':
-            description: Invalid request
-          '401':
-            description: Unauthenticated User
-          '403':
-            description: Unauthorized
-        consumes:
-            - application/x-www-form-urlencoded
-        parameters:
-        - in: body
-          name: body
-          required: true
-          description: user credentials
-          schema:
-            id: User
-            required:
-                - username
-                - password
-            properties:
-                username:
-                    type: string
-                password:
-                    type: string
-        definitions:
-            - schema:
-                id: UserCredentials
-                properties:
-                  user:
-                    type: string
-                    description: User name
-                  access_token:
-                    type: string
-                  refresh_token:
-                    type: string
-        tags:
-          - User
-        """
-        username = request.form.get("username") or request.json.get("username")
-        password = request.form.get("password") or request.json.get("password")
-
-        if not username:
-            return jsonify({"msg": "Missing username parameter"}), 400
-        if not password:
-            return jsonify({"msg": "Missing password parameter"}), 400
-
-        user = service.authenticate(username, password)
+    @bp.post("/login", tags=["User"], summary="Login")
+    def login(
+        credentials: UserCredentials,
+        jwt_manager: AuthJWT = Depends(),
+    ) -> Any:
+        user = service.authenticate(credentials.username, credentials.password)
         if not user:
-            return jsonify({"msg": "Bad username or password"}), 401
+            raise HTTPException(
+                status_code=401, detail="Bad username or password"
+            )
 
         # Identity can be any data that is json serializable
-        resp = generate_tokens(user)
+        resp = generate_tokens(user, jwt_manager)
 
-        return (
-            jsonify(resp),
-            200,
-        )
+        return resp
 
-    @bp.route("/refresh", methods=["POST"])
-    @jwt_required(refresh=True)  # type: ignore
-    def refresh() -> Any:
-        """
-        Refresh access token
-        ---
-        responses:
-          '200':
-            content:
-              application/json:
-                schema:
-                  $ref: '#/definitions/UserCredentials'
-            description: Successful operation
-          '400':
-            description: Invalid request
-          '401':
-            description: Unauthenticated User
-          '403':
-            description: Unauthorized
-        consumes:
-            - application/x-www-form-urlencoded
-        parameters:
-        - in: header
-          name: Authorization
-          required: true
-          description: refresh token
-          schema:
-            type: string
-            description: (Bearer {token}) Refresh token received from login or previous refreshes
-        definitions:
-            - schema:
-                id: UserCredentials
-                properties:
-                  user:
-                    type: string
-                    description: User name
-                  access_token:
-                    type: string
-                  refresh_token:
-                    type: string
-        tags:
-          - User
-        """
-        identity = get_jwt_identity()
+    @bp.post("/refresh", tags=["User"], summary="Refresh access token")
+    def refresh(jwt_manager: AuthJWT = Depends()) -> Any:
+        jwt_manager.jwt_refresh_token_required()
+        identity = json.loads(jwt_manager.get_jwt_subject())
         user = service.get_jwt(identity["id"])
         if user:
-            resp = generate_tokens(user)
+            resp = generate_tokens(user, jwt_manager)
 
-            return (
-                jsonify(resp),
-                200,
-            )
+            return resp
         else:
-            return "Token invalid", 403
+            raise HTTPException(status_code=403, detail="Token invalid")
 
-    @bp.route("/users", methods=["GET"])
-    @auth.protected()
-    def users_get_all() -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
-        return jsonify([u.to_dict() for u in service.get_all_users(params)])
+    @bp.get("/users", tags=["User"])
+    def users_get_all(
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        return [u.to_dict() for u in service.get_all_users(params)]
 
-    @bp.route("/users/<int:id>", methods=["GET"])
-    @auth.protected()
-    def users_get_id(id: int) -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
+    @bp.get("/users/{id}", tags=["User"])
+    def users_get_id(
+        id: int, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
+        params = RequestParameters(user=current_user)
         u = service.get_user_info(id, params)
         if u:
-            return jsonify(u.to_dict())
+            return u.to_dict()
         else:
-            return "", 404
+            raise HTTPException(status_code=404)
 
-    @bp.route("/users", methods=["POST"])
-    @auth.protected()
-    def users_create() -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
-        create_user = UserCreateDTO.from_dict(json.loads(request.data))
+    @bp.post("/users", tags=["User"])
+    def users_create(
+        create_user: UserCreateDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
 
-        return jsonify(service.create_user(create_user, params).to_dict())
+        return service.create_user(create_user, params).to_dict()
 
-    @bp.route("/users/<int:id>", methods=["PUT"])
-    @auth.protected()
-    def users_update(id: int) -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
-        u = User.from_dict(json.loads(request.data))
+    @bp.put("/users/{id}", tags=["User"])
+    def users_update(
+        id: int,
+        user_info: UserInfo,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
 
-        if id != u.id:
-            return "Id in path must be same id in body", 400
+        if id != user_info.id:
+            raise HTTPException(
+                status_code=400, detail="Id in path must be same id in body"
+            )
 
-        return jsonify(service.save_user(u, params).to_dict())
+        return service.save_user(User.from_dto(user_info), params).to_dict()
 
-    @bp.route("/users/<int:id>", methods=["DELETE"])
-    @auth.protected()
-    def users_delete(id: int) -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
+    @bp.delete("/users/{id}", tags=["User"])
+    def users_delete(
+        id: int, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
+        params = RequestParameters(user=current_user)
         service.delete_user(id, params)
-        return jsonify(id), 200
+        return id
 
-    @bp.route("/users/roles/<int:id>", methods=["DELETE"])
-    @auth.protected()
-    def roles_delete_by_user(id: int) -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
+    @bp.delete("/users/roles/{id}", tags=["User"])
+    def roles_delete_by_user(
+        id: int, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
+        params = RequestParameters(user=current_user)
         service.delete_all_roles_from_user(id, params)
-        return jsonify(id), 200
+        return id
 
-    @bp.route("/groups", methods=["GET"])
-    @auth.protected()
-    def groups_get_all() -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
-        return jsonify([g.to_dict() for g in service.get_all_groups(params)])
+    @bp.get("/groups", tags=["User"])
+    def groups_get_all(
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        return [g.to_dict() for g in service.get_all_groups(params)]
 
-    @bp.route("/groups/<string:id>", methods=["GET"])
-    @auth.protected()
-    def groups_get_id(id: str) -> Any:
+    @bp.get("/groups/{id}", tags=["User"])
+    def groups_get_id(
+        id: str, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
         gid = str(escape(id))
-        params = RequestParameters(user=Auth.get_current_user())
+        params = RequestParameters(user=current_user)
         group = service.get_group(gid, params)
         if group:
-            return jsonify(group.to_dict())
+            return group.to_dict()
         else:
-            return f"Group {gid} not found", 404
+            return HTTPException(
+                status_code=404, detail=f"Group {gid} not found"
+            )
 
-    @bp.route("/groups", methods=["POST"])
-    @auth.protected()
-    def groups_create() -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
-        group = Group.from_dict(json.loads(request.data))
-        return jsonify(service.save_group(group, params).to_dict())
+    @bp.post("/groups", tags=["User"])
+    def groups_create(
+        group_dto: GroupDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        group = Group(id=group_dto.id, name=group_dto.name)
+        return service.save_group(group, params).to_dict()
 
-    @bp.route("/groups/<string:id>", methods=["DELETE"])
-    @auth.protected()
-    def groups_delete(id: str) -> Any:
+    @bp.delete("/groups/{id}", tags=["User"])
+    def groups_delete(
+        id: str, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
         gid = str(escape(id))
-        params = RequestParameters(user=Auth.get_current_user())
+        params = RequestParameters(user=current_user)
         service.delete_group(gid, params)
-        return jsonify(gid), 200
+        return id
 
-    @bp.route("/roles/group/<string:group>", methods=["GET"])
-    @auth.protected()
-    def roles_get_all(group: str) -> Any:
+    @bp.get("/roles/group/{group}", tags=["User"])
+    def roles_get_all(
+        group: str, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
         group = str(escape(group))
-        params = RequestParameters(user=Auth.get_current_user())
-        return jsonify(
-            [
-                r.to_dict()
-                for r in service.get_all_roles_in_group(
-                    group=group, params=params
-                )
-            ]
-        )
+        params = RequestParameters(user=current_user)
+        return [
+            r.to_dict()
+            for r in service.get_all_roles_in_group(group=group, params=params)
+        ]
 
-    @bp.route("/roles", methods=["POST"])
-    @auth.protected()
-    def role_create() -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
-        role = RoleCreationDTO.from_dict(json.loads(request.data))
-        return jsonify(service.save_role(role, params).to_dict())
+    @bp.post("/roles", tags=["User"])
+    def role_create(
+        role: RoleCreationDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        return service.save_role(role, params).to_dict()
 
-    @bp.route("/roles/<string:group>/<int:user>", methods=["DELETE"])
-    @auth.protected()
-    def roles_delete(user: int, group: str) -> Any:
+    @bp.delete("/roles/{group}/{user}", tags=["User"])
+    def roles_delete(
+        user: int,
+        group: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
         group = str(escape(group))
-        params = RequestParameters(user=Auth.get_current_user())
+        params = RequestParameters(user=current_user)
         service.delete_role(user, group, params)
-        return jsonify((user, group)), 200
+        return user, group
 
-    @bp.route("/bots", methods=["POST"])
-    @auth.protected()
-    def bots_create() -> Any:
-        """
-        Create Bot
-        ---
-        responses:
-          '200':
-            content:
-              application/json:
-                schema:
-                  type: string
-                  description: Bot token API
-            description: Successful operation
-          '400':
-            description: Invalid request
-          '401':
-            description: Unauthenticated User
-          '403':
-            description: Unauthorized
-        consumes:
-            - application/json
-        parameters:
-        - in: body
-          name: body
-          required: true
-          description: Bot
-          schema:
-            id: User
-            required:
-                - name
-                - group
-                - role
-            properties:
-                name:
-                    type: string
-                    description: Bot name
-                isAuthor:
-                    type: boolean
-                    description: Set Bot impersonator between itself or it owner
-                group:
-                    type: string
-                    description: group id linked to bot
-                role:
-                    type: int
-                    description: RoleType used by bot. Should be lower or equals ot owner role type inside same group
-        tags:
-          - Bot
-        """
-        params = RequestParameters(user=Auth.get_current_user())
-        create = BotCreateDTO.from_dict(json.loads(request.data))
+    @bp.post("/bots", tags=["User"], summary="Create bot token")
+    def bots_create(
+        create: BotCreateDTO,
+        jwt_manager: AuthJWT = Depends(),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
         bot = service.save_bot(create, params)
 
         if not bot:
@@ -377,64 +253,51 @@ def create_login_api(
             type=bot.type,
             groups=[JWTGroup(id=group.id, name=group.name, role=create.role)],
         )
-        tokens = generate_tokens(jwt, expire=timedelta(days=368 * 200))
+        tokens = generate_tokens(
+            jwt, jwt_manager, expire=timedelta(days=368 * 200)
+        )
         return tokens["access_token"]
 
-    @bp.route("/bots/<int:id>", methods=["GET"])
-    @auth.protected()
-    def get_bot(id: int) -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
+    @bp.get("/bots/{id}", tags=["User"])
+    def get_bot(
+        id: int, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
+        params = RequestParameters(user=current_user)
         bot = service.get_bot(id, params)
-        return jsonify(bot.to_dict()), 200
+        return bot.to_dict()
 
-    @bp.route("/bots", methods=["GET"])
-    @auth.protected()
-    def get_all_bots() -> Any:
-        params = RequestParameters(user=Auth.get_current_user())
+    @bp.get("/bots", tags=["User"])
+    def get_all_bots(
+        owner: Optional[int] = None,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
 
-        owner = request.args.get("owner", default=None, type=int)
         bots = (
             service.get_all_bots_by_owner(owner, params)
             if owner
             else service.get_all_bots(params)
         )
-        return jsonify([b.to_dict() for b in bots]), 200
+        return [b.to_dict() for b in bots]
 
-    @bp.route("/bots/<int:id>", methods=["DELETE"])
-    @auth.protected()
-    def bots_delete(id: int) -> Any:
-        """
-        Revoke bot
-        ---
-        responses:
-          '200':
-            content:
-              application/json: {}
-            description: Successful operation
-          '400':
-            description: Invalid request
-        parameters:
-          - in: path
-            name: id
-            required: true
-            description: bot id
-            schema:
-              type: int
-        tags:
-          - Bot
-        """
-        params = RequestParameters(user=Auth.get_current_user())
+    @bp.delete("/bots/{id}", tags=["User"], summary="Revoke bot token")
+    def bots_delete(
+        id: int, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
+        params = RequestParameters(user=current_user)
         service.delete_bot(id, params)
-        return jsonify(id), 200
+        return id
 
-    @bp.route("/protected")
-    @auth.protected()
-    def protected() -> Any:
-        return f"user id={get_jwt_identity()}"
+    @bp.get("/protected", include_in_schema=False)
+    def protected(
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        return f"user id={current_user.id}"
 
-    @bp.route("/auth")
-    @auth.protected()
-    def auth_needed() -> Any:
-        return "ok"
+    @bp.get("/auth", include_in_schema=False)
+    def auth_needed(
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        return JSONResponse(current_user.to_dict())
 
     return bp

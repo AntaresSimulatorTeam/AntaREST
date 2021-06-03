@@ -5,7 +5,7 @@ security:
   login:
     admin:
       pwd: admin
-  ldapUrl: ""
+  ldapUrl: "http://localhost:9000"
 
 db:
   url: "sqlite:///database.db"

@@ -1,8 +1,11 @@
-from typing import Optional
+from http import HTTPStatus
+from typing import Optional, Any
 
-from flask import Flask
-from flask_jwt_extended import JWTManager  # type: ignore
+from fastapi import FastAPI
+from fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
@@ -19,7 +22,7 @@ from antarest.login.web import create_login_api
 
 
 def build_login(
-    application: Flask,
+    application: FastAPI,
     config: Config,
     db_session: Session,
     service: Optional[LoginService] = None,
@@ -57,6 +60,14 @@ def build_login(
             event_bus=event_bus,
         )
 
-    jwt = JWTManager(application)
-    application.register_blueprint(create_login_api(service, config, jwt))
+    @application.exception_handler(AuthJWTException)
+    def authjwt_exception_handler(
+        request: Request, exc: AuthJWTException
+    ) -> Any:
+        return JSONResponse(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            content={"detail": exc.message},
+        )
+
+    application.include_router(create_login_api(service, config))
     return service

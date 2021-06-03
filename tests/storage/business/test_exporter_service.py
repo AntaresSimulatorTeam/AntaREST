@@ -54,4 +54,4 @@ def test_export_matrix(tmp_path: Path) -> None:
     )
 
     md = RawStudy(id="id", workspace=DEFAULT_WORKSPACE_NAME)
-    assert exporter.get_matrix(md, "file.txt") == b"Hello World"
+    assert exporter.get_matrix(md, "file.txt").read() == b"Hello World"

@@ -6,7 +6,8 @@ from pathlib import Path
 from unittest.mock import Mock, call
 
 import pytest
-from flask import Flask
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 from antarest.common.custom_types import JSON
 from antarest.common.jwt import JWTUser, JWTGroup
@@ -35,7 +36,7 @@ ADMIN = JWTUser(
 def assert_url_content(
     storage_service: StorageService, url: str, expected_output: str
 ) -> None:
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         session=Mock(),
@@ -43,9 +44,9 @@ def assert_url_content(
         storage_service=storage_service,
         config=storage_service.study_service.config,
     )
-    client = app.test_client()
+    client = TestClient(app)
     res = client.get(url)
-    assert_study(json.loads(res.data), expected_output)
+    assert_study(res.json(), expected_output)
 
 
 def assert_with_errors(
@@ -383,7 +384,7 @@ def test_sta_mini_copy(storage_service) -> None:
     source_study_name = "STA-mini"
     destination_study_name = "copy-STA-mini"
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         session=Mock(),
@@ -391,13 +392,13 @@ def test_sta_mini_copy(storage_service) -> None:
         storage_service=storage_service,
         config=storage_service.study_service.config,
     )
-    client = app.test_client()
+    client = TestClient(app)
     result = client.post(
         f"/studies/{source_study_name}/copy?dest={destination_study_name}"
     )
 
     assert result.status_code == HTTPStatus.CREATED.value
-    uuid = result.json[len("/studies/") :]
+    uuid = result.json()[len("/studies/") :]
 
     parameters = RequestParameters(user=ADMIN)
     data_source = storage_service.get(source_study_name, -1, parameters)
@@ -471,7 +472,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=storage_service,
@@ -479,10 +480,10 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         user_service=Mock(),
         config=storage_service.study_service.config,
     )
-    client = app.test_client()
+    client = TestClient(app)
 
     study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
-    result = client.post("/studies", data={"study": (study_data, "study.zip")})
+    result = client.post("/studies", files={"study": study_data})
 
     assert result.status_code == HTTPStatus.CREATED.value
 
@@ -504,7 +505,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
 
     sta_mini_output_zip_path = Path(sta_mini_output_zip_filepath)
 
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         storage_service=storage_service,
@@ -512,12 +513,12 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         user_service=Mock(),
         config=storage_service.study_service.config,
     )
-    client = app.test_client()
+    client = TestClient(app)
 
     study_output_data = io.BytesIO(sta_mini_output_zip_path.read_bytes())
     result = client.post(
         "/studies/STA-mini/output",
-        data={"output": (study_output_data, "output.zip")},
+        files={"output": study_output_data},
     )
 
     assert result.status_code == HTTPStatus.ACCEPTED.value

@@ -1,8 +1,9 @@
 from typing import Optional
 
-import werkzeug
 from dataclasses import dataclass
 from markupsafe import escape
+
+from fastapi import HTTPException
 
 from antarest.common.jwt import JWTUser
 
@@ -19,5 +20,6 @@ class RequestParameters:
         return str(escape(str(self.user.id))) if self.user else "Unknown"
 
 
-class UserHasNotPermissionError(werkzeug.exceptions.Forbidden):
-    pass
+class UserHasNotPermissionError(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(status_code=403, detail="Permission denied")

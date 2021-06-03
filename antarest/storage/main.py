@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from flask import Flask
+from fastapi import FastAPI
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
@@ -23,7 +23,7 @@ from antarest.storage.web.utils_blueprint import create_utils_routes
 
 
 def build_storage(
-    application: Flask,
+    application: FastAPI,
     config: Config,
     session: Session,
     user_service: LoginService,
@@ -85,11 +85,7 @@ def build_storage(
     watcher = Watcher(config=config, service=storage_service)
     watcher.start()
 
-    application.register_blueprint(
-        create_study_routes(storage_service, config)
-    )
-    application.register_blueprint(
-        create_utils_routes(storage_service, config)
-    )
+    application.include_router(create_study_routes(storage_service, config))
+    application.include_router(create_utils_routes(storage_service, config))
 
     return storage_service

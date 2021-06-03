@@ -2,7 +2,8 @@ from unittest.mock import Mock, call
 from uuid import uuid4
 
 import pytest
-from flask import Flask
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 from antarest.common.config import Config, SecurityConfig
 from antarest.common.interfaces.eventbus import Event, EventType
@@ -21,8 +22,8 @@ ADMIN = JWTUser(
 )
 
 
-def create_app(service: Mock) -> Flask:
-    app = Flask(__name__)
+def create_app(service: Mock) -> FastAPI:
+    app = FastAPI(title=__name__)
 
     build_launcher(
         app,
@@ -42,11 +43,11 @@ def test_run() -> None:
     service.run_study.return_value = job
 
     app = create_app(service)
-    client = app.test_client()
+    client = TestClient(app)
     res = client.post(f"/launcher/run/{study}")
 
     assert res.status_code == 200
-    assert res.json == {"job_id": str(job)}
+    assert res.json() == {"job_id": str(job)}
     service.run_study.assert_called_once_with(study, RequestParameters(ADMIN))
 
 
@@ -64,11 +65,11 @@ def test_result() -> None:
     service.get_result.return_value = result
 
     app = create_app(service)
-    client = app.test_client()
+    client = TestClient(app)
     res = client.get(f"/launcher/jobs/{job}")
 
     assert res.status_code == 200
-    assert res.json == result.to_dict()
+    assert res.json() == result.to_dict()
     service.get_result.assert_called_once_with(job)
 
 
@@ -88,12 +89,12 @@ def test_jobs() -> None:
     service.get_jobs.return_value = [result]
 
     app = create_app(service)
-    client = app.test_client()
+    client = TestClient(app)
     res = client.get(f"/launcher/jobs?study={str(study_id)}")
     assert res.status_code == 200
-    assert res.json == [result.to_dict()]
+    assert res.json() == [result.to_dict()]
 
     res = client.get(f"/launcher/jobs")
     assert res.status_code == 200
-    assert res.json == [result.to_dict()]
+    assert res.json() == [result.to_dict()]
     service.get_jobs.assert_has_calls([call(str(study_id)), call(None)])

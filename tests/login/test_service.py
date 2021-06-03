@@ -2,7 +2,7 @@ from typing import Any, Callable, List, Tuple
 from unittest.mock import Mock
 
 import pytest
-from werkzeug.exceptions import BadRequest
+from fastapi import HTTPException
 
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import (
@@ -94,7 +94,7 @@ def test_save_group():
     assert_permission(
         test=lambda x: service.save_group(group, x),
         values=[(SADMIN, False), (GADMIN, False), (USER3, False)],
-        error=BadRequest,
+        error=HTTPException,
     )
 
 

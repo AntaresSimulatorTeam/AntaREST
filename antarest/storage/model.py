@@ -55,7 +55,7 @@ class Study(Base):  # type: ignore
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
-    owner_id = Column(Integer, ForeignKey(Identity.id))
+    owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True)
     owner = relationship(Identity, uselist=False)
     groups = relationship(
         "Group", secondary=lambda: groups_metadata, cascade=""

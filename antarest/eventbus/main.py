@@ -1,4 +1,4 @@
-from flask import Flask
+from fastapi import FastAPI
 
 from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import IEventBus
@@ -9,7 +9,7 @@ from antarest.eventbus.web import configure_websockets
 
 
 def build_eventbus(
-    application: Flask,
+    application: FastAPI,
     config: Config,
     autostart: bool = True,
 ) -> IEventBus:

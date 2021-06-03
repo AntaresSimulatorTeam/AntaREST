@@ -2,26 +2,29 @@ import argparse
 import logging
 import os
 import sys
-from numbers import Number
+from datetime import timedelta
 from pathlib import Path
-from typing import Tuple, Any, Optional
+from typing import Tuple, Any, Optional, Union
 
-from gevent import monkey  # type: ignore
+import uvicorn  # type: ignore
+from fastapi import FastAPI, HTTPException
+from fastapi_jwt_auth import AuthJWT  # type: ignore
+from pydantic.main import BaseModel
+from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from starlette.staticfiles import StaticFiles
+from starlette.templating import Jinja2Templates
 
-monkey.patch_all(thread=False)
 
-from flask import Flask, render_template, json, request
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
-from werkzeug.exceptions import HTTPException
 
 from antarest import __version__
 from antarest.eventbus.main import build_eventbus
 from antarest.login.auth import Auth
 from antarest.common.config import Config
 from antarest.common.persistence import Base
-from antarest.common.reverse_proxy import ReverseProxyMiddleware
-from antarest.common.swagger import build_swagger
 from antarest.launcher.main import build_launcher
 from antarest.login.main import build_login
 from antarest.storage.main import build_storage
@@ -91,13 +94,31 @@ def configure_logger(config: Config) -> None:
     )
 
 
-def flask_app(
-    config_file: Path, resource_path: Optional[Path] = None
-) -> Flask:
+class JwtSettings(BaseModel):
+    authjwt_secret_key: str
+    authjwt_token_location: Tuple[str, ...]
+    authjwt_access_token_expires: Union[
+        int, timedelta
+    ] = Auth.ACCESS_TOKEN_DURATION
+    authjwt_refresh_token_expires: Union[
+        int, timedelta
+    ] = Auth.REFRESH_TOKEN_DURATION
+    authjwt_denylist_enabled: bool = True
+    authjwt_denylist_token_checks: Any = {"access", "refresh"}
+
+
+def fastapi_app(
+    config_file: Path,
+    resource_path: Optional[Path] = None,
+    mount_front: bool = True,
+) -> FastAPI:
     res = resource_path or get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
 
     configure_logger(config)
+
+    logging.getLogger(__name__).info("Initiating application")
+
     # Database
     engine = create_engine(config.db_url, echo=config.debug)
     Base.metadata.create_all(engine)
@@ -105,52 +126,63 @@ def flask_app(
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
 
-    application = Flask(
-        __name__, static_url_path="/static", static_folder=str(res / "webapp")
+    application = FastAPI(title="AntaREST", version=__version__, docs_url=None)
+
+    if mount_front:
+        application.mount(
+            "/static",
+            StaticFiles(directory=str(res / "webapp")),
+            name="static",
+        )
+        templates = Jinja2Templates(directory=str(res / "templates"))
+
+        @application.get("/", include_in_schema=False)
+        def home(request: Request) -> Any:
+            """
+            Home ui
+            ---
+            responses:
+                '200':
+                  content:
+                     application/html: {}
+                  description: html home page
+            tags:
+              - UI
+            """
+            return templates.TemplateResponse(
+                "index.html", {"request": request}
+            )
+
+    @AuthJWT.load_config  # type: ignore
+    def get_config() -> JwtSettings:
+        return JwtSettings(
+            authjwt_secret_key=config.security.jwt_key,
+            authjwt_token_location=("headers", "cookies"),
+            authjwt_access_token_expires=Auth.ACCESS_TOKEN_DURATION,
+            authjwt_refresh_token_expires=Auth.REFRESH_TOKEN_DURATION,
+        )
+
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
-    application.wsgi_app = ReverseProxyMiddleware(application.wsgi_app)  # type: ignore
 
-    application.config["SECRET_KEY"] = config.security.jwt_key
-    application.config["JWT_ACCESS_TOKEN_EXPIRES"] = Auth.ACCESS_TOKEN_DURATION
-    application.config[
-        "JWT_REFRESH_TOKEN_EXPIRES"
-    ] = Auth.REFRESH_TOKEN_DURATION
-    application.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
-
-    @application.route("/", methods=["GET"])
-    def home() -> Any:
-        """
-        Home ui
-        ---
-        responses:
-            '200':
-              content:
-                 application/html: {}
-              description: html home page
-        tags:
-          - UI
-        """
-        return render_template("index.html")
-
-    @application.teardown_appcontext
-    def shutdown_session(exception: Any = None) -> None:
+    @application.on_event("shutdown")
+    def shutdown_session() -> None:
+        logging.getLogger(__name__).info("Request end")
         Auth.invalidate()
         db_session.remove()
 
-    @application.errorhandler(HTTPException)
-    def handle_exception(e: Any) -> Tuple[Any, Number]:
+    @application.exception_handler(HTTPException)
+    def handle_exception(request: Request, exc: HTTPException) -> Any:
         """Return JSON instead of HTML for HTTP errors."""
         # start with the correct headers and status code from the error
-        response = e.get_response()
-        # replace the body with JSON
-        response.data = json.dumps(
-            {
-                "name": e.name,
-                "description": e.description,
-            }
+        return JSONResponse(
+            content={"description": exc.detail}, status_code=exc.status_code
         )
-        response.content_type = "application/json"
-        return response, e.code
 
     event_bus = build_eventbus(application, config)
     user_service = build_login(
@@ -170,7 +202,6 @@ def flask_app(
         service_storage=storage,
         event_bus=event_bus,
     )
-    build_swagger(application)
 
     return application
 
@@ -182,5 +213,5 @@ if __name__ == "__main__":
         print(__version__)
         sys.exit()
     else:
-        app = flask_app(config_file)
-        app.socketio.run(app, debug=False, host="0.0.0.0", port=8080)
+        app = fastapi_app(config_file)
+        uvicorn.run(app, host="0.0.0.0", port=8080)
