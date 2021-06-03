@@ -41,7 +41,7 @@ class ExporterService:
 
         return self.exporter.export_file(path_study, outputs)
 
-    def get_matrix(self, metadata: Study, path: str) -> bytes:
+    def get_matrix(self, metadata: Study, path: str) -> BytesIO:
         """
         Get matrix file content
         Args:
@@ -52,4 +52,4 @@ class ExporterService:
 
         """
         file = self.study_service.get_study_path(metadata) / path
-        return file.read_bytes()
+        return BytesIO(file.read_bytes())

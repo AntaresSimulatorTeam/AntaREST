@@ -21,7 +21,7 @@ let config: Config = {
   applicationHome: '',
   restEndpoint: '/',
   wsUrl: '',
-  wsEndpoint: '/',
+  wsEndpoint: '/ws',
   hidden: false,
 };
 

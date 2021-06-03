@@ -2,7 +2,8 @@ from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
-from flask import Flask
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 from antarest.common.config import (
     Config,
@@ -20,7 +21,7 @@ from antarest.storage.service import StorageService
 
 
 def assert_url_content(storage_service: StorageService, url: str) -> bytes:
-    app = Flask(__name__)
+    app = FastAPI(title=__name__)
     build_storage(
         app,
         session=Mock(),
@@ -28,9 +29,9 @@ def assert_url_content(storage_service: StorageService, url: str) -> bytes:
         storage_service=storage_service,
         config=storage_service.study_service.config,
     )
-    client = app.test_client()
-    res = client.get(url)
-    return res.data
+    client = TestClient(app)
+    res = client.get(url, stream=True)
+    return res.raw.data
 
 
 def assert_data(data: bytes):

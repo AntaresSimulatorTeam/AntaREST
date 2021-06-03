@@ -1,5 +1,4 @@
 import axios from 'axios';
-import querystring from 'querystring';
 import moment from 'moment';
 import jwt_decode from 'jwt-decode';
 import client from './client';
@@ -57,18 +56,16 @@ export const login = async (
   username: string,
   password: string,
 ): Promise<UserInfo> => {
-  const data = querystring.stringify({ username, password });
-  const res = await rawAxiosInstance.post('/login', data, { headers: {
-    'Content-Type': 'application/x-www-form-urlencoded',
-  } });
+  const res = await rawAxiosInstance.post('/login', {username, password});
   const userInfo = await res.data;
   const tokenData = jwt_decode(userInfo.access_token);
+  const subject = JSON.parse((tokenData as any).sub);
   const infos : UserInfo  = {
     user: userInfo.user,
-    groups: (tokenData as any).sub.groups,
-    id: (tokenData as any).sub.id,
-    impersonator: (tokenData as any).sub.impersonator,
-    type: (tokenData as any).sub.type,
+    groups: subject.groups,
+    id: subject.id,
+    impersonator: subject.impersonator,
+    type: subject.type,
     accessToken: userInfo.access_token,
     refreshToken: userInfo.refresh_token
   }

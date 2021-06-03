@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { Action } from 'redux';
 import { ThunkAction } from 'redux-thunk';
-import socketIOClient from 'socket.io-client';
 import { UserInfo } from '../common/types';
 import { AppState } from '../App/reducers';
 import { getConfig } from '../services/config';
@@ -13,7 +12,7 @@ import { getConfig } from '../services/config';
 /** ******************************************* */
 
 export interface WebsocketState {
-  socket?: SocketIOClient.Socket;
+  socket?: WebSocket;
   listeners: Array<(ev: any) => void>;
 }
 
@@ -28,20 +27,27 @@ const initialState: WebsocketState = {
 
 export interface ConnectAction extends Action {
   type: 'WS/CONNECT';
-  payload: SocketIOClient.Socket;
+  payload: WebSocket;
 }
 
 export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, unknown, ConnectAction> => (dispatch, getState): void => {
   const config = getConfig();
-  const socket = socketIOClient(config.wsUrl + config.wsEndpoint, { transports: ['websocket'], auth: { token: user?.accessToken } });
+  const socket = new WebSocket(`${config.wsUrl + config.wsEndpoint}/${user?.user}?token=${user?.accessToken }`);
   const { websockets } = getState();
-  websockets.listeners.forEach((l) => {
-    socket.on('all', l);
-  });
-  dispatch({
-    type: 'WS/CONNECT',
-    payload: socket,
-  });
+  if (socket) {
+    socket.onopen = (ev) => console.log(ev);
+    socket.onclose = (ev) => console.log(ev)
+    socket.onerror = (ev) => console.log(ev)   
+    socket.onmessage = (message: any) => {
+      websockets.listeners.forEach((l) => {
+        l(message);
+      });
+    }
+    dispatch({
+      type: 'WS/CONNECT',
+      payload: socket,
+    });  
+  }
 };
 
 export interface DisconnectAction extends Action {
@@ -68,11 +74,7 @@ interface AddListenerAction extends Action {
   payload: (ev: any) => void;
 }
 
-export const addListener = (callback: (ev: any) => void): ThunkAction<void, AppState, unknown, AddListenerAction> => (dispatch, getState): void => {
-  const { websockets } = getState();
-  if (websockets.socket) {
-    websockets.socket.on('all', callback);
-  }
+export const addListener = (callback: (ev: any) => void): ThunkAction<void, AppState, unknown, AddListenerAction> => (dispatch): void => {
   dispatch({
     type: 'WS/ADD_LISTENER',
     payload: callback,
@@ -84,11 +86,7 @@ interface RemoveListenerAction extends Action {
   payload: (ev: any) => void;
 }
 
-export const removeListener = (callback: (ev: any) => void): ThunkAction<void, AppState, unknown, RemoveListenerAction> => (dispatch, getState): void => {
-  const { websockets } = getState();
-  if (websockets.socket) {
-    websockets.socket.off('all', callback);
-  }
+export const removeListener = (callback: (ev: any) => void): ThunkAction<void, AppState, unknown, RemoveListenerAction> => (dispatch): void => {
   dispatch({
     type: 'WS/REMOVE_LISTENER',
     payload: callback,
