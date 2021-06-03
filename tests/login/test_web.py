@@ -55,7 +55,6 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
             resources_path=Path(),
             security=SecurityConfig(disabled=auth_disabled),
         ),
-        db_session=Mock(),
     )
     return app
 

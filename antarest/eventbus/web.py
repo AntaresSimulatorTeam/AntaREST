@@ -1,7 +1,7 @@
 import dataclasses
 import json
 import logging
-from typing import List, Awaitable
+from typing import List, Awaitable, Optional
 
 from fastapi import FastAPI, Query, HTTPException, Depends
 from fastapi_jwt_auth import AuthJWT  # type: ignore
@@ -45,10 +45,9 @@ def configure_websockets(
         # TODO use event permissions to only send to specified rooms
         await manager.broadcast(json.dumps(dataclasses.asdict(event)))
 
-    @application.websocket("/ws/{client_id}")
+    @application.websocket("/ws")
     async def connect(
         websocket: WebSocket,
-        client_id: int,
         token: str = Query(...),
         jwt_manager: AuthJWT = Depends(),
     ) -> None:
@@ -68,13 +67,9 @@ def configure_websockets(
         await manager.connect(websocket)
         try:
             while True:
-                data = await websocket.receive_text()
-                await manager.send_personal_message(
-                    f"You wrote: {data}", websocket
-                )
-                await manager.broadcast(f"Client #{client_id} says: {data}")
+                await websocket.receive_text()
+
         except WebSocketDisconnect:
             manager.disconnect(websocket)
-            await manager.broadcast(f"Client #{client_id} left the chat")
 
     event_bus.add_listener(send_event_to_ws)

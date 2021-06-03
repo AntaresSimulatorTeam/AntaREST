@@ -1,5 +1,7 @@
 from datetime import datetime
+from unittest.mock import Mock
 
+from fastapi_sqlalchemy import DBSessionMiddleware, db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
 
@@ -26,37 +28,43 @@ def test_cyclelife():
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
     Base.metadata.create_all(engine)
-
-    repo = StudyMetadataRepository(session=sess)
-    a = Study(
-        name="a",
-        version="42",
-        author="John Smith",
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        public_mode=PublicMode.FULL,
-        owner=user,
-        groups=[group],
-    )
-    b = Study(
-        name="b",
-        version="43",
-        author="Morpheus",
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        public_mode=PublicMode.FULL,
-        owner=user,
-        groups=[group],
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
     )
 
-    a = repo.save(a)
-    b = repo.save(b)
-    assert b.id
-    c = repo.get(a.id)
-    assert a == c
+    with db():
+        repo = StudyMetadataRepository()
+        a = Study(
+            name="a",
+            version="42",
+            author="John Smith",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            public_mode=PublicMode.FULL,
+            owner=user,
+            groups=[group],
+        )
+        b = Study(
+            name="b",
+            version="43",
+            author="Morpheus",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            public_mode=PublicMode.FULL,
+            owner=user,
+            groups=[group],
+        )
 
-    repo.delete(a.id)
-    assert repo.get(a.id) is None
+        a = repo.save(a)
+        b = repo.save(b)
+        assert b.id
+        c = repo.get(a.id)
+        assert a == c
+
+        repo.delete(a.id)
+        assert repo.get(a.id) is None
 
 
 def test_study_inheritance():
@@ -68,24 +76,30 @@ def test_study_inheritance():
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
     Base.metadata.create_all(engine)
-
-    repo = StudyMetadataRepository(session=sess)
-    a = RawStudy(
-        name="a",
-        version="42",
-        author="John Smith",
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        public_mode=PublicMode.FULL,
-        owner=user,
-        groups=[group],
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path="study",
-        content_status=StudyContentStatus.WARNING,
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
     )
 
-    repo.save(a)
-    b = repo.get(a.id)
+    with db():
+        repo = StudyMetadataRepository()
+        a = RawStudy(
+            name="a",
+            version="42",
+            author="John Smith",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            public_mode=PublicMode.FULL,
+            owner=user,
+            groups=[group],
+            workspace=DEFAULT_WORKSPACE_NAME,
+            path="study",
+            content_status=StudyContentStatus.WARNING,
+        )
 
-    assert isinstance(b, RawStudy)
-    assert b.path == "study"
+        repo.save(a)
+        b = repo.get(a.id)
+
+        assert isinstance(b, RawStudy)
+        assert b.path == "study"

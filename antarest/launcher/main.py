@@ -1,7 +1,6 @@
 from typing import Optional
 
 from fastapi import FastAPI
-from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
@@ -14,14 +13,13 @@ from antarest.storage.service import StorageService
 def build_launcher(
     application: FastAPI,
     config: Config,
-    db_session: Session,
     service_storage: Optional[StorageService] = None,
     service_launcher: Optional[LauncherService] = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> None:
 
     if service_storage and not service_launcher:
-        repository = JobResultRepository(session=db_session)
+        repository = JobResultRepository()
         service_launcher = LauncherService(
             config=config,
             storage_service=service_storage,

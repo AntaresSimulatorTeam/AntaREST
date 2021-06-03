@@ -29,7 +29,6 @@ def create_app(service: Mock) -> FastAPI:
         app,
         service_launcher=service,
         config=Config(security=SecurityConfig(disabled=True)),
-        db_session=Mock(),
     )
     return app
 

@@ -15,4 +15,4 @@ aiofiles
 jinja2
 uvicorn[standard]
 bcrypt
-python-dotenv
+fastapi-sqlalchemy
