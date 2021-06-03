@@ -70,5 +70,35 @@ export interface IdentityDTO {
   roles: Array<RoleDTO>;
 }
 
+export interface BotDTO {
+  id: number;
+  name: string;
+  owner: number;
+  isAuthor: boolean;
+}
+
+
+export interface BotRoleCreateDTO {
+  group: string;
+  role: RoleType;
+}
+
+export interface BotCreateDTO{
+  name: string;
+  is_author: boolean;
+  roles: Array<BotRoleCreateDTO>
+}
+
+export interface BotIdentityDTO {
+  id: number;
+  name: string;
+  isAuthor: boolean;
+  roles: Array<RoleDTO>;  
+}
+
+export interface UserToken {
+  user: UserDTO;
+  bots: Array<BotDTO>;
+}
 
 export default {};

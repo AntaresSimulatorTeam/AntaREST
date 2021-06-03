@@ -46,6 +46,13 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         required=False,
     )
+    parser.add_argument(
+        "--no-front",
+        dest="no_front",
+        help="Not embed the front build",
+        action="store_true",
+        required=False,
+    )
     return parser.parse_args()
 
 
@@ -63,15 +70,15 @@ def get_default_config_path() -> Path:
     )
 
 
-def get_arguments() -> Tuple[Path, bool]:
+def get_arguments() -> Tuple[Path, bool, bool]:
     arguments = parse_arguments()
 
     display_version = arguments.version or False
     if display_version:
-        return Path("."), display_version
+        return Path("."), display_version, arguments.no_front
 
     config_file = Path(arguments.config_file or get_default_config_path())
-    return config_file, display_version
+    return config_file, display_version, arguments.no_front
 
 
 def get_local_path() -> Path:
@@ -207,11 +214,11 @@ def fastapi_app(
 
 
 if __name__ == "__main__":
-    config_file, display_version = get_arguments()
+    config_file, display_version, no_front = get_arguments()
 
     if display_version:
         print(__version__)
         sys.exit()
     else:
-        app = fastapi_app(config_file)
+        app = fastapi_app(config_file, mount_front=not no_front)
         uvicorn.run(app, host="0.0.0.0", port=8080)

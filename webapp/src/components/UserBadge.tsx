@@ -11,7 +11,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       width: '160px',
-      height: '240px',
+      height: '200px',
       display: 'flex',
       flexDirection: 'column',
     },

@@ -1,5 +1,14 @@
 import client from './client';
-import {UserDTO, GroupDTO, RoleCreationDTO, RoleDTO, IdentityDTO} from '../../common/types'
+import {UserDTO,
+        GroupDTO,
+        RoleCreationDTO,
+        RoleDTO,
+        UserToken,
+        IdentityDTO,
+        BotCreateDTO,
+        BotIdentityDTO,
+        BotDTO
+      } from '../../common/types'
 
 
 /** ******************************************* */
@@ -64,7 +73,6 @@ export const getAllRolesInGroup = async (group_id : string) : Promise<Array<Role
   return res.data;
 }
 
-
 export const createRole = async (role : RoleCreationDTO) : Promise<any> => {
   const data = role;
   const res = await client.post('/roles', data);
@@ -74,4 +82,47 @@ export const createRole = async (role : RoleCreationDTO) : Promise<any> => {
 export const deleteAllRoles = async (id : number) : Promise<any> => {
   const res = await client.delete(`/users/roles/${id}`);
   return res.data;
+}
+
+/** ******************************************* */
+/* Tokens                                       */
+/** ******************************************* */
+
+export const createNewBot = async (bot: BotCreateDTO) : Promise<any> => {
+  const data = bot;  
+  const res = await client.post('/bots', data);
+  return res.data;
+}
+
+export const getBots = async (owner?: number) : Promise<Array<BotDTO>> => {
+  let req = '/bots'+(!!owner ? `?owner=${owner}`:'');
+  const res = await client.get(req);
+  return res.data;
+}
+
+export const getBotInfos = async (id: number) : Promise<BotIdentityDTO> =>{
+  const res = await client.get(`/bots/${id}?verbose=1`);
+  return res.data;
+}
+
+
+export const deleteBot = async (id: number) : Promise<any> => {
+  const res = await client.delete(`/bots/${id}`);
+  return res.data;
+}
+
+export const getAdminTokenList = async () : Promise<Array<UserToken>> => {
+  try{
+
+    const tokenList : Array<UserToken> = [];
+    const users = await getUsers();
+
+    for(const user of users)
+      tokenList.push({ user, bots: await getBots(user.id)})
+    return tokenList;
+  }
+  catch(e)
+  {
+    throw e;
+  }
 }

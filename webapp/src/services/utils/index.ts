@@ -29,5 +29,26 @@ export const isUserAdmin = (user : UserInfo) : boolean => {
   return false;
 }
 
+export const roleToString = (role: RoleType) : string =>{
+    switch(role)
+    {
+      case RoleType.ADMIN:
+        return "ADMIN";
+
+      case RoleType.RUNNER:
+        return "RUNNER";
+
+      case RoleType.WRITER:
+        return "WRITER";
+
+      case RoleType.READER:
+        return "READER";
+
+      default:
+        break;
+    }
+    return "";
+}
+
 
 export default {};

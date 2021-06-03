@@ -34,12 +34,13 @@ export const refresh = async (user: UserInfo, login: (user: UserInfo) => void, l
       } });
       const userInfoDTO = await res.data;
       const tokenData = jwt_decode(userInfoDTO.access_token);
+      const subject = JSON.parse((tokenData as any).sub);
       const userInfo : UserInfo  = {
         user: userInfoDTO.user,
-        groups: (tokenData as any).sub.groups,
-        id: (tokenData as any).sub.id,
-        impersonator: (tokenData as any).sub.impersonator,
-        type: (tokenData as any).sub.type,
+        groups: subject.groups,
+        id: subject.id,
+        impersonator: subject.impersonator,
+        type: subject.type,
         accessToken: userInfoDTO.access_token,
         refreshToken: userInfoDTO.refresh_token
       }
