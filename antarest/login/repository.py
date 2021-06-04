@@ -191,6 +191,12 @@ class BotRepository:
         bots: List[Bot] = db.session.query(Bot).filter_by(owner=owner).all()
         return bots
 
+    def get_by_name_and_owner(self, owner: int, name: str) -> Optional[Bot]:
+        bot: Bot = (
+            self.session.query(Bot).filter_by(owner=owner, name=name).first()
+        )
+        return bot
+
     def exists(self, id: int) -> bool:
         res: bool = db.session.query(exists().where(Bot.id == id)).scalar()
         return res

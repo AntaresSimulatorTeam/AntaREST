@@ -127,6 +127,7 @@ const TokenNormal = (props: PropTypes) => {
                                             onActionClick={onWatchClick} />)
                           }                     
         {openCreationModal && <TokenCreationModal  open={openCreationModal}  // Why 'openCreationModal &&' ? => Otherwise previous data are still present
+                                                   userGroups={user?.groups}
                                                    onNewTokenCreation={onNewTokenCreation}
                                                    onClose={() => setOpenCreationModal(false)} />}
         {openConfirmationModal && <ConfirmationModal open={openConfirmationModal}

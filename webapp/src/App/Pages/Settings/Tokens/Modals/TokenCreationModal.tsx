@@ -6,7 +6,7 @@ import GenericModal from '../../../../../components/Settings/GenericModal';
 import GroupsAssignmentView from '../../../../../components/Settings/GroupsAssignmentView';
 import Checkbox from '@material-ui/core/Checkbox';
 import {getGroups} from '../../../../../services/api/user';
-import {GroupDTO, RoleType, RoleDTO, BotDTO } from '../../../../../common/types';
+import {GroupDTO, RoleType, RoleDTO, BotDTO, JWTGroup } from '../../../../../common/types';
 import {saveToken} from './utils';
 
 
@@ -39,6 +39,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
     open: boolean;
+    userGroups?: Array<JWTGroup>;
     onNewTokenCreation : (newToken : string, newBot: BotDTO) => void;
     onClose: () => void;
 };
@@ -48,7 +49,7 @@ const TokenCreationModal = (props: PropTypes) => {
     const classes = useStyles();
     const [t] = useTranslation();
     const { enqueueSnackbar } = useSnackbar();
-    const {open, onNewTokenCreation, onClose} = props;
+    const {open, userGroups, onNewTokenCreation, onClose} = props;
     const [groupList, setGroupList] = useState<Array<GroupDTO>>([]); 
     const [roleList, setRoleList] = useState<Array<RoleDTO>>([]);
     const [tokenName, setTokenName] = useState<string>('');
@@ -116,7 +117,6 @@ const TokenCreationModal = (props: PropTypes) => {
                 // Get list of all groups and add it to groupList or locally from access_token
                 const groups = await getGroups();
                 const filteredGroup = groups.filter((item) => item.id !== "admin");
-                
                 setGroupList(filteredGroup);
                 if(filteredGroup.length > 0)
                     setActiveGroup(filteredGroup[0]);
@@ -154,8 +154,10 @@ const TokenCreationModal = (props: PropTypes) => {
             </div>
 
            {
+            !!selectedGroup &&
             <GroupsAssignmentView groupsList={groupList}
                 roleList={roleList}
+                userGroups={userGroups}
                 selectedGroup={selectedGroup}
                 onChange={onChange}
                 addRole={addRoleToList}

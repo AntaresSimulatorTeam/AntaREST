@@ -172,11 +172,17 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
 
     @bp.get("/groups/{id}", tags=["User"])
     def groups_get_id(
-        id: str, current_user: JWTUser = Depends(auth.get_current_user)
+        id: str,
+        verbose: Optional[int] = None,
+        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         gid = str(escape(id))
         params = RequestParameters(user=current_user)
-        group = service.get_group(gid, params)
+        group = (
+            service.get_group_info(gid, params)
+            if verbose
+            else service.get_group(gid, params)
+        )
         if group:
             return group.to_dict()
         else:

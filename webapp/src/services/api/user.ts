@@ -4,6 +4,7 @@ import {UserDTO,
         RoleCreationDTO,
         RoleDTO,
         UserToken,
+        UserGroup,
         IdentityDTO,
         BotCreateDTO,
         BotIdentityDTO,
@@ -45,6 +46,11 @@ export const getGroups = async (): Promise<Array<GroupDTO>> => {
   const res = await client.get('/groups');
   return res.data;
 };
+
+export const getGroupInfos = async (id: string) : Promise<UserGroup> =>{
+  const res = await client.get(`/groups/${id}?verbose=1`);
+  return res.data;
+}
 
 export const createGroup = async (name: string): Promise<GroupDTO> => {
   const data = { name };  

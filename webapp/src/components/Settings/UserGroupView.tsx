@@ -1,12 +1,13 @@
 import React, {useState, useEffect, Fragment} from 'react';
 import { makeStyles, createStyles, Theme, Typography, Button } from '@material-ui/core';
-import VisibilityIcon from '@material-ui/icons/Visibility';
+import CreateIcon from '@material-ui/icons/Create';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {List, ListItem, ListItemText, Collapse}  from '@material-ui/core';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
-import {UserToken } from '../../common/types';
-
+import { useTranslation } from 'react-i18next';
+import {UserGroup } from '../../common/types';
+import {roleToString} from '../../services/utils'
 
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
@@ -20,7 +21,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         color: theme.palette.primary.main,
         margin: theme.spacing(3),
     },
-    botList:{
+    userList:{
         display: 'flex',
         paddingLeft: theme.spacing(4),
         flexFlow: 'column nowrap',
@@ -29,15 +30,19 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     userItem: {
         backgroundColor: 'white',
         margin: theme.spacing(1),
-        border: `1px solid ${theme.palette.primary.main}`
+        display: 'flex',
+        flexFlow: 'row nowrap',
+        justifyContent: 'space-evenly',
+        alignItems: 'center'
     },
-    botItem: {
+    groupItem: {
         display: 'flex',
         padding: theme.spacing(1),
         flexFlow: 'row nowrap',
         justifyContent: 'flex-start',
         color: theme.palette.primary.main,
         backgroundColor: 'white',
+        border: `1px solid ${theme.palette.primary.main}`,
         margin: theme.spacing(1)
     },   
     iconsContainer:
@@ -53,28 +58,33 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     {
         color: theme.palette.error.main
     },
-    seeIcon:
+    createIcon:
     {
         color: theme.palette.primary.main,
     }
 }));
 
 interface PropTypes {
-    data: Array<UserToken>;
+    data: Array<UserGroup>;
     filter: string;
-    onDeleteClick: (userId: number, botId: number) => void;
-    onWatchClick : (userId: number, botId: number) => void;
+    onDeleteClick: (groupId: string) => void;
+    onUpdateClick : (groupId: string) => void;
+    onItemClick: (groupId: string) => void
 }
 
-const UserTokensView = (props: PropTypes) => {
+const UserGroupView = (props: PropTypes) => {
 
     const classes = useStyles();
-    const {data, filter, onDeleteClick, onWatchClick} = props;
+    const [t] = useTranslation();
+    const {data, filter, onDeleteClick, onUpdateClick, onItemClick} = props;
     const [toogleList, setToogleList] = useState<Array<boolean>>([]);
 
-    const onButtonChange = (index: number) => {
+    const onButtonChange = (index: number, id: string) => {
         if(index >= 0 && index < toogleList.length)
         {
+            if(!toogleList[index])
+                onItemClick(id);
+
             const tmpList = ([] as Array<boolean>).concat(toogleList);
             tmpList[index] = !tmpList[index];
             setToogleList(tmpList);
@@ -89,9 +99,9 @@ const UserTokensView = (props: PropTypes) => {
     useEffect(() => {
         const initToogleList : Array<boolean> = [];
         for(let i = 0; i < data.length; i++)
-            initToogleList.push(true);
+            initToogleList.push(false);
         setToogleList(initToogleList); 
-    }, [data]);
+    }, [data.length]);
 
     return (
         <List
@@ -100,34 +110,34 @@ const UserTokensView = (props: PropTypes) => {
         className={classes.root}
         >
             {
-                data.map((userItem, index) => {
+                data.map((groupItem, index) => {
                     return (
-                        <Fragment key={userItem.user.id}>
-                            <ListItem className={classes.userItem}
-                                    button
-                                    onClick={() => onButtonChange(index)}
-                                    >
-                                    <ListItemText primary={userItem.user.name} />
-                                        {toogleList[index] ? <ExpandLess /> : <ExpandMore />}
+                        matchFilter(groupItem.group.name) &&
+                        <Fragment key={groupItem.group.id}>
+                            <ListItem className={classes.groupItem}>
+                                    <Typography>{groupItem.group.name}</Typography>
+                                    <div className={classes.iconsContainer}>
+                                        <Button onClick={() => onUpdateClick(groupItem.group.id)}>
+                                            <CreateIcon className={classes.createIcon} />
+                                        </Button>
+                                        <Button onClick={() => onDeleteClick(groupItem.group.id)}>
+                                            <DeleteIcon className={classes.deleteIcon}/>
+                                        </Button>
+                                    </div>  
+                                    {toogleList[index] ? 
+                                    <ExpandLess onClick={() => onButtonChange(index, groupItem.group.id)} /> : 
+                                    <ExpandMore onClick={() => onButtonChange(index, groupItem.group.id)}/>}
                             </ListItem>
                             <Collapse in={toogleList[index]} timeout="auto" unmountOnExit>
                                 <List component="div"
                                     disablePadding
-                                    className={classes.botList}>
+                                    className={classes.userList}>
                                     {
-                                        userItem.bots.map((botItem) => {
+                                        groupItem.users.map((userItem) => {
                                             return (
-                                                matchFilter(botItem.name) &&
-                                                <ListItem key={botItem.id} className={classes.botItem}>
-                                                    <Typography>{botItem.name}</Typography>
-                                                    <div className={classes.iconsContainer}>
-                                                        <Button onClick={() => onWatchClick(userItem.user.id, botItem.id)}>
-                                                            <VisibilityIcon className={classes.seeIcon} />
-                                                        </Button>
-                                                        <Button onClick={() => onDeleteClick(userItem.user.id, botItem.id)}>
-                                                            <DeleteIcon className={classes.deleteIcon}/>
-                                                        </Button>
-                                                    </div>                                                    
+                                                <ListItem key={userItem.id} className={classes.userItem}>
+                                                    <ListItemText primary={userItem.name} />
+                                                    <Typography>{t(roleToString(userItem.role))}</Typography>                                                
                                                 </ListItem> 
                                             )                                       
                                         })
@@ -144,4 +154,4 @@ const UserTokensView = (props: PropTypes) => {
 
 }
 
-export default UserTokensView
+export default UserGroupView

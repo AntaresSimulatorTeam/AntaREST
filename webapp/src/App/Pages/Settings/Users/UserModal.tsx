@@ -44,25 +44,26 @@ const UserModal = (props: PropTypes) => {
     const [roleList, setRoleList] = useState<Array<RoleDTO>>([]);
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');   
-    const [selectedGroup, setActiveGroup] = useState<GroupDTO>({id: '', name:''});
+    const [selectedGroup, setActiveGroup] = useState<GroupDTO>();
 
     const onChange = (group: GroupDTO) => {
         setActiveGroup(group);
     }
 
     const addRoleToList = () => {
+
         //1) Look if role is already added to list
-        if(roleList.find((item) => item.group_id === selectedGroup.id))
-            return ;
-        //2) Create a new role with type == READER
-        const newRole : RoleDTO = {
-            group_id: selectedGroup.id,
-            group_name: selectedGroup.name,
-            identity_id: !!userInfos ? userInfos.id : -1,
-            type: RoleType.READER // READER by default
+        if (selectedGroup && !roleList.find((item) => item.group_id === selectedGroup.id)) {
+            //2) Create a new role with type == READER
+            const newRole : RoleDTO = {
+                group_id: selectedGroup.id,
+                group_name: selectedGroup.name,
+                identity_id: !!userInfos ? userInfos.id : -1,
+                type: RoleType.READER // READER by default
+            }
+            //3) Add the role in roleList
+            setRoleList(roleList.concat([newRole]));
         }
-        //3) Add the role in roleList
-        setRoleList(roleList.concat([newRole]));
     }
 
     const deleteRoleFromList = (group_id: string) => {
@@ -127,7 +128,7 @@ const UserModal = (props: PropTypes) => {
           return () => {
             setGroupList([]);
             setRoleList([]);
-            setActiveGroup({id: '', name:''})
+            setActiveGroup(undefined)
           }
     }, [userInfos, t, enqueueSnackbar])
 
@@ -154,14 +155,16 @@ const UserModal = (props: PropTypes) => {
                 </div>)
 
             }
-
-            <GroupsAssignmentView groupsList={groupList}
-                                roleList={roleList}
-                                selectedGroup={selectedGroup}
-                                onChange={onChange}
-                                addRole={addRoleToList}
-                                deleteRole={deleteRoleFromList}
-                                updateRole={updateRoleFromList} />
+            {
+                !!selectedGroup &&
+                <GroupsAssignmentView groupsList={groupList}
+                                    roleList={roleList}
+                                    selectedGroup={selectedGroup}
+                                    onChange={onChange}
+                                    addRole={addRoleToList}
+                                    deleteRole={deleteRoleFromList}
+                                    updateRole={updateRoleFromList} />
+            }
       </GenericModal>       
     )
 
