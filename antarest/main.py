@@ -9,7 +9,7 @@ from typing import Tuple, Any, Optional, Union
 import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
-from fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.fastapi_sqlalchemy import DBSessionMiddleware
 from pydantic.main import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request

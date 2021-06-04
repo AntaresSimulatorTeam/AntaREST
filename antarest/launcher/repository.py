@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from fastapi_sqlalchemy import db
+from antarest.fastapi_sqlalchemy import db
 from sqlalchemy import exists  # type: ignore
 
 

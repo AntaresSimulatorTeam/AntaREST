@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, List
 
-from fastapi_sqlalchemy import db
+from antarest.fastapi_sqlalchemy import db
 
 from antarest.storage.model import Study
 

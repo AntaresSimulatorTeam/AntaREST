@@ -1,7 +1,7 @@
 from datetime import datetime
 from unittest.mock import Mock
 
-from fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.fastapi_sqlalchemy import DBSessionMiddleware, db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
 
