@@ -17,7 +17,9 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     auth = Auth(config)
 
     @bp.post(
-        "/launcher/run/{study_id}", tags=["Run Studies"], summary="Run study"
+        "/v1/launcher/run/{study_id}",
+        tags=["Run Studies"],
+        summary="Run study",
     )
     def run(
         study_id: str, current_user: JWTUser = Depends(auth.get_current_user)
@@ -25,7 +27,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         params = RequestParameters(user=current_user)
         return {"job_id": service.run_study(str(escape(study_id)), params)}
 
-    @bp.get("/launcher/jobs", tags=["Run Studies"], summary="Retrieve jobs")
+    @bp.get("/v1/launcher/jobs", tags=["Run Studies"], summary="Retrieve jobs")
     def get_job(
         study: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -33,7 +35,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return [job.to_dict() for job in service.get_jobs(study)]
 
     @bp.get(
-        "/launcher/jobs/{job_id}",
+        "/v1/launcher/jobs/{job_id}",
         tags=["Run Studies"],
         summary="Retrieve job info from job id",
     )

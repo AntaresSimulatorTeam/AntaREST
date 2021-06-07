@@ -60,7 +60,7 @@ def test_server() -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    client.get("/studies/study1/settings/general/params")
+    client.get("/v1/studies/study1/settings/general/params")
 
     mock_service.get.assert_called_once_with(
         "study1/settings/general/params", 3, PARAMS
@@ -81,10 +81,10 @@ def test_404() -> None:
         user_service=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
-    result = client.get("/studies/study1/settings/general/params")
+    result = client.get("/v1/studies/study1/settings/general/params")
     assert result.status_code == 404
 
-    result = client.get("/studies/WRONG_STUDY")
+    result = client.get("/v1/studies/WRONG_STUDY")
     assert result.status_code == 404
 
 
@@ -102,18 +102,18 @@ def test_server_with_parameters() -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    result = client.get("/studies/study1?depth=4")
+    result = client.get("/v1/studies/study1?depth=4")
 
     parameters = RequestParameters(user=ADMIN)
 
     assert result.status_code == 200
     mock_storage_service.get.assert_called_once_with("study1", 4, parameters)
 
-    result = client.get("/studies/study2?depth=WRONG_TYPE")
+    result = client.get("/v1/studies/study2?depth=WRONG_TYPE")
 
     assert result.status_code == 422
 
-    result = client.get("/studies/study2")
+    result = client.get("/v1/studies/study2")
 
     excepted_parameters = RequestParameters(user=ADMIN)
     mock_storage_service.get.assert_called_with(
@@ -143,7 +143,7 @@ def test_create_study(
     )
     client = TestClient(app)
 
-    result_right = client.post("/studies/study2")
+    result_right = client.post("/v1/studies/study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
     assert result_right.json() == "/studies/my-uuid"
@@ -178,12 +178,12 @@ def test_import_study_zipped(
     )
     client = TestClient(app)
 
-    result = client.post("/studies")
+    result = client.post("/v1/studies")
 
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY.value
 
     study_data = io.BytesIO(path_zip.read_bytes())
-    result = client.post("/studies", files={"study": study_data})
+    result = client.post("/v1/studies", files={"study": study_data})
 
     assert result.json() == "/studies/" + study_name
     assert result.status_code == HTTPStatus.CREATED.value
@@ -205,7 +205,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
     )
     client = TestClient(app)
 
-    result = client.post("/studies/existing-study/copy?dest=study-copied")
+    result = client.post("/v1/studies/existing-study/copy?dest=study-copied")
 
     storage_service.copy_study.assert_called_with(
         src_uuid="existing-study",
@@ -235,7 +235,7 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    result = client.get("/studies")
+    result = client.get("/v1/studies")
 
     assert result.json() == studies
 
@@ -269,7 +269,7 @@ def test_export_files() -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    result = client.get("/studies/name/export", stream=True)
+    result = client.get("/v1/studies/name/export", stream=True)
 
     assert result.raw.data == b"Hello"
     mock_storage_service.export_study.assert_called_once_with(
@@ -291,12 +291,12 @@ def test_export_params() -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    result = client.get("/studies/name/export", stream=True)
+    result = client.get("/v1/studies/name/export", stream=True)
 
     assert result.raw.data == b"Hello"
 
-    client.get("/studies/name/export?no_output=true")
-    client.get("/studies/name/export?no_output=false")
+    client.get("/v1/studies/name/export?no_output=true")
+    client.get("/v1/studies/name/export?no_output=false")
     mock_storage_service.export_study.assert_has_calls(
         [
             call(Markup("name"), PARAMS, False),
@@ -318,7 +318,7 @@ def test_delete_study() -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    client.delete("/studies/name")
+    client.delete("/v1/studies/name")
 
     mock_storage_service.delete_study.assert_called_once_with("name", PARAMS)
 
@@ -339,7 +339,7 @@ def test_import_matrix() -> None:
 
     data = io.BytesIO(b"hello")
     path = "path/to/matrix.txt"
-    result = client.post("/file/" + path, files={"matrix": data})
+    result = client.post("/v1/file/" + path, files={"matrix": data})
 
     mock_storage_service.upload_matrix.assert_called_once_with(
         path, b"hello", PARAMS
@@ -367,7 +367,7 @@ def test_import_matrix_with_wrong_path() -> None:
     data = io.BytesIO(b"hello")
     path = "path/to/matrix.txt"
     result = client.post(
-        "/file/" + path, data={"matrix": (data, "matrix.txt")}
+        "/v1/file/" + path, data={"matrix": (data, "matrix.txt")}
     )
 
     assert result.status_code == HTTPStatus.NOT_FOUND.value
@@ -389,7 +389,7 @@ def test_edit_study() -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    client.post("/studies/my-uuid/url/to/change", data=data)
+    client.post("/v1/studies/my-uuid/url/to/change", data=data)
 
     mock_storage_service.edit_study.assert_called_once_with(
         "my-uuid/url/to/change", {"Hello": "World"}, PARAMS
@@ -411,7 +411,7 @@ def test_edit_study_fail() -> None:
         user_service=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
-    res = client.post("/studies/my-uuid/url/to/change", data=data)
+    res = client.post("/v1/studies/my-uuid/url/to/change", data=data)
 
     assert res.status_code == 400
 
@@ -434,7 +434,7 @@ def test_study_permission_management(
     )
     client = TestClient(app, raise_server_exceptions=False)
 
-    result = client.put("/studies/existing-study/owner/2")
+    result = client.put("/v1/studies/existing-study/owner/2")
     storage_service.change_owner.assert_called_with(
         "existing-study",
         2,
@@ -442,7 +442,7 @@ def test_study_permission_management(
     )
     assert result.status_code == HTTPStatus.OK.value
 
-    result = client.put("/studies/existing-study/groups/group-a")
+    result = client.put("/v1/studies/existing-study/groups/group-a")
     storage_service.add_group.assert_called_with(
         "existing-study",
         "group-a",
@@ -450,7 +450,7 @@ def test_study_permission_management(
     )
     assert result.status_code == HTTPStatus.OK.value
 
-    result = client.delete("/studies/existing-study/groups/group-b")
+    result = client.delete("/v1/studies/existing-study/groups/group-b")
     storage_service.remove_group.assert_called_with(
         "existing-study",
         "group-b",
@@ -458,7 +458,7 @@ def test_study_permission_management(
     )
     assert result.status_code == HTTPStatus.OK.value
 
-    result = client.put("/studies/existing-study/public_mode/FULL")
+    result = client.put("/v1/studies/existing-study/public_mode/FULL")
     storage_service.set_public_mode.assert_called_with(
         "existing-study",
         PublicMode.FULL,
@@ -466,5 +466,5 @@ def test_study_permission_management(
     )
     assert result.status_code == HTTPStatus.OK.value
 
-    result = client.put("/studies/existing-study/public_mode/UNKNOWN")
+    result = client.put("/v1/studies/existing-study/public_mode/UNKNOWN")
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY.value

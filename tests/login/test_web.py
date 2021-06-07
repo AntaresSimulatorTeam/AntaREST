@@ -100,15 +100,15 @@ def test_auth_needed() -> None:
 
     app = create_app(service)
     client = TestClient(app, raise_server_exceptions=False)
-    res = client.get("/auth", headers=create_auth_token(app))
+    res = client.get("/v1/auth", headers=create_auth_token(app))
     assert res.status_code == 200
 
-    res = client.get("/auth")
+    res = client.get("/v1/auth")
     assert res.status_code == 401
 
     app = create_app(service, True)
     client = TestClient(app)
-    res = client.get("/auth")
+    res = client.get("/v1/auth")
     assert res.status_code == 200
 
 
@@ -120,7 +120,7 @@ def test_auth() -> None:
     app = create_app(service)
     client = TestClient(app)
     res = client.post(
-        "/login", json={"username": "admin", "password": "admin"}
+        "/v1/login", json={"username": "admin", "password": "admin"}
     )
 
     assert res.status_code == 200
@@ -137,7 +137,7 @@ def test_auth_fail() -> None:
     app = create_app(service)
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post(
-        "/login", json={"username": "admin", "password": "admin"}
+        "/v1/login", json={"username": "admin", "password": "admin"}
     )
 
     assert res.status_code == 401
@@ -151,7 +151,7 @@ def test_expiration() -> None:
     app = create_app(service)
     client = TestClient(app, raise_server_exceptions=False)
     res = client.get(
-        "/users",
+        "/v1/users",
         headers=create_auth_token(app, expires_delta=timedelta(days=-1)),
     )
 
@@ -168,7 +168,7 @@ def test_refresh() -> None:
     app = create_app(service)
     client = TestClient(app)
     res = client.post(
-        "/refresh",
+        "/v1/refresh",
         headers=create_auth_token(app, type=TokenType.REFRESH),
     )
 
@@ -187,7 +187,7 @@ def test_user() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/users", headers=create_auth_token(app))
+    res = client.get("/v1/users", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json() == [User(id=1, name="user").to_dict()]
 
@@ -201,7 +201,7 @@ def test_user_id() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/users/1", headers=create_auth_token(app))
+    res = client.get("/v1/users/1", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json() == IdentityDTO(id=1, name="user", roles=[]).to_dict()
 
@@ -216,7 +216,7 @@ def test_user_create() -> None:
     app = create_app(service)
     client = TestClient(app)
     res = client.post(
-        "/users",
+        "/v1/users",
         headers=create_auth_token(app),
         json=user.dict(),
     )
@@ -235,7 +235,7 @@ def test_user_save() -> None:
     app = create_app(service)
     client = TestClient(app)
     res = client.put(
-        "/users/0",
+        "/v1/users/0",
         headers=create_auth_token(app),
         json=user.to_dict(),
     )
@@ -251,7 +251,7 @@ def test_user_delete() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.delete("/users/0", headers=create_auth_token(app))
+    res = client.delete("/v1/users/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
     service.delete_user.assert_called_once_with(0, PARAMS)
@@ -264,7 +264,7 @@ def test_group() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/groups", headers=create_auth_token(app))
+    res = client.get("/v1/groups", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json() == [Group(id="my-group", name="group").to_dict()]
 
@@ -276,7 +276,7 @@ def test_group_id() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/groups/1", headers=create_auth_token(app))
+    res = client.get("/v1/groups/1", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json() == Group(id="my-group", name="group").to_dict()
 
@@ -290,7 +290,7 @@ def test_group_create() -> None:
     app = create_app(service)
     client = TestClient(app)
     res = client.post(
-        "/groups",
+        "/v1/groups",
         headers=create_auth_token(app),
         json={"name": "group"},
     )
@@ -306,7 +306,7 @@ def test_group_delete() -> None:
     app = create_app(service)
     client = TestClient(app)
     print(create_auth_token(app))
-    res = client.delete("/groups/0", headers=create_auth_token(app))
+    res = client.delete("/v1/groups/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
     service.delete_group.assert_called_once_with("0", PARAMS)
@@ -324,7 +324,7 @@ def test_role() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/roles/group/g", headers=create_auth_token(app))
+    res = client.get("/v1/roles/group/g", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json() == [role.to_dict()]
 
@@ -342,7 +342,7 @@ def test_role_create() -> None:
     app = create_app(service)
     client = TestClient(app)
     res = client.post(
-        "/roles",
+        "/v1/roles",
         headers=create_auth_token(app),
         json={"type": RoleType.ADMIN.value, "identity_id": 0, "group_id": "g"},
     )
@@ -357,7 +357,7 @@ def test_role_delete() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.delete("/roles/group/0", headers=create_auth_token(app))
+    res = client.delete("/v1/roles/group/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
     service.delete_role.assert_called_once_with(0, "group", PARAMS)
@@ -369,7 +369,7 @@ def test_roles_delete_by_user() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.delete("/users/roles/0", headers=create_auth_token(app))
+    res = client.delete("/v1/users/roles/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
     service.delete_all_roles_from_user.assert_called_once_with(0, PARAMS)
@@ -392,7 +392,7 @@ def test_bot_create() -> None:
     app = create_app(service)
     client = TestClient(app)
     res = client.post(
-        "/bots", headers=create_auth_token(app), json=create.dict()
+        "/v1/bots", headers=create_auth_token(app), json=create.dict()
     )
 
     assert res.status_code == 200
@@ -407,7 +407,7 @@ def test_bot() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/bots/0", headers=create_auth_token(app))
+    res = client.get("/v1/bots/0", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json() == bot.to_dict()
 
@@ -421,11 +421,11 @@ def test_all_bots() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/bots", headers=create_auth_token(app))
+    res = client.get("/v1/bots", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json() == [b.to_dict() for b in bots]
 
-    res = client.get("/bots?owner=4", headers=create_auth_token(app))
+    res = client.get("/v1/bots?owner=4", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json() == [b.to_dict() for b in bots]
 
@@ -439,7 +439,7 @@ def test_bot_delete() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.delete("/bots/0", headers=create_auth_token(app))
+    res = client.delete("/v1/bots/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
     service.delete_bot.assert_called_once_with(0, PARAMS)

@@ -41,7 +41,7 @@ def create_study_routes(
     bp = APIRouter()
     auth = Auth(config)
 
-    @bp.get("/studies", tags=["Manage Studies"], summary="Get Studies")
+    @bp.get("/v1/studies", tags=["Manage Studies"], summary="Get Studies")
     def get_studies(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -50,7 +50,7 @@ def create_study_routes(
         return available_studies
 
     @bp.post(
-        "/studies",
+        "/v1/studies",
         status_code=HTTPStatus.CREATED.value,
         tags=["Manage Studies"],
         summary="Import Study",
@@ -71,7 +71,7 @@ def create_study_routes(
         return content
 
     @bp.post(
-        "/studies/{uuid}/copy",
+        "/v1/studies/{uuid}/copy",
         status_code=HTTPStatus.CREATED.value,
         tags=["Manage Studies"],
         summary="Copy Study",
@@ -99,7 +99,7 @@ def create_study_routes(
         return f"/studies/{destination_uuid}"
 
     @bp.post(
-        "/studies/{name}",
+        "/v1/studies/{name}",
         status_code=HTTPStatus.CREATED.value,
         tags=["Manage Studies"],
         summary="Create a new empty study",
@@ -121,7 +121,7 @@ def create_study_routes(
         return content
 
     @bp.get(
-        "/studies/{uuid}/export",
+        "/v1/studies/{uuid}/export",
         tags=["Manage Studies"],
         summary="Export Study",
     )
@@ -146,7 +146,7 @@ def create_study_routes(
         )
 
     @bp.delete(
-        "/studies/{uuid}",
+        "/v1/studies/{uuid}",
         status_code=HTTPStatus.OK.value,
         tags=["Manage Studies"],
         summary="Delete Study",
@@ -162,7 +162,7 @@ def create_study_routes(
         return ""
 
     @bp.post(
-        "/studies/{uuid}/output",
+        "/v1/studies/{uuid}/output",
         status_code=HTTPStatus.ACCEPTED.value,
         tags=["Manage Outputs"],
         summary="Import Output",
@@ -184,7 +184,7 @@ def create_study_routes(
         return content
 
     @bp.put(
-        "/studies/{uuid}/owner/{user_id}",
+        "/v1/studies/{uuid}/owner/{user_id}",
         tags=["Manage Permissions"],
         summary="Change study owner",
     )
@@ -200,7 +200,7 @@ def create_study_routes(
         return ""
 
     @bp.put(
-        "/studies/{uuid}/groups/{group_id}",
+        "/v1/studies/{uuid}/groups/{group_id}",
         tags=["Manage Permissions"],
         summary="Add a group association",
     )
@@ -217,7 +217,7 @@ def create_study_routes(
         return ""
 
     @bp.delete(
-        "/studies/{uuid}/groups/{group_id}",
+        "/v1/studies/{uuid}/groups/{group_id}",
         tags=["Manage Permissions"],
         summary="Remove a group association",
     )
@@ -235,7 +235,7 @@ def create_study_routes(
         return ""
 
     @bp.put(
-        "/studies/{uuid}/public_mode/{mode}",
+        "/v1/studies/{uuid}/public_mode/{mode}",
         tags=["Manage Permissions"],
         summary="Set study public mode",
     )
@@ -251,7 +251,7 @@ def create_study_routes(
         return ""
 
     @bp.get(
-        "/studies/{path:path}",
+        "/v1/studies/{path:path}",
         tags=["Manage Data inside Study"],
         summary="Read data",
     )
@@ -266,7 +266,7 @@ def create_study_routes(
         return output
 
     @bp.post(
-        "/studies/{path:path}",
+        "/v1/studies/{path:path}",
         status_code=HTTPStatus.NO_CONTENT.value,
         tags=["Manage Data inside Study"],
         summary="Update data",
