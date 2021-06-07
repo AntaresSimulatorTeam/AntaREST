@@ -2,6 +2,7 @@ import React from 'react';
 import { Paper, makeStyles, Theme, createStyles } from '@material-ui/core';
 import StudyFileView from './StudyFileView';
 import StudyJsonView from './StudyJsonView';
+import StudyMatrixView from "./StudyMatrixView";
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -21,9 +22,14 @@ const StudyDataView = (props: PropTypes) => {
   const { study, type, data } = props;
   const classes = useStyles();
 
+  console.log(type);
+  console.log(data);
   const renderData = () => {
     if (type === 'file') {
       return <StudyFileView study={study} url={data} />;
+    }
+    else if (type === 'matrix') {
+      return (<StudyMatrixView study={study} url={data}/>);
     }
     return <StudyJsonView data={data} />;
   };

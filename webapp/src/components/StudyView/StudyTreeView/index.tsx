@@ -18,7 +18,7 @@ const isJsonLeaf = (studyDataNode: any) => {
     // BUT it could be something like {"a": "something", "b": {"c": "file://xxx"}}} so a kind of hybrid between a folder and a leaf node
     // though I guess this is not possible but i'm not sure...
     // the idea is that if all children is an object or a "file://", it is to be considered a folder
-    if (typeof element !== 'object' && (typeof element !== 'string' || !element.startsWith('file:/'))) {
+    if (typeof element !== 'object' && (typeof element !== 'string' || !(element.startsWith('file://') || element.startsWith('matrix://')))) {
       return true;
     }
   }
@@ -30,15 +30,15 @@ const getType = (data : any, path: string, itemkey: string) : GetTypeProps | und
   if (typeof data !== 'object')
   {
     const tmp = data.split('://');
-    console.log('Path : ',path)
-    console.log('Tmp : ',tmp)
     if(tmp && tmp.length > 0)
       return {type: tmp[0] as DataType, icon: 'file-alt', data: `${path}/${itemkey}`};
     else
       return {type: 'file', icon: 'file-alt', data: `${path}/${itemkey}`};
   }
-  if(isJsonLeaf(data))
+  if(isJsonLeaf(data)) {
     return {type: 'json', icon: 'file-code', data: JSON.stringify(data)};
+  }
+
   return undefined;
 }
 
