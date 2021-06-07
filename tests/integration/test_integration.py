@@ -8,7 +8,7 @@ def test_main(app: FastAPI):
     client = TestClient(app, raise_server_exceptions=False)
 
     res = client.post(
-        "/login", json={"username": "admin", "password": "admin"}
+        "/v1/login", json={"username": "admin", "password": "admin"}
     )
     admin_credentials = res.json()
 
@@ -17,7 +17,7 @@ def test_main(app: FastAPI):
     countdown = 10
     while study_count == 0 or countdown > 0:
         res = client.get(
-            "/studies",
+            "/v1/studies",
             headers={
                 "Authorization": f'Bearer {admin_credentials["access_token"]}'
             },
@@ -29,28 +29,28 @@ def test_main(app: FastAPI):
     # create some new users
     # TODO check for bad username or empty password
     res = client.post(
-        "/users",
+        "/v1/users",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
         json={"name": "George", "password": "mypass"},
     )
     res = client.post(
-        "/users",
+        "/v1/users",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
         json={"name": "Fred", "password": "mypass"},
     )
     res = client.post(
-        "/users",
+        "/v1/users",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
         json={"name": "Harry", "password": "mypass"},
     )
     res = client.get(
-        "/users",
+        "/v1/users",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -59,7 +59,7 @@ def test_main(app: FastAPI):
 
     # reject user with existing name creation
     res = client.post(
-        "/users",
+        "/v1/users",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -70,21 +70,21 @@ def test_main(app: FastAPI):
     # login with new user
     # TODO mock ldap connector and test user login
     res = client.post(
-        "/login", json={"username": "George", "password": "mypass"}
+        "/v1/login", json={"username": "George", "password": "mypass"}
     )
     george_credentials = res.json()
     res = client.post(
-        "/login", json={"username": "Fred", "password": "mypass"}
+        "/v1/login", json={"username": "Fred", "password": "mypass"}
     )
     fred_credentials = res.json()
     res = client.post(
-        "/login", json={"username": "Harry", "password": "mypass"}
+        "/v1/login", json={"username": "Harry", "password": "mypass"}
     )
     harry_credentials = res.json()
 
     # reject user creation from non admin
     res = client.post(
-        "/users",
+        "/v1/users",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -94,7 +94,7 @@ def test_main(app: FastAPI):
 
     # check study listing
     res = client.get(
-        "/studies",
+        "/v1/studies",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -103,13 +103,13 @@ def test_main(app: FastAPI):
 
     # study creation
     created = client.post(
-        "/studies/foo",
+        "/v1/studies/foo",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
     res = client.get(
-        "/studies",
+        "/v1/studies",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -118,14 +118,14 @@ def test_main(app: FastAPI):
 
     # Study copy
     copied = client.post(
-        f"{created.json()}/copy?dest=copied",
+        f"/v1{created.json()}/copy?dest=copied",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
 
     res = client.get(
-        "/studies",
+        "/v1/studies",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -134,14 +134,14 @@ def test_main(app: FastAPI):
 
     # Study delete
     client.delete(
-        f"{copied.json()}",
+        f"/v1{copied.json()}",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
 
     res = client.get(
-        "/studies",
+        "/v1/studies",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -150,7 +150,7 @@ def test_main(app: FastAPI):
 
     # check study permission
     res = client.get(
-        "/studies",
+        "/v1/studies",
         headers={
             "Authorization": f'Bearer {fred_credentials["access_token"]}'
         },
@@ -159,28 +159,28 @@ def test_main(app: FastAPI):
 
     # play with groups
     res = client.post(
-        "/groups",
+        "/v1/groups",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
         json={"name": "Weasley"},
     )
     res = client.get(
-        "/groups",
+        "/v1/groups",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
     group_id = res.json()[1]["id"]
     res = client.post(
-        "/roles",
+        "/v1/roles",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
         json={"type": 40, "group_id": group_id, "identity_id": 3},
     )
     res = client.post(
-        "/roles",
+        "/v1/roles",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -188,34 +188,34 @@ def test_main(app: FastAPI):
     )
     # reset login to update credentials
     res = client.post(
-        "/refresh",
+        "/v1/refresh",
         headers={
             "Authorization": f'Bearer {george_credentials["refresh_token"]}'
         },
     )
     george_credentials = res.json()
     res = client.post(
-        "/refresh",
+        "/v1/refresh",
         headers={
             "Authorization": f'Bearer {fred_credentials["refresh_token"]}'
         },
     )
     fred_credentials = res.json()
     res = client.post(
-        f"/studies/bar?groups={group_id}",
+        f"/v1/studies/bar?groups={group_id}",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
     res = client.get(
-        "/studies",
+        "/v1/studies",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
     assert len(res.json()) == 3
     res = client.get(
-        "/studies",
+        "/v1/studies",
         headers={
             "Authorization": f'Bearer {fred_credentials["access_token"]}'
         },
@@ -231,14 +231,14 @@ def test_main(app: FastAPI):
     ]
     study_id = studies[0]
     res = client.post(
-        f"/launcher/run/{study_id}",
+        f"/v1/launcher/run/{study_id}",
         headers={
             "Authorization": f'Bearer {fred_credentials["access_token"]}'
         },
     )
     job_id = res.json()["job_id"]
     res = client.get(
-        f"/launcher/jobs?study_id={study_id}",
+        f"/v1/launcher/jobs?study_id={study_id}",
         headers={
             "Authorization": f'Bearer {fred_credentials["access_token"]}'
         },
