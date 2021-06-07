@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
-from antarest.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 

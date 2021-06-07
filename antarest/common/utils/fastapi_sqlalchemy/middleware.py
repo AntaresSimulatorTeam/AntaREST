@@ -1,18 +1,19 @@
-from contextvars import ContextVar
-from typing import Dict, Optional, Union
+from contextvars import ContextVar, Token
+from typing import Dict, Optional, Union, Awaitable, Any, Type
 
-from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
-from sqlalchemy.engine.url import URL
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy.engine import Engine  # type: ignore
+from sqlalchemy.engine.url import URL  # type: ignore
+from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
     RequestResponseEndpoint,
 )
 from starlette.requests import Request
+from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from antarest.fastapi_sqlalchemy.exceptions import (
+from antarest.common.utils.fastapi_sqlalchemy.exceptions import (
     MissingSessionError,
     SessionNotInitialisedError,
 )
@@ -27,10 +28,10 @@ class DBSessionMiddleware(BaseHTTPMiddleware):
         app: ASGIApp,
         db_url: Optional[Union[str, URL]] = None,
         custom_engine: Optional[Engine] = None,
-        engine_args: Dict = None,
-        session_args: Dict = None,
+        engine_args: Optional[Dict[str, Any]] = None,
+        session_args: Optional[Dict[str, Any]] = None,
         commit_on_exit: bool = False,
-    ):
+    ) -> None:
         super().__init__(app)
         global _Session
         engine_args = engine_args or {}
@@ -49,7 +50,7 @@ class DBSessionMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
-    ):
+    ) -> Response:
         with db(commit_on_exit=self.commit_on_exit):
             response = await call_next(request)
         return response
@@ -73,28 +74,32 @@ class DBSessionMeta(type):
 
 class DBSession(metaclass=DBSessionMeta):
     def __init__(
-        self, session_args: Dict = None, commit_on_exit: bool = False
-    ):
-        self.token = None
+        self,
+        session_args: Optional[Dict[str, Any]] = None,
+        commit_on_exit: bool = False,
+    ) -> None:
+        self.token: Optional[Token[Optional[Any]]] = None
         self.session_args = session_args or {}
         self.commit_on_exit = commit_on_exit
 
-    def __enter__(self):
+    def __enter__(self) -> Type["DBSession"]:
         if not isinstance(_Session, sessionmaker):
             raise SessionNotInitialisedError
         self.token = _session.set(_Session(**self.session_args))
         return type(self)
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        sess = _session.get()
-        if exc_type is not None:
-            sess.rollback()
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
+        sess: Optional[Session] = _session.get()
+        if sess is not None:
+            if exc_type is not None:
+                sess.rollback()
 
-        if self.commit_on_exit:
-            sess.commit()
+            if self.commit_on_exit:
+                sess.commit()
 
-        sess.close()
-        _session.reset(self.token)
+            sess.close()
+        if self.token is not None:
+            _session.reset(self.token)
 
 
 db: DBSessionMeta = DBSession

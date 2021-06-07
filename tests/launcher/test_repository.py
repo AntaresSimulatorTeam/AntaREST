@@ -2,7 +2,7 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
-from antarest.fastapi_sqlalchemy import db, DBSessionMiddleware
+from antarest.common.utils.fastapi_sqlalchemy import db, DBSessionMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 

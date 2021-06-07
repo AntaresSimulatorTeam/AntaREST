@@ -4,7 +4,7 @@ from pathlib import Path
 from time import time, sleep
 from typing import List
 
-from antarest.fastapi_sqlalchemy import db
+from antarest.common.utils.fastapi_sqlalchemy import db
 from filelock import FileLock  # type: ignore
 
 from antarest.common.config import Config
