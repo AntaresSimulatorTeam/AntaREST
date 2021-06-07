@@ -6,6 +6,7 @@ import { Translation } from 'react-i18next';
 import { getFileData } from '../../../services/api/file';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
 import {MatrixType} from "../../../common/types";
+import MatrixView from "./MatrixView";
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   code: {
@@ -53,7 +54,7 @@ const StudyMatrixView = (props: PropTypes) => {
 
   return (
     <>
-      {data && <code className={classes.code}>{url}</code>}
+      {data && <MatrixView data={data}/>}
       {!loaded && (
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           <MainContentLoader />
