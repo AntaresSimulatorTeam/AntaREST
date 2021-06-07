@@ -1,8 +1,6 @@
 import json
 import logging
-from dataclasses import dataclass
 from datetime import timedelta
-from functools import wraps
 from typing import List, Optional, Dict, Any, Callable, cast
 
 from fastapi import Depends
@@ -11,14 +9,6 @@ from fastapi_jwt_auth import AuthJWT  # type: ignore
 from antarest.common.config import Config
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.roles import RoleType
-
-
-@dataclass
-class AuthContext:
-    user: Optional[JWTUser] = None
-
-
-g = AuthContext()
 
 
 class Auth:
@@ -68,7 +58,3 @@ class Auth:
     def get_user_from_token(token: str, jwt_manager: AuthJWT) -> JWTUser:
         token_data = jwt_manager._verified_token(token)
         return JWTUser.from_dict(json.loads(token_data["sub"]))
-
-    @staticmethod
-    def invalidate() -> None:
-        g.user = None

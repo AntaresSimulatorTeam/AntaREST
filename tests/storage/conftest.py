@@ -52,7 +52,6 @@ def storage_service_builder() -> Callable:
     def build_storage_service(
         study_factory=Mock(),
         exporter=Mock(),
-        session=Mock(),
         path_studies=Path(),
         path_resources=Path(),
         user_service=Mock(),
@@ -71,7 +70,6 @@ def storage_service_builder() -> Callable:
         return build_storage(
             application=Mock(),
             config=config,
-            session=session,
             user_service=user_service,
             study_factory=study_factory,
             exporter=exporter,

@@ -32,7 +32,7 @@ export interface ConnectAction extends Action {
 
 export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, unknown, ConnectAction> => (dispatch, getState): void => {
   const config = getConfig();
-  const socket = new WebSocket(`${config.wsUrl + config.wsEndpoint}/${user?.user}?token=${user?.accessToken }`);
+  const socket = new WebSocket(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken }`);
   const { websockets } = getState();
   if (socket) {
     socket.onopen = (ev) => console.log(ev);
