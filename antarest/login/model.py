@@ -271,6 +271,19 @@ class BotIdentityDTO(DataClassJsonMixin):  # type: ignore
 
 
 @dataclass
+class UserRoleDTO(DataClassJsonMixin):  # type: ignore
+    id: int
+    name: str
+    role: RoleType
+
+
+@dataclass
+class UserGroup(DataClassJsonMixin):  # type: ignore
+    group: GroupDTO
+    users: List[UserRoleDTO]
+
+
+@dataclass
 class Role(Base):  # type: ignore
     """
     Enable to link a user to a group with a specific role permission

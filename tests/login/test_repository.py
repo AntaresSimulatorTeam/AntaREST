@@ -92,13 +92,14 @@ def test_bots():
 
     with db():
         repo = BotRepository()
-
         a = Bot(name="a", owner=1)
-
         a = repo.save(a)
         assert a.id
         assert a == repo.get(a.id)
         assert [a] == repo.get_all_by_owner(1)
+        assert a == repo.get_by_name_and_owner(owner=1, name="a")
+        assert not repo.get_by_name_and_owner(owner=1, name="wrong_name")
+        assert not repo.get_by_name_and_owner(owner=9, name="a")
 
         with pytest.raises(ValueError):
             repo.save(a)
