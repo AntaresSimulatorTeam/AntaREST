@@ -40,6 +40,7 @@ const GenericSettings = (props: PropTypes) => {
     }
   }, [items, initialValue])
 
+
   return (
     <div className={classes.root}>
         <NavSettings  

@@ -3,6 +3,7 @@ import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
+import { useTranslation } from 'react-i18next';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
     root: {
@@ -50,9 +51,9 @@ interface PropTypes {
 }
 
 const NavSettings = (props: PropTypes) => {
-
     const classes = useStyles();
     const {currentItem, items, onItemClick} = props;
+    const [t] = useTranslation();
 
     return (
     <div className={classes.root}>
@@ -60,7 +61,7 @@ const NavSettings = (props: PropTypes) => {
           {
             items.map((item : string, index : number) => 
                 <ListItem button key={item} onClick={() => onItemClick(item)} className={currentItem === item ? classes.itemSelected: classes.item}>
-                    <ListItemText primary={item} className={classes.itemText} />
+                    <ListItemText primary={t(item)} className={classes.itemText} />
                 </ListItem>
             )
           }

@@ -115,7 +115,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     @bp.get("/users/{id}", tags=["User"])
     def users_get_id(
         id: int,
-        details: Optional[bool] = None,
+        details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
@@ -179,7 +179,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     @bp.get("/groups/{id}", tags=["User"])
     def groups_get_id(
         id: str,
-        details: Optional[bool] = None,
+        details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         gid = str(escape(id))
