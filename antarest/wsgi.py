@@ -14,4 +14,4 @@ def get_env_var(env_var_name: str) -> str:
 env_var_conf_path = get_env_var("ANTAREST_CONF")
 conf_path = Path(env_var_conf_path)
 
-app = fastapi_app(conf_path)
+app = fastapi_app(conf_path, mount_front=False)
