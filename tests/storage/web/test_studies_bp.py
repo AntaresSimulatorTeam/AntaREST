@@ -60,10 +60,10 @@ def test_server() -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    client.get("/v1/studies/study1/settings/general/params")
+    client.get("/v1/studies/study1/raw?path=settings/general/params")
 
     mock_service.get.assert_called_once_with(
-        "study1/settings/general/params", 3, PARAMS
+        "study1", "settings/general/params", 3, PARAMS
     )
 
 
@@ -81,10 +81,10 @@ def test_404() -> None:
         user_service=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
-    result = client.get("/v1/studies/study1/settings/general/params")
+    result = client.get("/v1/studies/study1/raw?path=settings/general/params")
     assert result.status_code == 404
 
-    result = client.get("/v1/studies/WRONG_STUDY")
+    result = client.get("/v1/studies/WRONG_STUDY/raw")
     assert result.status_code == 404
 
 
@@ -102,22 +102,24 @@ def test_server_with_parameters() -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    result = client.get("/v1/studies/study1?depth=4")
+    result = client.get("/v1/studies/study1/raw?depth=4")
 
     parameters = RequestParameters(user=ADMIN)
 
     assert result.status_code == 200
-    mock_storage_service.get.assert_called_once_with("study1", 4, parameters)
+    mock_storage_service.get.assert_called_once_with(
+        "study1", "/", 4, parameters
+    )
 
-    result = client.get("/v1/studies/study2?depth=WRONG_TYPE")
+    result = client.get("/v1/studies/study2/raw?depth=WRONG_TYPE")
 
     assert result.status_code == 422
 
-    result = client.get("/v1/studies/study2")
+    result = client.get("/v1/studies/study2/raw")
 
     excepted_parameters = RequestParameters(user=ADMIN)
     mock_storage_service.get.assert_called_with(
-        "study2", 3, excepted_parameters
+        "study2", "/", 3, excepted_parameters
     )
 
 
@@ -389,10 +391,10 @@ def test_edit_study() -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    client.post("/v1/studies/my-uuid/url/to/change", data=data)
+    client.post("/v1/studies/my-uuid/raw?path=url/to/change", data=data)
 
     mock_storage_service.edit_study.assert_called_once_with(
-        "my-uuid/url/to/change", {"Hello": "World"}, PARAMS
+        "my-uuid", "url/to/change", {"Hello": "World"}, PARAMS
     )
 
 
@@ -411,7 +413,7 @@ def test_edit_study_fail() -> None:
         user_service=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
-    res = client.post("/v1/studies/my-uuid/url/to/change", data=data)
+    res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", data=data)
 
     assert res.status_code == 400
 

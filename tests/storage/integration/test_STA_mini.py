@@ -53,9 +53,11 @@ def assert_with_errors(
     storage_service: StorageService, url: str, expected_output: dict
 ) -> None:
     url = url[len("/v1/studies/") :]
+    uuid, url = url.split("/raw?path=")
     params = RequestParameters(user=ADMIN)
     assert_study(
-        storage_service.get(route=url, depth=3, params=params), expected_output
+        storage_service.get(uuid=uuid, url=url, depth=3, params=params),
+        expected_output,
     )
 
 
@@ -63,8 +65,11 @@ def assert_with_errors(
 @pytest.mark.parametrize(
     "url, expected_output",
     [
-        ("/v1/studies/STA-mini/settings/generaldata/general/horizon", 2030),
-        ("/v1/studies/STA-mini/settings/simulations", {}),
+        (
+            "/v1/studies/STA-mini/raw?path=settings/generaldata/general/horizon",
+            2030,
+        ),
+        ("/v1/studies/STA-mini/raw?path=settings/simulations", {}),
     ],
 )
 def test_sta_mini_settings(storage_service, url: str, expected_output: str):
@@ -80,11 +85,11 @@ def test_sta_mini_settings(storage_service, url: str, expected_output: str):
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/layers/layers/activeLayer/showAllLayer",
+            "/v1/studies/STA-mini/raw?path=layers/layers/activeLayer/showAllLayer",
             True,
         ),
         (
-            "/v1/studies/STA-mini/layers/layers/layers/0",
+            "/v1/studies/STA-mini/raw?path=layers/layers/layers/0",
             "All",
         ),
     ],
@@ -104,14 +109,14 @@ def test_sta_mini_layers_layers(
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/Desktop/.shellclassinfo/iconfile",
+            "/v1/studies/STA-mini/raw?path=Desktop/.shellclassinfo/iconfile",
             "settings/resources/study.ico",
         ),
         (
-            "/v1/studies/STA-mini/Desktop/.shellclassinfo/infotip",
+            "/v1/studies/STA-mini/raw?path=Desktop/.shellclassinfo/infotip",
             "Antares Study7.0: STA-mini",
         ),
-        ("/v1/studies/STA-mini/Desktop/.shellclassinfo/iconindex", 0),
+        ("/v1/studies/STA-mini/raw?path=Desktop/.shellclassinfo/iconindex", 0),
     ],
 )
 def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
@@ -127,11 +132,11 @@ def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/study/antares/created",
+            "/v1/studies/STA-mini/raw?path=study/antares/created",
             1480683452,
         ),
         (
-            "/v1/studies/STA-mini/study/antares/author",
+            "/v1/studies/STA-mini/raw?path=study/antares/author",
             "Andrea SGATTONI",
         ),
     ],
@@ -151,26 +156,32 @@ def test_sta_mini_study_antares(
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/input/bindingconstraints/bindingconstraints",
+            "/v1/studies/STA-mini/raw?path=input/bindingconstraints/bindingconstraints",
             {},
         ),
         (
-            "/v1/studies/STA-mini/input/hydro/series/de/mod",
+            "/v1/studies/STA-mini/raw?path=input/hydro/series/de/mod",
             {},
         ),
         (
-            "/v1/studies/STA-mini/input/areas/list",
+            "/v1/studies/STA-mini/raw?path=input/areas/list",
             ["de", "es", "fr", "it"],
         ),
-        ("/v1/studies/STA-mini/input/areas/sets/all areas/output", False),
         (
-            "/v1/studies/STA-mini/input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
+            "/v1/studies/STA-mini/raw?path=input/areas/sets/all areas/output",
+            False,
+        ),
+        (
+            "/v1/studies/STA-mini/raw?path=input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
             0,
         ),
-        ("/v1/studies/STA-mini/input/areas/de/ui/layerX/0", 1),
-        ("/v1/studies/STA-mini/input/hydro/allocation/de/[allocation/de", 1),
+        ("/v1/studies/STA-mini/raw?path=input/areas/de/ui/layerX/0", 1),
         (
-            "/v1/studies/STA-mini/input/hydro/common/capacity/reservoir_fr",
+            "/v1/studies/STA-mini/raw?path=input/hydro/allocation/de/[allocation/de",
+            1,
+        ),
+        (
+            "/v1/studies/STA-mini/raw?path=input/hydro/common/capacity/reservoir_fr",
             {
                 "columns": [0, 1, 2],
                 "index": list(range(365)),
@@ -178,7 +189,7 @@ def test_sta_mini_study_antares(
             },
         ),
         (
-            "/v1/studies/STA-mini/input/thermal/series/fr/05_nuclear/series",
+            "/v1/studies/STA-mini/raw?path=input/thermal/series/fr/05_nuclear/series",
             {
                 "columns": [0],
                 "index": list(range(8760)),
@@ -186,35 +197,35 @@ def test_sta_mini_study_antares(
             },
         ),
         (
-            "/v1/studies/STA-mini/input/hydro/prepro/correlation/general/mode",
+            "/v1/studies/STA-mini/raw?path=input/hydro/prepro/correlation/general/mode",
             "annual",
         ),
         (
-            "/v1/studies/STA-mini/input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation",
+            "/v1/studies/STA-mini/raw?path=input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation",
             0.5,
         ),
         (
-            "/v1/studies/STA-mini/input/hydro/prepro/fr/energy",
+            "/v1/studies/STA-mini/raw?path=input/hydro/prepro/fr/energy",
             "",
         ),
         (
-            "/v1/studies/STA-mini/input/hydro/hydro/inter-monthly-breakdown/fr",
+            "/v1/studies/STA-mini/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
             1,
         ),
         (
-            "/v1/studies/STA-mini/input/thermal/areas/unserverdenergycost/de",
+            "/v1/studies/STA-mini/raw?path=input/thermal/areas/unserverdenergycost/de",
             3000.0,
         ),
         (
-            "/v1/studies/STA-mini/input/thermal/clusters/fr/list/05_nuclear/marginal-cost",
+            "/v1/studies/STA-mini/raw?path=input/thermal/clusters/fr/list/05_nuclear/marginal-cost",
             50,
         ),
         (
-            "/v1/studies/STA-mini/input/links/fr/properties/it/hurdles-cost",
+            "/v1/studies/STA-mini/raw?path=input/links/fr/properties/it/hurdles-cost",
             True,
         ),
         (
-            "/v1/studies/STA-mini/input/links/fr/it",
+            "/v1/studies/STA-mini/raw?path=input/links/fr/it",
             {
                 "columns": list(range(8)),
                 "index": list(range(8760)),
@@ -222,11 +233,11 @@ def test_sta_mini_study_antares(
             },
         ),
         (
-            "/v1/studies/STA-mini/input/load/prepro/fr/k",
+            "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
             "",
         ),
         (
-            "/v1/studies/STA-mini/input/load/series",
+            "/v1/studies/STA-mini/raw?path=input/load/series",
             {
                 "load_de": "file:///...../input/load/series/load_de.txt",
                 "load_es": "file:///...../input/load/series/load_es.txt",
@@ -235,7 +246,7 @@ def test_sta_mini_study_antares(
             },
         ),
         (
-            "/v1/studies/STA-mini/input/load/series/load_fr",
+            "/v1/studies/STA-mini/raw?path=input/load/series/load_fr",
             {
                 "columns": [0],
                 "index": list(range(8760)),
@@ -243,27 +254,27 @@ def test_sta_mini_study_antares(
             },
         ),
         (
-            "/v1/studies/STA-mini/input/misc-gen/miscgen-fr",
+            "/v1/studies/STA-mini/raw?path=input/misc-gen/miscgen-fr",
             "",
         ),
         (
-            "/v1/studies/STA-mini/input/reserves/fr",
+            "/v1/studies/STA-mini/raw?path=input/reserves/fr",
             "",
         ),
         (
-            "/v1/studies/STA-mini/input/solar/prepro/fr/k",
+            "/v1/studies/STA-mini/raw?path=input/solar/prepro/fr/k",
             "",
         ),
         (
-            "/v1/studies/STA-mini/input/solar/series/solar_fr",
+            "/v1/studies/STA-mini/raw?path=input/solar/series/solar_fr",
             {},
         ),
         (
-            "/v1/studies/STA-mini/input/wind/prepro/fr/k",
+            "/v1/studies/STA-mini/raw?path=input/wind/prepro/fr/k",
             "",
         ),
         (
-            "/v1/studies/STA-mini/input/wind/series/wind_fr",
+            "/v1/studies/STA-mini/raw?path=input/wind/series/wind_fr",
             {},
         ),
     ],
@@ -281,11 +292,11 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/output/3/annualSystemCost",
+            "/v1/studies/STA-mini/raw?path=output/3/annualSystemCost",
             "EXP : 185808000\nSTD : 0\nMIN : 185808000\nMAX : 185808000\n",
         ),
         (
-            "/v1/studies/STA-mini/output/1/checkIntegrity",
+            "/v1/studies/STA-mini/raw?path=output/1/checkIntegrity",
             """1.85808475215665e+08
 0.00000000000000e+00
 1.85808475215665e+08
@@ -297,74 +308,77 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
 """,
         ),
         (
-            "/v1/studies/STA-mini/output/4/simulation-comments",
+            "/v1/studies/STA-mini/raw?path=output/4/simulation-comments",
             "",
         ),
         (
-            "/v1/studies/STA-mini/output/2/simulation",
+            "/v1/studies/STA-mini/raw?path=output/2/simulation",
             simulation_log,
         ),
         (
-            "/v1/studies/STA-mini/output/1/about-the-study/areas",
+            "/v1/studies/STA-mini/raw?path=output/1/about-the-study/areas",
             "DE\nES\nFR\nIT\n",
         ),
         (
-            "/v1/studies/STA-mini/output/2/about-the-study/comments",
+            "/v1/studies/STA-mini/raw?path=output/2/about-the-study/comments",
             "",
         ),
         (
-            "/v1/studies/STA-mini/output/3/about-the-study/links",
+            "/v1/studies/STA-mini/raw?path=output/3/about-the-study/links",
             "de\n\tfr\nes\n\tfr\nfr\n\tit\nit\n",
         ),
         (
-            "/v1/studies/STA-mini/output/4/about-the-study/parameters/general/horizon",
+            "/v1/studies/STA-mini/raw?path=output/4/about-the-study/parameters/general/horizon",
             2030,
         ),
         (
-            "/v1/studies/STA-mini/output/1/about-the-study/study/antares/author",
+            "/v1/studies/STA-mini/raw?path=output/1/about-the-study/study/antares/author",
             "Andrea SGATTONI",
         ),
         (
-            "/v1/studies/STA-mini/output/1/economy/mc-all/grid/areas",
+            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-all/grid/areas",
             "id\tname\nde\tDE\nes\tES\nfr\tFR\nit\tIT\n",
         ),
-        ("/v1/studies/STA-mini/output/1/economy/mc-all/links/de/fr", {}),
         (
-            "/v1/studies/STA-mini/output/1/economy/mc-ind/00001/links/de/fr",
+            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-all/links/de/fr",
+            {},
+        ),
+        (
+            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/links/de/fr",
             {
                 "values-hourly": "file://...../economy/mc-inde/0001/links/de - fr/values-hourly.txt"
             },
         ),
         (
-            "/v1/studies/STA-mini/output/1/economy/mc-ind/00001/links/de/fr/values-hourly",
+            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/links/de/fr/values-hourly",
             de_fr_values_hourly,
         ),
         (
-            "/v1/studies/STA-mini/output/1/economy/mc-ind/00001/areas/de/details-annual",
+            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/areas/de/details-annual",
             de_details_hourly,
         ),
         (
-            "/v1/studies/STA-mini/output/1/ts-numbers/hydro/de",
+            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/de",
             "size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/output/1/ts-numbers/load/de",
+            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/load/de",
             "size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/output/1/ts-numbers/solar/de",
+            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/solar/de",
             "size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/output/1/ts-numbers/wind/de",
+            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/wind/de",
             "size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/output/1/ts-numbers/thermal/de/07_gas",
+            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/thermal/de/07_gas",
             "size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/output/1/info/general/version",
+            "/v1/studies/STA-mini/raw?path=output/1/info/general/version",
             700,
         ),
     ],
@@ -401,8 +415,8 @@ def test_sta_mini_copy(storage_service) -> None:
     uuid = result.json()[len("/studies/") :]
 
     parameters = RequestParameters(user=ADMIN)
-    data_source = storage_service.get(source_study_name, -1, parameters)
-    data_destination = storage_service.get(uuid, -1, parameters)
+    data_source = storage_service.get(source_study_name, "/", -1, parameters)
+    data_destination = storage_service.get(uuid, "/", -1, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
     assert input_link in link_url_source
@@ -454,7 +468,7 @@ def notest_sta_mini_with_wrong_output_folder(
     # TODO why a wrong test should success
     (sta_mini_path / "output" / "maps").mkdir()
 
-    url = "/v1/studies/STA-mini/Desktop/.shellclassinfo/infotip"
+    url = "/v1/studies/STA-mini/raw?path=Desktop/.shellclassinfo/infotip"
     expected_output = "Antares Study7.0: STA-mini"
 
     assert_with_errors(
@@ -529,14 +543,14 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/output/1/ts-numbers/hydro/de,fr/",
+            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/de,fr/",
             {
                 "de": "size:1x1\n1\n",
                 "fr": "size:1x1\n1\n",
             },
         ),
         (
-            "/v1/studies/STA-mini/output/1/ts-numbers/hydro/*/",
+            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/*/",
             {
                 "de": "size:1x1\n1\n",
                 "fr": "size:1x1\n1\n",

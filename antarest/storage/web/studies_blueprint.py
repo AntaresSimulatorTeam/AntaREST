@@ -4,6 +4,7 @@ from http import HTTPStatus
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, File, Depends, Path, Body
+from fastapi.params import Param
 from starlette.responses import StreamingResponse
 
 from antarest.common.custom_types import JSON
@@ -38,10 +39,10 @@ def create_study_routes(
     Returns:
 
     """
-    bp = APIRouter()
+    bp = APIRouter(prefix="/v1")
     auth = Auth(config)
 
-    @bp.get("/v1/studies", tags=["Manage Studies"], summary="Get Studies")
+    @bp.get("/studies", tags=["Manage Studies"], summary="Get Studies")
     def get_studies(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -50,7 +51,7 @@ def create_study_routes(
         return available_studies
 
     @bp.post(
-        "/v1/studies",
+        "/studies",
         status_code=HTTPStatus.CREATED.value,
         tags=["Manage Studies"],
         summary="Import Study",
@@ -71,7 +72,7 @@ def create_study_routes(
         return content
 
     @bp.post(
-        "/v1/studies/{uuid}/copy",
+        "/studies/{uuid}/copy",
         status_code=HTTPStatus.CREATED.value,
         tags=["Manage Studies"],
         summary="Copy Study",
@@ -99,7 +100,7 @@ def create_study_routes(
         return f"/studies/{destination_uuid}"
 
     @bp.post(
-        "/v1/studies/{name}",
+        "/studies/{name}",
         status_code=HTTPStatus.CREATED.value,
         tags=["Manage Studies"],
         summary="Create a new empty study",
@@ -121,7 +122,7 @@ def create_study_routes(
         return content
 
     @bp.get(
-        "/v1/studies/{uuid}/export",
+        "/studies/{uuid}/export",
         tags=["Manage Studies"],
         summary="Export Study",
     )
@@ -146,7 +147,7 @@ def create_study_routes(
         )
 
     @bp.delete(
-        "/v1/studies/{uuid}",
+        "/studies/{uuid}",
         status_code=HTTPStatus.OK.value,
         tags=["Manage Studies"],
         summary="Delete Study",
@@ -162,7 +163,7 @@ def create_study_routes(
         return ""
 
     @bp.post(
-        "/v1/studies/{uuid}/output",
+        "/studies/{uuid}/output",
         status_code=HTTPStatus.ACCEPTED.value,
         tags=["Manage Outputs"],
         summary="Import Output",
@@ -184,7 +185,7 @@ def create_study_routes(
         return content
 
     @bp.put(
-        "/v1/studies/{uuid}/owner/{user_id}",
+        "/studies/{uuid}/owner/{user_id}",
         tags=["Manage Permissions"],
         summary="Change study owner",
     )
@@ -200,7 +201,7 @@ def create_study_routes(
         return ""
 
     @bp.put(
-        "/v1/studies/{uuid}/groups/{group_id}",
+        "/studies/{uuid}/groups/{group_id}",
         tags=["Manage Permissions"],
         summary="Add a group association",
     )
@@ -217,7 +218,7 @@ def create_study_routes(
         return ""
 
     @bp.delete(
-        "/v1/studies/{uuid}/groups/{group_id}",
+        "/studies/{uuid}/groups/{group_id}",
         tags=["Manage Permissions"],
         summary="Remove a group association",
     )
@@ -235,7 +236,7 @@ def create_study_routes(
         return ""
 
     @bp.put(
-        "/v1/studies/{uuid}/public_mode/{mode}",
+        "/studies/{uuid}/public_mode/{mode}",
         tags=["Manage Permissions"],
         summary="Set study public mode",
     )
@@ -251,28 +252,30 @@ def create_study_routes(
         return ""
 
     @bp.get(
-        "/v1/studies/{path:path}",
+        "/studies/{uuid}/raw",
         tags=["Manage Data inside Study"],
         summary="Read data",
     )
     def get_study(
-        path: str = Path(..., examples=get_path_examples()),
+        uuid: str,
+        path: str = Param("/", examples=get_path_examples()),  # type: ignore
         depth: int = 3,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         parameters = RequestParameters(user=current_user)
-        output = storage_service.get(path, depth, parameters)
+        output = storage_service.get(uuid, path, depth, parameters)
 
         return output
 
     @bp.post(
-        "/v1/studies/{path:path}",
+        "/studies/{uuid}/raw",
         status_code=HTTPStatus.NO_CONTENT.value,
         tags=["Manage Data inside Study"],
         summary="Update data",
     )
     def edit_study(
-        path: str = Path(..., examples=get_path_examples()),
+        uuid: str,
+        path: str = Param("/", examples=get_path_examples()),  # type: ignore
         data: JSON = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -284,7 +287,7 @@ def create_study_routes(
 
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
-        storage_service.edit_study(path, new, params)
+        storage_service.edit_study(uuid, path, new, params)
         content = ""
 
         return content
