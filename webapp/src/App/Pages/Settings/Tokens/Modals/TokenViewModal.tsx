@@ -33,7 +33,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 interface PropTypes {
-  bot?: BotDTO;
+  bot: BotDTO | undefined;
   open: boolean;
   onButtonClick: () => void;
 }

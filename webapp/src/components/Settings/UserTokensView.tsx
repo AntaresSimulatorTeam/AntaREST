@@ -28,7 +28,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     },
     userItem: {
         backgroundColor: 'white',
-        margin: theme.spacing(1),
+        margin: theme.spacing(0.2),
         border: `1px solid ${theme.palette.primary.main}`
     },
     botItem: {
@@ -38,7 +38,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         justifyContent: 'flex-start',
         color: theme.palette.primary.main,
         backgroundColor: 'white',
-        margin: theme.spacing(1)
+        margin: theme.spacing(0.2)
     },   
     iconsContainer:
     {
@@ -102,6 +102,7 @@ const UserTokensView = (props: PropTypes) => {
             {
                 data.map((userItem, index) => {
                     return (
+                        userItem.bots.length > 0 &&
                         <Fragment key={userItem.user.id}>
                             <ListItem className={classes.userItem}
                                     button

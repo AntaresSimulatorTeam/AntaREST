@@ -176,9 +176,9 @@ class LoginService:
                     if not (role and role.type.is_higher_or_equals(role_type)):
                         raise UserHasNotPermissionError()
 
-            if not bot.name.replace(" ", ""):
+            if not bot.name.strip():
                 raise HTTPException(
-                    status_code=400, detail="Bot name is not valid"
+                    status_code=400, detail="Bot name must not be empty"
                 )
 
             if self.bots.get_by_name_and_owner(

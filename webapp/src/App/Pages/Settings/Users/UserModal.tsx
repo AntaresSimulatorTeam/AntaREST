@@ -29,7 +29,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
     open: boolean;
-    userInfos?: UserDTO;
+    userInfos: UserDTO | undefined;
     onNewUserCreaion : (newUser : UserDTO) => void;
     onClose: () => void;
 };

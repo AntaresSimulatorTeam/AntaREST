@@ -114,10 +114,16 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
 
     @bp.get("/users/{id}", tags=["User"])
     def users_get_id(
-        id: int, current_user: JWTUser = Depends(auth.get_current_user)
+        id: int,
+        details: Optional[bool] = None,
+        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        u = service.get_user_info(id, params)
+        u = (
+            service.get_user_info(id, params)
+            if details
+            else service.get_user(id, params)
+        )
         if u:
             return u.to_dict()
         else:
@@ -173,14 +179,14 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     @bp.get("/groups/{id}", tags=["User"])
     def groups_get_id(
         id: str,
-        verbose: Optional[int] = None,
+        details: Optional[bool] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         gid = str(escape(id))
         params = RequestParameters(user=current_user)
         group = (
             service.get_group_info(gid, params)
-            if verbose
+            if details
             else service.get_group(gid, params)
         )
         if group:

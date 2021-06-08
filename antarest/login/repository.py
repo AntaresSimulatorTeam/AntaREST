@@ -193,7 +193,7 @@ class BotRepository:
 
     def get_by_name_and_owner(self, owner: int, name: str) -> Optional[Bot]:
         bot: Bot = (
-            self.session.query(Bot).filter_by(owner=owner, name=name).first()
+            db.session.query(Bot).filter_by(owner=owner, name=name).first()
         )
         return bot
 

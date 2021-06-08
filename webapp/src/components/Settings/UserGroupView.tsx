@@ -29,7 +29,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     },
     userItem: {
         backgroundColor: 'white',
-        margin: theme.spacing(1),
+        margin: theme.spacing(0.2),
         display: 'flex',
         flexFlow: 'row nowrap',
         justifyContent: 'space-evenly',
@@ -43,7 +43,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         color: theme.palette.primary.main,
         backgroundColor: 'white',
         border: `1px solid ${theme.palette.primary.main}`,
-        margin: theme.spacing(1)
+        margin: theme.spacing(0.2)
     },   
     iconsContainer:
     {
@@ -114,7 +114,9 @@ const UserGroupView = (props: PropTypes) => {
                     return (
                         matchFilter(groupItem.group.name) &&
                         <Fragment key={groupItem.group.id}>
-                            <ListItem className={classes.groupItem}>
+                            <ListItem className={classes.groupItem}
+                                      button
+                                      onClick={() => onButtonChange(index, groupItem.group.id)}>
                                     <Typography>{groupItem.group.name}</Typography>
                                     <div className={classes.iconsContainer}>
                                         <Button onClick={() => onUpdateClick(groupItem.group.id)}>
@@ -125,8 +127,7 @@ const UserGroupView = (props: PropTypes) => {
                                         </Button>
                                     </div>  
                                     {toogleList[index] ? 
-                                    <ExpandLess onClick={() => onButtonChange(index, groupItem.group.id)} /> : 
-                                    <ExpandMore onClick={() => onButtonChange(index, groupItem.group.id)}/>}
+                                    <ExpandLess /> : <ExpandMore />}
                             </ListItem>
                             <Collapse in={toogleList[index]} timeout="auto" unmountOnExit>
                                 <List component="div"

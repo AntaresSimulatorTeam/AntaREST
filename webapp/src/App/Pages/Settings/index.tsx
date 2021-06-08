@@ -20,7 +20,6 @@ type PropTypes = ReduxProps;
 const UserSettings = (props: PropTypes) => {
 
   const { user} = props;
-  console.log(user);
 
   const [isAdmin, setAdminStatus] = useState<boolean>(false);
   
@@ -47,7 +46,8 @@ const UserSettings = (props: PropTypes) => {
   }
 
   // Why !!user ? => Error otherwise (NavState)
-  return !!user ? (<GenericSettings items={isAdmin ? adminUserData : normalUserData} />) : null;
+  return !!user ? (<GenericSettings items={isAdmin ? adminUserData : normalUserData}
+                                    initialValue={isAdmin ? t('settings:users') : t('settings:tokens')} />) : null;
 };
 
 export default connector(UserSettings);

@@ -4,14 +4,14 @@ import { useTranslation } from 'react-i18next';
 import {UserInfo, BotDTO, IDType} from '../../../../common/types';
 import { deleteBot, getBots } from '../../../../services/api/user';
 import GenericSettingView from '../../../../components/Settings/GenericSettingView';
-import ItemSettings from '../../../../components/Settings/ItemSettings';
 import TokenPrinter from '../../../../components/Settings/TokenPrinter';
 import ConfirmationModal from '../../../../components/ui/ConfirmationModal';
 import TokenCreationModal from './Modals/TokenCreationModal';
 import TokenViewModal from './Modals/TokenViewModal';
+import GenericListView from '../../../../components/Settings/GenericListView';
 
 interface PropTypes {
-  user?: UserInfo;
+  user: UserInfo | undefined;
 }
 
 const TokenNormal = (props: PropTypes) => {
@@ -29,11 +29,6 @@ const TokenNormal = (props: PropTypes) => {
     const [openCreationModal, setOpenCreationModal] = useState<boolean>(false);
     const [openViewModal, setOpenViewModal] = useState<boolean>(false);    
     const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
-
-    const matchFilter = (input: string) : boolean => {
-      //Very basic search => possibly modify
-      return (input.search(filter) >= 0);
-    }
 
      const createNewToken = () => {
           setCurrentBot(undefined);
@@ -116,16 +111,12 @@ const TokenNormal = (props: PropTypes) => {
                           placeholder={t('settings:tokensSearchbarPlaceholder')}
                           buttonValue={t('settings:createToken')}
                           onButtonClick={() => createNewToken()}> 
-                          {  
-                            tokenList.map((item) => 
-                            matchFilter(item.name) && 
-                                          <ItemSettings key={item.id}
-                                            id={item.id}
-                                            view={true}
-                                            value={String(item.name)}
-                                            onDeleteCLick={onDeleteClick}
-                                            onActionClick={onWatchClick} />)
-                          }                     
+        <GenericListView data={tokenList}
+                        filter={filter}
+                        view={true}
+                        onDeleteClick={onDeleteClick}
+                        onActionClick={onWatchClick}/>
+
         {openCreationModal && <TokenCreationModal  open={openCreationModal}  // Why 'openCreationModal &&' ? => Otherwise previous data are still present
                                                    userGroups={user?.groups}
                                                    onNewTokenCreation={onNewTokenCreation}

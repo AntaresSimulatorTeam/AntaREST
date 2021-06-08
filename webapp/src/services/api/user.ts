@@ -27,8 +27,13 @@ export const createNewUser = async (name: string, password: string) : Promise<an
   return res.data;
 }
 
-export const getUserInfos = async (id: number) : Promise<IdentityDTO> => {
+export const getUser = async (id: number) : Promise<UserDTO> => {
   const res = await client.get(`/users/${id}`);
+  return res.data;
+}
+
+export const getUserInfos = async (id: number) : Promise<IdentityDTO> => {
+  const res = await client.get(`/users/${id}?details=true`);
   return res.data;
 }
 
@@ -48,7 +53,7 @@ export const getGroups = async (): Promise<Array<GroupDTO>> => {
 };
 
 export const getGroupInfos = async (id: string) : Promise<UserGroup> =>{
-  const res = await client.get(`/groups/${id}?verbose=1`);
+  const res = await client.get(`/groups/${id}?details=true`);
   return res.data;
 }
 
