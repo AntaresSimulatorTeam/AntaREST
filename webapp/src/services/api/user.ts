@@ -33,7 +33,7 @@ export const getUser = async (id: number) : Promise<IdentityDTO> => {
 }
 
 export const getUserInfos = async (id: number) : Promise<IdentityDTO> => {
-  const res = await client.get(`/users/${id}?details=true`);
+  const res = await client.get(`/v1/users/${id}?details=true`);
   return res.data;
 }
 
@@ -53,7 +53,7 @@ export const getGroups = async (): Promise<Array<GroupDTO>> => {
 };
 
 export const getGroupInfos = async (id: string) : Promise<UserGroup> =>{
-  const res = await client.get(`/groups/${id}?details=true`);
+  const res = await client.get(`/v1/groups/${id}?details=true`);
   return res.data;
 }
 
