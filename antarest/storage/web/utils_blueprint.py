@@ -56,7 +56,7 @@ def create_utils_routes(
 
     auth = Auth(config)
 
-    @bp.get("/file/{path:path}", tags=["Manage Matrix"], summary="Get file")
+    @bp.get("/v1/file/{path:path}", tags=["Manage Matrix"], summary="Get file")
     def get_file(
         path: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
@@ -70,7 +70,7 @@ def create_utils_routes(
             )
 
     @bp.post(
-        "/file/{path:path}",
+        "/v1/file/{path:path}",
         status_code=HTTPStatus.NO_CONTENT.value,
         tags=["Manage Matrix"],
         summary="Post file",

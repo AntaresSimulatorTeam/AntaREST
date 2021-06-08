@@ -4,6 +4,7 @@ from http import HTTPStatus
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, File, Depends, Path, Body
+from fastapi.params import Param
 from starlette.responses import StreamingResponse
 
 from antarest.common.custom_types import JSON
@@ -38,7 +39,7 @@ def create_study_routes(
     Returns:
 
     """
-    bp = APIRouter()
+    bp = APIRouter(prefix="/v1")
     auth = Auth(config)
 
     @bp.get("/studies", tags=["Manage Studies"], summary="Get Studies")
@@ -251,28 +252,30 @@ def create_study_routes(
         return ""
 
     @bp.get(
-        "/studies/{path:path}",
+        "/studies/{uuid}/raw",
         tags=["Manage Data inside Study"],
         summary="Read data",
     )
     def get_study(
-        path: str = Path(..., examples=get_path_examples()),
+        uuid: str,
+        path: str = Param("/", examples=get_path_examples()),  # type: ignore
         depth: int = 3,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         parameters = RequestParameters(user=current_user)
-        output = storage_service.get(path, depth, parameters)
+        output = storage_service.get(uuid, path, depth, parameters)
 
         return output
 
     @bp.post(
-        "/studies/{path:path}",
+        "/studies/{uuid}/raw",
         status_code=HTTPStatus.NO_CONTENT.value,
         tags=["Manage Data inside Study"],
         summary="Update data",
     )
     def edit_study(
-        path: str = Path(..., examples=get_path_examples()),
+        uuid: str,
+        path: str = Param("/", examples=get_path_examples()),  # type: ignore
         data: JSON = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -284,7 +287,7 @@ def create_study_routes(
 
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
-        storage_service.edit_study(path, new, params)
+        storage_service.edit_study(uuid, path, new, params)
         content = ""
 
         return content

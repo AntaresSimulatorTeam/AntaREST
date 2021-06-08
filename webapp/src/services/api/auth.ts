@@ -15,7 +15,7 @@ export const initRawAxiosClient = (config: Config): void => {
 
 export const needAuth = async (): Promise<boolean> => {
   try {
-    await client.get('/auth');
+    await client.get('/v1/auth');
     return Promise.resolve(false);
   } catch (e) {
     const { status } = e.response;
@@ -29,7 +29,7 @@ export const needAuth = async (): Promise<boolean> => {
 export const refresh = async (user: UserInfo, login: (user: UserInfo) => void, logout: () => void): Promise<UserInfo|undefined> => {
   if (!user.expirationDate || user.expirationDate < moment().add(5, 's')) {
     try {
-      const res = await rawAxiosInstance.post('/refresh', {}, { headers: {
+      const res = await rawAxiosInstance.post('/v1/refresh', {}, { headers: {
         Authorization: `Bearer ${user.refreshToken}`,
       } });
       const userInfoDTO = await res.data;
@@ -57,7 +57,7 @@ export const login = async (
   username: string,
   password: string,
 ): Promise<UserInfo> => {
-  const res = await rawAxiosInstance.post('/login', {username, password});
+  const res = await rawAxiosInstance.post('/v1/login', {username, password});
   const userInfo = await res.data;
   const tokenData = jwt_decode(userInfo.access_token);
   const subject = JSON.parse((tokenData as any).sub);

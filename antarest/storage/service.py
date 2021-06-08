@@ -62,18 +62,20 @@ class StorageService:
         self.event_bus = event_bus
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def get(self, route: str, depth: int, params: RequestParameters) -> JSON:
+    def get(
+        self, uuid: str, url: str, depth: int, params: RequestParameters
+    ) -> JSON:
         """
         Get study data inside filesystem
         Args:
-            route: route to follow inside study structure
+            uuid: study uuid
+            url: route to follow inside study structure
             depth: depth to expand tree when route matched
             params: request parameters
 
         Returns: data study formatted in json
 
         """
-        uuid, url = StorageServiceUtils.extract_info_from_url(route)
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.READ)
 
@@ -499,20 +501,20 @@ class StorageService:
         return res
 
     def edit_study(
-        self, route: str, new: JSON, params: RequestParameters
+        self, uuid: str, url: str, new: JSON, params: RequestParameters
     ) -> JSON:
         """
         Replace data inside study.
 
         Args:
-            route: path data target in study
+            uuid: study id
+            url: path data target in study
             new: new data to replace
             params: request parameters
 
         Returns: new data replaced
 
         """
-        uuid, url = StorageServiceUtils.extract_info_from_url(route)
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.WRITE)
         if not isinstance(study, RawStudy):
