@@ -198,7 +198,7 @@ def test_user_id() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/users/1", headers=create_auth_token(app))
+    res = client.get("/v1/users/1", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json() == User(id=1, name="user").to_dict()
 
@@ -212,7 +212,9 @@ def test_user_id_with_details() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/v1/users/1?details=true", headers=create_auth_token(app))
+    res = client.get(
+        "/v1/users/1?details=true", headers=create_auth_token(app)
+    )
     assert res.status_code == 200
     assert res.json() == IdentityDTO(id=1, name="user", roles=[]).to_dict()
 
