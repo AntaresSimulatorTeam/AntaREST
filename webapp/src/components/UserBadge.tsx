@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import {useHistory} from 'react-router'
 import { Button, Popover, ButtonBase, makeStyles, Theme, createStyles } from '@material-ui/core';
@@ -6,12 +6,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useTranslation } from 'react-i18next';
 import { AppState } from '../App/reducers';
 import { logoutAction } from '../ducks/auth';
+import { getUser } from '../services/api/user';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       width: '160px',
-      height: '200px',
+      height: '210px',
       display: 'flex',
       flexDirection: 'column',
     },
@@ -34,6 +35,7 @@ const useStyles = makeStyles((theme: Theme) =>
     username: {
       color: theme.palette.primary.main,
       fontSize: '1.2em',
+      margin: theme.spacing(1)
     },
     logoutbutton: {
       margin: theme.spacing(1),
@@ -57,6 +59,7 @@ const UserBadge = (props: PropTypes) => {
   const [t] = useTranslation();
   const classes = useStyles();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const [userName, setUserName] = useState<string>('');
   const history = useHistory();
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -74,6 +77,22 @@ const UserBadge = (props: PropTypes) => {
     // On ferme la fenêtre de menu
     handleClose();
   }
+
+  useEffect(() => {
+    const init = async () => {
+
+        if(!!user)
+        {
+          const respUser = await getUser(user.id);
+          setUserName(respUser.name);
+        }
+    }
+    init();
+    return () => {
+      setUserName('');
+    }
+  
+  }, [user])
 
   const open = Boolean(anchorEl);
 
@@ -104,7 +123,7 @@ const UserBadge = (props: PropTypes) => {
           <div className={classes.content}>
             <div className={classes.header}>
               <FontAwesomeIcon className={classes.usericon} icon="user-circle" size="3x" />
-              <div className={classes.username}>{user.user}</div>
+              <div className={classes.username}>{userName}</div>
             </div>
           </div>
           <Button className={classes.logoutbutton} onClick={settings} variant="contained" color="primary">

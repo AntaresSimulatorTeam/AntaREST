@@ -48,14 +48,26 @@ export interface UserDTO {
   name: string;
 }
 
+export interface UserRoleDTO {
+  id: number;
+  name: string; 
+  role: RoleType; 
+}
+
 export interface GroupDTO {
   id: string;
   name: string;
 }
 
+export interface JWTGroup {
+  id: string;
+  name: string;
+  role: RoleType
+}
+
 export interface UserInfo {
   user: string;
-  groups: Array<any>;
+  groups: Array<JWTGroup>;
   id: number;
   impersonator: number;
   type: string;
@@ -100,5 +112,13 @@ export interface UserToken {
   user: UserDTO;
   bots: Array<BotDTO>;
 }
+
+
+
+export interface UserGroup {
+  group: GroupDTO;
+  users: Array<UserRoleDTO>;
+}
+
 
 export default {};

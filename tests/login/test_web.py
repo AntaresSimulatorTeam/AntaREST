@@ -194,13 +194,25 @@ def test_user() -> None:
 @pytest.mark.unit_test
 def test_user_id() -> None:
     service = Mock()
+    service.get_user.return_value = User(id=1, name="user")
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.get("/users/1", headers=create_auth_token(app))
+    assert res.status_code == 200
+    assert res.json() == User(id=1, name="user").to_dict()
+
+
+@pytest.mark.unit_test
+def test_user_id_with_details() -> None:
+    service = Mock()
     service.get_user_info.return_value = IdentityDTO(
         id=1, name="user", roles=[]
     )
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/users/1", headers=create_auth_token(app))
+    res = client.get("/users/1?details=true", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json() == IdentityDTO(id=1, name="user", roles=[]).to_dict()
 

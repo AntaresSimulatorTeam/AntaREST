@@ -33,7 +33,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 interface PropTypes {
-  bot?: BotDTO;
+  bot: BotDTO | undefined;
   open: boolean;
   onButtonClick: () => void;
 }
@@ -72,7 +72,7 @@ useEffect(() => {
                     <Table className={classes.table} aria-label="simple table">
                         <TableHead>
                         <TableRow>
-                            <TableCell className={classes.title}>Group Name</TableCell>
+                            <TableCell className={classes.title}>{t('settings:groupNameLabel')}</TableCell>
                             <TableCell className={classes.title} align="right">Role</TableCell>
                         </TableRow>
                         </TableHead>
@@ -84,7 +84,7 @@ useEffect(() => {
                                 <TableCell component="th" scope="row">
                                     {item.group_name}
                                 </TableCell>
-                                <TableCell align="right">{roleToString(item.type)}</TableCell>
+                                <TableCell align="right">{t(roleToString(item.type))}</TableCell>
                             </TableRow>
                         ))}
                         </TableBody>

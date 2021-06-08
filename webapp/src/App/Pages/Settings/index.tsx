@@ -1,6 +1,5 @@
-import React, {useState, useEffect} from 'react';
+import React from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import { AppState } from '../../reducers';
 import {isUserAdmin} from '../../../services/utils'
 import GenericSettings from '../../../components/Settings/GenericSettings'
@@ -18,36 +17,26 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const UserSettings = (props: PropTypes) => {
-
   const { user} = props;
-  console.log(user);
-
-  const [isAdmin, setAdminStatus] = useState<boolean>(false);
-  
-  const [t] = useTranslation();
-
-  useEffect(() => {
-
-    // Is admin ?
-    if(!!user && isUserAdmin(user))
-      setAdminStatus(true);
-    else
-      setAdminStatus(false);
-  
-  }, [user])
 
   const adminUserData = {
-    [t('settings:users')]: () => <UsersSettings />,
-    [t('settings:groups')]: () => <GroupsSettings />,
-    [t('settings:tokens')]: () => <TokensSettings />,
+    'settings:users': () => <UsersSettings />,
+    'settings:groups': () => <GroupsSettings />,
+    'settings:tokens': () => <TokensSettings />,
   }
 
   const normalUserData = {
-    [t('settings:tokens')]: () => <TokensSettings />,
+    'settings:tokens': () => <TokensSettings />,
   }
 
-  // Why !!user ? => Error otherwise (NavState)
-  return !!user ? (<GenericSettings items={isAdmin ? adminUserData : normalUserData} />) : null;
+  if (!!user) {
+    const isAdmin = isUserAdmin(user);
+
+    return  (<GenericSettings items={isAdmin ? adminUserData : normalUserData}
+                                      initialValue={isAdmin ? 'settings:users' : 'settings:tokens'} />);
+  
+  }
+  return null;
 };
 
 export default connector(UserSettings);

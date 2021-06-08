@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import CloseIcon from '@material-ui/icons/Close';
-import {GroupDTO, RoleType, RoleDTO } from '../../common/types'
+import {GroupDTO, RoleType, RoleDTO, JWTGroup} from '../../common/types'
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -67,6 +67,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
     groupsList: Array<GroupDTO>;
+    userGroups?: Array<JWTGroup>;
     selectedGroup?: GroupDTO;
     roleList: Array<RoleDTO>;
     onChange: (group: GroupDTO) => void;
@@ -78,10 +79,38 @@ interface PropTypes {
 
 const GroupsAssignmentView = (props: PropTypes) => {
 
-  const {groupsList, selectedGroup, onChange, roleList, addRole, deleteRole, updateRole} = props;
+  const {groupsList, userGroups, selectedGroup, onChange, roleList, addRole, deleteRole, updateRole} = props;
   const classes = useStyles();
   const [t] = useTranslation();
 
+  const getMenuItems = (id: string) => {
+
+  const menuItems = [{role: RoleType.READER, tr: 'settings:readerRole'},
+                      {role: RoleType.WRITER, tr: 'settings:writerRole'},
+                      {role: RoleType.RUNNER, tr: 'settings:runnerRole'},
+                      {role: RoleType.ADMIN, tr: 'settings:adminRole'}];
+    if(!!userGroups)
+    {
+          const group_found = userGroups.find((group) => group.id === id);
+          if(group_found)
+          {
+            return menuItems.filter((item) => group_found.role >= item.role);          
+          }
+    }
+
+    return menuItems;    
+  }
+
+  if(selectedGroup === undefined)
+  {
+    return (
+        <div className={classes.root}>
+          <div className={classes.titleBox}>
+              <Typography className={classes.title}>{t('settings:permissionsLabel')}</Typography>
+          </div>
+        </div>
+    )
+  }
   return (
     <div className={classes.root}>
         <div className={classes.titleBox}>
@@ -107,7 +136,9 @@ const GroupsAssignmentView = (props: PropTypes) => {
         </div>
         <div className={classes.roleList}>
             {
-                roleList.map((item) => 
+                roleList.map((item) => {
+
+                  return (
                     <Paper key={item.group_id} className={classes.role}>
                             <CloseIcon className={classes.close} onClick={() => deleteRole(item.group_id)} />
                             <Typography>{item.group_name }</Typography>
@@ -116,12 +147,13 @@ const GroupsAssignmentView = (props: PropTypes) => {
                                 onChange={(event: React.ChangeEvent<{ value: unknown }>) => updateRole(item.group_id, event.target.value as RoleType)}
                                 label={t("settings:roleLabel")}
                                 className={classes.select}>
-                                <MenuItem value={RoleType.READER}>{t('settings:readerRole')}</MenuItem>
-                                <MenuItem value={RoleType.WRITER}>{t('settings:writerRole')}</MenuItem>
-                                <MenuItem value={RoleType.RUNNER}>{t('settings:runnerRole')}</MenuItem>
-                                <MenuItem value={RoleType.ADMIN}>{t('settings:adminRole')}</MenuItem>
+                                {getMenuItems(item.group_id).map((menuItem) => 
+                                    <MenuItem key={menuItem.role} value={menuItem.role}>{t(menuItem.tr)}</MenuItem>
+                                )}
                             </Select>
                     </Paper>
+                  )
+                }
                 )
             }
         </div>
