@@ -9,6 +9,7 @@ from typing import Tuple, Any, Optional, Union
 import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
+from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from pydantic.main import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -16,9 +17,7 @@ from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-
 from sqlalchemy import create_engine  # type: ignore
-from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 
 from antarest import __version__
 from antarest.eventbus.main import build_eventbus
@@ -94,7 +93,7 @@ def configure_logger(config: Config) -> None:
     logging_level = config.logging.level or "INFO"
     logging_format = (
         config.logging.format
-        or "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        or "%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s"
     )
     logging.basicConfig(
         filename=logging_path, format=logging_format, level=logging_level
@@ -127,13 +126,20 @@ def fastapi_app(
     logging.getLogger(__name__).info("Initiating application")
 
     # Database
-    engine = create_engine(config.db_url, echo=config.debug)
-    Base.metadata.create_all(engine)
-    db_session = scoped_session(
-        sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    engine = create_engine(
+        config.db_url,
+        echo=config.debug,
+        connect_args={"check_same_thread": False},
     )
+    Base.metadata.create_all(engine)
 
     application = FastAPI(title="AntaREST", version=__version__, docs_url=None)
+
+    application.add_middleware(
+        DBSessionMiddleware,
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
 
     if mount_front:
         application.mount(
@@ -180,8 +186,6 @@ def fastapi_app(
     @application.on_event("shutdown")
     def shutdown_session() -> None:
         logging.getLogger(__name__).info("Request end")
-        Auth.invalidate()
-        db_session.remove()
 
     @application.exception_handler(HTTPException)
     def handle_exception(request: Request, exc: HTTPException) -> Any:
@@ -192,20 +196,16 @@ def fastapi_app(
         )
 
     event_bus = build_eventbus(application, config)
-    user_service = build_login(
-        application, config, db_session, event_bus=event_bus
-    )
+    user_service = build_login(application, config, event_bus=event_bus)
     storage = build_storage(
         application,
         config,
-        db_session,
         user_service=user_service,
         event_bus=event_bus,
     )
     build_launcher(
         application,
         config,
-        db_session,
         service_storage=storage,
         event_bus=event_bus,
     )

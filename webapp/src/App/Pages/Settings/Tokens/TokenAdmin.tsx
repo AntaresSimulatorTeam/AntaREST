@@ -11,7 +11,7 @@ import TokenCreationModal from './Modals/TokenCreationModal';
 import TokenViewModal from './Modals/TokenViewModal';
 
 interface PropTypes {
-  user?: UserInfo;
+  user: UserInfo | undefined;
 }
 
 const TokenAdmin = (props: PropTypes) => {
@@ -19,9 +19,8 @@ const TokenAdmin = (props: PropTypes) => {
     const [t] = useTranslation();
     const { enqueueSnackbar } = useSnackbar();
     const {user} = props;
-
     const [filter, setFilter] = useState<string>("");
-    const [idForDeletion, setIdForDeletion] = useState<any>({userId: -1, botId: -1});
+    const [idForDeletion, setIdForDeletion] = useState<any>(undefined);
     const [tokenList, setTokenList] = useState<Array<UserToken>>([]);
     const [currentBot, setCurrentBot] = useState<BotDTO|undefined>();
     const [lastCreatedToken, setLastCreatedToken] = useState<string>("");

@@ -189,7 +189,7 @@ class StorageService:
         )
 
         self.logger.info(
-            "study %d created by user %s", raw.id, params.get_user_id()
+            "study %s created by user %s", raw.id, params.get_user_id()
         )
         return str(raw.id)
 

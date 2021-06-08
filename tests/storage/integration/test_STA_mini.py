@@ -39,7 +39,6 @@ def assert_url_content(
     app = FastAPI(title=__name__)
     build_storage(
         app,
-        session=Mock(),
         user_service=Mock(),
         storage_service=storage_service,
         config=storage_service.study_service.config,
@@ -401,7 +400,6 @@ def test_sta_mini_copy(storage_service) -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
-        session=Mock(),
         user_service=Mock(),
         storage_service=storage_service,
         config=storage_service.study_service.config,
@@ -490,7 +488,6 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        session=Mock(),
         user_service=Mock(),
         config=storage_service.study_service.config,
     )
@@ -523,7 +520,6 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        session=Mock(),
         user_service=Mock(),
         config=storage_service.study_service.config,
     )

@@ -1,9 +1,6 @@
-import logging
-from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI
-from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
@@ -25,7 +22,6 @@ from antarest.storage.web.utils_blueprint import create_utils_routes
 def build_storage(
     application: FastAPI,
     config: Config,
-    session: Session,
     user_service: LoginService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
     study_factory: Optional[StudyFactory] = None,
@@ -54,9 +50,7 @@ def build_storage(
     path_resources = config.resources_path
     study_factory = study_factory or StudyFactory()
     exporter = exporter or Exporter()
-    metadata_repository = metadata_repository or StudyMetadataRepository(
-        session=session
-    )
+    metadata_repository = metadata_repository or StudyMetadataRepository()
 
     study_service = RawStudyService(
         config=config,

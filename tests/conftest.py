@@ -1,6 +1,7 @@
 import sys
+from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import pytest
 

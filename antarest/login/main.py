@@ -3,7 +3,6 @@ from typing import Optional, Any
 
 from fastapi import FastAPI
 from fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
-from sqlalchemy.orm import Session  # type: ignore
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -24,7 +23,6 @@ from antarest.login.web import create_login_api
 def build_login(
     application: FastAPI,
     config: Config,
-    db_session: Session,
     service: Optional[LoginService] = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> LoginService:
@@ -34,7 +32,6 @@ def build_login(
     Args:
         application: flask application
         config: server configuration
-        db_session: database session
         service: used by testing to inject mock. Let None to use true instantiation
         event_bus: used by testing to inject mock. Let None to use true instantiation
 
@@ -43,12 +40,12 @@ def build_login(
     """
 
     if service is None:
-        user_repo = UserRepository(config, db_session)
-        bot_repo = BotRepository(db_session)
-        group_repo = GroupRepository(db_session)
-        role_repo = RoleRepository(db_session)
+        user_repo = UserRepository(config)
+        bot_repo = BotRepository()
+        group_repo = GroupRepository()
+        role_repo = RoleRepository()
 
-        ldap_repo = UserLdapRepository(db_session)
+        ldap_repo = UserLdapRepository()
         ldap = LdapService(
             config=config, users=ldap_repo, groups=group_repo, roles=role_repo
         )

@@ -3,6 +3,8 @@ import threading
 from pathlib import Path
 from time import time, sleep
 from typing import List
+
+from antarest.common.utils.fastapi_sqlalchemy import db
 from filelock import FileLock  # type: ignore
 
 from antarest.common.config import Config
@@ -102,4 +104,5 @@ class Watcher:
                 groups = [Group(id=g) for g in workspace.groups]
                 studies = studies + rec_scan(path, name, groups)
 
-        self.service.sync_studies_on_disk(studies)
+        with db():
+            self.service.sync_studies_on_disk(studies)

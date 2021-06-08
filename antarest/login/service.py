@@ -25,6 +25,9 @@ from antarest.login.model import (
     RoleDTO,
     RoleCreationDTO,
     BotIdentityDTO,
+    UserGroup,
+    UserRoleDTO,
+    GroupDTO,
 )
 from antarest.login.repository import (
     UserRepository,
@@ -172,6 +175,19 @@ class LoginService:
                     role_type = RoleType.from_dict(role_create.role)
                     if not (role and role.type.is_higher_or_equals(role_type)):
                         raise UserHasNotPermissionError()
+
+            if not bot.name.strip():
+                raise HTTPException(
+                    status_code=400, detail="Bot name must not be empty"
+                )
+
+            if self.bots.get_by_name_and_owner(
+                owner=params.user.id, name=bot.name
+            ):
+                raise HTTPException(
+                    status_code=400, detail="Bot name already exists"
+                )
+
             b = self.bots.save(
                 Bot(
                     name=bot.name,
@@ -246,7 +262,7 @@ class LoginService:
     def get_group(self, id: str, params: RequestParameters) -> Optional[Group]:
         """
         Get group.
-        Permission: SADMIN, GADMIN (own group)
+        Permission: SADMIN, all users that belong to the group
 
         Args:
             id: group id
@@ -267,6 +283,39 @@ class LoginService:
             )
         ):
             return group
+        else:
+            self.logger.error(
+                "group %s not found by user %s", id, params.get_user_id()
+            )
+            raise GroupNotFoundError()
+
+    def get_group_info(
+        self, id: str, params: RequestParameters
+    ) -> Optional[UserGroup]:
+        """
+        Get group.
+        Permission: SADMIN, GADMIN (own group)
+
+        Args:
+            id: group id
+            params: request parameters
+
+        Returns: group and list of users
+
+        """
+        group = self.get_group(id, params)
+        if group:
+            user_list = []
+            roles = self.get_all_roles_in_group(group.id, params)
+            for role in roles:
+                user = self.users.get(role.identity_id)
+                if user:
+                    user_list.append(
+                        UserRoleDTO(id=user.id, name=user.name, role=role.type)
+                    )
+            return UserGroup(
+                group=GroupDTO(id=group.id, name=group.name), users=user_list
+            )
         else:
             self.logger.error(
                 "group %s not found by user %s", id, params.get_user_id()

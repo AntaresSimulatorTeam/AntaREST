@@ -151,6 +151,7 @@ def test_save_bot():
     )
     bots = Mock()
     bots.save.side_effect = lambda b: b
+    bots.get_by_name_and_owner.return_value = None
 
     roles = Mock()
     roles.get.return_value = Role(
@@ -242,6 +243,36 @@ def test_get_group():
     assert_permission(
         test=lambda x: service.get_group("group", x),
         values=[(SADMIN, True), (GADMIN, True), (USER3, True)],
+    )
+
+
+def test_get_group_info():
+
+    groups = Mock()
+    group = Group(id="group", name="group")
+    groups.get.return_value = group
+
+    users = Mock()
+    user = User(id=3)
+    users.get.return_value = user
+
+    roles = Mock()
+    roles.get_all_by_group.return_value = [
+        Role(group=group, identity=user, type=RoleType.RUNNER)
+    ]
+
+    service = LoginService(
+        user_repo=users,
+        bot_repo=Mock(),
+        group_repo=groups,
+        role_repo=roles,
+        ldap=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert_permission(
+        test=lambda x: service.get_group_info("group", x),
+        values=[(SADMIN, True), (GADMIN, True), (USER3, False)],
     )
 
 

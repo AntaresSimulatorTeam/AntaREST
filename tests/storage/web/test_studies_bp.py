@@ -55,7 +55,6 @@ def test_server() -> None:
     build_storage(
         app,
         storage_service=mock_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -76,7 +75,6 @@ def test_404() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -97,7 +95,6 @@ def test_server_with_parameters() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -139,7 +136,6 @@ def test_create_study(
     build_storage(
         app,
         storage_service=storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -174,7 +170,6 @@ def test_import_study_zipped(
     build_storage(
         app,
         storage_service=mock_storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -201,7 +196,6 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -232,7 +226,6 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
     build_storage(
         app,
         storage_service=storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -248,7 +241,6 @@ def test_server_health() -> None:
     build_storage(
         app,
         storage_service=Mock(),
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -266,7 +258,6 @@ def test_export_files() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -288,7 +279,6 @@ def test_export_params() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -315,7 +305,6 @@ def test_delete_study() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -333,7 +322,6 @@ def test_import_matrix() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -360,7 +348,6 @@ def test_import_matrix_with_wrong_path() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -386,7 +373,6 @@ def test_edit_study() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -408,7 +394,6 @@ def test_edit_study_fail() -> None:
     build_storage(
         app,
         storage_service=mock_storage_service,
-        session=Mock(),
         config=CONFIG,
         user_service=Mock(),
     )
@@ -430,7 +415,6 @@ def test_study_permission_management(
     build_storage(
         app,
         storage_service=storage_service,
-        session=Mock(),
         user_service=Mock(),
         config=CONFIG,
     )

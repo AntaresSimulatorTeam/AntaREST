@@ -4,7 +4,7 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { AppState } from '../../../reducers';
 import GenericSettingView from '../../../../components/Settings/GenericSettingView';
-import ItemSettings from '../../../../components/Settings/ItemSettings';
+import GenericListView from '../../../../components/Settings/GenericListView';
 import { getUsers, deleteUser} from '../../../../services/api/user';
 import {UserDTO, IDType } from '../../../../common/types';
 import UserModal from './UserModal'
@@ -71,11 +71,6 @@ const UsersSettings = (props: PropTypes) => {
       setUserList(userList.concat(newUser));
     }
 
-    const matchFilter = (input: string) : boolean => {
-      //Very basic search => possibly modify
-      return (input.search(filter) >= 0);
-    }
-
     useEffect(() => {
       const init = async () =>{
 
@@ -89,6 +84,9 @@ const UsersSettings = (props: PropTypes) => {
   
       }
       init();
+      return () => {
+        setUserList([]);
+      }
     }, [user, t, enqueueSnackbar]);
 
     return (
@@ -96,18 +94,14 @@ const UsersSettings = (props: PropTypes) => {
                           placeholder={t('settings:usersSearchbarPlaceholder')}
                           buttonValue={t('settings:createUser')}
                           onButtonClick={() => createNewUser()}>
-                          {
-                            userList.map((item) => 
-                            item.name && // To delete
-                            item.name !== 'admin' && 
-                            matchFilter(item.name) && 
-                                          <ItemSettings key={item.id}
-                                            id={item.id}
-                                            value={String(item.name)}
-                                            view={false}
-                                            onDeleteCLick={onDeleteClick}
-                                            onActionClick={onUpdateClick} />)
-                          }
+      
+        <GenericListView data={userList}
+                        filter={filter}
+                        view={false}
+                        excludeName={['admin']}
+                        onDeleteClick={onDeleteClick}
+                        onActionClick={onUpdateClick}/>
+
         {openModal && <UserModal  open={openModal}  // Why 'openModal &&' ? => Otherwise previous data are still present
                                   userInfos={currentUser}
                                   onNewUserCreaion={onNewUserCreaion}
