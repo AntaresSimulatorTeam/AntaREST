@@ -6,7 +6,7 @@ import { convertStudyDtoToMetadata } from '../utils';
 
 
 const getStudiesRaw = async (): Promise<{[sid: string]: StudyListDTO}> => {
-  const res = await client.get('/studies');
+  const res = await client.get('/v1/studies');
   return res.data;
 };
 
@@ -19,12 +19,12 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
 };
 
 export const getStudyData = async (sid: string, path = '', depth = 1): Promise<any> => {
-  const res = await client.get(`/studies/${sid}/${path}?depth=${depth}`);
+  const res = await client.get(`/v1/studies/${sid}/raw?path=${path}&depth=${depth}`);
   return res.data;
 };
 
 export const createStudy = async (name: string): Promise<string> => {
-  const res = await client.post(`/studies/${name}`);
+  const res = await client.post(`/v1/studies/${name}`);
   return res.data;
 };
 
@@ -34,7 +34,7 @@ export const deleteStudy = async (sid: string): Promise<any> => {
 };
 
 export const getExportUrl = (sid: string, compact = false, skipOutputs = false): string =>
-  `${getConfig().downloadHostUrl || (getConfig().baseUrl + getConfig().restEndpoint)}/studies/${sid}/export?no_output=${skipOutputs}`;
+  `${getConfig().downloadHostUrl || (getConfig().baseUrl + getConfig().restEndpoint)}/v1/studies/${sid}/export?no_output=${skipOutputs}`;
 
 export const importStudy = async (file: File, onProgress?: (progress: number) => void): Promise<string> => {
   const options: AxiosRequestConfig = {};
@@ -53,12 +53,12 @@ export const importStudy = async (file: File, onProgress?: (progress: number) =>
       'Access-Control-Allow-Origin': '*',
     },
   };
-  const res = await client.post('/studies', formData, restconfig);
+  const res = await client.post('/v1/studies', formData, restconfig);
   return res.data;
 };
 
 export const launchStudy = async (sid: string): Promise<string> => {
-  const res = await client.post(`/launcher/run/${sid}`);
+  const res = await client.post(`/v1/launcher/run/${sid}`);
   return res.data;
 };
 
@@ -74,7 +74,7 @@ export interface LaunchJob {
 
 export const getStudyJobs = async (sid?: string): Promise<LaunchJob[]> => {
   const query = sid ? `?study=${sid}` : '';
-  const res = await client.get(`/launcher/jobs${query}`);
+  const res = await client.get(`/v1/launcher/jobs${query}`);
   const data = await res.data;
   return data.map((j: any) => ({
     id: j.id,

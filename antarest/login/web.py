@@ -47,7 +47,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     Returns:
 
     """
-    bp = APIRouter()
+    bp = APIRouter(prefix="/v1")
 
     auth = Auth(config)
 

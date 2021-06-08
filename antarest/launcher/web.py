@@ -12,12 +12,14 @@ from antarest.launcher.service import LauncherService
 
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
-    bp = APIRouter()
+    bp = APIRouter(prefix="/v1")
 
     auth = Auth(config)
 
     @bp.post(
-        "/launcher/run/{study_id}", tags=["Run Studies"], summary="Run study"
+        "/launcher/run/{study_id}",
+        tags=["Run Studies"],
+        summary="Run study",
     )
     def run(
         study_id: str, current_user: JWTUser = Depends(auth.get_current_user)

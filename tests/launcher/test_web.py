@@ -43,7 +43,7 @@ def test_run() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.post(f"/launcher/run/{study}")
+    res = client.post(f"/v1/launcher/run/{study}")
 
     assert res.status_code == 200
     assert res.json() == {"job_id": str(job)}
@@ -65,7 +65,7 @@ def test_result() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get(f"/launcher/jobs/{job}")
+    res = client.get(f"/v1/launcher/jobs/{job}")
 
     assert res.status_code == 200
     assert res.json() == result.to_dict()
@@ -89,11 +89,11 @@ def test_jobs() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get(f"/launcher/jobs?study={str(study_id)}")
+    res = client.get(f"/v1/launcher/jobs?study={str(study_id)}")
     assert res.status_code == 200
     assert res.json() == [result.to_dict()]
 
-    res = client.get(f"/launcher/jobs")
+    res = client.get(f"/v1/launcher/jobs")
     assert res.status_code == 200
     assert res.json() == [result.to_dict()]
     service.get_jobs.assert_has_calls([call(str(study_id)), call(None)])

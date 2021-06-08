@@ -65,7 +65,7 @@ def test_get_matrix() -> None:
     )
     client = TestClient(app)
 
-    path = "/file/my-study/matrix.txt"
+    path = "/v1/file/my-study/matrix.txt"
     result = client.get(path, stream=True)
 
     assert result.status_code == HTTPStatus.OK.value
