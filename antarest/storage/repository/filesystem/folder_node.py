@@ -102,7 +102,7 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
             errors: List[str] = list()
             for key in data:
                 if key not in children:
-                    msg = f"{self.config.path}: key={key} not in {list(children.keys())} for {self.__class__.__name__}"
+                    msg = f"key={key} not in {list(children.keys())} for {self.__class__.__name__}"
                     if raising:
                         raise ValueError(msg)
                     errors += [msg]
