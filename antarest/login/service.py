@@ -235,8 +235,7 @@ class LoginService:
         role_obj = Role(
             type=role.type,
             group=self.groups.get(role.group_id),
-            identity=self.users.get(role.identity_id)
-            or self.ldap.get(role.identity_id),
+            identity=self.users.get(role.identity_id),
         )
         if params.user and any(
             (
@@ -504,15 +503,15 @@ class LoginService:
         Returns: jwt data with user information if auth success, None else.
 
         """
-        intern = self.users.get_by_name(name)
-        if intern and intern.password.check(pwd):  # type: ignore
-            self.logger.info("successful login from intern user %s", name)
-            return self.get_jwt(intern.id)
-
         extern = self.ldap.login(name, pwd)
         if extern:
             self.logger.info("successful login from ldap user %s", name)
             return self.get_jwt(extern.id)
+
+        intern = self.users.get_by_name(name)
+        if intern and intern.password.check(pwd):  # type: ignore
+            self.logger.info("successful login from intern user %s", name)
+            return self.get_jwt(intern.id)
 
         self.logger.error("wrong authentication from user %s", name)
         return None
