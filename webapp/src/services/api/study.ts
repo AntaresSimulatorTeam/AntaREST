@@ -29,7 +29,7 @@ export const createStudy = async (name: string): Promise<string> => {
 };
 
 export const deleteStudy = async (sid: string): Promise<any> => {
-  const res = await client.delete(`/studies/${sid}`);
+  const res = await client.delete(`/v1/studies/${sid}`);
   return res.data;
 };
 
