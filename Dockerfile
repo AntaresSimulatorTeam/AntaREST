@@ -1,4 +1,4 @@
-FROM python:3.6-slim-buster
+FROM python:3.8-slim-buster
 
 ENV ANTAREST_CONF /resources/application.yaml
 ENV UVICORN_WORKERS 8
