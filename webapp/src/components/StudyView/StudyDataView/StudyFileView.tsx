@@ -3,8 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { Theme, createStyles, makeStyles } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { Translation } from 'react-i18next';
-import { getStudyData } from '../../../services/api/study';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
+import { getStudyData } from '../../../services/api/study';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   code: {
@@ -30,7 +30,6 @@ const StudyDataView = (props: PropTypes) => {
     try {
       const res = await getStudyData(study, url);
       setData(res);
-      //setData(res);
     } catch (e) {
       enqueueSnackbar(<Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, { variant: 'error' });
     } finally {
