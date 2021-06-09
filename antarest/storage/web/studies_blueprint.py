@@ -1,11 +1,12 @@
 import io
+import json
 from glob import escape
 from http import HTTPStatus
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, File, Depends, Path, Body
 from fastapi.params import Param
-from starlette.responses import StreamingResponse
+from starlette.responses import StreamingResponse, JSONResponse, Response
 
 from antarest.common.custom_types import JSON
 from antarest.common.jwt import JWTUser
@@ -265,7 +266,14 @@ def create_study_routes(
         parameters = RequestParameters(user=current_user)
         output = storage_service.get(uuid, path, depth, parameters)
 
-        return output
+        json_response = json.dumps(
+            output,
+            ensure_ascii=False,
+            allow_nan=True,
+            indent=None,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return Response(content=json_response, media_type="application/json")
 
     @bp.post(
         "/studies/{uuid}/raw",
