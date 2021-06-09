@@ -372,6 +372,28 @@ def test_set_public_mode() -> None:
     )
 
 
+def test_check_errors():
+    study_service = Mock()
+    study_service.check_errors.return_value = ["Hello", "World"]
+
+    study = Study(id="hello world")
+    repo = Mock()
+    repo.get.return_value = study
+
+    service = StorageService(
+        study_service=study_service,
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        user_service=Mock(),
+        repository=repo,
+        event_bus=Mock(),
+    )
+
+    assert ["Hello", "World"] == service.check_errors("hello world")
+    study_service.check_errors.assert_called_once_with(study)
+    repo.get.assert_called_once_with("hello world")
+
+
 def test_assert_permission() -> None:
     uuid = str(uuid4())
     admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
