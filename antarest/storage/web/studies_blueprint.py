@@ -292,4 +292,10 @@ def create_study_routes(
 
         return content
 
+    @bp.get(
+        "/studies/{uuid}/validate", summary="Launch test validation on study"
+    )
+    def validate(uuid: str) -> Any:
+        return storage_service.check_errors(uuid)
+
     return bp
