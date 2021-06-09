@@ -656,6 +656,10 @@ class StorageService:
             params.get_user_id(),
         )
 
+    def check_errors(self, uuid: str) -> List[str]:
+        study = self._get_study(uuid)
+        return self.study_service.check_errors(cast(RawStudy, study))
+
     def _save_study(
         self,
         study: RawStudy,
