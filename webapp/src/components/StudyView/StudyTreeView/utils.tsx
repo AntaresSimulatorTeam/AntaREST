@@ -25,8 +25,6 @@ export const isJsonLeaf = (studyDataNode: any) => {
   
   
   export const getStudyParams = (data : any, path: string, itemkey: string) : StudyParams | undefined  => {
-    console.log('PATH : ', path)
-    console.log('Itemkey : ', itemkey)
     if (typeof data !== 'object')
     {
       const tmp = data.split('://');

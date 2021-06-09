@@ -23,7 +23,12 @@ const StudyMatrixView = (props: PropTypes) => {
     setLoaded(false);
     try {
       const res = await getStudyData(study, url);
-      setData(res);
+      if (typeof res === 'string') {
+        const fixed = res.replace(/NaN/g, '"NaN"');
+        setData(JSON.parse(fixed));
+      } else {
+        setData(res);
+      }
     } catch (e) {
       enqueueSnackbar(<Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, { variant: 'error' });
     } finally {
