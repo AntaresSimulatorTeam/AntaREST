@@ -1,8 +1,8 @@
 import React, {useEffect, useRef} from "react";
 import {MatrixType} from "../../../../common/types";
 import jspreadsheet from "jspreadsheet-ce";
-import "../../../../../node_modules/jexcel/dist/jexcel.css";
-import "../../../../../node_modules/jsuites/dist/jsuites.css";
+import "./jexcel.css";
+import "./jsuites.css";
 
  interface PropTypes {
    data: MatrixType;
