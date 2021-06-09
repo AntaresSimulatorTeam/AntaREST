@@ -367,8 +367,6 @@ def test_edit_study() -> None:
     mock_storage_service = Mock()
     mock_storage_service.edit_study.return_value = {}
 
-    data = json.dumps({"Hello": "World"})
-
     app = FastAPI(title=__name__)
     build_storage(
         app,
@@ -377,7 +375,7 @@ def test_edit_study() -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    client.post("/v1/studies/my-uuid/raw?path=url/to/change", json=data)
+    client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={"Hello": "World"})
 
     mock_storage_service.edit_study.assert_called_once_with(
         "my-uuid", "url/to/change", {"Hello": "World"}, PARAMS
@@ -388,8 +386,6 @@ def test_edit_study() -> None:
 def test_edit_study_fail() -> None:
     mock_storage_service = Mock()
 
-    data = json.dumps({})
-
     app = FastAPI(title=__name__)
     build_storage(
         app,
@@ -398,7 +394,7 @@ def test_edit_study_fail() -> None:
         user_service=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
-    res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", json=data)
+    res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={})
 
     assert res.status_code == 400
 
