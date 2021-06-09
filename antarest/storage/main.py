@@ -82,5 +82,4 @@ def build_storage(
     application.include_router(create_study_routes(storage_service, config))
     application.include_router(create_utils_routes(storage_service, config))
 
-
     return storage_service
