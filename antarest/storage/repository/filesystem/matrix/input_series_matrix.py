@@ -63,6 +63,6 @@ class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
             )
         if self.nb_columns and len(data) != self.nb_columns:
             errors.append(
-                f"Data was wrong size. expected {self.nb_columns} get {len(data)}"
+                f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}"
             )
         return errors

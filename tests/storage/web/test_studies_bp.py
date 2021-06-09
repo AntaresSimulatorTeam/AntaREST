@@ -406,6 +406,25 @@ def test_edit_study_fail() -> None:
 
 
 @pytest.mark.unit_test
+def test_validate() -> None:
+    mock_service = Mock()
+    mock_service.check_errors.return_value = ["Hello"]
+
+    app = FastAPI(title=__name__)
+    build_storage(
+        app,
+        storage_service=mock_service,
+        config=CONFIG,
+        user_service=Mock(),
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.get("/v1/studies/my-uuid/validate")
+
+    assert res.json() == ["Hello"]
+    mock_service.check_errors.assert_called_once_with("my-uuid")
+
+
+@pytest.mark.unit_test
 def test_study_permission_management(
     tmp_path: Path, storage_service_builder
 ) -> None:
