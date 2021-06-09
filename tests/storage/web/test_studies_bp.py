@@ -377,7 +377,7 @@ def test_edit_study() -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    client.post("/v1/studies/my-uuid/raw?path=url/to/change", data=data)
+    client.post("/v1/studies/my-uuid/raw?path=url/to/change", json=data)
 
     mock_storage_service.edit_study.assert_called_once_with(
         "my-uuid", "url/to/change", {"Hello": "World"}, PARAMS
@@ -398,7 +398,7 @@ def test_edit_study_fail() -> None:
         user_service=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
-    res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", data=data)
+    res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", json=data)
 
     assert res.status_code == 400
 
