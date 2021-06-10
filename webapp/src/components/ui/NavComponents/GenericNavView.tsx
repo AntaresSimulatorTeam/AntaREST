@@ -1,6 +1,6 @@
 import React, { useState, useEffect} from 'react';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
-import NavSettings from '../../components/Settings/NavSettings';
+import Nav from './Nav';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -19,7 +19,7 @@ interface PropTypes {
     initialValue: string;
 }
 
-const GenericSettings = (props: PropTypes) => {
+const GenericNavView = (props: PropTypes) => {
 
   const { items, initialValue} = props;
   const classes = useStyles();
@@ -43,7 +43,7 @@ const GenericSettings = (props: PropTypes) => {
 
   return (
     <div className={classes.root}>
-        <NavSettings  
+        <Nav  
           currentItem={navState}
           items={navList}
           onItemClick={onItemClick}
@@ -53,4 +53,4 @@ const GenericSettings = (props: PropTypes) => {
   );
 };
 
-export default GenericSettings;
+export default GenericNavView;

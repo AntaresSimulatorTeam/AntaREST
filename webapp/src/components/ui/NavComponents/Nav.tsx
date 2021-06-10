@@ -50,7 +50,7 @@ interface PropTypes {
     onItemClick: (item : string) => void
 }
 
-const NavSettings = (props: PropTypes) => {
+const Nav = (props: PropTypes) => {
     const classes = useStyles();
     const {currentItem, items, onItemClick} = props;
     const [t] = useTranslation();
@@ -71,4 +71,4 @@ const NavSettings = (props: PropTypes) => {
 
 }
 
-export default NavSettings
+export default Nav

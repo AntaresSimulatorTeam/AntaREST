@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import moment from 'moment';
 import { useSnackbar } from 'notistack';
 import { makeStyles, Button, createStyles, Theme, Card, CardContent, Typography, Grid, CardActions } from '@material-ui/core';
@@ -12,6 +12,7 @@ import { StudyMetadata } from '../../../common/types';
 import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy, getExportUrl } from '../../../services/api/study';
 import { removeStudies } from '../../../ducks/study';
 import DownloadLink from '../../ui/DownloadLink';
+import ConfirmationModal from '../../ui/ConfirmationModal';
 
 const logError = debug('antares:studyblockview:error');
 
@@ -67,6 +68,7 @@ const StudyBlockSummaryView = (props: PropTypes) => {
   const theme = useTheme();
   const [t] = useTranslation();
   const { study, removeStudy } = props;
+  const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
   const launchStudy = async () => {
     try {
@@ -80,15 +82,14 @@ const StudyBlockSummaryView = (props: PropTypes) => {
 
   const deleteStudy = async () => {
     // eslint-disable-next-line no-alert
-    if (window.confirm(t('studymanager:confirmdelete'))) {
-      try {
-        await callDeleteStudy(study.id);
-        removeStudy(study.id);
-      } catch (e) {
-        enqueueSnackbar(t('studymanager:failtodeletestudy'), { variant: 'error' });
-        logError('Failed to delete study', study, e);
-      }
+    try {
+      await callDeleteStudy(study.id);
+      removeStudy(study.id);
+    } catch (e) {
+      enqueueSnackbar(t('studymanager:failtodeletestudy'), { variant: 'error' });
+      logError('Failed to delete study', study, e);
     }
+    setOpenConfirmationModal(false);
   };
 
   return (
@@ -127,11 +128,15 @@ const StudyBlockSummaryView = (props: PropTypes) => {
             <Button size="small" style={{ color: theme.palette.secondary.main }} onClick={launchStudy}>{t('main:launch')}</Button>
             <DownloadLink url={getExportUrl(study.id, true, false)}><Button size="small" style={{ color: theme.palette.primary.light }}>{t('main:export')}</Button></DownloadLink>
             <DownloadLink url={getExportUrl(study.id, false, false)}><Button size="small" style={{ color: theme.palette.primary.light }}>{t('main:archive')}</Button></DownloadLink>
-            <Button size="small" style={{ float: 'right', color: theme.palette.error.main }} onClick={deleteStudy}>{t('main:delete')}</Button>
+            <Button size="small" style={{ float: 'right', color: theme.palette.error.main }} onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
           </div>
         </CardActions>
+        {openConfirmationModal && <ConfirmationModal open={openConfirmationModal}
+                                                     title={t('main:confirmationModalTitle')}
+                                                     message={t('studymanager:confirmdelete')}
+                                                     handleYes={deleteStudy}
+                                                     handleNo={() => setOpenConfirmationModal(false)}/>}
       </Card>
-
     </div>
   );
 };

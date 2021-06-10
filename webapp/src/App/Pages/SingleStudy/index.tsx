@@ -3,20 +3,29 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Breadcrumbs, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
-import StudyView from '../../components/StudyView';
-import { getStudyData, getStudyJobs, LaunchJob } from '../../services/api/study';
-import PulsingDot from '../../components/ui/PulsingDot';
+import StudyView from '../../../components/StudyView';
+import { getStudyData, getStudyJobs, LaunchJob } from '../../../services/api/study';
+import PulsingDot from '../../../components/ui/PulsingDot';
+import GenericTabView from '../../../components/ui/NavComponents/GenericTabView'
+import Informations from './Informations'
 
 const logError = debug('antares:singlestudyview:error');
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
     height: '100%',
+    width: '100%',
     display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     flexDirection: 'column',
+    overflow: 'hidden',
+    boxSizing: 'border-box'
   },
   breadcrumbs: {
     backgroundColor: '#d7d7d7',
+    width: '100%',
     padding: theme.spacing(1),
   },
   dot: {
@@ -69,6 +78,10 @@ const SingleStudyView = () => {
     }
   }, [studyId]);
 
+  const navData = {
+    'singlestudy:informations': () => <Informations studyId={studyId}/>,
+    'singlestudy:treeView': () => <StudyView study={studyId} />
+  }
   return (
     <div className={classes.root}>
       <Breadcrumbs aria-label="breadcrumb" className={classes.breadcrumbs}>
@@ -80,7 +93,10 @@ const SingleStudyView = () => {
           {studyname}
         </div>
       </Breadcrumbs>
-      { studyId && <StudyView study={studyId} /> }
+      { studyId &&
+        <GenericTabView items={navData}
+          initialValue={'singlestudy:informations'} /> 
+      }
     </div>
   );
 };

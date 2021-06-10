@@ -8,7 +8,7 @@ import createStore from './reducers';
 import { getConfig } from '../services/config';
 import MenuBar from './MenuBar';
 import StudyManagement from './Pages/StudyManagement';
-import SingleStudyView from './Pages/SingleStudyView';
+import SingleStudyView from './Pages/SingleStudy';
 import LoginWrapper from './LoginWrapper';
 import theme, { TOOLBAR_HEIGHT } from './theme';
 import SwaggerDoc from './Pages/SwaggerDoc';

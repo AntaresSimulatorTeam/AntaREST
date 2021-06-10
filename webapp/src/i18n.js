@@ -28,6 +28,7 @@ i18n
     },
     ns: [
       'main',
+      'singlestudy',
       'studymanager',
       'jobs',
       'settings'

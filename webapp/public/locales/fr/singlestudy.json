@@ -1,0 +1,13 @@
+{
+    "informations": "Informations",
+    "treeView": "Vue détaillé",
+    "currentTask": "Tâches",
+    "failtoloadjobs": "Echec du chargement des jobs",
+    "taskId": "Id",
+    "taskStatus": "Status",
+    "taskCreationDate": "Date de création",
+    "taskCompletionDate": "Date de complétion",
+    "taskMessage": "Message",
+    "taskExitCode": "Code retourné",
+    "noTasks": "Pas de tâches en cours"
+}

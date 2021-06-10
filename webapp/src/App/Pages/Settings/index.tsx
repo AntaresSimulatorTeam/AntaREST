@@ -2,7 +2,7 @@ import React from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { AppState } from '../../reducers';
 import {isUserAdmin} from '../../../services/utils'
-import GenericSettings from '../../../components/Settings/GenericSettings'
+import GenericNavView from '../../../components/ui/NavComponents/GenericNavView'
 import GroupsSettings from './Groups';
 import TokensSettings from './Tokens';
 import UsersSettings from './Users';
@@ -32,7 +32,7 @@ const UserSettings = (props: PropTypes) => {
   if (!!user) {
     const isAdmin = isUserAdmin(user);
 
-    return  (<GenericSettings items={isAdmin ? adminUserData : normalUserData}
+    return  (<GenericNavView items={isAdmin ? adminUserData : normalUserData}
                                       initialValue={isAdmin ? 'settings:users' : 'settings:tokens'} />);
   
   }
