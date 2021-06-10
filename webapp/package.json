@@ -71,7 +71,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "bash -c scripts/test_extracted_srclib.sh && react-scripts test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
