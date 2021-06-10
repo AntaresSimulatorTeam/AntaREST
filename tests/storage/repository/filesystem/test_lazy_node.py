@@ -8,7 +8,7 @@ from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 class MockLazyNode(LazyNode[str, str, str]):
     def __init__(self, path: Optional[Path] = None) -> None:
-        super().__init__()
+        super().__init__(url_prefix="file")
         if path:
             self.config = StudyConfig(study_path=path)
 

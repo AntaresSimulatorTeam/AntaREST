@@ -20,7 +20,7 @@ class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
     """
 
     def __init__(self, config: StudyConfig, nb_columns: Optional[int] = None):
-        super().__init__()
+        super().__init__(url_prefix="matrix")
         self.config = config
         self.nb_columns = nb_columns
 

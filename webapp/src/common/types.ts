@@ -1,5 +1,7 @@
 import { Moment } from 'moment';
 
+export type StudyDataType = 'json' | 'file' | 'matrix';
+
 export interface StudyMetadataDTO {
   author: string;
   caption: string;
@@ -120,5 +122,10 @@ export interface UserGroup {
   users: Array<UserRoleDTO>;
 }
 
+export interface MatrixType {
+    columns: Array<string>;
+    index: Array<string | number>;
+    data: Array<Array<number>>;
+}
 
 export default {};
