@@ -75,6 +75,9 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: webapp
+      - name: Check extracted deps
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run check
       - name: Run tests
         run: npm run test
         working-directory: webapp
