@@ -15,8 +15,8 @@ DEFAULT_WORKSPACE_NAME = "default"
 groups_metadata = Table(
     "group_metadata",
     Base.metadata,
-    Column("group_id", Integer, ForeignKey("groups.id")),
-    Column("study_id", Integer, ForeignKey("study.id")),
+    Column("group_id", String(36), ForeignKey("groups.id")),
+    Column("study_id", String(36), ForeignKey("study.id")),
 )
 
 
