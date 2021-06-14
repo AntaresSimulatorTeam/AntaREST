@@ -339,9 +339,7 @@ class StorageService:
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.READ)
         if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(
-                f"Study {uuid} with type {study.type} not recognized"
-            )
+            raise StudyTypeUnsupported(uuid, study.type)
 
         return self.exporter_service.export_study_flat(study, dest, outputs)
 

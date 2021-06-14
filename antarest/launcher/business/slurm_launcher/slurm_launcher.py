@@ -1,5 +1,6 @@
 import argparse
 import glob
+import logging
 import os
 import shutil
 import threading
@@ -21,8 +22,12 @@ from antarest.common.config import Config
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import RequestParameters
 from antarest.common.roles import RoleType
+from antarest.common.utils.fastapi_sqlalchemy import db
 from antarest.launcher.business.ilauncher import ILauncher
+from antarest.launcher.model import JobStatus
 from antarest.storage.service import StorageService
+
+logger = logging.getLogger(__name__)
 
 
 class SlurmLauncher(ILauncher):
@@ -30,7 +35,7 @@ class SlurmLauncher(ILauncher):
         self, config: Config, storage_service: StorageService
     ) -> None:
         super().__init__(config, storage_service)
-        self.callbacks: List[Callable[[str, bool], None]] = []
+        self.callbacks: List[Callable[[str, JobStatus, bool], None]] = []
         self.check_state: bool = True
         self.thread: Optional[threading.Thread] = None
         self.job_id_to_study_id: Dict[str, str] = {}
@@ -49,7 +54,9 @@ class SlurmLauncher(ILauncher):
         self.check_state = False
         self.thread = None
 
-    def add_callback(self, callback: Callable[[str, bool], None]) -> None:
+    def add_callback(
+        self, callback: Callable[[str, JobStatus, bool], None]
+    ) -> None:
         self.callbacks.append(callback)
 
     def _init_launcher_arguments(self) -> argparse.Namespace:
@@ -102,7 +109,7 @@ class SlurmLauncher(ILauncher):
                 "key_password": self.config.launcher.slurm.key_password,
                 "password": self.config.launcher.slurm.password,
             },
-            db_primary_key=self.config.launcher.slurm.db_primary_key,
+            db_primary_key="name",
         )
         return main_parameters
 
@@ -110,9 +117,11 @@ class SlurmLauncher(ILauncher):
     def _delete_study(study_path: Path) -> None:
         shutil.rmtree(study_path)
 
-    def _callback(self, study: StudyDTO) -> None:
+    def _callback(
+        self, study_name: str, status: JobStatus, with_error: bool = False
+    ) -> None:
         for callback in self.callbacks:
-            callback(study.name, study.with_error)
+            callback(study_name, status, with_error)
 
     def _export_output(self, output_path: Path) -> BytesIO:
         data = BytesIO()
@@ -151,6 +160,12 @@ class SlurmLauncher(ILauncher):
             ),
         )
 
+    def _get_job_id_from_study(self, study_id: str) -> Optional[str]:
+        for job in self.job_id_to_study_id:
+            if self.job_id_to_study_id[job] == study_id:
+                return job
+        return None
+
     def _check_studies_state(self) -> None:
         arguments = self._init_launcher_arguments()
         antares_launcher_parameters = self._init_launcher_parameters()
@@ -176,8 +191,22 @@ class SlurmLauncher(ILauncher):
         for study in study_list:
             all_done = all_done and (study.finished or study.with_error)
             if study.finished or study.with_error:
-                self._callback(study)
-                self._import_study_output(study.name)
+                with db():
+                    job_id = self._get_job_id_from_study(study.name)
+                    if job_id is not None:
+                        self._callback(
+                            job_id,
+                            JobStatus.FAILED
+                            if study.with_error
+                            else JobStatus.SUCCESS,
+                            study.with_error,
+                        )
+                        self._import_study_output(study.name)
+                    else:
+                        # should not happen
+                        logger.warning(
+                            f"Failed to retrieve job id from study {study.name}"
+                        )
                 data_repo_tinydb.remove_study(study.name)
                 self._delete_study(
                     self.config.launcher.slurm.local_workspace
@@ -197,6 +226,7 @@ class SlurmLauncher(ILauncher):
 
         launch_uuid = uuid4()
 
+        # TODO do this in a thread and directly return the job id
         study_path = Path(arguments.studies_in) / str(launch_uuid)
 
         self.job_id_to_study_id[str(launch_uuid)] = study_uuid
@@ -207,6 +237,7 @@ class SlurmLauncher(ILauncher):
         )
 
         run_with(arguments, antares_launcher_parameters, show_banner=False)
+        self._callback(str(launch_uuid), JobStatus.RUNNING)
 
         if not self.thread:
             self.start()
