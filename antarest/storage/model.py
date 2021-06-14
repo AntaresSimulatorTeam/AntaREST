@@ -101,3 +101,8 @@ class StudyFolder:
     path: Path
     workspace: str
     groups: List[Group]
+
+
+@dataclass
+class Patch:
+    pass
