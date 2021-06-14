@@ -1,9 +1,7 @@
 from io import BytesIO
 from pathlib import Path
 
-from antarest.common.interfaces.eventbus import IEventBus
 from antarest.storage.business.raw_study_service import RawStudyService
-from antarest.storage.business.raw_study_service import StudyService
 from antarest.storage.model import Study
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
@@ -61,5 +59,5 @@ class ExporterService:
         Returns: content file
 
         """
-         file = self.study_service.get_study_path(metadata) / path
+        file = self.study_service.get_study_path(metadata) / path
         return BytesIO(file.read_bytes())

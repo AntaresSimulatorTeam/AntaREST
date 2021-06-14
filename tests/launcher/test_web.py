@@ -44,7 +44,7 @@ def test_run() -> None:
     res = client.post(f"/v1/launcher/run/{study}")
 
     assert res.status_code == 200
-    assert res.json == {"job_id": str(job)}
+    assert res.json() == {"job_id": str(job)}
     service.run_study.assert_called_once_with(
         study, RequestParameters(ADMIN), "local"
     )

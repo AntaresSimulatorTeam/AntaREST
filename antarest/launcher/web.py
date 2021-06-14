@@ -23,7 +23,9 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Run study",
     )
     def run(
-        study_id: str, current_user: JWTUser = Depends(auth.get_current_user)
+        study_id: str,
+        engine: Optional[str] = None,
+        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         """
         Run study
@@ -57,11 +59,13 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         tags:
           - Run Studies
         """
-        engine = config.launcher.default
-        if "engine" in request.args:
-            engine = request.args["engine"]
+
+        selected_engine = (
+            engine if engine is not None else config.launcher.default
+        )
+
         params = RequestParameters(user=current_user)
-        return jsonify({"job_id": service.run_study(study_id, params, engine)})
+        return {"job_id": service.run_study(study_id, params, selected_engine)}
 
     @bp.get("/launcher/jobs", tags=["Run Studies"], summary="Retrieve jobs")
     def get_job(

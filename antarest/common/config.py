@@ -143,6 +143,7 @@ class LauncherConfig:
     """
     Sub config object dedicated to launcher module
     """
+
     default: str = "local"
     local: LocalConfig = LocalConfig()
     slurm: SlurmConfig = SlurmConfig()

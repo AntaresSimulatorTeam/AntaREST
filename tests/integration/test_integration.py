@@ -28,21 +28,21 @@ def test_main(app: FastAPI):
 
     # create some new users
     # TODO check for bad username or empty password
-    res = client.post(
+    client.post(
         "/v1/users",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
         json={"name": "George", "password": "mypass"},
     )
-    res = client.post(
+    client.post(
         "/v1/users",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
         json={"name": "Fred", "password": "mypass"},
     )
-    res = client.post(
+    client.post(
         "/v1/users",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
