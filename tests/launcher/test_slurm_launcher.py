@@ -93,9 +93,7 @@ def test_init_slurm_launcher_parameters():
         "key_password": config.launcher.slurm.key_password,
         "password": config.launcher.slurm.password,
     }
-    assert (
-        main_parameters.db_primary_key == config.launcher.slurm.db_primary_key
-    )
+    assert main_parameters.db_primary_key == "name"
 
 
 @pytest.mark.unit_test

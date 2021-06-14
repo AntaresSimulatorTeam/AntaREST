@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Optional, List, Dict
 
@@ -6,6 +7,8 @@ from dataclasses import dataclass, field
 
 from antarest.common.custom_types import JSON
 from antarest.common.roles import RoleType
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -91,7 +94,7 @@ class LocalConfig:
     binaries: Dict[str, Path] = field(default_factory=lambda: {})
 
     @staticmethod
-    def from_dict(data: JSON) -> "LocalConfig":
+    def from_dict(data: JSON) -> Optional["LocalConfig"]:
         return LocalConfig(
             binaries={v: Path(p) for v, p in data["binaries"].items()},
         )
@@ -145,15 +148,26 @@ class LauncherConfig:
     """
 
     default: str = "local"
-    local: LocalConfig = LocalConfig()
-    slurm: SlurmConfig = SlurmConfig()
+    local: Optional[LocalConfig] = LocalConfig()
+    slurm: Optional[SlurmConfig] = SlurmConfig()
 
     @staticmethod
     def from_dict(data: JSON) -> "LauncherConfig":
+        try:
+            local = LocalConfig.from_dict(data["local"])
+        except KeyError:
+            logger.info("Could not load local launcher")
+            local = None
+
+        try:
+            slurm = SlurmConfig.from_dict(data["slurm"])
+        except KeyError:
+            logger.info("Could not load slurm launcher")
+            slurm = None
         return LauncherConfig(
             default=data.get("default", "local"),
-            local=LocalConfig.from_dict(data["local"]),
-            slurm=SlurmConfig.from_dict(data["slurm"]),
+            local=local,
+            slurm=slurm,
         )
 
 

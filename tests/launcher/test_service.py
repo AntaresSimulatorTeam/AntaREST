@@ -33,11 +33,11 @@ def test_service_run_study(get_current_user_mock):
 
     event_bus = Mock()
 
-    running = JobResult(
-        id=str(uuid), study_id="study_uuid", job_status=JobStatus.RUNNING
+    pending = JobResult(
+        id=str(uuid), study_id="study_uuid", job_status=JobStatus.PENDING
     )
     repository = Mock()
-    repository.save.return_value = running
+    repository.save.return_value = pending
 
     launcher_service = LauncherService(
         config=Config(),
@@ -60,7 +60,7 @@ def test_service_run_study(get_current_user_mock):
     )
 
     assert job_id == uuid
-    repository.save.assert_called_once_with(running)
+    repository.save.assert_called_once_with(pending)
     event_bus.push.assert_called_once_with(
         Event(
             EventType.STUDY_JOB_STARTED,

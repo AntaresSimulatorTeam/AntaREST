@@ -30,6 +30,7 @@ from antarest.storage.service import StorageService
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
+
 class SlurmLauncher(ILauncher):
     def __init__(
         self, config: Config, storage_service: StorageService

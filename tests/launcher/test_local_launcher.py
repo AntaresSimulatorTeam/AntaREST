@@ -7,6 +7,7 @@ from antarest.common.config import Config
 from antarest.launcher.business.local_launcher.local_launcher import (
     LocalLauncher,
 )
+from antarest.launcher.model import JobStatus
 
 
 @pytest.mark.unit_test
@@ -22,4 +23,4 @@ def test_compute():
         antares_solver_path="echo", study_path="Hello, World!", uuid=uuid
     )
 
-    callback.assert_called_once_with(str(uuid), False)
+    callback.assert_called_once_with(str(uuid), JobStatus.SUCCESS, False)

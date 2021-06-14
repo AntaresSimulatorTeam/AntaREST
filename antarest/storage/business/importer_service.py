@@ -108,7 +108,7 @@ class ImporterService:
             / "output"
             / "imported_output"
         )
-        path_output.mkdir()
+        os.makedirs(path_output)
         StorageServiceUtils.extract_zip(stream, path_output)
         fix_study_root(path_output)
 
