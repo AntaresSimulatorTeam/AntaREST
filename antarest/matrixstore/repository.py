@@ -9,7 +9,12 @@ from sqlalchemy import exists
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.common.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.model import Matrix, MatrixType, MatrixFreq
+from antarest.matrixstore.model import (
+    Matrix,
+    MatrixType,
+    MatrixFreq,
+    MatrixContent,
+)
 
 
 class MatrixRepository:
@@ -60,8 +65,6 @@ class MatrixRepository:
 
 
 class MatrixContentRepository:
-    ITEMS = ["columns", "index", "data"]
-
     def __init__(self, config: Config) -> None:
         self.bucket = config.matrixstore.bucket
 
@@ -69,13 +72,16 @@ class MatrixContentRepository:
     def _compute_hash(data: str) -> str:
         return hashlib.md5(data.encode()).hexdigest()
 
-    def get(self, id: str) -> Optional[JSON]:
+    def get(self, id: str) -> Optional[MatrixContent]:
         file = self.bucket / id
-        return json.load(open(file)) if file.exists() else None
+        if not file.exists():
+            return None
 
-    def save(self, data: JSON) -> str:
-        data = {i: data[i] for i in MatrixContentRepository.ITEMS}
-        stringify = json.dumps(data)
+        data = json.load(open(file))
+        return MatrixContent.from_dict(data)  # type: ignore
+
+    def save(self, content: MatrixContent) -> str:
+        stringify = content.to_json()
         h = MatrixContentRepository._compute_hash(stringify)
         (self.bucket / h).write_text(stringify)
 

@@ -1,5 +1,5 @@
 import enum
-from typing import List
+from typing import List, Any, Optional
 
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin
@@ -30,6 +30,19 @@ class Matrix(Base):  # type: ignore
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Matrix):
+            return False
+
+        res: bool = (
+            self.id == other.id
+            and self.type == other.type
+            and self.freq == other.freq
+            and self.created_at == other.created_at
+            and self.updated_at == other.updated_at
+        )
+        return res
+
 
 @dataclass
 class MatrixDTO(DataClassJsonMixin):  # type: ignore
@@ -40,3 +53,11 @@ class MatrixDTO(DataClassJsonMixin):  # type: ignore
     index: List[str]
     columns: List[str]
     data: List[List[int]]
+    id: str = ""
+
+
+@dataclass
+class MatrixContent(DataClassJsonMixin):  # type: ignore
+    data: List[List[int]]
+    index: List[str]
+    columns: List[str]

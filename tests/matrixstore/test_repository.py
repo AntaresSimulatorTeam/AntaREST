@@ -7,7 +7,12 @@ from sqlalchemy import create_engine
 from antarest.common.config import Config, MatrixStoreConfig
 from antarest.common.persistence import Base
 from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.matrixstore.model import Matrix, MatrixType, MatrixFreq
+from antarest.matrixstore.model import (
+    Matrix,
+    MatrixType,
+    MatrixFreq,
+    MatrixContent,
+)
 from antarest.matrixstore.repository import (
     MatrixRepository,
     MatrixContentRepository,
@@ -49,8 +54,12 @@ def test_bucket_cyclelife(tmp_path: Path):
     config = Config(matrixstore=MatrixStoreConfig(bucket=tmp_path))
     repo = MatrixContentRepository(config)
 
-    a = {"index": [1, 2], "columns": ["a", "b"], "data": [[1, 2], [3, 4]]}
-    b = {"index": [3, 4], "columns": ["c", "d"], "data": [[5, 6], [7, 8]]}
+    a = MatrixContent(
+        index=["1", "2"], columns=["a", "b"], data=[[1, 2], [3, 4]]
+    )
+    b = MatrixContent(
+        index=["3", "4"], columns=["c", "d"], data=[[5, 6], [7, 8]]
+    )
 
     aid = repo.save(a)
     assert aid == repo.save(a)
