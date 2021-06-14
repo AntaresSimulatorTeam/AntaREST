@@ -72,6 +72,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "check": "bash -c scripts/test_extracted_srclib.sh",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx,.css",
     "test": " react-scripts test",
     "eject": "react-scripts eject"
   },
