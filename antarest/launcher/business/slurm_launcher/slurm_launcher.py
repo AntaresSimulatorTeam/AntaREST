@@ -28,7 +28,7 @@ from antarest.launcher.model import JobStatus
 from antarest.storage.service import StorageService
 
 logger = logging.getLogger(__name__)
-
+logging.getLogger("paramiko").setLevel("WARN")
 
 class SlurmLauncher(ILauncher):
     def __init__(
@@ -160,12 +160,6 @@ class SlurmLauncher(ILauncher):
             ),
         )
 
-    def _get_job_id_from_study(self, study_id: str) -> Optional[str]:
-        for job in self.job_id_to_study_id:
-            if self.job_id_to_study_id[job] == study_id:
-                return job
-        return None
-
     def _check_studies_state(self) -> None:
         arguments = self._init_launcher_arguments()
         antares_launcher_parameters = self._init_launcher_parameters()
@@ -192,7 +186,7 @@ class SlurmLauncher(ILauncher):
             all_done = all_done and (study.finished or study.with_error)
             if study.finished or study.with_error:
                 with db():
-                    job_id = self._get_job_id_from_study(study.name)
+                    job_id = self.job_id_to_study_id.get(study.name, None)
                     if job_id is not None:
                         self._callback(
                             job_id,
