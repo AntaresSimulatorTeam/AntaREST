@@ -98,7 +98,9 @@ def test_init_slurm_launcher_parameters():
 
 @pytest.mark.unit_test
 def test_slurm_launcher_delete_function(tmp_path: str):
-    slurm_launcher = SlurmLauncher(config=Mock(), storage_service=Mock())
+    config = Mock()
+    config.launcher.slurm.local_workspace = Path(tmp_path)
+    slurm_launcher = SlurmLauncher(config=config, storage_service=Mock())
     directory_path = Path(tmp_path) / "directory"
     directory_path.mkdir()
     (directory_path / "file.txt").touch()

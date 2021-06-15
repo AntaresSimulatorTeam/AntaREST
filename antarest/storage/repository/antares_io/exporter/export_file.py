@@ -38,7 +38,13 @@ class Exporter:
         outputs: bool = False,
     ) -> None:
         ignore_patterns = (
-            shutil.ignore_patterns("output") if not outputs else None
+            (
+                lambda directory, contents: ["output"]
+                if directory == path_study
+                else []
+            )
+            if not outputs
+            else None
         )
         shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
 

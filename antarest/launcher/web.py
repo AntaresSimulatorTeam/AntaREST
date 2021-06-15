@@ -84,4 +84,12 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     ) -> Any:
         return service.get_result(job_id).to_dict()
 
+    @bp.get(
+        "/launcher/engines",
+        tags=["Run Studies"],
+        summary="Retrieve available engines",
+    )
+    def get_engines() -> Any:
+        return {"engines": service.get_launchers()}
+
     return bp

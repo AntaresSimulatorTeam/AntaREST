@@ -93,3 +93,11 @@ class JWTUser:
 
         """
         return bool(self.id == user.id)
+
+
+DEFAULT_ADMIN_USER = JWTUser(
+    id=1,
+    impersonator=1,
+    type="users",
+    groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
+)

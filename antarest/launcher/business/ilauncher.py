@@ -20,7 +20,7 @@ class ILauncher(ABC):
         pass
 
     @abstractmethod
-    def add_callback(
+    def add_statusupdate_callback(
         self, callback: Callable[[str, JobStatus, bool], None]
     ) -> None:
         pass

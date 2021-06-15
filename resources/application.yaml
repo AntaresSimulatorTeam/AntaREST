@@ -24,26 +24,26 @@ launcher:
   local:
     binaries:
       700: path/to/700
-  slurm:
-    local_workspace: path/to/workspace
-    username: username
-    hostname: 0.0.0.0
-    port: 22
-    private_key_file: path/to/key
-    key_password: key_password
-    password: password_is_optional_but_necessary_if_key_is_absent
-    default_wait_time: 900
-    default_time_limit: 172800
-    default_n_cpu: 12
-    default_json_db_name: launcher_db.json
-    slurm_script_path: /path/to/launchantares_v1.1.3.sh
-    db_primary_key: name
-    antares_versions_on_remote_server :
-      - "610"
-      - "700"
-      - "710"
-      - "720"
-      - "800"
+#  slurm:
+#    local_workspace: path/to/workspace
+#    username: username
+#    hostname: 0.0.0.0
+#    port: 22
+#    private_key_file: path/to/key
+#    key_password: key_password
+#    password: password_is_optional_but_necessary_if_key_is_absent
+#    default_wait_time: 900
+#    default_time_limit: 172800
+#    default_n_cpu: 12
+#    default_json_db_name: launcher_db.json
+#    slurm_script_path: /path/to/launchantares_v1.1.3.sh
+#    db_primary_key: name
+#    antares_versions_on_remote_server :
+#      - "610"
+#      - "700"
+#      - "710"
+#      - "720"
+#      - "800"
 
 
 debug: true

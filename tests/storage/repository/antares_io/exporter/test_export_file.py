@@ -37,6 +37,8 @@ def test_export_flat(tmp_path: Path):
     root.mkdir()
     (root / "test").mkdir()
     (root / "test/file.txt").write_text("Bonjour")
+    (root / "test/output").mkdir()
+    (root / "test/output/file.txt").write_text("Test")
     (root / "file.txt").write_text("Hello, World")
     (root / "output").mkdir()
     (root / "output/file.txt").write_text("42")
@@ -45,6 +47,8 @@ def test_export_flat(tmp_path: Path):
     root_without_output.mkdir()
     (root_without_output / "test").mkdir()
     (root_without_output / "test/file.txt").write_text("Bonjour")
+    (root_without_output / "test/output").mkdir()
+    (root_without_output / "test/output/file.txt").write_text("Test")
     (root_without_output / "file.txt").write_text("Hello, World")
 
     root_hash = dirhash(root, "md5")

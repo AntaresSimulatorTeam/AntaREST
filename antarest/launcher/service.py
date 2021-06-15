@@ -1,6 +1,9 @@
 from datetime import datetime
+from http import HTTPStatus
 from typing import List, Optional
 from uuid import UUID
+
+from fastapi import HTTPException
 
 from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import (
@@ -21,6 +24,13 @@ class JobNotFound(Exception):
     pass
 
 
+class LauncherServiceNotAvailableException(HTTPException):
+    def __init__(self, engine: str):
+        super(LauncherServiceNotAvailableException, self).__init__(
+            HTTPStatus.BAD_REQUEST, f"The engine {engine} is not available"
+        )
+
+
 class LauncherService:
     def __init__(
         self,
@@ -38,7 +48,10 @@ class LauncherService:
             config, storage_service
         )
         for _, launcher in self.launchers.items():
-            launcher.add_callback(self.update)
+            launcher.add_statusupdate_callback(self.update)
+
+    def get_launchers(self):
+        return list(self.launchers.keys())
 
     def update(
         self, job_uuid: str, status: JobStatus, failed: bool = False
@@ -63,6 +76,8 @@ class LauncherService:
             uuid=study_uuid, params=params
         )
         study_version = study_info["antares"]["version"]
+        if launcher not in self.launchers:
+            raise LauncherServiceNotAvailableException(launcher)
         job_uuid: UUID = self.launchers[launcher].run_study(
             study_uuid, study_version, params
         )

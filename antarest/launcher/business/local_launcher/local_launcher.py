@@ -61,7 +61,7 @@ class LocalLauncher(ILauncher):
             else JobStatus.SUCCESS,
         )
 
-    def add_callback(
+    def add_statusupdate_callback(
         self, callback: Callable[[str, JobStatus, bool], None]
     ) -> None:
         self.callbacks.append(callback)

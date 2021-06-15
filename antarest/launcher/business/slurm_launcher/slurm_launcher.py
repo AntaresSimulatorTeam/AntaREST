@@ -19,7 +19,7 @@ from antareslauncher.main_option_parser import (
 )
 from antareslauncher.study_dto import StudyDTO
 from antarest.common.config import Config
-from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
 from antarest.common.roles import RoleType
 from antarest.common.utils.fastapi_sqlalchemy import db
@@ -55,7 +55,7 @@ class SlurmLauncher(ILauncher):
         self.check_state = False
         self.thread = None
 
-    def add_callback(
+    def add_statusupdate_callback(
         self, callback: Callable[[str, JobStatus, bool], None]
     ) -> None:
         self.callbacks.append(callback)
@@ -114,9 +114,12 @@ class SlurmLauncher(ILauncher):
         )
         return main_parameters
 
-    @staticmethod
-    def _delete_study(study_path: Path) -> None:
-        shutil.rmtree(study_path)
+    def _delete_study(self, study_path: Path) -> None:
+        if (
+            self.config.launcher.slurm.local_workspace.absolute()
+            in study_path.absolute().parents
+        ):
+            shutil.rmtree(study_path)
 
     def _callback(
         self, study_name: str, status: JobStatus, with_error: bool = False
@@ -127,12 +130,9 @@ class SlurmLauncher(ILauncher):
     def _export_output(self, output_path: Path) -> BytesIO:
         data = BytesIO()
         zipf = ZipFile(data, "w", ZIP_DEFLATED)
-        current_dir = os.getcwd()
-        os.chdir(output_path)
-        for path in glob.glob("**", recursive=True):
+        for path in output_path.glob("**"):
             zipf.write(path, path)
         zipf.close()
-        os.chdir(current_dir)
         data.seek(0)
         return data
 
@@ -149,16 +149,7 @@ class SlurmLauncher(ILauncher):
         self.storage_service.import_output(
             study_id,
             output,
-            params=RequestParameters(
-                JWTUser(
-                    id=1,
-                    impersonator=1,
-                    type="users",
-                    groups=[
-                        JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
-                    ],
-                )
-            ),
+            params=RequestParameters(DEFAULT_ADMIN_USER),
         )
 
     def _check_studies_state(self) -> None:
@@ -213,6 +204,15 @@ class SlurmLauncher(ILauncher):
         if all_done:
             self.stop()
 
+    def _clean_local_workspace(self):
+        local_workspace = self.config.launcher.slurm.local_workspace
+        for filename in os.listdir(local_workspace):
+            file_path = os.path.join(local_workspace, filename)
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+
     def run_study(
         self, study_uuid: str, version: str, params: RequestParameters
     ) -> UUID:  # TODO: version ?
@@ -230,6 +230,9 @@ class SlurmLauncher(ILauncher):
         self.storage_service.export_study_flat(
             study_uuid, params, study_path, outputs=False
         )
+
+        if not self.thread:
+            self._clean_local_workspace()
 
         run_with(arguments, antares_launcher_parameters, show_banner=False)
         self._callback(str(launch_uuid), JobStatus.RUNNING)

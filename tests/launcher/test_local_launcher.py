@@ -17,7 +17,7 @@ def test_compute():
     uuid = uuid4()
 
     callback = Mock()
-    local_launcher.add_callback(callback)
+    local_launcher.add_statusupdate_callback(callback)
 
     local_launcher._compute(
         antares_solver_path="echo", study_path="Hello, World!", uuid=uuid
