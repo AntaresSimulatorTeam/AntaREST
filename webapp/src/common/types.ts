@@ -27,7 +27,7 @@ export interface StudyMetadata {
 export enum RoleType {
   ADMIN = 40,
   RUNNER = 30,
-  WRITER =  20,
+  WRITER = 20,
   READER = 10
 }
 
@@ -53,8 +53,8 @@ export interface UserDTO {
 
 export interface UserRoleDTO {
   id: number;
-  name: string; 
-  role: RoleType; 
+  name: string;
+  role: RoleType;
 }
 
 export interface GroupDTO {
@@ -91,7 +91,6 @@ export interface BotDTO {
   owner: number;
   isAuthor: boolean;
 }
-
 
 export interface BotRoleCreateDTO {
   group: string;

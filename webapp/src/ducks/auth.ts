@@ -10,7 +10,6 @@ import { UserInfo } from '../common/types';
 import { setAuth } from '../services/api/client';
 import { AppState } from '../App/reducers';
 
-
 /** ******************************************* */
 /* State                                        */
 /** ******************************************* */
@@ -63,13 +62,11 @@ export const logoutAction = (): LogoutAction => ({
   type: 'AUTH/LOGOUT',
 });
 
-
 type AuthAction = LoginAction | LogoutAction;
 
 /** ******************************************* */
 /* Selectors                                    */
 /** ******************************************* */
-
 
 /** ******************************************* */
 /* Reducer                                      */

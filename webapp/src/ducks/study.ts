@@ -67,7 +67,6 @@ type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | A
 
 export const getCurrentStudy = (state: AppState): StudyMetadata | undefined => state.study.studies.find((s) => s.id === state.study.current);
 
-
 /** ******************************************* */
 /* Reducer                                      */
 /** ******************************************* */

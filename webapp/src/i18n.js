@@ -31,7 +31,7 @@ i18n
       'singlestudy',
       'studymanager',
       'jobs',
-      'settings'
+      'settings',
     ],
     defaultNS: 'main',
   });

@@ -68,7 +68,6 @@ const StudyManagement = (props: PropTypes) => {
     return () => removeWsListener(listen);
   }, []);
 
-
   return (
     <div className={classes.root}>
       <div className={classes.header}>

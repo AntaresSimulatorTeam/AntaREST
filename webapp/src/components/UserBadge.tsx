@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import {useHistory} from 'react-router'
+import { useHistory } from 'react-router';
 import { Button, Popover, ButtonBase, makeStyles, Theme, createStyles } from '@material-ui/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useTranslation } from 'react-i18next';
@@ -35,7 +35,7 @@ const useStyles = makeStyles((theme: Theme) =>
     username: {
       color: theme.palette.primary.main,
       fontSize: '1.2em',
-      margin: theme.spacing(1)
+      margin: theme.spacing(1),
     },
     logoutbutton: {
       margin: theme.spacing(1),
@@ -76,23 +76,20 @@ const UserBadge = (props: PropTypes) => {
 
     // On ferme la fenêtre de menu
     handleClose();
-  }
+  };
 
   useEffect(() => {
     const init = async () => {
-
-        if(!!user)
-        {
-          const respUser = await getUser(user.id);
-          setUserName(respUser.name);
-        }
-    }
+      if (user) {
+        const respUser = await getUser(user.id);
+        setUserName(respUser.name);
+      }
+    };
     init();
     return () => {
       setUserName('');
-    }
-  
-  }, [user])
+    };
+  }, [user]);
 
   const open = Boolean(anchorEl);
 
@@ -139,4 +136,3 @@ const UserBadge = (props: PropTypes) => {
 };
 
 export default connector(UserBadge);
-
