@@ -1,5 +1,6 @@
 import client from './client';
-import { UserDTO,
+import {
+  UserDTO,
   GroupDTO,
   RoleCreationDTO,
   RoleDTO,
@@ -76,8 +77,8 @@ export const deleteGroup = async (id: string): Promise<string> => {
 /* Roles                                        */
 /** ******************************************* */
 
-export const getAllRolesInGroup = async (group_id: string): Promise<Array<RoleDTO>> => {
-  const res = await client.get(`/v1/roles/group/${group_id}`);
+export const getAllRolesInGroup = async (groupId: string): Promise<Array<RoleDTO>> => {
+  const res = await client.get(`/v1/roles/group/${groupId}`);
   return res.data;
 };
 
@@ -119,13 +120,12 @@ export const deleteBot = async (id: number): Promise<any> => {
 };
 
 export const getAdminTokenList = async (): Promise<Array<UserToken>> => {
-  try {
-    const tokenList: Array<UserToken> = [];
-    const users = await getUsers();
+  const users = await getUsers();
 
-    for (const user of users) tokenList.push({ user, bots: await getBots(user.id) });
-    return tokenList;
-  } catch (e) {
-    throw e;
-  }
+  return Promise.all(
+    users.map(async (user) => ({
+      user,
+      bots: await getBots(user.id),
+    })),
+  );
 };

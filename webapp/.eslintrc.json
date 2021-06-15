@@ -5,13 +5,22 @@
     },
     "extends": [
         "plugin:@typescript-eslint/recommended",
-        "airbnb"
+        "airbnb",
+        "airbnb/hooks"
     ],
     "globals": {
         "Atomics": "readonly",
         "SharedArrayBuffer": "readonly"
     },
-    "ignorePatterns": ["build/*"],
+    "ignorePatterns": [
+        "build/*",
+        "serviceWorker.ts",
+        "**/*.test.tsx",
+        "**/*.test.ts",
+        "jexcel.css",
+        "jsuites.css",
+        "particles.css"
+    ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaFeatures": {
@@ -22,7 +31,8 @@
     },
     "plugins": [
         "react",
-        "@typescript-eslint"
+        "@typescript-eslint",
+        "react-hooks"
     ],
     "rules": {
         "import/extensions": [

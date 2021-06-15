@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import React, { useState, useEffect } from 'react';
 import { createStyles, makeStyles, Theme, TextField } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
@@ -63,17 +64,17 @@ const UserModal = (props: PropTypes) => {
     }
   };
 
-  const deleteRoleFromList = (group_id: string) => {
+  const deleteRoleFromList = (groupId: string) => {
     // Delete role from roleList
-    const tmpList = roleList.filter((item) => item.group_id !== group_id);
+    const tmpList = roleList.filter((item) => item.group_id !== groupId);
     setRoleList(tmpList);
   };
 
   // Update Role in roleList
-  const updateRoleFromList = (group_id: string, type: RoleType) => {
+  const updateRoleFromList = (groupId: string, type: RoleType) => {
     // 1) Find the role
     const tmpList: Array<RoleDTO> = ([] as Array<RoleDTO>).concat(roleList);
-    const index = roleList.findIndex((item) => item.group_id === group_id);
+    const index = roleList.findIndex((item) => item.group_id === groupId);
     if (index >= 0) {
       // 2) Update role in roleList
       tmpList[index].type = type;

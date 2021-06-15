@@ -36,11 +36,11 @@ const GroupsSettings = (props: PropTypes) => {
     setActiveGroup(undefined);
   };
 
-  const onUpdateClick = (group_id: string) => {
-    const group_found = groupList.find((item) => item.group.id === group_id);
+  const onUpdateClick = (groupId: string) => {
+    const groupFound = groupList.find((item) => item.group.id === groupId);
 
-    if (group_found) {
-      setActiveGroup(group_found.group);
+    if (groupFound) {
+      setActiveGroup(groupFound.group);
       setOpenModal(true);
     }
   };
@@ -112,12 +112,11 @@ const GroupsSettings = (props: PropTypes) => {
   useEffect(() => {
     const init = async () => {
       try {
-        let groups = await getGroups();
-        groups = groups.filter((item) => item.id !== 'admin');
-        const tmpList: Array<UserGroup> = [];
-
-        for (const group of groups) tmpList.push({ group, users: [] });
-        setGroupList(tmpList);
+        const res = await getGroups();
+        const groups = res
+          .filter((item) => item.id !== 'admin')
+          .map((group) => ({ group, users: [] }));
+        setGroupList(groups);
       } catch (e) {
         enqueueSnackbar(t('settings:groupsError'), { variant: 'error' });
       }

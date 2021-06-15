@@ -64,4 +64,8 @@ const StudyTreeView = (props: PropTypes) => {
   );
 };
 
+StudyTreeItem.defaultProps = {
+  path: '/',
+};
+
 export default StudyTreeView;

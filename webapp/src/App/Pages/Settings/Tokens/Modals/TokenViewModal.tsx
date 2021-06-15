@@ -48,8 +48,8 @@ const TokenViewModal = (props: PropTypes) => {
     const init = async () => {
       try {
         if (bot) {
-          const bot_infos = await getBotInfos(bot.id);
-          setBotInfos(bot_infos);
+          const res = await getBotInfos(bot.id);
+          setBotInfos(res);
         }
       } catch (e) {
         enqueueSnackbar(t('settings:tokensError'), { variant: 'error' });
