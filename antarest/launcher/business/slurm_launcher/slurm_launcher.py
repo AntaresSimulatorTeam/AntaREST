@@ -126,27 +126,24 @@ class SlurmLauncher(ILauncher):
         for callback in self.callbacks:
             callback(study_name, status, with_error)
 
-    def _export_output(self, output_path: Path) -> BytesIO:
-        data = BytesIO()
-        zipf = ZipFile(data, "w", ZIP_DEFLATED)
-        for path in output_path.glob("**"):
-            zipf.write(path, path)
-        zipf.close()
-        data.seek(0)
-        return data
-
     def _import_study_output(self, job_id: str) -> None:
         study_id = self.job_id_to_study_id[job_id]
 
-        output = self._export_output(
+        zipped_output = str(
             self.slurm_config.local_workspace / "OUTPUT" / job_id / "output"
         )
-
-        self.storage_service.import_output(
-            study_id,
-            output,
-            params=RequestParameters(DEFAULT_ADMIN_USER),
+        shutil.make_archive(
+            zipped_output,
+            "zip",
+            self.slurm_config.local_workspace / "OUTPUT" / job_id / "output",
         )
+
+        with open(zipped_output + ".zip", "rb") as fh:
+            self.storage_service.import_output(
+                study_id,
+                fh,
+                params=RequestParameters(DEFAULT_ADMIN_USER),
+            )
 
     def _check_studies_state(self) -> None:
         arguments = self._init_launcher_arguments()
@@ -173,32 +170,37 @@ class SlurmLauncher(ILauncher):
         for study in study_list:
             all_done = all_done and (study.finished or study.with_error)
             if study.finished or study.with_error:
-                with db():
-                    job_id = self.job_id_to_study_id.get(study.name, None)
-                    if job_id is not None:
-                        self._callback(
-                            job_id,
-                            JobStatus.FAILED
-                            if study.with_error
-                            else JobStatus.SUCCESS,
-                            study.with_error,
-                        )
-                        self._import_study_output(study.name)
-                    else:
-                        # should not happen
-                        logger.warning(
-                            f"Failed to retrieve job id from study {study.name}"
-                        )
-                data_repo_tinydb.remove_study(study.name)
-                self._delete_study(
-                    self.slurm_config.local_workspace / "OUTPUT" / study.name
-                )
-                del self.job_id_to_study_id[study.name]
+                try:
+                    with db():
+                        job_id = self.job_id_to_study_id.get(study.name, None)
+                        if job_id is not None:
+                            self._callback(
+                                job_id,
+                                JobStatus.FAILED
+                                if study.with_error
+                                else JobStatus.SUCCESS,
+                                study.with_error,
+                            )
+                            self._import_study_output(study.name)
+                        else:
+                            # should not happen
+                            logger.warning(
+                                f"Failed to retrieve job id from study {study.name}"
+                            )
+                finally:
+                    data_repo_tinydb.remove_study(study.name)
+                    self._delete_study(
+                        self.slurm_config.local_workspace
+                        / "OUTPUT"
+                        / study.name
+                    )
+                    del self.job_id_to_study_id[study.name]
 
         if all_done:
             self.stop()
 
     def _clean_local_workspace(self) -> None:
+        logger.info("Cleaning up slurm workspace")
         local_workspace = self.slurm_config.local_workspace
         for filename in os.listdir(local_workspace):
             file_path = os.path.join(local_workspace, filename)
@@ -220,13 +222,13 @@ class SlurmLauncher(ILauncher):
 
         self.job_id_to_study_id[str(launch_uuid)] = study_uuid
 
+        if not self.thread:
+            self._clean_local_workspace()
+
         # export study
         self.storage_service.export_study_flat(
             study_uuid, params, study_path, outputs=False
         )
-
-        if not self.thread:
-            self._clean_local_workspace()
 
         run_with(arguments, antares_launcher_parameters, show_banner=False)
         self._callback(str(launch_uuid), JobStatus.RUNNING)

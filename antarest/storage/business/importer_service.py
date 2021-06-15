@@ -109,41 +109,47 @@ class ImporterService:
             / "imported_output"
         )
         os.makedirs(path_output)
-        StorageServiceUtils.extract_zip(stream, path_output)
-        fix_study_root(path_output)
 
-        ini_reader = IniReader()
-        info_antares_output = ini_reader.read(
-            path_output / "info.antares-output"
-        )["general"]
+        try:
+            StorageServiceUtils.extract_zip(stream, path_output)
+            fix_study_root(path_output)
 
-        date = datetime.fromtimestamp(
-            int(info_antares_output["timestamp"])
-        ).strftime("%Y%m%d-%H%M")
+            ini_reader = IniReader()
+            info_antares_output = ini_reader.read(
+                path_output / "info.antares-output"
+            )["general"]
 
-        mode = "eco" if info_antares_output["mode"] == "Economy" else "adq"
-        name = (
-            f"-{info_antares_output['name']}"
-            if info_antares_output["name"]
-            else ""
-        )
+            date = datetime.fromtimestamp(
+                int(info_antares_output["timestamp"])
+            ).strftime("%Y%m%d-%H%M")
 
-        output_name = f"{date}{mode}{name}"
-        path_output.rename(Path(path_output.parent, output_name))
+            mode = "eco" if info_antares_output["mode"] == "Economy" else "adq"
+            name = (
+                f"-{info_antares_output['name']}"
+                if info_antares_output["name"]
+                else ""
+            )
 
-        output_id = (
-            sorted(os.listdir(path_output.parent)).index(output_name) + 1
-        )
+            output_name = f"{date}{mode}{name}"
+            path_output.rename(Path(path_output.parent, output_name))
 
-        data = self.study_service.get(
-            metadata,
-            f"output/{output_id}",
-            -1,
-        )
+            output_id = (
+                sorted(os.listdir(path_output.parent)).index(output_name) + 1
+            )
 
-        if data is None:
-            self.study_service.delete_output(metadata, "imported_output")
-            raise BadOutputError("The output provided is not conform.")
+            data = self.study_service.get(
+                metadata,
+                f"output/{output_id}",
+                -1,
+            )
+
+            if data is None:
+                self.study_service.delete_output(metadata, "imported_output")
+                raise BadOutputError("The output provided is not conform.")
+
+        except Exception as e:
+            logger.error("Failed to import output", exc_info=e)
+            shutil.rmtree(path_output)
 
         return data
 
