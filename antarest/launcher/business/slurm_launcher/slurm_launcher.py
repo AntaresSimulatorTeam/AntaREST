@@ -16,11 +16,14 @@ from antareslauncher.main_option_parser import (
     MainOptionParser,
     MainOptionsParameters,
 )
-from antarest.common.config import Config
+from antarest.common.config import Config, SlurmConfig
 from antarest.common.jwt import DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
 from antarest.common.utils.fastapi_sqlalchemy import db
-from antarest.launcher.business.ilauncher import ILauncher
+from antarest.launcher.business.ilauncher import (
+    ILauncher,
+    LauncherInitException,
+)
 from antarest.launcher.model import JobStatus
 from antarest.storage.service import StorageService
 
@@ -33,6 +36,10 @@ class SlurmLauncher(ILauncher):
         self, config: Config, storage_service: StorageService
     ) -> None:
         super().__init__(config, storage_service)
+        if config.launcher.slurm is None:
+            raise LauncherInitException()
+
+        self.slurm_config: SlurmConfig = config.launcher.slurm
         self.callbacks: List[Callable[[str, JobStatus, bool], None]] = []
         self.check_state: bool = True
         self.thread: Optional[threading.Thread] = None
@@ -59,20 +66,15 @@ class SlurmLauncher(ILauncher):
 
     def _init_launcher_arguments(self) -> argparse.Namespace:
         main_options_parameters = MainOptionsParameters(
-            default_wait_time=self.config.launcher.slurm.default_wait_time,
-            default_time_limit=self.config.launcher.slurm.default_time_limit,
-            default_n_cpu=self.config.launcher.slurm.default_n_cpu,
+            default_wait_time=self.slurm_config.default_wait_time,
+            default_time_limit=self.slurm_config.default_time_limit,
+            default_n_cpu=self.slurm_config.default_n_cpu,
             studies_in_dir=str(
-                (
-                    Path(self.config.launcher.slurm.local_workspace)
-                    / "STUDIES_IN"
-                )
+                (Path(self.slurm_config.local_workspace) / "STUDIES_IN")
             ),
-            log_dir=str(
-                (Path(self.config.launcher.slurm.local_workspace) / "LOGS")
-            ),
+            log_dir=str((Path(self.slurm_config.local_workspace) / "LOGS")),
             finished_dir=str(
-                (Path(self.config.launcher.slurm.local_workspace) / "OUTPUT")
+                (Path(self.slurm_config.local_workspace) / "OUTPUT")
             ),
             ssh_config_file_is_required=False,
             ssh_configfile_path_prod_cwd=None,
@@ -95,17 +97,17 @@ class SlurmLauncher(ILauncher):
 
     def _init_launcher_parameters(self) -> MainParameters:
         main_parameters = MainParameters(
-            json_dir=self.config.launcher.slurm.local_workspace,
-            default_json_db_name=self.config.launcher.slurm.default_json_db_name,
-            slurm_script_path=self.config.launcher.slurm.slurm_script_path,
-            antares_versions_on_remote_server=self.config.launcher.slurm.antares_versions_on_remote_server,
+            json_dir=self.slurm_config.local_workspace,
+            default_json_db_name=self.slurm_config.default_json_db_name,
+            slurm_script_path=self.slurm_config.slurm_script_path,
+            antares_versions_on_remote_server=self.slurm_config.antares_versions_on_remote_server,
             default_ssh_dict_from_embedded_json={
-                "username": self.config.launcher.slurm.username,
-                "hostname": self.config.launcher.slurm.hostname,
-                "port": self.config.launcher.slurm.port,
-                "private_key_file": self.config.launcher.slurm.private_key_file,
-                "key_password": self.config.launcher.slurm.key_password,
-                "password": self.config.launcher.slurm.password,
+                "username": self.slurm_config.username,
+                "hostname": self.slurm_config.hostname,
+                "port": self.slurm_config.port,
+                "private_key_file": self.slurm_config.private_key_file,
+                "key_password": self.slurm_config.key_password,
+                "password": self.slurm_config.password,
             },
             db_primary_key="name",
         )
@@ -113,7 +115,7 @@ class SlurmLauncher(ILauncher):
 
     def _delete_study(self, study_path: Path) -> None:
         if (
-            self.config.launcher.slurm.local_workspace.absolute()
+            self.slurm_config.local_workspace.absolute()
             in study_path.absolute().parents
         ):
             shutil.rmtree(study_path)
@@ -137,10 +139,7 @@ class SlurmLauncher(ILauncher):
         study_id = self.job_id_to_study_id[job_id]
 
         output = self._export_output(
-            self.config.launcher.slurm.local_workspace
-            / "OUTPUT"
-            / job_id
-            / "output"
+            self.slurm_config.local_workspace / "OUTPUT" / job_id / "output"
         )
 
         self.storage_service.import_output(
@@ -192,9 +191,7 @@ class SlurmLauncher(ILauncher):
                         )
                 data_repo_tinydb.remove_study(study.name)
                 self._delete_study(
-                    self.config.launcher.slurm.local_workspace
-                    / "OUTPUT"
-                    / study.name
+                    self.slurm_config.local_workspace / "OUTPUT" / study.name
                 )
                 del self.job_id_to_study_id[study.name]
 
@@ -202,7 +199,7 @@ class SlurmLauncher(ILauncher):
             self.stop()
 
     def _clean_local_workspace(self) -> None:
-        local_workspace = self.config.launcher.slurm.local_workspace
+        local_workspace = self.slurm_config.local_workspace
         for filename in os.listdir(local_workspace):
             file_path = os.path.join(local_workspace, filename)
             if os.path.isfile(file_path) or os.path.islink(file_path):

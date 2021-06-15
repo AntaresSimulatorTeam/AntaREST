@@ -40,7 +40,7 @@ class Exporter:
         ignore_patterns = (
             (
                 lambda directory, contents: ["output"]
-                if directory == path_study
+                if str(directory) == str(path_study)
                 else []
             )
             if not outputs

@@ -1,7 +1,11 @@
+import logging
 from typing import Dict
 
 from antarest.common.config import Config
-from antarest.launcher.business.ilauncher import ILauncher
+from antarest.launcher.business.ilauncher import (
+    ILauncher,
+    LauncherInitException,
+)
 from antarest.launcher.business.local_launcher.local_launcher import (
     LocalLauncher,
 )
@@ -9,6 +13,8 @@ from antarest.launcher.business.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
 )
 from antarest.storage.service import StorageService
+
+logger = logging.getLogger(__name__)
 
 
 class FactoryLauncher:

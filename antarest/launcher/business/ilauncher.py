@@ -8,6 +8,10 @@ from antarest.launcher.model import JobStatus
 from antarest.storage.service import StorageService
 
 
+class LauncherInitException(Exception):
+    pass
+
+
 class ILauncher(ABC):
     def __init__(self, config: Config, storage_service: StorageService):
         self.config = config

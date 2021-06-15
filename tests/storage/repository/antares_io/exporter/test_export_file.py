@@ -3,7 +3,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
-from dirhash import dirhash
+from checksumdir import dirhash
 
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
