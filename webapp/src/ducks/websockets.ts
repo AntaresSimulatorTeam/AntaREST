@@ -6,7 +6,6 @@ import { UserInfo } from '../common/types';
 import { AppState } from '../App/reducers';
 import { getConfig } from '../services/config';
 
-
 /** ******************************************* */
 /* State                                        */
 /** ******************************************* */
@@ -20,7 +19,6 @@ const initialState: WebsocketState = {
   listeners: [],
 };
 
-
 /** ******************************************* */
 /* Actions                                      */
 /** ******************************************* */
@@ -32,21 +30,21 @@ export interface ConnectAction extends Action {
 
 export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, unknown, ConnectAction> => (dispatch, getState): void => {
   const config = getConfig();
-  const socket = new WebSocket(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken }`);
+  const socket = new WebSocket(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
   const { websockets } = getState();
   if (socket) {
     socket.onopen = (ev) => console.log(ev);
-    socket.onclose = (ev) => console.log(ev)
-    socket.onerror = (ev) => console.log(ev)   
+    socket.onclose = (ev) => console.log(ev);
+    socket.onerror = (ev) => console.log(ev);
     socket.onmessage = (message: any) => {
       websockets.listeners.forEach((l) => {
         l(message);
       });
-    }
+    };
     dispatch({
       type: 'WS/CONNECT',
       payload: socket,
-    });  
+    });
   }
 };
 
@@ -98,7 +96,6 @@ type WebsocketAction = ConnectAction | DisconnectAction | AddListenerAction | Re
 /** ******************************************* */
 /* Selectors                                    */
 /** ******************************************* */
-
 
 /** ******************************************* */
 /* Reducer                                      */

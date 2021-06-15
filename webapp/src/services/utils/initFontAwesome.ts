@@ -14,7 +14,6 @@ import {
   faUserCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
-
 export default function (): void {
   library.add(
     faUser,

@@ -10,10 +10,10 @@ const mapState = (state: AppState) => ({
   user: state.auth.user,
 });
 
-const mapDispatch = ({
+const mapDispatch = {
   login: loginUser,
   logout: logoutAction,
-});
+};
 
 const connector = connect(mapState, mapDispatch);
 type PropsFromRedux = ConnectedProps<typeof connector>;
@@ -35,11 +35,11 @@ const DownloadLink = (props: PropTypes) => {
     location.href = url;
   };
 
-  return (
-    <span onClick={handleClick}>
-      {children}
-    </span>
-  );
+  return <span onClick={handleClick}>{children}</span>;
+};
+
+DownloadLink.defaultProps = {
+  children: null,
 };
 
 export default connector(DownloadLink);

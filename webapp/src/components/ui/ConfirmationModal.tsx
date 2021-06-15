@@ -10,7 +10,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    overflowY: 'auto'
+    overflowY: 'auto',
   },
   main: {
     backgroundColor: 'white',
@@ -18,31 +18,31 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     maxHeight: '800px',
     display: 'flex',
     flexFlow: 'column nowrap',
-    alignItems: 'center'
+    alignItems: 'center',
   },
-  titlebox:{
-      height: '40px',
-      width: '100%',
-      display: 'flex',
-      flexFlow: 'row nowrap',
-      alignItems: 'center',
-      backgroundColor: theme.palette.primary.main
+  titlebox: {
+    height: '40px',
+    width: '100%',
+    display: 'flex',
+    flexFlow: 'row nowrap',
+    alignItems: 'center',
+    backgroundColor: theme.palette.primary.main,
   },
   title: {
     fontWeight: 'bold',
     color: 'white',
     marginLeft: theme.spacing(2),
-    overflow: 'hidden'
+    overflow: 'hidden',
   },
   content: {
-      flex: '1',
-      width: '100%',
-      display: 'flex',
-      flexFlow: 'column nowrap',
-      justifyContent: 'center',
-      alignItems: 'center',
-      overflow: 'hidden',
-      padding: theme.spacing(3)
+    flex: '1',
+    width: '100%',
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    padding: theme.spacing(3),
   },
   footer: {
     height: '60px',
@@ -51,14 +51,13 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'row nowrap',
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden'      
+    overflow: 'hidden',
   },
   button: {
-      margin: theme.spacing(2)
-  }
+    margin: theme.spacing(2),
+  },
 
 }));
-
 
 interface PropTypes {
     open: boolean;
@@ -68,53 +67,55 @@ interface PropTypes {
     handleYes: () => void;
 }
 
-
 const ConfirmationModal = (props: PropTypes) => {
-
-  const { title, open, message, handleYes, handleNo} = props;
+  const { title, open, message, handleYes, handleNo } = props;
   const classes = useStyles();
   const [t] = useTranslation();
 
   return (
     <Modal
-    aria-labelledby="transition-modal-title"
-    aria-describedby="transition-modal-description"
-    className={classes.root}
-    open={open}
-    closeAfterTransition
-    BackdropComponent={Backdrop}
-    BackdropProps={{
-    timeout: 500,
-    }}
->
-    <Fade in={open}>
-    <Paper className={classes.main}>
-        <div className={classes.titlebox}>
+      aria-labelledby="transition-modal-title"
+      aria-describedby="transition-modal-description"
+      className={classes.root}
+      open={open}
+      closeAfterTransition
+      BackdropComponent={Backdrop}
+      BackdropProps={{
+        timeout: 500,
+      }}
+    >
+      <Fade in={open}>
+        <Paper className={classes.main}>
+          <div className={classes.titlebox}>
             <Typography className={classes.title}>
-                {title}
+              {title}
             </Typography>
-        </div>
-        <div className={classes.content}>
-          <Typography >
+          </div>
+          <div className={classes.content}>
+            <Typography>
               {message}
             </Typography>
-        </div>
-        <div className={classes.footer}>
-            <Button variant="contained"
-                    className={classes.button}
-                    onClick={handleNo}>
-                    {t('main:noButton')}
+          </div>
+          <div className={classes.footer}>
+            <Button
+              variant="contained"
+              className={classes.button}
+              onClick={handleNo}
+            >
+              {t('main:noButton')}
             </Button>
-            <Button variant="contained"
-                    className={classes.button}
-                    color="primary" 
-                    onClick={handleYes}>
-                    {t('main:yesButton')}
-            </Button>  
-        </div>
-    </Paper>
-    </Fade>
-</Modal>
+            <Button
+              variant="contained"
+              className={classes.button}
+              color="primary"
+              onClick={handleYes}
+            >
+              {t('main:yesButton')}
+            </Button>
+          </div>
+        </Paper>
+      </Fade>
+    </Modal>
   );
 };
 

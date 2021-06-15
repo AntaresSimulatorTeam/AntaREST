@@ -1,1 +1,1 @@
-declare module "jexcel";
+declare module 'jexcel';

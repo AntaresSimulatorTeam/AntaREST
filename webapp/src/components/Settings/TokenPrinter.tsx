@@ -12,7 +12,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: theme.spacing(3)
+    padding: theme.spacing(3),
   },
   main: {
     width: '90%',
@@ -25,30 +25,27 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'space-between',
     alignItems: 'center',
     color: theme.palette.primary.main,
-    border: `1px solid ${theme.palette.primary.main}`
+    border: `1px solid ${theme.palette.primary.main}`,
   },
   message: {
-      fontSize: '1em',
-      fontWeight: 'bold'
+    fontSize: '1em',
+    fontWeight: 'bold',
   },
   token: {
-      fontSize: '0.8em',
-      wordWrap: "break-word",
-      width: '100%',
-      margin: theme.spacing(2)
-  }
+    fontSize: '0.8em',
+    wordWrap: 'break-word',
+    width: '100%',
+    margin: theme.spacing(2),
+  },
 }));
-
 
 interface PropTypes {
     token: string;
-    onButtonClick: () => void
+    onButtonClick: () => void;
 }
 
-
 const TokenPrinter = (props: PropTypes) => {
-
-  const {token, onButtonClick } = props;
+  const { token, onButtonClick } = props;
   const classes = useStyles();
   const [t] = useTranslation();
 
@@ -56,17 +53,23 @@ const TokenPrinter = (props: PropTypes) => {
     <div className={classes.root}>
       <Paper className={classes.main}>
         <Typography variant="h2" className={classes.message}>
-              {t('settings:printTokenMessage')} :    
+          {t('settings:printTokenMessage')}
+          {' '}
+          :
         </Typography>
-        <Typography variant="h3"
-                    className={classes.token}>
-            {token}  
+        <Typography
+          variant="h3"
+          className={classes.token}
+        >
+          {token}
         </Typography>
-        <Button variant="contained"
-                color="primary" 
-                onClick={onButtonClick}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={onButtonClick}
+        >
           {t('main:backButton')}
-        </Button>  
+        </Button>
       </Paper>
     </div>
   );

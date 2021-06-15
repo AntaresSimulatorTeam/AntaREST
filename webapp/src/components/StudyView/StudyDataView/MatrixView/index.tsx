@@ -13,7 +13,7 @@ export default function MatrixView(props: PropTypes) {
   const { data = [], columns = [], index = [] } = props.data;
   const jRef = useRef(null);
 
-  const prependIndex = index.length > 0 && typeof index[0] == 'string';
+  const prependIndex = index.length > 0 && typeof index[0] === 'string';
   const options = {
     data: prependIndex ? data.map((row, i) => [index[i]].concat(row)) : data,
     columns: (prependIndex ? [{ title: 'Time', width: 100, type: 'string' }] : []).concat(
