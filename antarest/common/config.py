@@ -114,7 +114,6 @@ class SlurmConfig:
     default_n_cpu: int = 0
     default_json_db_name: str = ""
     slurm_script_path: str = ""
-    db_primary_key: str = ""
     antares_versions_on_remote_server: List[str] = field(
         default_factory=lambda: []
     )
@@ -134,7 +133,6 @@ class SlurmConfig:
             default_n_cpu=data["default_n_cpu"],
             default_json_db_name=data["default_json_db_name"],
             slurm_script_path=data["slurm_script_path"],
-            db_primary_key=data["db_primary_key"],
             antares_versions_on_remote_server=data[
                 "antares_versions_on_remote_server"
             ],
@@ -155,15 +153,15 @@ class LauncherConfig:
     def from_dict(data: JSON) -> "LauncherConfig":
         try:
             local = LocalConfig.from_dict(data["local"])
-        except KeyError:
-            logger.info("Could not load local launcher")
+        except KeyError as e:
+            logger.error("Could not load local launcher", exc_info=e)
             local = None
 
         slurm: Optional[SlurmConfig]
         try:
             slurm = SlurmConfig.from_dict(data["slurm"])
-        except KeyError:
-            logger.info("Could not load slurm launcher")
+        except KeyError as e:
+            logger.error("Could not load slurm launcher", exc_info=e)
             slurm = None
         return LauncherConfig(
             default=data.get("default", "local"),
