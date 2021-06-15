@@ -5,6 +5,7 @@
   "searchstudy": "Rechercher des études",
   "failtoretrievestudies": "Echec de la récupération des études",
   "failtodeletestudy": "Echec de la suppression de l'étude",
+  "failtoloadstudy": "Echec du chargement de l'étude",
   "failtorunstudy": "Echec du lancement de l'étude",
   "studylaunched": "{{studyname}} lancée !"
 }
