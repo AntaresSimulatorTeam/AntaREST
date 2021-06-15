@@ -1,0 +1,13 @@
+{
+  "informations": "Information",
+  "treeView": "Tree view",
+  "currentTask": "Current tasks",
+  "failtoloadjobs": "Failed to load jobs",
+  "taskId": "Id",
+  "taskStatus": "Status",
+  "taskCreationDate": "Creation date",
+  "taskCompletionDate": "Completion date",
+  "taskMessage": "Message",
+  "taskExitCode": "Exit code",
+  "noTasks": "No tasks"
+}

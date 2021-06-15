@@ -1,8 +1,8 @@
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { AppState } from '../../reducers';
-import {isUserAdmin} from '../../../services/utils'
-import GenericSettings from '../../../components/Settings/GenericSettings'
+import { isUserAdmin } from '../../../services/utils';
+import GenericNavView from '../../../components/ui/NavComponents/GenericNavView';
 import GroupsSettings from './Groups';
 import TokensSettings from './Tokens';
 import UsersSettings from './Users';
@@ -17,24 +17,27 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const UserSettings = (props: PropTypes) => {
-  const { user} = props;
+  const { user } = props;
 
   const adminUserData = {
     'settings:users': () => <UsersSettings />,
     'settings:groups': () => <GroupsSettings />,
     'settings:tokens': () => <TokensSettings />,
-  }
+  };
 
   const normalUserData = {
     'settings:tokens': () => <TokensSettings />,
-  }
+  };
 
-  if (!!user) {
+  if (user) {
     const isAdmin = isUserAdmin(user);
 
-    return  (<GenericSettings items={isAdmin ? adminUserData : normalUserData}
-                                      initialValue={isAdmin ? 'settings:users' : 'settings:tokens'} />);
-  
+    return (
+      <GenericNavView
+        items={isAdmin ? adminUserData : normalUserData}
+        initialValue={isAdmin ? 'settings:users' : 'settings:tokens'}
+      />
+    );
   }
   return null;
 };

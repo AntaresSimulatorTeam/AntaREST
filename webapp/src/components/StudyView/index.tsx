@@ -13,25 +13,29 @@ const logError = debug('antares:studyview:error');
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
-    display: 'flex',
+    flex: 1,
     width: '100%',
+    display: 'flex',
+    flexFlow: 'row nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     overflow: 'hidden',
-    flexGrow: 1,
-    position: 'relative',
+    boxSizing: 'border-box',
   },
   sidebar: {
     height: '100%',
-    flex: '30% 0 0',
+    flex: '0 0 30%',
     overflow: 'auto',
   },
   sidebarcontent: {
     padding: theme.spacing(1),
   },
   main: {
-    flexGrow: 1,
+    flex: 1,
     height: '100%',
     overflow: 'hidden',
     display: 'flex',
+    boxSizing: 'border-box',
   },
   maincontent: {
     padding: theme.spacing(2),
@@ -74,7 +78,6 @@ const StudyView = (props: PropTypes) => {
   useEffect(() => {
     initStudyData(study);
   }, [study, initStudyData]);
-
 
   return (
     <div className={classes.root}>
