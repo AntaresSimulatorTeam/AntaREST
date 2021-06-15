@@ -1,1 +1,1 @@
-declare module "jspreadsheet-ce";
+declare module 'jspreadsheet-ce';

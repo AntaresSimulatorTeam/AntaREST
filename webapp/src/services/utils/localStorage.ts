@@ -1,4 +1,3 @@
-
 export const loadState = <T>(path: string, defaultValue?: T): T | undefined => {
   try {
     const serializedState = localStorage.getItem(path);

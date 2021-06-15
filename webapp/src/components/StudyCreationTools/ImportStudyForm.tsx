@@ -33,7 +33,6 @@ interface OwnProps {
 }
 type PropTypes = PropsFromRedux & OwnProps;
 
-
 const ImportStudyForm = (props: PropTypes) => {
   const [t] = useTranslation();
   const { useStyles, addStudy, createUpload, updateUploadCompletion, endUpload } = props;

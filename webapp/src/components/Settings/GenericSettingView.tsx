@@ -1,6 +1,6 @@
-import React, {PropsWithChildren} from 'react';
+import React, { PropsWithChildren } from 'react';
 import { createStyles, makeStyles, Theme, InputBase, InputAdornment, Button } from '@material-ui/core';
-import {debounce} from 'lodash';
+import { debounce } from 'lodash';
 import SearchIcon from '@material-ui/icons/Search';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
@@ -27,10 +27,10 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     height: '50px',
     border: `2px solid ${theme.palette.primary.main}`,
     padding: theme.spacing(2),
-    color: theme.palette.primary.main
+    color: theme.palette.primary.main,
   },
-  searchicon :{
-    color: theme.palette.primary.main
+  searchicon: {
+    color: theme.palette.primary.main,
   },
   main: {
     flex: '1',
@@ -40,20 +40,17 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'column nowrap',
     alignItems: 'center',
     overflowY: 'auto',
-  }
+  },
 }));
 
-
 interface PropTypes {
-    searchFilter: (input: string) => void,
-    buttonValue: string,
-    placeholder: string,
-    onButtonClick: () => void
+    searchFilter: (input: string) => void;
+    buttonValue: string;
+    placeholder: string;
+    onButtonClick: () => void;
 }
 
-
 const GenericSettingView = (props: PropsWithChildren<PropTypes>) => {
-
   const { searchFilter, placeholder, buttonValue, onButtonClick, children } = props;
   const classes = useStyles();
 
@@ -61,20 +58,22 @@ const GenericSettingView = (props: PropsWithChildren<PropTypes>) => {
     <div className={classes.root}>
       <div className={classes.header}>
         <InputBase
-            className={classes.searchbar}
-            placeholder={placeholder}
-            onChange={(event) => debounce(searchFilter, 200)(event.target.value)}
-            endAdornment = {(
-              <InputAdornment position="start">
-                <SearchIcon className={classes.searchicon} />
-              </InputAdornment>
-            )} 
-          />
-        <Button variant="contained"
-                color="primary" 
-                onClick={onButtonClick}>
+          className={classes.searchbar}
+          placeholder={placeholder}
+          onChange={(event) => debounce(searchFilter, 200)(event.target.value)}
+          endAdornment={(
+            <InputAdornment position="start">
+              <SearchIcon className={classes.searchicon} />
+            </InputAdornment>
+            )}
+        />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={onButtonClick}
+        >
           {buttonValue}
-        </Button>     
+        </Button>
       </div>
       <div className={classes.main}>
         {children}

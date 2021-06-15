@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { Moment } from 'moment';
 
 export type StudyDataType = 'json' | 'file' | 'matrix';
@@ -26,7 +27,7 @@ export interface StudyMetadata {
 export enum RoleType {
   ADMIN = 40,
   RUNNER = 30,
-  WRITER =  20,
+  WRITER = 20,
   READER = 10
 }
 
@@ -42,7 +43,7 @@ export interface RoleDTO {
 export interface RoleCreationDTO {
   group_id: string;
   identity_id: number;
-  type: RoleType; 
+  type: RoleType;
 }
 
 export interface UserDTO {
@@ -52,8 +53,8 @@ export interface UserDTO {
 
 export interface UserRoleDTO {
   id: number;
-  name: string; 
-  role: RoleType; 
+  name: string;
+  role: RoleType;
 }
 
 export interface GroupDTO {
@@ -64,7 +65,7 @@ export interface GroupDTO {
 export interface JWTGroup {
   id: string;
   name: string;
-  role: RoleType
+  role: RoleType;
 }
 
 export interface UserInfo {
@@ -91,7 +92,6 @@ export interface BotDTO {
   isAuthor: boolean;
 }
 
-
 export interface BotRoleCreateDTO {
   group: string;
   role: RoleType;
@@ -100,22 +100,20 @@ export interface BotRoleCreateDTO {
 export interface BotCreateDTO{
   name: string;
   is_author: boolean;
-  roles: Array<BotRoleCreateDTO>
+  roles: Array<BotRoleCreateDTO>;
 }
 
 export interface BotIdentityDTO {
   id: number;
   name: string;
   isAuthor: boolean;
-  roles: Array<RoleDTO>;  
+  roles: Array<RoleDTO>;
 }
 
 export interface UserToken {
   user: UserDTO;
   bots: Array<BotDTO>;
 }
-
-
 
 export interface UserGroup {
   group: GroupDTO;

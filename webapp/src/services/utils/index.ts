@@ -1,5 +1,5 @@
 import { useSnackbar, OptionsObject } from 'notistack';
-import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType} from '../../common/types';
+import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType } from '../../common/types';
 
 export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDTO): StudyMetadata => ({
   id: sid,
@@ -20,35 +20,32 @@ export const useNotif = (): (message: React.ReactNode, options?: OptionsObject |
   return enqueueSnackbar;
 };
 
-export const isUserAdmin = (user : UserInfo) : boolean => {
-  if(user)
-  {
-    const adminElm = user.groups.find((elm : JWTGroup) => elm.id === 'admin' && elm.role === RoleType.ADMIN);
+export const isUserAdmin = (user: UserInfo): boolean => {
+  if (user) {
+    const adminElm = user.groups.find((elm: JWTGroup) => elm.id === 'admin' && elm.role === RoleType.ADMIN);
     return !!adminElm;
   }
   return false;
-}
+};
 
-export const roleToString = (role: RoleType) : string =>{
-    switch(role)
-    {
-      case RoleType.ADMIN:
-        return "settings:adminRole";
+export const roleToString = (role: RoleType): string => {
+  switch (role) {
+    case RoleType.ADMIN:
+      return 'settings:adminRole';
 
-      case RoleType.RUNNER:
-        return "settings:runnerRole";
+    case RoleType.RUNNER:
+      return 'settings:runnerRole';
 
-      case RoleType.WRITER:
-        return "settings:writerRole";
+    case RoleType.WRITER:
+      return 'settings:writerRole';
 
-      case RoleType.READER:
-        return "settings:readerRole";
+    case RoleType.READER:
+      return 'settings:readerRole';
 
-      default:
-        break;
-    }
-    return "";
-}
-
+    default:
+      break;
+  }
+  return '';
+};
 
 export default {};
