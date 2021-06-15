@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next';
 import StudyView from '../../../components/StudyView';
 import { getStudyData, getStudyJobs, LaunchJob } from '../../../services/api/study';
 import PulsingDot from '../../../components/ui/PulsingDot';
-import GenericTabView from '../../../components/ui/NavComponents/GenericTabView'
-import Informations from './Informations'
+import GenericTabView from '../../../components/ui/NavComponents/GenericTabView';
+import Informations from './Informations';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -21,7 +21,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
     flexDirection: 'column',
     overflow: 'hidden',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
   },
   breadcrumbs: {
     backgroundColor: '#d7d7d7',
@@ -79,9 +79,9 @@ const SingleStudyView = () => {
   }, [studyId]);
 
   const navData = {
-    'singlestudy:informations': () => <Informations studyId={studyId}/>,
-    'singlestudy:treeView': () => <StudyView study={studyId} />
-  }
+    'singlestudy:informations': () => <Informations studyId={studyId} />,
+    'singlestudy:treeView': () => <StudyView study={studyId} />,
+  };
   return (
     <div className={classes.root}>
       <Breadcrumbs aria-label="breadcrumb" className={classes.breadcrumbs}>
@@ -93,10 +93,12 @@ const SingleStudyView = () => {
           {studyname}
         </div>
       </Breadcrumbs>
-      { studyId &&
-        <GenericTabView items={navData}
-          initialValue={'singlestudy:informations'} /> 
-      }
+      { studyId && (
+        <GenericTabView
+          items={navData}
+          initialValue="singlestudy:informations"
+        />
+      )}
     </div>
   );
 };

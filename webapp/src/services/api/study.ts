@@ -4,7 +4,6 @@ import { StudyMetadata, StudyListDTO } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 
-
 const getStudiesRaw = async (): Promise<{[sid: string]: StudyListDTO}> => {
   const res = await client.get('/v1/studies');
   return res.data;
@@ -25,7 +24,7 @@ export const getStudyData = async (sid: string, path = '', depth = 1): Promise<a
 
 export const getStudyMetadata = async (sid: string): Promise<any> => {
   const res = await client.get(`/v1/studies/${sid}/metadata`);
-  return !!(res.data.antares) ? convertStudyDtoToMetadata(sid, res.data.antares) : undefined;
+  return res.data.antares ? convertStudyDtoToMetadata(sid, res.data.antares) : undefined;
 };
 
 export const createStudy = async (name: string): Promise<string> => {
@@ -38,7 +37,7 @@ export const deleteStudy = async (sid: string): Promise<any> => {
   return res.data;
 };
 
-export const getExportUrl = (sid: string, compact = false, skipOutputs = false): string =>
+export const getExportUrl = (sid: string, skipOutputs = false): string =>
   `${getConfig().downloadHostUrl || (getConfig().baseUrl + getConfig().restEndpoint)}/v1/studies/${sid}/export?no_output=${skipOutputs}`;
 
 export const importStudy = async (file: File, onProgress?: (progress: number) => void): Promise<string> => {

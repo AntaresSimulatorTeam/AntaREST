@@ -14,9 +14,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     boxSizing: 'border-box',
     padding: theme.spacing(1),
     overflow: 'auto',
-  }
+  },
 }));
-
 
 interface PropTypes {
     studyId: string;
@@ -27,8 +26,8 @@ const Informations = (props: PropTypes) => {
   const classes = useStyles();
   return (
     <div className={classes.root}>
-        <InformationView studyId={studyId}/>
-        <TaskView studyId={studyId} />
+      <InformationView studyId={studyId} />
+      <TaskView studyId={studyId} />
     </div>
   );
 };

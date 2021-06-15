@@ -1,11 +1,11 @@
-import React, {useState, useEffect} from 'react';
-import { makeStyles, Theme } from '@material-ui/core/styles';
+import React, { useState, useEffect } from 'react';
+import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import { useTranslation } from 'react-i18next';
 
-const useStyles = makeStyles((theme: Theme) => ({
+const useStyles = makeStyles(() => ({
   root: {
     flex: 1,
     width: '100%',
@@ -14,28 +14,27 @@ const useStyles = makeStyles((theme: Theme) => ({
     justifyContent: 'flex-start',
     alignItems: 'center',
     overflow: 'hidden',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
   },
   itemContainer: {
-      height: '100%',
-      width: '100%',
-      position: 'relative',
-      overflowY: 'hidden',
-      boxSizing: 'border-box'
-  }
+    height: '100%',
+    width: '100%',
+    position: 'relative',
+    overflowY: 'hidden',
+    boxSizing: 'border-box',
+  },
 }));
 
 interface PropTypes {
-    items : {
-        [item : string] : () => JSX.Element,
-    },
+    items: {
+        [item: string]: () => JSX.Element;
+    };
     initialValue: string;
 }
 
 export default function NavTabView(props: PropTypes) {
-
   const classes = useStyles();
-  const { items, initialValue} = props;
+  const { items, initialValue } = props;
   const [navList, setNavList] = useState<Array<string>>([]);
   const [navState, setNavState] = useState<string>(initialValue);
   const [t] = useTranslation();
@@ -48,12 +47,11 @@ export default function NavTabView(props: PropTypes) {
     const list = Object.keys(items);
     setNavList(list);
 
-    if(list.find((item) => item === initialValue))
-        setNavState(initialValue);
+    if (list.find((item) => item === initialValue)) setNavState(initialValue);
     return () => {
       setNavList([]);
-    }
-  }, [items, initialValue])
+    };
+  }, [items, initialValue]);
 
   return (
     <div className={classes.root}>
@@ -64,24 +62,24 @@ export default function NavTabView(props: PropTypes) {
           onChange={handleChange}
           aria-label="nav tabs example"
         >
-        {
-            navList.map((item, index) => {
-                return (
-                    <Tab key={index}
-                         //component="a"
-                         onClick={(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-                                event.preventDefault();}}
-                         label={t(item)}
-                         //href="/drafts"
-                         id={`nav-tab-${index}`}
-                         aria-controls={`nav-tabpanel-${index}`}/>);
-            })
+          {
+            navList.map((item, index) => (
+              <Tab
+                key={item}
+                onClick={(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+                  event.preventDefault();
+                }}
+                label={t(item)}
+                id={`nav-tab-${index}`}
+                aria-controls={`nav-tabpanel-${index}`}
+              />
+            ))
         }
         </Tabs>
       </AppBar>
-        {
-            items[navState]()      
-        }          
+      {
+            items[navState]()
+        }
     </div>
   );
 }

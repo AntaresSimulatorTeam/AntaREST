@@ -20,7 +20,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'flex-start',
     alignItems: 'center',
     overflow: 'hidden',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
   },
   sidebar: {
     height: '100%',
@@ -35,13 +35,13 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     height: '100%',
     overflow: 'hidden',
     display: 'flex',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
   },
   maincontent: {
     padding: theme.spacing(2),
     flexGrow: 1,
     overflow: 'hidden',
-    display: 'flex'
+    display: 'flex',
   },
 }));
 
@@ -79,8 +79,7 @@ const StudyView = (props: PropTypes) => {
     initStudyData(study);
   }, [study, initStudyData]);
 
-
-  return ( 
+  return (
     <div className={classes.root}>
       {
         studyData && (

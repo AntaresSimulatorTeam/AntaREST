@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import moment from 'moment';
 import { useSnackbar } from 'notistack';
 import { makeStyles, Button, createStyles, Theme, Card, CardContent, Typography, Grid, CardActions } from '@material-ui/core';
@@ -131,11 +131,15 @@ const StudyBlockSummaryView = (props: PropTypes) => {
             <Button size="small" style={{ float: 'right', color: theme.palette.error.main }} onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
           </div>
         </CardActions>
-        {openConfirmationModal && <ConfirmationModal open={openConfirmationModal}
-                                                     title={t('main:confirmationModalTitle')}
-                                                     message={t('studymanager:confirmdelete')}
-                                                     handleYes={deleteStudy}
-                                                     handleNo={() => setOpenConfirmationModal(false)}/>}
+        {openConfirmationModal && (
+        <ConfirmationModal
+          open={openConfirmationModal}
+          title={t('main:confirmationModalTitle')}
+          message={t('studymanager:confirmdelete')}
+          handleYes={deleteStudy}
+          handleNo={() => setOpenConfirmationModal(false)}
+        />
+        )}
       </Card>
     </div>
   );
