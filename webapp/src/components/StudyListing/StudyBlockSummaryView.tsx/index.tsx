@@ -127,7 +127,6 @@ const StudyBlockSummaryView = (props: PropTypes) => {
           <div style={{ width: '100%' }}>
             <Button size="small" style={{ color: theme.palette.secondary.main }} onClick={launchStudy}>{t('main:launch')}</Button>
             <DownloadLink url={getExportUrl(study.id, false)}><Button size="small" style={{ color: theme.palette.primary.light }}>{t('main:export')}</Button></DownloadLink>
-            <DownloadLink url={getExportUrl(study.id, false)}><Button size="small" style={{ color: theme.palette.primary.light }}>{t('main:archive')}</Button></DownloadLink>
             <Button size="small" style={{ float: 'right', color: theme.palette.error.main }} onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
           </div>
         </CardActions>

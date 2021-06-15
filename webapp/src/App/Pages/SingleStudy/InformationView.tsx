@@ -2,7 +2,7 @@ import debug from 'debug';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { makeStyles, createStyles, Theme, Paper, Typography, Button, GridList, GridListTile } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, Paper, Typography, Button } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
@@ -18,13 +18,13 @@ import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
 const logError = debug('antares:singlestudyview:error');
 
-const buttonStyle = (color: string) => ({
+const buttonStyle = (theme: Theme, color: string) => ({
   width: '120px',
   border: `2px solid ${color}`,
   color,
+  margin: theme.spacing(1.5),
   '&:hover': {
     color: 'white',
-    border: 'none',
     backgroundColor: color,
   },
 });
@@ -40,7 +40,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     overflow: 'hidden',
     display: 'flex',
     flexFlow: 'column nowrap',
-    justifyContent: 'space-evenly',
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
   header: {
@@ -57,6 +57,31 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     fontWeight: 'bold',
     color: 'white',
   },
+  infoContainer: {
+    width: '100%',
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    padding: theme.spacing(2),
+  },
+  info: {
+    width: '80%',
+    margin: theme.spacing(0.7),
+    color: theme.palette.primary.main,
+  },
+  mainInfo: {
+    width: '80%',
+    margin: theme.spacing(0.1),
+    color: theme.palette.primary.main,
+    display: 'flex',
+    flexFlow: 'row nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  infotxt: {
+    marginLeft: theme.spacing(1),
+  },
   buttonContainer: {
     flex: 1,
     width: '100%',
@@ -64,37 +89,27 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'column nowrap',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: theme.spacing(0.5),
+    boxSizing: 'border-box',
+    padding: theme.spacing(1),
   },
-  gridList: {
-    width: '100%',
-  },
-  gridTile: {
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  launchButton: buttonStyle(theme.palette.primary.main),
-  exportButton: buttonStyle(theme.palette.secondary.main),
-  archiveButton: buttonStyle(theme.palette.primary.light),
-  deleteButton: buttonStyle(theme.palette.error.main),
-  infoContainer: {
-    flex: '0 0 50%',
+  deleteContainer: {
     width: '100%',
     display: 'flex',
     flexFlow: 'column nowrap',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: theme.spacing(2),
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
   },
-  info: {
-    width: '80%',
+  launchButton: buttonStyle(theme, theme.palette.primary.main),
+  exportButton: buttonStyle(theme, theme.palette.secondary.main),
+  deleteButton: {
+    color: theme.palette.error.main,
+    padding: theme.spacing(0),
     margin: theme.spacing(1),
-    color: theme.palette.primary.main,
-  },
-  infotxt: {
-    marginLeft: theme.spacing(1),
+    marginRight: theme.spacing(2),
+    fontSize: '0.8em',
+    '&:hover': {
+      backgroundColor: '#0000',
+    },
   },
 }));
 
@@ -167,6 +182,15 @@ const InformationView = (props: PropTypes) => {
             <Typography className={classes.title}>{t('singlestudy:informations')}</Typography>
           </div>
           <div className={classes.infoContainer}>
+            <div className={classes.mainInfo}>
+              <Typography style={{ fontSize: '1.3em', fontWeight: 'bold' }}>{study.name}</Typography>
+            </div>
+            <div
+              className={classes.mainInfo}
+              style={{ marginBottom: '10px' }}
+            >
+              <Typography style={{ fontSize: '0.9em', color: 'gray' }}>{study.id}</Typography>
+            </div>
             <div className={classes.info}>
               <FontAwesomeIcon icon="user" />
               <span className={classes.infotxt}>{study.author}</span>
@@ -185,38 +209,25 @@ const InformationView = (props: PropTypes) => {
             </div>
           </div>
           <div className={classes.buttonContainer}>
-            <GridList cellHeight={50} className={classes.gridList}>
-              <GridListTile className={classes.gridTile}>
-                <Button
-                  className={classes.launchButton}
-                  onClick={launchStudy}
-                >
-                  {t('main:launch')}
-                </Button>
-              </GridListTile>
-              <GridListTile className={classes.gridTile}>
-                <DownloadLink url={getExportUrl(studyId, false)}>
-                  <Button className={classes.exportButton}>
-                    {t('main:export')}
-                  </Button>
-                </DownloadLink>
-              </GridListTile>
-              <GridListTile className={classes.gridTile}>
-                <DownloadLink url={getExportUrl(studyId, false)}>
-                  <Button className={classes.archiveButton}>
-                    {t('main:archive')}
-                  </Button>
-                </DownloadLink>
-              </GridListTile>
-              <GridListTile className={classes.gridTile}>
-                <Button
-                  className={classes.deleteButton}
-                  onClick={() => setOpenConfirmationModal(true)}
-                >
-                  {t('main:delete')}
-                </Button>
-              </GridListTile>
-            </GridList>
+            <Button
+              className={classes.launchButton}
+              onClick={launchStudy}
+            >
+              {t('main:launch')}
+            </Button>
+            <DownloadLink url={getExportUrl(studyId, false)}>
+              <Button className={classes.exportButton}>
+                {t('main:export')}
+              </Button>
+            </DownloadLink>
+          </div>
+          <div className={classes.deleteContainer}>
+            <Button
+              className={classes.deleteButton}
+              onClick={() => setOpenConfirmationModal(true)}
+            >
+              {t('main:delete')}
+            </Button>
           </div>
           {openConfirmationModal && (
           <ConfirmationModal
