@@ -195,14 +195,14 @@ const InformationView = (props: PropTypes) => {
                 </Button>
               </GridListTile>
               <GridListTile className={classes.gridTile}>
-                <DownloadLink url={getExportUrl(studyId, true, false)}>
+                <DownloadLink url={getExportUrl(studyId, false)}>
                   <Button className={classes.exportButton}>
                     {t('main:export')}
                   </Button>
                 </DownloadLink>
               </GridListTile>
               <GridListTile className={classes.gridTile}>
-                <DownloadLink url={getExportUrl(studyId, false, false)}>
+                <DownloadLink url={getExportUrl(studyId, false)}>
                   <Button className={classes.archiveButton}>
                     {t('main:archive')}
                   </Button>

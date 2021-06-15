@@ -19,7 +19,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     paddingBottom: theme.spacing(1),
     overflowY: 'auto',
     overflowX: 'hidden',
-    borderRadius: '4px',
   },
   header: {
     width: '100%',
@@ -96,11 +95,11 @@ const TaskView = (props: PropTypes) => {
   }, [t, enqueueSnackbar, studyId]);
 
   return (
-    <div className={classes.root}>
+    <Paper className={classes.root}>
       <div className={classes.header}>
         <Typography className={classes.title}>{t('singlestudy:currentTask')}</Typography>
       </div>
-      <Paper className={classes.tasksList}>
+      <div className={classes.tasksList}>
         {
                 jobs.length > 0 ?
                   jobs.map((item) => (
@@ -137,8 +136,8 @@ const TaskView = (props: PropTypes) => {
                       <Typography style={{ fontWeight: 'bold', fontSize: '1em' }}>{t('singlestudy:noTasks')}</Typography>
                     </div>
                   )}
-      </Paper>
-    </div>
+      </div>
+    </Paper>
   );
 };
 
