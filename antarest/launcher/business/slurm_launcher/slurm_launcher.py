@@ -172,21 +172,14 @@ class SlurmLauncher(ILauncher):
             if study.finished or study.with_error:
                 try:
                     with db():
-                        job_id = self.job_id_to_study_id.get(study.name, None)
-                        if job_id is not None:
-                            self._callback(
-                                job_id,
-                                JobStatus.FAILED
-                                if study.with_error
-                                else JobStatus.SUCCESS,
-                                study.with_error,
-                            )
-                            self._import_study_output(study.name)
-                        else:
-                            # should not happen
-                            logger.warning(
-                                f"Failed to retrieve job id from study {study.name}"
-                            )
+                        self._callback(
+                            study.name,
+                            JobStatus.FAILED
+                            if study.with_error
+                            else JobStatus.SUCCESS,
+                            study.with_error,
+                        )
+                        self._import_study_output(study.name)
                 finally:
                     data_repo_tinydb.remove_study(study.name)
                     self._delete_study(
