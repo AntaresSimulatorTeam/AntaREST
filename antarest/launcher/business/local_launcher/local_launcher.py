@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 from antarest.common.config import Config
 from antarest.common.requests import RequestParameters
+from antarest.common.utils.fastapi_sqlalchemy import db
 from antarest.launcher.business.ilauncher import ILauncher
 from antarest.launcher.model import JobStatus
 from antarest.storage.service import StorageService
@@ -41,8 +42,9 @@ class LocalLauncher(ILauncher):
             return uuid
 
     def _callback(self, process: Any, uuid: UUID, status: JobStatus) -> None:
-        for callback in self.callbacks:
-            callback(str(uuid), status, (not process.returncode == 0))
+        with db():
+            for callback in self.callbacks:
+                callback(str(uuid), status, (not process.returncode == 0))
 
     def _compute(
         self, antares_solver_path: Path, study_path: Path, uuid: UUID

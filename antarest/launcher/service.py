@@ -50,7 +50,7 @@ class LauncherService:
         for _, launcher in self.launchers.items():
             launcher.add_statusupdate_callback(self.update)
 
-    def get_launchers(self):
+    def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
 
     def update(

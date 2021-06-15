@@ -16,6 +16,8 @@ class FactoryLauncher:
         self, config: Config, storage_service: StorageService
     ) -> Dict[str, ILauncher]:
         dict_launchers: Dict[str, ILauncher] = dict()
-        dict_launchers["local"] = LocalLauncher(config, storage_service)
-        dict_launchers["slurm"] = SlurmLauncher(config, storage_service)
+        if config.launcher.local is not None:
+            dict_launchers["local"] = LocalLauncher(config, storage_service)
+        if config.launcher.slurm is not None:
+            dict_launchers["slurm"] = SlurmLauncher(config, storage_service)
         return dict_launchers

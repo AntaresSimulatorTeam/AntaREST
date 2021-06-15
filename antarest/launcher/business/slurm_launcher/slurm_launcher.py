@@ -1,5 +1,4 @@
 import argparse
-import glob
 import logging
 import os
 import shutil
@@ -17,11 +16,9 @@ from antareslauncher.main_option_parser import (
     MainOptionParser,
     MainOptionsParameters,
 )
-from antareslauncher.study_dto import StudyDTO
 from antarest.common.config import Config
-from antarest.common.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
+from antarest.common.jwt import DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
-from antarest.common.roles import RoleType
 from antarest.common.utils.fastapi_sqlalchemy import db
 from antarest.launcher.business.ilauncher import ILauncher
 from antarest.launcher.model import JobStatus
@@ -204,7 +201,7 @@ class SlurmLauncher(ILauncher):
         if all_done:
             self.stop()
 
-    def _clean_local_workspace(self):
+    def _clean_local_workspace(self) -> None:
         local_workspace = self.config.launcher.slurm.local_workspace
         for filename in os.listdir(local_workspace):
             file_path = os.path.join(local_workspace, filename)
