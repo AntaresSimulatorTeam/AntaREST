@@ -35,18 +35,19 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install pydantic --no-binary pydantic
           pip install -r requirements-dev.txt
       - name: Generate binary Unix
         if: matrix.os != 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > ./resources/commit_id
-          pyinstaller -F antarest/main.py -n server --add-data resources:resources
+          pyinstaller -F antarest/main.py -n server --additional-hooks-dir extra-hooks --add-data resources:resources
           dist/server -v
       - name: Generate binary Windows
         if: matrix.os == 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
-          pyinstaller -F antarest\main.py -n server --add-data ".\resources;.\resources"
+          pyinstaller -F antarest\main.py -n server --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources"
           dist\server.exe -v
       - name: Archive server binary
         uses: actions/upload-artifact@v2
