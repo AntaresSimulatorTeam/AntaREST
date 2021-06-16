@@ -19,7 +19,7 @@ export interface Config {
 let config: Config = {
   baseUrl: '',
   applicationHome: '',
-  restEndpoint: '/',
+  restEndpoint: '',
   wsUrl: '',
   wsEndpoint: '/ws',
   hidden: false,
