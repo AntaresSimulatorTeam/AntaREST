@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, ANY
 
 import pytest
 
@@ -7,6 +7,7 @@ from antarest.common.config import Config, LauncherConfig, SlurmConfig
 from antarest.launcher.business.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
 )
+from antarest.launcher.model import JobStatus
 
 
 @pytest.mark.unit_test
@@ -107,3 +108,49 @@ def test_slurm_launcher_delete_function(tmp_path: str):
     slurm_launcher._delete_study(directory_path)
 
     assert not directory_path.exists()
+
+
+@pytest.mark.unit_test
+def test_run_study():
+    config = Config(
+        launcher=LauncherConfig(
+            slurm=SlurmConfig(
+                local_workspace=Path("local_workspace"),
+                default_json_db_name="default_json_db_name",
+                slurm_script_path="slurm_script_path",
+                antares_versions_on_remote_server=["42"],
+                username="username",
+                hostname="hostname",
+                port=42,
+                private_key_file=Path("private_key_file"),
+                key_password="key_password",
+                password="password",
+            )
+        )
+    )
+
+    storage_service = Mock()
+    slurm_launcher = SlurmLauncher(
+        config=config, storage_service=storage_service
+    )
+
+    study_uuid = "study_uuid"
+    params = Mock()
+    argument = Mock()
+    argument.studies_in = "studies_in"
+    slurm_launcher._init_launcher_arguments = Mock(return_value=argument)
+    slurm_launcher._init_launcher_parameters = Mock()
+    slurm_launcher._clean_local_workspace = Mock()
+    slurm_launcher._callback = Mock()
+    slurm_launcher.start = Mock()
+    slurm_launcher._delete_study = Mock()
+
+    slurm_launcher.run_study(study_uuid, version="42", params=params)
+
+    slurm_launcher._init_launcher_arguments.assert_called_once()
+    slurm_launcher._init_launcher_parameters.assert_called_once()
+    slurm_launcher._clean_local_workspace.assert_called_once()
+    storage_service.export_study_flat.assert_called_once()
+    slurm_launcher._callback.assert_called_once_with(ANY, JobStatus.RUNNING)
+    slurm_launcher.start.assert_called_once()
+    slurm_launcher._delete_study.assert_called_once()
