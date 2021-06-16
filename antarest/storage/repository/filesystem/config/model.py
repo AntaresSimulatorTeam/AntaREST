@@ -113,7 +113,7 @@ class StudyConfig(DTO):
         study_path: Path,
         areas: Optional[Dict[str, Area]] = None,
         sets: Optional[Dict[str, Set]] = None,
-        outputs: Optional[Dict[int, Simulation]] = None,
+        outputs: Optional[Dict[str, Simulation]] = None,
         bindings: Optional[List[str]] = None,
         store_new_set: bool = False,
     ):
@@ -124,6 +124,16 @@ class StudyConfig(DTO):
         self.outputs = outputs or dict()
         self.bindings = bindings or list()
         self.store_new_set = store_new_set
+
+        self.links: Dict[str, List[str]] = dict()
+        for area_input_name in self.areas.keys():
+            if self.areas[area_input_name]:
+                tmp_links = self.areas[area_input_name].links
+                tmp_links_keys = tmp_links.keys()
+                if len(tmp_links_keys) > 0:
+                    self.links[area_input_name] = []
+                    for area_output_name in tmp_links_keys:
+                        self.links[area_input_name].append(area_output_name)
 
     def next_file(self, name: str) -> "StudyConfig":
         copy = StudyConfig(

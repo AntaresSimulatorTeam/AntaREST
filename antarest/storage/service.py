@@ -25,6 +25,7 @@ from antarest.storage.business.permissions import (
 )
 from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
+from antarest.storage.business.study_download_utils import StudyDownloader
 from antarest.storage.model import (
     Study,
     StudyContentStatus,
@@ -34,6 +35,8 @@ from antarest.storage.model import (
     PublicMode,
     StudyMetadataPatchDTO,
     StudyMetadataDTO,
+    StudyDownloadDTO,
+    MatrixAggregationResult,
 )
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.study import StudyMetadataRepository
@@ -445,6 +448,42 @@ class StorageService:
             uuid,
             params.get_user_id(),
         )
+
+    def download_outputs(
+        self,
+        study_id: str,
+        output_id: str,
+        data: StudyDownloadDTO,
+        params: RequestParameters,
+    ) -> MatrixAggregationResult:
+        """
+        Download outputs
+        Args:
+            study_id: study Id
+            output_id: output id
+            data: Json parameters
+            params: request parameters
+
+        Returns: CSV content file
+
+        """
+        # GET STUDY ID
+        study = self._get_study(study_id)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
+
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(study_id, study.type)
+
+        self.logger.info(
+            "study %s data asked by user %s",
+            study_id,
+            params.get_user_id(),
+        )
+        url = f"/output/{output_id}/economy"
+        matrix = StudyDownloader.build(
+            self.study_service, study, output_id, url, data
+        )
+        return matrix
 
     def get_matrix(self, route: str, params: RequestParameters) -> BytesIO:
         """

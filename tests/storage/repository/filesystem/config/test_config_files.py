@@ -84,7 +84,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
     config = StudyConfig(
         study_path,
         outputs={
-            1: Simulation(
+            "20201220-1456eco-hello": Simulation(
                 name="hello",
                 date="20201220-1456",
                 mode="economy",

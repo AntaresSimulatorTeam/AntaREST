@@ -20,6 +20,15 @@ from antarest.storage.model import (
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
     PublicMode,
+    StudyDownloadDTO,
+)
+from antarest.storage.repository.filesystem.root.study import (
+    Study as RootStudy,
+)
+from antarest.storage.repository.filesystem.config.model import (
+    Area,
+    StudyConfig,
+    Simulation,
 )
 from antarest.storage.service import StorageService, UserHasNotPermissionError
 
@@ -212,6 +221,78 @@ def test_save_metadata() -> None:
         owner=jwt,
     )
     repository.save.assert_called_once_with(study)
+
+
+def test_download_output() -> None:
+    study_service = Mock()
+    repository = Mock()
+
+    input_study = RawStudy(
+        id="c",
+        path="c",
+        name="c",
+        content_status=StudyContentStatus.WARNING,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=User(id=0),
+    )
+    input_data = StudyDownloadDTO(
+        type="AREA",
+        years=[],
+        level="annual",
+        filterIn="",
+        filterOut="",
+        filter=[],
+        columns=[],
+        synthesis=False,
+        includeClusters=True,
+    )
+
+    area = Area(
+        links=dict(), thermals=[], filters_synthesis=[], filters_year=[]
+    )
+
+    sim = Simulation(
+        name="",
+        date="",
+        mode="",
+        nbyears=1,
+        synthesis=True,
+        by_year=True,
+        error=False,
+    )
+    config = StudyConfig(
+        study_path=input_study.path,
+        areas={"east": area},
+        sets=None,
+        outputs={"output-id": sim},
+        bindings=None,
+        store_new_set=False,
+    )
+    study = Mock()
+
+    repository.get.return_value = input_study
+
+    service = StorageService(
+        study_service=study_service,
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        user_service=Mock(),
+        repository=repository,
+        event_bus=Mock(),
+    )
+    res_study = {"columns": [["H. VAL|Euro/MWh"]], "data": [[0.5]]}
+    res_matrix = {"00001|east|H. VAL|Euro/MWh": {"data": [0.5]}}
+    study_service.get_study_path.return_value = Path(input_study.path)
+    study_service.study_factory.create_from_fs.return_value = config, study
+    study.get.return_value = res_study
+
+    result = service.download_outputs(
+        "study-id",
+        "output-id",
+        input_data,
+        RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    )
+    assert result == res_matrix
 
 
 def test_change_owner() -> None:

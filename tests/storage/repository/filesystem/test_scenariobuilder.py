@@ -84,7 +84,10 @@ def test_get(tmp_path: Path):
 
     areas = {
         n: Area(
-            links=[], thermals=thermals, filters_year=[], filters_synthesis=[]
+            links=dict(),
+            thermals=thermals,
+            filters_year=[],
+            filters_synthesis=[],
         )
         for n in ["de", "fr", "es", "it"]
     }

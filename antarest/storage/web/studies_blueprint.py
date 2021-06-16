@@ -17,7 +17,8 @@ from antarest.common.requests import (
 from antarest.common.swagger import get_path_examples
 from antarest.common.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.storage.model import PublicMode, StudyMetadataPatchDTO
+from antarest.storage.model import PublicMode, StudyDownloadDTO, StudyMetadataPatchDTO
+from antarest.common.config import Config
 from antarest.storage.service import StorageService
 
 
@@ -329,6 +330,27 @@ def create_study_routes(
         content = ""
 
         return content
+
+    @bp.post(
+        "/studies/{study_id}/outputs/{output_id}/download",
+        tags=["Get outputs data"],
+        summary="Get outputs data",
+    )
+    def output_download(
+        study_id: str,
+        output_id: str,
+        data: StudyDownloadDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        new = data
+
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        params = RequestParameters(user=current_user)
+        content = storage_service.download_outputs(
+            study_id, output_id, new, params
+        )
+        return json.dumps(content)
 
     @bp.get(
         "/studies/{uuid}/validate",

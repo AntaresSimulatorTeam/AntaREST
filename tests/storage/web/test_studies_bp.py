@@ -20,7 +20,13 @@ from antarest.common.config import (
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.roles import RoleType
 from antarest.storage.main import build_storage
-from antarest.storage.model import DEFAULT_WORKSPACE_NAME, PublicMode
+from antarest.storage.model import (
+    DEFAULT_WORKSPACE_NAME,
+    PublicMode,
+    StudyDownloadDTO,
+    MatrixAggregationResult,
+    MatrixColumn,
+)
 from antarest.storage.web.exceptions import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
@@ -438,6 +444,45 @@ def test_validate() -> None:
 
     assert res.json() == ["Hello"]
     mock_service.check_errors.assert_called_once_with("my-uuid")
+
+
+@pytest.mark.unit_test
+def test_output_download() -> None:
+    mock_service = Mock()
+
+    output_data: MatrixAggregationResult = {
+        "00001|td3_37_de-38_pl|H. VAL|Euro/MWh": MatrixColumn(
+            data=[0.5, 0.6, 0.7]
+        )
+    }
+    mock_service.download_outputs.return_value = output_data
+
+    study_download = StudyDownloadDTO(
+        type="AREA",
+        years=[1],
+        level="annual",
+        filterIn="",
+        filterOut="",
+        filter=[],
+        columns=["00001|td3_37_de-38_pl|H. VAL|Euro/MWh"],
+        synthesis=False,
+        includeClusters=True,
+    )
+
+    app = FastAPI(title=__name__)
+    build_storage(
+        app,
+        storage_service=mock_service,
+        config=CONFIG,
+        user_service=Mock(),
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.post(
+        "/v1/studies/my-uuid/outputs/my-output-id/download",
+        json=study_download.dict(),
+    )
+
+    assert res.json() == json.dumps(output_data)
 
 
 @pytest.mark.unit_test
