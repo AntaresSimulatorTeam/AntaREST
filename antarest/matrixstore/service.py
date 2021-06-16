@@ -54,6 +54,8 @@ class MatrixService:
 
     def save(self, data: MatrixDTO) -> str:
         matrix, content = MatrixService._from_dto(data)
+        matrix.created_at = datetime.now()
+        matrix.updated_at = datetime.now()
         matrix.id = self.repo_content.save(content)
         self.repo.save(matrix)
 

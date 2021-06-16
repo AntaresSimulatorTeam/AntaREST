@@ -28,7 +28,7 @@ class Matrix(Base):  # type: ignore
     type = Column(Enum(MatrixType))
     freq = Column(Enum(MatrixFreq))
     created_at = Column(DateTime)
-    updated_at = Column(DateTime)
+    updated_at = Column(DateTime)  # TODO useless since matrix is immutable ?
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Matrix):
@@ -48,11 +48,11 @@ class Matrix(Base):  # type: ignore
 class MatrixDTO(DataClassJsonMixin):  # type: ignore
     type: MatrixType
     freq: MatrixFreq
-    created_at: int
-    updated_at: int
     index: List[str]
     columns: List[str]
     data: List[List[int]]
+    created_at: int = 0
+    updated_at: int = 0
     id: str = ""
 
 

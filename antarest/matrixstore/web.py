@@ -42,13 +42,14 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
 
     @bp.get("/matrix")
     def get_by_type_or_freq(
-        type: int = Query(""),
-        freq: int = Query(""),
+        type: int = Query(None),
+        freq: int = Query(None),
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         if user.id is not None:
             return service.get_by_type_freq(
-                freq=MatrixFreq(freq), type=MatrixType(type)
+                freq=MatrixFreq(freq) if freq else None,
+                type=MatrixType(type) if type else None,
             )
 
     return bp

@@ -244,3 +244,51 @@ def test_main(app: FastAPI):
         },
     )
     assert res.json()[0]["id"] == job_id
+
+
+def test_matrix(app: FastAPI):
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.post(
+        "/v1/login", json={"username": "admin", "password": "admin"}
+    )
+    admin_credentials = res.json()
+
+    matrix = {
+        "type": 1,
+        "freq": 1,
+        "index": ["1", "2"],
+        "columns": ["a", "b"],
+        "data": [[1, 2], [3, 4]],
+    }
+
+    res = client.post(
+        f"/v1/matrix",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json=matrix,
+    )
+
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/matrix/{res.json()}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+
+    assert res.status_code == 200
+    stored = res.json()
+    assert stored["created_at"] > 0
+    assert stored["id"] != ""
+
+    res = client.get(
+        f"/v1/matrix?type=1",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+
+    assert res.status_code == 200
+    assert res.json() == [stored]
