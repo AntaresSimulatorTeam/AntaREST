@@ -8,17 +8,17 @@ from sqlalchemy import Column, String, Enum, DateTime
 from antarest.common.persistence import Base
 
 
-class MatrixType(enum.Enum):
-    INPUT = "input"
-    OUTPUT = "output"
+class MatrixType(enum.IntEnum):
+    INPUT = 1
+    OUTPUT = 2
 
 
-class MatrixFreq(enum.Enum):
-    HOURLY = "hourly"
-    DAILY = "daily"
-    WEEKLY = "weekly"
-    MONTHLY = "monthly"
-    ANNUAL = "annual"
+class MatrixFreq(enum.IntEnum):
+    HOURLY = 1
+    DAILY = 2
+    WEEKLY = 3
+    MONTHLY = 4
+    ANNUAL = 5
 
 
 class Matrix(Base):  # type: ignore
