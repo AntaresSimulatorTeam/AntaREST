@@ -41,7 +41,7 @@ def test_save():
 
     # Test
     service = MatrixService(repo=repo, content=repo_content)
-    id = service.save(dto)
+    id = service.create(dto)
 
     # Verify
     assert id == "my-id"

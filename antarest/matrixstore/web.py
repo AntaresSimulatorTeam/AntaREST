@@ -31,7 +31,7 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         if current_user.id is not None:
-            return service.save(matrix)
+            return service.create(matrix)
         raise UserHasNotPermissionError()
 
     @bp.get("/matrix/{id}")

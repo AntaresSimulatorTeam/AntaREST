@@ -49,7 +49,7 @@ class MatrixService:
 
         return matrix, content
 
-    def save(self, data: MatrixDTO) -> str:
+    def create(self, data: MatrixDTO) -> str:
         matrix, content = MatrixService._from_dto(data)
         matrix.created_at = datetime.now()
         matrix.updated_at = datetime.now()

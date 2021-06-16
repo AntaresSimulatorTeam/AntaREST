@@ -48,15 +48,15 @@ def test_create() -> None:
     )
 
     service = Mock()
-    service.save.return_value = matrix
+    service.create.return_value = matrix
 
     app = create_app(service)
     client = TestClient(app)
     res = client.post(
-        "/v1/matrix", headers=create_auth_token(app), json=matrix.to_dict()
+        "/v1/matrix", headers=create_auth_token(app), json=matrix.dict()
     )
     assert res.status_code == 200
-    assert MatrixDTO.from_dict(res.json()) == matrix
+    assert res.json() == matrix.dict()
 
 
 @pytest.mark.unit_test
@@ -78,7 +78,7 @@ def test_get() -> None:
     client = TestClient(app)
     res = client.get("/v1/matrix/123", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert MatrixDTO.from_dict(res.json()) == matrix
+    assert res.json() == matrix.dict()
     service.get.assert_called_once_with("123")
 
 
@@ -104,5 +104,5 @@ def test_get_filter() -> None:
         headers=create_auth_token(app),
     )
     assert res.status_code == 200
-    assert MatrixDTO.from_dict(res.json()[0]) == matrix
+    assert res.json()[0] == matrix.dict()
     service.get_by_freq.assert_called_once_with(freq=MatrixFreq.WEEKLY)

@@ -4,6 +4,7 @@ from typing import List, Any, Optional
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin  # type: ignore
 from sqlalchemy import Column, String, Enum, DateTime  # type: ignore
+from pydantic import BaseModel
 
 from antarest.common.persistence import Base
 
@@ -37,8 +38,7 @@ class Matrix(Base):  # type: ignore
         return res
 
 
-@dataclass
-class MatrixDTO(DataClassJsonMixin):  # type: ignore
+class MatrixDTO(BaseModel):  # type: ignore
     freq: MatrixFreq
     index: List[str]
     columns: List[str]
