@@ -1,5 +1,5 @@
 import datetime
-from unittest.mock import Mock
+from unittest.mock import Mock, ANY
 
 from antarest.matrixstore.model import (
     MatrixDTO,
@@ -34,8 +34,8 @@ def test_save():
         id="my-id",
         type=MatrixType.INPUT,
         freq=MatrixFreq.WEEKLY,
-        created_at=datetime.datetime.fromtimestamp(42),
-        updated_at=datetime.datetime.fromtimestamp(101),
+        created_at=ANY,
+        updated_at=ANY,
     )
 
     content = MatrixContent(

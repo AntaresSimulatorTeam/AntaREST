@@ -3,7 +3,7 @@ from typing import Optional, Any
 from urllib.request import Request
 
 from fastapi import FastAPI
-from fastapi_jwt_auth.exceptions import AuthJWTException
+from fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
 from starlette.responses import JSONResponse
 
 from antarest.common.config import Config

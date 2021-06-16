@@ -4,7 +4,7 @@ import logging
 import os
 from typing import Optional, List, Any
 
-from sqlalchemy import exists
+from sqlalchemy import exists  # type: ignore
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON

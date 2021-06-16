@@ -2,8 +2,8 @@ import enum
 from typing import List, Any, Optional
 
 from dataclasses import dataclass
-from dataclasses_json import DataClassJsonMixin
-from sqlalchemy import Column, String, Enum, DateTime
+from dataclasses_json import DataClassJsonMixin  # type: ignore
+from sqlalchemy import Column, String, Enum, DateTime  # type: ignore
 
 from antarest.common.persistence import Base
 

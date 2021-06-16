@@ -75,7 +75,11 @@ def build_login(
         subject = json.loads(decrypted_token["sub"])
         user_id = subject["id"]
         token_type = subject["type"]
-        return token_type == "bots" and not service.exists_bot(user_id)
+        return (
+            token_type == "bots"
+            and service is not None
+            and not service.exists_bot(user_id)
+        )
 
     application.include_router(create_login_api(service, config))
     return service
