@@ -9,7 +9,6 @@ from antarest.common.persistence import Base
 from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.matrixstore.model import (
     Matrix,
-    MatrixType,
     MatrixFreq,
     MatrixContent,
 )
@@ -32,7 +31,6 @@ def test_db_cyclelife():
         repo = MatrixRepository()
         m = Matrix(
             id="hello",
-            type=MatrixType.INPUT,
             freq=MatrixFreq.WEEKLY,
             created_at=datetime.now(),
             updated_at=datetime.now(),
@@ -40,9 +38,8 @@ def test_db_cyclelife():
         repo.save(m)
         assert m.id
         assert m == repo.get(m.id)
-        assert [m] == repo.get_by_type_freq(freq=MatrixFreq.WEEKLY)
-        assert [m] == repo.get_by_type_freq(type=MatrixType.INPUT)
-        assert [] == repo.get_by_type_freq(type=MatrixType.OUTPUT)
+        assert [m] == repo.get_by_freq(freq=MatrixFreq.WEEKLY)
+        assert [] == repo.get_by_freq(freq=MatrixFreq.HOURLY)
 
         assert repo.exists(m.id)
 

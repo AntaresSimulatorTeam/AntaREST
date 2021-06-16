@@ -254,7 +254,6 @@ def test_matrix(app: FastAPI):
     admin_credentials = res.json()
 
     matrix = {
-        "type": 1,
         "freq": 1,
         "index": ["1", "2"],
         "columns": ["a", "b"],
@@ -284,7 +283,7 @@ def test_matrix(app: FastAPI):
     assert stored["id"] != ""
 
     res = client.get(
-        f"/v1/matrix?type=1",
+        f"/v1/matrix?freq=1",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },

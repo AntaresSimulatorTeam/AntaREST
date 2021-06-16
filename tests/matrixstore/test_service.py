@@ -3,7 +3,6 @@ from unittest.mock import Mock, ANY
 
 from antarest.matrixstore.model import (
     MatrixDTO,
-    MatrixType,
     MatrixFreq,
     Matrix,
     MatrixContent,
@@ -20,7 +19,6 @@ def test_save():
 
     # Input
     dto = MatrixDTO(
-        type=MatrixType.INPUT,
         freq=MatrixFreq.WEEKLY,
         created_at=42,
         updated_at=101,
@@ -32,7 +30,6 @@ def test_save():
     # Expected
     matrix = Matrix(
         id="my-id",
-        type=MatrixType.INPUT,
         freq=MatrixFreq.WEEKLY,
         created_at=ANY,
         updated_at=ANY,
@@ -64,7 +61,6 @@ def test_get():
     repo = Mock()
     repo.get.return_value = Matrix(
         id="my-id",
-        type=MatrixType.INPUT,
         freq=MatrixFreq.WEEKLY,
         created_at=datetime.datetime.fromtimestamp(42),
         updated_at=datetime.datetime.fromtimestamp(101),
@@ -73,7 +69,6 @@ def test_get():
     # Expected
     exp = MatrixDTO(
         id="my-id",
-        type=MatrixType.INPUT,
         freq=MatrixFreq.WEEKLY,
         created_at=42,
         updated_at=101,
@@ -97,10 +92,9 @@ def test_get_by_type_freq():
     )
 
     repo = Mock()
-    repo.get_by_type_freq.return_value = [
+    repo.get_by_freq.return_value = [
         Matrix(
             id="my-id",
-            type=MatrixType.INPUT,
             freq=MatrixFreq.WEEKLY,
             created_at=datetime.datetime.fromtimestamp(42),
             updated_at=datetime.datetime.fromtimestamp(101),
@@ -110,7 +104,6 @@ def test_get_by_type_freq():
     # Expected
     exp = MatrixDTO(
         id="my-id",
-        type=MatrixType.INPUT,
         freq=MatrixFreq.WEEKLY,
         created_at=42,
         updated_at=101,
@@ -121,9 +114,9 @@ def test_get_by_type_freq():
 
     # Test
     service = MatrixService(repo, content)
-    res = service.get_by_type_freq(freq=MatrixFreq.WEEKLY)
+    res = service.get_by_freq(freq=MatrixFreq.WEEKLY)
     assert [exp] == res
-    repo.get_by_type_freq.assert_called_once_with(None, MatrixFreq.WEEKLY)
+    repo.get_by_freq.assert_called_once_with(MatrixFreq.WEEKLY)
 
 
 def test_delete():

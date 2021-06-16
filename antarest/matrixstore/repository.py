@@ -11,7 +11,6 @@ from antarest.common.custom_types import JSON
 from antarest.common.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import (
     Matrix,
-    MatrixType,
     MatrixFreq,
     MatrixContent,
 )
@@ -44,15 +43,12 @@ class MatrixRepository:
         res: bool = db.session.query(exists().where(Matrix.id == id)).scalar()
         return res
 
-    def get_by_type_freq(
+    def get_by_freq(
         self,
-        type: Optional[MatrixType] = None,
         freq: Optional[MatrixFreq] = None,
     ) -> List[Matrix]:
         matrix: List[Matrix] = (
-            db.session.query(Matrix)
-            .filter((Matrix.type == type) | (Matrix.freq == freq))
-            .all()
+            db.session.query(Matrix).filter((Matrix.freq == freq)).all()
         )
         return matrix
 

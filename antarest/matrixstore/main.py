@@ -38,14 +38,5 @@ def build_matrixstore(
 
         service = MatrixService(repo=repo, content=content)
 
-    @application.exception_handler(AuthJWTException)
-    def authjwt_exception_handler(
-        request: Request, exc: AuthJWTException
-    ) -> Any:
-        return JSONResponse(
-            status_code=HTTPStatus.UNAUTHORIZED,
-            content={"detail": exc.message},
-        )
-
     application.include_router(create_matrix_api(service, config))
     return service
