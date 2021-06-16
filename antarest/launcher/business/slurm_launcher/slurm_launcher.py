@@ -46,8 +46,19 @@ class SlurmLauncher(ILauncher):
         self.job_id_to_study_id: Dict[str, str] = {}
 
     def _loop(self) -> None:
+        arguments = self._init_launcher_arguments()
+        antares_launcher_parameters = self._init_launcher_parameters()
+        data_repo_tinydb = DataRepoTinydb(
+            database_name=(
+                antares_launcher_parameters.json_dir
+                / antares_launcher_parameters.default_json_db_name
+            ),
+            db_primary_key=antares_launcher_parameters.db_primary_key,
+        )
         while self.check_state:
-            self._check_studies_state()
+            self._check_studies_state(
+                arguments, antares_launcher_parameters, data_repo_tinydb
+            )
             time.sleep(2)
 
     def start(self) -> None:
@@ -145,22 +156,17 @@ class SlurmLauncher(ILauncher):
                 params=RequestParameters(DEFAULT_ADMIN_USER),
             )
 
-    def _check_studies_state(self) -> None:
-        arguments = self._init_launcher_arguments()
-        antares_launcher_parameters = self._init_launcher_parameters()
+    def _check_studies_state(
+        self,
+        arguments: argparse.Namespace,
+        antares_launcher_parameters: MainParameters,
+        data_repo_tinydb: DataRepoTinydb,
+    ) -> None:
 
         run_with(
             arguments=arguments,
             parameters=antares_launcher_parameters,
             show_banner=False,
-        )
-
-        data_repo_tinydb = DataRepoTinydb(
-            database_name=(
-                antares_launcher_parameters.json_dir
-                / antares_launcher_parameters.default_json_db_name
-            ),
-            db_primary_key=antares_launcher_parameters.db_primary_key,
         )
 
         study_list = data_repo_tinydb.get_list_of_studies()

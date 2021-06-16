@@ -2,8 +2,11 @@ from pathlib import Path
 from unittest.mock import Mock, ANY
 
 import pytest
+from sqlalchemy import create_engine
 
 from antarest.common.config import Config, LauncherConfig, SlurmConfig
+from antarest.common.persistence import Base
+from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.launcher.business.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
 )
@@ -154,3 +157,65 @@ def test_run_study():
     slurm_launcher._callback.assert_called_once_with(ANY, JobStatus.RUNNING)
     slurm_launcher.start.assert_called_once()
     slurm_launcher._delete_study.assert_called_once()
+
+
+@pytest.mark.unit_test
+def test_check_state():
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+    config = Config(
+        launcher=LauncherConfig(
+            slurm=SlurmConfig(
+                local_workspace=Path("local_workspace"),
+                default_json_db_name="default_json_db_name",
+                slurm_script_path="slurm_script_path",
+                antares_versions_on_remote_server=["42"],
+                username="username",
+                hostname="hostname",
+                port=42,
+                private_key_file=Path("private_key_file"),
+                key_password="key_password",
+                password="password",
+            )
+        )
+    )
+
+    storage_service = Mock()
+    slurm_launcher = SlurmLauncher(
+        config=config, storage_service=storage_service
+    )
+    slurm_launcher._callback = Mock()
+    slurm_launcher._import_study_output = Mock()
+    slurm_launcher._delete_study = Mock()
+    slurm_launcher.stop = Mock()
+
+    study1 = Mock()
+    study1.finished = True
+    study1.name = "study1"
+    slurm_launcher.job_id_to_study_id["study1"] = "job_id1"
+
+    study2 = Mock()
+    study2.finished = True
+    study2.name = "study2"
+    slurm_launcher.job_id_to_study_id["study2"] = "job_id2"
+
+    data_repo_tinydb = Mock()
+    data_repo_tinydb.get_list_of_studies = Mock(return_value=[study1, study2])
+    data_repo_tinydb.remove_study = Mock()
+
+    slurm_launcher._check_studies_state(
+        arguments=Mock(),
+        antares_launcher_parameters=Mock(),
+        data_repo_tinydb=data_repo_tinydb,
+    )
+
+    assert slurm_launcher._callback.call_count == 2
+    assert slurm_launcher._import_study_output.call_count == 2
+    assert slurm_launcher._delete_study.call_count == 2
+    assert data_repo_tinydb.remove_study.call_count == 2
+    slurm_launcher.stop.assert_called_once()
