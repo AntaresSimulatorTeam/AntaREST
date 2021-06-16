@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 from typing import Optional, Any
 
@@ -67,6 +68,13 @@ def build_login(
             status_code=HTTPStatus.UNAUTHORIZED,
             content={"detail": exc.message},
         )
+
+    @AuthJWT.token_in_denylist_loader  # type: ignore
+    def check_if_token_is_revoked(decrypted_token: Any) -> bool:
+        subject = json.loads(decrypted_token["sub"])
+        user_id = subject["id"]
+        token_type = subject["type"]
+        return token_type == "bots" and not service.exists_bot(user_id)
 
     application.include_router(create_login_api(service, config))
     return service

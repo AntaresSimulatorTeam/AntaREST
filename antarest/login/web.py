@@ -2,7 +2,7 @@ import json
 from datetime import timedelta
 from typing import Any, Optional
 
-from fastapi import Depends, APIRouter, Form, HTTPException, Query
+from fastapi import Depends, APIRouter, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from markupsafe import escape
 from pydantic import BaseModel
@@ -19,11 +19,8 @@ from antarest.common.config import Config
 from antarest.login.model import (
     User,
     Group,
-    Password,
-    Role,
     BotCreateDTO,
     UserCreateDTO,
-    RoleDTO,
     RoleCreationDTO,
     UserInfo,
     GroupDTO,
@@ -69,13 +66,6 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
             if isinstance(refresh_token, bytes)
             else refresh_token,
         }
-
-    @AuthJWT.token_in_denylist_loader  # type: ignore
-    def check_if_token_is_revoked(decrypted_token: Any) -> bool:
-        subject = json.loads(decrypted_token["sub"])
-        user_id = subject["id"]
-        token_type = subject["type"]
-        return token_type == "bots" and not service.exists_bot(user_id)
 
     @bp.post("/login", tags=["User"], summary="Login")
     def login(

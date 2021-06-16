@@ -21,6 +21,7 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
         return JwtSettings(
             authjwt_secret_key="super-secret",
             authjwt_token_location=("headers", "cookies"),
+            authjwt_denylist_enabled=False,
         )
 
     build_matrixstore(
