@@ -67,6 +67,7 @@ class MatrixRepository:
 class MatrixContentRepository:
     def __init__(self, config: Config) -> None:
         self.bucket = config.matrixstore.bucket
+        self.bucket.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def _compute_hash(data: str) -> str:

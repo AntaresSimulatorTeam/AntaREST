@@ -78,9 +78,36 @@ def test_get() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get(
-        "/v1/matrix/123", headers=create_auth_token(app), json=matrix.to_dict()
-    )
+    res = client.get("/v1/matrix/123", headers=create_auth_token(app))
     assert res.status_code == 200
     assert MatrixDTO.from_dict(res.json()) == matrix
     service.get.assert_called_once_with("123")
+
+
+@pytest.mark.unit_test
+def test_get_filter() -> None:
+    matrix = MatrixDTO(
+        id="123",
+        type=MatrixType.INPUT,
+        freq=MatrixFreq.WEEKLY,
+        created_at=0,
+        updated_at=0,
+        index=["1", "2"],
+        columns=["a", "b"],
+        data=[[1, 2], [3, 4]],
+    )
+
+    service = Mock()
+    service.get_by_type_freq.return_value = [matrix]
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.get(
+        "/v1/matrix?type=2&freq=3",
+        headers=create_auth_token(app),
+    )
+    assert res.status_code == 200
+    assert MatrixDTO.from_dict(res.json()[0]) == matrix
+    service.get_by_type_freq.assert_called_once_with(
+        freq=MatrixFreq.WEEKLY, type=MatrixType.OUTPUT
+    )

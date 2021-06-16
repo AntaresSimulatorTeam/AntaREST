@@ -40,9 +40,9 @@ def test_db_cyclelife():
         repo.save(m)
         assert m.id
         assert m == repo.get(m.id)
-        assert [m] == repo.get_by_type_freq_create(freq=MatrixFreq.WEEKLY)
-        assert [m] == repo.get_by_type_freq_create(type=MatrixType.INPUT)
-        assert [] == repo.get_by_type_freq_create(type=MatrixType.OUTPUT)
+        assert [m] == repo.get_by_type_freq(freq=MatrixFreq.WEEKLY)
+        assert [m] == repo.get_by_type_freq(type=MatrixType.INPUT)
+        assert [] == repo.get_by_type_freq(type=MatrixType.OUTPUT)
 
         assert repo.exists(m.id)
 

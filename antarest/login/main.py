@@ -4,6 +4,7 @@ from typing import Optional, Any
 
 from fastapi import FastAPI
 from fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
+from fastapi_jwt_auth import AuthJWT  # type: ignore
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
