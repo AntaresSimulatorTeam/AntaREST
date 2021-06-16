@@ -38,7 +38,7 @@ class Matrix(Base):  # type: ignore
         return res
 
 
-class MatrixDTO(BaseModel):  # type: ignore
+class MatrixDTO(BaseModel):
     freq: MatrixFreq
     index: List[str]
     columns: List[str]
