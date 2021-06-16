@@ -64,7 +64,6 @@ def test_init_slurm_launcher_parameters():
                 private_key_file=Path("private_key_file"),
                 key_password="key_password",
                 password="password",
-                db_primary_key="db_primary_key",
             )
         )
     )
