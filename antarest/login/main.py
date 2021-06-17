@@ -1,8 +1,10 @@
+import json
 from http import HTTPStatus
 from typing import Optional, Any
 
 from fastapi import FastAPI
 from fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
+from fastapi_jwt_auth import AuthJWT  # type: ignore
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -66,6 +68,17 @@ def build_login(
         return JSONResponse(
             status_code=HTTPStatus.UNAUTHORIZED,
             content={"detail": exc.message},
+        )
+
+    @AuthJWT.token_in_denylist_loader  # type: ignore
+    def check_if_token_is_revoked(decrypted_token: Any) -> bool:
+        subject = json.loads(decrypted_token["sub"])
+        user_id = subject["id"]
+        token_type = subject["type"]
+        return (
+            token_type == "bots"
+            and service is not None
+            and not service.exists_bot(user_id)
         )
 
     application.include_router(create_login_api(service, config))

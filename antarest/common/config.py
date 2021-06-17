@@ -221,6 +221,19 @@ class EventBusConfig:
 
 
 @dataclass(frozen=True)
+class MatrixStoreConfig:
+    """
+    Sub config object dedicated to matrix store module
+    """
+
+    bucket: Path = Path("")
+
+    @staticmethod
+    def from_dict(data: JSON) -> "MatrixStoreConfig":
+        return MatrixStoreConfig(bucket=Path(data["bucket"]))
+
+
+@dataclass(frozen=True)
 class Config:
     """
     Root server config
@@ -229,6 +242,7 @@ class Config:
     security: SecurityConfig = SecurityConfig()
     storage: StorageConfig = StorageConfig()
     launcher: LauncherConfig = LauncherConfig()
+    matrixstore: MatrixStoreConfig = MatrixStoreConfig()
     db_url: str = ""
     logging: LoggingConfig = LoggingConfig()
     debug: bool = True
@@ -251,6 +265,7 @@ class Config:
             security=SecurityConfig.from_dict(data["security"]),
             storage=StorageConfig.from_dict(data["storage"]),
             launcher=LauncherConfig.from_dict(data["launcher"]),
+            matrixstore=MatrixStoreConfig.from_dict(data["matrixstore"]),
             db_url=data["db"]["url"],
             logging=LoggingConfig.from_dict(data["logging"]),
             debug=data["debug"],

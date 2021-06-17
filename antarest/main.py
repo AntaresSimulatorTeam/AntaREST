@@ -26,6 +26,7 @@ from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
 from antarest.login.auth import Auth
 from antarest.login.main import build_login
+from antarest.matrixstore.main import build_matrixstore
 from antarest.storage.main import build_storage
 
 
@@ -203,11 +204,17 @@ def fastapi_app(
         user_service=user_service,
         event_bus=event_bus,
     )
+
     build_launcher(
         application,
         config,
         service_storage=storage,
         event_bus=event_bus,
+    )
+
+    build_matrixstore(
+        application,
+        config,
     )
 
     return application

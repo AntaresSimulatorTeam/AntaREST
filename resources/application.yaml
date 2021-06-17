@@ -12,6 +12,9 @@ security:
 db:
   url: "sqlite:///database.db"
 
+matrixstore:
+  bucket: ./bucket
+
 storage:
   workspaces:
     tmp:

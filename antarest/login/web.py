@@ -67,13 +67,6 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
             else refresh_token,
         }
 
-    @AuthJWT.token_in_denylist_loader  # type: ignore
-    def check_if_token_is_revoked(decrypted_token: Any) -> bool:
-        subject = json.loads(decrypted_token["sub"])
-        user_id = subject["id"]
-        token_type = subject["type"]
-        return token_type == "bots" and not service.exists_bot(user_id)
-
     @bp.post("/login", tags=["User"], summary="Login")
     def login(
         credentials: UserCredentials,
