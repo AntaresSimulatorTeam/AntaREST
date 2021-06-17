@@ -21,7 +21,6 @@ def test_save():
     dto = MatrixDTO(
         freq=MatrixFreq.WEEKLY,
         created_at=42,
-        updated_at=101,
         data=[[1, 2]],
         index=["1", "2"],
         columns=["a", "b"],
@@ -32,7 +31,6 @@ def test_save():
         id="my-id",
         freq=MatrixFreq.WEEKLY,
         created_at=ANY,
-        updated_at=ANY,
     )
 
     content = MatrixContent(
@@ -63,7 +61,6 @@ def test_get():
         id="my-id",
         freq=MatrixFreq.WEEKLY,
         created_at=datetime.datetime.fromtimestamp(42),
-        updated_at=datetime.datetime.fromtimestamp(101),
     )
 
     # Expected
@@ -97,7 +94,6 @@ def test_get_by_type_freq():
             id="my-id",
             freq=MatrixFreq.WEEKLY,
             created_at=datetime.datetime.fromtimestamp(42),
-            updated_at=datetime.datetime.fromtimestamp(101),
         )
     ]
 

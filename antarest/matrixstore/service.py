@@ -28,7 +28,6 @@ class MatrixService:
             id=matrix.id,
             freq=matrix.freq,
             created_at=int(time.mktime(datetime.timetuple(matrix.created_at))),
-            updated_at=int(time.mktime(datetime.timetuple(matrix.updated_at))),
             index=content.index,
             columns=content.columns,
             data=content.data,
@@ -40,7 +39,6 @@ class MatrixService:
             id=dto.id,
             freq=dto.freq,
             created_at=datetime.fromtimestamp(dto.created_at),
-            updated_at=datetime.fromtimestamp(dto.updated_at),
         )
 
         content = MatrixContent(
@@ -52,7 +50,6 @@ class MatrixService:
     def create(self, data: MatrixDTO) -> str:
         matrix, content = MatrixService._from_dto(data)
         matrix.created_at = datetime.now()
-        matrix.updated_at = datetime.now()
         matrix.id = self.repo_content.save(content)
         self.repo.save(matrix)
 

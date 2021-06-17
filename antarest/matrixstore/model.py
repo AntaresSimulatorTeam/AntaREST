@@ -23,7 +23,6 @@ class Matrix(Base):  # type: ignore
     id = Column(String(32), primary_key=True)
     freq = Column(Enum(MatrixFreq))
     created_at = Column(DateTime)
-    updated_at = Column(DateTime)  # TODO useless since matrix is immutable ?
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Matrix):
@@ -33,7 +32,6 @@ class Matrix(Base):  # type: ignore
             self.id == other.id
             and self.freq == other.freq
             and self.created_at == other.created_at
-            and self.updated_at == other.updated_at
         )
         return res
 
@@ -44,7 +42,6 @@ class MatrixDTO(BaseModel):
     columns: List[str]
     data: List[List[int]]
     created_at: int = 0
-    updated_at: int = 0
     id: str = ""
 
 

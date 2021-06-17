@@ -33,7 +33,6 @@ def test_db_cyclelife():
             id="hello",
             freq=MatrixFreq.WEEKLY,
             created_at=datetime.now(),
-            updated_at=datetime.now(),
         )
         repo.save(m)
         assert m.id

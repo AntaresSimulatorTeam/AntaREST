@@ -7,7 +7,6 @@ from typing import Optional, List, Any
 from sqlalchemy import exists  # type: ignore
 
 from antarest.common.config import Config
-from antarest.common.custom_types import JSON
 from antarest.common.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import (
     Matrix,
@@ -67,7 +66,7 @@ class MatrixContentRepository:
 
     @staticmethod
     def _compute_hash(data: str) -> str:
-        return hashlib.md5(data.encode()).hexdigest()
+        return hashlib.sha256(data.encode()).hexdigest()
 
     def get(self, id: str) -> Optional[MatrixContent]:
         file = self.bucket / id
