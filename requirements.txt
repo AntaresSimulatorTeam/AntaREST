@@ -1,3 +1,4 @@
+-r antares-launcher/requirements.txt
 jsonref==0.2
 PyYAML==5.3.1
 filelock==3.0.12
@@ -16,3 +17,4 @@ jinja2
 uvicorn[standard]
 bcrypt
 contextvars
+scandir

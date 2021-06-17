@@ -2,7 +2,6 @@ import logging
 from typing import Optional, List
 
 from antarest.common.utils.fastapi_sqlalchemy import db
-
 from antarest.storage.model import Study
 
 

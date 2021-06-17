@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
-from antarest.common.persistence import DTO, Base
-from antarest.login.model import User, Group, Identity
+from antarest.common.persistence import Base
+from antarest.login.model import Group, Identity
 
 DEFAULT_WORKSPACE_NAME = "default"
 

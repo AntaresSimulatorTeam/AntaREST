@@ -83,6 +83,7 @@ const StudySearchTool = (props: PropTypes) => {
         <InputBase
           className={classes.searchbar}
           placeholder={`${t('studymanager:searchstudy')}...`}
+          onChange={() => onSubmit(watch())}
           inputProps={{
             'aria-label': 'search studies',
             ref: register,

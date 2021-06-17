@@ -1,9 +1,8 @@
 from typing import Optional
 
 from dataclasses import dataclass
-from markupsafe import escape
-
 from fastapi import HTTPException
+from markupsafe import escape
 
 from antarest.common.jwt import JWTUser
 

@@ -6,14 +6,14 @@ from typing import Any, Optional
 from fastapi import APIRouter, HTTPException, File, Depends
 from starlette.responses import StreamingResponse
 
-from antarest.common.jwt import JWTUser
-from antarest.login.auth import Auth
+from antarest import __version__
 from antarest.common.config import Config
+from antarest.common.jwt import JWTUser
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.login.auth import Auth
 from antarest.storage.service import StorageService
-from antarest import __version__
 
 
 def get_commit_id(path_resources: Path) -> Optional[str]:

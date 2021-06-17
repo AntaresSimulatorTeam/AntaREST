@@ -1,13 +1,14 @@
-import os
-from copy import deepcopy
+import logging
 from pathlib import Path
-from typing import Any, Optional, List, Dict
+from typing import Optional, List, Dict
 
 import yaml
 from dataclasses import dataclass, field
 
 from antarest.common.custom_types import JSON
 from antarest.common.roles import RoleType
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -89,21 +90,83 @@ class StorageConfig:
 
 
 @dataclass(frozen=True)
+class LocalConfig:
+    binaries: Dict[str, Path] = field(default_factory=lambda: {})
+
+    @staticmethod
+    def from_dict(data: JSON) -> Optional["LocalConfig"]:
+        return LocalConfig(
+            binaries={v: Path(p) for v, p in data["binaries"].items()},
+        )
+
+
+@dataclass(frozen=True)
+class SlurmConfig:
+    local_workspace: Path = Path()
+    username: str = ""
+    hostname: str = ""
+    port: int = 0
+    private_key_file: Path = Path()
+    key_password: str = ""
+    password: str = ""
+    default_wait_time: int = 0
+    default_time_limit: int = 0
+    default_n_cpu: int = 0
+    default_json_db_name: str = ""
+    slurm_script_path: str = ""
+    antares_versions_on_remote_server: List[str] = field(
+        default_factory=lambda: []
+    )
+
+    @staticmethod
+    def from_dict(data: JSON) -> "SlurmConfig":
+        return SlurmConfig(
+            local_workspace=Path(data["local_workspace"]),
+            username=data["username"],
+            hostname=data["hostname"],
+            port=data["port"],
+            private_key_file=data.get("private_key_file", None),
+            key_password=data.get("key_password", None),
+            password=data.get("password", None),
+            default_wait_time=data["default_wait_time"],
+            default_time_limit=data["default_time_limit"],
+            default_n_cpu=data["default_n_cpu"],
+            default_json_db_name=data["default_json_db_name"],
+            slurm_script_path=data["slurm_script_path"],
+            antares_versions_on_remote_server=data[
+                "antares_versions_on_remote_server"
+            ],
+        )
+
+
+@dataclass(frozen=True)
 class LauncherConfig:
     """
     Sub config object dedicated to launcher module
     """
 
-    binaries: Dict[str, Path] = field(default_factory=lambda: {})
     default: str = "local"
+    local: Optional[LocalConfig] = LocalConfig()
+    slurm: Optional[SlurmConfig] = SlurmConfig()
 
     @staticmethod
     def from_dict(data: JSON) -> "LauncherConfig":
+        try:
+            local = LocalConfig.from_dict(data["local"])
+        except KeyError as e:
+            logger.error("Could not load local launcher", exc_info=e)
+            local = None
+
+        slurm: Optional[SlurmConfig]
+        try:
+            slurm = SlurmConfig.from_dict(data["slurm"])
+        except KeyError as e:
+            logger.error("Could not load slurm launcher", exc_info=e)
+            slurm = None
         return LauncherConfig(
-            binaries={
-                v: Path(p) for v, p in data["local"]["binaries"].items()
-            },
             default=data.get("default", "local"),
+            local=local,
+            slurm=slurm,
         )
 
 
@@ -158,6 +221,19 @@ class EventBusConfig:
 
 
 @dataclass(frozen=True)
+class MatrixStoreConfig:
+    """
+    Sub config object dedicated to matrix store module
+    """
+
+    bucket: Path = Path("")
+
+    @staticmethod
+    def from_dict(data: JSON) -> "MatrixStoreConfig":
+        return MatrixStoreConfig(bucket=Path(data["bucket"]))
+
+
+@dataclass(frozen=True)
 class Config:
     """
     Root server config
@@ -166,6 +242,7 @@ class Config:
     security: SecurityConfig = SecurityConfig()
     storage: StorageConfig = StorageConfig()
     launcher: LauncherConfig = LauncherConfig()
+    matrixstore: MatrixStoreConfig = MatrixStoreConfig()
     db_url: str = ""
     logging: LoggingConfig = LoggingConfig()
     debug: bool = True
@@ -188,6 +265,7 @@ class Config:
             security=SecurityConfig.from_dict(data["security"]),
             storage=StorageConfig.from_dict(data["storage"]),
             launcher=LauncherConfig.from_dict(data["launcher"]),
+            matrixstore=MatrixStoreConfig.from_dict(data["matrixstore"]),
             db_url=data["db"]["url"],
             logging=LoggingConfig.from_dict(data["logging"]),
             debug=data["debug"],

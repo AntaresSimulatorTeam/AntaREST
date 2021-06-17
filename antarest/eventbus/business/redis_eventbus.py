@@ -1,10 +1,9 @@
 import json
 import logging
+from typing import List, Optional
+
 import dataclasses
 import redis
-
-from typing import Any, List, Optional
-from dataclasses import dataclass
 from redis.client import Redis
 
 from antarest.common.config import RedisConfig

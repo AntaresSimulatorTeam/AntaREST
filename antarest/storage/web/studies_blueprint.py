@@ -4,20 +4,20 @@ from glob import escape
 from http import HTTPStatus
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, File, Depends, Path, Body
+from fastapi import APIRouter, HTTPException, File, Depends, Body
 from fastapi.params import Param
-from starlette.responses import StreamingResponse, JSONResponse, Response
+from starlette.responses import StreamingResponse, Response
 
+from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.common.jwt import JWTUser
-from antarest.common.swagger import get_path_examples
-from antarest.login.auth import Auth
-from antarest.common.config import Config
-from antarest.storage.model import PublicMode
-from antarest.storage.service import StorageService
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.common.swagger import get_path_examples
+from antarest.login.auth import Auth
+from antarest.storage.model import PublicMode
+from antarest.storage.service import StorageService
 
 
 def sanitize_uuid(uuid: str) -> str:

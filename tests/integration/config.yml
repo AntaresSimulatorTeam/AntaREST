@@ -11,6 +11,9 @@ security:
 db:
   url: {{dburl}}
 
+matrixstore:
+  bucket: ./bucket
+
 storage:
   watcher_lock: false
   workspaces:

@@ -1,6 +1,6 @@
-from contextvars import ContextVar, Token
-from typing import Dict, Optional, Union, Awaitable, Any, Type
+from typing import Dict, Optional, Union, Any, Type
 
+from contextvars import ContextVar, Token
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine import Engine  # type: ignore
 from sqlalchemy.engine.url import URL  # type: ignore
