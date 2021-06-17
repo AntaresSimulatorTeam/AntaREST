@@ -11,14 +11,12 @@ import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from pydantic.main import BaseModel
-from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy import create_engine
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
-
-from sqlalchemy import create_engine
 
 from antarest import __version__
 from antarest.common.config import Config
