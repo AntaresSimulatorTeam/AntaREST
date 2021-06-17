@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { makeStyles, createStyles, Theme } from '@material-ui/core';
+import { makeStyles, createStyles } from '@material-ui/core';
 import debug from 'debug';
 import { AppState } from '../reducers';
 import StudyCreationTools from '../../components/StudyCreationTools';
@@ -15,7 +15,7 @@ import { addListener, removeListener } from '../../ducks/websockets';
 
 const logError = debug('antares:studymanagement:error');
 
-const useStyles = makeStyles((theme: Theme) => createStyles({
+const useStyles = makeStyles(() => createStyles({
   root: {
     height: '100%',
     display: 'flex',
@@ -67,7 +67,6 @@ const StudyManagement = (props: PropTypes) => {
     init();
     return () => removeWsListener(listen);
   }, []);
-
 
   return (
     <div className={classes.root}>

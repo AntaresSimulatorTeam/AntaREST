@@ -28,7 +28,6 @@ interface OwnProps {
 }
 type PropTypes = PropsFromRedux & OwnProps;
 
-
 const CreateStudyForm = (props: PropTypes) => {
   const [t] = useTranslation();
   const { useStyles, addStudy } = props;

@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { AppState } from '../App/reducers';
 import { addOnCloseListener, removeOnCloseListener } from './global';
 
-
 /** ******************************************* */
 /* State                                        */
 /** ******************************************* */
@@ -86,7 +85,6 @@ type UploadAction = AddUploadAction | UpdateUploadAction | CompleteUploadAction 
 /** ******************************************* */
 /* Selectors / Misc                             */
 /** ******************************************* */
-
 
 /** ******************************************* */
 /* Reducer                                      */

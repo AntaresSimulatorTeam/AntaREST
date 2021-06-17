@@ -1,36 +1,30 @@
 import React from 'react';
-import {render, unmountComponentAtNode} from 'react-dom'
+import { render, unmountComponentAtNode } from 'react-dom';
 import { screen } from '@testing-library/react';
-import StudyCreationTools from './index'
-
+import StudyCreationTools from './index';
 
 /** ******************************************* */
 /* Test                                         */
 /** ******************************************* */
 
 describe('Test StudyCreationTools component', (): void => {
+  let container: HTMLElement = null;
+  beforeEach((): void => {
+    // Sets up a DOM element as a render target
+    container = document.createElement('div');
 
-    let container : HTMLElement = null;
-    beforeEach(() : void =>
-    {
-        // Sets up a DOM element as a render target
-        container = document.createElement("div");
+    // We attach the container to 'document'
+    document.body.appendChild(container);
+  });
 
-        // We attach the container to 'document'
-        document.body.appendChild(container);
-    })
+  afterEach((): void => {
+    // clean
+    unmountComponentAtNode(container);
+    container.remove();
+    container = null;
+  });
 
-    afterEach((): void => {
+  it('Test 1', (): void => {
 
-        // clean
-        unmountComponentAtNode(container);
-        container.remove();
-        container = null;
-    })
-
-
-    it('Test 1', () : void => {
-        
-    });
-
-})
+  });
+});

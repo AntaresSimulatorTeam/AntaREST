@@ -235,6 +235,24 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
     assert result.json() == studies
 
 
+def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
+    study = {"antares": {"caption": ""}}
+    storage_service = Mock()
+    storage_service.get_study_information.return_value = study
+
+    app = FastAPI(title=__name__)
+    build_storage(
+        app,
+        storage_service=storage_service,
+        config=CONFIG,
+        user_service=Mock(),
+    )
+    client = TestClient(app)
+    result = client.get("/v1/studies/1/metadata")
+
+    assert result.json() == study
+
+
 @pytest.mark.unit_test
 def test_server_health() -> None:
     app = FastAPI(title=__name__)

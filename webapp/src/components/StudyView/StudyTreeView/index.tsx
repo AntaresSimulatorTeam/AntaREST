@@ -7,8 +7,7 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import TreeItem from '@material-ui/lab/TreeItem';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { StudyDataType } from '../../../common/types';
-import {getStudyParams} from './utils'
-
+import { getStudyParams } from './utils';
 
 interface ItemPropTypes {
   itemkey: string;
@@ -22,21 +21,20 @@ const StudyTreeItem = (props: ItemPropTypes) => {
 
   // if not an object then it's a RawFileNode or MatrixNode
   // here we have to decide which viewer to use
-    const params = getStudyParams(data, path, itemkey);
-    if(!!params)
-    {
-      return (
-        <TreeItem
-          nodeId={`${path}/${itemkey}`}
-          label={(
-            <div role="button" onClick={() => viewer(params.type, params.data)}>
-              <FontAwesomeIcon icon={params.icon} />
-              <span style={{ marginLeft: '4px' }}>{itemkey}</span>
-            </div>
+  const params = getStudyParams(data, path, itemkey);
+  if (params) {
+    return (
+      <TreeItem
+        nodeId={`${path}/${itemkey}`}
+        label={(
+          <div role="button" onClick={() => viewer(params.type, params.data)}>
+            <FontAwesomeIcon icon={params.icon} />
+            <span style={{ marginLeft: '4px' }}>{itemkey}</span>
+          </div>
           )}
-        />
-      );
-    }
+      />
+    );
+  }
 
   // else this is a folder containing.. stuff (recursion)
   return (
@@ -64,6 +62,10 @@ const StudyTreeView = (props: PropTypes) => {
       {Object.keys(data).map((key) => (<StudyTreeItem key={key} itemkey={key} data={data[key]} viewer={view} />))}
     </TreeView>
   );
+};
+
+StudyTreeItem.defaultProps = {
+  path: '/',
 };
 
 export default StudyTreeView;

@@ -28,9 +28,10 @@ i18n
     },
     ns: [
       'main',
+      'singlestudy',
       'studymanager',
       'jobs',
-      'settings'
+      'settings',
     ],
     defaultNS: 'main',
   });

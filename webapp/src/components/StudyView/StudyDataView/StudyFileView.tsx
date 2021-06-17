@@ -1,12 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
-import { Theme, createStyles, makeStyles } from '@material-ui/core';
+import { createStyles, makeStyles } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { Translation } from 'react-i18next';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
 import { getStudyData } from '../../../services/api/study';
 
-const useStyles = makeStyles((theme: Theme) => createStyles({
+const useStyles = makeStyles(() => createStyles({
   code: {
     whiteSpace: 'pre',
   },

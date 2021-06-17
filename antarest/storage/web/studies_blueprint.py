@@ -275,6 +275,19 @@ def create_study_routes(
         ).encode("utf-8")
         return Response(content=json_response, media_type="application/json")
 
+    @bp.get(
+        "/studies/{uuid}/metadata",
+        tags=["Manage Studies"],
+        summary="Get Study informations",
+    )
+    def get_study_metadata(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        study_metadata = storage_service.get_study_information(uuid, params)
+        return study_metadata
+
     @bp.post(
         "/studies/{uuid}/raw",
         status_code=HTTPStatus.NO_CONTENT.value,
