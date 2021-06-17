@@ -7,4 +7,4 @@ from antarest.storage.repository.filesystem.matrix.input_series_matrix import (
 
 class InputHydroSeriesAreaRor(InputSeriesMatrix):
     def __init__(self, context: ContextServer, config: StudyConfig):
-        super(InputHydroSeriesAreaRor, self).__init__(self.context, config)
+        super(InputHydroSeriesAreaRor, self).__init__(context, config)

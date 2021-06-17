@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import Mock
 
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.root.input.areas.list import (
@@ -18,7 +19,7 @@ IT
     config = StudyConfig(
         study_path=file, areas={"fr": None, "de": None, "it": None}
     )
-    node = InputAreasList(config=config)
+    node = InputAreasList(context=Mock(), config=config)
 
     assert ["fr", "de", "it"] == node.get()
     assert not node.check_errors(["fr", "de", "it"])

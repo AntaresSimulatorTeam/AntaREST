@@ -10,7 +10,7 @@ class InputMiscGen(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             f"miscgen-{a}": InputMiscGenArea(
-                config.next_file(f"miscgen-{a}.txt")
+                self.context, config.next_file(f"miscgen-{a}.txt")
             )
             for a in config.area_names()
         }

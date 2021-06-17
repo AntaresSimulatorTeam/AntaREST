@@ -38,7 +38,7 @@ class Input(FolderNode):
         children: TREE = {
             "areas": InputAreas(self.context, config.next_file("areas")),
             "bindingconstraints": BindingConstraints(
-                config.next_file("bindingconstraints")
+                self.context, config.next_file("bindingconstraints")
             ),
             "hydro": InputHydro(self.context, config.next_file("hydro")),
             "links": InputLink(self.context, config.next_file("links")),

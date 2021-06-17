@@ -10,7 +10,7 @@ class OutputSimulationTsNumbersSolar(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             area: OutputSimulationTsNumbersSolarArea(
-                config.next_file(area + ".txt")
+                self.context, config.next_file(area + ".txt")
             )
             for area in config.area_names()
         }

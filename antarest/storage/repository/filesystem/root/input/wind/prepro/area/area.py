@@ -22,17 +22,17 @@ class InputWindPreproArea(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "conversion": InputWindPreproAreaConversation(
-                config.next_file("conversion.txt")
+                self.context, config.next_file("conversion.txt")
             ),
             "data": InputWindPreproAreaData(
                 self.context, config.next_file("data.txt")
             ),
             "k": InputWindPreproAreaK(self.context, config.next_file("k.txt")),
             "translation": InputWindPreproAreaTranslation(
-                config.next_file("translation.txt")
+                self.context, config.next_file("translation.txt")
             ),
             "settings": InputWindPreproAreaSettings(
-                config.next_file("settings.ini")
+                self.context, config.next_file("settings.ini")
             ),
         }
         return children

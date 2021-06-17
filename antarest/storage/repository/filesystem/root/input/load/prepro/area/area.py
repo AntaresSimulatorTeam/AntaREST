@@ -25,7 +25,7 @@ class InputLoadPreproArea(FolderNode):
                 self.context, config.next_file("conversion.txt")
             ),
             "data": InputLoadPreproAreaData(
-                self.context, self.context, config.next_file("data.txt")
+                self.context, config.next_file("data.txt")
             ),
             "k": InputLoadPreproAreaK(self.context, config.next_file("k.txt")),
             "translation": InputLoadPreproAreaTranslation(

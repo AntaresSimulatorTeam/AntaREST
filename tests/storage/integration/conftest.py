@@ -72,6 +72,7 @@ def storage_service(
         user_service=Mock(),
         config=config,
         metadata_repository=repo,
+        study_factory=StudyFactory(matrix=Mock()),
     )
 
     return storage_service

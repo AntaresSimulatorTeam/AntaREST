@@ -10,7 +10,7 @@ class InputThermalSeriesAreaThermal(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "series": InputThermalSeriesAreaThermalSeries(
-                config.next_file("series.txt")
+                self.context, config.next_file("series.txt")
             ),
         }
         return children

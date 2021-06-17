@@ -16,6 +16,6 @@ class InputWindPrepro(FolderNode):
             for a in config.area_names()
         }
         children["correlation"] = InputWindPreproCorrelation(
-            config.next_file("correlation.ini")
+            self.context, config.next_file("correlation.ini")
         )
         return children

@@ -13,6 +13,7 @@ from antarest.common.custom_types import JSON
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.roles import RoleType
 from antarest.storage.main import build_storage
+from antarest.storage.repository.filesystem.factory import StudyFactory
 
 from antarest.storage.service import StorageService
 from antarest.common.requests import (
@@ -42,6 +43,7 @@ def assert_url_content(
         user_service=Mock(),
         storage_service=storage_service,
         config=storage_service.study_service.config,
+        study_factory=StudyFactory(matrix=Mock()),
     )
     client = TestClient(app)
     res = client.get(url)
@@ -403,6 +405,7 @@ def test_sta_mini_copy(storage_service) -> None:
         user_service=Mock(),
         storage_service=storage_service,
         config=storage_service.study_service.config,
+        study_factory=StudyFactory(matrix=Mock()),
     )
     client = TestClient(app)
     result = client.post(
@@ -490,6 +493,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         storage_service=storage_service,
         user_service=Mock(),
         config=storage_service.study_service.config,
+        study_factory=StudyFactory(matrix=Mock()),
     )
     client = TestClient(app)
 
@@ -522,6 +526,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         storage_service=storage_service,
         user_service=Mock(),
         config=storage_service.study_service.config,
+        study_factory=StudyFactory(matrix=Mock()),
     )
     client = TestClient(app)
 

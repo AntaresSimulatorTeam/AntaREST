@@ -36,7 +36,12 @@ def test_get(tmp_path: Path):
         index=["01/02", "01/01"],
     )
 
-    node = OutputSeriesMatrix(config, serializer, AreaHeadWriter("", ""))
+    node = OutputSeriesMatrix(
+        context=Mock(),
+        config=config,
+        date_serializer=serializer,
+        head_writer=AreaHeadWriter("", ""),
+    )
     assert node.load() == matrix.to_dict(orient="split")
 
 
@@ -56,7 +61,10 @@ def test_save(tmp_path: Path):
     )
 
     node = OutputSeriesMatrix(
-        config, serializer, AreaHeadWriter(area="de", freq="hourly")
+        context=Mock(),
+        config=config,
+        date_serializer=serializer,
+        head_writer=AreaHeadWriter(area="de", freq="hourly"),
     )
 
     matrix = pd.DataFrame(

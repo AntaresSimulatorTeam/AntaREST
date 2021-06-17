@@ -16,7 +16,10 @@ class ScenarioBuilder(IniFileNode):
             self._add_thermal(area, rules)
 
         IniFileNode.__init__(
-            self, config=config, types={"Default Ruleset": rules}
+            self,
+            context=context,
+            config=config,
+            types={"Default Ruleset": rules},
         )
 
     def _add_thermal(self, area: str, rules: Dict[str, Type[int]]) -> None:

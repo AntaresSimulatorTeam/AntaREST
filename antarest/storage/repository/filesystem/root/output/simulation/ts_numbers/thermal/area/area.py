@@ -15,7 +15,7 @@ class OutputSimulationTsNumbersThermalArea(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             thermal: OutputSimulationTsNumbersThermalAreaThermal(
-                config.next_file(thermal + ".txt")
+                self.context, config.next_file(thermal + ".txt")
             )
             for thermal in config.get_thermal_names(self.area)
         }

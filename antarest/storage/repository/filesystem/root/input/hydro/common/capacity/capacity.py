@@ -19,6 +19,6 @@ class InputHydroCommonCapacity(FolderNode):
             ]:
                 name = f"{file}_{area}"
                 children[name] = InputHydroCommonCapacityItem(
-                    config.next_file(f"{name}.txt")
+                    self.context, config.next_file(f"{name}.txt")
                 )
         return children
