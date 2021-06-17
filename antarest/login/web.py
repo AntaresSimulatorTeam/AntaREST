@@ -2,12 +2,13 @@ import json
 from datetime import timedelta
 from typing import Any, Optional
 
-from fastapi import Depends, APIRouter, Form, HTTPException, Query
+from fastapi import Depends, APIRouter, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from markupsafe import escape
 from pydantic import BaseModel
 from starlette.responses import JSONResponse
 
+from antarest.common.config import Config
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import (
     RequestParameters,
@@ -15,15 +16,11 @@ from antarest.common.requests import (
 )
 from antarest.common.roles import RoleType
 from antarest.login.auth import Auth
-from antarest.common.config import Config
 from antarest.login.model import (
     User,
     Group,
-    Password,
-    Role,
     BotCreateDTO,
     UserCreateDTO,
-    RoleDTO,
     RoleCreationDTO,
     UserInfo,
     GroupDTO,

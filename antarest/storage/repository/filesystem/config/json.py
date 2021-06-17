@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple
 
 from antarest.common.custom_types import JSON
 from antarest.storage.repository.filesystem.config.model import (

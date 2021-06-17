@@ -3,7 +3,6 @@ from typing import Optional, List
 
 from fastapi import HTTPException
 
-from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import (

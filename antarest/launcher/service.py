@@ -1,25 +1,34 @@
 from datetime import datetime
+from http import HTTPStatus
 from typing import List, Optional
 from uuid import UUID
+
+from fastapi import HTTPException
 
 from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import (
     IEventBus,
     Event,
     EventType,
-    DummyEventBusService,
 )
-from antarest.launcher.factory_launcher import FactoryLauncher
-from antarest.launcher.model import JobResult, JobStatus
-from antarest.launcher.repository import JobResultRepository
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.launcher.business.factory_launcher import FactoryLauncher
+from antarest.launcher.model import JobResult, JobStatus
+from antarest.launcher.repository import JobResultRepository
 from antarest.storage.service import StorageService
 
 
 class JobNotFound(Exception):
     pass
+
+
+class LauncherServiceNotAvailableException(HTTPException):
+    def __init__(self, engine: str):
+        super(LauncherServiceNotAvailableException, self).__init__(
+            HTTPStatus.BAD_REQUEST, f"The engine {engine} is not available"
+        )
 
 
 class LauncherService:
@@ -35,32 +44,49 @@ class LauncherService:
         self.storage_service = storage_service
         self.repository = repository
         self.event_bus = event_bus
-        self.launcher = factory_launcher.build_launcher(config)
-        self.launcher.add_callback(self.update)
-
-    def update(self, job_result: JobResult) -> None:
-        job_result.completion_date = datetime.utcnow()
-        self.repository.save(job_result)
-        self.event_bus.push(
-            Event(
-                EventType.STUDY_JOB_COMPLETED,
-                {"jid": str(job_result.id), "sid": job_result.study_id},
-            )
+        self.launchers = factory_launcher.build_launcher(
+            config, storage_service
         )
+        for _, launcher in self.launchers.items():
+            launcher.add_statusupdate_callback(self.update)
 
-    def run_study(self, study_uuid: str, params: RequestParameters) -> UUID:
+    def get_launchers(self) -> List[str]:
+        return list(self.launchers.keys())
+
+    def update(
+        self, job_uuid: str, status: JobStatus, failed: bool = False
+    ) -> None:
+        # TODO remove unused failed
+        job_result = self.repository.get(job_uuid)
+        if job_result is not None:
+            job_result.job_status = status
+            job_result.completion_date = datetime.utcnow()
+            self.repository.save(job_result)
+            self.event_bus.push(
+                Event(
+                    EventType.STUDY_JOB_COMPLETED,
+                    {"jid": str(job_result.id), "sid": job_result.study_id},
+                )
+            )
+
+    def run_study(
+        self, study_uuid: str, params: RequestParameters, launcher: str
+    ) -> UUID:
         study_info = self.storage_service.get_study_information(
             uuid=study_uuid, params=params
         )
         study_version = study_info["antares"]["version"]
-        study_path = self.storage_service.get_study_path(study_uuid, params)
-        job_uuid: UUID = self.launcher.run_study(study_path, study_version)
+        if launcher not in self.launchers:
+            raise LauncherServiceNotAvailableException(launcher)
+        job_uuid: UUID = self.launchers[launcher].run_study(
+            study_uuid, study_version, params
+        )
 
         self.repository.save(
             JobResult(
                 id=str(job_uuid),
                 study_id=study_uuid,
-                job_status=JobStatus.RUNNING,
+                job_status=JobStatus.PENDING,
             )
         )
         self.event_bus.push(

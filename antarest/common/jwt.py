@@ -1,11 +1,10 @@
-from enum import Enum
 from typing import List, Union
 
 from dataclasses import dataclass, field
 
 from antarest.common.custom_types import JSON
 from antarest.common.roles import RoleType
-from antarest.login.model import Group, User, Identity
+from antarest.login.model import Group, Identity
 
 
 @dataclass
@@ -93,3 +92,11 @@ class JWTUser:
 
         """
         return bool(self.id == user.id)
+
+
+DEFAULT_ADMIN_USER = JWTUser(
+    id=1,
+    impersonator=1,
+    type="users",
+    groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
+)

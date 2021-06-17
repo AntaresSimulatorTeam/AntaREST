@@ -1,4 +1,4 @@
-from configparser import ConfigParser, RawConfigParser
+from configparser import RawConfigParser
 from pathlib import Path
 
 from antarest.common.custom_types import JSON

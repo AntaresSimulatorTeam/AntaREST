@@ -1,8 +1,7 @@
-import shutil
 from typing import List, Optional
 
 from antarest.storage.repository.filesystem.config.model import StudyConfig
-from antarest.storage.repository.filesystem.inode import INode, TREE
+from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 

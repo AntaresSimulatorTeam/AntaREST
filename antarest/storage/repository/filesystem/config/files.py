@@ -2,11 +2,11 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
+from antarest.common.custom_types import JSON
 from antarest.storage.repository.antares_io.reader import (
     IniReader,
     SetsIniReader,
 )
-from antarest.common.custom_types import JSON
 from antarest.storage.repository.filesystem.config.model import (
     StudyConfig,
     Area,

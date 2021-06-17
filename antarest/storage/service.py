@@ -2,29 +2,28 @@ import logging
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from time import time
+from time import time, sleep
 from typing import List, IO, Optional, cast
-
 from uuid import uuid4
 
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.common.jwt import JWTUser
-from antarest.common.roles import RoleType
-from antarest.login.model import User, Group
-from antarest.login.service import LoginService
-from antarest.storage.business.exporter_service import ExporterService
-from antarest.storage.business.importer_service import ImporterService
 from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
+from antarest.common.roles import RoleType
+from antarest.login.model import Group
+from antarest.login.service import LoginService
+from antarest.storage.business.exporter_service import ExporterService
+from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.permissions import (
     StudyPermissionType,
     check_permission,
 )
-from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.model import (
     Study,
     StudyContentStatus,
@@ -226,6 +225,7 @@ class StorageService:
             if isinstance(study, RawStudy)
         ]
         for folder in folders:
+            sleep(0.2)
             if str(folder.path) not in paths:
                 study = RawStudy(
                     id=str(uuid4()),
@@ -327,6 +327,20 @@ class StorageService:
             "study %s exported by user %s", uuid, params.get_user_id()
         )
         return self.exporter_service.export_study(study, outputs)
+
+    def export_study_flat(
+        self,
+        uuid: str,
+        params: RequestParameters,
+        dest: Path,
+        outputs: bool = True,
+    ) -> None:
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(uuid, study.type)
+
+        return self.exporter_service.export_study_flat(study, dest, outputs)
 
     def delete_study(self, uuid: str, params: RequestParameters) -> None:
         """

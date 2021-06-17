@@ -11,6 +11,11 @@ COPY ./requirements.txt /conf/
 COPY ./antarest /antarest
 COPY ./resources /resources
 
+COPY ./antares-launcher /antares-launcher
+RUN ln -s /antares-launcher/antareslauncher /antareslauncher
+RUN mkdir /conf/antares-launcher
+RUN cp /antares-launcher/requirements.txt /conf/antares-launcher/requirements.txt
+
 RUN pip3 install --upgrade pip \
     && pip3 install -r /conf/requirements.txt
 

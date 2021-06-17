@@ -2,7 +2,6 @@ import asyncio
 import logging
 import threading
 import time
-from asyncio import AbstractEventLoop
 from typing import List, Callable, Optional, Dict, Awaitable
 from uuid import uuid4
 

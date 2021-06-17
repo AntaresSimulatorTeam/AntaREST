@@ -1,9 +1,8 @@
 import uuid
 from typing import Any, List, Optional
 
-from dataclasses import dataclass
-
 import bcrypt
+from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic.main import BaseModel
 from sqlalchemy import Column, Integer, Sequence, String, ForeignKey, Enum, Boolean  # type: ignore
@@ -11,8 +10,8 @@ from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.common.custom_types import JSON
-from antarest.common.roles import RoleType
 from antarest.common.persistence import Base
+from antarest.common.roles import RoleType
 
 
 class UserInfo(BaseModel):
