@@ -7,6 +7,7 @@ from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.lazy_node import LazyNode
+from antarest.storage.repository.filesystem.context import ContextServer
 
 
 class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
@@ -14,8 +15,14 @@ class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
     Generic node to handle input matrix behavior
     """
 
-    def __init__(self, config: StudyConfig, nb_columns: Optional[int] = None):
+    def __init__(
+        self,
+        context: ContextServer,
+        config: StudyConfig,
+        nb_columns: Optional[int] = None,
+    ):
         super().__init__(url_prefix="matrix")
+        self.context = context
         self.config = config
         self.nb_columns = nb_columns
 

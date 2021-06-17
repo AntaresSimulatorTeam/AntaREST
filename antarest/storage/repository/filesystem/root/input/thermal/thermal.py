@@ -18,9 +18,17 @@ from antarest.storage.repository.filesystem.root.input.thermal.series.series imp
 class InputThermal(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "clusters": InputThermalClusters(config.next_file("clusters")),
-            "prepro": InputThermalPrepro(config.next_file("prepro")),
-            "series": InputThermalSeries(config.next_file("series")),
-            "areas": InputThermalAreasIni(config.next_file("areas.ini")),
+            "clusters": InputThermalClusters(
+                self.context, config.next_file("clusters")
+            ),
+            "prepro": InputThermalPrepro(
+                self.context, config.next_file("prepro")
+            ),
+            "series": InputThermalSeries(
+                self.context, config.next_file("series")
+            ),
+            "areas": InputThermalAreasIni(
+                self.context, config.next_file("areas.ini")
+            ),
         }
         return children

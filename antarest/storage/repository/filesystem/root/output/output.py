@@ -9,7 +9,9 @@ from antarest.storage.repository.filesystem.root.output.simulation.simulation im
 class Output(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            str(i): OutputSimulation(config.next_file(s.get_file()), s)
+            str(i): OutputSimulation(
+                self.context, config.next_file(s.get_file()), s
+            )
             for i, s in config.outputs.items()
         }
         return children

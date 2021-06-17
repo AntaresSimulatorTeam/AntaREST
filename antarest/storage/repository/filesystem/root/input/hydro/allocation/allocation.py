@@ -9,7 +9,9 @@ from antarest.storage.repository.filesystem.root.input.hydro.allocation.area imp
 class InputHydroAllocation(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            a: InputHydroAllocationArea(config.next_file(f"{a}.ini"), area=a)
+            a: InputHydroAllocationArea(
+                self.context, config.next_file(f"{a}.ini"), area=a
+            )
             for a in config.area_names()
         }
         return children

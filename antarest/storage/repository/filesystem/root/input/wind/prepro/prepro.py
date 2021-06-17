@@ -12,7 +12,7 @@ from antarest.storage.repository.filesystem.root.input.wind.prepro.correlation i
 class InputWindPrepro(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            a: InputWindPreproArea(config.next_file(a))
+            a: InputWindPreproArea(self.context, config.next_file(a))
             for a in config.area_names()
         }
         children["correlation"] = InputWindPreproCorrelation(

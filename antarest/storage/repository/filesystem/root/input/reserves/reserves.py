@@ -9,7 +9,7 @@ from antarest.storage.repository.filesystem.root.input.reserves.area import (
 class InputReserves(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            a: InputReservesArea(config.next_file(f"{a}.txt"))
+            a: InputReservesArea(self.context, config.next_file(f"{a}.txt"))
             for a in config.area_names()
         }
         return children

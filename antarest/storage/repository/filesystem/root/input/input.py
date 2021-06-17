@@ -36,17 +36,21 @@ from antarest.storage.repository.filesystem.root.input.wind.wind import (
 class Input(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "areas": InputAreas(config.next_file("areas")),
+            "areas": InputAreas(self.context, config.next_file("areas")),
             "bindingconstraints": BindingConstraints(
                 config.next_file("bindingconstraints")
             ),
-            "hydro": InputHydro(config.next_file("hydro")),
-            "links": InputLink(config.next_file("links")),
-            "load": InputLoad(config.next_file("load")),
-            "misc-gen": InputMiscGen(config.next_file("misc-gen")),
-            "reserves": InputReserves(config.next_file("reserves")),
-            "solar": InputSolar(config.next_file("solar")),
-            "thermal": InputThermal(config.next_file("thermal")),
-            "wind": InputWind(config.next_file("wind")),
+            "hydro": InputHydro(self.context, config.next_file("hydro")),
+            "links": InputLink(self.context, config.next_file("links")),
+            "load": InputLoad(self.context, config.next_file("load")),
+            "misc-gen": InputMiscGen(
+                self.context, config.next_file("misc-gen")
+            ),
+            "reserves": InputReserves(
+                self.context, config.next_file("reserves")
+            ),
+            "solar": InputSolar(self.context, config.next_file("solar")),
+            "thermal": InputThermal(self.context, config.next_file("thermal")),
+            "wind": InputWind(self.context, config.next_file("wind")),
         }
         return children

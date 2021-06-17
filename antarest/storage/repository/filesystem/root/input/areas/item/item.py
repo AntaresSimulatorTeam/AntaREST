@@ -12,9 +12,10 @@ from antarest.storage.repository.filesystem.root.input.areas.item.ui import (
 class InputAreasItem(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "ui": InputAreasUi(config.next_file("ui.ini")),
+            "ui": InputAreasUi(self.context, config.next_file("ui.ini")),
             "optimization": InputAreasOptimization(
-                config.next_file("optimization.ini")
+                self.context,
+                config.next_file("optimization.ini"),
             ),
         }
         return children

@@ -21,10 +21,20 @@ from antarest.storage.repository.filesystem.root.input.hydro.series.series impor
 class InputHydro(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "allocation": InputHydroAllocation(config.next_file("allocation")),
-            "common": InputHydroCommon(config.next_file("common")),
-            "prepro": InputHydroPrepro(config.next_file("prepro")),
-            "series": InputHydroSeries(config.next_file("series")),
-            "hydro": InputHydroIni(config.next_file("hydro.ini")),
+            "allocation": InputHydroAllocation(
+                self.context, config.next_file("allocation")
+            ),
+            "common": InputHydroCommon(
+                self.context, config.next_file("common")
+            ),
+            "prepro": InputHydroPrepro(
+                self.context, config.next_file("prepro")
+            ),
+            "series": InputHydroSeries(
+                self.context, config.next_file("series")
+            ),
+            "hydro": InputHydroIni(
+                self.context, config.next_file("hydro.ini")
+            ),
         }
         return children

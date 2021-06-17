@@ -21,15 +21,21 @@ from antarest.storage.repository.filesystem.root.output.simulation.about.study i
 class OutputSimulationAbout(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "areas": OutputSimulationAboutAreas(config.next_file("areas.txt")),
-            "comments": OutputSimulationAboutComments(
-                config.next_file("comments.txt")
+            "areas": OutputSimulationAboutAreas(
+                self.context, config.next_file("areas.txt")
             ),
-            "links": OutputSimulationAboutLinks(config.next_file("links.txt")),
-            # TODO "map": OutputSimulationAboutMap(config.next_file("map")),
-            "study": OutputSimulationAboutStudy(config.next_file("study.ini")),
+            "comments": OutputSimulationAboutComments(
+                self.context, config.next_file("comments.txt")
+            ),
+            "links": OutputSimulationAboutLinks(
+                self.context, config.next_file("links.txt")
+            ),
+            # TODO "map": OutputSimulationAboutMap(self.context, config.next_file("map")),
+            "study": OutputSimulationAboutStudy(
+                self.context, config.next_file("study.ini")
+            ),
             "parameters": OutputSimulationAboutParameters(
-                config.next_file("parameters.ini")
+                self.context, config.next_file("parameters.ini")
             ),
         }
         return children

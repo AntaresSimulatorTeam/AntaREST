@@ -12,7 +12,11 @@ from antarest.storage.repository.filesystem.root.input.wind.series.series import
 class InputWind(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "prepro": InputWindPrepro(config.next_file("prepro")),
-            "series": InputWindSeries(config.next_file("series")),
+            "prepro": InputWindPrepro(
+                self.context, config.next_file("prepro")
+            ),
+            "series": InputWindSeries(
+                self.context, config.next_file("series")
+            ),
         }
         return children

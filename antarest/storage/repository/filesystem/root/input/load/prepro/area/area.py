@@ -22,15 +22,17 @@ class InputLoadPreproArea(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "conversion": InputLoadPreproAreaConversation(
-                config.next_file("conversion.txt")
+                self.context, config.next_file("conversion.txt")
             ),
-            "data": InputLoadPreproAreaData(config.next_file("data.txt")),
-            "k": InputLoadPreproAreaK(config.next_file("k.txt")),
+            "data": InputLoadPreproAreaData(
+                self.context, self.context, config.next_file("data.txt")
+            ),
+            "k": InputLoadPreproAreaK(self.context, config.next_file("k.txt")),
             "translation": InputLoadPreproAreaTranslation(
-                config.next_file("translation.txt")
+                self.context, config.next_file("translation.txt")
             ),
             "settings": InputLoadPreproAreaSettings(
-                config.next_file("settings.ini")
+                self.context, config.next_file("settings.ini")
             ),
         }
         return children

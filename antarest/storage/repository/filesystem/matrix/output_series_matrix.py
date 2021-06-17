@@ -13,6 +13,7 @@ from antarest.storage.repository.filesystem.matrix.date_serializer import (
 from antarest.storage.repository.filesystem.matrix.head_writer import (
     HeadWriter,
 )
+from antarest.storage.repository.filesystem.context import ContextServer
 
 
 class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
@@ -23,11 +24,13 @@ class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
 
     def __init__(
         self,
+        context: ContextServer,
         config: StudyConfig,
         date_serializer: IDateMatrixSerializer,
         head_writer: HeadWriter,
     ):
         super().__init__(url_prefix="matrix")
+        self.context = context
         self.config = config
         self.date_serializer = date_serializer
         self.head_writer = head_writer

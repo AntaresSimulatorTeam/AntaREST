@@ -1,4 +1,5 @@
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
 
 
@@ -14,9 +15,9 @@ class LayersIni(IniFileNode):
     showAllLayer = true
     """
 
-    def __init__(self, config: StudyConfig):
+    def __init__(self, context: ContextServer, config: StudyConfig):
         types = {
             "layers": {},
             "activeLayer": {"activeLayerID": int, "showAllLayer": bool},
         }
-        IniFileNode.__init__(self, config, types=types)
+        IniFileNode.__init__(self, context, config, types=types)

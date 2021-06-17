@@ -2,6 +2,7 @@ from antarest.storage.repository.filesystem.config.model import (
     StudyConfig,
     Simulation,
 )
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.folder_node import FolderNode
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.root.output.simulation.about.about import (
@@ -31,48 +32,53 @@ from antarest.storage.repository.filesystem.root.output.simulation.ts_numbers.ts
 
 
 class OutputSimulation(FolderNode):
-    def __init__(self, config: StudyConfig, simulation: Simulation):
-        FolderNode.__init__(self, config)
+    def __init__(
+        self,
+        context: ContextServer,
+        config: StudyConfig,
+        simulation: Simulation,
+    ):
+        FolderNode.__init__(self, context, config)
         self.simulation = simulation
 
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "about-the-study": OutputSimulationAbout(
-                config.next_file("about-the-study")
+                self.context, config.next_file("about-the-study")
             ),
             "simulation": OutputSimulationSimulationLog(
-                config.next_file("simulation.log")
+                self.context, config.next_file("simulation.log")
             ),
             "info": OutputSimulationInfoAntaresOutput(
-                config.next_file("info.antares-output")
+                self.context, config.next_file("info.antares-output")
             ),
         }
         if not self.simulation.error:
             children["annualSystemCost"] = OutputSimulationAnnualSystemCost(
-                config.next_file("annualSystemCost.txt")
+                self.context, config.next_file("annualSystemCost.txt")
             )
             children["checkIntegrity"] = OutputSimulationCheckIntegrity(
-                config.next_file("checkIntegrity.txt")
+                self.context, config.next_file("checkIntegrity.txt")
             )
             children[
                 "simulation-comments"
             ] = OutputSimulationSimulationComments(
-                config.next_file("simulation-comments.txt")
+                self.context, config.next_file("simulation-comments.txt")
             )
 
             if config.store_new_set:
                 children["ts-numbers"] = OutputSimulationTsNumbers(
-                    config.next_file("ts-numbers")
+                    self.context, config.next_file("ts-numbers")
                 )
 
             if self.simulation.mode == "economy":
                 children["economy"] = OutputSimulationMode(
-                    config.next_file("economy"), self.simulation
+                    self.context, config.next_file("economy"), self.simulation
                 )
 
             elif self.simulation.mode == "adequacy":
                 children["adequacy"] = OutputSimulationMode(
-                    config.next_file("adequacy"), self.simulation
+                    self.context, config.next_file("adequacy"), self.simulation
                 )
 
         return children

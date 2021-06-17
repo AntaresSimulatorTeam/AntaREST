@@ -12,10 +12,10 @@ from antarest.storage.repository.filesystem.root.input.load.prepro.correlation i
 class InputLoadPrepro(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            a: InputLoadPreproArea(config.next_file(a))
+            a: InputLoadPreproArea(self.context, config.next_file(a))
             for a in config.area_names()
         }
         children["correlation"] = InputLoadPreproCorrelation(
-            config.next_file("correlation.ini")
+            self.context, config.next_file("correlation.ini")
         )
         return children

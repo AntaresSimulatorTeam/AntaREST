@@ -6,6 +6,7 @@ from antarest.storage.repository.antares_io.reader.ini_reader import IReader
 from antarest.storage.repository.antares_io.writer.ini_writer import IniWriter
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import INode, TREE
+from antarest.storage.repository.filesystem.context import ContextServer
 
 
 class IniReaderError(Exception):
@@ -20,10 +21,12 @@ class IniReaderError(Exception):
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
+        context: ContextServer,
         config: StudyConfig,
         types: Dict[str, Any],
         reader: Optional[IReader] = None,
     ):
+        self.context = context
         self.path = config.path
         self.types = types
         self.reader = reader or IniReader()

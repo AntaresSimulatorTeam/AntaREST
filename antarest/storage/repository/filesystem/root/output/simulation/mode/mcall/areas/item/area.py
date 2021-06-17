@@ -1,4 +1,5 @@
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.folder_node import FolderNode
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.root.output.simulation.mode.mcall.areas.item.details import (
@@ -13,8 +14,8 @@ from antarest.storage.repository.filesystem.root.output.simulation.mode.mcall.ar
 
 
 class OutputSimulationModeMcAllAreasArea(FolderNode):
-    def __init__(self, config: StudyConfig, area: str):
-        FolderNode.__init__(self, config)
+    def __init__(self, context: ContextServer, config: StudyConfig, area: str):
+        FolderNode.__init__(self, context, config)
         self.area = area
 
     def build(self, config: StudyConfig) -> TREE:
@@ -28,16 +29,25 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
             else []
         ):
             children[f"details-{timing}"] = Details(
-                config.next_file(f"details-{timing}.txt"), timing, self.area
+                self.context,
+                config.next_file(f"details-{timing}.txt"),
+                timing,
+                self.area,
             )
 
         for timing in filters:
             children[f"id-{timing}"] = Id(
-                config.next_file(f"id-{timing}.txt"), timing, self.area
+                self.context,
+                config.next_file(f"id-{timing}.txt"),
+                timing,
+                self.area,
             )
 
             children[f"values-{timing}"] = Values(
-                config.next_file(f"values-{timing}.txt"), timing, self.area
+                self.context,
+                config.next_file(f"values-{timing}.txt"),
+                timing,
+                self.area,
             )
 
         return children
