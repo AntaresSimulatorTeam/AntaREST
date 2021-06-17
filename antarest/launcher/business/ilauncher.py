@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, List
 from uuid import UUID
 
 from antarest.common.config import Config
@@ -16,6 +16,7 @@ class ILauncher(ABC):
     def __init__(self, config: Config, storage_service: StorageService):
         self.config = config
         self.storage_service = storage_service
+        self.callbacks: List[Callable[[str, JobStatus, bool], None]] = []
 
     @abstractmethod
     def run_study(
@@ -23,8 +24,7 @@ class ILauncher(ABC):
     ) -> UUID:
         pass
 
-    @abstractmethod
     def add_statusupdate_callback(
         self, callback: Callable[[str, JobStatus, bool], None]
     ) -> None:
-        pass
+        self.callbacks.append(callback)

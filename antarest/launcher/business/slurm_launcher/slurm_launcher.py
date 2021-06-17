@@ -40,7 +40,6 @@ class SlurmLauncher(ILauncher):
             raise LauncherInitException()
 
         self.slurm_config: SlurmConfig = config.launcher.slurm
-        self.callbacks: List[Callable[[str, JobStatus, bool], None]] = []
         self.check_state: bool = True
         self.thread: Optional[threading.Thread] = None
         self.job_id_to_study_id: Dict[str, str] = {}
@@ -163,11 +162,14 @@ class SlurmLauncher(ILauncher):
         data_repo_tinydb: DataRepoTinydb,
     ) -> None:
 
-        run_with(
-            arguments=arguments,
-            parameters=antares_launcher_parameters,
-            show_banner=False,
-        )
+        try:
+            run_with(
+                arguments=arguments,
+                parameters=antares_launcher_parameters,
+                show_banner=False,
+            )
+        except Exception as e:
+            logger.info("Could not get data on remote server")
 
         study_list = data_repo_tinydb.get_list_of_studies()
 

@@ -24,7 +24,6 @@ class LocalLauncher(ILauncher):
         self, config: Config, storage_service: StorageService
     ) -> None:
         super().__init__(config, storage_service)
-        self.callbacks: List[Callable[[str, JobStatus, bool], None]] = []
 
     def run_study(
         self, study_uuid: str, version: str, params: RequestParameters
