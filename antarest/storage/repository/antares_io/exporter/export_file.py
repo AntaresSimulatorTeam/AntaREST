@@ -10,6 +10,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from antarest.common.custom_types import JSON
 
+
 # TODO merge with exporter service ?
 
 

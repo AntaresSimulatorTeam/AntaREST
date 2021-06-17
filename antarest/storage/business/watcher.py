@@ -4,14 +4,13 @@ from pathlib import Path
 from time import time, sleep
 from typing import List
 
-from antarest.common.utils.fastapi_sqlalchemy import db
 from filelock import FileLock  # type: ignore
 
 from antarest.common.config import Config
+from antarest.common.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
 from antarest.storage.service import StorageService
-
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
-from antarest.login.model import UserCreateDTO, UserLdap, Group, Role
+from antarest.login.model import UserLdap, Group, Role
 from antarest.login.repository import (
     UserLdapRepository,
     RoleRepository,

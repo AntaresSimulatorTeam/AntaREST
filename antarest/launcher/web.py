@@ -1,12 +1,10 @@
 from typing import Any, Optional
 from uuid import UUID
 
-from markupsafe import escape
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
-from antarest.common.jwt import JWTUser
-from antarest.login.auth import Auth
 from antarest.common.config import Config
+from antarest.common.jwt import JWTUser
 from antarest.common.requests import RequestParameters
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth

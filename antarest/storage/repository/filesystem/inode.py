@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, TypeVar, Generic, Any, Union
+from typing import List, Optional, Dict, TypeVar, Generic, Any
 
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 

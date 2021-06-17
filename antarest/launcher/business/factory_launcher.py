@@ -4,7 +4,6 @@ from typing import Dict
 from antarest.common.config import Config
 from antarest.launcher.business.ilauncher import (
     ILauncher,
-    LauncherInitException,
 )
 from antarest.launcher.business.local_launcher.local_launcher import (
     LocalLauncher,

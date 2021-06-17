@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import shutil
@@ -7,11 +6,9 @@ from pathlib import Path
 from typing import IO
 from uuid import uuid4
 
-from antarest.common.config import Config
 from antarest.common.custom_types import JSON
-from antarest.common.interfaces.eventbus import IEventBus
-from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.model import Study, RawStudy
 from antarest.storage.repository.antares_io.reader import IniReader
 from antarest.storage.repository.filesystem.factory import StudyFactory

@@ -1,11 +1,10 @@
-from enum import Enum
 from typing import List, Union
 
 from dataclasses import dataclass, field
 
 from antarest.common.custom_types import JSON
 from antarest.common.roles import RoleType
-from antarest.login.model import Group, User, Identity
+from antarest.login.model import Group, Identity
 
 
 @dataclass

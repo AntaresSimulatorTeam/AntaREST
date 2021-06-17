@@ -4,11 +4,9 @@ import os
 import shutil
 import threading
 import time
-from io import BytesIO
 from pathlib import Path
-from typing import Callable, List, Optional, Dict
+from typing import Callable, Optional, Dict
 from uuid import UUID, uuid4
-from zipfile import ZipFile, ZIP_DEFLATED
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with

@@ -4,27 +4,26 @@ from io import BytesIO
 from pathlib import Path
 from time import time, sleep
 from typing import List, IO, Optional, cast
-
 from uuid import uuid4
 
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.common.jwt import JWTUser
-from antarest.common.roles import RoleType
-from antarest.login.model import User, Group
-from antarest.login.service import LoginService
-from antarest.storage.business.exporter_service import ExporterService
-from antarest.storage.business.importer_service import ImporterService
 from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
+from antarest.common.roles import RoleType
+from antarest.login.model import Group
+from antarest.login.service import LoginService
+from antarest.storage.business.exporter_service import ExporterService
+from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.permissions import (
     StudyPermissionType,
     check_permission,
 )
-from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.model import (
     Study,
     StudyContentStatus,

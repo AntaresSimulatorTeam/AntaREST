@@ -1,11 +1,11 @@
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.folder_node import FolderNode
 from antarest.storage.repository.filesystem.inode import TREE
-from antarest.storage.repository.filesystem.root.output.simulation.mode.mcall.links.item.values import (
-    OutputSimulationModeMcAllLinksItemValues as Values,
-)
 from antarest.storage.repository.filesystem.root.output.simulation.mode.mcall.links.item.id import (
     OutputSimulationModeMcAllLinksItemId as Id,
+)
+from antarest.storage.repository.filesystem.root.output.simulation.mode.mcall.links.item.values import (
+    OutputSimulationModeMcAllLinksItemValues as Values,
 )
 
 
