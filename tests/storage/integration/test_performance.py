@@ -1,6 +1,7 @@
 from pathlib import Path
 from time import time
 from typing import Callable, Any
+from unittest.mock import Mock
 from zipfile import ZipFile
 
 from antarest.storage.repository.filesystem.factory import StudyFactory
@@ -31,7 +32,7 @@ def test_performance(tmp_path: Path, project_path: Path):
     bench = {"build": 0}
 
     (_, study), bench["build"] = benchmark(
-        lambda: StudyFactory().create_from_fs(path_studies)
+        lambda: StudyFactory(matrix=Mock()).create_from_fs(path_studies)
     )
     data, bench["get"] = benchmark(lambda: study.get())
     _, bench["get_author"] = benchmark(
