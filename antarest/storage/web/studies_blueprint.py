@@ -4,20 +4,21 @@ from glob import escape
 from http import HTTPStatus
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, File, Depends, Path, Body
+from fastapi import APIRouter, HTTPException, File, Depends, Body
 from fastapi.params import Param
-from starlette.responses import StreamingResponse, JSONResponse, Response
+from starlette.responses import StreamingResponse, Response
 
+from antarest.common.config import Config
 from antarest.common.custom_types import JSON
 from antarest.common.jwt import JWTUser
-from antarest.common.swagger import get_path_examples
-from antarest.login.auth import Auth
-from antarest.common.config import Config
-from antarest.storage.model import PublicMode
-from antarest.storage.service import StorageService
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.common.swagger import get_path_examples
+from antarest.login.auth import Auth
+from antarest.storage.business.patch_service import PatchService
+from antarest.storage.model import PublicMode
+from antarest.storage.service import StorageService
 
 
 def sanitize_uuid(uuid: str) -> str:
@@ -29,7 +30,9 @@ def sanitize_study_name(name: str) -> str:
 
 
 def create_study_routes(
-    storage_service: StorageService, config: Config
+    storage_service: StorageService,
+    patch_service: PatchService,
+    config: Config,
 ) -> APIRouter:
     """
     Endpoint implementation for studies management
@@ -318,5 +321,40 @@ def create_study_routes(
     )
     def validate(uuid: str) -> Any:
         return storage_service.check_errors(uuid)
+
+    @bp.patch("/studies/{uuid}", summary="Patch the study metadata")
+    def patch_metadata(
+        uuid: str,
+        data: JSON = Body(...),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        uuid_sanitized = sanitize_uuid(uuid)
+        params = RequestParameters(user=current_user)
+
+        patch_service.patch(uuid_sanitized, data, params)
+        content = ""
+
+        return content
+
+    @bp.put(
+        "/studies/{uuid}/outputs/{output_id}/reference",
+        summary="Put the selected output as reference the study metadata",
+    )
+    def set_reference(
+        uuid: str,
+        output_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        uuid_sanitized = sanitize_uuid(uuid)
+        output_id_sanitized = sanitize_uuid(output_id)
+        params = RequestParameters(user=current_user)
+
+        patch_service.set_reference_output(
+            uuid_sanitized, output_id_sanitized, params
+        )
+
+        content = ""
+
+        return content
 
     return bp
