@@ -2,8 +2,11 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import create_engine
 
 from antarest.common.config import Config
+from antarest.common.persistence import Base
+from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.launcher.business.local_launcher.local_launcher import (
     LocalLauncher,
 )
@@ -12,6 +15,13 @@ from antarest.launcher.model import JobStatus
 
 @pytest.mark.unit_test
 def test_compute():
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
     local_launcher = LocalLauncher(Config(), storage_service=Mock())
 
     uuid = uuid4()

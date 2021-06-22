@@ -2,7 +2,6 @@ import time
 from datetime import datetime
 from typing import List, Optional, Tuple
 
-from antarest.common.custom_types import JSON
 from antarest.matrixstore.model import (
     MatrixDTO,
     MatrixFreq,

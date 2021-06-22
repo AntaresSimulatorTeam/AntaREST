@@ -1,10 +1,10 @@
 import enum
-from typing import List, Any, Optional
+from typing import List, Any
 
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin  # type: ignore
-from sqlalchemy import Column, String, Enum, DateTime  # type: ignore
 from pydantic import BaseModel
+from sqlalchemy import Column, String, Enum, DateTime  # type: ignore
 
 from antarest.common.persistence import Base
 

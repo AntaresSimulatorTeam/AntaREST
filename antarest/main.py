@@ -5,8 +5,8 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 from typing import Tuple, Any, Optional, Union
-import sqlalchemy.ext.baked  # type: ignore
 
+import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore

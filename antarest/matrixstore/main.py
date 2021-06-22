@@ -1,10 +1,7 @@
-from http import HTTPStatus
-from typing import Optional, Any
-from urllib.request import Request
+from typing import Optional
 
 from fastapi import FastAPI
 from fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
-from starlette.responses import JSONResponse
 
 from antarest.common.config import Config
 from antarest.matrixstore.repository import (

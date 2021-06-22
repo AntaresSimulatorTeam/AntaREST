@@ -2,7 +2,7 @@ import hashlib
 import json
 import logging
 import os
-from typing import Optional, List, Any
+from typing import Optional, List
 
 from sqlalchemy import exists  # type: ignore
 
