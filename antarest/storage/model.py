@@ -120,7 +120,7 @@ class PatchLeaf:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PatchLeaf):
-            raise NotImplementedError
+            raise NotImplemented
 
         eq: bool = True
         for attribute in self.__dict__.keys():
@@ -163,18 +163,11 @@ class PatchNode:
                     new_leaf,
                 )
             elif new_leaf is not None:
-                if type(old_leaf) != dict:
-                    setattr(
-                        merged_patch,
-                        leaf_name,
-                        old_leaf.patch(new_leaf),
-                    )
-                else:
-                    setattr(
-                        merged_patch,
-                        leaf_name,
-                        old_leaf.patch(new_leaf),
-                    )
+                setattr(
+                    merged_patch,
+                    leaf_name,
+                    old_leaf.patch(new_leaf),
+                )
         return merged_patch
 
 
