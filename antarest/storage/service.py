@@ -736,6 +736,7 @@ class StorageService:
     def get_raw_study(self, uuid: str, params: RequestParameters) -> RawStudy:
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.READ)
+        assert type(study) == RawStudy
 
         return cast(RawStudy, study)
 
