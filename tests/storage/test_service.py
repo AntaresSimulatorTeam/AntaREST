@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
@@ -11,7 +11,6 @@ from antarest.login.model import User, Group
 from antarest.common.requests import (
     RequestParameters,
 )
-from antarest.login.service import GroupNotFoundError
 from antarest.storage.business.permissions import StudyPermissionType
 from antarest.storage.model import (
     Study,
@@ -21,14 +20,16 @@ from antarest.storage.model import (
     RawStudy,
     PublicMode,
     StudyDownloadDTO,
+    MatrixAggregationResult,
+    MatrixIndex,
 )
-from antarest.storage.repository.filesystem.root.study import (
-    Study as RootStudy,
-)
+
 from antarest.storage.repository.filesystem.config.model import (
     Area,
     StudyConfig,
     Simulation,
+    Link,
+    Set,
 )
 from antarest.storage.service import StorageService, UserHasNotPermissionError
 
@@ -248,7 +249,10 @@ def test_download_output() -> None:
     )
 
     area = Area(
-        links=dict(), thermals=[], filters_synthesis=[], filters_year=[]
+        links={"west": Link(filters_synthesis=[], filters_year=[])},
+        thermals=[],
+        filters_synthesis=[],
+        filters_year=[],
     )
 
     sim = Simulation(
@@ -263,7 +267,7 @@ def test_download_output() -> None:
     config = StudyConfig(
         study_path=input_study.path,
         areas={"east": area},
-        sets=None,
+        sets={"north": Set()},
         outputs={"output-id": sim},
         bindings=None,
         store_new_set=False,
@@ -280,12 +284,51 @@ def test_download_output() -> None:
         repository=repository,
         event_bus=Mock(),
     )
+
     res_study = {"columns": [["H. VAL|Euro/MWh"]], "data": [[0.5]]}
-    res_matrix = {"00001|east|H. VAL|Euro/MWh": {"data": [0.5]}}
     study_service.get_study_path.return_value = Path(input_study.path)
     study_service.study_factory.create_from_fs.return_value = config, study
     study.get.return_value = res_study
 
+    # AREA TYPE
+    res_matrix = MatrixAggregationResult(
+        index=MatrixIndex(),
+        data={"east": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        warnings=[],
+    )
+    result = service.download_outputs(
+        "study-id",
+        "output-id",
+        input_data,
+        RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    )
+    assert result == res_matrix
+
+    # LINK TYPE
+    input_data.type = "LINK"
+    input_data.filter = ["east>west"]
+    res_matrix = MatrixAggregationResult(
+        index=MatrixIndex(),
+        data={"east^west": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        warnings=[],
+    )
+    result = service.download_outputs(
+        "study-id",
+        "output-id",
+        input_data,
+        RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    )
+    assert result == res_matrix
+
+    # CLUSTER TYPE
+    input_data.type = "CLUSTER"
+    input_data.filter = []
+    input_data.filterIn = "n"
+    res_matrix = MatrixAggregationResult(
+        index=MatrixIndex(),
+        data={"north": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        warnings=[],
+    )
     result = service.download_outputs(
         "study-id",
         "output-id",

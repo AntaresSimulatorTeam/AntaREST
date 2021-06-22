@@ -25,7 +25,7 @@ from antarest.storage.model import (
     PublicMode,
     StudyDownloadDTO,
     MatrixAggregationResult,
-    MatrixColumn,
+    MatrixIndex,
 )
 from antarest.storage.web.exceptions import (
     IncorrectPathError,
@@ -450,11 +450,11 @@ def test_validate() -> None:
 def test_output_download() -> None:
     mock_service = Mock()
 
-    output_data: MatrixAggregationResult = {
-        "00001|td3_37_de-38_pl|H. VAL|Euro/MWh": MatrixColumn(
-            data=[0.5, 0.6, 0.7]
-        )
-    }
+    output_data = MatrixAggregationResult(
+        index=MatrixIndex(),
+        data={"td3_37_de-38_pl": {1: {"H. VAL|Euro/MWh": [0.5, 0.6, 0.7]}}},
+        warnings=[],
+    )
     mock_service.download_outputs.return_value = output_data
 
     study_download = StudyDownloadDTO(
@@ -482,7 +482,7 @@ def test_output_download() -> None:
         json=study_download.dict(),
     )
 
-    assert res.json() == json.dumps(output_data)
+    assert res.json() == json.dumps(output_data.to_dict(), allow_nan=True)
 
 
 @pytest.mark.unit_test

@@ -1,11 +1,11 @@
+from datetime import datetime
 import enum
 import uuid
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, List, Dict, Optional, TypeVar
-
 from dataclasses import dataclass
-from datetime import datetime
+from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -275,8 +275,14 @@ class StudyDownloadDTO(BaseModel):
     includeClusters: bool = True
 
 
-class MatrixColumn(Dict[Any, Any]):
-    data: List[float]
+@dataclass
+class MatrixIndex(DataClassJsonMixin):  # type: ignore
+    startDate: str = ""
+    step: int = 3600000
 
 
-MatrixAggregationResult = Dict[str, MatrixColumn]
+@dataclass
+class MatrixAggregationResult(DataClassJsonMixin):  # type: ignore
+    index: MatrixIndex
+    data: Dict[str, Dict[int, Dict[str, List[float]]]]
+    warnings: List[str]

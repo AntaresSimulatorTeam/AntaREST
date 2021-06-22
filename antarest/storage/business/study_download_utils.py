@@ -5,16 +5,19 @@ from antarest.storage.model import (
     MatrixAggregationResult,
     RawStudy,
     StudyDownloadDTO,
-    MatrixColumn,
     StudyDownloadLevelDTO,
     StudyDownloadType,
+    MatrixIndex,
 )
 from antarest.storage.repository.filesystem.folder_node import (
     ChildNotFoundError,
     FilterError,
 )
 from antarest.storage.repository.filesystem.root.study import Study
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    StudyConfig,
+    Area,
+)
 
 
 class StudyDownloader:
@@ -24,6 +27,8 @@ class StudyDownloader:
     def read_columns(
         matrix: MatrixAggregationResult,
         prefix: str,
+        year: int,
+        area_name: str,
         study: Study,
         url: str,
         data: StudyDownloadDTO,
@@ -36,22 +41,31 @@ class StudyDownloader:
             filter_column = data.columns and len(data.columns) > 0
 
             for index, column in enumerate(columns):
-                column_name = (
-                    prefix + "|" + "|".join([c for c in column if c.strip()])
-                )
+                column_name = "|".join([c for c in column if c.strip()])
+                filter_column_name = prefix + "|" + column_name
                 if filter_column:
-                    if not (column_name in data.columns):
+                    if not (filter_column_name in data.columns):
                         continue
-                matrix[column_name] = MatrixColumn(
-                    data=[row[index] for row in rows]
-                )
+
+                if area_name not in matrix.data:
+                    matrix.data[area_name] = dict()
+
+                if year not in matrix.data[area_name]:
+                    matrix.data[area_name][year] = dict()
+
+                matrix.data[area_name][year][column_name] = [
+                    row[index] for row in rows
+                ]
+
         except (ChildNotFoundError, FilterError):
-            pass
+            matrix.warnings.append(f"{area_name} has no child")
 
     @staticmethod
     def level_output_filter(
         matrix: MatrixAggregationResult,
         prefix: str,
+        year: int,
+        area_name: str,
         study: Study,
         url: str,
         data: StudyDownloadDTO,
@@ -66,37 +80,45 @@ class StudyDownloader:
             for elm in files_matcher:
                 tmp_url = f"{url}/{elm}"
                 StudyDownloader.read_columns(
-                    matrix, prefix, study, tmp_url, data
+                    matrix, prefix, year, area_name, study, tmp_url, data
                 )
 
     @staticmethod
-    def apply_filter_2(
+    def apply_type_filters(
         matrix: MatrixAggregationResult,
         prefix: str,
+        year: int,
         type_elm: Any,
         elm: str,
         study: Study,
         url: str,
         data: StudyDownloadDTO,
-        filter_1: bool,
-        filter_2: Callable[[str], bool],
+        first_element_type_condition: bool,
+        second_element_type_condition: Callable[[str], bool],
     ) -> None:
 
-        if filter_1:
+        if first_element_type_condition:
             if StudyDownloadType.from_dict(
                 data.type
-            ) == StudyDownloadType.LINK and isinstance(type_elm[elm], list):
-                for out_link in type_elm[elm]:
-                    if filter_2(out_link):
-                        tmp_prefix = f"{prefix}|{elm}^{out_link}"
-                        link_url = f"{url}/{out_link}"
-                        StudyDownloader.level_output_filter(
-                            matrix, tmp_prefix, study, link_url, data
-                        )
+            ) == StudyDownloadType.LINK and isinstance(type_elm[elm], Area):
+                if type_elm[elm].links:
+                    for out_link in type_elm[elm].links.keys():
+                        if second_element_type_condition(out_link):
+                            tmp_prefix = f"{prefix}|{elm}^{out_link}"
+                            link_url = f"{url}/{out_link}"
+                            StudyDownloader.level_output_filter(
+                                matrix,
+                                tmp_prefix,
+                                year,
+                                f"{elm}^{out_link}",
+                                study,
+                                link_url,
+                                data,
+                            )
             else:
                 tmp_prefix = f"{prefix}|{elm}"
                 StudyDownloader.level_output_filter(
-                    matrix, tmp_prefix, study, url, data
+                    matrix, tmp_prefix, year, elm, study, url, data
                 )
 
     @staticmethod
@@ -110,9 +132,10 @@ class StudyDownloader:
         return "", ""
 
     @staticmethod
-    def apply_filter_1(
+    def select_filter(
         matrix: MatrixAggregationResult,
         prefix: str,
+        year: int,
         type_elm: Any,
         study: Study,
         url: str,
@@ -132,9 +155,10 @@ class StudyDownloader:
                     tmp_filters = flt.split(">")
                     if len(tmp_filters) >= 2:
                         flt_1, flt_2 = tuple(tmp_filters[:2])
-                        StudyDownloader.apply_filter_2(
+                        StudyDownloader.apply_type_filters(
                             matrix,
                             prefix,
+                            year,
                             type_elm,
                             elm,
                             study,
@@ -144,9 +168,10 @@ class StudyDownloader:
                             lambda x: not (flt_2 and x != flt_2),
                         )
                     else:
-                        StudyDownloader.apply_filter_2(
+                        StudyDownloader.apply_type_filters(
                             matrix,
                             prefix,
+                            year,
                             type_elm,
                             elm,
                             study,
@@ -167,51 +192,58 @@ class StudyDownloader:
                     else ("", "")
                 )
 
-                filter_1_in = bool(re.search(flt_in_1, elm))
-                filter_1_out = (
+                first_element_type_condition_in = bool(
+                    re.search(flt_in_1, elm)
+                )
+                first_element_type_condition_out = (
                     not bool(re.search(flt_out_1, elm)) if flt_out_1 else True
                 )
-                filter_1 = filter_1_in and filter_1_out
+                first_element_type_condition = (
+                    first_element_type_condition_in
+                    and first_element_type_condition_out
+                )
 
-                def filter_2(x: str) -> bool:
+                def second_element_type_condition(x: str) -> bool:
                     cond1 = not (flt_out_2 and bool(re.search(flt_out_2, x)))
                     cond2 = not (flt_in_2 and not bool(re.search(flt_in_2, x)))
                     return cond1 and cond2
 
-                StudyDownloader.apply_filter_2(
+                StudyDownloader.apply_type_filters(
                     matrix,
                     prefix,
+                    year,
                     type_elm,
                     elm,
                     study,
                     filtered_url,
                     data,
-                    filter_1,
-                    filter_2,
+                    first_element_type_condition,
+                    second_element_type_condition,
                 )
 
     @staticmethod
     def type_output_filter(
         matrix: MatrixAggregationResult,
         prefix: str,
+        year: int,
         config: StudyConfig,
         study: Study,
         url: str,
         data: StudyDownloadDTO,
     ) -> None:
         if StudyDownloadType.from_dict(data.type) == StudyDownloadType.AREA:
-            StudyDownloader.apply_filter_1(
-                matrix, prefix, config.areas, study, f"{url}/areas", data
+            StudyDownloader.select_filter(
+                matrix, prefix, year, config.areas, study, f"{url}/areas", data
             )
         elif (
             StudyDownloadType.from_dict(data.type) == StudyDownloadType.CLUSTER
         ):
-            StudyDownloader.apply_filter_1(
-                matrix, prefix, config.sets, study, f"{url}/areas", data
+            StudyDownloader.select_filter(
+                matrix, prefix, year, config.sets, study, f"{url}/areas", data
             )
         else:
-            StudyDownloader.apply_filter_1(
-                matrix, prefix, config.links, study, f"{url}/links", data
+            StudyDownloader.select_filter(
+                matrix, prefix, year, config.areas, study, f"{url}/links", data
             )
 
     @staticmethod
@@ -228,7 +260,7 @@ class StudyDownloader:
                 prefix = str(year).zfill(5)
                 tmp_url = f"{url}/{prefix}"
                 StudyDownloader.type_output_filter(
-                    matrix, prefix, config, study, tmp_url, data
+                    matrix, prefix, year, config, study, tmp_url, data
                 )
         else:
             years = config.outputs[output_id].nbyears
@@ -236,7 +268,7 @@ class StudyDownloader:
                 prefix = str(year).zfill(5)
                 tmp_url = f"{url}/{prefix}"
                 StudyDownloader.type_output_filter(
-                    matrix, prefix, config, study, tmp_url, data
+                    matrix, prefix, year, config, study, tmp_url, data
                 )
 
     @staticmethod
@@ -259,7 +291,9 @@ class StudyDownloader:
 
         """
         tmp_url = url
-        matrix: MatrixAggregationResult = dict()
+        matrix: MatrixAggregationResult = MatrixAggregationResult(
+            index=MatrixIndex(), data=dict(), warnings=[]
+        )
         study_path = study_service.get_study_path(study)
         config, study_root = study_service.study_factory.create_from_fs(
             study_path
@@ -267,7 +301,7 @@ class StudyDownloader:
         if data.synthesis:
             tmp_url += "/mc-all"
             StudyDownloader.type_output_filter(
-                matrix, "", config, study_root, tmp_url, data
+                matrix, "", 0, config, study_root, tmp_url, data
             )
         else:
             tmp_url += "/mc-ind"
@@ -275,3 +309,11 @@ class StudyDownloader:
                 matrix, config, output_id, study_root, tmp_url, data
             )
         return matrix
+
+    @staticmethod
+    def export(
+        matrix: MatrixAggregationResult, type: str
+    ) -> str:  # JUST A TEMPLATE
+        if matrix:
+            return type
+        return ""

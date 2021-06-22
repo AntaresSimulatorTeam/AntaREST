@@ -45,7 +45,6 @@ export const refresh = async (user: UserInfo, login: (user: UserInfo) => void, l
         accessToken: userInfoDTO.access_token,
         refreshToken: userInfoDTO.refresh_token,
       };
-      console.log('ACCESS : ', userInfoDTO.access_token);
       login(userInfo);
       return userInfo;
     } catch (e) {
