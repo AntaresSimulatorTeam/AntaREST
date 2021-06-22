@@ -78,6 +78,7 @@ class ImporterService:
                 self.study_service.delete_study(metadata)
                 raise StudyValidationError("Fail to import study")
 
+            metadata.name = data["study"]["antares"]["caption"]
             StorageServiceUtils.update_antares_info(metadata, data)
             self.study_service.edit_study(
                 metadata, url="study", new=data["study"]

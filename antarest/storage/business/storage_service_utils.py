@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 from typing import IO, Tuple
 from uuid import uuid4
@@ -106,8 +107,8 @@ class StorageServiceUtils:
         info_antares = study_data["study"]["antares"]
 
         info_antares["caption"] = metadata.name
-        info_antares["created"] = metadata.created_at
-        info_antares["lastsave"] = metadata.updated_at
+        info_antares["created"] = int(metadata.created_at.timestamp())
+        info_antares["lastsave"] = int(metadata.updated_at.timestamp())
 
     @staticmethod
     def extract_info_from_url(route: str) -> Tuple[str, str]:
