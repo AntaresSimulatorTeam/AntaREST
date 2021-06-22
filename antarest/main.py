@@ -21,7 +21,7 @@ from starlette.templating import Jinja2Templates
 from antarest import __version__
 from antarest.common.config import Config
 from antarest.common.persistence import Base
-from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.common.utils.web import tags_metadata
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
@@ -222,6 +222,9 @@ def fastapi_app(
         application,
         config,
     )
+
+    with db():
+        storage.tmp_fix_study_db()
 
     return application
 

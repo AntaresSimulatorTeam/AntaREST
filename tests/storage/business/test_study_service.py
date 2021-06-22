@@ -1,3 +1,4 @@
+import datetime
 import os
 from pathlib import Path
 from typing import Callable
@@ -62,6 +63,7 @@ def test_get(tmp_path: str, project_path) -> None:
         config=build_config(path_to_studies),
         study_factory=study_factory,
         path_resources=project_path / "resources",
+        patch_service=Mock(),
     )
 
     metadata = RawStudy(
@@ -86,6 +88,7 @@ def test_check_errors():
         config=build_config(Path()),
         study_factory=factory,
         path_resources=Path(),
+        patch_service=Mock(),
     )
 
     metadata = RawStudy(
@@ -115,6 +118,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
         config=build_config(path_to_studies),
         study_factory=Mock(),
         path_resources=project_path / "resources",
+        patch_service=Mock(),
     )
 
     metadata = RawStudy(
@@ -142,6 +146,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         config=build_config(path_to_studies),
         study_factory=Mock(),
         path_resources=project_path / "resources",
+        patch_service=Mock(),
     )
 
     metadata = RawStudy(
@@ -182,6 +187,7 @@ def test_find_studies(tmp_path: str, storage_service_builder) -> None:
         config=build_config(path_studies),
         study_factory=Mock(),
         path_resources=Path(),
+        patch_service=Mock(),
     )
 
     assert study_names == study_service.get_study_uuids()
@@ -205,12 +211,16 @@ def test_create_study(
         config=build_config(path_studies),
         study_factory=study_factory,
         path_resources=project_path / "resources",
+        patch_service=Mock(),
     )
 
     metadata = RawStudy(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(study_service.get_default_workspace_path() / "study1"),
+        version=0,
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
     )
     md = study_service.create_study(metadata)
 
@@ -263,6 +273,7 @@ def test_copy_study(
         config=build_config(path_studies),
         study_factory=study_factory,
         path_resources=Path(),
+        patch_service=Mock(),
     )
 
     src_md = RawStudy(
@@ -272,6 +283,9 @@ def test_copy_study(
         id="study2",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(study_service.get_default_workspace_path() / "study2"),
+        version=0,
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
     )
     md = study_service.copy_study(src_md, dest_md)
 
@@ -291,6 +305,7 @@ def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
         config=build_config(tmp_path),
         study_factory=Mock(),
         path_resources=Path(),
+        patch_service=Mock(),
     )
 
     md = RawStudy(
@@ -315,6 +330,7 @@ def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
         config=build_config(tmp_path),
         study_factory=study_factory,
         path_resources=Path(),
+        patch_service=Mock(),
     )
 
     # Input

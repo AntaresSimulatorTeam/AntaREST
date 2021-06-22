@@ -17,7 +17,7 @@ from antarest.common.requests import (
 from antarest.common.swagger import get_path_examples
 from antarest.common.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.storage.model import PublicMode
+from antarest.storage.model import PublicMode, StudyMetadataPatchDTO
 from antarest.storage.service import StorageService
 
 
@@ -53,7 +53,7 @@ def create_study_routes(
         return available_studies
 
     @bp.post(
-        "/studies",
+        "/studies/_import",
         status_code=HTTPStatus.CREATED.value,
         tags=[APITag.study_management],
         summary="Import Study",
@@ -102,7 +102,7 @@ def create_study_routes(
         return f"/studies/{destination_uuid}"
 
     @bp.post(
-        "/studies/{name}",
+        "/studies",
         status_code=HTTPStatus.CREATED.value,
         tags=[APITag.study_management],
         summary="Create a new empty study",
@@ -254,6 +254,35 @@ def create_study_routes(
         return ""
 
     @bp.get(
+        "/studies/{uuid}",
+        tags=[APITag.study_management],
+        summary="Get Study informations",
+    )
+    def get_study_metadata(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        study_metadata = storage_service.get_study_information(uuid, params)
+        return study_metadata
+
+    @bp.put(
+        "/studies/{uuid}",
+        tags=[APITag.study_management],
+        summary="Get Study informations",
+    )
+    def update_study_metadata(
+        uuid: str,
+        study_metadata_patch: StudyMetadataPatchDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        study_metadata = storage_service.update_study_information(
+            uuid, study_metadata_patch, params
+        )
+        return study_metadata
+
+    @bp.get(
         "/studies/{uuid}/raw",
         tags=[APITag.study_data],
         summary="Read data",
@@ -275,19 +304,6 @@ def create_study_routes(
             separators=(",", ":"),
         ).encode("utf-8")
         return Response(content=json_response, media_type="application/json")
-
-    @bp.get(
-        "/studies/{uuid}/metadata",
-        tags=[APITag.study_management],
-        summary="Get Study informations",
-    )
-    def get_study_metadata(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        params = RequestParameters(user=current_user)
-        study_metadata = storage_service.get_study_information(uuid, params)
-        return study_metadata
 
     @bp.post(
         "/studies/{uuid}/raw",

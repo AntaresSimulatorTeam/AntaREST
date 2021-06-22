@@ -103,7 +103,7 @@ def test_main(app: FastAPI):
 
     # study creation
     created = client.post(
-        "/v1/studies/foo",
+        "/v1/studies?name=foo",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -202,7 +202,7 @@ def test_main(app: FastAPI):
     )
     fred_credentials = res.json()
     res = client.post(
-        f"/v1/studies/bar?groups={group_id}",
+        f"/v1/studies?name=bar&groups={group_id}",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -227,7 +227,7 @@ def test_main(app: FastAPI):
     studies = [
         study_id
         for study_id in res.json()
-        if res.json()[study_id]["antares"]["caption"] == "STA-mini"
+        if res.json()[study_id]["name"] == "STA-mini"
     ]
     study_id = studies[0]
     res = client.post(

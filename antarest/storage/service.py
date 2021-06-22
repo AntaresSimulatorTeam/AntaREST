@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.common.jwt import JWTUser
+from antarest.common.jwt import JWTUser, DEFAULT_ADMIN_USER
 from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
@@ -18,6 +18,7 @@ from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
+from antarest.storage.business.patch_service import PatchService
 from antarest.storage.business.permissions import (
     StudyPermissionType,
     check_permission,
@@ -31,7 +32,10 @@ from antarest.storage.model import (
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
     PublicMode,
+    StudyMetadataPatchDTO,
+    StudyMetadataDTO,
 )
+from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.study import StudyMetadataRepository
 from antarest.storage.web.exceptions import (
     StudyNotFoundError,
@@ -109,13 +113,15 @@ class StorageService:
             "studies metadata asked by user %s", params.get_user_id()
         )
         return {
-            study.id: self.study_service.get_study_information(study)
+            study.id: self.study_service.get_study_information(
+                study, summary=True
+            )
             for study in self._get_study_metadatas(params)
         }
 
     def get_study_information(
         self, uuid: str, params: RequestParameters
-    ) -> JSON:
+    ) -> StudyMetadataDTO:
         """
         Get study information
         Args:
@@ -134,6 +140,43 @@ class StorageService:
             "study %s metadata asked by user %s", uuid, params.get_user_id()
         )
         return self.study_service.get_study_information(study)
+
+    def update_study_information(
+        self,
+        uuid: str,
+        metadata_patch: StudyMetadataPatchDTO,
+        params: RequestParameters,
+    ) -> StudyMetadataDTO:
+        """
+        Update study metadata
+        Args:
+            uuid: study uuid
+            metadata_patch: metadata patch
+            params: request parameters
+        """
+        self.logger.info(
+            "updating study %s metadata for user %s",
+            uuid,
+            params.get_user_id(),
+        )
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(uuid, study.type)
+
+        if metadata_patch.name:
+            study.name = metadata_patch.name
+        if metadata_patch.horizon:
+            study_settings_url = "settings/generaldata/general"
+            study_settings = self.study_service.get(study, study_settings_url)
+            study_settings["horizon"] = metadata_patch.horizon
+            self.study_service.edit_study(
+                study, study_settings_url, study_settings
+            )
+
+        return self.study_service.patch_update_study_metadata(
+            study, metadata_patch
+        )
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
         """
@@ -179,6 +222,7 @@ class StorageService:
             path=study_path,
             created_at=datetime.now(),
             updated_at=datetime.now(),
+            version=RawStudyService.new_default_version,
         )
 
         raw = self.study_service.create_study(raw)
@@ -225,7 +269,6 @@ class StorageService:
             if isinstance(study, RawStudy)
         ]
         for folder in folders:
-            sleep(0.2)
             if str(folder.path) not in paths:
                 study = RawStudy(
                     id=str(uuid4()),
@@ -237,6 +280,10 @@ class StorageService:
                     public_mode=PublicMode.FULL
                     if len(folder.groups) == 0
                     else PublicMode.NONE,
+                )
+
+                self.study_service.update_from_raw_meta(
+                    study, fallback_on_default=True
                 )
 
                 study.content_status = self._analyse_study(study)
@@ -286,6 +333,7 @@ class StorageService:
             ),
             created_at=datetime.now(),
             updated_at=datetime.now(),
+            version=src_study.version,
         )
 
         study = self.study_service.copy_study(src_study, dest_study)
@@ -470,8 +518,6 @@ class StorageService:
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
         )
         study = self.importer_service.import_study(study, stream)
         status = self._analyse_study(study)
@@ -733,13 +779,6 @@ class StorageService:
             raise StudyNotFoundError(uuid)
         return study
 
-    def get_raw_study(self, uuid: str, params: RequestParameters) -> RawStudy:
-        study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.READ)
-        assert type(study) == RawStudy
-
-        return cast(RawStudy, study)
-
     def _assert_permission(
         self,
         user: Optional[JWTUser],
@@ -796,3 +835,34 @@ class StorageService:
         except Exception as e:
             self.logger.error(e)
             return StudyContentStatus.ERROR
+
+    def tmp_fix_study_db(self) -> None:
+        """
+        TODO remove this method, this is only used to fix the rec env
+        """
+        for study in self._get_study_metadatas(
+            RequestParameters(user=DEFAULT_ADMIN_USER)
+        ):
+            config = StudyConfig(
+                study_path=self.study_service.get_study_path(study)
+            )
+            raw_study = self.study_service.study_factory.create_from_config(
+                config
+            )
+            print(config)
+            file_metadata = raw_study.get(url=["study", "antares"])
+
+            if study.version is None:
+                study.version = file_metadata["version"]
+
+            if study.created_at is None:
+                study.created_at = datetime.fromtimestamp(
+                    file_metadata["created"]
+                )
+
+            if study.updated_at is None:
+                study.updated_at = datetime.fromtimestamp(
+                    file_metadata["lastsave"]
+                )
+
+            self.repository.save(study)

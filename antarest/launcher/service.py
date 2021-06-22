@@ -75,11 +75,11 @@ class LauncherService:
         study_info = self.storage_service.get_study_information(
             uuid=study_uuid, params=params
         )
-        study_version = study_info["antares"]["version"]
+        study_version = study_info.version
         if launcher not in self.launchers:
             raise LauncherServiceNotAvailableException(launcher)
         job_uuid: UUID = self.launchers[launcher].run_study(
-            study_uuid, study_version, params
+            study_uuid, str(study_version), params
         )
 
         self.repository.save(

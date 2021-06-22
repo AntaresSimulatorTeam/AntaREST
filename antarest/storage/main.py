@@ -55,10 +55,13 @@ def build_storage(
     exporter = exporter or Exporter()
     metadata_repository = metadata_repository or StudyMetadataRepository()
 
+    patch_service = patch_service or PatchService(PatchRepository())
+
     study_service = RawStudyService(
         config=config,
         study_factory=study_factory,
         path_resources=path_resources,
+        patch_service=patch_service,
     )
     importer_service = ImporterService(
         study_service=study_service,
@@ -77,10 +80,6 @@ def build_storage(
         user_service=user_service,
         repository=metadata_repository,
         event_bus=event_bus,
-    )
-
-    patch_service = patch_service or PatchService(
-        PatchRepository(), storage_service
     )
 
     watcher = Watcher(config=config, service=storage_service)

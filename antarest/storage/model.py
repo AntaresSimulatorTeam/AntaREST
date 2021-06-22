@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, List, Dict, Optional, TypeVar
 
 from dataclasses import dataclass
+from datetime import datetime
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -173,6 +174,8 @@ class PatchNode:
 
 class PatchStudy(BaseModel, PatchLeaf):
     scenario: Optional[str] = None
+    doc: Optional[str] = None
+    status: Optional[str] = None
 
 
 class PatchArea(BaseModel, PatchLeaf):
@@ -187,3 +190,24 @@ class Patch(BaseModel, PatchNode):
     study: Optional[PatchStudy] = None
     areas: Optional[PatchLeafDict] = None
     outputs: Optional[PatchOutputs] = None
+
+
+class StudyMetadataDTO(BaseModel):
+    id: str
+    name: str
+    version: int
+    created: int
+    updated: int
+    author: str
+    horizon: Optional[str]
+    scenario: Optional[str]
+    status: Optional[str]
+    doc: Optional[str]
+
+
+class StudyMetadataPatchDTO(BaseModel):
+    name: Optional[str] = None
+    horizon: Optional[str] = None
+    scenario: Optional[str] = None
+    status: Optional[str] = None
+    doc: Optional[str] = None

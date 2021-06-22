@@ -442,13 +442,16 @@ def test_sta_mini_copy(storage_service) -> None:
 def test_sta_mini_list_studies(storage_service) -> None:
     expected_output = {
         "STA-mini": {
-            "antares": {
-                "author": "Andrea SGATTONI",
-                "caption": "STA-mini",
-                "created": 1480683452,
-                "lastsave": 1602678639,
-                "version": 700,
-            }
+            "id": "STA-mini",
+            "name": "STA-mini",
+            "version": 700,
+            "created": 1480683452,
+            "updated": 1602678639,
+            "author": "Andrea SGATTONI",
+            "horizon": "2030",
+            "scenario": None,
+            "status": None,
+            "doc": None,
         }
     }
     url = "/v1/studies"
@@ -494,7 +497,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     client = TestClient(app)
 
     study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
-    result = client.post("/v1/studies", files={"study": study_data})
+    result = client.post("/v1/studies/_import", files={"study": study_data})
 
     assert result.status_code == HTTPStatus.CREATED.value
 
