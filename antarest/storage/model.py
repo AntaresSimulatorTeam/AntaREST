@@ -120,7 +120,7 @@ class PatchLeaf:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PatchLeaf):
-            raise NotImplemented
+            return NotImplemented
 
         eq: bool = True
         for attribute in self.__dict__.keys():
