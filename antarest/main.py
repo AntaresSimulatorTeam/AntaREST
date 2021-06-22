@@ -5,28 +5,28 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 from typing import Tuple, Any, Optional, Union
-import sqlalchemy.ext.baked  # type: ignore
 
+import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
-from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from pydantic.main import BaseModel
+from sqlalchemy import create_engine
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from sqlalchemy import create_engine
-
 from antarest import __version__
-from antarest.eventbus.main import build_eventbus
-from antarest.login.auth import Auth
 from antarest.common.config import Config
 from antarest.common.persistence import Base
+from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
+from antarest.login.auth import Auth
 from antarest.login.main import build_login
+from antarest.matrixstore.main import build_matrixstore
 from antarest.storage.main import build_storage
 
 
@@ -204,11 +204,17 @@ def fastapi_app(
         user_service=user_service,
         event_bus=event_bus,
     )
+
     build_launcher(
         application,
         config,
         service_storage=storage,
         event_bus=event_bus,
+    )
+
+    build_matrixstore(
+        application,
+        config,
     )
 
     return application

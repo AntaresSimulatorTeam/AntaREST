@@ -86,9 +86,7 @@ def build_storage(
     watcher = Watcher(config=config, service=storage_service)
     watcher.start()
 
-    application.include_router(
-        create_study_routes(storage_service, patch_service, config)
-    )
+    application.include_router(create_study_routes(storage_service, config))
     application.include_router(create_utils_routes(storage_service, config))
 
     return storage_service

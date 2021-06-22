@@ -1,5 +1,4 @@
-from contextlib import contextmanager
-from typing import Any, Generator
+from typing import Any
 
 from sqlalchemy.ext.declarative import declarative_base  # type: ignore
 

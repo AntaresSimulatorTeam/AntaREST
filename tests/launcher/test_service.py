@@ -4,14 +4,13 @@ from uuid import uuid4
 
 import pytest
 
+from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import Event, EventType
 from antarest.common.jwt import JWTUser
-from antarest.login.auth import Auth
-from antarest.common.config import Config
-from antarest.login.model import User
 from antarest.common.requests import RequestParameters
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
+from antarest.login.auth import Auth
 
 
 @pytest.mark.unit_test
@@ -28,15 +27,17 @@ def test_service_run_study(get_current_user_mock):
     launcher_mock = Mock()
     launcher_mock.run_study.return_value = uuid
     factory_launcher_mock = Mock()
-    factory_launcher_mock.build_launcher.return_value = launcher_mock
+    factory_launcher_mock.build_launcher.return_value = {
+        "local": launcher_mock
+    }
 
     event_bus = Mock()
 
-    running = JobResult(
-        id=str(uuid), study_id="study_uuid", job_status=JobStatus.RUNNING
+    pending = JobResult(
+        id=str(uuid), study_id="study_uuid", job_status=JobStatus.PENDING
     )
     repository = Mock()
-    repository.save.return_value = running
+    repository.save.return_value = pending
 
     launcher_service = LauncherService(
         config=Config(),
@@ -55,10 +56,11 @@ def test_service_run_study(get_current_user_mock):
                 type="users",
             )
         ),
+        "local",
     )
 
     assert job_id == uuid
-    repository.save.assert_called_once_with(running)
+    repository.save.assert_called_once_with(pending)
     event_bus.push.assert_called_once_with(
         Event(
             EventType.STUDY_JOB_STARTED,
@@ -77,7 +79,9 @@ def test_service_get_result_from_launcher():
         exit_code=0,
     )
     factory_launcher_mock = Mock()
-    factory_launcher_mock.build_launcher.return_value = launcher_mock
+    factory_launcher_mock.build_launcher.return_value = {
+        "local": launcher_mock
+    }
 
     repository = Mock()
     repository.get.return_value = fake_execution_result
@@ -107,7 +111,9 @@ def test_service_get_result_from_database():
     )
     launcher_mock.get_result.return_value = None
     factory_launcher_mock = Mock()
-    factory_launcher_mock.build_launcher.return_value = launcher_mock
+    factory_launcher_mock.build_launcher.return_value = {
+        "local": launcher_mock
+    }
 
     repository = Mock()
     repository.get.return_value = fake_execution_result
@@ -138,7 +144,9 @@ def test_service_get_jobs_from_database():
     ]
     launcher_mock.get_result.return_value = None
     factory_launcher_mock = Mock()
-    factory_launcher_mock.build_launcher.return_value = launcher_mock
+    factory_launcher_mock.build_launcher.return_value = {
+        "local": launcher_mock
+    }
 
     repository = Mock()
     repository.find_by_study.return_value = fake_execution_result

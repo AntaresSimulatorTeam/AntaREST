@@ -8,7 +8,6 @@ from antarest.storage.repository.filesystem.matrix.head_writer import (
 from antarest.storage.repository.filesystem.matrix.output_series_matrix import (
     OutputSeriesMatrix,
 )
-from antarest.storage.repository.filesystem.raw_file_node import RawFileNode
 
 
 class OutputSimulationModeMcAllAreasItemDetails(OutputSeriesMatrix):

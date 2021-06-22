@@ -1,11 +1,9 @@
-import configparser
-from pathlib import Path
-from typing import List, Optional, Union, cast, Type, Dict, Any
+from typing import List, Optional, cast, Dict, Any
 
+from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage.repository.antares_io.reader import IniReader
 from antarest.storage.repository.antares_io.reader.ini_reader import IReader
 from antarest.storage.repository.antares_io.writer.ini_writer import IniWriter
-from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import INode, TREE
 

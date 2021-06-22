@@ -6,13 +6,11 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.common.config import Config, SecurityConfig
-from antarest.common.interfaces.eventbus import Event, EventType
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import RequestParameters
 from antarest.common.roles import RoleType
 from antarest.launcher.main import build_launcher
 from antarest.launcher.model import JobResult, JobStatus
-
 
 ADMIN = JWTUser(
     id=1,
@@ -47,7 +45,9 @@ def test_run() -> None:
 
     assert res.status_code == 200
     assert res.json() == {"job_id": str(job)}
-    service.run_study.assert_called_once_with(study, RequestParameters(ADMIN))
+    service.run_study.assert_called_once_with(
+        study, RequestParameters(ADMIN), "local"
+    )
 
 
 @pytest.mark.unit_test

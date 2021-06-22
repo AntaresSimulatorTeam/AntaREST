@@ -7,7 +7,7 @@ from zipfile import ZipFile
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.storage.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.web.exceptions import StudyNotFoundError

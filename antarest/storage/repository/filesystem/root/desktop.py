@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
 

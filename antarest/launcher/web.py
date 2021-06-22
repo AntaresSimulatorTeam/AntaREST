@@ -1,14 +1,13 @@
 from typing import Any, Optional
 from uuid import UUID
 
-from markupsafe import escape
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
-from antarest.common.jwt import JWTUser
-from antarest.login.auth import Auth
 from antarest.common.config import Config
+from antarest.common.jwt import JWTUser
 from antarest.common.requests import RequestParameters
 from antarest.launcher.service import LauncherService
+from antarest.login.auth import Auth
 
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
@@ -22,10 +21,49 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Run study",
     )
     def run(
-        study_id: str, current_user: JWTUser = Depends(auth.get_current_user)
+        study_id: str,
+        engine: Optional[str] = None,
+        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        """
+        Run study
+        ---
+        responses:
+          '200':
+            content:
+              application/json:
+                schema:
+                    $ref: '#/definitions/RunInfo'
+            description: Successful operation
+          '400':
+            description: Invalid request
+          '401':
+            description: Unauthenticated User
+          '403':
+            description: Unauthorized
+        parameters:
+        - in: path
+          name: study_id
+          required: true
+          description: study id
+          schema:
+            type: string
+        definitions:
+            - schema:
+                id: RunInfo
+                properties:
+                  job_id:
+                    type: string
+        tags:
+          - Run Studies
+        """
+
+        selected_engine = (
+            engine if engine is not None else config.launcher.default
+        )
+
         params = RequestParameters(user=current_user)
-        return {"job_id": service.run_study(str(escape(study_id)), params)}
+        return {"job_id": service.run_study(study_id, params, selected_engine)}
 
     @bp.get("/launcher/jobs", tags=["Run Studies"], summary="Retrieve jobs")
     def get_job(
@@ -43,5 +81,13 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         job_id: UUID, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
         return service.get_result(job_id).to_dict()
+
+    @bp.get(
+        "/launcher/engines",
+        tags=["Run Studies"],
+        summary="Retrieve available engines",
+    )
+    def get_engines() -> Any:
+        return {"engines": service.get_launchers()}
 
     return bp

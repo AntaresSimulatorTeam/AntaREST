@@ -13,11 +13,11 @@ from antarest.storage.repository.filesystem.root.output.simulation.annualSystemC
 from antarest.storage.repository.filesystem.root.output.simulation.checkIntegrity import (
     OutputSimulationCheckIntegrity,
 )
-from antarest.storage.repository.filesystem.root.output.simulation.mode.economy import (
-    OutputSimulationMode,
-)
 from antarest.storage.repository.filesystem.root.output.simulation.info_antares_output import (
     OutputSimulationInfoAntaresOutput,
+)
+from antarest.storage.repository.filesystem.root.output.simulation.mode.economy import (
+    OutputSimulationMode,
 )
 from antarest.storage.repository.filesystem.root.output.simulation.simulation_comments import (
     OutputSimulationSimulationComments,

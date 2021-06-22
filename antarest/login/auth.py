@@ -1,14 +1,13 @@
 import json
 import logging
 from datetime import timedelta
-from typing import List, Optional, Dict, Any, Callable, cast
+from typing import Dict, Any, Callable
 
 from fastapi import Depends
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 
 from antarest.common.config import Config
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.roles import RoleType
+from antarest.common.jwt import JWTUser, DEFAULT_ADMIN_USER
 
 
 class Auth:
@@ -39,14 +38,7 @@ class Auth:
 
         """
         if self.disabled:
-            return JWTUser(
-                id=1,
-                impersonator=1,
-                type="users",
-                groups=[
-                    JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
-                ],
-            )
+            return DEFAULT_ADMIN_USER
 
         auth_jwt.jwt_required()
 

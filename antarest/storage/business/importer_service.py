@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import shutil
@@ -7,11 +6,9 @@ from pathlib import Path
 from typing import IO
 from uuid import uuid4
 
-from antarest.common.config import Config
 from antarest.common.custom_types import JSON
-from antarest.common.interfaces.eventbus import IEventBus
-from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.model import Study, RawStudy
 from antarest.storage.repository.antares_io.reader import IniReader
 from antarest.storage.repository.filesystem.factory import StudyFactory
@@ -108,41 +105,48 @@ class ImporterService:
             / "output"
             / "imported_output"
         )
-        path_output.mkdir()
-        StorageServiceUtils.extract_zip(stream, path_output)
+        os.makedirs(path_output)
 
-        ini_reader = IniReader()
-        info_antares_output = ini_reader.read(
-            path_output / "info.antares-output"
-        )["general"]
+        try:
+            StorageServiceUtils.extract_zip(stream, path_output)
+            fix_study_root(path_output)
 
-        date = datetime.fromtimestamp(
-            int(info_antares_output["timestamp"])
-        ).strftime("%Y%m%d-%H%M")
+            ini_reader = IniReader()
+            info_antares_output = ini_reader.read(
+                path_output / "info.antares-output"
+            )["general"]
 
-        mode = "eco" if info_antares_output["mode"] == "Economy" else "adq"
-        name = (
-            f"-{info_antares_output['name']}"
-            if info_antares_output["name"]
-            else ""
-        )
+            date = datetime.fromtimestamp(
+                int(info_antares_output["timestamp"])
+            ).strftime("%Y%m%d-%H%M")
 
-        output_name = f"{date}{mode}{name}"
-        path_output.rename(Path(path_output.parent, output_name))
+            mode = "eco" if info_antares_output["mode"] == "Economy" else "adq"
+            name = (
+                f"-{info_antares_output['name']}"
+                if info_antares_output["name"]
+                else ""
+            )
 
-        output_id = (
-            sorted(os.listdir(path_output.parent)).index(output_name) + 1
-        )
+            output_name = f"{date}{mode}{name}"
+            path_output.rename(Path(path_output.parent, output_name))
 
-        data = self.study_service.get(
-            metadata,
-            f"output/{output_id}",
-            -1,
-        )
+            output_id = (
+                sorted(os.listdir(path_output.parent)).index(output_name) + 1
+            )
 
-        if data is None:
-            self.study_service.delete_output(metadata, "imported_output")
-            raise BadOutputError("The output provided is not conform.")
+            data = self.study_service.get(
+                metadata,
+                f"output/{output_id}",
+                -1,
+            )
+
+            if data is None:
+                self.study_service.delete_output(metadata, "imported_output")
+                raise BadOutputError("The output provided is not conform.")
+
+        except Exception as e:
+            logger.error("Failed to import output", exc_info=e)
+            shutil.rmtree(path_output)
 
         return data
 
