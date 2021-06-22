@@ -166,6 +166,7 @@ class StorageService:
 
         if metadata_patch.name:
             study.name = metadata_patch.name
+            self.repository.save(study)
         if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
             study_settings = self.study_service.get(study, study_settings_url)

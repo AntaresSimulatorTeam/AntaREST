@@ -23,10 +23,10 @@ def test_service_run_study(get_current_user_mock):
     storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
         id="id",
         name="name",
-        created=datetime.datetime.now(),
-        updated=datetime.datetime.now(),
+        created=1,
+        updated=1,
         author="author",
-        version=42
+        version=42,
     )
     storage_service_mock.get_study_path.return_value = Path("path/to/study")
 
@@ -103,7 +103,7 @@ def test_service_get_result_from_launcher():
 
     job_id = uuid4()
     assert (
-            launcher_service.get_result(job_uuid=job_id) == fake_execution_result
+        launcher_service.get_result(job_uuid=job_id) == fake_execution_result
     )
 
 
@@ -134,7 +134,7 @@ def test_service_get_result_from_database():
     )
 
     assert (
-            launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
+        launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
     )
 
 

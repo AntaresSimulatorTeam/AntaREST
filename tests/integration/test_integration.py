@@ -245,6 +245,25 @@ def test_main(app: FastAPI):
     )
     assert res.json()[0]["id"] == job_id
 
+    # update metadata
+    res = client.put(
+        f"/v1/studies/{study_id}",
+        headers={
+            "Authorization": f'Bearer {fred_credentials["access_token"]}'
+        },
+        json={"name": "STA-mini-copy", "status": "copied", "horizon": "2035"},
+    )
+    new_meta = client.get(
+        f"/v1/studies/{study_id}",
+        headers={
+            "Authorization": f'Bearer {fred_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == new_meta.json()
+    assert new_meta.json()["status"] == "copied"
+    assert new_meta.json()["name"] == "STA-mini-copy"
+    assert new_meta.json()["horizon"] == "2035"
+
 
 def test_matrix(app: FastAPI):
     client = TestClient(app, raise_server_exceptions=False)
