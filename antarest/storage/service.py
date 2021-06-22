@@ -414,7 +414,7 @@ class StorageService:
             raise StudyTypeUnsupported(uuid, study.type)
 
         self.logger.info(
-            "matrix %S asked by user %s", route, params.get_user_id()
+            "matrix %s asked by user %s", route, params.get_user_id()
         )
         return self.exporter_service.get_matrix(study, path)
 
