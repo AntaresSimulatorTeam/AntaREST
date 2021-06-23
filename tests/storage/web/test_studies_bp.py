@@ -141,7 +141,7 @@ def test_create_study(
     )
     client = TestClient(app)
 
-    result_right = client.post("/v1/studies/study2")
+    result_right = client.post("/v1/studies?name=study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
     assert result_right.json() == "/studies/my-uuid"
@@ -180,7 +180,7 @@ def test_import_study_zipped(
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY.value
 
     study_data = io.BytesIO(path_zip.read_bytes())
-    result = client.post("/v1/studies", files={"study": study_data})
+    result = client.post("/v1/studies/_import", files={"study": study_data})
 
     assert result.json() == "/studies/" + study_name
     assert result.status_code == HTTPStatus.CREATED.value
@@ -248,7 +248,7 @@ def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
         user_service=Mock(),
     )
     client = TestClient(app)
-    result = client.get("/v1/studies/1/metadata")
+    result = client.get("/v1/studies/1")
 
     assert result.json() == study
 

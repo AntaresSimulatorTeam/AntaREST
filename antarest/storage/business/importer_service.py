@@ -72,16 +72,7 @@ class ImporterService:
         try:
             StorageServiceUtils.extract_zip(stream, path_study)
             fix_study_root(path_study)
-
-            data = self.study_service.get(metadata, url="", depth=-1)
-            if data is None:
-                self.study_service.delete_study(metadata)
-                raise StudyValidationError("Fail to import study")
-
-            StorageServiceUtils.update_antares_info(metadata, data)
-            self.study_service.edit_study(
-                metadata, url="study", new=data["study"]
-            )
+            self.study_service.update_from_raw_meta(metadata)
 
         except Exception as e:
             shutil.rmtree(path_study)

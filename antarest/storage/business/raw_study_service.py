@@ -1,16 +1,28 @@
 import copy
+import logging
 import shutil
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 from zipfile import ZipFile
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON, SUB_JSON
+from antarest.storage.business.patch_service import PatchService
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.storage.model import (
+    DEFAULT_WORKSPACE_NAME,
+    RawStudy,
+    StudyMetadataPatchDTO,
+    StudyMetadataDTO,
+    Patch,
+    PatchStudy,
+)
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.web.exceptions import StudyNotFoundError
+
+logger = logging.getLogger(__name__)
 
 
 class RawStudyService:
@@ -20,15 +32,19 @@ class RawStudyService:
 
     """
 
+    new_default_version = 720
+
     def __init__(
         self,
         config: Config,
         study_factory: StudyFactory,
         path_resources: Path,
+        patch_service: PatchService,
     ):
         self.config: Config = config
         self.study_factory: StudyFactory = study_factory
         self.path_resources: Path = path_resources
+        self.patch_service = patch_service
 
     def check_study_exists(self, metadata: RawStudy) -> None:
         """
@@ -44,6 +60,37 @@ class RawStudyService:
             raise StudyNotFoundError(
                 f"Study with the uuid {metadata.id} does not exist."
             )
+
+    def update_from_raw_meta(
+        self, metadata: RawStudy, fallback_on_default: Optional[bool] = False
+    ) -> None:
+        """
+        Update metadata from study raw metadata
+        Args:
+            metadata: study
+            fallback_on_default: use default values in case of failure
+        """
+        path = self.get_study_path(metadata)
+        _, study = self.study_factory.create_from_fs(path)
+        try:
+            raw_meta = study.get(["study", "antares"])
+            metadata.name = raw_meta["caption"]
+            metadata.version = raw_meta["version"]
+            metadata.created_at = datetime.fromtimestamp(raw_meta["created"])
+            metadata.updated_at = datetime.fromtimestamp(raw_meta["lastsave"])
+        except Exception as e:
+            logger.error(
+                "Failed to fetch study %s raw metadata!",
+                str(metadata.path),
+                exc_info=e,
+            )
+            if fallback_on_default is not None:
+                metadata.name = metadata.name or "unnamed"
+                metadata.version = metadata.version or 0
+                metadata.created_at = metadata.created_at or datetime.now()
+                metadata.updated_at = metadata.updated_at or datetime.now()
+            else:
+                raise e
 
     def check_errors(self, metadata: RawStudy) -> List[str]:
         """
@@ -112,18 +159,49 @@ class RawStudyService:
         del study
         return data
 
-    def get_study_information(self, metadata: RawStudy) -> JSON:
+    def get_study_information(
+        self, study: RawStudy, summary: bool = False
+    ) -> StudyMetadataDTO:
         """
         Get information present in study.antares file
         Args:
-            metadata: study
+            study: study
+            summary: if true, only retrieve basic info from database
 
-        Returns: study.antares data formatted in json
+        Returns: study metadata
 
         """
-        config = StudyConfig(study_path=self.get_study_path(metadata))
-        study = self.study_factory.create_from_config(config)
-        return study.get(url=["study"])
+        file_settings = {}
+        config = StudyConfig(study_path=self.get_study_path(study))
+        raw_study = self.study_factory.create_from_config(config)
+        file_metadata = raw_study.get(url=["study", "antares"])
+        patch_metadata = self.patch_service.get(study).study or PatchStudy()
+
+        try:
+            file_settings = raw_study.get(
+                url=["settings", "generaldata", "general"]
+            )
+        except Exception as e:
+            logger.error(
+                "Failed to retrieve general settings for raw study %s",
+                study.id,
+                exc_info=e,
+            )
+
+        return StudyMetadataDTO(
+            id=study.id,
+            name=study.name,
+            version=study.version,
+            created=study.created_at.timestamp(),
+            updated=study.updated_at.timestamp(),
+            author=study.owner.name
+            if study.owner is not None
+            else file_metadata.get("author", "Unknown"),
+            horizon=file_settings.get("horizon", None),
+            scenario=patch_metadata.scenario,
+            status=patch_metadata.status,
+            doc=patch_metadata.doc,
+        )
 
     def get_workspace_path(self, workspace: str) -> Path:
         """
@@ -260,3 +338,18 @@ class RawStudyService:
         study.save(new, url.split("/"))  # type: ignore
         del study
         return new
+
+    def patch_update_study_metadata(
+        self, study: RawStudy, metadata: StudyMetadataPatchDTO
+    ) -> StudyMetadataDTO:
+        self.patch_service.patch(
+            study,
+            {
+                "study": {
+                    "scenario": metadata.scenario,
+                    "doc": metadata.doc,
+                    "status": metadata.status,
+                }
+            },
+        )
+        return self.get_study_information(study)

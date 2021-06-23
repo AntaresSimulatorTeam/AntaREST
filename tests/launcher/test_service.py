@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 from uuid import uuid4
@@ -11,6 +12,7 @@ from antarest.common.requests import RequestParameters
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
+from antarest.storage.model import StudyMetadataDTO
 
 
 @pytest.mark.unit_test
@@ -18,9 +20,14 @@ from antarest.login.auth import Auth
 def test_service_run_study(get_current_user_mock):
     get_current_user_mock.return_value = None
     storage_service_mock = Mock()
-    storage_service_mock.get_study_information.return_value = {
-        "antares": {"version": "42"}
-    }
+    storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
+        id="id",
+        name="name",
+        created=1,
+        updated=1,
+        author="author",
+        version=42,
+    )
     storage_service_mock.get_study_path.return_value = Path("path/to/study")
 
     uuid = uuid4()

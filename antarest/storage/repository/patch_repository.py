@@ -6,7 +6,9 @@ from antarest.storage.model import Patch, RawStudy
 class PatchRepository:
     def get(self, study: RawStudy) -> Patch:
         patch_path = Path(study.path) / "patch.json"
-        return Patch.parse_file(patch_path)
+        if patch_path.exists():
+            return Patch.parse_file(patch_path)
+        return Patch()
 
     def save(self, study: RawStudy, patch: Patch) -> None:
         patch_content = patch.json()

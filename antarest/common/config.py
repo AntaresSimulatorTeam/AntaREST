@@ -96,7 +96,7 @@ class LocalConfig:
     @staticmethod
     def from_dict(data: JSON) -> Optional["LocalConfig"]:
         return LocalConfig(
-            binaries={v: Path(p) for v, p in data["binaries"].items()},
+            binaries={str(v): Path(p) for v, p in data["binaries"].items()},
         )
 
 

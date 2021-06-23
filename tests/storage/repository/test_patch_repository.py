@@ -16,7 +16,9 @@ from antarest.storage.repository.patch_repository import PatchRepository
 PATCH_CONTENT = """ 
 {
   "study": {
-    "scenario": "BAU2025"
+    "scenario": "BAU2025",
+    "doc": null,
+    "status": null
   },
   "areas": {
     "a1": {
