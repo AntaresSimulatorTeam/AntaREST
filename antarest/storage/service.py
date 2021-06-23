@@ -16,9 +16,15 @@ from antarest.common.requests import (
 from antarest.common.roles import RoleType
 from antarest.login.model import Group
 from antarest.login.service import LoginService
+from antarest.storage.business.area_management import (
+    AreaManager,
+    AreaType,
+    AreaInfoDTO,
+    AreaCreationDTO,
+    AreaPatchUpdateDTO,
+)
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
-from antarest.storage.business.patch_service import PatchService
 from antarest.storage.business.permissions import (
     StudyPermissionType,
     check_permission,
@@ -38,7 +44,6 @@ from antarest.storage.model import (
     StudyDownloadDTO,
     MatrixAggregationResult,
 )
-from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.study import StudyMetadataRepository
 from antarest.storage.web.exceptions import (
     StudyNotFoundError,
@@ -66,6 +71,7 @@ class StorageService:
         self.user_service = user_service
         self.repository = repository
         self.event_bus = event_bus
+        self.areas = AreaManager(self.study_service)
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def get(
@@ -760,6 +766,44 @@ class StorageService:
         study = self._get_study(uuid)
         return self.study_service.check_errors(cast(RawStudy, study))
 
+    def get_all_areas(
+        self,
+        uuid: str,
+        area_type: Optional[AreaType],
+        params: RequestParameters,
+    ) -> List[AreaInfoDTO]:
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        return self.areas.get_all_areas(study, area_type)
+
+    def create_area(
+        self,
+        uuid: str,
+        area_creation_dto: AreaCreationDTO,
+        params: RequestParameters,
+    ) -> AreaInfoDTO:
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        return self.areas.create_area(study, area_creation_dto)
+
+    def update_area(
+        self,
+        uuid: str,
+        area_id: str,
+        area_patch_dto: AreaPatchUpdateDTO,
+        params: RequestParameters,
+    ) -> AreaInfoDTO:
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        return self.areas.update_area(study, area_id, area_patch_dto)
+
+    def delete_area(
+        self, uuid: str, area_id: str, params: RequestParameters
+    ) -> None:
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        return self.areas.delete_area(study, area_id)
+
     def _save_study(
         self,
         study: RawStudy,
@@ -875,34 +919,3 @@ class StorageService:
         except Exception as e:
             self.logger.error(e)
             return StudyContentStatus.ERROR
-
-    def tmp_fix_study_db(self) -> None:
-        """
-        TODO remove this method, this is only used to fix the rec env
-        """
-        for study in self._get_study_metadatas(
-            RequestParameters(user=DEFAULT_ADMIN_USER)
-        ):
-            config = StudyConfig(
-                study_path=self.study_service.get_study_path(study)
-            )
-            raw_study = self.study_service.study_factory.create_from_config(
-                config
-            )
-            print(config)
-            file_metadata = raw_study.get(url=["study", "antares"])
-
-            if study.version is None:
-                study.version = file_metadata["version"]
-
-            if study.created_at is None:
-                study.created_at = datetime.fromtimestamp(
-                    file_metadata["created"]
-                )
-
-            if study.updated_at is None:
-                study.updated_at = datetime.fromtimestamp(
-                    file_metadata["lastsave"]
-                )
-
-            self.repository.save(study)

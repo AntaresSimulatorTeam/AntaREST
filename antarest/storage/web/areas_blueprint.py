@@ -17,7 +17,7 @@ from antarest.common.requests import (
 from antarest.common.swagger import get_path_examples
 from antarest.common.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.storage.model import PublicMode, StudyMetadataPatchDTO
+from antarest.storage.business.area_management import AreaType, AreaCreationDTO
 from antarest.storage.service import StorageService
 
 
@@ -25,7 +25,7 @@ def create_study_area_routes(
     storage_service: StorageService, config: Config
 ) -> APIRouter:
     """
-    Endpoint implementation for studies management
+    Endpoint implementation for studies area management
     Args:
         storage_service: storage service facade to handle request
         config: main server configuration
@@ -39,54 +39,64 @@ def create_study_area_routes(
     @bp.get(
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
-        summary="Get Study informations",
+        summary="Get all areas basic info",
     )
     def get_areas(
         uuid: str,
+        type: Optional[AreaType] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        study_metadata = storage_service.get_study_information(uuid, params)
+        study_metadata = storage_service.get_all_areas(uuid, type, params)
         return study_metadata
 
     @bp.post(
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
-        summary="Get Study informations",
+        summary="Create a new area/cluster",
     )
     def create_area(
         uuid: str,
-        study_metadata_patch: StudyMetadataPatchDTO,
+        area_creation_info: AreaCreationDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        study_metadata = storage_service.update_study_information(
-            uuid, study_metadata_patch, params
-        )
-        return study_metadata
+        pass
 
     @bp.get(
         "/studies/{uuid}/areas/{area_id}",
         tags=[APITag.study_data],
-        summary="Get Study informations",
+        summary="Get area detailed information",
     )
-    def get_detail_area_info(uuid: str, area_id: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
+    def get_detail_area_info(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
         pass
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}",
         tags=[APITag.study_data],
-        summary="Get Study informations",
+        summary="Update area information",
     )
-    def update_area_info(uuid: str, area_id: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
+    def update_area_info(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
         pass
 
     @bp.delete(
         "/studies/{uuid}/areas/{area_id}",
         tags=[APITag.study_data],
-        summary="Get Study informations",
+        summary="Delete an area",
     )
-    def delete_area(uuid: str, area_id: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
+    def delete_area(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
         pass
 
     return bp

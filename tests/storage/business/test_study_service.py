@@ -157,43 +157,6 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_find_studies(tmp_path: str, storage_service_builder) -> None:
-    # Create folders
-    path_studies = Path(tmp_path) / "studies"
-    path_studies.mkdir()
-
-    path_study1 = path_studies / "study1"
-    path_study1.mkdir()
-    (path_study1 / "study.antares").touch()
-
-    path_study2 = path_studies / "study2"
-    path_study2.mkdir()
-    (path_study2 / "study.antares").touch()
-
-    path_not_study = path_studies / "not_a_study"
-    path_not_study.mkdir()
-    (path_not_study / "lambda.txt").touch()
-
-    path_lambda = path_studies / "folder1"
-    path_lambda.mkdir()
-    path_study_misplaced = path_lambda / "study_misplaced"
-    path_study_misplaced.mkdir()
-    (path_study_misplaced / "study.antares").touch()
-    # Input
-    study_names = ["study1", "study2"]
-
-    # Test & Verify
-    study_service = RawStudyService(
-        config=build_config(path_studies),
-        study_factory=Mock(),
-        path_resources=Path(),
-        patch_service=Mock(),
-    )
-
-    assert study_names == study_service.get_study_uuids()
-
-
-@pytest.mark.unit_test
 def test_create_study(
     tmp_path: str, storage_service_builder, project_path
 ) -> None:

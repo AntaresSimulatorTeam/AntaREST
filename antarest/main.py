@@ -223,9 +223,6 @@ def fastapi_app(
         config,
     )
 
-    with db():
-        storage.tmp_fix_study_db()
-
     return application
 
 
