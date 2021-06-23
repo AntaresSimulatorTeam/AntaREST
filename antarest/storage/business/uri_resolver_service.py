@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 from antarest.common.config import Config
-from antarest.common.jwt import JWTUser, JWTGroup
+from antarest.common.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
 from antarest.common.roles import RoleType
 from antarest.login.model import User
@@ -10,15 +10,6 @@ from antarest.storage.service import StorageService
 
 
 class UriResolverService:
-    ADMIN = RequestParameters(
-        user=JWTUser(
-            id=1,
-            impersonator=1,
-            type="user",
-            groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
-        )
-    )
-
     def __init__(self, storage_service: StorageService, config: Config):
         self.config = config
         self.storage_service = storage_service
@@ -35,10 +26,10 @@ class UriResolverService:
         if protocol == "studyfile":
             self._resolve_studyfile(id, path)
 
-    def _resolve_studyfile(self, id: str, path: str):
-        pass
+    def _resolve_studyfile(self, id: str, path: str) -> Path:
+        return self._get_path(id) / path
 
     def _get_path(self, study_id: str) -> Path:
         return self.storage_service.get_study_path(
-            study_id, UriResolverService.ADMIN
+            study_id, DEFAULT_ADMIN_USER
         )

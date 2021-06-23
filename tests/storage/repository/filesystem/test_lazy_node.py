@@ -3,15 +3,16 @@ from typing import Optional, List
 from unittest.mock import Mock
 
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.inode import V, S, G, TREE
 from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 
 class MockLazyNode(LazyNode[str, str, str]):
-    def __init__(self, path: Path) -> None:
+    def __init__(self, context: ContextServer, config: StudyConfig) -> None:
         super().__init__(
-            config=StudyConfig(study_path=path, study_id="id"),
-            context=Mock(),
+            config=config,
+            context=context,
             url_prefix="file",
         )
 
@@ -35,13 +36,33 @@ class MockLazyNode(LazyNode[str, str, str]):
         pass  # not used
 
 
-def test_get(tmp_path: Path):
-    file = tmp_path / "lazy.txt"
+def test_get_no_expanded_txt(tmp_path: Path):
+    file = tmp_path / "my-study/lazy.txt"
+    file.touch()
 
-    node = MockLazyNode(file)
-    assert "lazy.txt" in node.get(expanded=True)
+    uri = "studyfile://my-study/lazy.txt"
+    uri_resolver = Mock()
+    uri_resolver.build_studyfile_uri.return_value = uri
 
-    assert "Hello" == node.get()
+    config = StudyConfig(study_path=file, study_id="my-study")
+
+    node = MockLazyNode(
+        context=ContextServer(matrix=Mock(), resolver=uri_resolver),
+        config=config,
+    )
+    assert uri == node.get(expanded=True)
+
+
+def test_get_no_expanded_link(tmp_path: Path):
+    pass
+
+
+def test_get_expanded_txt(tmp_path: Path):
+    pass
+
+
+def test_get_expanded_link(tmp_path: Path):
+    pass
 
 
 def test_save(tmp_path: Path):

@@ -31,10 +31,23 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     ) -> G:
         self._assert_url(url)
         if expanded:
-            path = str(self.config.path.absolute()).replace("\\", "/")
-            return f"{self.url_prefix}://{path}"  # type: ignore
-
-        return self.load(url, depth, expanded)
+            if self.config.path.exists():
+                return self.context.resolver.build_studyfile_uri(
+                    self.config.path, self.config.study_id
+                )
+            else:
+                path = self.config.path.parent / (
+                    self.config.path.name + ".link"
+                )
+                return path.read_text()
+        else:
+            if self.config.path.exists():
+                return self.load(url, depth, expanded)
+            else:
+                path = self.config.path.parent / (
+                    self.config.path.name + ".link"
+                )
+                return self.context.resolver.resolve(path.read_text())
 
     def save(self, data: S, url: Optional[List[str]] = None) -> None:
         self._assert_url(url)
