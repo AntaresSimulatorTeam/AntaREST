@@ -75,13 +75,13 @@ class ConfigPathBuilder:
         return {a: ConfigPathBuilder.parse_area(root, a) for a in areas}
 
     @staticmethod
-    def _parse_outputs(root: Path) -> Dict[int, Simulation]:
+    def _parse_outputs(root: Path) -> Dict[str, Simulation]:
         if not (root / "output").exists():
             return {}
 
         files = sorted((root / "output").iterdir())
         return {
-            i + 1: ConfigPathBuilder.parse_simulation(f)
+            f.name: ConfigPathBuilder.parse_simulation(f)
             for i, f in enumerate(files)
             if (f / "about-the-study").exists()
         }

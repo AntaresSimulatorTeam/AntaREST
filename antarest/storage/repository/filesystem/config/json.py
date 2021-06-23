@@ -69,14 +69,14 @@ class ConfigJsonBuilder:
         return {a: ConfigJsonBuilder._parse_area(json, a) for a in areas}
 
     @staticmethod
-    def _parse_outputs(json: JSON) -> Dict[int, Simulation]:
+    def _parse_outputs(json: JSON) -> Dict[str, Simulation]:
         if "output" not in json:
             return {}
 
         outputs = json["output"]
         return {
-            int(i): ConfigJsonBuilder._parse_simulation(s)
-            for i, s in outputs.items()
+            s: ConfigJsonBuilder._parse_simulation(outputs[s])
+            for s in outputs.keys()
         }
 
     @staticmethod

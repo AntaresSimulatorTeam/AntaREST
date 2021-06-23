@@ -121,13 +121,9 @@ class ImporterService:
             output_name = f"{date}{mode}{name}"
             path_output.rename(Path(path_output.parent, output_name))
 
-            output_id = (
-                sorted(os.listdir(path_output.parent)).index(output_name) + 1
-            )
-
             data = self.study_service.get(
                 metadata,
-                f"output/{output_id}",
+                f"output/{output_name}",
                 -1,
             )
 

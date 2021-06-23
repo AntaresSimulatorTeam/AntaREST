@@ -4,7 +4,7 @@ from glob import escape
 from http import HTTPStatus
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, File, Depends, Body
+from fastapi import APIRouter, HTTPException, File, Depends, Body, Request
 from fastapi.params import Param
 from starlette.responses import StreamingResponse, Response
 
@@ -17,7 +17,13 @@ from antarest.common.requests import (
 from antarest.common.swagger import get_path_examples
 from antarest.common.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.storage.model import PublicMode, StudyMetadataPatchDTO
+from antarest.storage.model import (
+    PublicMode,
+    StudyDownloadDTO,
+    StudyMetadataPatchDTO,
+)
+from antarest.common.config import Config
+from antarest.storage.business.study_download_utils import StudyDownloader
 from antarest.storage.service import StorageService
 
 
@@ -328,6 +334,44 @@ def create_study_routes(
         storage_service.edit_study(uuid, path, new, params)
         content = ""
 
+        return content
+
+    @bp.post(
+        "/studies/{study_id}/outputs/{output_id}/download",
+        tags=["Get outputs data"],
+        summary="Get outputs data",
+        responses={
+            200: {
+                "content": {
+                    "application/json": {},
+                    "application/zip": {},
+                    "application/tar+gz": {},
+                },
+            },
+        },
+    )
+    def output_download(
+        study_id: str,
+        output_id: str,
+        data: StudyDownloadDTO,
+        request: Request,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        params = RequestParameters(user=current_user)
+        content = storage_service.download_outputs(
+            study_id, output_id, data, params
+        )
+        accept = request.headers.get("Accept")
+        if accept == "application/zip" or accept == "application/tar+gz":
+            return StreamingResponse(
+                StudyDownloader.export(content, accept),
+                headers={
+                    "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
+                },
+                media_type="application/zip",
+            )
         return content
 
     @bp.get(

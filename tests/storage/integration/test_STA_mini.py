@@ -291,11 +291,11 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=output/3/annualSystemCost",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1427eco/annualSystemCost",
             "EXP : 185808000\nSTD : 0\nMIN : 185808000\nMAX : 185808000\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/checkIntegrity",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/checkIntegrity",
             """1.85808475215665e+08
 0.00000000000000e+00
 1.85808475215665e+08
@@ -307,77 +307,77 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
 """,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/4/simulation-comments",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1430adq/simulation-comments",
             "",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/2/simulation",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1425eco-goodbye/simulation",
             simulation_log,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/about-the-study/areas",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/about-the-study/areas",
             "DE\nES\nFR\nIT\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/2/about-the-study/comments",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1425eco-goodbye/about-the-study/comments",
             "",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/3/about-the-study/links",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1427eco/about-the-study/links",
             "de\n\tfr\nes\n\tfr\nfr\n\tit\nit\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/4/about-the-study/parameters/general/horizon",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1430adq/about-the-study/parameters/general/horizon",
             2030,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/about-the-study/study/antares/author",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/about-the-study/study/antares/author",
             "Andrea SGATTONI",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-all/grid/areas",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/areas",
             "id\tname\nde\tDE\nes\tES\nfr\tFR\nit\tIT\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-all/links/de/fr",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/links/de/fr",
             {},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/links/de/fr",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr",
             {
                 "values-hourly": "matrix://...../economy/mc-inde/0001/links/de - fr/values-hourly.txt"
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/links/de/fr/values-hourly",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
             de_fr_values_hourly,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/areas/de/details-annual",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual",
             de_details_hourly,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/de",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de",
             "size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/load/de",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/load/de",
             "size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/solar/de",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/solar/de",
             "size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/wind/de",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/wind/de",
             "size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/thermal/de/07_gas",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/thermal/de/07_gas",
             "size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/info/general/version",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/info/general/version",
             700,
         ),
     ],
@@ -542,14 +542,14 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/de,fr/",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de,fr/",
             {
                 "de": "size:1x1\n1\n",
                 "fr": "size:1x1\n1\n",
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/*/",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/*/",
             {
                 "de": "size:1x1\n1\n",
                 "fr": "size:1x1\n1\n",
