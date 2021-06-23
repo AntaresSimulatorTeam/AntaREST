@@ -4,7 +4,7 @@ import os
 import re
 import tarfile
 from io import BytesIO, StringIO
-from typing import Callable, Tuple, Any, List, Dict, Union
+from typing import Callable, Tuple, Any, List, Dict, Union, Optional
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.storage.business.raw_study_service import RawStudyService
@@ -332,7 +332,7 @@ class StudyDownloader:
 
     @staticmethod
     def export_infos(
-        data: Dict[str, Dict[str, List[float]]]
+        data: Dict[str, Dict[str, List[Optional[float]]]]
     ) -> Tuple[int, List[str]]:
         years = list(data.keys())
         if len(years) > 0:
@@ -369,7 +369,7 @@ class StudyDownloader:
             for year in matrix.data[area_name].keys():
                 for i in range(0, nb_rows):
                     columns = matrix.data[area_name][year]
-                    csv_row = [0.0, float(year)]
+                    csv_row: List[Optional[float]] = [0.0, float(year)]
                     csv_row.extend(
                         [columns[name][i] for name in columns.keys()]
                     )

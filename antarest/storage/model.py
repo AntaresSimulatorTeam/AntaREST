@@ -284,5 +284,5 @@ class MatrixIndex(BaseModel):
 
 class MatrixAggregationResult(BaseModel):
     index: MatrixIndex
-    data: Dict[str, Dict[str, Dict[str, List[float]]]]
+    data: Dict[str, Dict[str, Dict[str, List[Optional[float]]]]]
     warnings: List[str]
