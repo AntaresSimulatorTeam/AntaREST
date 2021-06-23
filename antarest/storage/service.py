@@ -479,9 +479,9 @@ class StorageService:
             study_id,
             params.get_user_id(),
         )
-        url = f"/output/{output_id}/economy"
+
         matrix = StudyDownloader.build(
-            self.study_service, study, output_id, url, data
+            self.study_service, study, output_id, data
         )
         return matrix
 

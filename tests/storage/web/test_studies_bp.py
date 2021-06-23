@@ -452,7 +452,7 @@ def test_output_download() -> None:
 
     output_data = MatrixAggregationResult(
         index=MatrixIndex(),
-        data={"td3_37_de-38_pl": {1: {"H. VAL|Euro/MWh": [0.5, 0.6, 0.7]}}},
+        data={"td3_37_de-38_pl": {"1": {"H. VAL|Euro/MWh": [0.5, 0.6, 0.7]}}},
         warnings=[],
     )
     mock_service.download_outputs.return_value = output_data
@@ -481,8 +481,7 @@ def test_output_download() -> None:
         "/v1/studies/my-uuid/outputs/my-output-id/download",
         json=study_download.dict(),
     )
-
-    assert res.json() == json.dumps(output_data.to_dict(), allow_nan=True)
+    assert res.json() == output_data.dict()
 
 
 @pytest.mark.unit_test

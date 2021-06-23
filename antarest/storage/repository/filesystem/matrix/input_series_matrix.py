@@ -29,12 +29,15 @@ class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
         expanded: bool = False,
     ) -> SUB_JSON:
         try:
-            data: JSON = pd.read_csv(
+            matrix = pd.read_csv(
                 self.config.path,
                 sep="\t",
                 dtype=float,
                 header=None,
-            ).to_dict(orient="split")
+            )
+            matrix = matrix.where(pd.notna(matrix), None)
+            data: JSON = matrix.to_dict(orient="split")
+
             return data
         except EmptyDataError:
             return {}

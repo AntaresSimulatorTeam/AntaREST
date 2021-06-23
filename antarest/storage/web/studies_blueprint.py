@@ -17,7 +17,11 @@ from antarest.common.requests import (
 from antarest.common.swagger import get_path_examples
 from antarest.common.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.storage.model import PublicMode, StudyDownloadDTO, StudyMetadataPatchDTO
+from antarest.storage.model import (
+    PublicMode,
+    StudyDownloadDTO,
+    StudyMetadataPatchDTO,
+)
 from antarest.common.config import Config
 from antarest.storage.business.study_download_utils import StudyDownloader
 from antarest.storage.service import StorageService
@@ -361,8 +365,14 @@ def create_study_routes(
         )
         accept = request.headers.get("Accept")
         if accept == "application/zip" or accept == "application/tar+gz":
-            return StudyDownloader.export(content, accept)
-        return json.dumps(content.to_dict(), allow_nan=True)
+            return StreamingResponse(
+                StudyDownloader.export(content, accept),
+                headers={
+                    "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
+                },
+                media_type="application/zip",
+            )
+        return content
 
     @bp.get(
         "/studies/{uuid}/validate",

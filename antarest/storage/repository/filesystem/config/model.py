@@ -98,7 +98,7 @@ class Simulation(DTO):
         self.error = error
 
     def get_file(self) -> str:
-        modes = {"economy": "eco", "adequacy": "adq"}
+        modes = {"economy": "eco", "adequacy": "adq", "draft": "dft"}
         dash = "-" if self.name else ""
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 

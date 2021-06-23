@@ -1,5 +1,12 @@
+import csv
+import logging
+import os
 import re
-from typing import Callable, Tuple, Any
+import tarfile
+from io import BytesIO, StringIO
+from typing import Callable, Tuple, Any, List, Dict, Union
+from zipfile import ZipFile, ZIP_DEFLATED
+
 from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.model import (
     MatrixAggregationResult,
@@ -18,6 +25,8 @@ from antarest.storage.repository.filesystem.config.model import (
     StudyConfig,
     Area,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class StudyDownloader:
@@ -38,27 +47,30 @@ class StudyDownloader:
             elm = study.get(parts)
             columns = elm["columns"]
             rows = elm["data"]
-            filter_column = data.columns and len(data.columns) > 0
 
             for index, column in enumerate(columns):
                 column_name = "|".join([c for c in column if c.strip()])
                 filter_column_name = prefix + "|" + column_name
-                if filter_column:
+                if data.columns and len(data.columns) > 0:
                     if not (filter_column_name in data.columns):
                         continue
 
                 if area_name not in matrix.data:
                     matrix.data[area_name] = dict()
 
-                if year not in matrix.data[area_name]:
-                    matrix.data[area_name][year] = dict()
+                year_str = str(year)
+                if year_str not in matrix.data[area_name]:
+                    matrix.data[area_name][year_str] = dict()
 
-                matrix.data[area_name][year][column_name] = [
+                matrix.data[area_name][year_str][column_name] = [
                     row[index] for row in rows
                 ]
 
-        except (ChildNotFoundError, FilterError):
+        except (ChildNotFoundError, FilterError) as e:
             matrix.warnings.append(f"{area_name} has no child")
+            logger.warning(
+                f"Failed to retrieve matrix data for {area_name}", exc_info=e
+            )
 
     @staticmethod
     def level_output_filter(
@@ -152,6 +164,7 @@ class StudyDownloader:
             # Filter has priority over FilterIn or FilterOut
             if data.filter and len(data.filter) > 0:
                 for flt in data.filter:
+                    #  ">" is a separator character used only for links
                     tmp_filters = flt.split(">")
                     if len(tmp_filters) >= 2:
                         flt_1, flt_2 = tuple(tmp_filters[:2])
@@ -231,13 +244,12 @@ class StudyDownloader:
         url: str,
         data: StudyDownloadDTO,
     ) -> None:
-        if StudyDownloadType.from_dict(data.type) == StudyDownloadType.AREA:
+        data_type = StudyDownloadType.from_dict(data.type)
+        if data_type == StudyDownloadType.AREA:
             StudyDownloader.select_filter(
                 matrix, prefix, year, config.areas, study, f"{url}/areas", data
             )
-        elif (
-            StudyDownloadType.from_dict(data.type) == StudyDownloadType.CLUSTER
-        ):
+        elif data_type == StudyDownloadType.CLUSTER:
             StudyDownloader.select_filter(
                 matrix, prefix, year, config.sets, study, f"{url}/areas", data
             )
@@ -276,7 +288,6 @@ class StudyDownloader:
         study_service: RawStudyService,
         study: RawStudy,
         output_id: str,
-        url: str,
         data: StudyDownloadDTO,
     ) -> MatrixAggregationResult:
         """
@@ -285,12 +296,11 @@ class StudyDownloader:
             study_service: service to manage services
             study: study we want to parse
             output_id: output id
-            url: link to /economy directory
             data: Json parameters
         Returns: JSON content file
 
         """
-        tmp_url = url
+        url = f"/output/{output_id}"
         matrix: MatrixAggregationResult = MatrixAggregationResult(
             index=MatrixIndex(), data=dict(), warnings=[]
         )
@@ -298,22 +308,85 @@ class StudyDownloader:
         config, study_root = study_service.study_factory.create_from_fs(
             study_path
         )
-        if data.synthesis:
-            tmp_url += "/mc-all"
-            StudyDownloader.type_output_filter(
-                matrix, "", 0, config, study_root, tmp_url, data
-            )
-        else:
-            tmp_url += "/mc-ind"
-            StudyDownloader.years_output_filter(
-                matrix, config, output_id, study_root, tmp_url, data
-            )
+
+        if config.outputs and output_id in config.outputs:
+            sim = config.outputs[output_id]
+            if sim:
+                url += (
+                    f"/{sim.mode}"
+                    if sim.mode != "draft"
+                    else f"/adequacy-draft"
+                )
+
+                if data.synthesis:
+                    url += "/mc-all"
+                    StudyDownloader.type_output_filter(
+                        matrix, "", 0, config, study_root, url, data
+                    )
+                else:
+                    url += "/mc-ind"
+                    StudyDownloader.years_output_filter(
+                        matrix, config, output_id, study_root, url, data
+                    )
         return matrix
 
     @staticmethod
-    def export(
-        matrix: MatrixAggregationResult, type: str
-    ) -> str:  # JUST A TEMPLATE
-        if matrix:
-            return type
-        return ""
+    def export_infos(
+        data: Dict[str, Dict[str, List[float]]]
+    ) -> Tuple[int, List[str]]:
+        years = list(data.keys())
+        if len(years) > 0:
+            columns: List[str] = list(data[years[0]].keys())
+            if len(columns) > 0:
+                return len(data[years[0]][columns[0]]), (
+                    ["Time", "Value"] + columns
+                )
+        return -1, []
+
+    @staticmethod
+    def export(matrix: MatrixAggregationResult, type: str) -> BytesIO:
+
+        # 1- Zip/tar+gz container
+        data = BytesIO()
+        output_data: Union[ZipFile, tarfile.TarFile] = (
+            ZipFile(data, "w", ZIP_DEFLATED)
+            if type == "application/zip"
+            else tarfile.open(fileobj=data, mode="w:gz")
+        )
+
+        # 2 - Create CSV files
+        for area_name in matrix.data.keys():
+            output = StringIO()
+            writer = csv.writer(output, quoting=csv.QUOTE_NONE)
+            nb_rows, csv_titles = StudyDownloader.export_infos(
+                matrix.data[area_name]
+            )
+            if nb_rows == -1:
+                raise Exception(
+                    f"Outputs export:  No rows for  {area_name} csv"
+                )
+            writer.writerow(csv_titles)
+            for year in matrix.data[area_name].keys():
+                for i in range(0, nb_rows):
+                    columns = matrix.data[area_name][year]
+                    csv_row = [0.0, float(year)]
+                    csv_row.extend(
+                        [columns[name][i] for name in columns.keys()]
+                    )
+                    writer.writerow(csv_row)
+
+            bytes_data = str.encode(output.getvalue(), "utf-8")
+            if isinstance(output_data, ZipFile):
+                output_data.writestr(f"{area_name}.csv", bytes_data)
+            else:
+                data_file = BytesIO(bytes_data)
+                data_file.seek(0, os.SEEK_END)
+                file_size = data_file.tell()
+                data_file.seek(0)
+                info = tarfile.TarInfo(name=f"{area_name}.csv")
+                info.size = file_size
+                output_data.addfile(tarinfo=info, fileobj=data_file)
+
+        output_data.close()
+        data.seek(0)
+        return data

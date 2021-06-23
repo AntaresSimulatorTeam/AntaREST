@@ -211,6 +211,8 @@ class StudyMetadataPatchDTO(BaseModel):
     scenario: Optional[str] = None
     status: Optional[str] = None
     doc: Optional[str] = None
+
+
 class StudyDownloadType(enum.Enum):
     LINK = "LINK"
     CLUSTER = "CLUSTER"
@@ -270,19 +272,17 @@ class StudyDownloadDTO(BaseModel):
     filterIn: Optional[str]
     filterOut: Optional[str]
     filter: Optional[List[str]]
-    columns: List[str]
+    columns: Optional[List[str]]
     synthesis: bool = False
-    includeClusters: bool = True
+    includeClusters: bool = False
 
 
-@dataclass
-class MatrixIndex(DataClassJsonMixin):  # type: ignore
+class MatrixIndex(BaseModel):
     startDate: str = ""
     step: int = 3600000
 
 
-@dataclass
-class MatrixAggregationResult(DataClassJsonMixin):  # type: ignore
+class MatrixAggregationResult(BaseModel):
     index: MatrixIndex
-    data: Dict[str, Dict[int, Dict[str, List[float]]]]
+    data: Dict[str, Dict[str, Dict[str, List[float]]]]
     warnings: List[str]
