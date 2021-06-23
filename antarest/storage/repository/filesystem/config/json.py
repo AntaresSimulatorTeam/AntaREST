@@ -19,18 +19,20 @@ class ConfigJsonBuilder:
     """
 
     @staticmethod
-    def build(study_path: Path, json: JSON) -> "StudyConfig":
+    def build(study_path: Path, json: JSON, study_id: str) -> "StudyConfig":
         """
         Extract data from json structure to build study config
         Args:
             study_path: root study path to integrate in config
             json: json data
+            study_id: study id
 
         Returns: study config fill with data
 
         """
         (sns,) = ConfigJsonBuilder._parse_parameters(json)
         return StudyConfig(
+            study_id=study_id,
             study_path=study_path,
             areas=ConfigJsonBuilder._parse_areas(json),
             sets=ConfigJsonBuilder._parse_sets(json),

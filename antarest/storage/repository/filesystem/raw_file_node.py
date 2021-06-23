@@ -12,9 +12,9 @@ class RawFileNode(LazyNode[str, str, str]):
     """
 
     def __init__(self, context: ContextServer, config: StudyConfig):
-        LazyNode.__init__(self, url_prefix="file", config=config)
-        self.config = config
-        self.context = context
+        LazyNode.__init__(
+            self, url_prefix="file", config=config, context=context
+        )
 
     def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build

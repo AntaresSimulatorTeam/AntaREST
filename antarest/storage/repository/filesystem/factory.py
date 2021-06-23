@@ -32,7 +32,7 @@ class StudyFactory:
         return Study(self.context, config)
 
     def create_from_json(
-        self, path: Path, json: JSON
+        self, path: Path, json: JSON, study_id: str
     ) -> Tuple[StudyConfig, Study]:
-        config = ConfigJsonBuilder.build(path, json)
+        config = ConfigJsonBuilder.build(path, json, study_id)
         return config, Study(self.context, config)

@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Optional, List
+from unittest.mock import Mock
 
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import V, S, G, TREE
@@ -7,10 +8,12 @@ from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 
 class MockLazyNode(LazyNode[str, str, str]):
-    def __init__(self, path: Optional[Path] = None) -> None:
-        super().__init__(url_prefix="file")
-        if path:
-            self.config = StudyConfig(study_path=path)
+    def __init__(self, path: Path) -> None:
+        super().__init__(
+            config=StudyConfig(study_path=path, study_id="id"),
+            context=Mock(),
+            url_prefix="file",
+        )
 
     def load(
         self,

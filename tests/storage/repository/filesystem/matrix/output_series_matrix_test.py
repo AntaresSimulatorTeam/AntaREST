@@ -15,7 +15,7 @@ from antarest.storage.repository.filesystem.matrix.output_series_matrix import (
 def test_get(tmp_path: Path):
     file = tmp_path / "matrix-daily.txt"
     file.write_text("\n\n\n\nmock\tfile")
-    config = StudyConfig(study_path=file)
+    config = StudyConfig(study_path=file, study_id="id")
 
     serializer = Mock()
     serializer.extract_date.return_value = (
@@ -47,7 +47,7 @@ def test_get(tmp_path: Path):
 
 def test_save(tmp_path: Path):
     file = tmp_path / "matrix-daily.txt"
-    config = StudyConfig(study_path=file)
+    config = StudyConfig(study_path=file, study_id="id")
 
     serializer = Mock()
     serializer.build_date.return_value = pd.DataFrame(

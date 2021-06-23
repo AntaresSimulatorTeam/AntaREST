@@ -29,9 +29,7 @@ class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
         date_serializer: IDateMatrixSerializer,
         head_writer: HeadWriter,
     ):
-        super().__init__(url_prefix="matrix")
-        self.context = context
-        self.config = config
+        super().__init__(url_prefix="matrix", context=context, config=config)
         self.date_serializer = date_serializer
         self.head_writer = head_writer
 

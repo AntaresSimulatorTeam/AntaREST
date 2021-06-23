@@ -92,7 +92,9 @@ def test_get(tmp_path: Path):
 
     node = ScenarioBuilder(
         context=Mock(),
-        config=StudyConfig(study_path=path, areas=areas, outputs=dict()),
+        config=StudyConfig(
+            study_path=path, areas=areas, outputs=dict(), study_id="id"
+        ),
     )
 
     assert node.get(["Default Ruleset", "t,it,0,09_hydro_pump"]) == 1

@@ -121,7 +121,9 @@ class RawStudyService:
         Returns: study.antares data formatted in json
 
         """
-        config = StudyConfig(study_path=self.get_study_path(metadata))
+        config = StudyConfig(
+            study_path=self.get_study_path(metadata), study_id=metadata.id
+        )
         study = self.study_factory.create_from_config(config)
         return study.get(url=["study"])
 

@@ -19,7 +19,9 @@ def build_bucket(tmp: Path) -> Path:
 def test_get_bucket(tmp_path: Path):
     file = build_bucket(tmp_path)
 
-    node = BucketNode(config=StudyConfig(study_path=file), context=Mock())
+    node = BucketNode(
+        config=StudyConfig(study_path=file, study_id="id"), context=Mock()
+    )
 
     assert node.get(["fileA.txt"]) == "Content A"
     bucket = node.get()
@@ -31,7 +33,9 @@ def test_get_bucket(tmp_path: Path):
 def test_save_bucket(tmp_path: Path):
     file = build_bucket(tmp_path)
 
-    node = BucketNode(config=StudyConfig(study_path=file), context=Mock())
+    node = BucketNode(
+        config=StudyConfig(study_path=file, study_id="id"), context=Mock()
+    )
     node.save(data={"fileA.txt": "Hello, World"})
 
     assert (file / "fileA.txt").read_text() == "Hello, World"

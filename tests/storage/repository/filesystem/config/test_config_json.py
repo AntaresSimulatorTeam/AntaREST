@@ -31,10 +31,12 @@ def test_parse_parameters() -> None:
     # Setup json
     json = build_empty_json()
     json["settings"]["generaldata"] = {"output": {"storenewset": True}}
-    config = StudyConfig(study_path=study_path, store_new_set=True)
+    config = StudyConfig(
+        study_path=study_path, store_new_set=True, study_id="id"
+    )
 
     # Test
-    assert ConfigJsonBuilder.build(study_path, json) == config
+    assert ConfigJsonBuilder.build(study_path, json, "id") == config
 
 
 def test_parse_bindings() -> None:
@@ -45,10 +47,12 @@ def test_parse_bindings() -> None:
         "bindA": {"id": "bindA"},
         "bindB": {"id": "bindB"},
     }
-    config = StudyConfig(study_path=study_path, bindings=["bindA", "bindB"])
+    config = StudyConfig(
+        study_path=study_path, bindings=["bindA", "bindB"], study_id="id"
+    )
 
     # Test
-    assert ConfigJsonBuilder.build(study_path, json) == config
+    assert ConfigJsonBuilder.build(study_path, json, "id") == config
 
 
 def test_parse_outputs() -> None:
@@ -76,6 +80,7 @@ def test_parse_outputs() -> None:
 
     config = StudyConfig(
         study_path,
+        "id",
         outputs={
             1: Simulation(
                 name="hello",
@@ -88,7 +93,7 @@ def test_parse_outputs() -> None:
             )
         },
     )
-    assert ConfigJsonBuilder.build(study_path, json) == config
+    assert ConfigJsonBuilder.build(study_path, json, "id") == config
 
 
 def test_parse_areas() -> None:
@@ -106,6 +111,7 @@ def test_parse_areas() -> None:
 
     config = StudyConfig(
         study_path,
+        "id",
         areas={
             "fr": Area(
                 thermals=[],
@@ -115,7 +121,7 @@ def test_parse_areas() -> None:
             )
         },
     )
-    assert ConfigJsonBuilder.build(study_path, json) == config
+    assert ConfigJsonBuilder.build(study_path, json, "id") == config
 
 
 def test_parse_thermal() -> None:

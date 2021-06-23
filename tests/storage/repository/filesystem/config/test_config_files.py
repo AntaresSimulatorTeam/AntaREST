@@ -40,8 +40,8 @@ def test_parse_output_parmeters(tmp_path) -> None:
     """
     (study / "settings/generaldata.ini").write_text(content)
 
-    config = StudyConfig(study_path=study, store_new_set=True)
-    assert ConfigPathBuilder.build(study) == config
+    config = StudyConfig(study_path=study, store_new_set=True, study_id="id")
+    assert ConfigPathBuilder.build(study, "id") == config
 
 
 def test_parse_bindings(tmp_path: Path) -> None:
@@ -58,8 +58,10 @@ def test_parse_bindings(tmp_path: Path) -> None:
         study_path / "input/bindingconstraints/bindingconstraints.ini"
     ).write_text(content)
 
-    config = StudyConfig(study_path=study_path, bindings=["bindA", "bindB"])
-    assert ConfigPathBuilder.build(study_path) == config
+    config = StudyConfig(
+        study_path=study_path, bindings=["bindA", "bindB"], study_id="id"
+    )
+    assert ConfigPathBuilder.build(study_path, "id") == config
 
 
 def test_parse_outputs(tmp_path: Path) -> None:
@@ -83,6 +85,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
 
     config = StudyConfig(
         study_path,
+        "id",
         outputs={
             1: Simulation(
                 name="hello",
@@ -95,7 +98,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
             )
         },
     )
-    assert ConfigPathBuilder.build(study_path) == config
+    assert ConfigPathBuilder.build(study_path, "id") == config
 
 
 def test_parse_sets(tmp_path: Path) -> None:
@@ -126,6 +129,7 @@ def test_parse_area(tmp_path: Path) -> None:
 
     config = StudyConfig(
         study_path,
+        "id",
         areas={
             "fr": Area(
                 thermals=[],
@@ -135,7 +139,7 @@ def test_parse_area(tmp_path: Path) -> None:
             )
         },
     )
-    assert ConfigPathBuilder.build(study_path) == config
+    assert ConfigPathBuilder.build(study_path, "id") == config
 
 
 def test_parse_thermal(tmp_path: Path) -> None:

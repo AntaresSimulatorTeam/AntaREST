@@ -17,7 +17,9 @@ IT
     file.write_text(content)
 
     config = StudyConfig(
-        study_path=file, areas={"fr": None, "de": None, "it": None}
+        study_path=file,
+        study_id="id",
+        areas={"fr": None, "de": None, "it": None},
     )
     node = InputAreasList(context=Mock(), config=config)
 

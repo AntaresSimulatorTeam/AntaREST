@@ -21,9 +21,7 @@ class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
         config: StudyConfig,
         nb_columns: Optional[int] = None,
     ):
-        super().__init__(url_prefix="matrix")
-        self.context = context
-        self.config = config
+        super().__init__(url_prefix="matrix", context=context, config=config)
         self.nb_columns = nb_columns
 
     def build(self, config: StudyConfig) -> TREE:

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, List, Generic
 
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.inode import INode, S, G, V
 
 
@@ -12,7 +13,13 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     Abstract left with implemented a lazy loading for its daughter implementation.
     """
 
-    def __init__(self, url_prefix: str, config: StudyConfig) -> None:
+    def __init__(
+        self,
+        context: ContextServer,
+        config: StudyConfig,
+        url_prefix: str,
+    ) -> None:
+        self.context = context
         self.config = config
         self.url_prefix = url_prefix
 

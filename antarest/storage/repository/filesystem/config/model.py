@@ -130,6 +130,7 @@ class StudyConfig(DTO):
     def next_file(self, name: str) -> "StudyConfig":
         copy = StudyConfig(
             self.root_path,
+            self.study_id,
             self.areas,
             self.sets,
             self.outputs,
