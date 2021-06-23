@@ -17,6 +17,7 @@ from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.repository.patch_repository import PatchRepository
 from antarest.storage.repository.study import StudyMetadataRepository
 from antarest.storage.service import StorageService
+from antarest.storage.web.areas_blueprint import create_study_area_routes
 from antarest.storage.web.studies_blueprint import create_study_routes
 from antarest.storage.web.utils_blueprint import create_utils_routes
 
@@ -87,5 +88,6 @@ def build_storage(
 
     application.include_router(create_study_routes(storage_service, config))
     application.include_router(create_utils_routes(storage_service, config))
+    application.include_router(create_study_area_routes(storage_service, config))
 
     return storage_service
