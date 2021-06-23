@@ -12,8 +12,8 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     Abstract left with implemented a lazy loading for its daughter implementation.
     """
 
-    def __init__(self, url_prefix: str) -> None:
-        self.config = StudyConfig(study_path=Path())
+    def __init__(self, url_prefix: str, config: StudyConfig) -> None:
+        self.config = config
         self.url_prefix = url_prefix
 
     def get(

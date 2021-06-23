@@ -28,11 +28,14 @@ def benchmark(function: Callable) -> [Any, float]:
 def test_performance(tmp_path: Path, project_path: Path):
 
     path_studies = extract_sta(tmp_path, project_path)
+    study_id = "study_id"
 
     bench = {"build": 0}
 
     (_, study), bench["build"] = benchmark(
-        lambda: StudyFactory(matrix=Mock()).create_from_fs(path_studies)
+        lambda: StudyFactory(matrix=Mock()).create_from_fs(
+            path_studies, study_id
+        )
     )
     data, bench["get"] = benchmark(lambda: study.get())
     _, bench["get_author"] = benchmark(

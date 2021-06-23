@@ -55,7 +55,7 @@ class RawStudyService:
 
         """
         path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(path)
+        _, study = self.study_factory.create_from_fs(path, metadata.id)
         return study.check_errors(study.get())
 
     def study_exists(self, metadata: RawStudy) -> bool:
@@ -105,7 +105,7 @@ class RawStudyService:
         self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
 
-        _, study = self.study_factory.create_from_fs(study_path)
+        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         parts = [item for item in url.split("/") if item]
 
         data = study.get(parts, depth=depth)
@@ -177,7 +177,7 @@ class RawStudyService:
         study_data = self.get(metadata, url="", depth=10)
         StorageServiceUtils.update_antares_info(metadata, study_data)
 
-        _, study = self.study_factory.create_from_fs(path_study)
+        _, study = self.study_factory.create_from_fs(path_study, metadata.id)
         study.save(study_data["study"], url=["study"])
 
         metadata.path = str(path_study)
@@ -196,7 +196,9 @@ class RawStudyService:
         self.check_study_exists(src_meta)
         src_path = self.get_study_path(src_meta)
 
-        config, study = self.study_factory.create_from_fs(src_path)
+        config, study = self.study_factory.create_from_fs(
+            src_path, src_meta.id
+        )
         data_source = study.get()
         del study
 
@@ -256,7 +258,7 @@ class RawStudyService:
         self.check_study_exists(metadata)
 
         study_path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(study_path)
+        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         study.save(new, url.split("/"))  # type: ignore
         del study
         return new

@@ -22,8 +22,10 @@ class StudyFactory:
     def __init__(self, matrix: MatrixService) -> None:
         self.context = ContextServer(matrix=matrix)
 
-    def create_from_fs(self, path: Path) -> Tuple[StudyConfig, Study]:
-        config = ConfigPathBuilder.build(path)
+    def create_from_fs(
+        self, path: Path, study_id: str
+    ) -> Tuple[StudyConfig, Study]:
+        config = ConfigPathBuilder.build(path, study_id)
         return config, Study(self.context, config)
 
     def create_from_config(self, config: StudyConfig) -> Study:
