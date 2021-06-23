@@ -26,6 +26,7 @@ def assert_url_content(storage_service: StorageService, url: str) -> bytes:
         app,
         user_service=Mock(),
         storage_service=storage_service,
+        matrix_service=Mock(),
         config=storage_service.study_service.config,
         study_factory=StudyFactory(matrix=Mock()),
     )
@@ -67,6 +68,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         application=Mock(),
         config=config,
         user_service=Mock(),
+        matrix_service=Mock(),
         metadata_repository=repo,
         study_factory=StudyFactory(matrix=Mock()),
     )
@@ -104,6 +106,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
         application=Mock(),
         config=config,
         user_service=Mock(),
+        matrix_service=Mock(),
         metadata_repository=repo,
         study_factory=StudyFactory(matrix=Mock()),
     )

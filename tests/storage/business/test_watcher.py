@@ -5,8 +5,11 @@ from time import sleep
 from unittest.mock import Mock, call
 
 import pytest
+from sqlalchemy import create_engine
 
 from antarest.common.config import Config, StorageConfig, WorkspaceConfig
+from antarest.common.persistence import Base
+from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.model import Group
 from antarest.storage.business.watcher import Watcher
 from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
@@ -36,6 +39,14 @@ def clean_files() -> None:
 
 @pytest.mark.unit_test
 def test_scan(tmp_path: Path):
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+
     clean_files()
 
     default = tmp_path / "default"

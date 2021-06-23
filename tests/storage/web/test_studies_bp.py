@@ -57,6 +57,7 @@ def test_server() -> None:
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -78,6 +79,7 @@ def test_404() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
@@ -99,6 +101,7 @@ def test_server_with_parameters() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -141,6 +144,7 @@ def test_create_study(
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -176,6 +180,7 @@ def test_import_study_zipped(
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -203,6 +208,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -234,6 +240,7 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -253,6 +260,7 @@ def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -269,6 +277,7 @@ def test_server_health() -> None:
         storage_service=Mock(),
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -287,6 +296,7 @@ def test_export_files() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -309,6 +319,7 @@ def test_export_params() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -336,6 +347,7 @@ def test_delete_study() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -354,6 +366,7 @@ def test_import_matrix() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -381,6 +394,7 @@ def test_import_matrix_with_wrong_path() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -405,6 +419,7 @@ def test_edit_study() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app)
@@ -427,6 +442,7 @@ def test_edit_study_fail() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
@@ -448,6 +464,7 @@ def test_validate() -> None:
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
         study_factory=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
@@ -468,6 +485,7 @@ def test_study_permission_management(
         app,
         storage_service=storage_service,
         user_service=Mock(),
+        matrix_service=Mock(),
         config=CONFIG,
         study_factory=Mock(),
     )

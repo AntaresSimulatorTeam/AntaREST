@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.login.service import LoginService
+from antarest.matrixstore.service import MatrixService
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.patch_service import PatchService
@@ -25,6 +26,7 @@ def build_storage(
     application: FastAPI,
     config: Config,
     user_service: LoginService,
+    matrix_service: MatrixService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
     study_factory: Optional[StudyFactory] = None,
     exporter: Optional[Exporter] = None,
@@ -51,7 +53,7 @@ def build_storage(
     """
 
     path_resources = config.resources_path
-    study_factory = study_factory or StudyFactory()
+    study_factory = study_factory or StudyFactory(matrix=matrix_service)
     exporter = exporter or Exporter()
     metadata_repository = metadata_repository or StudyMetadataRepository()
 
