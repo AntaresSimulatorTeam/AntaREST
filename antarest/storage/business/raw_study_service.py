@@ -3,7 +3,7 @@ import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from zipfile import ZipFile
 
 from antarest.common.config import Config
@@ -20,6 +20,7 @@ from antarest.storage.model import (
 )
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.factory import StudyFactory
+from antarest.storage.repository.filesystem.root.study import Study
 from antarest.storage.web.exceptions import StudyNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -116,27 +117,18 @@ class RawStudyService:
         """
         return (self.get_study_path(metadata) / "study.antares").is_file()
 
-    def get_study_uuids(self, workspace: Optional[str] = None) -> List[str]:
+    def get_study(self, metadata: RawStudy) -> Tuple[StudyConfig, Study]:
         """
-        List study presents on disk
+        Fetch a study object and its config
         Args:
-            workspace: specify workspace
+            metadata: study
 
-        Returns: list of study present in workspace
+        Returns: the config and study tree object
 
         """
-        folders: List[Path] = []
-        if workspace:
-            folders = list(self.get_workspace_path(workspace).iterdir())
-        else:
-            for w in self.config.storage.workspaces:
-                folders += list(self.get_workspace_path(w).iterdir())
-
-        studies_list = [
-            path.name for path in folders if (path / "study.antares").is_file()
-        ]
-        # sorting needed for test
-        return sorted(studies_list)
+        self.check_study_exists(metadata)
+        study_path = self.get_study_path(metadata)
+        return self.study_factory.create_from_fs(study_path)
 
     def get(self, metadata: RawStudy, url: str = "", depth: int = 3) -> JSON:
         """
@@ -149,10 +141,7 @@ class RawStudyService:
         Returns: study data formatted in json
 
         """
-        self.check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-
-        _, study = self.study_factory.create_from_fs(study_path)
+        _, study = self.get_study(metadata)
         parts = [item for item in url.split("/") if item]
 
         data = study.get(parts, depth=depth)
