@@ -73,7 +73,7 @@ class AreaManager:
     def create_area(
         self, study: RawStudy, area_creation_info: AreaCreationDTO
     ) -> AreaInfoDTO:
-        pass
+        raise NotImplementedError()
 
     def update_area(
         self,
@@ -81,7 +81,7 @@ class AreaManager:
         area_id: str,
         area_creation_info: AreaPatchUpdateDTO,
     ) -> AreaInfoDTO:
-        pass
+        raise NotImplementedError()
 
     def delete_area(self, study: RawStudy, area_id: str) -> None:
-        pass
+        raise NotImplementedError()

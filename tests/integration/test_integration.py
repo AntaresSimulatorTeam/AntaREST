@@ -310,3 +310,59 @@ def test_matrix(app: FastAPI):
 
     assert res.status_code == 200
     assert res.json() == [stored]
+
+
+def test_area_management(app: FastAPI):
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.post(
+        "/v1/login", json={"username": "admin", "password": "admin"}
+    )
+    admin_credentials = res.json()
+
+    created = client.post(
+        "/v1/studies?name=foo",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    study_path = created.json()
+    res_areas = client.get(
+        f"/v1{study_path}/areas",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res_areas.json() == []
+
+    res_create = client.post(
+        f"/v1{study_path}/areas",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={"name": "test", "type": "AREA"},
+    )
+    res_update = client.put(
+        f"/v1{study_path}/areas/test",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={"name": "test", "type": "AREA"},
+    )
+    res_delete = client.delete(
+        f"/v1{study_path}/areas/test",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert (
+        res_create.status_code == 500
+        and res_create.json()["exception"] == "NotImplementedError"
+    )
+    assert (
+        res_update.status_code == 500
+        and res_update.json()["exception"] == "NotImplementedError"
+    )
+    assert (
+        res_delete.status_code == 500
+        and res_delete.json()["exception"] == "NotImplementedError"
+    )

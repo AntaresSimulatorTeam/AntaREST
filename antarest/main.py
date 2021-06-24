@@ -195,11 +195,25 @@ def fastapi_app(
         logging.getLogger(__name__).info("Request end")
 
     @application.exception_handler(HTTPException)
-    def handle_exception(request: Request, exc: HTTPException) -> Any:
+    def handle_http_exception(request: Request, exc: HTTPException) -> Any:
         """Return JSON instead of HTML for HTTP errors."""
-        # start with the correct headers and status code from the error
         return JSONResponse(
-            content={"description": exc.detail}, status_code=exc.status_code
+            content={
+                "description": exc.detail,
+                "exception": exc.__class__.__name__,
+            },
+            status_code=exc.status_code,
+        )
+
+    @application.exception_handler(Exception)
+    def handle_all_exception(request: Request, exc: Exception) -> Any:
+        """Return JSON instead of HTML for HTTP errors."""
+        return JSONResponse(
+            content={
+                "description": "Unexpected server error",
+                "exception": exc.__class__.__name__,
+            },
+            status_code=500,
         )
 
     event_bus = build_eventbus(application, config)
