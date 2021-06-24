@@ -375,6 +375,36 @@ def create_study_routes(
         return content
 
     @bp.get(
+        "/studies/{study_id}/outputs/",
+        summary="Get global information about a study simulation result",
+        tags=["Get outputs information"],
+    )
+    def sim_result(
+        study_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        params = RequestParameters(user=current_user)
+        content = storage_service.get_study_sim_result(study_id, params)
+        return content
+
+    @bp.put(
+        "/studies/{study_id}/outputs/{output_id}/reference",
+        summary="Set simulation as the reference output",
+        tags=["Set simulation as the reference output"],
+    )
+    def set_sim_reference(
+        study_id: str,
+        output_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        params = RequestParameters(user=current_user)
+        storage_service.set_sim_reference(study_id, output_id, params)
+        return "OK"
+
+    @bp.get(
         "/studies/{uuid}/validate",
         summary="Launch test validation on study",
         tags=[APITag.study_data],

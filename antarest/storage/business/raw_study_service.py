@@ -17,8 +17,13 @@ from antarest.storage.model import (
     StudyMetadataDTO,
     Patch,
     PatchStudy,
+    StudySimResultDTO,
+    StudySimSettingsDTO,
 )
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    StudyConfig,
+    Simulation,
+)
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.repository.filesystem.root.study import Study
 from antarest.storage.web.exceptions import StudyNotFoundError
@@ -342,3 +347,49 @@ class RawStudyService:
             },
         )
         return self.get_study_information(study)
+
+    def set_reference_output(self, study: RawStudy, output_id: str) -> None:
+        self.patch_service.set_reference_output(study, output_id)
+
+    def get_study_sim_result(self, study: RawStudy) -> List[StudySimResultDTO]:
+        """
+        Get global result information
+        Args:
+            study: study
+        Returns: study output data
+
+        """
+        study_path = self.get_study_path(study)
+        config, raw_study = self.study_factory.create_from_fs(study_path)
+        patch_metadata = self.patch_service.get(study)
+        results: List[StudySimResultDTO] = []
+        if patch_metadata.outputs is not None and config.outputs is not None:
+            reference = patch_metadata.outputs.reference
+            for output in config.outputs:
+                file_metadata = raw_study.get(
+                    url=["output", output, "about-the-study", "parameters"]
+                )
+                settings = StudySimSettingsDTO(
+                    general=file_metadata["general"],
+                    input=file_metadata["input"],
+                    output=file_metadata["output"],
+                    optimization=file_metadata["optimization"],
+                    otherPreferences=file_metadata["other preferences"],
+                    advancedParameters=file_metadata["advanced parameters"],
+                    seedsMersenneTwister=file_metadata[
+                        "seeds - Mersenne Twister"
+                    ],
+                )
+                output_data: Simulation = config.outputs[output]
+                results.append(
+                    StudySimResultDTO(
+                        name=output_data.name,
+                        type=output_data.mode,
+                        settings=settings,
+                        completionDate="",
+                        referenceStatus=(reference == output),
+                        synchronized=False,
+                        status="",
+                    )
+                )
+        return results

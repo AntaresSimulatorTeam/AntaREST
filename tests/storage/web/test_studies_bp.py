@@ -26,6 +26,8 @@ from antarest.storage.model import (
     StudyDownloadDTO,
     MatrixAggregationResult,
     MatrixIndex,
+    StudySimResultDTO,
+    StudySimSettingsDTO,
 )
 from antarest.storage.web.exceptions import (
     IncorrectPathError,
@@ -482,6 +484,64 @@ def test_output_download() -> None:
         json=study_download.dict(),
     )
     assert res.json() == output_data.dict()
+
+
+@pytest.mark.unit_test
+def test_sim_reference() -> None:
+    mock_service = Mock()
+    study_id = "my-study-id"
+    output_id = "my-output-id"
+
+    app = FastAPI(title=__name__)
+    build_storage(
+        app,
+        storage_service=mock_service,
+        config=CONFIG,
+        user_service=Mock(),
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.put(f"/v1/studies/{study_id}/outputs/{output_id}/reference")
+    mock_service.set_sim_reference.assert_called_once_with(
+        study_id, output_id, PARAMS
+    )
+    assert res.json() == "OK"
+
+
+@pytest.mark.unit_test
+def test_sim_result() -> None:
+    mock_service = Mock()
+    study_id = "my-study-id"
+    settings = StudySimSettingsDTO(
+        general=dict(),
+        input=dict(),
+        output=dict(),
+        optimization=dict(),
+        otherPreferences=dict(),
+        advancedParameters=dict(),
+        seedsMersenneTwister=dict(),
+    )
+    result_data = [
+        StudySimResultDTO(
+            name="output-id",
+            type="economy",
+            settings=settings,
+            completionDate="",
+            referenceStatus=True,
+            synchronized=False,
+            status="",
+        )
+    ]
+    mock_service.get_study_sim_result.return_value = result_data
+    app = FastAPI(title=__name__)
+    build_storage(
+        app,
+        storage_service=mock_service,
+        config=CONFIG,
+        user_service=Mock(),
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.get(f"/v1/studies/{study_id}/outputs")
+    assert res.json() == result_data
 
 
 @pytest.mark.unit_test
