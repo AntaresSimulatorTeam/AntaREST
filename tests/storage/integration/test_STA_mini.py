@@ -44,7 +44,7 @@ def assert_url_content(
         storage_service=storage_service,
         matrix_service=Mock(),
         config=storage_service.study_service.config,
-        study_factory=StudyFactory(matrix=Mock()),
+        study_factory=StudyFactory(matrix=Mock(), resolver=Mock()),
     )
     client = TestClient(app)
     res = client.get(url)
@@ -57,8 +57,9 @@ def assert_with_errors(
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
     params = RequestParameters(user=ADMIN)
+    output = storage_service.get(uuid=uuid, url=url, depth=3, params=params)
     assert_study(
-        storage_service.get(uuid=uuid, url=url, depth=3, params=params),
+        output,
         expected_output,
     )
 
@@ -241,10 +242,10 @@ def test_sta_mini_study_antares(
         (
             "/v1/studies/STA-mini/raw?path=input/load/series",
             {
-                "load_de": "matrix:///...../input/load/series/load_de.txt",
-                "load_es": "matrix:///...../input/load/series/load_es.txt",
-                "load_fr": "matrix:///...../input/load/series/load_fr.txt",
-                "load_it": "matrix:///...../input/load/series/load_it.txt",
+                "load_de": "studyfile://STA-mini/input/load/series/load_de.txt",
+                "load_es": "studyfile://STA-mini/input/load/series/load_es.txt",
+                "load_fr": "studyfile://STA-mini/input/load/series/load_fr.txt",
+                "load_it": "studyfile://STA-mini/input/load/series/load_it.txt",
             },
         ),
         (
@@ -407,7 +408,7 @@ def test_sta_mini_copy(storage_service) -> None:
         storage_service=storage_service,
         matrix_service=Mock(),
         config=storage_service.study_service.config,
-        study_factory=StudyFactory(matrix=Mock()),
+        study_factory=StudyFactory(matrix=Mock(), resolver=Mock()),
     )
     client = TestClient(app)
     result = client.post(
@@ -496,7 +497,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         user_service=Mock(),
         matrix_service=Mock(),
         config=storage_service.study_service.config,
-        study_factory=StudyFactory(matrix=Mock()),
+        study_factory=StudyFactory(matrix=Mock(), resolver=Mock()),
     )
     client = TestClient(app)
 
@@ -530,7 +531,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         user_service=Mock(),
         matrix_service=Mock(),
         config=storage_service.study_service.config,
-        study_factory=StudyFactory(matrix=Mock()),
+        study_factory=StudyFactory(matrix=Mock(), resolver=Mock()),
     )
     client = TestClient(app)
 

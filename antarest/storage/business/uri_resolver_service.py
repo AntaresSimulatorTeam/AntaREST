@@ -9,9 +9,9 @@ from antarest.login.model import User
 
 
 class UriResolverService:
-    def __init__(self, storage_service: "StorageService", config: Config):
+    def __init__(self, config: Config):
         self.config = config
-        self.storage_service = storage_service
+        self.storage_service = None
 
     def resolve(self, uri: str):
         match = re.match(r"^(\w+):\/\/([\w-]+)\/?(.*)$", uri)
@@ -32,3 +32,9 @@ class UriResolverService:
         return self.storage_service.get_study_path(
             study_id, DEFAULT_ADMIN_USER
         )
+
+    def build_studyfile_uri(self, path: Path, study_id: str) -> str:
+        relative_path = str(path.absolute()).split(f"{study_id}/")[1]
+        uri = f"studyfile://{study_id}/{relative_path}"
+        return uri
+        # return "42"

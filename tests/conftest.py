@@ -42,16 +42,18 @@ def _assert_others(a: Any, b: Any) -> None:
 
 
 def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
-    if isinstance(a, dict) and isinstance(b, dict):
-        _assert_dict(a, b)
-    elif isinstance(a, list) and isinstance(b, list):
-        _assert_list(a, b)
-    elif (
-        isinstance(a, str)
-        and isinstance(b, str)
-        and ("file://" in a or "matrix://" in a)
-        and ("file://" in b or "matrix://" in b)
-    ):
-        _assert_pointer_path(a, b)
-    else:
-        _assert_others(a, b)
+    # TODO: REMOVE FUNCTION
+    # if isinstance(a, dict) and isinstance(b, dict):
+    #     _assert_dict(a, b)
+    # elif isinstance(a, list) and isinstance(b, list):
+    #     _assert_list(a, b)
+    # elif (
+    #     isinstance(a, str)
+    #     and isinstance(b, str)
+    #     and ("file://" in a or "matrix://" in a)
+    #     and ("file://" in b or "matrix://" in b)
+    # ):
+    #     _assert_pointer_path(a, b)
+    # else:
+    #     _assert_others(a, b)
+    assert a == b

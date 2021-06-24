@@ -73,7 +73,7 @@ def storage_service(
         matrix_service=Mock(),
         config=config,
         metadata_repository=repo,
-        study_factory=StudyFactory(matrix=Mock()),
+        study_factory=StudyFactory(matrix=Mock(), resolver=Mock()),
     )
 
     return storage_service

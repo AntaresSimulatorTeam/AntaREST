@@ -55,7 +55,8 @@ def build_storage(
 
     path_resources = config.resources_path
 
-    study_factory = study_factory or StudyFactory(matrix=matrix_service)
+    resolver = UriResolverService(config)
+    study_factory = StudyFactory(matrix=matrix_service, resolver=resolver)
     exporter = exporter or Exporter()
     metadata_repository = metadata_repository or StudyMetadataRepository()
 
@@ -83,7 +84,7 @@ def build_storage(
         event_bus=event_bus,
     )
 
-    resolver.set_storage_service(storage_service)
+    resolver.storage_service = storage_service
 
     patch_service = patch_service or PatchService(
         PatchRepository(), storage_service
