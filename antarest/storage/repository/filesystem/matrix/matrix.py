@@ -4,21 +4,31 @@ from abc import ABC, abstractmethod
 from typing import Optional, List
 
 from antarest.common.custom_types import JSON, SUB_JSON
+from antarest.matrixstore.model import MatrixDTO, MatrixFreq
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 
 class MatrixNode(LazyNode[JSON, JSON, JSON], ABC):
-    def __init__(self, context: ContextServer, config: StudyConfig) -> None:
+    def __init__(
+        self, context: ContextServer, config: StudyConfig, freq: str
+    ) -> None:
         LazyNode.__init__(self, context, config, url_prefix="")
+        self.freq = freq
 
-    def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
+    def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
         self._assert_url_end(url)
 
         if self.context.resolver.is_managed(self.config.study_id):
             if isinstance(data, dict):
-                id = self.context.matrix.create(data)
+                dto = MatrixDTO(
+                    freq=MatrixFreq.from_str(self.freq),
+                    index=data["index"],
+                    columns=data["columns"],
+                    data=data["data"],
+                )
+                id = self.context.matrix.create(dto)
                 data = self.context.resolver.build_matrix_uri(id)
 
             link_path = self.get_link_path()
@@ -26,14 +36,18 @@ class MatrixNode(LazyNode[JSON, JSON, JSON], ABC):
             self.config.path.unlink()
             return None
 
-        if isinstance(data, str) and f"matrix://" in data:
-            src = self.context.resolver.resolve(data)
-            if src != self.config.path:
-                self.config.path.parent.mkdir(exist_ok=True, parents=True)
-                shutil.copyfile(src, self.config.path)
-            return None
+        else:
+            if isinstance(data, str) and "matrix://" in data:
+                id = self.context.resolver.resolve(data)
+                dto = self.context.matrix.get(id)
+                data = {
+                    "index": dto.index,
+                    "columns": dto.columns,
+                    "data": dto.data,
+                }
 
-        return self.dump(data, url)
+            self.dump(data)
+            return None
 
     @abstractmethod
     def load(

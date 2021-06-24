@@ -6,6 +6,7 @@ from antarest.common.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
 from antarest.common.roles import RoleType
 from antarest.login.model import User
+from antarest.storage.model import DEFAULT_WORKSPACE_NAME
 
 
 class UriResolverService:
@@ -38,5 +39,9 @@ class UriResolverService:
         uri = f"studyfile://{study_id}/{relative_path}"
         return uri
 
-    def build_matrix_uri(self, id):
-        pass  # TODO
+    def build_matrix_uri(self, id) -> str:
+        return f"matrix://{id}"
+
+    def is_managed(self, study_id) -> bool:
+        default = self.config.storage.workspaces[DEFAULT_WORKSPACE_NAME]
+        return default in self.storage_service.get_study_path(study_id).parts

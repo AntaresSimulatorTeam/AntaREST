@@ -36,13 +36,13 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
                     self.config.path, self.config.study_id
                 )
             else:
-                path = self._get_link_path()
+                path = self.get_link_path()
                 return path.read_text()
         else:
             if self.config.path.exists():
                 return self.load(url, depth, expanded)
             else:
-                path = self._get_link_path()
+                path = self.get_link_path()
                 return self.context.resolver.resolve(path.read_text())
 
     def get_link_path(self):
