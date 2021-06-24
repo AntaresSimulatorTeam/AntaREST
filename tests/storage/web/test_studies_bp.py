@@ -502,7 +502,7 @@ def test_sim_reference() -> None:
     client = TestClient(app, raise_server_exceptions=False)
     res = client.put(f"/v1/studies/{study_id}/outputs/{output_id}/reference")
     mock_service.set_sim_reference.assert_called_once_with(
-        study_id, output_id, PARAMS
+        study_id, output_id, True, PARAMS
     )
     assert res.json() == "OK"
 
