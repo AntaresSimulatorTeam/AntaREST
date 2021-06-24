@@ -42,6 +42,13 @@ def test_set_reference_output():
     assert patch.outputs.reference == output_id
     patch_repository.save.assert_called_once_with(raw_study, patch)
 
+    patch_service.set_reference_output(
+        study=raw_study, output_id=output_id, status=False
+    )
+    patch_repository.get.assert_called_with(raw_study)
+    assert patch.outputs.reference is None
+    patch_repository.save.assert_called_with(raw_study, patch)
+
 
 @pytest.mark.unit_test
 def test_patch():

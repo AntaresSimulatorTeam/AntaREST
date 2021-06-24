@@ -10,11 +10,13 @@ class PatchService:
     def get(self, study: RawStudy) -> Patch:
         return self.repository.get(study)
 
-    def set_reference_output(self, study: RawStudy, output_id: str) -> None:
+    def set_reference_output(
+        self, study: RawStudy, output_id: str, status: bool = True
+    ) -> None:
         patch = self.repository.get(study)
         if patch.outputs is not None:
-            patch.outputs.reference = output_id
-        else:
+            patch.outputs.reference = output_id if status else None
+        elif status:
             patch.outputs = PatchOutputs(reference=output_id)
         self.repository.save(study, patch)
 

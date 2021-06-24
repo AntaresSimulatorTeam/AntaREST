@@ -519,13 +519,18 @@ class StorageService:
         return self.study_service.get_study_sim_result(study)
 
     def set_sim_reference(
-        self, study_id: str, output_id: str, params: RequestParameters
+        self,
+        study_id: str,
+        output_id: str,
+        status: bool,
+        params: RequestParameters,
     ) -> None:
         """
         Set simulation as the reference output
         Args:
             study_id: study Id
             output_id: output id
+            status: state of the reference status
             params: request parameters
 
         Returns: None
@@ -543,7 +548,7 @@ class StorageService:
             params.get_user_id(),
         )
 
-        self.study_service.set_reference_output(study, output_id)
+        self.study_service.set_reference_output(study, output_id, status)
 
     def get_matrix(self, route: str, params: RequestParameters) -> BytesIO:
         """

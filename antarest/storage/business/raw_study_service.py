@@ -349,8 +349,10 @@ class RawStudyService:
         )
         return self.get_study_information(study)
 
-    def set_reference_output(self, study: RawStudy, output_id: str) -> None:
-        self.patch_service.set_reference_output(study, output_id)
+    def set_reference_output(
+        self, study: RawStudy, output_id: str, status: bool
+    ) -> None:
+        self.patch_service.set_reference_output(study, output_id, status)
 
     def get_study_sim_result(self, study: RawStudy) -> List[StudySimResultDTO]:
         """

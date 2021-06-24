@@ -338,7 +338,7 @@ def create_study_routes(
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/download",
-        tags=["Get outputs data"],
+        tags=[APITag.study_outputs],
         summary="Get outputs data",
         responses={
             200: {
@@ -377,7 +377,7 @@ def create_study_routes(
     @bp.get(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
-        tags=["Get outputs information"],
+        tags=[APITag.study_outputs],
     )
     def sim_result(
         study_id: str,
@@ -391,17 +391,18 @@ def create_study_routes(
     @bp.put(
         "/studies/{study_id}/outputs/{output_id}/reference",
         summary="Set simulation as the reference output",
-        tags=["Set simulation as the reference output"],
+        tags=[APITag.study_outputs],
     )
     def set_sim_reference(
         study_id: str,
         output_id: str,
+        status: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_uuid(output_id)
         params = RequestParameters(user=current_user)
-        storage_service.set_sim_reference(study_id, output_id, params)
+        storage_service.set_sim_reference(study_id, output_id, status, params)
         return "OK"
 
     @bp.get(
