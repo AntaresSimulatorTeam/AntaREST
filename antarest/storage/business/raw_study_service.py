@@ -19,6 +19,7 @@ from antarest.storage.model import (
     PatchStudy,
     StudySimResultDTO,
     StudySimSettingsDTO,
+    PatchOutputs,
 )
 from antarest.storage.repository.filesystem.config.model import (
     StudyConfig,
@@ -363,8 +364,8 @@ class RawStudyService:
         config, raw_study = self.study_factory.create_from_fs(study_path)
         patch_metadata = self.patch_service.get(study)
         results: List[StudySimResultDTO] = []
-        if patch_metadata.outputs is not None and config.outputs is not None:
-            reference = patch_metadata.outputs.reference
+        if config.outputs is not None:
+            reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in config.outputs:
                 file_metadata = raw_study.get(
                     url=["output", output, "about-the-study", "parameters"]
@@ -383,7 +384,7 @@ class RawStudyService:
                 output_data: Simulation = config.outputs[output]
                 results.append(
                     StudySimResultDTO(
-                        name=output_data.name,
+                        name=output_data.get_file(),
                         type=output_data.mode,
                         settings=settings,
                         completionDate="",

@@ -375,7 +375,7 @@ def create_study_routes(
         return content
 
     @bp.get(
-        "/studies/{study_id}/outputs/",
+        "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
         tags=["Get outputs information"],
     )
