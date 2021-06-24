@@ -123,7 +123,9 @@ DE	weekly	01_solar	02_wind_on
     serializer = WeeklyMatrixSerializer(area="de")
     date, body = serializer.extract_date(df)
 
-    pd.testing.assert_index_equal(date, pd.Index(range(1)))
+    pd.testing.assert_index_equal(
+        date, pd.Index([("1",)], dtype=object, tupleize_cols=False)
+    )
 
     pd.testing.assert_frame_equal(
         body,
