@@ -10,6 +10,7 @@ from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.patch_service import PatchService
 from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.uri_resolver_service import UriResolverService
 from antarest.storage.business.watcher import Watcher
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
@@ -53,6 +54,7 @@ def build_storage(
     """
 
     path_resources = config.resources_path
+
     study_factory = study_factory or StudyFactory(matrix=matrix_service)
     exporter = exporter or Exporter()
     metadata_repository = metadata_repository or StudyMetadataRepository()
@@ -80,6 +82,8 @@ def build_storage(
         repository=metadata_repository,
         event_bus=event_bus,
     )
+
+    resolver.set_storage_service(storage_service)
 
     patch_service = patch_service or PatchService(
         PatchRepository(), storage_service

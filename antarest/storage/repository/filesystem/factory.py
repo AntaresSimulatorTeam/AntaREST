@@ -3,6 +3,7 @@ from typing import Tuple
 
 from antarest.common.custom_types import JSON
 from antarest.matrixstore.service import MatrixService
+from antarest.storage.business.uri_resolver_service import UriResolverService
 from antarest.storage.repository.filesystem.config.files import (
     ConfigPathBuilder,
 )
@@ -19,8 +20,10 @@ class StudyFactory:
     Study Factory. Mainly used in test to inject study mock by dependency injection.
     """
 
-    def __init__(self, matrix: MatrixService) -> None:
-        self.context = ContextServer(matrix=matrix)
+    def __init__(
+        self, matrix: MatrixService, resolver: UriResolverService
+    ) -> None:
+        self.context = ContextServer(matrix=matrix, resolver=resolver)
 
     def create_from_fs(
         self, path: Path, study_id: str

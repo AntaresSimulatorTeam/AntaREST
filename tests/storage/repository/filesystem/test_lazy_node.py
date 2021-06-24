@@ -22,7 +22,7 @@ class MockLazyNode(LazyNode[str, str, str]):
         depth: int = -1,
         expanded: bool = False,
     ) -> str:
-        return "Hello"
+        return "Mock Matrix Content"
 
     def dump(self, data: str, url: Optional[List[str]] = None) -> None:
         self.config.path.write_text(data)
@@ -38,6 +38,7 @@ class MockLazyNode(LazyNode[str, str, str]):
 
 def test_get_no_expanded_txt(tmp_path: Path):
     file = tmp_path / "my-study/lazy.txt"
+    file.parent.mkdir()
     file.touch()
 
     uri = "studyfile://my-study/lazy.txt"
@@ -54,15 +55,53 @@ def test_get_no_expanded_txt(tmp_path: Path):
 
 
 def test_get_no_expanded_link(tmp_path: Path):
-    pass
+    uri = "studyfile://my-link"
+
+    file = tmp_path / "my-study/lazy.txt"
+    file.parent.mkdir()
+    (file.parent / "lazy.txt.link").write_text(uri)
+
+    config = StudyConfig(study_path=file, study_id="my-study")
+
+    node = MockLazyNode(
+        context=ContextServer(matrix=Mock(), resolver=Mock()),
+        config=config,
+    )
+    assert uri == node.get(expanded=True)
 
 
 def test_get_expanded_txt(tmp_path: Path):
-    pass
+    file = tmp_path / "my-study/lazy.txt"
+    file.parent.mkdir()
+    file.touch()
+
+    config = StudyConfig(study_path=file, study_id="my-study")
+
+    node = MockLazyNode(
+        context=ContextServer(matrix=Mock(), resolver=Mock()),
+        config=config,
+    )
+    assert "Mock Matrix Content" == node.get(expanded=False)
 
 
 def test_get_expanded_link(tmp_path: Path):
-    pass
+    uri = "studyfile://my-link"
+
+    file = tmp_path / "my-study/lazy.txt"
+    file.parent.mkdir()
+    (file.parent / "lazy.txt.link").write_text(uri)
+
+    uri_resolver = Mock()
+    uri_resolver.resolve.return_value = "Mock Matrix Content"
+
+    config = StudyConfig(study_path=file, study_id="my-study")
+
+    node = MockLazyNode(
+        context=ContextServer(matrix=Mock(), resolver=uri_resolver),
+        config=config,
+    )
+    assert "Mock Matrix Content" == node.get(expanded=False)
+    uri_resolver.resolve.assert_called_once_with(uri)
 
 
 def test_save(tmp_path: Path):

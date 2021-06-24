@@ -6,11 +6,10 @@ from antarest.common.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
 from antarest.common.roles import RoleType
 from antarest.login.model import User
-from antarest.storage.service import StorageService
 
 
 class UriResolverService:
-    def __init__(self, storage_service: StorageService, config: Config):
+    def __init__(self, storage_service: "StorageService", config: Config):
         self.config = config
         self.storage_service = storage_service
 
