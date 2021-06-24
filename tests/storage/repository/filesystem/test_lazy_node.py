@@ -105,15 +105,21 @@ def test_get_expanded_link(tmp_path: Path):
 
 
 def test_save(tmp_path: Path):
-    file = tmp_path / "lazy.txt"
+    file = tmp_path / "my-study/lazy.txt"
+    file.parent.mkdir()
     file.touch()
 
     src = tmp_path / "src.txt"
     src.write_text("Lazy")
 
-    node = MockLazyNode(file)
+    resolver = Mock()
+    resolver.resolve.return_value = str(src.absolute())
 
-    node.save(f"file://{src.absolute()}")
+    config = StudyConfig(study_path=file, study_id="")
+    context = ContextServer(matrix=Mock(), resolver=resolver)
+    node = MockLazyNode(context=context, config=config)
+
+    node.save(f"studyfile://{src.absolute()}")
     assert file.read_text() == "Lazy"
 
     node.save("Not Lazy")

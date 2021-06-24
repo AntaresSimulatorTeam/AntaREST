@@ -54,7 +54,7 @@ class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
-        self._assert_url(url)
+        self._assert_url_end(url)
 
         errors = []
         if not self.config.path.exists():

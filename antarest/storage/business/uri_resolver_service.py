@@ -37,4 +37,6 @@ class UriResolverService:
         relative_path = str(path.absolute()).split(f"{study_id}/")[1]
         uri = f"studyfile://{study_id}/{relative_path}"
         return uri
-        # return "42"
+
+    def build_matrix_uri(self, id):
+        pass  # TODO
