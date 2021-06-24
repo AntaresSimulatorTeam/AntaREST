@@ -43,6 +43,7 @@ from antarest.storage.model import (
     StudyMetadataDTO,
     StudyDownloadDTO,
     MatrixAggregationResult,
+    StudySimResultDTO,
 )
 from antarest.storage.repository.study import StudyMetadataRepository
 from antarest.storage.web.exceptions import (
@@ -490,6 +491,64 @@ class StorageService:
             self.study_service, study, output_id, data
         )
         return matrix
+
+    def get_study_sim_result(
+        self, study_id: str, params: RequestParameters
+    ) -> List[StudySimResultDTO]:
+        """
+        Get global result information
+        Args:
+            study_id: study Id
+            params: request parameters
+
+        Returns: an object containing all needed information
+
+        """
+        study = self._get_study(study_id)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
+
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(study_id, study.type)
+
+        self.logger.info(
+            "study %s data asked by user %s",
+            study_id,
+            params.get_user_id(),
+        )
+
+        return self.study_service.get_study_sim_result(study)
+
+    def set_sim_reference(
+        self,
+        study_id: str,
+        output_id: str,
+        status: bool,
+        params: RequestParameters,
+    ) -> None:
+        """
+        Set simulation as the reference output
+        Args:
+            study_id: study Id
+            output_id: output id
+            status: state of the reference status
+            params: request parameters
+
+        Returns: None
+
+        """
+        study = self._get_study(study_id)
+        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(study_id, study.type)
+
+        self.logger.info(
+            "study %s data asked by user %s",
+            study_id,
+            params.get_user_id(),
+        )
+
+        self.study_service.set_reference_output(study, output_id, status)
 
     def get_matrix(self, route: str, params: RequestParameters) -> BytesIO:
         """

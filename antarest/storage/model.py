@@ -3,7 +3,7 @@ import enum
 import uuid
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, List, Dict, Optional, TypeVar
+from typing import Any, List, Dict, Optional, TypeVar, Union
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic import BaseModel
@@ -211,6 +211,26 @@ class StudyMetadataPatchDTO(BaseModel):
     scenario: Optional[str] = None
     status: Optional[str] = None
     doc: Optional[str] = None
+
+
+class StudySimSettingsDTO(BaseModel):
+    general: Dict[str, Any]
+    input: Dict[str, Any]
+    output: Dict[str, Any]
+    optimization: Dict[str, Any]
+    otherPreferences: Dict[str, Any]
+    advancedParameters: Dict[str, Any]
+    seedsMersenneTwister: Dict[str, Any]
+
+
+class StudySimResultDTO(BaseModel):
+    name: str
+    type: str
+    settings: StudySimSettingsDTO
+    completionDate: str
+    referenceStatus: bool
+    synchronized: bool
+    status: str
 
 
 class StudyDownloadType(enum.Enum):
