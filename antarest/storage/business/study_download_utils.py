@@ -339,7 +339,7 @@ class StudyDownloader:
             columns: List[str] = list(data[years[0]].keys())
             if len(columns) > 0:
                 return len(data[years[0]][columns[0]]), (
-                    ["Time", "Value"] + columns
+                    ["Time", "Version"] + columns
                 )
         return -1, []
 
