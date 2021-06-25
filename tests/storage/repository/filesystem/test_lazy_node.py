@@ -13,7 +13,6 @@ class MockLazyNode(LazyNode[str, str, str]):
         super().__init__(
             config=config,
             context=context,
-            url_prefix="file",
         )
 
     def load(
@@ -110,17 +109,18 @@ def test_save(tmp_path: Path):
     file.touch()
 
     src = tmp_path / "src.txt"
-    src.write_text("Lazy")
 
     resolver = Mock()
-    resolver.resolve.return_value = str(src.absolute())
+    resolver.resolve.return_value = "Lazy"
 
     config = StudyConfig(study_path=file, study_id="")
     context = ContextServer(matrix=Mock(), resolver=resolver)
     node = MockLazyNode(context=context, config=config)
 
-    node.save(f"studyfile://{src.absolute()}")
+    uri = f"studyfile://{src.absolute()}"
+    node.save(uri)
     assert file.read_text() == "Lazy"
+    resolver.resolve.assert_called_once_with(uri)
 
     node.save("Not Lazy")
     assert file.read_text() == "Not Lazy"

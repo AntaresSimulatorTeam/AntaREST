@@ -8,9 +8,10 @@ from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.lazy_node import LazyNode
 from antarest.storage.repository.filesystem.context import ContextServer
+from antarest.storage.repository.filesystem.matrix.matrix import MatrixNode
 
 
-class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
+class InputSeriesMatrix(MatrixNode):
     """
     Generic node to handle input matrix behavior
     """
@@ -21,7 +22,7 @@ class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
         config: StudyConfig,
         nb_columns: Optional[int] = None,
     ):
-        super().__init__(url_prefix="matrix", context=context, config=config)
+        super().__init__(context=context, config=config, freq="hourly")
         self.nb_columns = nb_columns
 
     def build(self, config: StudyConfig) -> TREE:

@@ -25,4 +25,5 @@ class OutputSimulationModeMcAllLinksItemValues(OutputSeriesMatrix):
             config=config,
             date_serializer=FactoryDateSerializer.create(freq, src),
             head_writer=LinkHeadWriter(src, dest, freq),
+            freq=freq,
         )

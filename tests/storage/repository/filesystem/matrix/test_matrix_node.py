@@ -106,7 +106,7 @@ def test_save_no_managed_uri(tmp_path: Path):
 
     resolver = Mock()
     resolver.is_managed.return_value = False
-    resolver.resolve.return_value = "my-id"
+    resolver.resolve.return_value = MOCK_MATRIX_JSON
 
     matrix = Mock()
     matrix.get.return_value = MOCK_MATRIX_DTO

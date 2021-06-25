@@ -23,30 +23,30 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
 
         filters = config.get_filters_synthesis(self.area)
 
-        for timing in (
+        for freq in (
             filters
             if config.get_thermal_names(self.area, only_enabled=True)
             else []
         ):
-            children[f"details-{timing}"] = Details(
+            children[f"details-{freq}"] = Details(
                 self.context,
-                config.next_file(f"details-{timing}.txt"),
-                timing,
+                config.next_file(f"details-{freq}.txt"),
+                freq,
                 self.area,
             )
 
-        for timing in filters:
-            children[f"id-{timing}"] = Id(
+        for freq in filters:
+            children[f"id-{freq}"] = Id(
                 self.context,
-                config.next_file(f"id-{timing}.txt"),
-                timing,
+                config.next_file(f"id-{freq}.txt"),
+                freq,
                 self.area,
             )
 
-            children[f"values-{timing}"] = Values(
+            children[f"values-{freq}"] = Values(
                 self.context,
-                config.next_file(f"values-{timing}.txt"),
-                timing,
+                config.next_file(f"values-{freq}.txt"),
+                freq,
                 self.area,
             )
 

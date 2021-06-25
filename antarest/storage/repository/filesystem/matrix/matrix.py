@@ -14,7 +14,7 @@ class MatrixNode(LazyNode[JSON, JSON, JSON], ABC):
     def __init__(
         self, context: ContextServer, config: StudyConfig, freq: str
     ) -> None:
-        LazyNode.__init__(self, context, config, url_prefix="")
+        LazyNode.__init__(self, context, config)
         self.freq = freq
 
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
@@ -38,13 +38,7 @@ class MatrixNode(LazyNode[JSON, JSON, JSON], ABC):
 
         else:
             if isinstance(data, str) and "matrix://" in data:
-                id = self.context.resolver.resolve(data)
-                dto = self.context.matrix.get(id)
-                data = {
-                    "index": dto.index,
-                    "columns": dto.columns,
-                    "data": dto.data,
-                }
+                data = self.context.resolver.resolve(data)
 
             self.dump(data)
             return None

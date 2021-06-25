@@ -28,7 +28,7 @@ class BucketNode(FolderNode):
             return dict()
 
         children: TREE = {}
-        for item in config.path.iterdir():
+        for item in sorted(config.path.iterdir()):
             if item.is_file():
                 children[item.name] = RawFileNode(
                     self.context, config.next_file(item.name)

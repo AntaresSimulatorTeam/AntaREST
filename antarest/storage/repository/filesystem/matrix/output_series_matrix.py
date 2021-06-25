@@ -14,9 +14,10 @@ from antarest.storage.repository.filesystem.matrix.head_writer import (
     HeadWriter,
 )
 from antarest.storage.repository.filesystem.context import ContextServer
+from antarest.storage.repository.filesystem.matrix.matrix import MatrixNode
 
 
-class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
+class OutputSeriesMatrix(MatrixNode):
     """
     Generic node to handle output matrix behavior.
     Node needs a DateSerializer and a HeadWriter to work
@@ -28,8 +29,9 @@ class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
         config: StudyConfig,
         date_serializer: IDateMatrixSerializer,
         head_writer: HeadWriter,
+        freq: str,
     ):
-        super().__init__(url_prefix="matrix", context=context, config=config)
+        super().__init__(context=context, config=config, freq=freq)
         self.date_serializer = date_serializer
         self.head_writer = head_writer
 

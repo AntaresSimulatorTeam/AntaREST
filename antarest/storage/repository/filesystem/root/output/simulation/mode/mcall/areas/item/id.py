@@ -20,4 +20,5 @@ class OutputSimulationModeMcAllAreasItemId(OutputSeriesMatrix):
             config=config,
             date_serializer=FactoryDateSerializer.create(freq, area),
             head_writer=AreaHeadWriter(area, freq),
+            freq=freq,
         )

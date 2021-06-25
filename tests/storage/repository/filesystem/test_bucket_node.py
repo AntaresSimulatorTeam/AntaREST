@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 from antarest.storage.repository.filesystem.bucket_node import BucketNode
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 
 
 def build_bucket(tmp: Path) -> Path:
@@ -19,8 +20,17 @@ def build_bucket(tmp: Path) -> Path:
 def test_get_bucket(tmp_path: Path):
     file = build_bucket(tmp_path)
 
+    resolver = Mock()
+    resolver.build_studyfile_uri.side_effect = [
+        "fileA.txt",
+        "fileB.txt",
+        "fileC.txt",
+    ]
+
+    context = ContextServer(resolver=resolver, matrix=Mock())
+
     node = BucketNode(
-        config=StudyConfig(study_path=file, study_id="id"), context=Mock()
+        config=StudyConfig(study_path=file, study_id="id"), context=context
     )
 
     assert node.get(["fileA.txt"]) == "Content A"

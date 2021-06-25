@@ -17,11 +17,9 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         self,
         context: ContextServer,
         config: StudyConfig,
-        url_prefix: str,
     ) -> None:
         self.context = context
         self.config = config
-        self.url_prefix = url_prefix
 
     def get(
         self,
@@ -30,22 +28,19 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         expanded: bool = False,
     ) -> G:
         self._assert_url_end(url)
-        if expanded:
-            if self.config.path.exists():
+
+        if self.config.path.exists():
+            if expanded:
                 return self.context.resolver.build_studyfile_uri(
                     self.config.path, self.config.study_id
                 )
             else:
-                path = self.get_link_path()
-                return path.read_text()
-        else:
-            if self.config.path.exists():
                 return self.load(url, depth, expanded)
-            else:
-                path = self.get_link_path()
-                return self.context.resolver.resolve(path.read_text())
+        else:
+            data = self.get_link_path().read_text()
+            return data if expanded else self.context.resolver.resolve(data)
 
-    def get_link_path(self):
+    def get_link_path(self) -> Path:
         path = self.config.path.parent / (self.config.path.name + ".link")
         return path
 
@@ -53,12 +48,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         self._assert_url_end(url)
 
         if isinstance(data, str) and f"studyfile://" in data:
-            src = self.context.resolver.resolve(data)
-            if src != self.config.path:
-                self.config.path.parent.mkdir(exist_ok=True, parents=True)
-                shutil.copyfile(src, self.config.path)
-            return None
-
+            data = self.context.resolver.resolve(data)
         return self.dump(data, url)
 
     @abstractmethod

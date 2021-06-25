@@ -40,7 +40,8 @@ def test_get(tmp_path: Path):
         context=Mock(),
         config=config,
         date_serializer=serializer,
-        head_writer=AreaHeadWriter("", ""),
+        head_writer=AreaHeadWriter(area="", freq=""),
+        freq="",
     )
     assert node.load() == matrix.to_dict(orient="split")
 
@@ -65,6 +66,7 @@ def test_save(tmp_path: Path):
         config=config,
         date_serializer=serializer,
         head_writer=AreaHeadWriter(area="de", freq="hourly"),
+        freq="",
     )
 
     matrix = pd.DataFrame(
