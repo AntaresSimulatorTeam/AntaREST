@@ -22,11 +22,11 @@ class RawFileNode(LazyNode[str, str, str]):
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-    ) -> str:
-        return self.config.path.read_text()
+    ) -> bytes:
+        return self.config.path.read_bytes()
 
-    def dump(self, data: str, url: Optional[List[str]] = None) -> None:
-        self.config.path.write_text(data)
+    def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
+        self.config.path.write_bytes(data)
 
     def check_errors(
         self, data: str, url: Optional[List[str]] = None, raising: bool = False

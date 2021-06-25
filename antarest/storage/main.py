@@ -34,7 +34,7 @@ def build_storage(
     storage_service: Optional[StorageService] = None,
     patch_service: Optional[PatchService] = None,
     event_bus: IEventBus = DummyEventBusService(),
-) -> StorageService:
+) -> StorageService:  # TODO: remove study_factory from signature
     """
     Storage module linking dependencies.
 
@@ -55,7 +55,7 @@ def build_storage(
 
     path_resources = config.resources_path
 
-    resolver = UriResolverService(config)
+    resolver = UriResolverService(config, matrix_service=matrix_service)
     study_factory = StudyFactory(matrix=matrix_service, resolver=resolver)
     exporter = exporter or Exporter()
     metadata_repository = metadata_repository or StudyMetadataRepository()

@@ -146,7 +146,7 @@ class StorageService:
 
         """
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.F)
+        self._assert_permission(params.user, study, StudyPermissionType.RUN)
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)

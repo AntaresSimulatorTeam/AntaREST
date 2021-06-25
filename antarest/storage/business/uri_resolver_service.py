@@ -1,10 +1,11 @@
 import re
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
-from antarest.common.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
+from antarest.common.jwt import DEFAULT_ADMIN_USER
+from antarest.common.requests import RequestParameters
 from antarest.matrixstore.service import MatrixService
 from antarest.storage.model import DEFAULT_WORKSPACE_NAME
 
@@ -12,13 +13,14 @@ from antarest.storage.model import DEFAULT_WORKSPACE_NAME
 class UriResolverService:
     def __init__(self, config: Config, matrix_service: MatrixService):
         self.config = config
-        self.storage_service = None
+        # StorageService must be injected after the class creation to avoid circular injection
+        self.storage_service = None  # type: ignore
         self.matrix_service = matrix_service
 
     def resolve(self, uri: str) -> Union[str, JSON]:
         match = re.match(r"^(\w+)://([\w-]+)/?(.*)$", uri)
         if not match:
-            return
+            raise ValueError("Pattern Uri not found")
 
         protocol = match.group(1)
         id = match.group(2)
@@ -40,17 +42,21 @@ class UriResolverService:
             }
         raise ValueError(f"id matrix {id} not found")
 
-    def _resolve_studyfile(self, id: str, path: str) -> str:
+    def _get_path(self, study_id: str) -> Path:
+        if self.storage_service is not None:
+            return self.storage_service.get_study_path(
+                study_id, RequestParameters(user=DEFAULT_ADMIN_USER)
+            )
+        else:
+            raise NotImplementedError("Storage service is not injected")
+
+    def _resolve_studyfile(self, id: str, path: str) -> bytes:
         file = self._get_path(id) / path
         if file.exists():
-            return file.read_text()
+            print(file)
+            return file.read_bytes()
         else:
             raise ValueError(f"File Not Found {file.absolute()}")
-
-    def _get_path(self, study_id: str) -> Path:
-        return self.storage_service.get_study_path(
-            study_id, DEFAULT_ADMIN_USER
-        )
 
     def build_studyfile_uri(self, path: Path, study_id: str) -> str:
         # extract path after study id
@@ -63,4 +69,12 @@ class UriResolverService:
 
     def is_managed(self, study_id) -> bool:
         default = self.config.storage.workspaces[DEFAULT_WORKSPACE_NAME]
-        return default in self.storage_service.get_study_path(study_id).parts
+        if self.storage_service is not None:
+            return (
+                default
+                in self.storage_service.get_study_path(
+                    study_id, RequestParameters(user=DEFAULT_ADMIN_USER)
+                ).parts
+            )
+        else:
+            raise NotImplementedError("Storage service is not injected")

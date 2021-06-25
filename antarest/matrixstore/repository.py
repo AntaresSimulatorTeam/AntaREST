@@ -85,4 +85,5 @@ class MatrixContentRepository:
 
     def delete(self, id: str) -> None:
         file = self.bucket / id
-        file.unlink(missing_ok=True)
+        if file.exists():
+            file.unlink()

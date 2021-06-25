@@ -349,7 +349,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
         (
             "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/links/de/fr",
             {
-                "values-hourly": "matrix://...../economy/mc-inde/0001/links/de - fr/values-hourly.txt"
+                "values-hourly": "studyfile://STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/links/de - fr/values-hourly.txt"
             },
         ),
         (
@@ -408,7 +408,6 @@ def test_sta_mini_copy(storage_service) -> None:
         storage_service=storage_service,
         matrix_service=Mock(),
         config=storage_service.study_service.config,
-        study_factory=StudyFactory(matrix=Mock(), resolver=Mock()),
     )
     client = TestClient(app)
     result = client.post(

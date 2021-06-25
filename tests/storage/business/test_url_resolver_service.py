@@ -1,10 +1,12 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+from antarest.common.config import Config
 from antarest.common.jwt import DEFAULT_ADMIN_USER
+from antarest.common.requests import RequestParameters
 from antarest.matrixstore.model import MatrixDTO, MatrixFreq
-from antarest.matrixstore.service import MatrixService
 from antarest.storage.business.uri_resolver_service import UriResolverService
+from antarest.storage.service import StorageService
 
 MOCK_MATRIX_JSON = {
     "index": ["1", "2"],
@@ -46,7 +48,7 @@ def test_resolve_file(tmp_path: Path):
 
     assert "File Content" == resolver.resolve("studyfile://my-study/my/file")
     storage_service.get_study_path.assert_called_once_with(
-        "my-study", DEFAULT_ADMIN_USER
+        "my-study", RequestParameters(user=DEFAULT_ADMIN_USER)
     )
 
 
@@ -58,3 +60,26 @@ def test_resolve_matrix():
 
     assert MOCK_MATRIX_JSON == resolver.resolve("matrix://my-id")
     matrix_service.get.assert_called_once_with("my-id")
+
+
+def test_is_managed():
+    params = RequestParameters(user=DEFAULT_ADMIN_USER)
+
+    study_id = "study_id"
+    config = Config()
+    config.storage.workspaces["default"] = "default_workspace"
+
+    resolver = UriResolverService(config=config, matrix_service=Mock())
+    resolver.storage_service = Mock(spec=StorageService)
+    resolver.storage_service.get_study_path.return_value = (
+        Path("default_workspace") / study_id
+    )
+
+    expected_output = True
+
+    output = resolver.is_managed(study_id=study_id)
+
+    assert output == expected_output
+    resolver.storage_service.get_study_path.assert_called_once_with(
+        study_id, params
+    )
