@@ -1,86 +1,57 @@
 import React, { useEffect, useState } from 'react';
-import ReactDataSheet from 'react-datasheet';
-import 'react-datasheet/lib/react-datasheet.css';
-// import "./styles.css";
-// import jspreadsheet from 'jspreadsheet-ce';
+import { HotTable, HotColumn } from '@handsontable/react';
+import { createStyles, makeStyles } from '@material-ui/core';
 import { MatrixType } from '../../../../common/types';
-import theme from '../../../../App/theme';
-// import './jexcel.css';
-// import './jsuites.css';
+import 'handsontable/dist/handsontable.min.css';
+
+const useStyles = makeStyles(() => createStyles({
+  root: {
+    width: '100%',
+    height: '100%',
+    overflow: 'auto',
+  },
+}));
 
 interface PropTypes {
   data: MatrixType;
 }
 
-type CellType = Array<{value: number | string; readOnly: boolean | undefined}>
+type CellType = Array<number | string | boolean>;
+type ColumnsType = {title: string; readOnly: boolean};
 
-/* export default function MatrixView(props: PropTypes) {
-  // eslint-disable-next-line react/destructuring-assignment
-  const { data = [], columns = [], index = [] } = props.data;
-  const jRef = useRef(null);
-
-  const prependIndex = index.length > 0 && typeof index[0] === 'string';
-  const options = {
-    data: prependIndex ? data.map((row, i) => [index[i]].concat(row)) : data,
-    columns: (prependIndex ? [{ title: 'Time', width: 100, type: 'string' }] : []).concat(
-      columns.map((title) => ({ title: String(title), width: 100, type: 'number' })),
-    ),
-  };
-
-  useEffect(() => {
-    if (jRef === null) return;
-
-    const { current } = jRef;
-    if (current === null) return;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!(current as any).jspreadsheet) {
-      jspreadsheet(jRef.current, options);
-    }
-  }, [options]);
-
-  return (
-    <div>
-      <div ref={jRef} />
-    </div>
-  );
-}
-*/
 export default function MatrixView(props: PropTypes) {
   // eslint-disable-next-line react/destructuring-assignment
   const { data = [], columns = [], index = [] } = props.data;
+  const classes = useStyles();
   const prependIndex = index.length > 0 && typeof index[0] === 'string';
   const [grid, setGrid] = useState<Array<CellType>>([]);
+  const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
 
   useEffect(() => {
-    const columns_data: CellType = (prependIndex ? [{ value: 'Time', readOnly: true }] : []).concat(
-      columns.map((title) => ({ value: String(title), readOnly: true })),
+    const columnsData: Array<ColumnsType> = (prependIndex ? [{ title: 'Time', readOnly: false }] : []).concat(
+      columns.map((title) => ({ title: String(title), readOnly: false })),
     );
-    const tmp_grid = [columns_data];
-    const tmp_data = data.map((row, i) => {
-      const tmp_row = row.map((item) => ({ value: item, readOnly: false }));
+    setColumns(columnsData);
 
-      return (
-        prependIndex ? [{ value: index[i], readOnly: true }].concat(tmp_row) : tmp_row
-      );
-    });
-    tmp_grid.concat(tmp_data);
-    setGrid(tmp_grid.concat(tmp_data));
+    const tmpData = data.map((row, i) => (
+      prependIndex ? [index[i]].concat(row) : row
+    ));
+    setGrid(tmpData);
   }, [columns, data, index, prependIndex]);
 
   return (
-    <div>
-      <ReactDataSheet
+    <div className={classes.root}>
+      <HotTable
         data={grid}
-        valueRenderer={(cell) => cell.value}
-        onCellsChanged={(changes) => {
-          const new_grid = grid.map((row) => [...row]);
-          changes.forEach(({ cell, row, col, value }) => {
-            new_grid[row][col] = value ? { value, readOnly: false } : new_grid[row][col];
-          });
-          setGrid(new_grid);
-        }}
-      />
+        licenseKey="non-commercial-and-evaluation"
+        width="100%"
+        height="100%"
+      >
+        {
+          formatedColumns.map((column) =>
+            <HotColumn key={column.title} settings={column} />)
+        }
+      </HotTable>
     </div>
   );
 }
