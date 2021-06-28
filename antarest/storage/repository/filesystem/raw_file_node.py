@@ -26,6 +26,7 @@ class RawFileNode(LazyNode[str, str, str]):
         return self.config.path.read_bytes()
 
     def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
+        self.config.path.parent.mkdir(exist_ok=True, parents=True)
         self.config.path.write_bytes(data)
 
     def check_errors(

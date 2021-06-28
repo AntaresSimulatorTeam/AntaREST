@@ -14,7 +14,7 @@ class BucketNode(FolderNode):
 
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
         for key, value in data.items():
-            if isinstance(value, bytes):
+            if isinstance(value, (str, bytes)):
                 RawFileNode(self.context, self.config.next_file(key)).save(
                     value
                 )
