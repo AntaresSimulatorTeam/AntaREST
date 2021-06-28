@@ -4,16 +4,43 @@ import logging
 import os
 from typing import Optional, List
 
-from sqlalchemy import exists  # type: ignore
+from sqlalchemy import exists, and_  # type: ignore
 
 from antarest.common.config import Config
 from antarest.common.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import (
     Matrix,
     MatrixFreq,
-    MatrixContent,
+    MatrixContent, MatrixMetadataOwnership,
 )
 
+
+class MatrixMetadataOwnershipRepository:
+    """
+    Database connector to manage Matrix metadata entity
+    """
+
+    def __init__(self) -> None:
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+    def save(self, matrix_ownership: MatrixMetadataOwnership) -> Matrix:
+        res = db.session.query(exists().where(and_(MatrixMetadataOwnership.id == matrix_ownership.id, MatrixMetadataOwnership.owner_id == matrix_ownership.owner_id))).scalar()
+        if res:
+            db.session.merge(matrix_ownership)
+        else:
+            db.session.add(matrix_ownership)
+        db.session.commit()
+
+        self.logger.debug(f"Matrix ownership between matrix {matrix_ownership.matrix_id} and {matrix_ownership.owner_id} saved")
+        return matrix_ownership
+
+    def get(self, matrix_id: str, owner_id: int) -> Optional[MatrixMetadataOwnership]:
+        matrix: MatrixMetadataOwnership = db.session.query(MatrixMetadataOwnership).get(id)
+        return matrix
+
+    def exists(self, id: str) -> bool:
+        res: bool = db.session.query(exists().where(Matrix.id == id)).scalar()
+        return res
 
 class MatrixRepository:
     """
@@ -21,7 +48,8 @@ class MatrixRepository:
     """
 
     def __init__(self) -> None:
-        self.logger = logging.Logger(self.__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.info("Hello")
 
     def save(self, matrix: Matrix) -> Matrix:
         res = db.session.query(exists().where(Matrix.id == matrix.id)).scalar()

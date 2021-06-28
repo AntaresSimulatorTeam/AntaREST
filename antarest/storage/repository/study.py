@@ -11,7 +11,7 @@ class StudyMetadataRepository:
     """
 
     def __init__(self) -> None:
-        self.logger = logging.Logger(self.__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def save(self, metadata: Study) -> Study:
         metadata.groups = [db.session.merge(g) for g in metadata.groups]

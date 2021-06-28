@@ -61,7 +61,7 @@ class Study(Base):  # type: ignore
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True)
     owner = relationship(Identity, uselist=False)
     groups = relationship(
-        "Group", secondary=lambda: groups_metadata, cascade=""
+        Group, secondary=lambda: groups_metadata, cascade=""
     )
 
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}

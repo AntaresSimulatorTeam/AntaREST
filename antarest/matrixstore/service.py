@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 from antarest.matrixstore.model import (
     MatrixDTO,
@@ -53,6 +53,18 @@ class MatrixService:
         self.repo.save(matrix)
 
         return matrix.id
+
+    def update_metadata(self, user_id: str, metadata: Dict[str, str]):
+        pass
+
+    def add_group(self, user_id: str, group_id: str):
+        pass
+
+    def remove_group(self, user_id: str, group_id:str):
+        pass
+
+    def set_public(self, user_id: str, public_status: bool):
+        pass
 
     def get(self, id: str) -> Optional[MatrixDTO]:
         data = self.repo_content.get(id)
