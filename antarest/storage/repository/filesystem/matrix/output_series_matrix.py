@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional, List, cast
 
 import numpy as np  # type: ignore
@@ -38,16 +39,9 @@ class OutputSeriesMatrix(MatrixNode):
     def build(self, config: StudyConfig) -> TREE:
         pass  # End of tree
 
-    def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> SUB_JSON:
+    def parse(self, path: Path) -> SUB_JSON:
 
-        df = pd.read_csv(
-            self.config.path, sep="\t", skiprows=4, na_values="N/A"
-        )
+        df = pd.read_csv(path, sep="\t", skiprows=4, na_values="N/A")
 
         date, body = self.date_serializer.extract_date(df)
 
@@ -63,7 +57,7 @@ class OutputSeriesMatrix(MatrixNode):
 
         return cast(JSON, matrix.to_dict(orient="split"))
 
-    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
+    def format(self, data: JSON, path: Path) -> None:
         df = pd.DataFrame(**data)
 
         headers = pd.DataFrame(df.columns.values.tolist()).T
@@ -78,7 +72,7 @@ class OutputSeriesMatrix(MatrixNode):
         self.config.path.write_text(head)
 
         matrix.to_csv(
-            open(self.config.path, "a", newline="\n"),
+            open(path, "a", newline="\n"),
             sep="\t",
             index=False,
             header=False,

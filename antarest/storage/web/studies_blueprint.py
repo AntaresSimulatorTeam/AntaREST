@@ -266,6 +266,11 @@ def create_study_routes(
         parameters = RequestParameters(user=current_user)
         output = storage_service.get(uuid, path, depth, parameters)
 
+        try:
+            output = output.decode("utf-8")  # try to encode
+        except:
+            pass
+
         json_response = json.dumps(
             output,
             ensure_ascii=False,

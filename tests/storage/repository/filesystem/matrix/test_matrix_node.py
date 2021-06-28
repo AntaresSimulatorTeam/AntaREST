@@ -17,16 +17,11 @@ class MockMatrixNode(MatrixNode):
     def __init__(self, context: ContextServer, config: StudyConfig) -> None:
         super().__init__(config=config, context=context, freq="annual")
 
-    def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> str:
+    def parse(self, path: Path) -> JSON:
         return "Mock Content Matrix"
 
-    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
-        json.dump(data, self.config.path.open("w"))
+    def format(self, data: JSON, path: Path) -> None:
+        json.dump(data, path.open("w"))
 
     def build(self, config: StudyConfig) -> TREE:
         pass  # not used
@@ -128,6 +123,7 @@ def test_save_no_managed_content(tmp_path: Path):
 
     resolver = Mock()
     resolver.is_managed.return_value = False
+    resolver.resolve.return_value = MOCK_MATRIX_JSON
 
     config = StudyConfig(study_path=file, study_id="my-study")
 

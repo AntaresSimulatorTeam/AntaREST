@@ -209,7 +209,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/prepro/fr/energy",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
@@ -237,7 +237,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/series",
@@ -258,15 +258,15 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/misc-gen/miscgen-fr",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/reserves/fr",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/prepro/fr/k",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/series/solar_fr",
@@ -274,7 +274,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/prepro/fr/k",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/series/wind_fr",
@@ -296,11 +296,11 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
     [
         (
             "/v1/studies/STA-mini/raw?path=output/3/annualSystemCost",
-            "EXP : 185808000\nSTD : 0\nMIN : 185808000\nMAX : 185808000\n",
+            b"EXP : 185808000\nSTD : 0\nMIN : 185808000\nMAX : 185808000\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/checkIntegrity",
-            """1.85808475215665e+08
+            b"""1.85808475215665e+08
 0.00000000000000e+00
 1.85808475215665e+08
 1.85808475215665e+08
@@ -312,23 +312,19 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/4/simulation-comments",
-            "",
-        ),
-        (
-            "/v1/studies/STA-mini/raw?path=output/2/simulation",
-            simulation_log,
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/about-the-study/areas",
-            "DE\nES\nFR\nIT\n",
+            b"DE\r\nES\r\nFR\r\nIT\r\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/2/about-the-study/comments",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/3/about-the-study/links",
-            "de\n\tfr\nes\n\tfr\nfr\n\tit\nit\n",
+            b"de\n\tfr\nes\n\tfr\nfr\n\tit\nit\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/4/about-the-study/parameters/general/horizon",
@@ -340,7 +336,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/economy/mc-all/grid/areas",
-            "id\tname\nde\tDE\nes\tES\nfr\tFR\nit\tIT\n",
+            b"id\tname\nde\tDE\nes\tES\nfr\tFR\nit\tIT\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/economy/mc-all/links/de/fr",
@@ -362,23 +358,23 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/de",
-            "size:1x1\n1\n",
+            b"size:1x1\n1\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/load/de",
-            "size:1x1\n1\n",
+            b"size:1x1\n1\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/solar/de",
-            "size:1x1\n1\n",
+            b"size:1x1\n1\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/wind/de",
-            "size:1x1\n1\n",
+            b"size:1x1\n1\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/thermal/de/07_gas",
-            "size:1x1\n1\n",
+            b"size:1x1\n1\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/info/general/version",
@@ -550,17 +546,17 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         (
             "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/de,fr/",
             {
-                "de": "size:1x1\n1\n",
-                "fr": "size:1x1\n1\n",
+                "de": b"size:1x1\n1\n",
+                "fr": b"size:1x1\n1\n",
             },
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/*/",
             {
-                "de": "size:1x1\n1\n",
-                "fr": "size:1x1\n1\n",
-                "it": "size:1x1\n1\n",
-                "es": "size:1x1\n1\n",
+                "de": b"size:1x1\n1\n",
+                "fr": b"size:1x1\n1\n",
+                "it": b"size:1x1\n1\n",
+                "es": b"size:1x1\n1\n",
             },
         ),
     ],

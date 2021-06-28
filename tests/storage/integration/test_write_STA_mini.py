@@ -157,11 +157,11 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
-            "write something",
+            b"write something",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/series/load_fr",
@@ -219,7 +219,7 @@ def test_sta_mini_input(storage_service, url: str, new: SUB_JSON):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/4/simulation-comments",
-            "write something",
+            b"write something",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/areas/de/details-annual",

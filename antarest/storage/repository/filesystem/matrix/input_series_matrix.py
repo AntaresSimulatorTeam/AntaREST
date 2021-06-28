@@ -1,4 +1,6 @@
-from typing import Optional, List
+from io import StringIO
+from pathlib import Path
+from typing import Optional, List, IO
 
 import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
@@ -28,15 +30,10 @@ class InputSeriesMatrix(MatrixNode):
     def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
 
-    def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> SUB_JSON:
+    def parse(self, path: Path) -> SUB_JSON:
         try:
             data: JSON = pd.read_csv(
-                self.config.path,
+                path,
                 sep="\t",
                 dtype=float,
                 header=None,
@@ -45,9 +42,20 @@ class InputSeriesMatrix(MatrixNode):
         except EmptyDataError:
             return {}
 
-    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
+    def format(self, data: SUB_JSON, path: Path) -> None:
         df = pd.DataFrame(**data)
-        df.to_csv(self.config.path, sep="\t", header=False, index=False)
+        df.to_csv(path, sep="\t", header=False, index=False)
+
+    def load(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> SUB_JSON:
+        return self.parse(self.config.path)
+
+    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
+        self.format(data, self.config.path)
 
     def check_errors(
         self,

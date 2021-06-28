@@ -26,8 +26,17 @@ def test_build_studyfile_uri():
     path = Path() / "my-study/my/file"
 
     resolver = UriResolverService(config=Mock(), matrix_service=Mock())
-    res = resolver.build_studyfile_uri(path, "my-study")
-    assert "studyfile://my-study/my/file" == res
+    res = resolver.build_studyfile_uri(path, "my-study", "my-id")
+    assert "studyfile://my-id/my/file" == res
+
+
+def test_resolve_file_parsed():
+    path = Path() / "my-study/my/file"
+
+    resolver = UriResolverService(config=Mock(), matrix_service=Mock())
+    res = resolver.build_studyfile_uri(
+        path, "my-study", "my-id", parser=lambda x: "Mock Matrix Content"
+    )
 
 
 def test_build_matrix_uri():
@@ -46,10 +55,29 @@ def test_resolve_file(tmp_path: Path):
     resolver = UriResolverService(config=Mock(), matrix_service=Mock())
     resolver.storage_service = storage_service
 
-    assert "File Content" == resolver.resolve("studyfile://my-study/my/file")
+    assert b"File Content" == resolver.resolve("studyfile://my-study/my/file")
     storage_service.get_study_path.assert_called_once_with(
         "my-study", RequestParameters(user=DEFAULT_ADMIN_USER)
     )
+
+
+def test_resolve_file_parsed(tmp_path: Path):
+    file = tmp_path / "my-study/my/file"
+    file.parent.mkdir(parents=True)
+    file.touch()
+
+    storage_service = Mock()
+    storage_service.get_study_path.return_value = tmp_path / "my-study"
+
+    resolver = UriResolverService(config=Mock(), matrix_service=Mock())
+    resolver.storage_service = storage_service
+
+    res = resolver.resolve(
+        "studyfile://my-study/my/file",
+        parser=lambda x: "Mock Matrix Content",
+    )
+
+    assert res == "Mock Matrix Content"
 
 
 def test_resolve_matrix():

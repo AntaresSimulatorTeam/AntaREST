@@ -31,14 +31,19 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
 
         if self.config.path.exists():
             if expanded:
-                return self.context.resolver.build_studyfile_uri(
-                    self.config.path, self.config.study_id
-                )
+                return self.get_uri()
             else:
                 return self.load(url, depth, expanded)
         else:
             data = self.get_link_path().read_text()
             return data if expanded else self.context.resolver.resolve(data)
+
+    def get_uri(self) -> str:
+        return self.context.resolver.build_studyfile_uri(
+            self.config.path,
+            self.config.root_path,
+            self.config.study_id,
+        )
 
     def get_link_path(self) -> Path:
         path = self.config.path.parent / (self.config.path.name + ".link")

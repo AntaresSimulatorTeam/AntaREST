@@ -12,7 +12,7 @@ def test_get(tmp_path: Path) -> None:
     file.write_text("Hello")
 
     node = RawFileNode(context=Mock(), config=StudyConfig(file, study_id="id"))
-    assert node.get() == "Hello"
+    assert node.get() == b"Hello"
 
 
 def test_validate(tmp_path: Path) -> None:
@@ -38,5 +38,5 @@ def test_save(tmp_path: Path) -> None:
     node = RawFileNode(
         context=Mock(), config=StudyConfig(study_path=file, study_id="id")
     )
-    node.save("Hello")
+    node.save(b"Hello")
     assert file.read_text() == "Hello"

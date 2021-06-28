@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Union, Optional
+from typing import Union, Optional, Callable
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
@@ -17,7 +17,9 @@ class UriResolverService:
         self.storage_service = None  # type: ignore
         self.matrix_service = matrix_service
 
-    def resolve(self, uri: str) -> Union[str, JSON]:
+    def resolve(
+        self, uri: str, parser: Optional[Callable[[Path], JSON]] = None
+    ) -> Union[bytes, JSON]:
         match = re.match(r"^(\w+)://([\w-]+)/?(.*)$", uri)
         if not match:
             raise ValueError("Pattern Uri not found")
@@ -27,7 +29,7 @@ class UriResolverService:
         path = match.group(3)
 
         if protocol == "studyfile":
-            return self._resolve_studyfile(id, path)
+            return self._resolve_studyfile(id, path, parser)
         if protocol == "matrix":
             return self._resolve_matrix(id)
         raise NotImplementedError(f"protocol {protocol} not implemented")
@@ -50,17 +52,23 @@ class UriResolverService:
         else:
             raise NotImplementedError("Storage service is not injected")
 
-    def _resolve_studyfile(self, id: str, path: str) -> bytes:
+    def _resolve_studyfile(
+        self,
+        id: str,
+        path: str,
+        parser: Optional[Callable[[Path], JSON]] = None,
+    ) -> Union[JSON, bytes]:
         file = self._get_path(id) / path
         if file.exists():
-            print(file)
-            return file.read_bytes()
+            return parser(file) if parser else file.read_bytes()
         else:
             raise ValueError(f"File Not Found {file.absolute()}")
 
-    def build_studyfile_uri(self, path: Path, study_id: str) -> str:
+    def build_studyfile_uri(
+        self, path: Path, root_path: Path, study_id: str
+    ) -> str:
         # extract path after study id
-        relative_path = str(path.absolute()).split(f"{study_id}/")[1]
+        relative_path = str(path.absolute()).split(f"{root_path}/")[1]
         uri = f"studyfile://{study_id}/{relative_path}"
         return uri
 
