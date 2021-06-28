@@ -38,7 +38,9 @@ def test_save():
     )
 
     # Test
-    service = MatrixService(repo=repo, content=repo_content)
+    service = MatrixService(
+        repo=repo, repo_meta=Mock(), content=repo_content, user_service=Mock()
+    )
     id = service.create(dto)
 
     # Verify
@@ -63,6 +65,8 @@ def test_get():
         created_at=datetime.datetime.fromtimestamp(42),
     )
 
+    repo_meta = Mock()
+
     # Expected
     exp = MatrixDTO(
         id="my-id",
@@ -75,7 +79,7 @@ def test_get():
     )
 
     # Test
-    service = MatrixService(repo, content)
+    service = MatrixService(repo, repo_meta, content, Mock())
     res = service.get("my-id")
     assert exp == res
 
@@ -97,6 +101,8 @@ def test_get_by_type_freq():
         )
     ]
 
+    repo_meta = Mock()
+
     # Expected
     exp = MatrixDTO(
         id="my-id",
@@ -109,7 +115,7 @@ def test_get_by_type_freq():
     )
 
     # Test
-    service = MatrixService(repo, content)
+    service = MatrixService(repo, repo_meta, content, Mock())
     res = service.get_by_freq(freq=MatrixFreq.WEEKLY)
     assert [exp] == res
     repo.get_by_freq.assert_called_once_with(MatrixFreq.WEEKLY)
@@ -118,8 +124,9 @@ def test_get_by_type_freq():
 def test_delete():
     content = Mock()
     repo = Mock()
+    repo_meta = Mock()
 
-    service = MatrixService(repo, content)
+    service = MatrixService(repo, repo_meta, content, Mock())
     service.delete("my-id")
     content.delete.assert_called_once_with("my-id")
     repo.delete.assert_called_once_with("my-id")

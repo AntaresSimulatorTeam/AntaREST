@@ -103,6 +103,16 @@ class JWTUser:
         """
         return bool(self.impersonator == user.id)
 
+    def is_or_impersonate(self, user_id: int) -> bool:
+        """
+        Check if the current identity if a bot of or the user itself
+        Args:
+            user_id: the user id to check if it's been impersonated or himself
+
+        Returns: true if the user is (or impersonnated) by the current identity
+        """
+        return self.id == user_id or self.impersonator == user_id
+
 
 DEFAULT_ADMIN_USER = JWTUser(
     id=1,

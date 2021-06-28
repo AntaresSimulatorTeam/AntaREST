@@ -232,10 +232,7 @@ def fastapi_app(
         event_bus=event_bus,
     )
 
-    build_matrixstore(
-        application,
-        config,
-    )
+    build_matrixstore(application, config, user_service)
 
     return application
 

@@ -11,11 +11,12 @@ from antarest.common.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import (
     Matrix,
     MatrixFreq,
-    MatrixContent, MatrixMetadataOwnership,
+    MatrixContent,
+    MatrixUserMetadata,
 )
 
 
-class MatrixMetadataOwnershipRepository:
+class MatrixMetadataRepository:
     """
     Database connector to manage Matrix metadata entity
     """
@@ -23,24 +24,37 @@ class MatrixMetadataOwnershipRepository:
     def __init__(self) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def save(self, matrix_ownership: MatrixMetadataOwnership) -> Matrix:
-        res = db.session.query(exists().where(and_(MatrixMetadataOwnership.id == matrix_ownership.id, MatrixMetadataOwnership.owner_id == matrix_ownership.owner_id))).scalar()
+    def save(
+        self, matrix_user_metadata: MatrixUserMetadata
+    ) -> MatrixUserMetadata:
+        res = db.session.query(
+            exists().where(
+                and_(
+                    MatrixUserMetadata.id == matrix_user_metadata.id,
+                    MatrixUserMetadata.owner_id
+                    == matrix_user_metadata.owner_id,
+                )
+            )
+        ).scalar()
         if res:
-            db.session.merge(matrix_ownership)
+            db.session.merge(matrix_user_metadata)
         else:
-            db.session.add(matrix_ownership)
+            db.session.add(matrix_user_metadata)
         db.session.commit()
 
-        self.logger.debug(f"Matrix ownership between matrix {matrix_ownership.matrix_id} and {matrix_ownership.owner_id} saved")
-        return matrix_ownership
+        self.logger.debug(
+            f"Matrix ownership between matrix {matrix_user_metadata.matrix_id} and {matrix_user_metadata.owner_id} saved"
+        )
+        return matrix_user_metadata
 
-    def get(self, matrix_id: str, owner_id: int) -> Optional[MatrixMetadataOwnership]:
-        matrix: MatrixMetadataOwnership = db.session.query(MatrixMetadataOwnership).get(id)
+    def get(
+        self, matrix_id: str, owner_id: int
+    ) -> Optional[MatrixUserMetadata]:
+        matrix: MatrixUserMetadata = db.session.query(MatrixUserMetadata).get(
+            {"matrix_id": matrix_id, "owner_id": owner_id}
+        )
         return matrix
 
-    def exists(self, id: str) -> bool:
-        res: bool = db.session.query(exists().where(Matrix.id == id)).scalar()
-        return res
 
 class MatrixRepository:
     """
