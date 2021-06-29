@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, unmountComponentAtNode } from 'react-dom';
 import { screen } from '@testing-library/react';
-import StudyBlockSummaryView from './index';
+import StudyBlockSummaryView from './StudyBlockSummaryView';
 
 /** ******************************************* */
 /* Test                                         */

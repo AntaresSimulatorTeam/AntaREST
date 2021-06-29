@@ -1,7 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { makeStyles, createStyles } from '@material-ui/core';
+import { makeStyles, createStyles, Button } from '@material-ui/core';
+import ListIcon from '@material-ui/icons/List';
+import ViewCompactIcon from '@material-ui/icons/ViewCompact';
 import debug from 'debug';
 import { AppState } from '../reducers';
 import StudyCreationTools from '../../components/StudyCreationTools';
@@ -12,6 +14,7 @@ import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
 import StudySearchTool from '../../components/StudySearchTool';
 import { StudyMetadata } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
+import theme from '../theme';
 
 const logError = debug('antares:studymanagement:error');
 
@@ -23,6 +26,20 @@ const useStyles = makeStyles(() => createStyles({
   },
   header: {
     borderBottom: '1px solid #d7d7d7',
+  },
+  view: {
+    display: 'flex',
+    flexFLow: 'row nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    padding: '0px 10px',
+  },
+  viewButton: {
+    color: theme.palette.primary.main,
+  },
+  viewIcon: {
+    width: '35px',
+    height: '35px',
   },
 }));
 
@@ -45,6 +62,7 @@ const StudyManagement = (props: PropTypes) => {
   const classes = useStyles();
   const [filteredStudies, setFilteredStudies] = useState<StudyMetadata[]>(studies);
   const [loaded, setLoaded] = useState(true);
+  const [isList, setViewState] = useState(true);
 
   const init = async () => {
     setLoaded(false);
@@ -72,10 +90,20 @@ const StudyManagement = (props: PropTypes) => {
     <div className={classes.root}>
       <div className={classes.header}>
         <StudyCreationTools />
-        <StudySearchTool setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
+        <div className={classes.view}>
+          <StudySearchTool setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
+          <Button
+            className={classes.viewButton}
+            onClick={() => setViewState(!isList)}
+          >
+            {
+              isList ? <ViewCompactIcon className={classes.viewIcon} /> : <ListIcon className={classes.viewIcon} />
+            }
+          </Button>
+        </div>
       </div>
       {!loaded && <MainContentLoader />}
-      {loaded && studies && <StudyListing studies={filteredStudies} />}
+      {loaded && studies && <StudyListing studies={filteredStudies} isList={isList} />}
     </div>
   );
 };
