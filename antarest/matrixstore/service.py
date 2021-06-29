@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+from http import HTTPStatus
 from typing import List, Optional, Tuple, Dict, Any
 
 from fastapi import HTTPException
@@ -8,8 +9,9 @@ from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.login.model import Group
+from antarest.login.model import Group, GroupDTO
 from antarest.login.service import LoginService
+from antarest.matrixstore.exceptions import MetadataKeyNotAllowed
 from antarest.matrixstore.model import (
     MatrixDTO,
     MatrixFreq,
@@ -85,7 +87,9 @@ class MatrixService:
     ) -> MatrixUserMetadata:
         if not params.user or not params.user.is_or_impersonate(user_id):
             raise UserHasNotPermissionError()
-        valid_metadata = self._strip_metadata_reserved_keys(metadata)
+        valid_metadata = MatrixUserMetadata.strip_metadata_reserved_keys(
+            metadata, raise_exception=True
+        )
         user_meta = MatrixUserMetadata(
             matrix_id=matrix_id,
             owner_id=user_id,
@@ -135,14 +139,14 @@ class MatrixService:
 
         user_meta = self.repo_meta.get(matrix_id, user_id)
         if not user_meta:
-            raise HTTPException(status_code=404)
+            user_meta = MatrixUserMetadata(
+                matrix_id=matrix_id,
+                owner_id=user_id,
+                metadata_={},
+            )
 
-        new_meta = user_meta.metadata_
-        new_meta[key] = value
-        user_meta = MatrixUserMetadata(
-            matrix_id=matrix_id,
-            owner_id=user_id,
-            metadata_=new_meta,
+        user_meta.metadata_[key] = MatrixMetadata(
+            matrix_id=matrix_id, owner_id=user_id, key=key, value=value
         )
         return self.repo_meta.save(user_meta)
 
@@ -193,36 +197,19 @@ class MatrixService:
             query.name, query.metadata, query.owner
         )
         return [
-            MatrixMetadataDTO(
-                id=metadata.matrix_id,
-                name=metadata.metadata_.get("name", None),
-                groups=[group for group in metadata.groups],
-                public=metadata.is_public(),
-                metadata=self._strip_metadata_reserved_keys(
-                    metadata.metadata_
-                ),
-            )
+            metadata.to_dto()
             for metadata in users_metadata
             if metadata.is_public()
+            or user.is_or_impersonate(metadata.owner_id)
             or len(
-                [group for group in metadata.groups if group.id in user.groups]
+                [
+                    group
+                    for group in metadata.groups
+                    if group.id in [jwtgroup.id for jwtgroup in user.groups]
+                ]
             )
             > 0
         ]
-
-    def _strip_metadata_reserved_keys(
-        self, metadata: Dict[str, Any], raise_exception: bool = False
-    ) -> Dict[str, Any]:
-        stripped = {
-            key: metadata[key]
-            for key in metadata.keys()
-            if key not in MATRIX_METADATA_RESERVED_KEYS
-        }
-        if raise_exception and len(stripped.keys()) != len(metadata.keys()):
-            raise Exception(
-                f"Cannot use reserved key {MATRIX_METADATA_RESERVED_KEYS}"
-            )
-        return stripped
 
     def get(self, id: str) -> Optional[MatrixDTO]:
         data = self.repo_content.get(id)

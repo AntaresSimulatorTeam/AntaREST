@@ -311,6 +311,40 @@ def test_matrix(app: FastAPI):
     assert res.status_code == 200
     assert res.json() == [stored]
 
+    matrix_id = stored["id"]
+
+    res = client.put(
+        f"/v1/matrix/{matrix_id}/metadata?name=test",
+        json={"foo": "bar"},
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == {
+        "id": matrix_id,
+        "name": "test",
+        "metadata": {"foo": "bar"},
+        "public": False,
+        "groups": [],
+    }
+
+    res = client.post(
+        f"/v1/matrix/_search",
+        json={"name": "te"},
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == [
+        {
+            "id": matrix_id,
+            "name": "test",
+            "metadata": {"foo": "bar"},
+            "public": False,
+            "groups": [],
+        }
+    ]
+
 
 def test_area_management(app: FastAPI):
     client = TestClient(app, raise_server_exceptions=False)

@@ -239,6 +239,12 @@ class Group(Base):  # type: ignore
     def to_dict(self) -> JSON:
         return {"id": self.id, "name": self.name}
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Group):
+            return False
+
+        return bool(self.id == other.id and self.name == other.name)
+
 
 class RoleCreationDTO(BaseModel):
     type: RoleType

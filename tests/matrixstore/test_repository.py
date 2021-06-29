@@ -87,12 +87,6 @@ def test_metadata():
 
     with db():
         repo = MatrixRepository()
-        m = Matrix(
-            id="hello",
-            freq=MatrixFreq.WEEKLY,
-            created_at=datetime.now(),
-        )
-        repo.save(m)
 
         user_repo = UserRepository(Config(security=SecurityConfig()))
         user_repo.save(User(name="foo", password=Password("bar")))
@@ -101,6 +95,13 @@ def test_metadata():
         group = group_repo.save(Group(name="group"))
 
         meta_repo = MatrixMetadataRepository()
+
+        m = Matrix(
+            id="hello",
+            freq=MatrixFreq.WEEKLY,
+            created_at=datetime.now(),
+        )
+        repo.save(m)
 
         metadata = MatrixMetadata(
             matrix_id="hello", owner_id=1, key="name", value="some ts"
