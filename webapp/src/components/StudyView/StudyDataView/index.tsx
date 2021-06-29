@@ -14,7 +14,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
   study: string;
-  type: 'json' | 'file' | 'matrix';
+  type: 'json' | 'file' | 'matrix' | 'studyfile';
   data: string;
 }
 
@@ -22,7 +22,7 @@ const StudyDataView = (props: PropTypes) => {
   const { study, type, data } = props;
   const classes = useStyles();
   const renderData = () => {
-    if (type === 'file') {
+    if (type === 'file' || type === 'studyfile') {
       return <StudyFileView study={study} url={data} />;
     }
     if (type === 'matrix') {

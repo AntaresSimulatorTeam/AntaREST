@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import { Moment } from 'moment';
 
-export type StudyDataType = 'json' | 'file' | 'matrix';
+export type StudyDataType = 'json' | 'file' | 'studyfile' | 'matrix';
 
 export interface StudyMetadataDTO {
   author: string;
