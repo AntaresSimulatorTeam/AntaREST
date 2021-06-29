@@ -78,6 +78,16 @@ class MatrixService:
 
         return matrix.id
 
+    def get_metadata(
+        self,
+        matrix_id: str,
+        user_id: int,
+        params: RequestParameters,
+    ) -> Optional[MatrixUserMetadata]:
+        if not params.user or not params.user.is_or_impersonate(user_id):
+            raise UserHasNotPermissionError()
+        return self.repo_meta.get(matrix_id, user_id)
+
     def update_metadata(
         self,
         matrix_id: str,

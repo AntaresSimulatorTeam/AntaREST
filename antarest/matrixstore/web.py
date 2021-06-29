@@ -69,18 +69,18 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         request_params = RequestParameters(user=user)
-        result: Optional[MatrixUserMetadata] = None
         if metadata is not None:
-            result = service.update_metadata(
-                id, user.id, metadata, request_params
-            )
+            service.update_metadata(id, user.id, metadata, request_params)
         if name is not None:
-            result = service.set_name(id, user.id, name, request_params)
+            service.set_name(id, user.id, name, request_params)
         if groups is not None:
-            result = service.update_group(id, user.id, groups, request_params)
+            service.update_group(id, user.id, groups, request_params)
         if public is not None:
-            result = service.set_public(id, user.id, public, request_params)
-        return result.to_dto() if result else None
+            service.set_public(id, user.id, public, request_params)
+        result = service.get_metadata(
+            matrix_id=id, user_id=user.id, params=request_params
+        )
+        return result.to_dto() if result is not None else None
 
     @bp.post("/matrix/_search", tags=[APITag.matrix])
     def query_metadata(
