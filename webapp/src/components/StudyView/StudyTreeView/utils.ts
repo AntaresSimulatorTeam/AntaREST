@@ -19,7 +19,7 @@ export const isJsonLeaf = (studyDataNode: any) => {
     if (
       typeof element !== 'object' &&
       (typeof element !== 'string' ||
-        !(element.startsWith('file://') || element.startsWith('matrix://')))
+        !(element.startsWith('studyfile://') || element.startsWith('matrix://')))
     ) {
       return true;
     }
