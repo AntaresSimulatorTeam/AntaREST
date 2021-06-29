@@ -21,14 +21,20 @@ from antarest.storage.repository.filesystem.root.settings.simulations.simulation
 class Settings(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "resources": Resources(config.next_file("resources")),
-            "simulations": SettingsSimulations(
-                config.next_file("simulations")
+            "resources": Resources(
+                self.context, config.next_file("resources")
             ),
-            "comments": Comments(config.next_file("comments.txt")),
-            "generaldata": GeneralData(config.next_file("generaldata.ini")),
+            "simulations": SettingsSimulations(
+                self.context, config.next_file("simulations")
+            ),
+            "comments": Comments(
+                self.context, config.next_file("comments.txt")
+            ),
+            "generaldata": GeneralData(
+                self.context, config.next_file("generaldata.ini")
+            ),
             "scenariobuilder": ScenarioBuilder(
-                config.next_file("scenariobuilder.dat")
+                self.context, config.next_file("scenariobuilder.dat")
             ),
         }
         return children

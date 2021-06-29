@@ -21,12 +21,20 @@ from antarest.storage.repository.filesystem.root.output.simulation.ts_numbers.wi
 class OutputSimulationTsNumbers(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "hydro": OutputSimulationTsNumbersHydro(config.next_file("hydro")),
-            "load": OutputSimulationTsNumbersLoad(config.next_file("load")),
-            "solar": OutputSimulationTsNumbersSolar(config.next_file("solar")),
-            "wind": OutputSimulationTsNumbersWind(config.next_file("wind")),
+            "hydro": OutputSimulationTsNumbersHydro(
+                self.context, config.next_file("hydro")
+            ),
+            "load": OutputSimulationTsNumbersLoad(
+                self.context, config.next_file("load")
+            ),
+            "solar": OutputSimulationTsNumbersSolar(
+                self.context, config.next_file("solar")
+            ),
+            "wind": OutputSimulationTsNumbersWind(
+                self.context, config.next_file("wind")
+            ),
             "thermal": OutputSimulationTsNumbersThermal(
-                config.next_file("thermal")
+                self.context, config.next_file("thermal")
             ),
         }
         return children

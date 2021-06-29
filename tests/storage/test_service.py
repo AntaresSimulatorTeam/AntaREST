@@ -266,6 +266,7 @@ def test_download_output() -> None:
     )
     config = StudyConfig(
         study_path=input_study.path,
+        study_id="",
         areas={"east": area},
         sets={"north": Set()},
         outputs={"output-id": sim},

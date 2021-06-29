@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 from antarest.common.custom_types import JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import INode, TREE
+from antarest.storage.repository.filesystem.context import ContextServer
 
 
 class FilterError(Exception):
@@ -21,8 +22,9 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
     Strucuture is implemented in antarest.storage.repository.filesystem.root
     """
 
-    def __init__(self, config: StudyConfig) -> None:
+    def __init__(self, context: ContextServer, config: StudyConfig) -> None:
         self.config = config
+        self.context = context
 
     @abstractmethod
     def build(self, config: StudyConfig) -> TREE:

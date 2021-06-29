@@ -13,10 +13,10 @@ class OutputSimulationModeMcIndScn(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "areas": OutputSimulationModeMcIndScnAreas(
-                config.next_file("areas")
+                self.context, config.next_file("areas")
             ),
             "links": OutputSimulationModeMcIndScnLinks(
-                config.next_file("links")
+                self.context, config.next_file("links")
             ),
         }
         return children

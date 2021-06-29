@@ -1,4 +1,5 @@
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
 
 
@@ -19,7 +20,7 @@ class InputAreasOptimization(IniFileNode):
     filter-year-by-year = hourly, weekly, annual
     """
 
-    def __init__(self, config: StudyConfig):
+    def __init__(self, context: ContextServer, config: StudyConfig):
         types = {
             "nodal optimization": {
                 "non-dispatchable-power": bool,
@@ -30,4 +31,4 @@ class InputAreasOptimization(IniFileNode):
             },
             "filtering": {"filter-synthesis": str, "filter-year-by-year": str},
         }
-        IniFileNode.__init__(self, config, types)
+        IniFileNode.__init__(self, context, config, types)

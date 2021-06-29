@@ -1,4 +1,5 @@
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
 
 
@@ -23,7 +24,7 @@ class InputAreasUi(IniFileNode):
     0 = 0 , 128 , 255
     """
 
-    def __init__(self, config: StudyConfig):
+    def __init__(self, context: ContextServer, config: StudyConfig):
         types = {
             "ui": {
                 "x": int,
@@ -37,4 +38,4 @@ class InputAreasUi(IniFileNode):
             "layerY": {"0": int},
             "layerColor": {"0": str},
         }
-        IniFileNode.__init__(self, config, types)
+        IniFileNode.__init__(self, context, config, types)

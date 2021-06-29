@@ -12,12 +12,14 @@ from antarest.storage.repository.filesystem.root.input.bindingconstraints.item i
 class BindingConstraints(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            bind: BindingConstraintsItem(config.next_file(f"{bind}.txt"))
+            bind: BindingConstraintsItem(
+                self.context, config.next_file(f"{bind}.txt")
+            )
             for bind in config.bindings
         }
 
         children["bindingconstraints"] = BindingConstraintsIni(
-            config.next_file("bindingconstraints.ini")
+            self.context, config.next_file("bindingconstraints.ini")
         )
 
         return children

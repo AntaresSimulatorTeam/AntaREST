@@ -1,9 +1,10 @@
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
 
 
 class InputSolarPreproCorrelation(IniFileNode):
-    def __init__(self, config: StudyConfig):
+    def __init__(self, context: ContextServer, config: StudyConfig):
         types = {
             "general": {"mode": str},
             "0": {},
@@ -19,4 +20,4 @@ class InputSolarPreproCorrelation(IniFileNode):
             "10": {},
             "11": {},
         }
-        IniFileNode.__init__(self, config, types)
+        IniFileNode.__init__(self, context, config, types)

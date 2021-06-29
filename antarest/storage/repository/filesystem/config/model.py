@@ -111,6 +111,7 @@ class StudyConfig(DTO):
     def __init__(
         self,
         study_path: Path,
+        study_id: str,
         areas: Optional[Dict[str, Area]] = None,
         sets: Optional[Dict[str, Set]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
@@ -124,10 +125,12 @@ class StudyConfig(DTO):
         self.outputs = outputs or dict()
         self.bindings = bindings or list()
         self.store_new_set = store_new_set
+        self.study_id = study_id
 
     def next_file(self, name: str) -> "StudyConfig":
         copy = StudyConfig(
             self.root_path,
+            self.study_id,
             self.areas,
             self.sets,
             self.outputs,

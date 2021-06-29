@@ -1,4 +1,5 @@
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
 
 
@@ -14,7 +15,7 @@ class Desktop(IniFileNode):
     infotip = Antares Study7.0: STA-mini
     """
 
-    def __init__(self, config: StudyConfig):
+    def __init__(self, context: ContextServer, config: StudyConfig):
         types = {
             ".shellclassinfo": {
                 "iconfile": str,
@@ -23,4 +24,4 @@ class Desktop(IniFileNode):
             }
         }
 
-        IniFileNode.__init__(self, config, types=types)
+        IniFileNode.__init__(self, context, config, types=types)

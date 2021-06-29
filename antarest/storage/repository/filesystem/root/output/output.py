@@ -10,7 +10,7 @@ class Output(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             str(s.get_file()): OutputSimulation(
-                config.next_file(s.get_file()), s
+                self.context, config.next_file(s.get_file()), s
             )
             for i, s in config.outputs.items()
         }

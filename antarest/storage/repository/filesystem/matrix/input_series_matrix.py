@@ -1,4 +1,6 @@
-from typing import Optional, List
+from io import StringIO
+from pathlib import Path
+from typing import Optional, List, IO
 
 import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
@@ -7,44 +9,56 @@ from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.lazy_node import LazyNode
+from antarest.storage.repository.filesystem.context import ContextServer
+from antarest.storage.repository.filesystem.matrix.matrix import MatrixNode
 
 
-class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
+class InputSeriesMatrix(MatrixNode):
     """
     Generic node to handle input matrix behavior
     """
 
-    def __init__(self, config: StudyConfig, nb_columns: Optional[int] = None):
-        super().__init__(url_prefix="matrix")
-        self.config = config
+    def __init__(
+        self,
+        context: ContextServer,
+        config: StudyConfig,
+        nb_columns: Optional[int] = None,
+    ):
+        super().__init__(context=context, config=config, freq="hourly")
         self.nb_columns = nb_columns
 
     def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
 
-    def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> SUB_JSON:
+    def parse(self, path: Path) -> SUB_JSON:  # type: ignore
         try:
-            matrix = pd.read_csv(
-                self.config.path,
+            matrix: pd.DataFrame = pd.read_csv(
+                path,
                 sep="\t",
                 dtype=float,
                 header=None,
             )
-            matrix = matrix.where(pd.notna(matrix), None)
+            matrix = matrix.where(pd.notna(matrix), None)  # TODO fillna ?
             data: JSON = matrix.to_dict(orient="split")
 
             return data
         except EmptyDataError:
             return {}
 
-    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
+    def format(self, data: SUB_JSON, path: Path) -> None:
         df = pd.DataFrame(**data)
-        df.to_csv(self.config.path, sep="\t", header=False, index=False)
+        df.to_csv(path, sep="\t", header=False, index=False)
+
+    def load(  # type: ignore
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> SUB_JSON:
+        return self.parse(self.config.path)
+
+    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
+        self.format(data, self.config.path)
 
     def check_errors(
         self,
@@ -52,7 +66,7 @@ class InputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
-        self._assert_url(url)
+        self._assert_url_end(url)
 
         errors = []
         if not self.config.path.exists():

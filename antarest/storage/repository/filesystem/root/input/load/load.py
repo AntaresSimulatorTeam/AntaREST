@@ -12,7 +12,11 @@ from antarest.storage.repository.filesystem.root.input.load.series.series import
 class InputLoad(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "prepro": InputLoadPrepro(config.next_file("prepro")),
-            "series": InputLoadSeries(config.next_file("series")),
+            "prepro": InputLoadPrepro(
+                self.context, config.next_file("prepro")
+            ),
+            "series": InputLoadSeries(
+                self.context, config.next_file("series")
+            ),
         }
         return children

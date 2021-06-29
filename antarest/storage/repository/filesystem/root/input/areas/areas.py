@@ -15,8 +15,13 @@ from antarest.storage.repository.filesystem.root.input.areas.sets import (
 class InputAreas(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            a: InputAreasItem(config.next_file(a)) for a in config.area_names()
+            a: InputAreasItem(self.context, config.next_file(a))
+            for a in config.area_names()
         }
-        children["list"] = InputAreasList(config.next_file("list.txt"))
-        children["sets"] = InputAreasSets(config.next_file("sets.ini"))
+        children["list"] = InputAreasList(
+            self.context, config.next_file("list.txt")
+        )
+        children["sets"] = InputAreasSets(
+            self.context, config.next_file("sets.ini")
+        )
         return children

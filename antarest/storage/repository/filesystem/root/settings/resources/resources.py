@@ -8,5 +8,7 @@ from antarest.storage.repository.filesystem.root.settings.resources.study_ico im
 
 class Resources(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
-        children: TREE = {"study": StudyIcon(config.next_file("study.ico"))}
+        children: TREE = {
+            "study": StudyIcon(self.context, config.next_file("study.ico"))
+        }
         return children

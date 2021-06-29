@@ -5,10 +5,12 @@ from fastapi import FastAPI
 from antarest.common.config import Config
 from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.login.service import LoginService
+from antarest.matrixstore.service import MatrixService
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.patch_service import PatchService
 from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.uri_resolver_service import UriResolverService
 from antarest.storage.business.watcher import Watcher
 from antarest.storage.repository.antares_io.exporter.export_file import (
     Exporter,
@@ -26,8 +28,8 @@ def build_storage(
     application: FastAPI,
     config: Config,
     user_service: LoginService,
+    matrix_service: MatrixService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
-    study_factory: Optional[StudyFactory] = None,
     exporter: Optional[Exporter] = None,
     storage_service: Optional[StorageService] = None,
     patch_service: Optional[PatchService] = None,
@@ -52,7 +54,9 @@ def build_storage(
     """
 
     path_resources = config.resources_path
-    study_factory = study_factory or StudyFactory()
+
+    resolver = UriResolverService(config, matrix_service=matrix_service)
+    study_factory = StudyFactory(matrix=matrix_service, resolver=resolver)
     exporter = exporter or Exporter()
     metadata_repository = metadata_repository or StudyMetadataRepository()
 
@@ -82,6 +86,8 @@ def build_storage(
         repository=metadata_repository,
         event_bus=event_bus,
     )
+
+    resolver.storage_service = storage_service  # type: ignore
 
     watcher = Watcher(config=config, service=storage_service)
     watcher.start()

@@ -306,7 +306,7 @@ class StudyDownloader:
         )
         study_path = study_service.get_study_path(study)
         config, study_root = study_service.study_factory.create_from_fs(
-            study_path
+            study_path, study.id
         )
 
         if config.outputs and output_id in config.outputs:

@@ -40,6 +40,7 @@ def test_version() -> None:
         storage_service=mock_storage_service,
         config=Config(),
         user_service=Mock(),
+        matrix_service=Mock(),
     )
     client = TestClient(app)
 
@@ -62,6 +63,7 @@ def test_get_matrix() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
     )
     client = TestClient(app)
 

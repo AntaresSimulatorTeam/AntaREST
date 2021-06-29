@@ -22,15 +22,19 @@ class InputSolarPreproArea(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "conversion": InputSolarPreproAreaConversation(
-                config.next_file("conversion.txt")
+                self.context, config.next_file("conversion.txt")
             ),
-            "data": InputSolarPreproAreaData(config.next_file("data.txt")),
-            "k": InputSolarPreproAreaK(config.next_file("k.txt")),
+            "data": InputSolarPreproAreaData(
+                self.context, config.next_file("data.txt")
+            ),
+            "k": InputSolarPreproAreaK(
+                self.context, config.next_file("k.txt")
+            ),
             "translation": InputSolarPreproAreaTranslation(
-                config.next_file("translation.txt")
+                self.context, config.next_file("translation.txt")
             ),
             "settings": InputSolarPreproAreaSettings(
-                config.next_file("settings.ini")
+                self.context, config.next_file("settings.ini")
             ),
         }
         return children

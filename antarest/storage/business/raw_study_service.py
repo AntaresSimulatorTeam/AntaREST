@@ -78,7 +78,7 @@ class RawStudyService:
             fallback_on_default: use default values in case of failure
         """
         path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(path)
+        _, study = self.study_factory.create_from_fs(path, study_id="")
         try:
             raw_meta = study.get(["study", "antares"])
             metadata.name = raw_meta["caption"]
@@ -109,7 +109,7 @@ class RawStudyService:
 
         """
         path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(path)
+        _, study = self.study_factory.create_from_fs(path, metadata.id)
         return study.check_errors(study.get())
 
     def study_exists(self, metadata: RawStudy) -> bool:
@@ -134,7 +134,7 @@ class RawStudyService:
         """
         self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
-        return self.study_factory.create_from_fs(study_path)
+        return self.study_factory.create_from_fs(study_path, metadata.id)
 
     def get(self, metadata: RawStudy, url: str = "", depth: int = 3) -> JSON:
         """
@@ -147,7 +147,10 @@ class RawStudyService:
         Returns: study data formatted in json
 
         """
-        _, study = self.get_study(metadata)
+        self.check_study_exists(metadata)
+        study_path = self.get_study_path(metadata)
+
+        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         parts = [item for item in url.split("/") if item]
 
         data = study.get(parts, depth=depth)
@@ -167,7 +170,9 @@ class RawStudyService:
 
         """
         file_settings = {}
-        config = StudyConfig(study_path=self.get_study_path(study))
+        config = StudyConfig(
+            study_path=self.get_study_path(study), study_id=""
+        )
         raw_study = self.study_factory.create_from_config(config)
         file_metadata = raw_study.get(url=["study", "antares"])
         patch_metadata = self.patch_service.get(study).study or PatchStudy()
@@ -250,7 +255,7 @@ class RawStudyService:
         study_data = self.get(metadata, url="", depth=10)
         StorageServiceUtils.update_antares_info(metadata, study_data)
 
-        _, study = self.study_factory.create_from_fs(path_study)
+        _, study = self.study_factory.create_from_fs(path_study, metadata.id)
         study.save(study_data["study"], url=["study"])
 
         metadata.path = str(path_study)
@@ -269,7 +274,9 @@ class RawStudyService:
         self.check_study_exists(src_meta)
         src_path = self.get_study_path(src_meta)
 
-        config, study = self.study_factory.create_from_fs(src_path)
+        config, study = self.study_factory.create_from_fs(
+            src_path, src_meta.id
+        )
         data_source = study.get()
         del study
 
@@ -329,7 +336,7 @@ class RawStudyService:
         self.check_study_exists(metadata)
 
         study_path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(study_path)
+        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         study.save(new, url.split("/"))  # type: ignore
         del study
         return new
@@ -363,7 +370,9 @@ class RawStudyService:
 
         """
         study_path = self.get_study_path(study)
-        config, raw_study = self.study_factory.create_from_fs(study_path)
+        config, raw_study = self.study_factory.create_from_fs(
+            study_path, study.id
+        )
         patch_metadata = self.patch_service.get(study)
         results: List[StudySimResultDTO] = []
         if config.outputs is not None:

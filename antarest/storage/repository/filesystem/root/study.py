@@ -22,16 +22,20 @@ class Study(FolderNode):
 
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "Desktop": Desktop(config.next_file("Desktop.ini")),
-            "study": StudyAntares(config.next_file("study.antares")),
-            "settings": Settings(config.next_file("settings")),
-            "layers": Layers(config.next_file("layers")),
-            "logs": Logs(config.next_file("logs")),
-            "input": Input(config.next_file("input")),
-            "user": User(config.next_file("user")),
+            "Desktop": Desktop(self.context, config.next_file("Desktop.ini")),
+            "study": StudyAntares(
+                self.context, config.next_file("study.antares")
+            ),
+            "settings": Settings(self.context, config.next_file("settings")),
+            "layers": Layers(self.context, config.next_file("layers")),
+            "logs": Logs(self.context, config.next_file("logs")),
+            "input": Input(self.context, config.next_file("input")),
+            "user": User(self.context, config.next_file("user")),
         }
 
         if config.outputs:
-            children["output"] = Output(config.next_file("output"))
+            children["output"] = Output(
+                self.context, config.next_file("output")
+            )
 
         return children
