@@ -68,7 +68,9 @@ class UriResolverService:
         self, path: Path, root_path: Path, study_id: str
     ) -> str:
         # extract path after study id
-        relative_path = str(path.absolute()).split(f"{root_path}/")[1]
+        root_length = len(root_path.absolute().parts)
+        relative_parts = path.absolute().parts[root_length:]
+        relative_path = "/".join(relative_parts)
         uri = f"studyfile://{study_id}/{relative_path}"
         return uri
 

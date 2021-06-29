@@ -26,7 +26,7 @@ def test_build_studyfile_uri():
     path = Path() / "my-study/my/file"
 
     resolver = UriResolverService(config=Mock(), matrix_service=Mock())
-    res = resolver.build_studyfile_uri(path, "my-study", "my-id")
+    res = resolver.build_studyfile_uri(path, Path("my-study"), "my-id")
     assert "studyfile://my-id/my/file" == res
 
 
