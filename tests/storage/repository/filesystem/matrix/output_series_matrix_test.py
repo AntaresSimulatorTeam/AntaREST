@@ -15,7 +15,7 @@ from antarest.storage.repository.filesystem.matrix.output_series_matrix import (
 def test_get(tmp_path: Path):
     file = tmp_path / "matrix-daily.txt"
     file.write_text("\n\n\n\nmock\tfile")
-    config = StudyConfig(study_path=file)
+    config = StudyConfig(study_path=file, study_id="id")
 
     serializer = Mock()
     serializer.extract_date.return_value = (
@@ -36,13 +36,19 @@ def test_get(tmp_path: Path):
         index=["01/02", "01/01"],
     )
 
-    node = OutputSeriesMatrix(config, serializer, AreaHeadWriter("", ""))
+    node = OutputSeriesMatrix(
+        context=Mock(),
+        config=config,
+        date_serializer=serializer,
+        head_writer=AreaHeadWriter(area="", freq=""),
+        freq="",
+    )
     assert node.load() == matrix.to_dict(orient="split")
 
 
 def test_save(tmp_path: Path):
     file = tmp_path / "matrix-daily.txt"
-    config = StudyConfig(study_path=file)
+    config = StudyConfig(study_path=file, study_id="id")
 
     serializer = Mock()
     serializer.build_date.return_value = pd.DataFrame(
@@ -56,7 +62,11 @@ def test_save(tmp_path: Path):
     )
 
     node = OutputSeriesMatrix(
-        config, serializer, AreaHeadWriter(area="de", freq="hourly")
+        context=Mock(),
+        config=config,
+        date_serializer=serializer,
+        head_writer=AreaHeadWriter(area="de", freq="hourly"),
+        freq="",
     )
 
     matrix = pd.DataFrame(

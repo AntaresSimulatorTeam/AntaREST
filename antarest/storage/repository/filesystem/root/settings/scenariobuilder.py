@@ -1,11 +1,12 @@
 from typing import Dict, Type
 
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
 
 
 class ScenarioBuilder(IniFileNode):
-    def __init__(self, config: StudyConfig):
+    def __init__(self, context: ContextServer, config: StudyConfig):
         self.config = config
 
         rules: Dict[str, Type[int]] = dict()
@@ -15,7 +16,10 @@ class ScenarioBuilder(IniFileNode):
             self._add_thermal(area, rules)
 
         IniFileNode.__init__(
-            self, config=config, types={"Default Ruleset": rules}
+            self,
+            context=context,
+            config=config,
+            types={"Default Ruleset": rules},
         )
 
     def _add_thermal(self, area: str, rules: Dict[str, Type[int]]) -> None:

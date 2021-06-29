@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Tuple
+from unittest.mock import Mock
 
 import pytest
 
@@ -40,7 +41,9 @@ def test_get(tmp_path: str) -> None:
         "part2": {"key_bool": True, "key_bool2": False},
     }
     node = IniFileNode(
-        StudyConfig(path, areas=dict(), outputs=dict()), types=types
+        context=Mock(),
+        config=StudyConfig(path, areas=dict(), outputs=dict(), study_id="id"),
+        types=types,
     )
     assert node.get([]) == expected_json
     assert node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
@@ -56,7 +59,9 @@ def test_get_depth(tmp_path: str) -> None:
         "part2": {},
     }
     node = IniFileNode(
-        StudyConfig(path, areas=dict(), outputs=dict()), types=types
+        context=Mock(),
+        config=StudyConfig(path, areas=dict(), outputs=dict(), study_id="id"),
+        types=types,
     )
     assert node.get(depth=1) == expected_json
 
@@ -65,7 +70,11 @@ def test_get_depth(tmp_path: str) -> None:
 def test_validate_section():
     data = {"section": {"params": 42}}
 
-    node = IniFileNode(config=StudyConfig(Path()), types={"wrong-section": {}})
+    node = IniFileNode(
+        context=Mock(),
+        config=StudyConfig(Path(), study_id="id"),
+        types={"wrong-section": {}},
+    )
     assert node.check_errors(data=data) == [
         "section wrong-section not in IniFileNode"
     ]
@@ -73,7 +82,9 @@ def test_validate_section():
         node.check_errors(data, raising=True)
 
     node = IniFileNode(
-        config=StudyConfig(Path()), types={"section": {"wrong-params": 42}}
+        context=Mock(),
+        config=StudyConfig(Path(), study_id="id"),
+        types={"section": {"wrong-params": 42}},
     )
     assert node.check_errors(data=data) == [
         "param wrong-params of section section not in IniFileNode"
@@ -82,7 +93,9 @@ def test_validate_section():
         node.check_errors(data, raising=True)
 
     node = IniFileNode(
-        config=StudyConfig(Path()), types={"section": {"params": str}}
+        context=Mock(),
+        config=StudyConfig(Path(), study_id="id"),
+        types={"section": {"params": str}},
     )
     assert node.check_errors(data=data) == [
         "param params of section section in IniFileNode bad type"
@@ -110,7 +123,9 @@ key_float = 3.14
     types = {"part1": {"key_int": int, "key_float": float, "key_str": str}}
 
     node = IniFileNode(
-        StudyConfig(path, areas=dict(), outputs=dict()), types=types
+        context=Mock(),
+        config=StudyConfig(path, study_id="id", areas=dict(), outputs=dict()),
+        types=types,
     )
     data = {
         "part1": {"key_int": 10, "key_str": "value10", "key_float": 2.1},

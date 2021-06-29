@@ -9,7 +9,9 @@ from antarest.storage.repository.filesystem.root.input.thermal.series.area.area 
 class InputThermalSeries(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            a: InputThermalSeriesArea(config.next_file(a), area=a)
+            a: InputThermalSeriesArea(
+                self.context, config.next_file(a), area=a
+            )
             for a in config.area_names()
         }
         return children

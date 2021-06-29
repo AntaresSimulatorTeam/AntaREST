@@ -2,6 +2,7 @@ from antarest.storage.repository.filesystem.config.model import (
     StudyConfig,
     Simulation,
 )
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.folder_node import FolderNode
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.root.output.simulation.mode.mcall.mcall import (
@@ -13,8 +14,13 @@ from antarest.storage.repository.filesystem.root.output.simulation.mode.mcind.mc
 
 
 class OutputSimulationMode(FolderNode):
-    def __init__(self, config: StudyConfig, simulation: Simulation):
-        FolderNode.__init__(self, config)
+    def __init__(
+        self,
+        context: ContextServer,
+        config: StudyConfig,
+        simulation: Simulation,
+    ):
+        FolderNode.__init__(self, context, config)
         self.simulation = simulation
 
     def build(self, config: StudyConfig) -> TREE:
@@ -22,11 +28,11 @@ class OutputSimulationMode(FolderNode):
 
         if self.simulation.by_year:
             children["mc-ind"] = OutputSimulationModeMcInd(
-                config.next_file("mc-ind"), self.simulation
+                self.context, config.next_file("mc-ind"), self.simulation
             )
         if self.simulation.synthesis:
             children["mc-all"] = OutputSimulationModeMcAll(
-                config.next_file("mc-all")
+                self.context, config.next_file("mc-all")
             )
 
         return children

@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import Mock
 
 from antarest.storage.repository.filesystem.config.model import (
     Area,
@@ -93,7 +94,10 @@ def test_get(tmp_path: Path):
     }
 
     node = ScenarioBuilder(
-        StudyConfig(study_path=path, areas=areas, outputs=dict())
+        context=Mock(),
+        config=StudyConfig(
+            study_path=path, areas=areas, outputs=dict(), study_id="id"
+        ),
     )
 
     assert node.get(["Default Ruleset", "t,it,0,09_hydro_pump"]) == 1

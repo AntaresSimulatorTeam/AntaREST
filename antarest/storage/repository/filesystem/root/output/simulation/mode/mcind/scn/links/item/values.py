@@ -1,4 +1,5 @@
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.matrix.date_serializer import (
     FactoryDateSerializer,
 )
@@ -11,9 +12,18 @@ from antarest.storage.repository.filesystem.matrix.output_series_matrix import (
 
 
 class OutputSimulationModeMcIndScnLinksItemValues(OutputSeriesMatrix):
-    def __init__(self, config: StudyConfig, freq: str, src: str, dest: str):
+    def __init__(
+        self,
+        context: ContextServer,
+        config: StudyConfig,
+        freq: str,
+        src: str,
+        dest: str,
+    ):
         super(OutputSimulationModeMcIndScnLinksItemValues, self).__init__(
+            context=context,
             config=config,
             date_serializer=FactoryDateSerializer.create(freq, src),
             head_writer=LinkHeadWriter(src, dest, freq),
+            freq=freq,
         )

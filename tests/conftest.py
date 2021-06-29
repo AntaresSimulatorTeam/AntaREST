@@ -31,8 +31,9 @@ def _assert_list(a: list, b: list) -> None:
 
 
 def _assert_pointer_path(a: str, b: str) -> None:
-    # path must share the same 15 last characters to be set as equals
-    if a[-15:] != b[-15:]:
+    # pointer is like studyfile://study-id/a/b/c
+    # we should compare a/b/c only
+    if a.split("/")[4:] != b.split("/")[4:]:
         raise AssertionError(f"element in study not the same {a} != {b}")
 
 
@@ -49,8 +50,8 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
     elif (
         isinstance(a, str)
         and isinstance(b, str)
-        and ("file://" in a or "matrix://" in a)
-        and ("file://" in b or "matrix://" in b)
+        and "studyfile://" in a
+        and "studyfile://" in b
     ):
         _assert_pointer_path(a, b)
     else:

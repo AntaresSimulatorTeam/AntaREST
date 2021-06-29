@@ -79,6 +79,7 @@ def storage_service(
     storage_service = build_storage(
         application=Mock(),
         user_service=Mock(),
+        matrix_service=Mock(),
         config=config,
         metadata_repository=repo,
     )

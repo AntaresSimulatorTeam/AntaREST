@@ -10,7 +10,7 @@ class InputSolarSeries(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             f"solar_{a}": InputSolarSeriesArea(
-                config.next_file(f"solar_{a}.txt")
+                self.context, config.next_file(f"solar_{a}.txt")
             )
             for a in config.area_names()
         }

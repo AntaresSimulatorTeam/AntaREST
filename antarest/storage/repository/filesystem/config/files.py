@@ -24,11 +24,12 @@ class ConfigPathBuilder:
     """
 
     @staticmethod
-    def build(study_path: Path) -> "StudyConfig":
+    def build(study_path: Path, study_id: str) -> "StudyConfig":
         """
-        Extract data from filesystel to build config study.
+        Extract data from filesystem to build config study.
         Args:
             study_path: study_path with files inside.
+            study_id: uuid of the study
 
         Returns: study config fill with data
 
@@ -37,6 +38,7 @@ class ConfigPathBuilder:
 
         return StudyConfig(
             study_path=study_path,
+            study_id=study_id,
             areas=ConfigPathBuilder._parse_areas(study_path),
             sets=ConfigPathBuilder._parse_sets(study_path),
             outputs=ConfigPathBuilder._parse_outputs(study_path),

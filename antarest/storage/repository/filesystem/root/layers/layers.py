@@ -8,5 +8,7 @@ from antarest.storage.repository.filesystem.root.layers.layer_ini import (
 
 class Layers(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
-        children: TREE = {"layers": LayersIni(config.next_file("layers.ini"))}
+        children: TREE = {
+            "layers": LayersIni(self.context, config.next_file("layers.ini"))
+        }
         return children

@@ -1,4 +1,5 @@
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.folder_node import FolderNode
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.root.output.simulation.mode.mcind.scn.areas.item.values import (
@@ -7,8 +8,8 @@ from antarest.storage.repository.filesystem.root.output.simulation.mode.mcind.sc
 
 
 class OutputSimulationModeMcIndScnAreasSet(FolderNode):
-    def __init__(self, config: StudyConfig, set: str):
-        FolderNode.__init__(self, config)
+    def __init__(self, context: ContextServer, config: StudyConfig, set: str):
+        FolderNode.__init__(self, context, config)
         self.set = set
 
     def build(self, config: StudyConfig) -> TREE:
@@ -16,7 +17,10 @@ class OutputSimulationModeMcIndScnAreasSet(FolderNode):
 
         for timing in config.get_filters_year(self.set):
             children[f"values-{timing}"] = Values(
-                config.next_file(f"values-{timing}.txt"), timing, self.set
+                self.context,
+                config.next_file(f"values-{timing}.txt"),
+                timing,
+                self.set,
             )
 
         return children

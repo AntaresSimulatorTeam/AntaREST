@@ -1,41 +1,57 @@
-import React, { useEffect, useRef } from 'react';
-import jspreadsheet from 'jspreadsheet-ce';
+import React, { useEffect, useState } from 'react';
+import { HotTable, HotColumn } from '@handsontable/react';
+import { createStyles, makeStyles } from '@material-ui/core';
 import { MatrixType } from '../../../../common/types';
-import './jexcel.css';
-import './jsuites.css';
+import 'handsontable/dist/handsontable.min.css';
+
+const useStyles = makeStyles(() => createStyles({
+  root: {
+    width: '100%',
+    height: '100%',
+    overflow: 'auto',
+  },
+}));
 
 interface PropTypes {
   data: MatrixType;
 }
 
+type CellType = Array<number | string | boolean>;
+type ColumnsType = {title: string; readOnly: boolean};
+
 export default function MatrixView(props: PropTypes) {
   // eslint-disable-next-line react/destructuring-assignment
   const { data = [], columns = [], index = [] } = props.data;
-  const jRef = useRef(null);
-
+  const classes = useStyles();
   const prependIndex = index.length > 0 && typeof index[0] === 'string';
-  const options = {
-    data: prependIndex ? data.map((row, i) => [index[i]].concat(row)) : data,
-    columns: (prependIndex ? [{ title: 'Time', width: 100, type: 'string' }] : []).concat(
-      columns.map((title) => ({ title: String(title), width: 100, type: 'number' })),
-    ),
-  };
+  const [grid, setGrid] = useState<Array<CellType>>([]);
+  const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
 
   useEffect(() => {
-    if (jRef === null) return;
+    const columnsData: Array<ColumnsType> = (prependIndex ? [{ title: 'Time', readOnly: false }] : []).concat(
+      columns.map((title) => ({ title: String(title), readOnly: false })),
+    );
+    setColumns(columnsData);
 
-    const { current } = jRef;
-    if (current === null) return;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!(current as any).jspreadsheet) {
-      jspreadsheet(jRef.current, options);
-    }
-  }, [options]);
+    const tmpData = data.map((row, i) => (
+      prependIndex ? [index[i]].concat(row) : row
+    ));
+    setGrid(tmpData);
+  }, [columns, data, index, prependIndex]);
 
   return (
-    <div>
-      <div ref={jRef} />
+    <div className={classes.root}>
+      <HotTable
+        data={grid}
+        licenseKey="non-commercial-and-evaluation"
+        width="100%"
+        height="100%"
+      >
+        {
+          formatedColumns.map((column) =>
+            <HotColumn key={column.title} settings={column} />)
+        }
+      </HotTable>
     </div>
   );
 }

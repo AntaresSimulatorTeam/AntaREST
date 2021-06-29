@@ -12,7 +12,11 @@ from antarest.storage.repository.filesystem.root.input.solar.series.series impor
 class InputSolar(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "prepro": InputSolarPrepro(config.next_file("prepro")),
-            "series": InputSolarSeries(config.next_file("series")),
+            "prepro": InputSolarPrepro(
+                self.context, config.next_file("prepro")
+            ),
+            "series": InputSolarSeries(
+                self.context, config.next_file("series")
+            ),
         }
         return children

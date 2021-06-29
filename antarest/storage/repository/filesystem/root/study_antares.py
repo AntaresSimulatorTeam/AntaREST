@@ -1,4 +1,5 @@
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
 
 
@@ -17,7 +18,7 @@ class StudyAntares(IniFileNode):
 
     """
 
-    def __init__(self, config: StudyConfig):
+    def __init__(self, context: ContextServer, config: StudyConfig):
         types = {
             "antares": {
                 "version": int,
@@ -27,4 +28,4 @@ class StudyAntares(IniFileNode):
                 "author": str,
             }
         }
-        IniFileNode.__init__(self, config, types=types)
+        IniFileNode.__init__(self, context, config, types=types)

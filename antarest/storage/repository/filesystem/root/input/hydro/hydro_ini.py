@@ -1,9 +1,10 @@
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
 
 
 class InputHydroIni(IniFileNode):
-    def __init__(self, config: StudyConfig):
+    def __init__(self, context: ContextServer, config: StudyConfig):
         sections = [
             "inter-daily-breakdown",
             "intra-daily-modulation",
@@ -16,4 +17,4 @@ class InputHydroIni(IniFileNode):
         section = {a: (int, float) for a in config.area_names()}
         types = {name: section for name in sections}
 
-        IniFileNode.__init__(self, config, types)
+        IniFileNode.__init__(self, context, config, types)

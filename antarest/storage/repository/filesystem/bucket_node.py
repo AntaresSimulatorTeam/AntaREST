@@ -14,21 +14,29 @@ class BucketNode(FolderNode):
 
     def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
         for key, value in data.items():
-            if isinstance(value, str):
-                RawFileNode(self.config.next_file(key)).save(value)
+            if isinstance(value, (str, bytes)):
+                RawFileNode(self.context, self.config.next_file(key)).save(
+                    value  # type: ignore
+                )
             elif isinstance(value, dict):
-                BucketNode(self.config.next_file(key)).save(value)
+                BucketNode(self.context, self.config.next_file(key)).save(
+                    value
+                )
 
     def build(self, config: StudyConfig) -> TREE:
         if not config.path.exists():
             return dict()
 
         children: TREE = {}
-        for item in config.path.iterdir():
+        for item in sorted(config.path.iterdir()):
             if item.is_file():
-                children[item.name] = RawFileNode(config.next_file(item.name))
+                children[item.name] = RawFileNode(
+                    self.context, config.next_file(item.name)
+                )
             else:
-                children[item.name] = BucketNode(config.next_file(item.name))
+                children[item.name] = BucketNode(
+                    self.context, config.next_file(item.name)
+                )
 
         return children
 

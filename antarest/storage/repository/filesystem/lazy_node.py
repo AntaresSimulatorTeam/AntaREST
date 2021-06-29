@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, List, Generic
 
 from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.inode import INode, S, G, V
 
 
@@ -12,9 +13,13 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     Abstract left with implemented a lazy loading for its daughter implementation.
     """
 
-    def __init__(self, url_prefix: str) -> None:
-        self.config = StudyConfig(study_path=Path())
-        self.url_prefix = url_prefix
+    def __init__(
+        self,
+        context: ContextServer,
+        config: StudyConfig,
+    ) -> None:
+        self.context = context
+        self.config = config
 
     def get(
         self,
@@ -22,23 +27,35 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         depth: int = -1,
         expanded: bool = False,
     ) -> G:
-        self._assert_url(url)
-        if expanded:
-            path = str(self.config.path.absolute()).replace("\\", "/")
-            return f"{self.url_prefix}://{path}"  # type: ignore
+        self._assert_url_end(url)
 
-        return self.load(url, depth, expanded)
+        if self.config.path.exists():
+            if expanded:
+                return self.get_uri()  # type: ignore
+            else:
+                return self.load(url, depth, expanded)
+        else:
+            data = self.get_link_path().read_text()
+            return (
+                data if expanded else self.context.resolver.resolve(data)  # type: ignore
+            )  # type ignore
+
+    def get_uri(self) -> str:
+        return self.context.resolver.build_studyfile_uri(
+            self.config.path,
+            self.config.root_path,
+            self.config.study_id,
+        )
+
+    def get_link_path(self) -> Path:
+        path = self.config.path.parent / (self.config.path.name + ".link")
+        return path
 
     def save(self, data: S, url: Optional[List[str]] = None) -> None:
-        self._assert_url(url)
+        self._assert_url_end(url)
 
-        if isinstance(data, str) and f"{self.url_prefix}://" in data:
-            src = Path(data[len(f"{self.url_prefix}://") :])
-            if src != self.config.path:
-                self.config.path.parent.mkdir(exist_ok=True, parents=True)
-                shutil.copyfile(src, self.config.path)
-            return None
-
+        if isinstance(data, str) and f"studyfile://" in data:
+            data = self.context.resolver.resolve(data)  # type: ignore
         return self.dump(data, url)
 
     @abstractmethod

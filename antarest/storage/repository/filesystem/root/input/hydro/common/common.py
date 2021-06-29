@@ -9,6 +9,8 @@ from antarest.storage.repository.filesystem.root.input.hydro.common.capacity.cap
 class InputHydroCommon(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "capacity": InputHydroCommonCapacity(config.next_file("capacity"))
+            "capacity": InputHydroCommonCapacity(
+                self.context, config.next_file("capacity")
+            )
         }
         return children

@@ -12,10 +12,10 @@ from antarest.storage.repository.filesystem.root.input.hydro.prepro.correlation 
 class InputHydroPrepro(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            a: InputHydroPreproArea(config.next_file(a))
+            a: InputHydroPreproArea(self.context, config.next_file(a))
             for a in config.area_names()
         }
         children["correlation"] = InputHydroPreproCorrelation(
-            config.next_file("correlation.ini")
+            self.context, config.next_file("correlation.ini")
         )
         return children

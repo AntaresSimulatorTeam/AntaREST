@@ -12,7 +12,11 @@ from antarest.storage.repository.filesystem.root.input.hydro.series.area.ror imp
 class InputHydroSeriesArea(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            "mod": InputHydroSeriesAreaMod(config.next_file("mod.txt")),
-            "ror": InputHydroSeriesAreaRor(config.next_file("ror.txt")),
+            "mod": InputHydroSeriesAreaMod(
+                self.context, config.next_file("mod.txt")
+            ),
+            "ror": InputHydroSeriesAreaRor(
+                self.context, config.next_file("ror.txt")
+            ),
         }
         return children

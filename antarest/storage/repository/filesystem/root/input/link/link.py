@@ -9,7 +9,7 @@ from antarest.storage.repository.filesystem.root.input.link.area.area import (
 class InputLink(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            a: InputLinkArea(config.next_file(a), area=a)
+            a: InputLinkArea(self.context, config.next_file(a), area=a)
             for a in config.area_names()
         }
         return children

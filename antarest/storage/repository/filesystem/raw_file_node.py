@@ -3,16 +3,16 @@ from typing import List, Optional
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.lazy_node import LazyNode
+from antarest.storage.repository.filesystem.context import ContextServer
 
 
-class RawFileNode(LazyNode[str, str, str]):
+class RawFileNode(LazyNode[bytes, bytes, str]):
     """
     Basic left which handle text file as like with any parsing / serialization
     """
 
-    def __init__(self, config: StudyConfig):
-        LazyNode.__init__(self, url_prefix="file")
-        self.config = config
+    def __init__(self, context: ContextServer, config: StudyConfig):
+        LazyNode.__init__(self, config=config, context=context)
 
     def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
@@ -22,11 +22,12 @@ class RawFileNode(LazyNode[str, str, str]):
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-    ) -> str:
-        return self.config.path.read_text()
+    ) -> bytes:
+        return self.config.path.read_bytes()
 
-    def dump(self, data: str, url: Optional[List[str]] = None) -> None:
-        self.config.path.write_text(data)
+    def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
+        self.config.path.parent.mkdir(exist_ok=True, parents=True)
+        self.config.path.write_bytes(data)
 
     def check_errors(
         self, data: str, url: Optional[List[str]] = None, raising: bool = False

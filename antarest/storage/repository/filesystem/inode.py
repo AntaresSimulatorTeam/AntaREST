@@ -75,7 +75,7 @@ class INode(ABC, Generic[G, S, V]):
         """
         pass
 
-    def _assert_url(self, url: Optional[List[str]] = None) -> None:
+    def _assert_url_end(self, url: Optional[List[str]] = None) -> None:
         """
         Raise error if elements remain in url
         Args:

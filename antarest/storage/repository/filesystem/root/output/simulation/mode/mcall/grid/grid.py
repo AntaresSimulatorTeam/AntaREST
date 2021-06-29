@@ -19,16 +19,16 @@ class OutputSimulationModeMcAllGrid(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "areas": OutputSimulationModeMcAllGridAreas(
-                config.next_file("areas.txt")
+                self.context, config.next_file("areas.txt")
             ),
             "digest": OutputSimulationModeMcAllGridDigest(
-                config.next_file("digest.txt")
+                self.context, config.next_file("digest.txt")
             ),
             "links": OutputSimulationModeMcAllGridLinks(
-                config.next_file("links.txt")
+                self.context, config.next_file("links.txt")
             ),
             "thermal": OutputSimulationModeMcAllGridThermals(
-                config.next_file("thermal.txt")
+                self.context, config.next_file("thermal.txt")
             ),
         }
         return children

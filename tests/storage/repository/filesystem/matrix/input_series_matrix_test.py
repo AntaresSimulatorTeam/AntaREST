@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import Mock
 
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.matrix.input_series_matrix import (
@@ -14,8 +15,8 @@ def test_get(tmp_path: Path) -> None:
     """
     file.write_text(content)
 
-    config = StudyConfig(study_path=file)
-    node = InputSeriesMatrix(config, nb_columns=8)
+    config = StudyConfig(study_path=file, study_id="id")
+    node = InputSeriesMatrix(context=Mock(), config=config, nb_columns=8)
 
     assert node.load() == {
         "columns": [0, 1, 2, 3, 4, 5, 6, 7],
@@ -31,8 +32,8 @@ def test_save(tmp_path: Path) -> None:
     file = tmp_path / "input.txt"
     file.write_text("\n")
 
-    config = StudyConfig(study_path=file)
-    node = InputSeriesMatrix(config)
+    config = StudyConfig(study_path=file, study_id="id")
+    node = InputSeriesMatrix(context=Mock(), config=config)
 
     node.dump({"columns": [0, 1], "data": [[1, 2], [3, 4]], "index": [0, 1]})
     assert (

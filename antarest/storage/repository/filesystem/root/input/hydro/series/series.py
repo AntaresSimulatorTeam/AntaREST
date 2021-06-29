@@ -9,7 +9,7 @@ from antarest.storage.repository.filesystem.root.input.hydro.series.area.area im
 class InputHydroSeries(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
-            a: InputHydroSeriesArea(config.next_file(a))
+            a: InputHydroSeriesArea(self.context, config.next_file(a))
             for a in config.area_names()
         }
         return children

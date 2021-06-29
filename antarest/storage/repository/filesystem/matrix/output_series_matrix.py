@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional, List, cast
 
 import numpy as np  # type: ignore
@@ -13,9 +14,11 @@ from antarest.storage.repository.filesystem.matrix.date_serializer import (
 from antarest.storage.repository.filesystem.matrix.head_writer import (
     HeadWriter,
 )
+from antarest.storage.repository.filesystem.context import ContextServer
+from antarest.storage.repository.filesystem.matrix.matrix import MatrixNode
 
 
-class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
+class OutputSeriesMatrix(MatrixNode):
     """
     Generic node to handle output matrix behavior.
     Node needs a DateSerializer and a HeadWriter to work
@@ -23,28 +26,22 @@ class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
 
     def __init__(
         self,
+        context: ContextServer,
         config: StudyConfig,
         date_serializer: IDateMatrixSerializer,
         head_writer: HeadWriter,
+        freq: str,
     ):
-        super().__init__(url_prefix="matrix")
-        self.config = config
+        super().__init__(context=context, config=config, freq=freq)
         self.date_serializer = date_serializer
         self.head_writer = head_writer
 
     def build(self, config: StudyConfig) -> TREE:
         pass  # End of tree
 
-    def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> SUB_JSON:
+    def parse(self, path: Path) -> SUB_JSON:  # type: ignore
 
-        df = pd.read_csv(
-            self.config.path, sep="\t", skiprows=4, na_values="N/A"
-        )
+        df = pd.read_csv(path, sep="\t", skiprows=4, na_values="N/A")
 
         date, body = self.date_serializer.extract_date(df)
 
@@ -61,7 +58,7 @@ class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
 
         return cast(JSON, matrix.to_dict(orient="split"))
 
-    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
+    def format(self, data: JSON, path: Path) -> None:
         df = pd.DataFrame(**data)
 
         headers = pd.DataFrame(df.columns.values.tolist()).T
@@ -76,7 +73,7 @@ class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
         self.config.path.write_text(head)
 
         matrix.to_csv(
-            open(self.config.path, "a", newline="\n"),
+            open(path, "a", newline="\n"),
             sep="\t",
             index=False,
             header=False,
@@ -89,7 +86,7 @@ class OutputSeriesMatrix(LazyNode[SUB_JSON, JSON, JSON]):
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
-        self._assert_url(url)
+        self._assert_url_end(url)
 
         errors = []
         if not self.config.path.exists():

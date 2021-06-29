@@ -86,6 +86,8 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: webapp
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
       - name: Check extracted deps
         if: matrix.os == 'ubuntu-latest'
         run: npm run check

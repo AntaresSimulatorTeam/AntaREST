@@ -13,10 +13,10 @@ class InputHydroPreproArea(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "energy": InputHydroPreproAreaEnergy(
-                config.next_file("energy.txt")
+                self.context, config.next_file("energy.txt")
             ),
             "prepro": InputHydroPreproAreaPrepro(
-                config.next_file("prepro.ini")
+                self.context, config.next_file("prepro.ini")
             ),
         }
         return children

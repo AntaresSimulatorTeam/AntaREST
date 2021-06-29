@@ -21,6 +21,20 @@ class MatrixFreq(enum.IntEnum):
     MONTHLY = 4
     ANNUAL = 5
 
+    @staticmethod
+    def from_str(data: str) -> "MatrixFreq":
+        if data == "hourly":
+            return MatrixFreq.HOURLY
+        elif data == "daily":
+            return MatrixFreq.DAILY
+        elif data == "weekly":
+            return MatrixFreq.WEEKLY
+        elif data == "monthly":
+            return MatrixFreq.MONTHLY
+        elif data == "annual":
+            return MatrixFreq.ANNUAL
+        raise NotImplementedError()
+
 
 groups_matrix_metadata = Table(
     "matrix_group",

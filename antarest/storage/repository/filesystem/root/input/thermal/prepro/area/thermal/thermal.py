@@ -13,10 +13,10 @@ class InputThermalPreproAreaThermal(FolderNode):
     def build(self, config: StudyConfig) -> TREE:
         children: TREE = {
             "data": InputThermalPreproAreaThermalData(
-                config.next_file("data.txt")
+                self.context, config.next_file("data.txt")
             ),
             "modulation": InputThermalPreproAreaThermalModulation(
-                config.next_file("modulation.txt")
+                self.context, config.next_file("modulation.txt")
             ),
         }
         return children
