@@ -29,6 +29,7 @@ def test_get_all_area():
     study = RawStudy()
     config = StudyConfig(
         study_path=Path("somepath"),
+        study_id="",
         areas={
             "a1": Area({}, [], [], []),
             "a2": Area({}, [], [], []),

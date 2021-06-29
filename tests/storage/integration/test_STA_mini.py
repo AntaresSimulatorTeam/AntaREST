@@ -207,7 +207,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/prepro/fr/energy",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
@@ -293,12 +293,12 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=output/3/annualSystemCost",
-            "EXP : 185808000\nSTD : 0\nMIN : 185808000\nMAX : 185808000\n",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/annualSystemCost",
+            b"EXP : 185808000\nSTD : 0\nMIN : 185808000\nMAX : 185808000\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/checkIntegrity",
-            """1.85808475215665e+08
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/checkIntegrity",
+            b"""1.85808475215665e+08
 0.00000000000000e+00
 1.85808475215665e+08
 1.85808475215665e+08
@@ -309,24 +309,20 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
 """,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1430adq/simulation-comments",
-            "",
-        ),
-        (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1425eco-goodbye/simulation",
-            simulation_log,
+            "/v1/studies/STA-mini/raw?path=output/20201014-1425eco-goodbye/simulation-comments",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/about-the-study/areas",
-            "DE\nES\nFR\nIT\n",
+            b"DE\r\nES\r\nFR\r\nIT\r\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1425eco-goodbye/about-the-study/comments",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1427eco/about-the-study/links",
-            "de\n\tfr\nes\n\tfr\nfr\n\tit\nit\n",
+            b"de\n\tfr\nes\n\tfr\nfr\n\tit\nit\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1430adq/about-the-study/parameters/general/horizon",
@@ -338,7 +334,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/areas",
-            "id\tname\nde\tDE\nes\tES\nfr\tFR\nit\tIT\n",
+            b"id\tname\nde\tDE\nes\tES\nfr\tFR\nit\tIT\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/links/de/fr",
@@ -360,32 +356,22 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de",
-            "size:1x1\n1\n",
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/de",
             b"size:1x1\n1\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/load/de",
-            "size:1x1\n1\n",
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/load/de",
             b"size:1x1\n1\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/solar/de",
-            "size:1x1\n1\n",
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/solar/de",
             b"size:1x1\n1\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/wind/de",
-            "size:1x1\n1\n",
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/wind/de",
             b"size:1x1\n1\n",
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/thermal/de/07_gas",
-            "size:1x1\n1\n",
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/thermal/de/07_gas",
             b"size:1x1\n1\n",
         ),
         (

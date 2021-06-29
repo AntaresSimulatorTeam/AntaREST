@@ -33,7 +33,7 @@ class InputSeriesMatrix(MatrixNode):
     def parse(self, path: Path) -> SUB_JSON:  # type: ignore
         try:
             matrix: JSON = pd.read_csv(
-                self.config.path,
+                path,
                 sep="\t",
                 dtype=float,
                 header=None,

@@ -494,6 +494,7 @@ def test_output_download() -> None:
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post(
@@ -515,6 +516,7 @@ def test_sim_reference() -> None:
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.put(f"/v1/studies/{study_id}/outputs/{output_id}/reference")
@@ -555,6 +557,7 @@ def test_sim_result() -> None:
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
+        matrix_service=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.get(f"/v1/studies/{study_id}/outputs")

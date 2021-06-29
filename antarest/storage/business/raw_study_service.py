@@ -78,7 +78,7 @@ class RawStudyService:
             fallback_on_default: use default values in case of failure
         """
         path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(path)
+        _, study = self.study_factory.create_from_fs(path, study_id="")
         try:
             raw_meta = study.get(["study", "antares"])
             metadata.name = raw_meta["caption"]
@@ -134,7 +134,7 @@ class RawStudyService:
         """
         self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
-        return self.study_factory.create_from_fs(study_path)
+        return self.study_factory.create_from_fs(study_path, metadata.id)
 
     def get(self, metadata: RawStudy, url: str = "", depth: int = 3) -> JSON:
         """
@@ -150,7 +150,7 @@ class RawStudyService:
         self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
 
-        _, study = self.study_factory.create_from_fs(study_path)
+        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         parts = [item for item in url.split("/") if item]
 
         data = study.get(parts, depth=depth)
@@ -170,7 +170,9 @@ class RawStudyService:
 
         """
         file_settings = {}
-        config = StudyConfig(study_path=self.get_study_path(study))
+        config = StudyConfig(
+            study_path=self.get_study_path(study), study_id=""
+        )
         raw_study = self.study_factory.create_from_config(config)
         file_metadata = raw_study.get(url=["study", "antares"])
         patch_metadata = self.patch_service.get(study).study or PatchStudy()
