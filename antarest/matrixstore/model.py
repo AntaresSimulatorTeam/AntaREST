@@ -1,4 +1,5 @@
 import enum
+from distutils.util import strtobool
 from typing import List, Any, Dict, Optional
 
 from dataclasses import dataclass
@@ -9,7 +10,7 @@ from sqlalchemy.orm import relationship  # type: ignore
 from sqlalchemy.orm.collections import attribute_mapped_collection  # type: ignore
 
 from antarest.common.persistence import Base
-from antarest.login.model import Identity
+from antarest.login.model import Identity, Group
 
 
 class MatrixFreq(enum.IntEnum):
@@ -52,6 +53,11 @@ class Matrix(Base):  # type: ignore
 
 
 MATRIX_METADATA_PUBLIC_MODE = "is_public"
+MATRIX_METADATA_NAME = "name"
+MATRIX_METADATA_RESERVED_KEYS = [
+    MATRIX_METADATA_NAME,
+    MATRIX_METADATA_PUBLIC_MODE,
+]
 
 
 class MatrixUserMetadata(Base):  # type: ignore
@@ -78,6 +84,11 @@ class MatrixUserMetadata(Base):  # type: ignore
         cascade="all, delete-orphan",
     )
 
+    def is_public(self) -> bool:
+        return MATRIX_METADATA_PUBLIC_MODE in self.metadata_.keys() and bool(
+            strtobool(self.metadata_[MATRIX_METADATA_PUBLIC_MODE])
+        )
+
 
 class MatrixMetadata(Base):  # type: ignore
     __tablename__ = "matrix_metadata"
@@ -89,8 +100,17 @@ class MatrixMetadata(Base):  # type: ignore
 
 
 class MatrixUserMetadataQuery(BaseModel):
-    name: Optional[str] = None  # regex
-    metadata: Optional[Dict[str, str]] = None
+    name: Optional[str]
+    metadata: Dict[str, str] = {}
+    owner: Optional[int]
+
+
+class MatrixMetadataDTO(BaseModel):
+    id: str
+    name: Optional[str] = None
+    metadata: Dict[str, str] = {}
+    public: bool = True
+    groups: List[Group] = []
 
 
 class MatrixDTO(BaseModel):
