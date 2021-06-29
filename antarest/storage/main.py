@@ -29,12 +29,11 @@ def build_storage(
     user_service: LoginService,
     matrix_service: MatrixService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
-    study_factory: Optional[StudyFactory] = None,
     exporter: Optional[Exporter] = None,
     storage_service: Optional[StorageService] = None,
     patch_service: Optional[PatchService] = None,
     event_bus: IEventBus = DummyEventBusService(),
-) -> StorageService:  # TODO: remove study_factory from signature
+) -> StorageService:
     """
     Storage module linking dependencies.
 

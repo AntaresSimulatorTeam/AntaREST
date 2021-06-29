@@ -58,7 +58,6 @@ def test_server() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
     client.get("/v1/studies/study1/raw?path=settings/general/params")
@@ -80,7 +79,6 @@ def test_404() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
     result = client.get("/v1/studies/study1/raw?path=settings/general/params")
@@ -102,7 +100,6 @@ def test_server_with_parameters() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
     result = client.get("/v1/studies/study1/raw?depth=4")
@@ -145,7 +142,6 @@ def test_create_study(
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
 
@@ -181,7 +177,6 @@ def test_import_study_zipped(
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
 
@@ -209,7 +204,6 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
 
@@ -241,7 +235,6 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
     result = client.get("/v1/studies")
@@ -261,7 +254,6 @@ def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
     result = client.get("/v1/studies/1/metadata")
@@ -278,7 +270,6 @@ def test_server_health() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
     result = client.get("/health", stream=True)
@@ -297,7 +288,6 @@ def test_export_files() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
     result = client.get("/v1/studies/name/export", stream=True)
@@ -320,7 +310,6 @@ def test_export_params() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
     result = client.get("/v1/studies/name/export", stream=True)
@@ -348,7 +337,6 @@ def test_delete_study() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
     client.delete("/v1/studies/name")
@@ -367,7 +355,6 @@ def test_import_matrix() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
 
@@ -395,7 +382,6 @@ def test_import_matrix_with_wrong_path() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
 
@@ -420,7 +406,6 @@ def test_edit_study() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
     client.post(
@@ -443,7 +428,6 @@ def test_edit_study_fail() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={})
@@ -465,7 +449,6 @@ def test_validate() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.get("/v1/studies/my-uuid/validate")
@@ -487,7 +470,6 @@ def test_study_permission_management(
         user_service=Mock(),
         matrix_service=Mock(),
         config=CONFIG,
-        study_factory=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
 

@@ -44,7 +44,6 @@ def assert_url_content(
         storage_service=storage_service,
         matrix_service=Mock(),
         config=storage_service.study_service.config,
-        study_factory=StudyFactory(matrix=Mock(), resolver=Mock()),
     )
     client = TestClient(app)
     res = client.get(url)
@@ -492,7 +491,6 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         user_service=Mock(),
         matrix_service=Mock(),
         config=storage_service.study_service.config,
-        study_factory=StudyFactory(matrix=Mock(), resolver=Mock()),
     )
     client = TestClient(app)
 
@@ -526,7 +524,6 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         user_service=Mock(),
         matrix_service=Mock(),
         config=storage_service.study_service.config,
-        study_factory=StudyFactory(matrix=Mock(), resolver=Mock()),
     )
     client = TestClient(app)
 

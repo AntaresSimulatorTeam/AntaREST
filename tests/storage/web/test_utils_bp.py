@@ -41,7 +41,6 @@ def test_version() -> None:
         config=Config(),
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
 
@@ -65,7 +64,6 @@ def test_get_matrix() -> None:
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(),
-        study_factory=Mock(),
     )
     client = TestClient(app)
 
