@@ -3,9 +3,9 @@ import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType } from '.
 
 export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDTO): StudyMetadata => ({
   id: sid,
-  name: metadata.caption,
+  name: metadata.name,
   creationDate: metadata.created,
-  modificationDate: metadata.lastsave,
+  modificationDate: metadata.updated,
   author: metadata.author,
   version: metadata.version.toString(),
 });

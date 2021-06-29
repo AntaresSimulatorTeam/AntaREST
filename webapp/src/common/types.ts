@@ -5,14 +5,10 @@ export type StudyDataType = 'json' | 'file' | 'matrix';
 
 export interface StudyMetadataDTO {
   author: string;
-  caption: string;
+  name: string;
   created: number;
-  lastsave: number;
+  updated: number;
   version: number;
-}
-
-export interface StudyListDTO {
-  antares: StudyMetadataDTO;
 }
 
 export interface StudyMetadata {

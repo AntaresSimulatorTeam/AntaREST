@@ -32,12 +32,15 @@ class InputSeriesMatrix(MatrixNode):
 
     def parse(self, path: Path) -> SUB_JSON:  # type: ignore
         try:
-            data: JSON = pd.read_csv(
-                path,
+            matrix: JSON = pd.read_csv(
+                self.config.path,
                 sep="\t",
                 dtype=float,
                 header=None,
-            ).to_dict(orient="split")
+            )
+            matrix = matrix.where(pd.notna(matrix), None)  # TODO fillna ?
+            data: JSON = matrix.to_dict(orient="split")
+
             return data
         except EmptyDataError:
             return {}

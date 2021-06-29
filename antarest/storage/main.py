@@ -29,6 +29,7 @@ def build_storage(
     user_service: LoginService,
     matrix_service: MatrixService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
+    study_factory: Optional[StudyFactory] = None,
     exporter: Optional[Exporter] = None,
     storage_service: Optional[StorageService] = None,
     patch_service: Optional[PatchService] = None,
@@ -59,10 +60,13 @@ def build_storage(
     exporter = exporter or Exporter()
     metadata_repository = metadata_repository or StudyMetadataRepository()
 
+    patch_service = patch_service or PatchService(PatchRepository())
+
     study_service = RawStudyService(
         config=config,
         study_factory=study_factory,
         path_resources=path_resources,
+        patch_service=patch_service,
     )
     importer_service = ImporterService(
         study_service=study_service,
@@ -83,16 +87,15 @@ def build_storage(
         event_bus=event_bus,
     )
 
-    resolver.storage_service = storage_service  # type: ignore
-
-    patch_service = patch_service or PatchService(
-        PatchRepository(), storage_service
-    )
+    resolver.storage_service = storage_service
 
     watcher = Watcher(config=config, service=storage_service)
     watcher.start()
 
     application.include_router(create_study_routes(storage_service, config))
     application.include_router(create_utils_routes(storage_service, config))
+    application.include_router(
+        create_study_area_routes(storage_service, config)
+    )
 
     return storage_service

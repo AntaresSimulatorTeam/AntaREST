@@ -52,6 +52,7 @@ class OutputSeriesMatrix(MatrixNode):
         ).tolist()
 
         matrix = body.iloc[2:].astype(float)
+        matrix = matrix.where(pd.notna(matrix), None)
         matrix.index = date
         matrix.columns = header
 

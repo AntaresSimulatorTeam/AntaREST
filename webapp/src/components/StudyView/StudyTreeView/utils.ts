@@ -42,7 +42,6 @@ export const getStudyParams = (
   if (isJsonLeaf(data)) {
     return { type: 'json', icon: 'file-code', data: JSON.stringify(data) };
   }
-
   return undefined;
 };
 

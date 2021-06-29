@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from antarest.common.config import Config
 from antarest.common.jwt import JWTUser
 from antarest.common.requests import RequestParameters
+from antarest.common.utils.web import APITag
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
 
@@ -17,7 +18,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.post(
         "/launcher/run/{study_id}",
-        tags=["Run Studies"],
+        tags=[APITag.launcher],
         summary="Run study",
     )
     def run(
@@ -65,7 +66,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         params = RequestParameters(user=current_user)
         return {"job_id": service.run_study(study_id, params, selected_engine)}
 
-    @bp.get("/launcher/jobs", tags=["Run Studies"], summary="Retrieve jobs")
+    @bp.get("/launcher/jobs", tags=[APITag.launcher], summary="Retrieve jobs")
     def get_job(
         study: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -74,7 +75,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/launcher/jobs/{job_id}",
-        tags=["Run Studies"],
+        tags=[APITag.launcher],
         summary="Retrieve job info from job id",
     )
     def get_result(
@@ -84,7 +85,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/launcher/engines",
-        tags=["Run Studies"],
+        tags=[APITag.launcher],
         summary="Retrieve available engines",
     )
     def get_engines() -> Any:

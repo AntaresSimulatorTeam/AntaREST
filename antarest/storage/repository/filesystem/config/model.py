@@ -98,7 +98,7 @@ class Simulation(DTO):
         self.error = error
 
     def get_file(self) -> str:
-        modes = {"economy": "eco", "adequacy": "adq"}
+        modes = {"economy": "eco", "adequacy": "adq", "draft": "dft"}
         dash = "-" if self.name else ""
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
@@ -114,7 +114,7 @@ class StudyConfig(DTO):
         study_id: str,
         areas: Optional[Dict[str, Area]] = None,
         sets: Optional[Dict[str, Set]] = None,
-        outputs: Optional[Dict[int, Simulation]] = None,
+        outputs: Optional[Dict[str, Simulation]] = None,
         bindings: Optional[List[str]] = None,
         store_new_set: bool = False,
     ):

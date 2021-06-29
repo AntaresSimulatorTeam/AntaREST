@@ -206,23 +206,23 @@ def test_sta_mini_input(storage_service, url: str, new: SUB_JSON):
     "url, new",
     [
         (
-            "/v1/studies/STA-mini/raw?path=output/4/about-the-study/parameters/general/horizon",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1430adq/about-the-study/parameters/general/horizon",
             2042,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/about-the-study/study/antares/author",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/about-the-study/study/antares/author",
             "John Smith",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/info/general/version",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/info/general/version",
             42,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/4/simulation-comments",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1430adq/simulation-comments",
             b"write something",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/areas/de/details-annual",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual",
             de_details_hourly,
         ),
     ],

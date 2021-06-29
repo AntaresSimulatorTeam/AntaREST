@@ -21,7 +21,8 @@ from starlette.templating import Jinja2Templates
 from antarest import __version__
 from antarest.common.config import Config
 from antarest.common.persistence import Base
-from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.common.utils.web import tags_metadata
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
 from antarest.login.auth import Auth
@@ -134,7 +135,12 @@ def fastapi_app(
     )
     Base.metadata.create_all(engine)
 
-    application = FastAPI(title="AntaREST", version=__version__, docs_url=None)
+    application = FastAPI(
+        title="AntaREST",
+        version=__version__,
+        docs_url=None,
+        openapi_tags=tags_metadata,
+    )
 
     application.add_middleware(
         DBSessionMiddleware,
@@ -189,11 +195,25 @@ def fastapi_app(
         logging.getLogger(__name__).info("Request end")
 
     @application.exception_handler(HTTPException)
-    def handle_exception(request: Request, exc: HTTPException) -> Any:
+    def handle_http_exception(request: Request, exc: HTTPException) -> Any:
         """Return JSON instead of HTML for HTTP errors."""
-        # start with the correct headers and status code from the error
         return JSONResponse(
-            content={"description": exc.detail}, status_code=exc.status_code
+            content={
+                "description": exc.detail,
+                "exception": exc.__class__.__name__,
+            },
+            status_code=exc.status_code,
+        )
+
+    @application.exception_handler(Exception)
+    def handle_all_exception(request: Request, exc: Exception) -> Any:
+        """Return JSON instead of HTML for HTTP errors."""
+        return JSONResponse(
+            content={
+                "description": "Unexpected server error",
+                "exception": exc.__class__.__name__,
+            },
+            status_code=500,
         )
 
     event_bus = build_eventbus(application, config)

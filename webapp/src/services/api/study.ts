@@ -1,10 +1,10 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { StudyMetadata, StudyListDTO } from '../../common/types';
+import { StudyMetadata, StudyMetadataDTO } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 
-const getStudiesRaw = async (): Promise<{[sid: string]: StudyListDTO}> => {
+const getStudiesRaw = async (): Promise<{[sid: string]: StudyMetadataDTO}> => {
   const res = await client.get('/v1/studies');
   return res.data;
 };
@@ -13,7 +13,7 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
   const rawStudyList = await getStudiesRaw();
   return Object.keys(rawStudyList).map((sid) => {
     const study = rawStudyList[sid];
-    return convertStudyDtoToMetadata(sid, study.antares);
+    return convertStudyDtoToMetadata(sid, study);
   });
 };
 
@@ -22,13 +22,13 @@ export const getStudyData = async (sid: string, path = '', depth = 1): Promise<a
   return res.data;
 };
 
-export const getStudyMetadata = async (sid: string): Promise<any> => {
-  const res = await client.get(`/v1/studies/${sid}/metadata`);
-  return res.data.antares ? convertStudyDtoToMetadata(sid, res.data.antares) : undefined;
+export const getStudyMetadata = async (sid: string, summary = true): Promise<StudyMetadata> => {
+  const res = await client.get(`/v1/studies/${sid}?summary=${summary}`);
+  return convertStudyDtoToMetadata(sid, res.data);
 };
 
 export const createStudy = async (name: string): Promise<string> => {
-  const res = await client.post(`/v1/studies/${name}`);
+  const res = await client.post(`/v1/studies?name=${encodeURIComponent(name)}`);
   return res.data;
 };
 
@@ -57,7 +57,7 @@ export const importStudy = async (file: File, onProgress?: (progress: number) =>
       'Access-Control-Allow-Origin': '*',
     },
   };
-  const res = await client.post('/v1/studies', formData, restconfig);
+  const res = await client.post('/v1/studies/_import', formData, restconfig);
   return res.data;
 };
 

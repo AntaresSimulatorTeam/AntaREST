@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from antarest.common.custom_types import JSON
 from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.common.jwt import JWTUser
+from antarest.common.jwt import JWTUser, DEFAULT_ADMIN_USER
 from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
@@ -16,6 +16,13 @@ from antarest.common.requests import (
 from antarest.common.roles import RoleType
 from antarest.login.model import Group
 from antarest.login.service import LoginService
+from antarest.storage.business.area_management import (
+    AreaManager,
+    AreaType,
+    AreaInfoDTO,
+    AreaCreationDTO,
+    AreaPatchUpdateDTO,
+)
 from antarest.storage.business.exporter_service import ExporterService
 from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.permissions import (
@@ -24,6 +31,7 @@ from antarest.storage.business.permissions import (
 )
 from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
+from antarest.storage.business.study_download_utils import StudyDownloader
 from antarest.storage.model import (
     Study,
     StudyContentStatus,
@@ -31,6 +39,11 @@ from antarest.storage.model import (
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
     PublicMode,
+    StudyMetadataPatchDTO,
+    StudyMetadataDTO,
+    StudyDownloadDTO,
+    MatrixAggregationResult,
+    StudySimResultDTO,
 )
 from antarest.storage.repository.study import StudyMetadataRepository
 from antarest.storage.web.exceptions import (
@@ -59,6 +72,7 @@ class StorageService:
         self.user_service = user_service
         self.repository = repository
         self.event_bus = event_bus
+        self.areas = AreaManager(self.study_service)
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def get(
@@ -109,13 +123,15 @@ class StorageService:
             "studies metadata asked by user %s", params.get_user_id()
         )
         return {
-            study.id: self.study_service.get_study_information(study)
+            study.id: self.study_service.get_study_information(
+                study, summary=True
+            )
             for study in self._get_study_metadatas(params)
         }
 
     def get_study_information(
         self, uuid: str, params: RequestParameters
-    ) -> JSON:
+    ) -> StudyMetadataDTO:
         """
         Get study information
         Args:
@@ -134,6 +150,44 @@ class StorageService:
             "study %s metadata asked by user %s", uuid, params.get_user_id()
         )
         return self.study_service.get_study_information(study)
+
+    def update_study_information(
+        self,
+        uuid: str,
+        metadata_patch: StudyMetadataPatchDTO,
+        params: RequestParameters,
+    ) -> StudyMetadataDTO:
+        """
+        Update study metadata
+        Args:
+            uuid: study uuid
+            metadata_patch: metadata patch
+            params: request parameters
+        """
+        self.logger.info(
+            "updating study %s metadata for user %s",
+            uuid,
+            params.get_user_id(),
+        )
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(uuid, study.type)
+
+        if metadata_patch.name:
+            study.name = metadata_patch.name
+            self.repository.save(study)
+        if metadata_patch.horizon:
+            study_settings_url = "settings/generaldata/general"
+            study_settings = self.study_service.get(study, study_settings_url)
+            study_settings["horizon"] = metadata_patch.horizon
+            self.study_service.edit_study(
+                study, study_settings_url, study_settings
+            )
+
+        return self.study_service.patch_update_study_metadata(
+            study, metadata_patch
+        )
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
         """
@@ -179,6 +233,7 @@ class StorageService:
             path=study_path,
             created_at=datetime.now(),
             updated_at=datetime.now(),
+            version=RawStudyService.new_default_version,
         )
 
         raw = self.study_service.create_study(raw)
@@ -225,7 +280,6 @@ class StorageService:
             if isinstance(study, RawStudy)
         ]
         for folder in folders:
-            sleep(0.2)
             if str(folder.path) not in paths:
                 study = RawStudy(
                     id=str(uuid4()),
@@ -237,6 +291,10 @@ class StorageService:
                     public_mode=PublicMode.FULL
                     if len(folder.groups) == 0
                     else PublicMode.NONE,
+                )
+
+                self.study_service.update_from_raw_meta(
+                    study, fallback_on_default=True
                 )
 
                 study.content_status = self._analyse_study(study)
@@ -286,6 +344,7 @@ class StorageService:
             ),
             created_at=datetime.now(),
             updated_at=datetime.now(),
+            version=src_study.version,
         )
 
         study = self.study_service.copy_study(src_study, dest_study)
@@ -397,6 +456,100 @@ class StorageService:
             params.get_user_id(),
         )
 
+    def download_outputs(
+        self,
+        study_id: str,
+        output_id: str,
+        data: StudyDownloadDTO,
+        params: RequestParameters,
+    ) -> MatrixAggregationResult:
+        """
+        Download outputs
+        Args:
+            study_id: study Id
+            output_id: output id
+            data: Json parameters
+            params: request parameters
+
+        Returns: CSV content file
+
+        """
+        # GET STUDY ID
+        study = self._get_study(study_id)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
+
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(study_id, study.type)
+
+        self.logger.info(
+            "study %s data asked by user %s",
+            study_id,
+            params.get_user_id(),
+        )
+
+        matrix = StudyDownloader.build(
+            self.study_service, study, output_id, data
+        )
+        return matrix
+
+    def get_study_sim_result(
+        self, study_id: str, params: RequestParameters
+    ) -> List[StudySimResultDTO]:
+        """
+        Get global result information
+        Args:
+            study_id: study Id
+            params: request parameters
+
+        Returns: an object containing all needed information
+
+        """
+        study = self._get_study(study_id)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
+
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(study_id, study.type)
+
+        self.logger.info(
+            "study %s data asked by user %s",
+            study_id,
+            params.get_user_id(),
+        )
+
+        return self.study_service.get_study_sim_result(study)
+
+    def set_sim_reference(
+        self,
+        study_id: str,
+        output_id: str,
+        status: bool,
+        params: RequestParameters,
+    ) -> None:
+        """
+        Set simulation as the reference output
+        Args:
+            study_id: study Id
+            output_id: output id
+            status: state of the reference status
+            params: request parameters
+
+        Returns: None
+
+        """
+        study = self._get_study(study_id)
+        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(study_id, study.type)
+
+        self.logger.info(
+            "study %s data asked by user %s",
+            study_id,
+            params.get_user_id(),
+        )
+
+        self.study_service.set_reference_output(study, output_id, status)
+
     def get_matrix(self, route: str, params: RequestParameters) -> BytesIO:
         """
         Download matrix
@@ -414,7 +567,7 @@ class StorageService:
             raise StudyTypeUnsupported(uuid, study.type)
 
         self.logger.info(
-            "matrix %S asked by user %s", route, params.get_user_id()
+            "matrix %s asked by user %s", route, params.get_user_id()
         )
         return self.exporter_service.get_matrix(study, path)
 
@@ -470,8 +623,6 @@ class StorageService:
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
         )
         study = self.importer_service.import_study(study, stream)
         status = self._analyse_study(study)
@@ -674,6 +825,44 @@ class StorageService:
         study = self._get_study(uuid)
         return self.study_service.check_errors(cast(RawStudy, study))
 
+    def get_all_areas(
+        self,
+        uuid: str,
+        area_type: Optional[AreaType],
+        params: RequestParameters,
+    ) -> List[AreaInfoDTO]:
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        return self.areas.get_all_areas(study, area_type)
+
+    def create_area(
+        self,
+        uuid: str,
+        area_creation_dto: AreaCreationDTO,
+        params: RequestParameters,
+    ) -> AreaInfoDTO:
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        return self.areas.create_area(study, area_creation_dto)
+
+    def update_area(
+        self,
+        uuid: str,
+        area_id: str,
+        area_patch_dto: AreaPatchUpdateDTO,
+        params: RequestParameters,
+    ) -> AreaInfoDTO:
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        return self.areas.update_area(study, area_id, area_patch_dto)
+
+    def delete_area(
+        self, uuid: str, area_id: str, params: RequestParameters
+    ) -> None:
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        return self.areas.delete_area(study, area_id)
+
     def _save_study(
         self,
         study: RawStudy,
@@ -732,13 +921,6 @@ class StorageService:
             )
             raise StudyNotFoundError(uuid)
         return study
-
-    def get_raw_study(self, uuid: str, params: RequestParameters) -> RawStudy:
-        study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.READ)
-        assert type(study) == RawStudy
-
-        return cast(RawStudy, study)
 
     def _assert_permission(
         self,

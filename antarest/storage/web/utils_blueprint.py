@@ -12,6 +12,7 @@ from antarest.common.jwt import JWTUser
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.common.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.storage.service import StorageService
 
@@ -56,7 +57,9 @@ def create_utils_routes(
 
     auth = Auth(config)
 
-    @bp.get("/v1/file/{path:path}", tags=["Manage Matrix"], summary="Get file")
+    @bp.get(
+        "/v1/file/{path:path}", tags=[APITag.study_data], summary="Get file"
+    )
     def get_file(
         path: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
@@ -72,7 +75,7 @@ def create_utils_routes(
     @bp.post(
         "/v1/file/{path:path}",
         status_code=HTTPStatus.NO_CONTENT.value,
-        tags=["Manage Matrix"],
+        tags=[APITag.study_data],
         summary="Post file",
     )
     def post_file(
@@ -85,11 +88,11 @@ def create_utils_routes(
 
         return ""
 
-    @bp.get("/health", tags=["Misc"])
+    @bp.get("/health", tags=[APITag.misc])
     def health() -> Any:
         return {"status": "available"}
 
-    @bp.get("/version", tags=["Misc"], summary="Get application version")
+    @bp.get("/version", tags=[APITag.misc], summary="Get application version")
     def version() -> Any:
         version_data = {"version": __version__}
 

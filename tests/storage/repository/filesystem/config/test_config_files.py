@@ -87,7 +87,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
         study_path,
         "id",
         outputs={
-            1: Simulation(
+            "20201220-1456eco-hello": Simulation(
                 name="hello",
                 date="20201220-1456",
                 mode="economy",

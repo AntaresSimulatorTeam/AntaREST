@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
@@ -46,14 +47,22 @@ def storage_service(
 
     md = RawStudy(
         id="STA-mini",
+        name="STA-mini",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / "STA-mini"),
+        created_at=datetime.datetime.fromtimestamp(1480683452),
+        updated_at=datetime.datetime.fromtimestamp(1602678639),
+        version=700,
     )
     repo = Mock()
     repo.get.side_effect = lambda name: RawStudy(
         id=name,
+        name=name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / name),
+        created_at=datetime.datetime.fromtimestamp(1480683452),
+        updated_at=datetime.datetime.fromtimestamp(1602678639),
+        version=700,
     )
     repo.get_all.return_value = [md]
 

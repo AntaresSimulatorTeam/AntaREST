@@ -196,7 +196,7 @@ class WeeklyMatrixSerializer(IDateMatrixSerializer):
         node = df.columns[0]
         body = df.drop([node, "weekly"], axis=1)
 
-        return pd.Index(range(date.size)), body
+        return pd.Index(date), body
 
 
 class MonthlyMatrixSerializer(IDateMatrixSerializer):

@@ -4,7 +4,7 @@ from glob import escape
 from http import HTTPStatus
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, File, Depends, Body
+from fastapi import APIRouter, HTTPException, File, Depends, Body, Request
 from fastapi.params import Param
 from starlette.responses import StreamingResponse, Response
 
@@ -15,8 +15,15 @@ from antarest.common.requests import (
     RequestParameters,
 )
 from antarest.common.swagger import get_path_examples
+from antarest.common.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.storage.model import PublicMode
+from antarest.storage.model import (
+    PublicMode,
+    StudyDownloadDTO,
+    StudyMetadataPatchDTO,
+)
+from antarest.common.config import Config
+from antarest.storage.business.study_download_utils import StudyDownloader
 from antarest.storage.service import StorageService
 
 
@@ -43,7 +50,7 @@ def create_study_routes(
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
 
-    @bp.get("/studies", tags=["Manage Studies"], summary="Get Studies")
+    @bp.get("/studies", tags=[APITag.study_management], summary="Get Studies")
     def get_studies(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -52,9 +59,9 @@ def create_study_routes(
         return available_studies
 
     @bp.post(
-        "/studies",
+        "/studies/_import",
         status_code=HTTPStatus.CREATED.value,
-        tags=["Manage Studies"],
+        tags=[APITag.study_management],
         summary="Import Study",
     )
     def import_study(
@@ -75,7 +82,7 @@ def create_study_routes(
     @bp.post(
         "/studies/{uuid}/copy",
         status_code=HTTPStatus.CREATED.value,
-        tags=["Manage Studies"],
+        tags=[APITag.study_management],
         summary="Copy Study",
     )
     def copy_study(
@@ -101,9 +108,9 @@ def create_study_routes(
         return f"/studies/{destination_uuid}"
 
     @bp.post(
-        "/studies/{name}",
+        "/studies",
         status_code=HTTPStatus.CREATED.value,
-        tags=["Manage Studies"],
+        tags=[APITag.study_management],
         summary="Create a new empty study",
     )
     def create_study(
@@ -124,7 +131,7 @@ def create_study_routes(
 
     @bp.get(
         "/studies/{uuid}/export",
-        tags=["Manage Studies"],
+        tags=[APITag.study_management],
         summary="Export Study",
     )
     def export_study(
@@ -150,7 +157,7 @@ def create_study_routes(
     @bp.delete(
         "/studies/{uuid}",
         status_code=HTTPStatus.OK.value,
-        tags=["Manage Studies"],
+        tags=[APITag.study_management],
         summary="Delete Study",
     )
     def delete_study(
@@ -166,7 +173,7 @@ def create_study_routes(
     @bp.post(
         "/studies/{uuid}/output",
         status_code=HTTPStatus.ACCEPTED.value,
-        tags=["Manage Outputs"],
+        tags=[APITag.study_outputs],
         summary="Import Output",
     )
     def import_output(
@@ -187,7 +194,7 @@ def create_study_routes(
 
     @bp.put(
         "/studies/{uuid}/owner/{user_id}",
-        tags=["Manage Permissions"],
+        tags=[APITag.study_permissions],
         summary="Change study owner",
     )
     def change_owner(
@@ -203,7 +210,7 @@ def create_study_routes(
 
     @bp.put(
         "/studies/{uuid}/groups/{group_id}",
-        tags=["Manage Permissions"],
+        tags=[APITag.study_permissions],
         summary="Add a group association",
     )
     def add_group(
@@ -220,7 +227,7 @@ def create_study_routes(
 
     @bp.delete(
         "/studies/{uuid}/groups/{group_id}",
-        tags=["Manage Permissions"],
+        tags=[APITag.study_permissions],
         summary="Remove a group association",
     )
     def remove_group(
@@ -238,7 +245,7 @@ def create_study_routes(
 
     @bp.put(
         "/studies/{uuid}/public_mode/{mode}",
-        tags=["Manage Permissions"],
+        tags=[APITag.study_permissions],
         summary="Set study public mode",
     )
     def set_public_mode(
@@ -253,8 +260,37 @@ def create_study_routes(
         return ""
 
     @bp.get(
+        "/studies/{uuid}",
+        tags=[APITag.study_management],
+        summary="Get Study informations",
+    )
+    def get_study_metadata(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        study_metadata = storage_service.get_study_information(uuid, params)
+        return study_metadata
+
+    @bp.put(
+        "/studies/{uuid}",
+        tags=[APITag.study_management],
+        summary="Get Study informations",
+    )
+    def update_study_metadata(
+        uuid: str,
+        study_metadata_patch: StudyMetadataPatchDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        study_metadata = storage_service.update_study_information(
+            uuid, study_metadata_patch, params
+        )
+        return study_metadata
+
+    @bp.get(
         "/studies/{uuid}/raw",
-        tags=["Manage Data inside Study"],
+        tags=[APITag.study_data],
         summary="Read data",
     )
     def get_study(
@@ -281,23 +317,10 @@ def create_study_routes(
         ).encode("utf-8")
         return Response(content=json_response, media_type="application/json")
 
-    @bp.get(
-        "/studies/{uuid}/metadata",
-        tags=["Manage Studies"],
-        summary="Get Study informations",
-    )
-    def get_study_metadata(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        params = RequestParameters(user=current_user)
-        study_metadata = storage_service.get_study_information(uuid, params)
-        return study_metadata
-
     @bp.post(
         "/studies/{uuid}/raw",
         status_code=HTTPStatus.NO_CONTENT.value,
-        tags=["Manage Data inside Study"],
+        tags=[APITag.study_data],
         summary="Update data",
     )
     def edit_study(
@@ -319,8 +342,79 @@ def create_study_routes(
 
         return content
 
+    @bp.post(
+        "/studies/{study_id}/outputs/{output_id}/download",
+        tags=[APITag.study_outputs],
+        summary="Get outputs data",
+        responses={
+            200: {
+                "content": {
+                    "application/json": {},
+                    "application/zip": {},
+                    "application/tar+gz": {},
+                },
+            },
+        },
+    )
+    def output_download(
+        study_id: str,
+        output_id: str,
+        data: StudyDownloadDTO,
+        request: Request,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        params = RequestParameters(user=current_user)
+        content = storage_service.download_outputs(
+            study_id, output_id, data, params
+        )
+        accept = request.headers.get("Accept")
+        if accept == "application/zip" or accept == "application/tar+gz":
+            return StreamingResponse(
+                StudyDownloader.export(content, accept),
+                headers={
+                    "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
+                },
+                media_type="application/zip",
+            )
+        return content
+
     @bp.get(
-        "/studies/{uuid}/validate", summary="Launch test validation on study"
+        "/studies/{study_id}/outputs",
+        summary="Get global information about a study simulation result",
+        tags=[APITag.study_outputs],
+    )
+    def sim_result(
+        study_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        params = RequestParameters(user=current_user)
+        content = storage_service.get_study_sim_result(study_id, params)
+        return content
+
+    @bp.put(
+        "/studies/{study_id}/outputs/{output_id}/reference",
+        summary="Set simulation as the reference output",
+        tags=[APITag.study_outputs],
+    )
+    def set_sim_reference(
+        study_id: str,
+        output_id: str,
+        status: bool = True,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        params = RequestParameters(user=current_user)
+        storage_service.set_sim_reference(study_id, output_id, status, params)
+        return "OK"
+
+    @bp.get(
+        "/studies/{uuid}/validate",
+        summary="Launch test validation on study",
+        tags=[APITag.study_data],
     )
     def validate(uuid: str) -> Any:
         return storage_service.check_errors(uuid)

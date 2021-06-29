@@ -348,6 +348,7 @@ class LoginService:
                 params.user.is_site_admin(),
                 params.user.is_group_admin(groups),
                 params.user.is_himself(user),
+                params.user.is_bot_of(user),
             )
         ):
             return user

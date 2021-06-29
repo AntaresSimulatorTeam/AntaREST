@@ -20,7 +20,15 @@ from antarest.common.config import (
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.roles import RoleType
 from antarest.storage.main import build_storage
-from antarest.storage.model import DEFAULT_WORKSPACE_NAME, PublicMode
+from antarest.storage.model import (
+    DEFAULT_WORKSPACE_NAME,
+    PublicMode,
+    StudyDownloadDTO,
+    MatrixAggregationResult,
+    MatrixIndex,
+    StudySimResultDTO,
+    StudySimSettingsDTO,
+)
 from antarest.storage.web.exceptions import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
@@ -145,7 +153,7 @@ def test_create_study(
     )
     client = TestClient(app)
 
-    result_right = client.post("/v1/studies/study2")
+    result_right = client.post("/v1/studies?name=study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
     assert result_right.json() == "/studies/my-uuid"
@@ -185,7 +193,7 @@ def test_import_study_zipped(
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY.value
 
     study_data = io.BytesIO(path_zip.read_bytes())
-    result = client.post("/v1/studies", files={"study": study_data})
+    result = client.post("/v1/studies/_import", files={"study": study_data})
 
     assert result.json() == "/studies/" + study_name
     assert result.status_code == HTTPStatus.CREATED.value
@@ -256,7 +264,7 @@ def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
         matrix_service=Mock(),
     )
     client = TestClient(app)
-    result = client.get("/v1/studies/1/metadata")
+    result = client.get("/v1/studies/1")
 
     assert result.json() == study
 
@@ -455,6 +463,102 @@ def test_validate() -> None:
 
     assert res.json() == ["Hello"]
     mock_service.check_errors.assert_called_once_with("my-uuid")
+
+
+@pytest.mark.unit_test
+def test_output_download() -> None:
+    mock_service = Mock()
+
+    output_data = MatrixAggregationResult(
+        index=MatrixIndex(),
+        data={"td3_37_de-38_pl": {"1": {"H. VAL|Euro/MWh": [0.5, 0.6, 0.7]}}},
+        warnings=[],
+    )
+    mock_service.download_outputs.return_value = output_data
+
+    study_download = StudyDownloadDTO(
+        type="AREA",
+        years=[1],
+        level="annual",
+        filterIn="",
+        filterOut="",
+        filter=[],
+        columns=["00001|td3_37_de-38_pl|H. VAL|Euro/MWh"],
+        synthesis=False,
+        includeClusters=True,
+    )
+
+    app = FastAPI(title=__name__)
+    build_storage(
+        app,
+        storage_service=mock_service,
+        config=CONFIG,
+        user_service=Mock(),
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.post(
+        "/v1/studies/my-uuid/outputs/my-output-id/download",
+        json=study_download.dict(),
+    )
+    assert res.json() == output_data.dict()
+
+
+@pytest.mark.unit_test
+def test_sim_reference() -> None:
+    mock_service = Mock()
+    study_id = "my-study-id"
+    output_id = "my-output-id"
+
+    app = FastAPI(title=__name__)
+    build_storage(
+        app,
+        storage_service=mock_service,
+        config=CONFIG,
+        user_service=Mock(),
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.put(f"/v1/studies/{study_id}/outputs/{output_id}/reference")
+    mock_service.set_sim_reference.assert_called_once_with(
+        study_id, output_id, True, PARAMS
+    )
+    assert res.json() == "OK"
+
+
+@pytest.mark.unit_test
+def test_sim_result() -> None:
+    mock_service = Mock()
+    study_id = "my-study-id"
+    settings = StudySimSettingsDTO(
+        general=dict(),
+        input=dict(),
+        output=dict(),
+        optimization=dict(),
+        otherPreferences=dict(),
+        advancedParameters=dict(),
+        seedsMersenneTwister=dict(),
+    )
+    result_data = [
+        StudySimResultDTO(
+            name="output-id",
+            type="economy",
+            settings=settings,
+            completionDate="",
+            referenceStatus=True,
+            synchronized=False,
+            status="",
+        )
+    ]
+    mock_service.get_study_sim_result.return_value = result_data
+    app = FastAPI(title=__name__)
+    build_storage(
+        app,
+        storage_service=mock_service,
+        config=CONFIG,
+        user_service=Mock(),
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.get(f"/v1/studies/{study_id}/outputs")
+    assert res.json() == result_data
 
 
 @pytest.mark.unit_test

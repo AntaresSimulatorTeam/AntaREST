@@ -15,6 +15,7 @@ from antarest.common.requests import (
     UserHasNotPermissionError,
 )
 from antarest.common.roles import RoleType
+from antarest.common.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.model import (
     User,
@@ -67,7 +68,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
             else refresh_token,
         }
 
-    @bp.post("/login", tags=["User"], summary="Login")
+    @bp.post("/login", tags=[APITag.users], summary="Login")
     def login(
         credentials: UserCredentials,
         jwt_manager: AuthJWT = Depends(),
@@ -83,7 +84,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
 
         return resp
 
-    @bp.post("/refresh", tags=["User"], summary="Refresh access token")
+    @bp.post("/refresh", tags=[APITag.users], summary="Refresh access token")
     def refresh(jwt_manager: AuthJWT = Depends()) -> Any:
         jwt_manager.jwt_refresh_token_required()
         identity = json.loads(jwt_manager.get_jwt_subject())
@@ -95,14 +96,14 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         else:
             raise HTTPException(status_code=403, detail="Token invalid")
 
-    @bp.get("/users", tags=["User"])
+    @bp.get("/users", tags=[APITag.users])
     def users_get_all(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
         return [u.to_dict() for u in service.get_all_users(params)]
 
-    @bp.get("/users/{id}", tags=["User"])
+    @bp.get("/users/{id}", tags=[APITag.users])
     def users_get_id(
         id: int,
         details: Optional[bool] = False,
@@ -119,7 +120,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         else:
             raise HTTPException(status_code=404)
 
-    @bp.post("/users", tags=["User"])
+    @bp.post("/users", tags=[APITag.users])
     def users_create(
         create_user: UserCreateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -128,7 +129,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
 
         return service.create_user(create_user, params).to_dict()
 
-    @bp.put("/users/{id}", tags=["User"])
+    @bp.put("/users/{id}", tags=[APITag.users])
     def users_update(
         id: int,
         user_info: UserInfo,
@@ -143,7 +144,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
 
         return service.save_user(User.from_dto(user_info), params).to_dict()
 
-    @bp.delete("/users/{id}", tags=["User"])
+    @bp.delete("/users/{id}", tags=[APITag.users])
     def users_delete(
         id: int, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
@@ -151,7 +152,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         service.delete_user(id, params)
         return id
 
-    @bp.delete("/users/roles/{id}", tags=["User"])
+    @bp.delete("/users/roles/{id}", tags=[APITag.users])
     def roles_delete_by_user(
         id: int, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
@@ -159,14 +160,14 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         service.delete_all_roles_from_user(id, params)
         return id
 
-    @bp.get("/groups", tags=["User"])
+    @bp.get("/groups", tags=[APITag.users])
     def groups_get_all(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
         return [g.to_dict() for g in service.get_all_groups(params)]
 
-    @bp.get("/groups/{id}", tags=["User"])
+    @bp.get("/groups/{id}", tags=[APITag.users])
     def groups_get_id(
         id: str,
         details: Optional[bool] = False,
@@ -186,7 +187,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
                 status_code=404, detail=f"Group {gid} not found"
             )
 
-    @bp.post("/groups", tags=["User"])
+    @bp.post("/groups", tags=[APITag.users])
     def groups_create(
         group_dto: GroupDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -195,7 +196,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         group = Group(id=group_dto.id, name=group_dto.name)
         return service.save_group(group, params).to_dict()
 
-    @bp.delete("/groups/{id}", tags=["User"])
+    @bp.delete("/groups/{id}", tags=[APITag.users])
     def groups_delete(
         id: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
@@ -204,7 +205,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         service.delete_group(gid, params)
         return id
 
-    @bp.get("/roles/group/{group}", tags=["User"])
+    @bp.get("/roles/group/{group}", tags=[APITag.users])
     def roles_get_all(
         group: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
@@ -215,7 +216,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
             for r in service.get_all_roles_in_group(group=group, params=params)
         ]
 
-    @bp.post("/roles", tags=["User"])
+    @bp.post("/roles", tags=[APITag.users])
     def role_create(
         role: RoleCreationDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -223,7 +224,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         params = RequestParameters(user=current_user)
         return service.save_role(role, params).to_dict()
 
-    @bp.delete("/roles/{group}/{user}", tags=["User"])
+    @bp.delete("/roles/{group}/{user}", tags=[APITag.users])
     def roles_delete(
         user: int,
         group: str,
@@ -234,7 +235,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         service.delete_role(user, group, params)
         return user, group
 
-    @bp.post("/bots", tags=["User"], summary="Create bot token")
+    @bp.post("/bots", tags=[APITag.users], summary="Create bot token")
     def bots_create(
         create: BotCreateDTO,
         jwt_manager: AuthJWT = Depends(),
@@ -265,7 +266,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         )
         return tokens["access_token"]
 
-    @bp.get("/bots/{id}", tags=["User"])
+    @bp.get("/bots/{id}", tags=[APITag.users])
     def get_bot(
         id: int,
         verbose: Optional[int] = None,
@@ -281,7 +282,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
             return UserHasNotPermissionError()
         return bot.to_dict()
 
-    @bp.get("/bots", tags=["User"])
+    @bp.get("/bots", tags=[APITag.users])
     def get_all_bots(
         owner: Optional[int] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -295,7 +296,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         )
         return [b.to_dict() for b in bots]
 
-    @bp.delete("/bots/{id}", tags=["User"], summary="Revoke bot token")
+    @bp.delete("/bots/{id}", tags=[APITag.users], summary="Revoke bot token")
     def bots_delete(
         id: int, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:

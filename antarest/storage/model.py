@@ -1,10 +1,11 @@
+from datetime import datetime
 import enum
 import uuid
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, List, Dict, Optional, TypeVar
-
+from typing import Any, List, Dict, Optional, TypeVar, Union
 from dataclasses import dataclass
+from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -173,6 +174,8 @@ class PatchNode:
 
 class PatchStudy(BaseModel, PatchLeaf):
     scenario: Optional[str] = None
+    doc: Optional[str] = None
+    status: Optional[str] = None
 
 
 class PatchArea(BaseModel, PatchLeaf):
@@ -187,3 +190,119 @@ class Patch(BaseModel, PatchNode):
     study: Optional[PatchStudy] = None
     areas: Optional[PatchLeafDict] = None
     outputs: Optional[PatchOutputs] = None
+
+
+class StudyMetadataDTO(BaseModel):
+    id: str
+    name: str
+    version: int
+    created: int
+    updated: int
+    author: str
+    horizon: Optional[str]
+    scenario: Optional[str]
+    status: Optional[str]
+    doc: Optional[str]
+
+
+class StudyMetadataPatchDTO(BaseModel):
+    name: Optional[str] = None
+    horizon: Optional[str] = None
+    scenario: Optional[str] = None
+    status: Optional[str] = None
+    doc: Optional[str] = None
+
+
+class StudySimSettingsDTO(BaseModel):
+    general: Dict[str, Any]
+    input: Dict[str, Any]
+    output: Dict[str, Any]
+    optimization: Dict[str, Any]
+    otherPreferences: Dict[str, Any]
+    advancedParameters: Dict[str, Any]
+    seedsMersenneTwister: Dict[str, Any]
+
+
+class StudySimResultDTO(BaseModel):
+    name: str
+    type: str
+    settings: StudySimSettingsDTO
+    completionDate: str
+    referenceStatus: bool
+    synchronized: bool
+    status: str
+
+
+class StudyDownloadType(enum.Enum):
+    LINK = "LINK"
+    CLUSTER = "CLUSTER"
+    AREA = "AREA"
+
+    @staticmethod
+    def from_dict(value: str) -> "StudyDownloadType":
+        mapping = {
+            "LINK": StudyDownloadType.LINK,
+            "CLUSTER": StudyDownloadType.CLUSTER,
+            "AREA": StudyDownloadType.AREA,
+        }
+
+        if value in mapping:
+            return mapping[value]
+        else:
+            raise ValueError(f"any StudyDownloadType for value {value}")
+
+    def to_dict(self) -> str:
+        return str(self.value)
+
+
+class StudyDownloadLevelDTO(enum.Enum):
+    ANNUAL = "annual"
+    MONTHLY = "monthly"
+    WEEKLY = "weekly"
+    DAILY = "daily"
+    HOURLY = "hourly"
+
+    @staticmethod
+    def from_dict(value: str) -> "StudyDownloadLevelDTO":
+        mapping = {
+            "annual": StudyDownloadLevelDTO.ANNUAL,
+            "monthly": StudyDownloadLevelDTO.MONTHLY,
+            "weekly": StudyDownloadLevelDTO.WEEKLY,
+            "daily": StudyDownloadLevelDTO.DAILY,
+            "hourly": StudyDownloadLevelDTO.HOURLY,
+        }
+
+        if value in mapping:
+            return mapping[value]
+        else:
+            raise ValueError(f"any StudyDownloadLevelDTO for value {value}")
+
+    def to_dict(self) -> str:
+        return str(self.value)
+
+
+class StudyDownloadDTO(BaseModel):
+    """
+    DTO used to download outputs
+    """
+
+    type: str
+    years: Optional[List[int]]
+    level: str
+    filterIn: Optional[str]
+    filterOut: Optional[str]
+    filter: Optional[List[str]]
+    columns: Optional[List[str]]
+    synthesis: bool = False
+    includeClusters: bool = False
+
+
+class MatrixIndex(BaseModel):
+    startDate: str = ""
+    step: int = 3600000
+
+
+class MatrixAggregationResult(BaseModel):
+    index: MatrixIndex
+    data: Dict[str, Dict[str, Dict[str, List[Optional[float]]]]]
+    warnings: List[str]
