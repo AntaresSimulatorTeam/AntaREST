@@ -30,7 +30,7 @@ class InputSeriesMatrix(MatrixNode):
     def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
 
-    def parse(self, path: Path) -> SUB_JSON:
+    def parse(self, path: Path) -> SUB_JSON:  # type: ignore
         try:
             data: JSON = pd.read_csv(
                 path,
@@ -46,7 +46,7 @@ class InputSeriesMatrix(MatrixNode):
         df = pd.DataFrame(**data)
         df.to_csv(path, sep="\t", header=False, index=False)
 
-    def load(
+    def load(  # type: ignore
         self,
         url: Optional[List[str]] = None,
         depth: int = -1,

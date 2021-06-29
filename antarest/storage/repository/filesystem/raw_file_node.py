@@ -6,7 +6,7 @@ from antarest.storage.repository.filesystem.lazy_node import LazyNode
 from antarest.storage.repository.filesystem.context import ContextServer
 
 
-class RawFileNode(LazyNode[str, str, str]):
+class RawFileNode(LazyNode[bytes, bytes, str]):
     """
     Basic left which handle text file as like with any parsing / serialization
     """

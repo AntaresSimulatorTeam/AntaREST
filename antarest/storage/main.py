@@ -84,7 +84,7 @@ def build_storage(
         event_bus=event_bus,
     )
 
-    resolver.storage_service = storage_service
+    resolver.storage_service = storage_service  # type: ignore
 
     patch_service = patch_service or PatchService(
         PatchRepository(), storage_service

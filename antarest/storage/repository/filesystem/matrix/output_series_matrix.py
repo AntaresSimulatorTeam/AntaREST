@@ -39,7 +39,7 @@ class OutputSeriesMatrix(MatrixNode):
     def build(self, config: StudyConfig) -> TREE:
         pass  # End of tree
 
-    def parse(self, path: Path) -> SUB_JSON:
+    def parse(self, path: Path) -> SUB_JSON:  # type: ignore
 
         df = pd.read_csv(path, sep="\t", skiprows=4, na_values="N/A")
 

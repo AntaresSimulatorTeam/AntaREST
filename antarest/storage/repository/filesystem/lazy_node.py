@@ -31,12 +31,14 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
 
         if self.config.path.exists():
             if expanded:
-                return self.get_uri()
+                return self.get_uri()  # type: ignore
             else:
                 return self.load(url, depth, expanded)
         else:
             data = self.get_link_path().read_text()
-            return data if expanded else self.context.resolver.resolve(data)
+            return (
+                data if expanded else self.context.resolver.resolve(data)  # type: ignore
+            )  # type ignore
 
     def get_uri(self) -> str:
         return self.context.resolver.build_studyfile_uri(
@@ -53,7 +55,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         self._assert_url_end(url)
 
         if isinstance(data, str) and f"studyfile://" in data:
-            data = self.context.resolver.resolve(data)
+            data = self.context.resolver.resolve(data)  # type: ignore
         return self.dump(data, url)
 
     @abstractmethod

@@ -26,18 +26,18 @@ class MatrixNode(LazyNode[JSON, JSON, JSON], ABC):
                 data = self._send_to_store(data)
 
             link_path = self.get_link_path()
-            link_path.write_text(data)
+            link_path.write_text(cast(str, data))
             self.config.path.unlink()
             return None
 
         else:
             if isinstance(data, str):
-                data = self.context.resolver.resolve(data, parser=self.parse)
+                data = self.context.resolver.resolve(data, parser=self.parse)  # type: ignore
 
             self.dump(cast(JSON, data))
             return None
 
-    def _send_to_store(self, data: JSON):
+    def _send_to_store(self, data: JSON) -> str:
         dto = MatrixDTO(
             freq=MatrixFreq.from_str(self.freq),
             index=data["index"],

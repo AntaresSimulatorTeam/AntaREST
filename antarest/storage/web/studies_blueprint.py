@@ -267,7 +267,8 @@ def create_study_routes(
         output = storage_service.get(uuid, path, depth, parameters)
 
         try:
-            output = output.decode("utf-8")  # try to encode
+            # try to encode
+            output = output.decode("utf-8")  # type: ignore
         except:
             pass
 

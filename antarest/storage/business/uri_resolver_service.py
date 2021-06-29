@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Union, Optional, Callable
 
 from antarest.common.config import Config
-from antarest.common.custom_types import JSON
+from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.common.jwt import DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
 from antarest.matrixstore.service import MatrixService
@@ -14,12 +14,12 @@ class UriResolverService:
     def __init__(self, config: Config, matrix_service: MatrixService):
         self.config = config
         # StorageService must be injected after the class creation to avoid circular injection
-        self.storage_service = None  # type: ignore
+        self.storage_service = None
         self.matrix_service = matrix_service
 
     def resolve(
         self, uri: str, parser: Optional[Callable[[Path], JSON]] = None
-    ) -> Union[bytes, JSON]:
+    ) -> Union[bytes, SUB_JSON]:
         match = re.match(r"^(\w+)://([\w-]+)/?(.*)$", uri)
         if not match:
             raise ValueError("Pattern Uri not found")
@@ -72,10 +72,10 @@ class UriResolverService:
         uri = f"studyfile://{study_id}/{relative_path}"
         return uri
 
-    def build_matrix_uri(self, id) -> str:
+    def build_matrix_uri(self, id: str) -> str:
         return f"matrix://{id}"
 
-    def is_managed(self, study_id) -> bool:
+    def is_managed(self, study_id: str) -> bool:
         default = self.config.storage.workspaces[DEFAULT_WORKSPACE_NAME]
         if self.storage_service is not None:
             return (
