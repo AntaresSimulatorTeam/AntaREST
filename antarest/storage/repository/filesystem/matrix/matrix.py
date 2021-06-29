@@ -44,8 +44,8 @@ class MatrixNode(LazyNode[JSON, JSON, JSON], ABC):
             columns=data["columns"],
             data=data["data"],
         )
-        id = self.context.matrix.create(dto)
-        uri = self.context.resolver.build_matrix_uri(id)
+        matrix_id = self.context.matrix.create(dto)
+        uri = self.context.resolver.build_matrix_uri(matrix_id)
         return uri
 
     @abstractmethod

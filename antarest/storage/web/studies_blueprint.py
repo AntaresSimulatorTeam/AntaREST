@@ -267,9 +267,9 @@ def create_study_routes(
         output = storage_service.get(uuid, path, depth, parameters)
 
         try:
-            # try to encode
+            # try to decode string
             output = output.decode("utf-8")  # type: ignore
-        except:
+        except (AttributeError, UnicodeDecodeError):
             pass
 
         json_response = json.dumps(

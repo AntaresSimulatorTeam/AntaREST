@@ -25,13 +25,13 @@ class UriResolverService:
             raise ValueError("Pattern Uri not found")
 
         protocol = match.group(1)
-        id = match.group(2)
+        uuid = match.group(2)
         path = match.group(3)
 
         if protocol == "studyfile":
-            return self._resolve_studyfile(id, path, parser)
+            return self._resolve_studyfile(uuid, path, parser)
         if protocol == "matrix":
-            return self._resolve_matrix(id)
+            return self._resolve_matrix(uuid)
         raise NotImplementedError(f"protocol {protocol} not implemented")
 
     def _resolve_matrix(self, id: str) -> JSON:
