@@ -370,7 +370,9 @@ class RawStudyService:
 
         """
         study_path = self.get_study_path(study)
-        config, raw_study = self.study_factory.create_from_fs(study_path)
+        config, raw_study = self.study_factory.create_from_fs(
+            study_path, study.id
+        )
         patch_metadata = self.patch_service.get(study)
         results: List[StudySimResultDTO] = []
         if config.outputs is not None:

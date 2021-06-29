@@ -30,7 +30,6 @@ def build_storage(
     user_service: LoginService,
     matrix_service: MatrixService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
-    study_factory: Optional[StudyFactory] = None,
     exporter: Optional[Exporter] = None,
     storage_service: Optional[StorageService] = None,
     patch_service: Optional[PatchService] = None,
@@ -88,7 +87,7 @@ def build_storage(
         event_bus=event_bus,
     )
 
-    resolver.storage_service = storage_service
+    resolver.storage_service = storage_service  # type: ignore
 
     watcher = Watcher(config=config, service=storage_service)
     watcher.start()
