@@ -23,6 +23,8 @@ jobs:
       - name: Install dependencies
         run: npm install
         working-directory: webapp
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
       - name: Build
         run: bash ./build-front.sh
         working-directory: scripts
