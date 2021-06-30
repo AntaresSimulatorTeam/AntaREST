@@ -47,7 +47,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface ElementView {
   type: StudyDataType;
-  data: string;
+  data: string | {path: string; json: string};
 }
 
 interface PropTypes {
@@ -91,7 +91,7 @@ const StudyView = (props: PropTypes) => {
             </div>
             <div className={classes.main}>
               <div className={classes.maincontent}>
-                {elementView && <StudyDataView study={study} type={elementView.type} data={elementView.data} />}
+                {elementView && <StudyDataView study={study} studyData={studyData} setStudyData={setStudyData} type={elementView.type} data={elementView.data} />}
               </div>
             </div>
           </>
