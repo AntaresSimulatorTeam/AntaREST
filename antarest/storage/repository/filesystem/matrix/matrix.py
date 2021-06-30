@@ -18,7 +18,13 @@ class MatrixNode(LazyNode[JSON, JSON, JSON], ABC):
         LazyNode.__init__(self, context, config)
         self.freq = freq
 
-    # This node level is maintaining because it could be useful for next optimize feature
+    def get_lazy_content(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> str:
+        return f"matrix://{self.config.path.name}"
 
     @abstractmethod
     def load(
