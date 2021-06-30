@@ -16,7 +16,7 @@ class BucketNode(FolderNode):
         for key, value in data.items():
             if isinstance(value, (str, bytes)):
                 RawFileNode(self.context, self.config.next_file(key)).save(
-                    value  # type: ignore
+                    value
                 )
             elif isinstance(value, dict):
                 BucketNode(self.context, self.config.next_file(key)).save(

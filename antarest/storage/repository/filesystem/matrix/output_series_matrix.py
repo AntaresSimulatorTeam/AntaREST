@@ -39,9 +39,16 @@ class OutputSeriesMatrix(MatrixNode):
     def build(self, config: StudyConfig) -> TREE:
         pass  # End of tree
 
-    def parse(self, path: Path) -> SUB_JSON:  # type: ignore
+    def load(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> JSON:
 
-        df = pd.read_csv(path, sep="\t", skiprows=4, na_values="N/A")
+        df = pd.read_csv(
+            self.config.path, sep="\t", skiprows=4, na_values="N/A"
+        )
 
         date, body = self.date_serializer.extract_date(df)
 
@@ -58,7 +65,7 @@ class OutputSeriesMatrix(MatrixNode):
 
         return cast(JSON, matrix.to_dict(orient="split"))
 
-    def format(self, data: JSON, path: Path) -> None:
+    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
         df = pd.DataFrame(**data)
 
         headers = pd.DataFrame(df.columns.values.tolist()).T
@@ -73,7 +80,7 @@ class OutputSeriesMatrix(MatrixNode):
         self.config.path.write_text(head)
 
         matrix.to_csv(
-            open(path, "a", newline="\n"),
+            open(self.config.path, "a", newline="\n"),
             sep="\t",
             index=False,
             header=False,
