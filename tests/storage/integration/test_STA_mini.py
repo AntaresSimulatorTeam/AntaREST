@@ -240,10 +240,10 @@ def test_sta_mini_study_antares(
         (
             "/v1/studies/STA-mini/raw?path=input/load/series",
             {
-                "load_de": "studyfile://STA-mini/input/load/series/load_de.txt",
-                "load_es": "studyfile://STA-mini/input/load/series/load_es.txt",
-                "load_fr": "studyfile://STA-mini/input/load/series/load_fr.txt",
-                "load_it": "studyfile://STA-mini/input/load/series/load_it.txt",
+                "load_de": "[LAZY] matrix://load_de.txt",
+                "load_es": "[LAZY] matrix://load_es.txt",
+                "load_fr": "[LAZY] matrix://load_fr.txt",
+                "load_it": "[LAZY] matrix://load_it.txt",
             },
         ),
         (
@@ -342,9 +342,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr",
-            {
-                "values-hourly": "studyfile://STA-mini/output/20201014-1422eco-hello/economy/mc-ind/00001/links/de - fr/values-hourly.txt"
-            },
+            {"values-hourly": "[LAZY] matrix://values-hourly.txt"},
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
@@ -416,10 +414,10 @@ def test_sta_mini_copy(storage_service) -> None:
     data_destination = storage_service.get(uuid, "/", -1, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
-    assert input_link in link_url_source
+    assert "[LAZY] matrix://fr.txt" == link_url_source
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
-    assert input_link in link_url_destination
+    assert "[LAZY] matrix://fr.txt" == link_url_destination
 
     def replace_study_name(data: JSON) -> None:
         if isinstance(data, dict):

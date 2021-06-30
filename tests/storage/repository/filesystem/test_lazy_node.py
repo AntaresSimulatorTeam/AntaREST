@@ -40,21 +40,17 @@ def test_get_no_expanded_txt(tmp_path: Path):
     file.parent.mkdir()
     file.touch()
 
-    uri = "studyfile://my-study/lazy.txt"
-    uri_resolver = Mock()
-    uri_resolver.build_studyfile_uri.return_value = uri
-
     config = StudyConfig(study_path=file, study_id="my-study")
 
     node = MockLazyNode(
-        context=ContextServer(matrix=Mock(), resolver=uri_resolver),
+        context=ContextServer(matrix=Mock(), resolver=Mock()),
         config=config,
     )
-    assert uri == node.get(expanded=True)
+    assert "Mock Matrix Content" == node.get(expanded=False)
 
 
 def test_get_no_expanded_link(tmp_path: Path):
-    uri = "studyfile://my-link"
+    uri = "matrix://my-link"
 
     file = tmp_path / "my-study/lazy.txt"
     file.parent.mkdir()
@@ -62,11 +58,15 @@ def test_get_no_expanded_link(tmp_path: Path):
 
     config = StudyConfig(study_path=file, study_id="my-study")
 
+    resolver = Mock()
+    resolver.resolve.return_value = "Mock Matrix Content"
+
     node = MockLazyNode(
-        context=ContextServer(matrix=Mock(), resolver=Mock()),
+        context=ContextServer(matrix=Mock(), resolver=resolver),
         config=config,
     )
-    assert uri == node.get(expanded=True)
+    assert "Mock Matrix Content" == node.get(expanded=False)
+    resolver.resolve.assert_called_once_with(uri)
 
 
 def test_get_expanded_txt(tmp_path: Path):
@@ -80,35 +80,29 @@ def test_get_expanded_txt(tmp_path: Path):
         context=ContextServer(matrix=Mock(), resolver=Mock()),
         config=config,
     )
-    assert "Mock Matrix Content" == node.get(expanded=False)
+    assert "[LAZY] Lazy content of lazy.txt" == node.get(expanded=True)
 
 
 def test_get_expanded_link(tmp_path: Path):
-    uri = "studyfile://my-link"
+    uri = "matrix://my-link"
 
     file = tmp_path / "my-study/lazy.txt"
     file.parent.mkdir()
     (file.parent / "lazy.txt.link").write_text(uri)
 
-    uri_resolver = Mock()
-    uri_resolver.resolve.return_value = "Mock Matrix Content"
-
     config = StudyConfig(study_path=file, study_id="my-study")
 
     node = MockLazyNode(
-        context=ContextServer(matrix=Mock(), resolver=uri_resolver),
+        context=ContextServer(matrix=Mock(), resolver=Mock()),
         config=config,
     )
-    assert "Mock Matrix Content" == node.get(expanded=False)
-    uri_resolver.resolve.assert_called_once_with(uri)
+    assert uri == node.get(expanded=True)
 
 
-def test_save(tmp_path: Path):
+def test_save_uri(tmp_path: Path):
     file = tmp_path / "my-study/lazy.txt"
     file.parent.mkdir()
     file.touch()
-
-    src = tmp_path / "src.txt"
 
     resolver = Mock()
     resolver.resolve.return_value = "Lazy"
@@ -117,10 +111,29 @@ def test_save(tmp_path: Path):
     context = ContextServer(matrix=Mock(), resolver=resolver)
     node = MockLazyNode(context=context, config=config)
 
-    uri = f"studyfile://{src.absolute()}"
+    uri = f"matrix://id"
     node.save(uri)
-    assert file.read_text() == "Lazy"
+    assert (file.parent / f"{file.name}.link").read_text() == uri
+    assert not file.exists()
     resolver.resolve.assert_called_once_with(uri)
 
-    node.save("Not Lazy")
-    assert file.read_text() == "Not Lazy"
+
+def test_save_txt(tmp_path: Path):
+    file = tmp_path / "my-study/lazy.txt"
+    file.parent.mkdir()
+
+    link = file.parent / f"{file.name}.link"
+    link.touch()
+
+    resolver = Mock()
+    resolver.resolve.return_value = None
+
+    config = StudyConfig(study_path=file, study_id="")
+    context = ContextServer(matrix=Mock(), resolver=resolver)
+    node = MockLazyNode(context=context, config=config)
+
+    content = "Mock File Content"
+    node.save(content)
+    assert file.read_text() == content
+    assert not link.exists()
+    resolver.resolve.assert_called_once_with(content)

@@ -17,6 +17,14 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
     def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
 
+    def get_lazy_content(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> str:
+        return f"file://{self.config.path.name}"
+
     def load(
         self,
         url: Optional[List[str]] = None,

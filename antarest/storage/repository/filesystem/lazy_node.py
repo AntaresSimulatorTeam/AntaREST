@@ -1,7 +1,7 @@
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, List, Generic
+from typing import Optional, List, Generic, Union, cast
 
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.context import ContextServer
@@ -12,6 +12,8 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     """
     Abstract left with implemented a lazy loading for its daughter implementation.
     """
+
+    LAZY_PLACEHOLDER_PREFIX: str = "[LAZY] "
 
     def __init__(
         self,
@@ -26,37 +28,51 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-    ) -> G:
+    ) -> Union[str, G]:
         self._assert_url_end(url)
 
-        if self.config.path.exists():
+        if self.get_link_path().exists():
+            link = self.get_link_path().read_text()
             if expanded:
-                return self.get_uri()  # type: ignore
+                return link
             else:
-                return self.load(url, depth, expanded)
-        else:
-            data = self.get_link_path().read_text()
-            return (
-                data if expanded else self.context.resolver.resolve(data)  # type: ignore
-            )  # type ignore
+                return cast(G, self.context.resolver.resolve(link))
 
-    def get_uri(self) -> str:
-        return self.context.resolver.build_studyfile_uri(
-            self.config.path,
-            self.config.root_path,
-            self.config.study_id,
-        )
+        if expanded:
+            return LazyNode.LAZY_PLACEHOLDER_PREFIX + self.get_lazy_content()
+        else:
+            return self.load(url, depth, expanded)
 
     def get_link_path(self) -> Path:
         path = self.config.path.parent / (self.config.path.name + ".link")
         return path
 
-    def save(self, data: S, url: Optional[List[str]] = None) -> None:
+    def save(
+        self, data: Union[str, S], url: Optional[List[str]] = None
+    ) -> None:
         self._assert_url_end(url)
 
-        if isinstance(data, str) and f"studyfile://" in data:
-            data = self.context.resolver.resolve(data)  # type: ignore
-        return self.dump(data, url)
+        if isinstance(data, str) and LazyNode.LAZY_PLACEHOLDER_PREFIX in data:
+            return None
+
+        if isinstance(data, str) and self.context.resolver.resolve(data):
+            self.get_link_path().write_text(data)
+            if self.config.path.exists():
+                self.config.path.unlink()
+            return None
+
+        self.dump(cast(S, data), url)
+        if self.get_link_path().exists():
+            self.get_link_path().unlink()
+        return None
+
+    def get_lazy_content(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> str:
+        return f"Lazy content of {self.config.path.name}"
 
     @abstractmethod
     def load(

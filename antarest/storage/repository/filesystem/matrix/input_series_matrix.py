@@ -30,10 +30,15 @@ class InputSeriesMatrix(MatrixNode):
     def build(self, config: StudyConfig) -> TREE:
         pass  # end node has nothing to build
 
-    def parse(self, path: Path) -> SUB_JSON:  # type: ignore
+    def load(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> JSON:
         try:
             matrix: pd.DataFrame = pd.read_csv(
-                path,
+                self.config.path,
                 sep="\t",
                 dtype=float,
                 header=None,
@@ -45,20 +50,9 @@ class InputSeriesMatrix(MatrixNode):
         except EmptyDataError:
             return {}
 
-    def format(self, data: SUB_JSON, path: Path) -> None:
-        df = pd.DataFrame(**data)
-        df.to_csv(path, sep="\t", header=False, index=False)
-
-    def load(  # type: ignore
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> SUB_JSON:
-        return self.parse(self.config.path)
-
     def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
-        self.format(data, self.config.path)
+        df = pd.DataFrame(**data)
+        df.to_csv(self.config.path, sep="\t", header=False, index=False)
 
     def check_errors(
         self,

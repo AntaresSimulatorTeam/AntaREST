@@ -87,8 +87,6 @@ def build_storage(
         event_bus=event_bus,
     )
 
-    resolver.storage_service = storage_service  # type: ignore
-
     watcher = Watcher(config=config, service=storage_service)
     watcher.start()
 
