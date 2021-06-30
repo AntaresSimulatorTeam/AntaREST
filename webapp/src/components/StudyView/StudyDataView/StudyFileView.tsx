@@ -59,7 +59,7 @@ const StudyDataView = (props: PropTypes) => {
   return (
     <>
       {data && <code className={classes.code}>{data}</code>}
-      {matrixData && <MatrixView data={matrixData} />}
+      {matrixData && Object.keys(matrixData).length > 0 && <MatrixView data={matrixData} />}
       {!loaded && (
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           <MainContentLoader />

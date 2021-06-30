@@ -42,6 +42,10 @@ class SlurmLauncher(ILauncher):
         self.check_state: bool = True
         self.thread: Optional[threading.Thread] = None
         self.job_id_to_study_id: Dict[str, str] = {}
+        self._check_config()
+
+    def _check_config(self):
+        assert self.slurm_config.local_workspace.exists() and self.slurm_config.local_workspace.is_dir() # and check write permission
 
     def _loop(self) -> None:
         arguments = self._init_launcher_arguments()
