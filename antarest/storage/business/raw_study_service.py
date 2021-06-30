@@ -273,23 +273,21 @@ class RawStudyService:
         """
         self.check_study_exists(src_meta)
         src_path = self.get_study_path(src_meta)
+        dest_path = self.get_study_path(dest_meta)
 
-        config, study = self.study_factory.create_from_fs(
-            src_path, src_meta.id
+        shutil.copytree(src_path, dest_path)
+
+        output = dest_path / "output"
+        if output.exists():
+            shutil.rmtree(output)
+
+        _, study = self.study_factory.create_from_fs(
+            dest_path, study_id=dest_meta.id
         )
-        data_source = study.get()
-        del study
-
-        config.path = Path(dest_meta.path)
-        data_destination = copy.deepcopy(data_source)
-
+        data_destination = study.get()
         StorageServiceUtils.update_antares_info(dest_meta, data_destination)
-        if "output" in data_destination:
-            del data_destination["output"]
-        config.outputs = {}
-
-        study = self.study_factory.create_from_config(config)
         study.save(data_destination)
+
         del study
         return dest_meta
 
