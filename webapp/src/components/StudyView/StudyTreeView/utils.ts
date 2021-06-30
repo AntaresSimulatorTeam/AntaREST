@@ -33,7 +33,7 @@ export const getStudyParams = (
   itemkey: string,
 ): StudyParams | undefined => {
   if (typeof data !== 'object') {
-    const tmp = data.substr("[LAZY] ".length).split('://');
+    const tmp = data.substr('[LAZY] '.length).split('://');
     if (tmp && tmp.length > 0) {
       return { type: tmp[0] as StudyDataType, icon: 'file-alt', data: `${path}/${itemkey}` };
     }
