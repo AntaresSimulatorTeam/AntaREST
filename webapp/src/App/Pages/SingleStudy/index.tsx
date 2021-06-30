@@ -4,10 +4,11 @@ import { useParams, Link } from 'react-router-dom';
 import { Breadcrumbs, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import StudyView from '../../../components/StudyView';
-import { getStudyData, getStudyJobs, LaunchJob } from '../../../services/api/study';
+import { getStudyData, getStudyJobs } from '../../../services/api/study';
 import PulsingDot from '../../../components/ui/PulsingDot';
 import GenericTabView from '../../../components/ui/NavComponents/GenericTabView';
 import Informations from './Informations';
+import { LaunchJob } from '../../../common/types';
 
 const logError = debug('antares:singlestudyview:error');
 

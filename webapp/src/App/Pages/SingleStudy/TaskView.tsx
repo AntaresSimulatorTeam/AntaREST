@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { makeStyles, createStyles, Theme, Paper, Typography, GridList, GridListTile } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { getStudyJobs, LaunchJob } from '../../../services/api/study';
+import { getStudyJobs } from '../../../services/api/study';
+import { LaunchJob } from '../../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {

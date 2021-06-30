@@ -20,6 +20,18 @@ export interface StudyMetadata {
   version: string;
 }
 
+export type JobStatus = 'JobStatus.RUNNING' | 'JobStatus.PENDING' | 'JobStatus.SUCCESS' | 'JobStatus.FAILED';
+
+export interface LaunchJob {
+  id: string;
+  studyId: string;
+  status: JobStatus;
+  creationDate: number;
+  completionDate: number;
+  msg: string;
+  exitCode: number;
+}
+
 export enum RoleType {
   ADMIN = 40,
   RUNNER = 30,

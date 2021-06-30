@@ -6,11 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { createStyles, makeStyles, Theme, Breadcrumbs } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import { AppState } from '../reducers';
-import { LaunchJob, getStudyJobs, getStudies } from '../../services/api/study';
+import { getStudyJobs, getStudies } from '../../services/api/study';
 import JobListing from '../../components/JobListing';
 import { useNotif } from '../../services/utils';
 import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
 import { initStudies } from '../../ducks/study';
+import { LaunchJob } from '../../common/types';
 
 const logError = debug('antares:studymanagement:error');
 

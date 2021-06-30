@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { makeStyles, createStyles, Button } from '@material-ui/core';
+import { makeStyles, createStyles } from '@material-ui/core';
 import ListIcon from '@material-ui/icons/List';
 import ViewCompactIcon from '@material-ui/icons/ViewCompact';
 import debug from 'debug';
@@ -34,12 +34,13 @@ const useStyles = makeStyles(() => createStyles({
     alignItems: 'center',
     padding: '0px 10px',
   },
-  viewButton: {
-    color: theme.palette.primary.main,
-  },
   viewIcon: {
     width: '35px',
     height: '35px',
+    color: theme.palette.primary.main,
+    '&:hover': {
+      color: theme.palette.primary.dark,
+    },
   },
 }));
 
@@ -92,14 +93,14 @@ const StudyManagement = (props: PropTypes) => {
         <StudyCreationTools />
         <div className={classes.view}>
           <StudySearchTool setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
-          <Button
-            className={classes.viewButton}
-            onClick={() => setViewState(!isList)}
-          >
-            {
-              isList ? <ViewCompactIcon className={classes.viewIcon} /> : <ListIcon className={classes.viewIcon} />
+          {
+              isList ? (
+                <ViewCompactIcon
+                  className={classes.viewIcon}
+                  onClick={() => setViewState(!isList)}
+                />
+              ) : <ListIcon className={classes.viewIcon} onClick={() => setViewState(!isList)} />
             }
-          </Button>
         </div>
       </div>
       {!loaded && <MainContentLoader />}
