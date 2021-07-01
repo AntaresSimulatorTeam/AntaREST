@@ -2,8 +2,8 @@ import os
 import time
 from pathlib import Path
 
-from antarest.launcher.business.slurm_launcher.log_manager import (
-    SlurmLogManager,
+from antarest.launcher.business.log_manager import (
+    LogTailManager,
 )
 
 import logging
@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def test_reading(tmp_path: Path):
-    log_manager = SlurmLogManager(tmp_path)
+    log_manager = LogTailManager(tmp_path)
 
     logs = []
 
