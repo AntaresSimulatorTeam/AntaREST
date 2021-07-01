@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { StudyMetadata, StudyMetadataDTO } from '../../common/types';
+import { LaunchJob, StudyMetadata, StudyMetadataDTO } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 
@@ -65,16 +65,6 @@ export const launchStudy = async (sid: string): Promise<string> => {
   const res = await client.post(`/v1/launcher/run/${sid}`);
   return res.data;
 };
-
-export interface LaunchJob {
-  id: string;
-  studyId: string;
-  status: string;
-  creationDate: string;
-  completionDate: string;
-  msg: string;
-  exitCode: number;
-}
 
 export const getStudyJobs = async (sid?: string): Promise<LaunchJob[]> => {
   const query = sid ? `?study=${sid}` : '';
