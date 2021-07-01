@@ -35,7 +35,9 @@ class LogTailManager:
 
     @staticmethod
     def follow(
-        log_file: Path, handler: Callable[[str], None], stop: Callable[[], bool]
+        log_file: Path,
+        handler: Callable[[str], None],
+        stop: Callable[[], bool],
     ) -> None:
         with open(log_file, "r") as fh:
             line = ""
