@@ -113,6 +113,7 @@ class JwtSettings(BaseModel):
     ] = Auth.REFRESH_TOKEN_DURATION
     authjwt_denylist_enabled: bool = True
     authjwt_denylist_token_checks: Any = {"access", "refresh"}
+    authjwt_cookie_csrf_protect: bool = True
 
 
 def fastapi_app(
@@ -180,6 +181,7 @@ def fastapi_app(
             authjwt_token_location=("headers", "cookies"),
             authjwt_access_token_expires=Auth.ACCESS_TOKEN_DURATION,
             authjwt_refresh_token_expires=Auth.REFRESH_TOKEN_DURATION,
+            authjwt_cookie_csrf_protect=False,
         )
 
     application.add_middleware(
@@ -219,10 +221,7 @@ def fastapi_app(
     event_bus = build_eventbus(application, config)
     user_service = build_login(application, config, event_bus=event_bus)
 
-    matrix_service = build_matrixstore(
-        application,
-        config,
-    )
+    matrix_service = build_matrixstore(application, config, user_service)
 
     storage = build_storage(
         application,

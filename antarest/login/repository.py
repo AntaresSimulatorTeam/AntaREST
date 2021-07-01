@@ -22,7 +22,7 @@ class GroupRepository:
     """
 
     def __init__(self) -> None:
-        self.logger = logging.Logger(self.__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
         with db():
             self.save(Group(id="admin", name="admin"))
 
@@ -63,7 +63,7 @@ class UserRepository:
     """
 
     def __init__(self, config: Config) -> None:
-        self.logger = logging.Logger(self.__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
         # init seed admin user from conf
         with db():
             admin_user = self.get_by_name("admin")
@@ -116,7 +116,7 @@ class UserLdapRepository:
     """
 
     def __init__(self) -> None:
-        self.logger = logging.Logger(self.__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def save(self, user_ldap: UserLdap) -> UserLdap:
         res = db.session.query(
@@ -159,7 +159,7 @@ class BotRepository:
     """
 
     def __init__(self) -> None:
-        self.logger = logging.Logger(self.__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def save(self, bot: Bot) -> Bot:
         res = db.session.query(exists().where(Bot.id == bot.id)).scalar()
@@ -208,7 +208,7 @@ class RoleRepository:
     """
 
     def __init__(self) -> None:
-        self.logger = logging.Logger(self.__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
         with db():
             if self.get(1, "admin") is None:
                 self.save(
