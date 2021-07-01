@@ -14,14 +14,14 @@ from antarest.launcher.model import JobStatus
 
 
 @pytest.mark.unit_test
-def test_init_slurm_launcher_arguments():
+def test_init_slurm_launcher_arguments(tmp_path: Path):
     config = Config(
         launcher=LauncherConfig(
             slurm=SlurmConfig(
                 default_wait_time=42,
                 default_time_limit=43,
                 default_n_cpu=44,
-                local_workspace=Path("local_workspace"),
+                local_workspace=tmp_path,
             )
         )
     )
@@ -56,11 +56,11 @@ def test_init_slurm_launcher_arguments():
 
 
 @pytest.mark.unit_test
-def test_init_slurm_launcher_parameters():
+def test_init_slurm_launcher_parameters(tmp_path: Path):
     config = Config(
         launcher=LauncherConfig(
             slurm=SlurmConfig(
-                local_workspace=Path("local_workspace"),
+                local_workspace=tmp_path,
                 default_json_db_name="default_json_db_name",
                 slurm_script_path="slurm_script_path",
                 antares_versions_on_remote_server=["42"],
@@ -120,11 +120,11 @@ def test_slurm_launcher_delete_function(tmp_path: str):
 
 
 @pytest.mark.unit_test
-def test_run_study():
+def test_run_study(tmp_path: Path):
     config = Config(
         launcher=LauncherConfig(
             slurm=SlurmConfig(
-                local_workspace=Path("local_workspace"),
+                local_workspace=tmp_path,
                 default_json_db_name="default_json_db_name",
                 slurm_script_path="slurm_script_path",
                 antares_versions_on_remote_server=["42"],
@@ -166,7 +166,7 @@ def test_run_study():
 
 
 @pytest.mark.unit_test
-def test_check_state():
+def test_check_state(tmp_path: Path):
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
@@ -177,7 +177,7 @@ def test_check_state():
     config = Config(
         launcher=LauncherConfig(
             slurm=SlurmConfig(
-                local_workspace=Path("local_workspace"),
+                local_workspace=tmp_path,
                 default_json_db_name="default_json_db_name",
                 slurm_script_path="slurm_script_path",
                 antares_versions_on_remote_server=["42"],
