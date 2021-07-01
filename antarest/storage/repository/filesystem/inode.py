@@ -23,7 +23,7 @@ class INode(ABC, Generic[G, S, V]):
         Returns: children of current node
 
         """
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def get(
@@ -43,7 +43,7 @@ class INode(ABC, Generic[G, S, V]):
         Returns: json
 
         """
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def save(self, data: S, url: Optional[List[str]] = None) -> None:
@@ -57,7 +57,7 @@ class INode(ABC, Generic[G, S, V]):
         Returns:
 
         """
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def check_errors(
@@ -73,7 +73,25 @@ class INode(ABC, Generic[G, S, V]):
         Returns: list of errors belongs to this node or children
 
         """
-        pass
+        raise NotImplementedError()
+
+    @abstractmethod
+    def normalize(self) -> None:
+        """
+        Scan tree to send matrix in matrix store and replace by its links
+        Returns:
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def denormalize(self) -> None:
+        """
+        Scan tree to fetch matrix by its links
+        Returns:
+
+        """
+        raise NotImplementedError()
 
     def _assert_url_end(self, url: Optional[List[str]] = None) -> None:
         """

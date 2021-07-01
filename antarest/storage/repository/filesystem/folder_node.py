@@ -117,6 +117,14 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
                     )
             return errors
 
+    def normalize(self) -> None:
+        for child in self.build(self.config).values():
+            child.normalize()
+
+    def denormalize(self) -> None:
+        for child in self.build(self.config).values():
+            child.denormalize()
+
     def extract_child(
         self, children: TREE, url: List[str]
     ) -> Tuple[List[str], List[str]]:

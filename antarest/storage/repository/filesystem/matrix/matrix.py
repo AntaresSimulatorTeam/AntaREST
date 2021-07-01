@@ -26,6 +26,36 @@ class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):
     ) -> str:
         return f"matrixfile://{self.config.path.name}"
 
+    def normalize(self) -> None:
+        if self.get_link_path().exists():
+            return
+
+        matrix = self.load()
+        dto = MatrixDTO(
+            freq=MatrixFreq.from_str(self.freq),
+            index=matrix["index"],
+            columns=matrix["columns"],
+            data=matrix["data"],
+        )
+
+        uuid = self.context.matrix.create(dto)
+        self.get_link_path().write_text(uuid)
+        self.config.path.unlink()
+
+    def denormalize(self) -> None:
+        if self.config.path.exists():
+            return
+
+        uuid = self.get_link_path().read_text()
+        dto = self.context.matrix.get(uuid)
+        if not dto:
+            return
+
+        matrix = {"data": dto.data, "index": dto.index, "columns": dto.columns}
+
+        self.dump(matrix)
+        self.get_link_path().unlink()
+
     @abstractmethod
     def load(
         self,
