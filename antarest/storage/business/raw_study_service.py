@@ -400,3 +400,11 @@ class RawStudyService:
                     )
                 )
         return results
+
+    def normalize(self, study: RawStudy) -> None:
+        _, study = self.get_study(study)
+        study.normalize()
+
+    def denormalize(self, study: RawStudy) -> None:
+        _, study = self.get_study(study)
+        study.denormalize()

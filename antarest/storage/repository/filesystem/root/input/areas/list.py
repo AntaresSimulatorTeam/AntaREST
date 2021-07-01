@@ -6,6 +6,12 @@ from antarest.storage.repository.filesystem.inode import INode, TREE
 
 
 class InputAreasList(INode[List[str], List[str], List[str]]):
+    def normalize(self) -> None:
+        pass
+
+    def denormalize(self) -> None:
+        pass
+
     def __init__(self, context: ContextServer, config: StudyConfig):
         self.config = config
         self.context = context

@@ -39,7 +39,7 @@ class ExporterService:
         """
         path_study = self.study_service.get_study_path(metadata)
 
-        self.study_service.check_study_exists(metadata)
+        self.study_service.denormalize(metadata)
 
         return self.exporter.export_file(path_study, target, outputs)
 
@@ -48,6 +48,6 @@ class ExporterService:
     ) -> None:
         path_study = self.study_service.get_study_path(metadata)
 
-        self.study_service.check_study_exists(metadata)
+        self.study_service.denormalize(metadata)
 
         self.exporter.export_flat(path_study, dest, outputs)

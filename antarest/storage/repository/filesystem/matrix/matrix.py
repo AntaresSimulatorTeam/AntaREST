@@ -39,13 +39,16 @@ class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):
         )
 
         uuid = self.context.matrix.create(dto)
-        self.get_link_path().write_text(uuid)
+        self.get_link_path().write_text(
+            self.context.resolver.build_matrix_uri(uuid)
+        )
         self.config.path.unlink()
 
     def denormalize(self) -> None:
         if self.config.path.exists():
             return
 
+        print(f"HELLO {self.__class__.__name__}")
         uuid = self.get_link_path().read_text()
         dto = self.context.matrix.get(uuid)
         if not dto:
