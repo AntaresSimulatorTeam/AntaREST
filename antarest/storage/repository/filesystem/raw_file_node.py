@@ -48,7 +48,7 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
         return []
 
     def normalize(self) -> None:
-        pass
+        pass  # no external store in this node
 
     def denormalize(self) -> None:
-        pass
+        pass  # no external store in this node

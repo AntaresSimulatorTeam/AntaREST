@@ -7,10 +7,10 @@ from antarest.storage.repository.filesystem.inode import INode, TREE
 
 class InputAreasList(INode[List[str], List[str], List[str]]):
     def normalize(self) -> None:
-        pass
+        pass  # no external store in this node
 
     def denormalize(self) -> None:
-        pass
+        pass  # no external store in this node
 
     def __init__(self, context: ContextServer, config: StudyConfig):
         self.config = config

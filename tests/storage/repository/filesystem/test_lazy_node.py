@@ -9,6 +9,12 @@ from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 
 class MockLazyNode(LazyNode[str, str, str]):
+    def normalize(self) -> None:
+        pass  # no external store in this node
+
+    def denormalize(self) -> None:
+        pass  # no external store in this node
+
     def __init__(self, context: ContextServer, config: StudyConfig) -> None:
         super().__init__(
             config=config,

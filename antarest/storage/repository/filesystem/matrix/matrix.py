@@ -48,13 +48,10 @@ class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):
         if self.config.path.exists():
             return
 
-        print(f"HELLO {self.__class__.__name__}")
         uuid = self.get_link_path().read_text()
-        dto = self.context.matrix.get(uuid)
-        if not dto:
+        matrix = self.context.resolver.resolve(uuid)
+        if not matrix or not isinstance(matrix, dict):
             return
-
-        matrix = {"data": dto.data, "index": dto.index, "columns": dto.columns}
 
         self.dump(matrix)
         self.get_link_path().unlink()

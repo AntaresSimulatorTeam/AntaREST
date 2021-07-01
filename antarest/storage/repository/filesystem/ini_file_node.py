@@ -88,10 +88,10 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         return errors
 
     def normalize(self) -> None:
-        pass
+        pass  # no external store in this node
 
     def denormalize(self) -> None:
-        pass
+        pass  # no external store in this node
 
     def _validate_param(
         self,

@@ -57,15 +57,19 @@ def test_normalize(tmp_path: Path):
     matrix_service = Mock()
     matrix_service.create.return_value = "my-id"
 
+    resolver = Mock()
+    resolver.build_matrix_uri.return_value = "matrix://my-id"
+
     node = MockMatrixNode(
-        context=ContextServer(matrix=matrix_service, resolver=Mock()),
+        context=ContextServer(matrix=matrix_service, resolver=resolver),
         config=StudyConfig(study_path=file, study_id="mi-id"),
     )
 
     node.normalize()
-    assert node.get_link_path().read_text() == "my-id"
+    assert node.get_link_path().read_text() == "matrix://my-id"
     assert not file.exists()
     matrix_service.create.assert_called_once_with(MOCK_MATRIX_DTO)
+    resolver.build_matrix_uri.assert_called_once_with("my-id")
 
 
 def test_denormalize(tmp_path: Path):
@@ -74,11 +78,11 @@ def test_denormalize(tmp_path: Path):
     link = file.parent / f"{file.name}.link"
     link.write_text("my-id")
 
-    matrix_service = Mock()
-    matrix_service.get.return_value = MOCK_MATRIX_DTO
+    resolver = Mock()
+    resolver.resolve.return_value = MOCK_MATRIX_JSON
 
     node = MockMatrixNode(
-        context=ContextServer(matrix=matrix_service, resolver=Mock()),
+        context=ContextServer(matrix=Mock(), resolver=resolver),
         config=StudyConfig(study_path=file, study_id="mi-id"),
     )
 
