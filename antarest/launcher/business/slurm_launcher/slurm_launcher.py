@@ -24,6 +24,7 @@ from antarest.launcher.business.ilauncher import (
     ILauncher,
     LauncherInitException,
 )
+from antarest.launcher.business.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus
 from antarest.storage.service import StorageService
 
@@ -33,7 +34,10 @@ logging.getLogger("paramiko").setLevel("WARN")
 
 class SlurmLauncher(ILauncher):
     def __init__(
-        self, config: Config, storage_service: StorageService, event_bus: IEventBus
+        self,
+        config: Config,
+        storage_service: StorageService,
+        event_bus: IEventBus,
     ) -> None:
         super().__init__(config, storage_service)
         if config.launcher.slurm is None:
@@ -45,9 +49,15 @@ class SlurmLauncher(ILauncher):
         self.thread: Optional[threading.Thread] = None
         self.job_id_to_study_id: Dict[str, str] = {}
         self._check_config()
+        self.log_tail_manager = LogTailManager(
+            self.slurm_config.local_workspace
+        )
 
-    def _check_config(self):
-        assert self.slurm_config.local_workspace.exists() and self.slurm_config.local_workspace.is_dir() # and check write permission
+    def _check_config(self) -> None:
+        assert (
+            self.slurm_config.local_workspace.exists()
+            and self.slurm_config.local_workspace.is_dir()
+        )  # and check write permission
 
     def _loop(self) -> None:
         arguments = self._init_launcher_arguments()
