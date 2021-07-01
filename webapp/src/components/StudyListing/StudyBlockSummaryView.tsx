@@ -18,33 +18,16 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     padding: '4px',
     width: '400px',
     height: '170px',
-    display: 'flex',
-    flexFlow: 'row nowrap',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  main: {
-    flex: 1,
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   jobStatus: {
     width: '20px',
-    height: '168px',
-    display: 'flex',
+    marginLeft: theme.spacing(1),
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
   },
   buttons: {
-    paddingLeft: theme.spacing(2),
-    width: '95%',
-    display: 'flex',
-    flexFlow: 'row nowrap',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    width: '100%',
   },
   title: {
     color: theme.palette.primary.main,
@@ -115,49 +98,48 @@ const StudyBlockSummaryView = (props: PropTypes) => {
   return (
     <div>
       <Card className={classes.root}>
-        <div className={classes.main}>
-          <CardContent>
-            <Link className={classes.title} to={`/study/${encodeURI(study.id)}`}>
-              <Typography className={classes.title} component="h3">
-                {study.name}
-              </Typography>
-            </Link>
-            <Typography color="textSecondary" className={classes.id} gutterBottom>
-              {study.id}
+        <CardContent>
+          <Link className={classes.title} to={`/study/${encodeURI(study.id)}`}>
+            <Typography className={classes.title} component="h3">
+              {study.name}
+              {
+                !!lastJobStatus && (
+                <span className={classes.jobStatus}>
+                  <FiberManualRecordIcon style={{ width: '15px', height: '15px', color: statusColor[lastJobStatus] }} />
+                </span>
+                )
+              }
             </Typography>
-            <Grid container spacing={2} className={classes.info}>
-              <Grid item xs={6}>
-                <FontAwesomeIcon icon="user" />
-                <span className={classes.infotxt}>{study.author}</span>
-              </Grid>
-              <Grid item xs={6}>
-                <FontAwesomeIcon icon="clock" />
-                <span className={classes.infotxt}>{moment.unix(study.creationDate).format('YYYY/MM/DD HH:mm')}</span>
-              </Grid>
-              <Grid item xs={6}>
-                <FontAwesomeIcon icon="code-branch" />
-                <span className={classes.infotxt}>{study.version}</span>
-              </Grid>
-              <Grid item xs={6}>
-                <FontAwesomeIcon icon="history" />
-                <span className={classes.infotxt}>{moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm')}</span>
-              </Grid>
+          </Link>
+          <Typography color="textSecondary" className={classes.id} gutterBottom>
+            {study.id}
+          </Typography>
+          <Grid container spacing={2} className={classes.info}>
+            <Grid item xs={6}>
+              <FontAwesomeIcon icon="user" />
+              <span className={classes.infotxt}>{study.author}</span>
             </Grid>
-          </CardContent>
-          <CardActions className={classes.buttons}>
-            <div>
-              <Button size="small" style={{ color: theme.palette.secondary.main }} onClick={() => launchStudy(study)}>{t('main:launch')}</Button>
-              <DownloadLink url={getExportUrl(study.id, false)}><Button size="small" style={{ color: theme.palette.primary.light }}>{t('main:export')}</Button></DownloadLink>
-            </div>
-            <Button size="small" style={{ float: 'right', color: theme.palette.error.main }} onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
-          </CardActions>
-        </div>
-        {
-          !!lastJobStatus && (
-          <div className={classes.jobStatus}>
-            <FiberManualRecordIcon style={{ width: '15px', height: '15px', color: statusColor[lastJobStatus] }} />
+            <Grid item xs={6}>
+              <FontAwesomeIcon icon="clock" />
+              <span className={classes.infotxt}>{moment.unix(study.creationDate).format('YYYY/MM/DD HH:mm')}</span>
+            </Grid>
+            <Grid item xs={6}>
+              <FontAwesomeIcon icon="code-branch" />
+              <span className={classes.infotxt}>{study.version}</span>
+            </Grid>
+            <Grid item xs={6}>
+              <FontAwesomeIcon icon="history" />
+              <span className={classes.infotxt}>{moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm')}</span>
+            </Grid>
+          </Grid>
+        </CardContent>
+        <CardActions>
+          <div className={classes.buttons}>
+            <Button size="small" style={{ color: theme.palette.secondary.main }} onClick={() => launchStudy(study)}>{t('main:launch')}</Button>
+            <DownloadLink url={getExportUrl(study.id, false)}><Button size="small" style={{ color: theme.palette.primary.light }}>{t('main:export')}</Button></DownloadLink>
           </div>
-          )}
+          <Button size="small" style={{ float: 'right', color: theme.palette.error.main }} onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
+        </CardActions>
         {openConfirmationModal && (
         <ConfirmationModal
           open={openConfirmationModal}

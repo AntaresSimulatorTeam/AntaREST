@@ -37,9 +37,10 @@ const useStyles = makeStyles(() => createStyles({
   viewIcon: {
     width: '35px',
     height: '35px',
+    cursor: 'pointer',
     color: theme.palette.primary.main,
     '&:hover': {
-      color: theme.palette.primary.dark,
+      color: theme.palette.secondary.main,
     },
   },
 }));

@@ -25,7 +25,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   jobStatus: {
     width: '20px',
-    height: '80%',
+    height: '58%',
     display: 'flex',
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
@@ -116,7 +116,7 @@ const StudyListSummaryView = (props: PropTypes) => {
             {study.name}
           </Typography>
         </Link>
-        <Typography color="textSecondary" className={classes.id} gutterBottom>
+        <Typography color="textSecondary" className={classes.id}>
           {study.id}
         </Typography>
       </div>
