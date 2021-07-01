@@ -16,6 +16,7 @@ from antareslauncher.main_option_parser import (
 )
 
 from antarest.common.config import Config, SlurmConfig
+from antarest.common.interfaces.eventbus import IEventBus
 from antarest.common.jwt import DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
 from antarest.common.utils.fastapi_sqlalchemy import db
@@ -32,7 +33,7 @@ logging.getLogger("paramiko").setLevel("WARN")
 
 class SlurmLauncher(ILauncher):
     def __init__(
-        self, config: Config, storage_service: StorageService
+        self, config: Config, storage_service: StorageService, event_bus: IEventBus
     ) -> None:
         super().__init__(config, storage_service)
         if config.launcher.slurm is None:
@@ -40,6 +41,7 @@ class SlurmLauncher(ILauncher):
 
         self.slurm_config: SlurmConfig = config.launcher.slurm
         self.check_state: bool = True
+        self.event_bus = event_bus
         self.thread: Optional[threading.Thread] = None
         self.job_id_to_study_id: Dict[str, str] = {}
         self._check_config()

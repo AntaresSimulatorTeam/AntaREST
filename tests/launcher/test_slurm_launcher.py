@@ -26,7 +26,7 @@ def test_init_slurm_launcher_arguments():
         )
     )
 
-    slurm_launcher = SlurmLauncher(config=config, storage_service=Mock())
+    slurm_launcher = SlurmLauncher(config=config, storage_service=Mock(), event_bus=Mock())
 
     arguments = slurm_launcher._init_launcher_arguments()
 
@@ -72,7 +72,7 @@ def test_init_slurm_launcher_parameters():
         )
     )
 
-    slurm_launcher = SlurmLauncher(config=config, storage_service=Mock())
+    slurm_launcher = SlurmLauncher(config=config, storage_service=Mock(), event_bus=Mock())
 
     main_parameters = slurm_launcher._init_launcher_parameters()
     assert main_parameters.json_dir == config.launcher.slurm.local_workspace
@@ -103,7 +103,7 @@ def test_init_slurm_launcher_parameters():
 def test_slurm_launcher_delete_function(tmp_path: str):
     config = Mock()
     config.launcher.slurm.local_workspace = Path(tmp_path)
-    slurm_launcher = SlurmLauncher(config=config, storage_service=Mock())
+    slurm_launcher = SlurmLauncher(config=config, storage_service=Mock(), event_bus=Mock())
     directory_path = Path(tmp_path) / "directory"
     directory_path.mkdir()
     (directory_path / "file.txt").touch()
@@ -134,7 +134,7 @@ def test_run_study():
 
     storage_service = Mock()
     slurm_launcher = SlurmLauncher(
-        config=config, storage_service=storage_service
+        config=config, storage_service=storage_service, event_bus=Mock()
     )
 
     study_uuid = "study_uuid"
@@ -187,7 +187,7 @@ def test_check_state():
 
     storage_service = Mock()
     slurm_launcher = SlurmLauncher(
-        config=config, storage_service=storage_service
+        config=config, storage_service=storage_service, event_bus=Mock()
     )
     slurm_launcher._callback = Mock()
     slurm_launcher._import_study_output = Mock()

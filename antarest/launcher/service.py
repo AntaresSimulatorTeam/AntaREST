@@ -45,7 +45,7 @@ class LauncherService:
         self.repository = repository
         self.event_bus = event_bus
         self.launchers = factory_launcher.build_launcher(
-            config, storage_service
+            config, storage_service, event_bus
         )
         for _, launcher in self.launchers.items():
             launcher.add_statusupdate_callback(self.update)
