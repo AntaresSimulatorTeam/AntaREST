@@ -21,7 +21,6 @@ const App: React.FC<{}> = () => (
   <Provider store={reduxStore}>
     <Router basename={getConfig().applicationHome}>
       <ThemeProvider theme={theme}>
-        {getConfig().hidden && <Redirect to="/info" />}
         <SnackbarProvider maxSnack={5}>
           <div style={{ height: '100vh' }}>
             <LoginWrapper>
