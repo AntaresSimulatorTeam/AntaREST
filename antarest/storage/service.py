@@ -369,17 +369,17 @@ class StorageService:
     def export_study(
         self,
         uuid: str,
+        target: Path,
         params: RequestParameters,
         outputs: bool = True,
-    ) -> BytesIO:
+    ) -> Path:
         """
         Export study to a zip file.
         Args:
             uuid: study id
+            target: export path
             params: request parmeters
             outputs: integrate output folder in zip file
-
-        Returns: zip file
 
         """
         study = self._get_study(uuid)
@@ -390,7 +390,7 @@ class StorageService:
         self.logger.info(
             "study %s exported by user %s", uuid, params.get_user_id()
         )
-        return self.exporter_service.export_study(study, outputs)
+        return self.exporter_service.export_study(study, target, outputs)
 
     def export_study_flat(
         self,

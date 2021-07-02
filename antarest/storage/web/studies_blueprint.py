@@ -2,11 +2,12 @@ import io
 import json
 from glob import escape
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, File, Depends, Body, Request
 from fastapi.params import Param
-from starlette.responses import StreamingResponse, Response
+from starlette.responses import StreamingResponse, Response, FileResponse
 
 from antarest.common.config import Config
 from antarest.common.custom_types import JSON
@@ -15,6 +16,7 @@ from antarest.common.requests import (
     RequestParameters,
 )
 from antarest.common.swagger import get_path_examples
+from antarest.common.utils.file_transfer import FileTransferManager
 from antarest.common.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.storage.model import (
@@ -49,6 +51,7 @@ def create_study_routes(
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
+    ftm = FileTransferManager.get_instance(config)
 
     @bp.get("/studies", tags=[APITag.study_management], summary="Get Studies")
     def get_studies(
@@ -137,17 +140,18 @@ def create_study_routes(
     def export_study(
         uuid: str,
         no_output: Optional[bool] = False,
+        request_tmp_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         uuid_sanitized = sanitize_uuid(uuid)
 
         params = RequestParameters(user=current_user)
-        content = storage_service.export_study(
-            uuid_sanitized, params, not no_output
+        export_path = storage_service.export_study(
+            uuid_sanitized, request_tmp_file, params, not no_output
         )
 
-        return StreamingResponse(
-            content,
+        return FileResponse(
+            export_path,
             headers={
                 "Content-Disposition": f'attachment; filename="{uuid_sanitized}.zip'
             },
@@ -361,6 +365,7 @@ def create_study_routes(
         output_id: str,
         data: StudyDownloadDTO,
         request: Request,
+        tmp_export_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
@@ -371,12 +376,13 @@ def create_study_routes(
         )
         accept = request.headers.get("Accept")
         if accept == "application/zip" or accept == "application/tar+gz":
-            return StreamingResponse(
-                StudyDownloader.export(content, accept),
+            StudyDownloader.export(content, accept, tmp_export_file)
+            return FileResponse(
+                tmp_export_file,
                 headers={
                     "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
                 },
-                media_type="application/zip",
+                media_type=accept,
             )
         return content
 

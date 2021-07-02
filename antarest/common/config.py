@@ -1,4 +1,5 @@
 import logging
+import tempfile
 from pathlib import Path
 from typing import Optional, List, Dict
 
@@ -243,6 +244,7 @@ class Config:
     storage: StorageConfig = StorageConfig()
     launcher: LauncherConfig = LauncherConfig()
     matrixstore: MatrixStoreConfig = MatrixStoreConfig()
+    tmp_dir: Path = Path(tempfile.gettempdir())
     db_url: str = ""
     logging: LoggingConfig = LoggingConfig()
     debug: bool = True

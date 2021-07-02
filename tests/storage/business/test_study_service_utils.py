@@ -50,10 +50,8 @@ def test_output_downloads_export(tmp_path: Path):
         },
         warnings=[],
     )
-    data = StudyDownloader.export(matrix, "application/zip")
     zip_file = tmp_path / "output.zip"
-    with open(zip_file, "wb") as fh:
-        fh.write(data.read())
+    StudyDownloader.export(matrix, "application/zip", zip_file)
     with ZipFile(zip_file) as zip_input:
         assert zip_input.namelist() == ["a1.csv", "a2.csv"]
         assert (

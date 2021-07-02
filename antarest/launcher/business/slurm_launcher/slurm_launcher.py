@@ -86,6 +86,8 @@ class SlurmLauncher(ILauncher):
                 (Path(self.slurm_config.local_workspace) / "OUTPUT")
             ),
             ssh_config_file_is_required=False,
+            ssh_configfile_path_alternate1=None,
+            ssh_configfile_path_alternate2=None,
         )
 
         parser: MainOptionParser = MainOptionParser(main_options_parameters)

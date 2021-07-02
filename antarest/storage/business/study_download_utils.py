@@ -4,6 +4,7 @@ import os
 import re
 import tarfile
 from io import BytesIO, StringIO
+from pathlib import Path
 from typing import Callable, Tuple, Any, List, Dict, Union, Optional
 from zipfile import ZipFile, ZIP_DEFLATED
 
@@ -344,49 +345,46 @@ class StudyDownloader:
         return -1, []
 
     @staticmethod
-    def export(matrix: MatrixAggregationResult, type: str) -> BytesIO:
+    def export(
+        matrix: MatrixAggregationResult, type: str, target_file: Path
+    ) -> None:
 
         # 1- Zip/tar+gz container
-        data = BytesIO()
-        output_data: Union[ZipFile, tarfile.TarFile] = (
-            ZipFile(data, "w", ZIP_DEFLATED)
+        with (
+            ZipFile(target_file, "w", ZIP_DEFLATED)  # type: ignore
             if type == "application/zip"
-            else tarfile.open(fileobj=data, mode="w:gz")
-        )
+            else tarfile.open(target_file, mode="w:gz")
+        ) as output_data:
 
-        # 2 - Create CSV files
-        for area_name in matrix.data.keys():
-            output = StringIO()
-            writer = csv.writer(output, quoting=csv.QUOTE_NONE)
-            nb_rows, csv_titles = StudyDownloader.export_infos(
-                matrix.data[area_name]
-            )
-            if nb_rows == -1:
-                raise Exception(
-                    f"Outputs export:  No rows for  {area_name} csv"
+            # 2 - Create CSV files
+            for area_name in matrix.data.keys():
+                output = StringIO()
+                writer = csv.writer(output, quoting=csv.QUOTE_NONE)
+                nb_rows, csv_titles = StudyDownloader.export_infos(
+                    matrix.data[area_name]
                 )
-            writer.writerow(csv_titles)
-            for year in matrix.data[area_name].keys():
-                for i in range(0, nb_rows):
-                    columns = matrix.data[area_name][year]
-                    csv_row: List[Optional[float]] = [0.0, float(year)]
-                    csv_row.extend(
-                        [columns[name][i] for name in columns.keys()]
+                if nb_rows == -1:
+                    raise Exception(
+                        f"Outputs export:  No rows for  {area_name} csv"
                     )
-                    writer.writerow(csv_row)
+                writer.writerow(csv_titles)
+                for year in matrix.data[area_name].keys():
+                    for i in range(0, nb_rows):
+                        columns = matrix.data[area_name][year]
+                        csv_row: List[Optional[float]] = [0.0, float(year)]
+                        csv_row.extend(
+                            [columns[name][i] for name in columns.keys()]
+                        )
+                        writer.writerow(csv_row)
 
-            bytes_data = str.encode(output.getvalue(), "utf-8")
-            if isinstance(output_data, ZipFile):
-                output_data.writestr(f"{area_name}.csv", bytes_data)
-            else:
-                data_file = BytesIO(bytes_data)
-                data_file.seek(0, os.SEEK_END)
-                file_size = data_file.tell()
-                data_file.seek(0)
-                info = tarfile.TarInfo(name=f"{area_name}.csv")
-                info.size = file_size
-                output_data.addfile(tarinfo=info, fileobj=data_file)
-
-        output_data.close()
-        data.seek(0)
-        return data
+                bytes_data = str.encode(output.getvalue(), "utf-8")
+                if isinstance(output_data, ZipFile):
+                    output_data.writestr(f"{area_name}.csv", bytes_data)
+                else:
+                    data_file = BytesIO(bytes_data)
+                    data_file.seek(0, os.SEEK_END)
+                    file_size = data_file.tell()
+                    data_file.seek(0)
+                    info = tarfile.TarInfo(name=f"{area_name}.csv")
+                    info.size = file_size
+                    output_data.addfile(tarinfo=info, fileobj=data_file)

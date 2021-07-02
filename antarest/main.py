@@ -192,10 +192,6 @@ def fastapi_app(
         allow_headers=["*"],
     )
 
-    @application.on_event("shutdown")
-    def shutdown_session() -> None:
-        logging.getLogger(__name__).info("Request end")
-
     @application.exception_handler(HTTPException)
     def handle_http_exception(request: Request, exc: HTTPException) -> Any:
         """Return JSON instead of HTML for HTTP errors."""

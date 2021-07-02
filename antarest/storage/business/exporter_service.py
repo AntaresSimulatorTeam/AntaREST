@@ -24,11 +24,14 @@ class ExporterService:
         self.study_factory = study_factory
         self.exporter = exporter
 
-    def export_study(self, metadata: Study, outputs: bool = True) -> BytesIO:
+    def export_study(
+        self, metadata: Study, target: Path, outputs: bool = True
+    ) -> Path:
         """
         Export and compresse study inside zip
         Args:
             metadata: study
+            target: path of the file to export to
             outputs: ask to integrated output folder inside exportation
 
         Returns: zip file with study files compressed inside
@@ -38,7 +41,7 @@ class ExporterService:
 
         self.study_service.check_study_exists(metadata)
 
-        return self.exporter.export_file(path_study, outputs)
+        return self.exporter.export_file(path_study, target, outputs)
 
     def export_study_flat(
         self, metadata: Study, dest: Path, outputs: bool = True
