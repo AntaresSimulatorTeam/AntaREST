@@ -445,6 +445,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "created": 1480683452,
             "updated": 1602678639,
             "author": "Andrea SGATTONI",
+            "workspace": "default",
             "horizon": "2030",
             "scenario": None,
             "status": None,

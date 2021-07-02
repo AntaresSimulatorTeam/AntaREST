@@ -194,6 +194,7 @@ class RawStudyService:
             version=study.version,
             created=study.created_at.timestamp(),
             updated=study.updated_at.timestamp(),
+            workspace=study.workspace,
             author=study.owner.name
             if study.owner is not None
             else file_metadata.get("author", "Unknown"),
