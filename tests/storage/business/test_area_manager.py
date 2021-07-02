@@ -6,6 +6,7 @@ from antarest.storage.business.area_management import (
     AreaManager,
     AreaType,
     AreaInfoDTO,
+    AreaPatchUpdateDTO,
 )
 from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.model import RawStudy, Patch, PatchLeafDict, PatchArea
@@ -112,4 +113,32 @@ def test_delete_area():
 def test_update_area():
     raw_study_service = Mock(spec=RawStudyService)
     area_manager = AreaManager(raw_study_service=raw_study_service)
-    pass
+
+    study = RawStudy()
+    config = StudyConfig(
+        study_path=Path("somepath"),
+        study_id="",
+        areas={
+            "a1": Area({}, [], [], []),
+            "a2": Area({}, [], [], []),
+        },
+        sets={"s1": Set(["a1"])},
+    )
+    raw_study_service.get_study.return_value = (config, None)
+
+    raw_study_service.patch_service = Mock()
+    raw_study_service.patch_service.get.return_value = Patch(
+        areas=PatchLeafDict(a1=PatchArea(country="fr"))
+    )
+
+    raw_study_service.patch_service.patch.side_effect = lambda x, y: y
+
+    new_area_info = area_manager.update_area(
+        study,
+        "a1",
+        AreaPatchUpdateDTO(
+            type=AreaType.AREA, metadata=PatchArea(country="fr")
+        ),
+    )
+    assert new_area_info.id == "a1"
+    assert new_area_info.metadata == {"country": "fr"}
