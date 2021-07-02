@@ -281,31 +281,36 @@ class StorageService:
         ]
         for folder in folders:
             if str(folder.path) not in paths:
-                study = RawStudy(
-                    id=str(uuid4()),
-                    name=folder.path.name,
-                    path=str(folder.path),
-                    workspace=folder.workspace,
-                    owner=None,
-                    groups=folder.groups,
-                    public_mode=PublicMode.FULL
-                    if len(folder.groups) == 0
-                    else PublicMode.NONE,
-                )
+                try:
+                    study = RawStudy(
+                        id=str(uuid4()),
+                        name=folder.path.name,
+                        path=str(folder.path),
+                        workspace=folder.workspace,
+                        owner=None,
+                        groups=folder.groups,
+                        public_mode=PublicMode.FULL
+                        if len(folder.groups) == 0
+                        else PublicMode.NONE,
+                    )
 
-                self.study_service.update_from_raw_meta(
-                    study, fallback_on_default=True
-                )
+                    self.study_service.update_from_raw_meta(
+                        study, fallback_on_default=True
+                    )
 
-                study.content_status = self._analyse_study(study)
+                    study.content_status = self._analyse_study(study)
 
-                self.logger.info(
-                    "Study=%s appears on disk and will be added", study.id
-                )
-                self.event_bus.push(
-                    Event(EventType.STUDY_CREATED, study.to_json_summary())
-                )
-                self.repository.save(study)
+                    self.logger.info(
+                        "Study=%s appears on disk and will be added", study.id
+                    )
+                    self.event_bus.push(
+                        Event(EventType.STUDY_CREATED, study.to_json_summary())
+                    )
+                    self.repository.save(study)
+                except Exception as e:
+                    self.logger.error(
+                        f"Failed to add study {folder.path}", exc_info=e
+                    )
 
     def copy_study(
         self,
