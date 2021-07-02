@@ -55,15 +55,17 @@ interface PropTypes {
   study: string;
   studyData: any;
   setStudyData: (elm: any) => void;
+  filterOut: Array<string>;
 }
 
 const StudyJsonView = (props: PropTypes) => {
-  const { data, study, studyData, setStudyData } = props;
+  const { data, study, studyData, setStudyData, filterOut } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
   const [jsonData, setJsonData] = useState<object>(JSON.parse(data.json));
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
+  const [isEditable, setEditable] = useState<boolean>(true);
 
   const writeLeaf = (keys: Array<string>, dataElm: any, value: object, index = 0) => {
     if (index >= keys.length || keys.length === 0) { return; }
@@ -87,30 +89,39 @@ const StudyJsonView = (props: PropTypes) => {
       writeLeaf(tmpDataPath, newData, jsonData);
       setStudyData(newData);
       enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
+      setSaveAllowed(false);
     } catch (e) {
       enqueueSnackbar(t('studymanager:failtosavedata'), { variant: 'error' });
     }
   };
   useEffect(() => {
+    const tmpDataPath = data.path.split('/').filter((item) => item);
+    if (tmpDataPath.length > 0) {
+      setEditable(!filterOut.includes(tmpDataPath[0]));
+    }
     setJsonData(JSON.parse(data.json));
-  }, [data.json]);
+    setSaveAllowed(false);
+  }, [data, filterOut]);
   return (
     <div className={classes.root}>
-      <div className={classes.header}>
-        <Button
-          variant="outlined"
-          color="primary"
-          className={classes.saveButton}
-          style={{ border: '2px solid' }}
-          onClick={() => saveData()}
-          disabled={!saveAllowed}
-        >
-          <SaveIcon className={classes.buttonElement} style={{ width: '16px', height: '16px' }} />
-          <Typography className={classes.buttonElement} style={{ fontSize: '12px' }}>Save</Typography>
-        </Button>
-      </div>
+      {
+        isEditable && (
+        <div className={classes.header}>
+          <Button
+            variant="outlined"
+            color="primary"
+            className={classes.saveButton}
+            style={{ border: '2px solid' }}
+            onClick={() => saveData()}
+            disabled={!saveAllowed}
+          >
+            <SaveIcon className={classes.buttonElement} style={{ width: '16px', height: '16px' }} />
+            <Typography className={classes.buttonElement} style={{ fontSize: '12px' }}>{t('main:save')}</Typography>
+          </Button>
+        </div>
+        )}
       <Paper className={classes.content}>
-        <ReactJson src={jsonData} onEdit={(e) => { setJsonData(e.updated_src); setSaveAllowed(jsonData !== studyData); }} />
+        <ReactJson src={jsonData} onEdit={(e) => { setJsonData(e.updated_src); setSaveAllowed(true); }} />
       </Paper>
     </div>
   );

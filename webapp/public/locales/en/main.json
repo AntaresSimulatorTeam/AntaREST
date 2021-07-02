@@ -19,5 +19,7 @@
   "yesButton": "Yes",
   "noButton": "No",
   "backButton": "Back",
-  "closeButton": "Close"
+  "closeButton": "Close",
+  "save": "Save",
+  "edit": "Edit"
 }

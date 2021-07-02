@@ -29,14 +29,16 @@ interface RenderData {
 const StudyDataView = (props: PropTypes) => {
   const { study, type, data, studyData, setStudyData } = props;
   const classes = useStyles();
+  const filterOut = ['output', 'logs', 'Desktop'];
+
   const renderData = (): RenderData => {
     if (type === 'file') {
-      return { css: { overflow: 'auto' }, data: <StudyFileView study={study} url={data as string} /> };
+      return { css: { overflow: 'auto' }, data: <StudyFileView study={study} url={data as string} filterOut={filterOut} /> };
     }
     if (type === 'matrix' || type === 'matrixfile') {
-      return { css: { overflow: 'auto' }, data: <StudyMatrixView study={study} url={data as string} /> };
+      return { css: { overflow: 'auto' }, data: <StudyMatrixView study={study} url={data as string} filterOut={filterOut}/> };
     }
-    return { css: { overflow: 'hidden', paddingTop: '0px' }, data: <StudyJsonView studyData={studyData} setStudyData={setStudyData} study={study} data={data as DataType} /> };
+    return { css: { overflow: 'hidden', paddingTop: '0px' }, data: <StudyJsonView studyData={studyData} setStudyData={setStudyData} study={study} data={data as DataType} filterOut={filterOut} /> };
   };
 
   const rd = renderData();
