@@ -137,7 +137,6 @@ class MatrixRepository:
 
     def __init__(self) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.info("Hello")
 
     def save(self, matrix: Matrix) -> Matrix:
         res = db.session.query(exists().where(Matrix.id == matrix.id)).scalar()

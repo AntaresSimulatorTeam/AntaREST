@@ -256,11 +256,11 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/misc-gen/miscgen-fr",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/reserves/fr",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/prepro/fr/k",
