@@ -29,6 +29,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     width: '100%',
     padding: theme.spacing(1),
   },
+  breadcrumbsfirstelement: {
+    marginLeft: theme.spacing(1),
+  },
   dot: {
     height: '0.5em',
     width: '0.5em',
@@ -86,7 +89,7 @@ const SingleStudyView = () => {
   return (
     <div className={classes.root}>
       <Breadcrumbs aria-label="breadcrumb" className={classes.breadcrumbs}>
-        <Link to="/">
+        <Link to="/" className={classes.breadcrumbsfirstelement}>
           {t('main:allStudies')}
         </Link>
         <div style={{ display: 'flex', alignItems: 'center' }}>
