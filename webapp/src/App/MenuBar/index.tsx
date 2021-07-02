@@ -38,8 +38,7 @@ const useStyles = makeStyles((theme: Theme) =>
       marginBottom: '-10px',
       marginRight: theme.spacing(1.5),
     },
-  }),
-);
+  }));
 
 const MenuBar = () => {
   const classes = useStyles();

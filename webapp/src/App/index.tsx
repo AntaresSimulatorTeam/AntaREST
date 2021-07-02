@@ -1,7 +1,7 @@
 /* eslint-disable react/destructuring-assignment */
 import { Provider } from 'react-redux';
 import React from 'react';
-import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { ThemeProvider } from '@material-ui/core/styles';
 import { SnackbarProvider } from 'notistack';
 import createStore from './reducers';
