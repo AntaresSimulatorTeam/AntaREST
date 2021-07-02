@@ -15,22 +15,21 @@ from antarest.common.custom_types import JSON
 
 
 class Exporter:
-    def export_file(self, path_study: Path, outputs: bool = True) -> BytesIO:
-        data = BytesIO()
-        zipf = ZipFile(data, "w", ZIP_DEFLATED)
+    def export_file(
+        self, path_study: Path, export_path: Path, outputs: bool = True
+    ) -> Path:
+        with ZipFile(export_path, "w", ZIP_DEFLATED) as zipf:
+            current_dir = os.getcwd()
+            os.chdir(path_study)
 
-        current_dir = os.getcwd()
-        os.chdir(path_study)
+            for path in glob.glob("**", recursive=True):
+                if outputs or path.split(os.sep)[0] != "output":
+                    zipf.write(path, path)
 
-        for path in glob.glob("**", recursive=True):
-            if outputs or path.split(os.sep)[0] != "output":
-                zipf.write(path, path)
+            zipf.close()
 
-        zipf.close()
-
-        os.chdir(current_dir)
-        data.seek(0)
-        return data
+            os.chdir(current_dir)
+        return export_path
 
     def export_flat(
         self,

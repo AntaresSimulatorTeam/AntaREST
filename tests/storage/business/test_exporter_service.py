@@ -37,8 +37,9 @@ def test_export_file(tmp_path: Path):
 
     # Test good study
     md = RawStudy(id=name, workspace=DEFAULT_WORKSPACE_NAME)
-    assert b"Hello" == exporter_service.export_study(md)
-    exporter.export_file.assert_called_once_with(study_path, True)
+    export_path = tmp_path / "export.zip"
+    exporter_service.export_study(md, export_path)
+    exporter.export_file.assert_called_once_with(study_path, export_path, True)
 
 
 @pytest.mark.unit_test

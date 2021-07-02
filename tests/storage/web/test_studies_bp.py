@@ -4,7 +4,7 @@ import shutil
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from unittest.mock import Mock, call
+from unittest.mock import Mock, call, ANY
 
 import pytest
 from fastapi import FastAPI
@@ -285,9 +285,12 @@ def test_server_health() -> None:
 
 
 @pytest.mark.unit_test
-def test_export_files() -> None:
+def test_export_files(tmp_path: Path) -> None:
     mock_storage_service = Mock()
-    mock_storage_service.export_study.return_value = BytesIO(b"Hello")
+    file_export = tmp_path / "export.zip"
+    with open(file_export, "w") as fh:
+        fh.write("Hello")
+    mock_storage_service.export_study.return_value = file_export
 
     app = FastAPI(title=__name__)
     build_storage(
@@ -302,14 +305,16 @@ def test_export_files() -> None:
 
     assert result.raw.data == b"Hello"
     mock_storage_service.export_study.assert_called_once_with(
-        "name", PARAMS, True
+        "name", ANY, PARAMS, True
     )
 
 
 @pytest.mark.unit_test
-def test_export_params() -> None:
+def test_export_params(tmp_path: Path) -> None:
     mock_storage_service = Mock()
-    mock_storage_service.export_study.return_value = BytesIO(b"Hello")
+    export_file = tmp_path / "export.zip"
+    export_file.touch()
+    mock_storage_service.export_study.return_value = export_file
 
     app = FastAPI(title=__name__)
     build_storage(
@@ -320,16 +325,12 @@ def test_export_params() -> None:
         matrix_service=Mock(),
     )
     client = TestClient(app)
-    result = client.get("/v1/studies/name/export", stream=True)
-
-    assert result.raw.data == b"Hello"
-
     client.get("/v1/studies/name/export?no_output=true")
     client.get("/v1/studies/name/export?no_output=false")
     mock_storage_service.export_study.assert_has_calls(
         [
-            call(Markup("name"), PARAMS, False),
-            call(Markup("name"), PARAMS, True),
+            call(Markup("name"), ANY, PARAMS, False),
+            call(Markup("name"), ANY, PARAMS, True),
         ]
     )
 

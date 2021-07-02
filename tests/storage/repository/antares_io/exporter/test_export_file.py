@@ -21,8 +21,10 @@ def test_export_file(tmp_path: Path, outputs: bool):
     (root / "output").mkdir()
     (root / "output/file.txt").write_text("42")
 
-    data = Exporter().export_file(root, outputs)
-    zipf = ZipFile(data)
+    export_path = tmp_path / "study.zip"
+
+    Exporter().export_file(root, export_path, outputs)
+    zipf = ZipFile(export_path)
 
     assert "file.txt" in zipf.namelist()
     assert "test/" in zipf.namelist()
