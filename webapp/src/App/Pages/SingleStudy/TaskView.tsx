@@ -51,6 +51,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         margin: theme.spacing(1),
         padding: theme.spacing(2),
         border: `1px solid ${theme.palette.primary.main}`,
+        width: '80%',
       },
   message: {
     margin: theme.spacing(1),
@@ -61,6 +62,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     width: '100%',
   },
   gridTile: {
+    width: '100%',
     display: 'flex',
     flexFlow: 'row nowrap',
     justifyContent: 'flex-start',

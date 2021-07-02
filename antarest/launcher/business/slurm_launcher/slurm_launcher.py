@@ -14,9 +14,10 @@ from antareslauncher.main_option_parser import (
     MainOptionParser,
     MainOptionsParameters,
 )
+from antareslauncher.study_dto import StudyDTO
 
 from antarest.common.config import Config, SlurmConfig
-from antarest.common.interfaces.eventbus import IEventBus
+from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.common.jwt import DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
 from antarest.common.utils.fastapi_sqlalchemy import db
@@ -194,6 +195,9 @@ class SlurmLauncher(ILauncher):
             all_done = all_done and (study.finished or study.with_error)
             if study.finished or study.with_error:
                 try:
+                    self.log_tail_manager.stop_tracking(
+                        self._get_log_path(study)
+                    )
                     with db():
                         self._callback(
                             study.name,
@@ -211,9 +215,36 @@ class SlurmLauncher(ILauncher):
                         / study.name
                     )
                     del self.job_id_to_study_id[study.name]
+            else:
+                self.log_tail_manager.track(
+                    self._get_log_path(study),
+                    self.create_update_log(
+                        study.name, self.job_id_to_study_id[study.name]
+                    ),
+                )
 
         if all_done:
             self.stop()
+
+    def create_update_log(
+        self, job_id: str, study_id: str
+    ) -> Callable[[str], None]:
+        def update_log(log_line: str) -> None:
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_JOB_LOG_UPDATE,
+                    payload={
+                        "log": log_line,
+                        "job_id": job_id,
+                        "study_id": study_id,
+                    },
+                )
+            )
+
+        return update_log
+
+    def _get_log_path(self, study: StudyDTO) -> Path:
+        return Path(study.job_log_dir) / "log"
 
     def _clean_local_workspace(self) -> None:
         logger.info("Cleaning up slurm workspace")
@@ -225,33 +256,41 @@ class SlurmLauncher(ILauncher):
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
 
+    def _run_study(
+        self, study_uuid: str, launch_uuid: str, params: RequestParameters
+    ) -> None:
+        with db():
+            arguments = self._init_launcher_arguments()
+            antares_launcher_parameters = self._init_launcher_parameters()
+
+            study_path = Path(arguments.studies_in) / str(launch_uuid)
+
+            self.job_id_to_study_id[str(launch_uuid)] = study_uuid
+
+            if not self.thread:
+                self._clean_local_workspace()
+
+            # export study
+            self.storage_service.export_study_flat(
+                study_uuid, params, study_path, outputs=False
+            )
+
+            run_with(arguments, antares_launcher_parameters, show_banner=False)
+            self._callback(str(launch_uuid), JobStatus.RUNNING)
+
+            if not self.thread:
+                self.start()
+
+            self._delete_study(study_path)
+
     def run_study(
         self, study_uuid: str, version: str, params: RequestParameters
     ) -> UUID:  # TODO: version ?
-        arguments = self._init_launcher_arguments()
-        antares_launcher_parameters = self._init_launcher_parameters()
-
         launch_uuid = uuid4()
 
-        # TODO do this in a thread and directly return the job id
-        study_path = Path(arguments.studies_in) / str(launch_uuid)
-
-        self.job_id_to_study_id[str(launch_uuid)] = study_uuid
-
-        if not self.thread:
-            self._clean_local_workspace()
-
-        # export study
-        self.storage_service.export_study_flat(
-            study_uuid, params, study_path, outputs=False
+        thread = threading.Thread(
+            target=self._run_study, args=(study_uuid, launch_uuid, params)
         )
-
-        run_with(arguments, antares_launcher_parameters, show_banner=False)
-        self._callback(str(launch_uuid), JobStatus.RUNNING)
-
-        if not self.thread:
-            self.start()
-
-        self._delete_study(study_path)
+        thread.start()
 
         return launch_uuid
