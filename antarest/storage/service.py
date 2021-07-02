@@ -53,6 +53,7 @@ from antarest.storage.web.exceptions import (
 
 logger = logging.getLogger(__name__)
 
+
 class StorageService:
     """
     Storage module facade service to handle studies management.
@@ -119,9 +120,7 @@ class StorageService:
         Returns: List of study information
 
         """
-        logger.info(
-            "studies metadata asked by user %s", params.get_user_id()
-        )
+        logger.info("studies metadata asked by user %s", params.get_user_id())
         return {
             study.id: self.study_service.get_study_information(
                 study, summary=True
@@ -300,7 +299,7 @@ class StorageService:
 
                     logger.warning("Skipping study format error analysis")
                     # TODO re enable this on an async worker
-                    #study.content_status = self._analyse_study(study)
+                    # study.content_status = self._analyse_study(study)
 
                     logger.info(
                         "Study=%s appears on disk and will be added", study.id
@@ -389,9 +388,7 @@ class StorageService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        logger.info(
-            "study %s exported by user %s", uuid, params.get_user_id()
-        )
+        logger.info("study %s exported by user %s", uuid, params.get_user_id())
         return self.exporter_service.export_study(study, target, outputs)
 
     def export_study_flat(
@@ -429,9 +426,7 @@ class StorageService:
             Event(EventType.STUDY_DELETED, study.to_json_summary())
         )
 
-        logger.info(
-            "study %s deleted by user %s", uuid, params.get_user_id()
-        )
+        logger.info("study %s deleted by user %s", uuid, params.get_user_id())
 
     def delete_output(
         self, uuid: str, output_name: str, params: RequestParameters
@@ -573,9 +568,7 @@ class StorageService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        logger.info(
-            "matrix %s asked by user %s", route, params.get_user_id()
-        )
+        logger.info("matrix %s asked by user %s", route, params.get_user_id())
         return self.exporter_service.get_matrix(study, path)
 
     def upload_matrix(
@@ -603,9 +596,7 @@ class StorageService:
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
 
-        logger.info(
-            "matrix %s updated by user %s", path, params.get_user_id()
-        )
+        logger.info("matrix %s updated by user %s", path, params.get_user_id())
 
     def import_study(
         self,

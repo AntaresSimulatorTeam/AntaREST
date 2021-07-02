@@ -22,12 +22,12 @@ class StudyFactory:
     """
 
     def __init__(
-            self, matrix: MatrixService, resolver: UriResolverService
+        self, matrix: MatrixService, resolver: UriResolverService
     ) -> None:
         self.context = ContextServer(matrix=matrix, resolver=resolver)
 
     def create_from_fs(
-            self, path: Path, study_id: str
+        self, path: Path, study_id: str
     ) -> Tuple[StudyConfig, Study]:
         start_time = time.time()
         config = ConfigPathBuilder.build(path, study_id)
@@ -37,4 +37,3 @@ class StudyFactory:
 
     def create_from_config(self, config: StudyConfig) -> Study:
         return Study(self.context, config)
-
