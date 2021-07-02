@@ -51,6 +51,7 @@ from antarest.storage.web.exceptions import (
     StudyTypeUnsupported,
 )
 
+logger = logging.getLogger(__name__)
 
 class StorageService:
     """
@@ -73,7 +74,6 @@ class StorageService:
         self.repository = repository
         self.event_bus = event_bus
         self.areas = AreaManager(self.study_service)
-        self.logger = logging.getLogger(self.__class__.__name__)
 
     def get(
         self, uuid: str, url: str, depth: int, params: RequestParameters
@@ -93,7 +93,7 @@ class StorageService:
         self._assert_permission(params.user, study, StudyPermissionType.READ)
 
         if isinstance(study, RawStudy):
-            self.logger.info(
+            logger.info(
                 "study %s data asked by user %s", uuid, params.get_user_id()
             )
             return self.study_service.get(study, url, depth)
@@ -119,7 +119,7 @@ class StorageService:
         Returns: List of study information
 
         """
-        self.logger.info(
+        logger.info(
             "studies metadata asked by user %s", params.get_user_id()
         )
         return {
@@ -146,7 +146,7 @@ class StorageService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        self.logger.info(
+        logger.info(
             "study %s metadata asked by user %s", uuid, params.get_user_id()
         )
         return self.study_service.get_study_information(study)
@@ -164,7 +164,7 @@ class StorageService:
             metadata_patch: metadata patch
             params: request parameters
         """
-        self.logger.info(
+        logger.info(
             "updating study %s metadata for user %s",
             uuid,
             params.get_user_id(),
@@ -205,7 +205,7 @@ class StorageService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        self.logger.info(
+        logger.info(
             "study %s path asked by user %s", uuid, params.get_user_id()
         )
         return self.study_service.get_study_path(study)
@@ -242,7 +242,7 @@ class StorageService:
             Event(EventType.STUDY_CREATED, raw.to_json_summary())
         )
 
-        self.logger.info(
+        logger.info(
             "study %s created by user %s", raw.id, params.get_user_id()
         )
         return str(raw.id)
@@ -264,7 +264,7 @@ class StorageService:
                 study.workspace != DEFAULT_WORKSPACE_NAME
                 and study.path not in paths
             ):
-                self.logger.info(
+                logger.info(
                     "Study=%s is not present in disk and will be deleted",
                     study.id,
                 )
@@ -298,9 +298,11 @@ class StorageService:
                         study, fallback_on_default=True
                     )
 
-                    study.content_status = self._analyse_study(study)
+                    logger.warning("Skipping study format error analysis")
+                    # TODO re enable this on an async worker
+                    #study.content_status = self._analyse_study(study)
 
-                    self.logger.info(
+                    logger.info(
                         "Study=%s appears on disk and will be added", study.id
                     )
                     self.event_bus.push(
@@ -308,7 +310,7 @@ class StorageService:
                     )
                     self.repository.save(study)
                 except Exception as e:
-                    self.logger.error(
+                    logger.error(
                         f"Failed to add study {folder.path}", exc_info=e
                     )
 
@@ -358,7 +360,7 @@ class StorageService:
             Event(EventType.STUDY_CREATED, study.to_json_summary())
         )
 
-        self.logger.info(
+        logger.info(
             "study %s copied to %s by user %s",
             src_study,
             study.id,
@@ -387,7 +389,7 @@ class StorageService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        self.logger.info(
+        logger.info(
             "study %s exported by user %s", uuid, params.get_user_id()
         )
         return self.exporter_service.export_study(study, target, outputs)
@@ -427,7 +429,7 @@ class StorageService:
             Event(EventType.STUDY_DELETED, study.to_json_summary())
         )
 
-        self.logger.info(
+        logger.info(
             "study %s deleted by user %s", uuid, params.get_user_id()
         )
 
@@ -454,7 +456,7 @@ class StorageService:
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
 
-        self.logger.info(
+        logger.info(
             "delete output %s on study %s by user %s",
             output_name,
             uuid,
@@ -486,7 +488,7 @@ class StorageService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study_id, study.type)
 
-        self.logger.info(
+        logger.info(
             "study %s data asked by user %s",
             study_id,
             params.get_user_id(),
@@ -515,7 +517,7 @@ class StorageService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study_id, study.type)
 
-        self.logger.info(
+        logger.info(
             "study %s data asked by user %s",
             study_id,
             params.get_user_id(),
@@ -547,7 +549,7 @@ class StorageService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study_id, study.type)
 
-        self.logger.info(
+        logger.info(
             "study %s data asked by user %s",
             study_id,
             params.get_user_id(),
@@ -571,7 +573,7 @@ class StorageService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        self.logger.info(
+        logger.info(
             "matrix %s asked by user %s", route, params.get_user_id()
         )
         return self.exporter_service.get_matrix(study, path)
@@ -601,7 +603,7 @@ class StorageService:
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
 
-        self.logger.info(
+        logger.info(
             "matrix %s updated by user %s", path, params.get_user_id()
         )
 
@@ -641,7 +643,7 @@ class StorageService:
             Event(EventType.STUDY_CREATED, study.to_json_summary())
         )
 
-        self.logger.info(
+        logger.info(
             "study %s imported by user %s", study.id, params.get_user_id()
         )
         return str(study.id)
@@ -665,7 +667,7 @@ class StorageService:
             raise StudyTypeUnsupported(uuid, study.type)
 
         res = self.importer_service.import_output(study, stream)
-        self.logger.info(
+        logger.info(
             "output added to study %s by user %s", uuid, params.get_user_id()
         )
         return res
@@ -699,7 +701,7 @@ class StorageService:
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
-        self.logger.info(
+        logger.info(
             "data %s on study %s updated by user %s",
             url,
             uuid,
@@ -733,7 +735,7 @@ class StorageService:
                 study, url="study/antares/author", new=new_owner.name
             )
 
-        self.logger.info(
+        logger.info(
             "user %s change study %s owner to %d",
             params.get_user_id(),
             study_id,
@@ -764,7 +766,7 @@ class StorageService:
         ]
         self.repository.save(study)
 
-        self.logger.info(
+        logger.info(
             "adding group %s to study %s by user %s",
             group_id,
             study_id,
@@ -793,7 +795,7 @@ class StorageService:
         ]
         self.repository.save(study)
 
-        self.logger.info(
+        logger.info(
             "removing group %s to study %s by user %s",
             group_id,
             study_id,
@@ -820,7 +822,7 @@ class StorageService:
         study.public_mode = mode
         self.repository.save(study)
 
-        self.logger.info(
+        logger.info(
             "updated public mode of study %s by user %s",
             study_id,
             params.get_user_id(),
@@ -920,7 +922,7 @@ class StorageService:
         study = self.repository.get(uuid)
         if not study:
             sanitized = StorageServiceUtils.sanitize(uuid)
-            self.logger.warning(
+            logger.warning(
                 "Study %s not found in metadata db",
                 sanitized,
             )
@@ -946,16 +948,16 @@ class StorageService:
 
         """
         if not user:
-            self.logger.error("FAIL permission: user is not logged")
+            logger.error("FAIL permission: user is not logged")
             raise UserHasNotPermissionError()
 
         if not study:
-            self.logger.error("FAIL permission: study not exist")
+            logger.error("FAIL permission: study not exist")
             raise ValueError("Metadata is None")
 
         ok = check_permission(user, study, permission_type)
         if raising and not ok:
-            self.logger.error(
+            logger.error(
                 "FAIL permission: user %d has no permission on study %s",
                 user.id,
                 study.id,
@@ -981,5 +983,5 @@ class StorageService:
             else:
                 return StudyContentStatus.VALID
         except Exception as e:
-            self.logger.error(e)
+            logger.error(e)
             return StudyContentStatus.ERROR
