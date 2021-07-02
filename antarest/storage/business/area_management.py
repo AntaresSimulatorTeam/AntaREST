@@ -4,7 +4,8 @@ from typing import Optional, Dict, List
 from pydantic import BaseModel
 
 from antarest.storage.business.raw_study_service import RawStudyService
-from antarest.storage.model import RawStudy, PatchArea
+from antarest.storage.model import RawStudy, PatchArea, PatchLeafDict
+from antarest.storage.repository.filesystem.config.model import Area, Set
 
 
 class AreaType(Enum):
@@ -22,7 +23,7 @@ class AreaCreationDTO(BaseModel):
 class AreaPatchUpdateDTO(BaseModel):
     type: AreaType
     name: Optional[str]
-    metadata: Optional[Dict[str, Optional[str]]]
+    metadata: Optional[PatchArea]
     set: Optional[List[str]]
 
 
@@ -48,9 +49,7 @@ class AreaManager:
                         id=area_name,
                         name=area_name,
                         type=AreaType.AREA,
-                        metadata=areas_metadata.get(
-                            area_name, PatchArea()
-                        ).dict(),
+                        metadata=areas_metadata.get(area_name, PatchArea()),
                     )
                 )
 
@@ -62,9 +61,7 @@ class AreaManager:
                         name=set_name,
                         type=AreaType.CLUSTER,
                         set=config.sets[set_name].areas,
-                        metadata=areas_metadata.get(
-                            set_name, PatchArea()
-                        ).dict(),
+                        metadata=areas_metadata.get(set_name, PatchArea()),
                     )
                 )
 
@@ -81,6 +78,23 @@ class AreaManager:
         area_id: str,
         area_creation_info: AreaPatchUpdateDTO,
     ) -> AreaInfoDTO:
+        if area_creation_info.metadata:
+            config, study_tree = self.raw_study_service.get_study(study)
+            area_or_set = config.areas.get(area_id) or config.sets.get(area_id)
+            patch = self.raw_study_service.patch_service.get(study)
+            patch.areas = (patch.areas or PatchLeafDict()).patch(
+                PatchLeafDict({area_id: area_creation_info.metadata})
+            )
+            self.raw_study_service.patch_service.patch(study, patch.dict())
+            return AreaInfoDTO(
+                id=area_id,
+                name=area_id,  #  TODO modify config to get the display name
+                type=AreaType.AREA
+                if isinstance(area_or_set, Area)
+                else AreaType.CLUSTER,
+                metadata=patch.areas.get(area_id),
+                set=area_or_set.areas if isinstance(area_or_set, Set) else [],
+            )
         raise NotImplementedError()
 
     def delete_area(self, study: RawStudy, area_id: str) -> None:
