@@ -8,6 +8,8 @@ export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDT
   modificationDate: metadata.updated,
   author: metadata.author,
   version: metadata.version.toString(),
+  workspace: metadata.workspace,
+  managed: metadata.managed,
 });
 
 export const getStudyIdFromUrl = (url: string): string => {

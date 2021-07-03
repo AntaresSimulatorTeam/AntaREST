@@ -9,6 +9,8 @@ export interface StudyMetadataDTO {
   created: number;
   updated: number;
   version: number;
+  workspace: string;
+  managed: boolean;
 }
 
 export interface StudyMetadata {
@@ -18,6 +20,8 @@ export interface StudyMetadata {
   modificationDate: number;
   author: string;
   version: string;
+  workspace: string;
+  managed: boolean;
 }
 
 export type JobStatus = 'JobStatus.RUNNING' | 'JobStatus.PENDING' | 'JobStatus.SUCCESS' | 'JobStatus.FAILED';

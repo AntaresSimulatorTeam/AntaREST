@@ -198,6 +198,7 @@ class StudyMetadataDTO(BaseModel):
     updated: int
     author: str
     workspace: str
+    managed: bool
     horizon: Optional[str]
     scenario: Optional[str]
     status: Optional[str]
