@@ -1,8 +1,10 @@
 import glob
 import json
+import logging
 import os
 import re
 import shutil
+import time
 import uuid
 from io import BytesIO
 from pathlib import Path
@@ -11,13 +13,14 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from antarest.common.custom_types import JSON
 
 
+logger = logging.getLogger(__name__)
+
 # TODO merge with exporter service ?
-
-
 class Exporter:
     def export_file(
         self, path_study: Path, export_path: Path, outputs: bool = True
     ) -> Path:
+        start_time = time.time()
         with ZipFile(export_path, "w", ZIP_DEFLATED) as zipf:
             current_dir = os.getcwd()
             os.chdir(path_study)
@@ -29,6 +32,10 @@ class Exporter:
             zipf.close()
 
             os.chdir(current_dir)
+        duration = "{:.3f}".format(time.time() - start_time)
+        logger.info(
+            f"Study {path_study} exported (zipped mode) in {duration}s"
+        )
         return export_path
 
     def export_flat(
@@ -37,6 +44,7 @@ class Exporter:
         dest: Path,
         outputs: bool = False,
     ) -> None:
+        start_time = time.time()
         ignore_patterns = (
             (
                 lambda directory, contents: ["output"]
@@ -47,23 +55,5 @@ class Exporter:
             else None
         )
         shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
-
-    def export_compact(self, path_study: Path, data: JSON) -> BytesIO:
-        zip = BytesIO()
-        zipf = ZipFile(zip, "w", ZIP_DEFLATED)
-
-        root = path_study.parent.absolute()
-
-        jsonify = json.dumps(data)
-
-        for url in re.findall(r"file\/[^\"]*", jsonify):
-            uuid4 = str(uuid.uuid4())
-            jsonify = jsonify.replace(url, uuid4)
-            url = url.replace("file/", "")
-            zipf.write(root / url, f"res/{uuid4}")
-
-        zipf.writestr("data.json", jsonify)
-
-        zipf.close()
-        zip.seek(0)
-        return zip
+        duration = "{:.3f}".format(time.time() - start_time)
+        logger.info(f"Study {path_study} exported (flat mode) in {duration}s")

@@ -93,7 +93,7 @@ const StudyListSummaryView = (props: PropTypes) => {
     const init = async () => {
       try {
         const jobList = await getStudyJobs(study.id);
-        jobList.sort((a: LaunchJob, b: LaunchJob) => (moment(a.completionDate).isAfter(moment(b.completionDate)) ? 1 : -1));
+        jobList.sort((a: LaunchJob, b: LaunchJob) => (moment(a.completionDate).isAfter(moment(b.completionDate)) ? -1 : 1));
         if (jobList.length > 0) setLastJobsStatus(jobList[0].status);
       } catch (e) {
         enqueueSnackbar(t('singlestudy:failtoloadjobs'), { variant: 'error' });

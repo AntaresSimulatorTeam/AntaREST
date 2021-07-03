@@ -22,15 +22,16 @@ def test_compute():
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    local_launcher = LocalLauncher(Config(), storage_service=Mock())
+    local_launcher = LocalLauncher(
+        Config(), storage_service=Mock(), callbacks=Mock()
+    )
 
     uuid = uuid4()
-
-    callback = Mock()
-    local_launcher.add_statusupdate_callback(callback)
-
+    local_launcher.job_id_to_study_id = {str(uuid): "study-id"}
     local_launcher._compute(
         antares_solver_path="echo", study_path="Hello, World!", uuid=uuid
     )
 
-    callback.assert_called_once_with(str(uuid), JobStatus.SUCCESS, False)
+    local_launcher.callbacks.update_status.assert_called_once_with(
+        str(uuid), JobStatus.SUCCESS, None, None
+    )

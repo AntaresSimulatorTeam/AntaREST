@@ -66,19 +66,27 @@ export const launchStudy = async (sid: string): Promise<string> => {
   return res.data;
 };
 
+export const mapLaunchJobDTO = (j: any): LaunchJob => ({
+  id: j.id,
+  studyId: j.study_id,
+  status: j.status,
+  creationDate: j.creation_date,
+  completionDate: j.completion_date,
+  msg: j.msg,
+  outputId: j.output_id,
+  exitCode: j.exit_code,
+});
+
 export const getStudyJobs = async (sid?: string): Promise<LaunchJob[]> => {
   const query = sid ? `?study=${sid}` : '';
   const res = await client.get(`/v1/launcher/jobs${query}`);
   const data = await res.data;
-  return data.map((j: any) => ({
-    id: j.id,
-    studyId: j.study_id,
-    status: j.status,
-    creationDate: j.creation_date,
-    completionDate: j.completion_date,
-    msg: j.msg,
-    exitCode: j.exit_code,
-  }));
+  return data.map(mapLaunchJobDTO);
+};
+
+export const getStudyJobLog = async (jid: string, logType = 'STDOUT'): Promise<string|undefined> => {
+  const res = await client.get(`/v1/launcher/jobs/${jid}/logs?log_type=${logType}`);
+  return res.data;
 };
 
 export default {};
