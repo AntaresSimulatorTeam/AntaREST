@@ -12,13 +12,14 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
 }));
 
-type DataType = {path: string; json: string};
+type DataType = {path: string; json: object};
 interface PropTypes {
   study: string;
   type: StudyDataType;
   data: string | DataType;
   studyData: any;
   setStudyData: (elm: any) => void;
+  updateViewedData: (json: object) => void;
 }
 
 interface RenderData {
@@ -27,7 +28,7 @@ interface RenderData {
 }
 
 const StudyDataView = (props: PropTypes) => {
-  const { study, type, data, studyData, setStudyData } = props;
+  const { study, type, data, studyData, setStudyData, updateViewedData } = props;
   const classes = useStyles();
   const filterOut = ['output', 'logs', 'Desktop'];
 
@@ -38,7 +39,7 @@ const StudyDataView = (props: PropTypes) => {
     if (type === 'matrix' || type === 'matrixfile') {
       return { css: { overflow: 'auto' }, data: <StudyMatrixView study={study} url={data as string} filterOut={filterOut}/> };
     }
-    return { css: { overflow: 'hidden', paddingTop: '0px' }, data: <StudyJsonView studyData={studyData} setStudyData={setStudyData} study={study} data={data as DataType} filterOut={filterOut} /> };
+    return { css: { overflow: 'hidden', paddingTop: '0px' }, data: <StudyJsonView studyData={studyData} setStudyData={setStudyData} updateViewedData={updateViewedData} study={study} data={data as DataType} filterOut={filterOut} /> };
   };
 
   const rd = renderData();

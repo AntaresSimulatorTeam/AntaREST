@@ -51,19 +51,20 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 }));
 
 interface PropTypes {
-  data: {path: string; json: string};
+  data: {path: string; json: object};
   study: string;
   studyData: any;
   setStudyData: (elm: any) => void;
+  updateViewedData: (json: object) => void;
   filterOut: Array<string>;
 }
 
 const StudyJsonView = (props: PropTypes) => {
-  const { data, study, studyData, setStudyData, filterOut } = props;
+  const { data, study, studyData, setStudyData, updateViewedData, filterOut } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
-  const [jsonData, setJsonData] = useState<object>(JSON.parse(data.json));
+  const [jsonData, setJsonData] = useState<object>(data.json);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
   const [isEditable, setEditable] = useState<boolean>(true);
 
@@ -88,6 +89,7 @@ const StudyJsonView = (props: PropTypes) => {
       const newData = { ...studyData };
       writeLeaf(tmpDataPath, newData, jsonData);
       setStudyData(newData);
+      updateViewedData(jsonData);
       enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
       setSaveAllowed(false);
     } catch (e) {
@@ -99,7 +101,7 @@ const StudyJsonView = (props: PropTypes) => {
     if (tmpDataPath.length > 0) {
       setEditable(!filterOut.includes(tmpDataPath[0]));
     }
-    setJsonData(JSON.parse(data.json));
+    setJsonData(data.json);
     setSaveAllowed(false);
   }, [data, filterOut]);
   return (
@@ -121,7 +123,7 @@ const StudyJsonView = (props: PropTypes) => {
         </div>
         )}
       <Paper className={classes.content}>
-        <ReactJson src={jsonData} onEdit={(e) => { setJsonData(e.updated_src); setSaveAllowed(true); }} />
+        <ReactJson src={jsonData} onEdit={isEditable ? (e) => { setJsonData(e.updated_src); setSaveAllowed(true); } : undefined} />
       </Paper>
     </div>
   );
