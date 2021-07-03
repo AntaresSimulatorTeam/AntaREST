@@ -1,6 +1,6 @@
 from datetime import datetime
 from http import HTTPStatus
-from typing import List, Optional
+from typing import List, Optional, cast
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -14,14 +14,16 @@ from antarest.common.interfaces.eventbus import (
 from antarest.common.requests import (
     RequestParameters,
 )
+from antarest.launcher.business.abstractlauncher import LauncherCallbacks
 from antarest.launcher.business.factory_launcher import FactoryLauncher
-from antarest.launcher.model import JobResult, JobStatus
+from antarest.launcher.model import JobResult, JobStatus, LogType
 from antarest.launcher.repository import JobResultRepository
 from antarest.storage.service import StorageService
 
 
-class JobNotFound(Exception):
-    pass
+class JobNotFound(HTTPException):
+    def __init__(self) -> None:
+        super(JobNotFound, self).__init__(HTTPStatus.NOT_FOUND)
 
 
 class LauncherServiceNotAvailableException(HTTPException):
@@ -45,18 +47,31 @@ class LauncherService:
         self.repository = repository
         self.event_bus = event_bus
         self.launchers = factory_launcher.build_launcher(
-            config, storage_service, event_bus
+            config,
+            storage_service,
+            LauncherCallbacks(
+                update_status=lambda jobid, status, msg, output_id: self.update(
+                    jobid, status, msg, output_id
+                )
+            ),
+            event_bus,
         )
-        for _, launcher in self.launchers.items():
-            launcher.add_statusupdate_callback(self.update)
 
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
 
-    def update(self, job_uuid: str, status: JobStatus) -> None:
+    def update(
+        self,
+        job_uuid: str,
+        status: JobStatus,
+        msg: Optional[str],
+        output_id: Optional[str],
+    ) -> None:
         job_result = self.repository.get(job_uuid)
         if job_result is not None:
             job_result.job_status = status
+            job_result.msg = msg
+            job_result.output_id = output_id
             final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
             if final_status:
                 job_result.completion_date = datetime.utcnow()
@@ -66,7 +81,7 @@ class LauncherService:
                     EventType.STUDY_JOB_COMPLETED
                     if final_status
                     else EventType.STUDY_JOB_STATUS_UPDATE,
-                    {"jid": str(job_result.id), "sid": job_result.study_id},
+                    job_result.to_dict(),
                 )
             )
 
@@ -83,32 +98,58 @@ class LauncherService:
             study_uuid, str(study_version), params
         )
 
-        self.repository.save(
-            JobResult(
-                id=str(job_uuid),
-                study_id=study_uuid,
-                job_status=JobStatus.PENDING,
-            )
+        job_status = JobResult(
+            id=str(job_uuid),
+            study_id=study_uuid,
+            job_status=JobStatus.PENDING,
+            launcher=launcher,
         )
+        self.repository.save(job_status)
         self.event_bus.push(
             Event(
                 EventType.STUDY_JOB_STARTED,
-                {"jid": str(job_uuid), "sid": study_uuid},
+                job_status.to_dict(),
             )
         )
 
         return job_uuid
 
-    def get_result(self, job_uuid: UUID) -> JobResult:
+    def get_result(
+        self, job_uuid: UUID, params: RequestParameters
+    ) -> JobResult:
         job_result = self.repository.get(str(job_uuid))
         if job_result:
             return job_result
 
         raise JobNotFound()
 
-    def get_jobs(self, study_uid: Optional[str] = None) -> List[JobResult]:
+    def get_jobs(
+        self, study_uid: Optional[str], params: RequestParameters
+    ) -> List[JobResult]:
         if study_uid is not None:
             job_results = self.repository.find_by_study(study_uid)
         else:
             job_results = self.repository.get_all()
         return job_results
+
+    def get_log(
+        self, job_id: str, log_type: LogType, params: RequestParameters
+    ) -> Optional[str]:
+        job_result = self.repository.get(str(job_id))
+        if job_result:
+            if job_result.output_id:
+                return cast(
+                    str,
+                    self.storage_service.get(
+                        job_result.study_id,
+                        f"/output/{job_result.output_id}/simulation",
+                        depth=1,
+                        params=params,
+                    ),
+                )
+            if job_result.launcher not in self.launchers:
+                raise LauncherServiceNotAvailableException(job_result.launcher)
+            return self.launchers[job_result.launcher].get_log(
+                job_id, log_type
+            )
+        raise JobNotFound()

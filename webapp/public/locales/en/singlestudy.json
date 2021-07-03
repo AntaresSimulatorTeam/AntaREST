@@ -8,6 +8,8 @@
   "taskCreationDate": "Creation date",
   "taskCompletionDate": "Completion date",
   "taskMessage": "Message",
-  "taskExitCode": "Exit code",
-  "noTasks": "No tasks"
+  "taskOutputId": "Simulation output Id",
+  "taskLog": "Logs",
+  "noTasks": "No tasks",
+  "failtofetchlogs": "Failed to fetch logs"
 }

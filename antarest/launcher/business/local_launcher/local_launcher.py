@@ -1,17 +1,19 @@
 import subprocess
 import threading
 from pathlib import Path
-from typing import Callable, Any
+from typing import Callable, Any, Dict, Optional
 from uuid import UUID, uuid4
 
 from antarest.common.config import Config
+from antarest.common.jwt import DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
 from antarest.common.utils.fastapi_sqlalchemy import db
-from antarest.launcher.business.ilauncher import (
-    ILauncher,
+from antarest.launcher.business.abstractlauncher import (
+    AbstractLauncher,
     LauncherInitException,
+    LauncherCallbacks,
 )
-from antarest.launcher.model import JobStatus
+from antarest.launcher.model import JobStatus, LogType
 from antarest.storage.service import StorageService
 
 
@@ -19,11 +21,15 @@ class StudyVersionNotSupported(Exception):
     pass
 
 
-class LocalLauncher(ILauncher):
+class LocalLauncher(AbstractLauncher):
     def __init__(
-        self, config: Config, storage_service: StorageService
+        self,
+        config: Config,
+        storage_service: StorageService,
+        callbacks: LauncherCallbacks,
     ) -> None:
-        super().__init__(config, storage_service)
+        super().__init__(config, storage_service, callbacks)
+        self.job_id_to_study_id: Dict[str, str] = {}
 
     def run_study(
         self, study_uuid: str, version: str, params: RequestParameters
@@ -36,6 +42,7 @@ class LocalLauncher(ILauncher):
             raise StudyVersionNotSupported()
         else:
             uuid = uuid4()
+            self.job_id_to_study_id[str(uuid)] = study_uuid
             study_path = self.storage_service.get_study_path(
                 study_uuid, params
             )
@@ -46,10 +53,6 @@ class LocalLauncher(ILauncher):
             job.start()
             return uuid
 
-    def _callback(self, process: Any, uuid: UUID, status: JobStatus) -> None:
-        for callback in self.callbacks:
-            callback(str(uuid), status)
-
     def _compute(
         self, antares_solver_path: Path, study_path: Path, uuid: UUID
     ) -> None:
@@ -58,12 +61,16 @@ class LocalLauncher(ILauncher):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-
+        del self.job_id_to_study_id[str(uuid)]
         with db():
-            self._callback(
-                process,
-                uuid,
+            self.callbacks.update_status(
+                str(uuid),
                 JobStatus.FAILED
                 if (not process.returncode == 0)
                 else JobStatus.SUCCESS,
+                None,
+                None,
             )
+
+    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+        raise NotImplementedError()

@@ -8,6 +8,8 @@
   "taskCreationDate": "Date de création",
   "taskCompletionDate": "Date de complétion",
   "taskMessage": "Message",
-  "taskExitCode": "Code retourné",
-  "noTasks": "Pas de tâches en cours"
+  "taskOutputId": "Id de la simulation",
+  "taskLog": "Logs",
+  "noTasks": "Pas de tâches en cours",
+  "failtofetchlogs": "Echec du chargement des logs"
 }

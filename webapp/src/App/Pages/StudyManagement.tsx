@@ -12,7 +12,7 @@ import { initStudies } from '../../ducks/study';
 import { getStudies } from '../../services/api/study';
 import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
 import StudySearchTool from '../../components/StudySearchTool';
-import { StudyMetadata } from '../../common/types';
+import { StudyMetadata, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 import theme from '../theme';
 
@@ -78,7 +78,7 @@ const StudyManagement = (props: PropTypes) => {
     }
   };
 
-  const listen = (ev: any) => {
+  const listen = (ev: WSMessage) => {
     console.log(ev);
   };
 

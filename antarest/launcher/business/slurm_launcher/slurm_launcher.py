@@ -21,26 +21,28 @@ from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.common.jwt import DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
 from antarest.common.utils.fastapi_sqlalchemy import db
-from antarest.launcher.business.ilauncher import (
-    ILauncher,
+from antarest.launcher.business.abstractlauncher import (
+    AbstractLauncher,
     LauncherInitException,
+    LauncherCallbacks,
 )
 from antarest.launcher.business.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus
+from antarest.launcher.model import JobStatus, LogType
 from antarest.storage.service import StorageService
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
 
-class SlurmLauncher(ILauncher):
+class SlurmLauncher(AbstractLauncher):
     def __init__(
         self,
         config: Config,
         storage_service: StorageService,
+        callbacks: LauncherCallbacks,
         event_bus: IEventBus,
     ) -> None:
-        super().__init__(config, storage_service)
+        super().__init__(config, storage_service, callbacks)
         if config.launcher.slurm is None:
             raise LauncherInitException()
 
@@ -53,6 +55,15 @@ class SlurmLauncher(ILauncher):
         self.log_tail_manager = LogTailManager(
             self.slurm_config.local_workspace
         )
+        self.launcher_args = self._init_launcher_arguments()
+        self.launcher_params = self._init_launcher_parameters()
+        self.data_repo_tinydb = DataRepoTinydb(
+            database_name=(
+                self.launcher_params.json_dir
+                / self.launcher_params.default_json_db_name
+            ),
+            db_primary_key=self.launcher_params.db_primary_key,
+        )
 
     def _check_config(self) -> None:
         assert (
@@ -61,19 +72,8 @@ class SlurmLauncher(ILauncher):
         )  # and check write permission
 
     def _loop(self) -> None:
-        arguments = self._init_launcher_arguments()
-        antares_launcher_parameters = self._init_launcher_parameters()
-        data_repo_tinydb = DataRepoTinydb(
-            database_name=(
-                antares_launcher_parameters.json_dir
-                / antares_launcher_parameters.default_json_db_name
-            ),
-            db_primary_key=antares_launcher_parameters.db_primary_key,
-        )
         while self.check_state:
-            self._check_studies_state(
-                arguments, antares_launcher_parameters, data_repo_tinydb
-            )
+            self._check_studies_state()
             time.sleep(2)
 
     def start(self) -> None:
@@ -141,35 +141,25 @@ class SlurmLauncher(ILauncher):
         ):
             shutil.rmtree(study_path)
 
-    def _callback(self, study_name: str, status: JobStatus) -> None:
-        for callback in self.callbacks:
-            callback(study_name, status)
-
-    def _import_study_output(self, job_id: str) -> None:
+    def _import_study_output(self, job_id: str) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
-        self.storage_service.import_output(
+        return self.storage_service.import_output(
             study_id,
             self.slurm_config.local_workspace / "OUTPUT" / job_id / "output",
             params=RequestParameters(DEFAULT_ADMIN_USER),
         )
 
-    def _check_studies_state(
-        self,
-        arguments: argparse.Namespace,
-        antares_launcher_parameters: MainParameters,
-        data_repo_tinydb: DataRepoTinydb,
-    ) -> None:
-
+    def _check_studies_state(self) -> None:
         try:
             run_with(
-                arguments=arguments,
-                parameters=antares_launcher_parameters,
+                arguments=self.launcher_args,
+                parameters=self.launcher_params,
                 show_banner=False,
             )
         except Exception as e:
             logger.info("Could not get data on remote server")
 
-        study_list = data_repo_tinydb.get_list_of_studies()
+        study_list = self.data_repo_tinydb.get_list_of_studies()
 
         all_done = True
 
@@ -185,15 +175,18 @@ class SlurmLauncher(ILauncher):
                         SlurmLauncher._get_log_path(study)
                     )
                     with db():
-                        self._callback(
+                        output_id = self._import_study_output(study.name)
+                        self.callbacks.update_status(
                             study.name,
                             JobStatus.FAILED
                             if study.with_error
                             else JobStatus.SUCCESS,
+                            None,
+                            output_id,
                         )
-                        self._import_study_output(study.name)
+
                 finally:
-                    data_repo_tinydb.remove_study(study.name)
+                    self.data_repo_tinydb.remove_study(study.name)
                     self._delete_study(
                         self.slurm_config.local_workspace
                         / "OUTPUT"
@@ -229,11 +222,16 @@ class SlurmLauncher(ILauncher):
         return update_log
 
     @staticmethod
-    def _get_log_path(study: StudyDTO) -> Optional[Path]:
+    def _get_log_path(
+        study: StudyDTO, log_type: LogType = LogType.STDOUT
+    ) -> Optional[Path]:
         log_dir = Path(study.job_log_dir)
+        log_prefix = (
+            "antares-out-" if log_type == LogType.STDOUT else "antares-err-"
+        )
         if log_dir.exists() and log_dir.is_dir():
             for fname in os.listdir(log_dir):
-                if fname.startswith("antares-out-"):
+                if fname.startswith(log_prefix):
                     return log_dir / fname
         return None
 
@@ -251,10 +249,7 @@ class SlurmLauncher(ILauncher):
         self, study_uuid: str, launch_uuid: str, params: RequestParameters
     ) -> None:
         with db():
-            arguments = self._init_launcher_arguments()
-            antares_launcher_parameters = self._init_launcher_parameters()
-
-            study_path = Path(arguments.studies_in) / str(launch_uuid)
+            study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
 
             self.job_id_to_study_id[str(launch_uuid)] = study_uuid
 
@@ -266,8 +261,12 @@ class SlurmLauncher(ILauncher):
                 study_uuid, params, study_path, outputs=False
             )
 
-            run_with(arguments, antares_launcher_parameters, show_banner=False)
-            self._callback(str(launch_uuid), JobStatus.RUNNING)
+            run_with(
+                self.launcher_args, self.launcher_params, show_banner=False
+            )
+            self.callbacks.update_status(
+                str(launch_uuid), JobStatus.RUNNING, None, None
+            )
 
             if not self.thread:
                 self.start()
@@ -285,3 +284,11 @@ class SlurmLauncher(ILauncher):
         thread.start()
 
         return launch_uuid
+
+    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+        for study in self.data_repo_tinydb.get_list_of_studies():
+            if study.name == job_id:
+                log_path = SlurmLauncher._get_log_path(study, log_type)
+                if log_path:
+                    return log_path.read_text()
+        return None

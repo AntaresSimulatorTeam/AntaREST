@@ -28,7 +28,10 @@ def test_init_slurm_launcher_arguments(tmp_path: Path):
     )
 
     slurm_launcher = SlurmLauncher(
-        config=config, storage_service=Mock(), event_bus=Mock()
+        config=config,
+        storage_service=Mock(),
+        callbacks=Mock(),
+        event_bus=Mock(),
     )
 
     arguments = slurm_launcher._init_launcher_arguments()
@@ -76,7 +79,10 @@ def test_init_slurm_launcher_parameters(tmp_path: Path):
     )
 
     slurm_launcher = SlurmLauncher(
-        config=config, storage_service=Mock(), event_bus=Mock()
+        config=config,
+        storage_service=Mock(),
+        callbacks=Mock(),
+        event_bus=Mock(),
     )
 
     main_parameters = slurm_launcher._init_launcher_parameters()
@@ -106,10 +112,16 @@ def test_init_slurm_launcher_parameters(tmp_path: Path):
 
 @pytest.mark.unit_test
 def test_slurm_launcher_delete_function(tmp_path: str):
-    config = Mock()
-    config.launcher.slurm.local_workspace = Path(tmp_path)
+    config = Config(
+        launcher=LauncherConfig(
+            slurm=SlurmConfig(local_workspace=Path(tmp_path))
+        )
+    )
     slurm_launcher = SlurmLauncher(
-        config=config, storage_service=Mock(), event_bus=Mock()
+        config=config,
+        storage_service=Mock(),
+        callbacks=Mock(),
+        event_bus=Mock(),
     )
     directory_path = Path(tmp_path) / "directory"
     directory_path.mkdir()
@@ -122,6 +134,13 @@ def test_slurm_launcher_delete_function(tmp_path: str):
 
 @pytest.mark.unit_test
 def test_run_study(tmp_path: Path):
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
     config = Config(
         launcher=LauncherConfig(
             slurm=SlurmConfig(
@@ -141,27 +160,28 @@ def test_run_study(tmp_path: Path):
 
     storage_service = Mock()
     slurm_launcher = SlurmLauncher(
-        config=config, storage_service=storage_service, event_bus=Mock()
+        config=config,
+        storage_service=storage_service,
+        callbacks=Mock(),
+        event_bus=Mock(),
     )
 
     study_uuid = "study_uuid"
     params = Mock()
     argument = Mock()
     argument.studies_in = "studies_in"
-    slurm_launcher._init_launcher_arguments = Mock(return_value=argument)
-    slurm_launcher._init_launcher_parameters = Mock()
+    slurm_launcher.launcher_args = argument
     slurm_launcher._clean_local_workspace = Mock()
-    slurm_launcher._callback = Mock()
     slurm_launcher.start = Mock()
     slurm_launcher._delete_study = Mock()
 
     slurm_launcher._run_study(study_uuid, str(uuid.uuid4()), params=params)
 
-    slurm_launcher._init_launcher_arguments.assert_called_once()
-    slurm_launcher._init_launcher_parameters.assert_called_once()
     slurm_launcher._clean_local_workspace.assert_called_once()
     storage_service.export_study_flat.assert_called_once()
-    slurm_launcher._callback.assert_called_once_with(ANY, JobStatus.RUNNING)
+    slurm_launcher.callbacks.update_status.assert_called_once_with(
+        ANY, JobStatus.RUNNING, None, None
+    )
     slurm_launcher.start.assert_called_once()
     slurm_launcher._delete_study.assert_called_once()
 
@@ -194,9 +214,11 @@ def test_check_state(tmp_path: Path):
 
     storage_service = Mock()
     slurm_launcher = SlurmLauncher(
-        config=config, storage_service=storage_service, event_bus=Mock()
+        config=config,
+        storage_service=storage_service,
+        callbacks=Mock(),
+        event_bus=Mock(),
     )
-    slurm_launcher._callback = Mock()
     slurm_launcher._import_study_output = Mock()
     slurm_launcher._delete_study = Mock()
     slurm_launcher.stop = Mock()
@@ -217,13 +239,13 @@ def test_check_state(tmp_path: Path):
     data_repo_tinydb.get_list_of_studies = Mock(return_value=[study1, study2])
     data_repo_tinydb.remove_study = Mock()
 
-    slurm_launcher._check_studies_state(
-        arguments=Mock(),
-        antares_launcher_parameters=Mock(),
-        data_repo_tinydb=data_repo_tinydb,
-    )
+    slurm_launcher.launcher_params = Mock()
+    slurm_launcher.launcher_args = Mock()
+    slurm_launcher.data_repo_tinydb = data_repo_tinydb
 
-    assert slurm_launcher._callback.call_count == 2
+    slurm_launcher._check_studies_state()
+
+    assert slurm_launcher.callbacks.update_status.call_count == 2
     assert slurm_launcher._import_study_output.call_count == 2
     assert slurm_launcher._delete_study.call_count == 2
     assert data_repo_tinydb.remove_study.call_count == 2

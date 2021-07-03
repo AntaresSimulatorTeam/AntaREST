@@ -29,6 +29,7 @@ export interface LaunchJob {
   creationDate: number;
   completionDate: number;
   msg: string;
+  outputId: string;
   exitCode: number;
 }
 
@@ -132,6 +133,11 @@ export interface MatrixType {
     columns: Array<string>;
     index: Array<string | number>;
     data: Array<Array<number>>;
+}
+
+export interface WSMessage {
+  type: string;
+  payload: unknown;
 }
 
 export default {};

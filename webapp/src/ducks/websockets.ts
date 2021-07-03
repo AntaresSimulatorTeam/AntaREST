@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { Action } from 'redux';
 import { ThunkAction } from 'redux-thunk';
-import { UserInfo } from '../common/types';
+import { UserInfo, WSMessage } from '../common/types';
 import { AppState } from '../App/reducers';
 import { getConfig } from '../services/config';
 
@@ -12,7 +12,7 @@ import { getConfig } from '../services/config';
 
 export interface WebsocketState {
   socket?: WebSocket;
-  listeners: Array<(ev: any) => void>;
+  listeners: Array<(msg: WSMessage) => void>;
 }
 
 const initialState: WebsocketState = {
@@ -36,7 +36,8 @@ export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, u
     socket.onopen = (ev) => console.log(ev);
     socket.onclose = (ev) => console.log(ev);
     socket.onerror = (ev) => console.log(ev);
-    socket.onmessage = (message: any) => {
+    socket.onmessage = (ev: MessageEvent): void => {
+      const message: WSMessage = JSON.parse(ev.data);
       websockets.listeners.forEach((l) => {
         l(message);
       });
@@ -67,31 +68,53 @@ export const reconnectWebsocket = (user?: UserInfo): ThunkAction<void, AppState,
   dispatch(connectWebsocket(user));
 };
 
-interface AddListenerAction extends Action {
-  type: 'WS/ADD_LISTENER';
-  payload: (ev: any) => void;
+export interface RefreshHandlersAction extends Action {
+  type: 'WS/REFRESH_HANDLERS';
 }
 
-export const addListener = (callback: (ev: any) => void): ThunkAction<void, AppState, unknown, AddListenerAction> => (dispatch): void => {
+const refreshHandlers = (state: WebsocketState): void => {
+  if (state.socket) {
+    // eslint-disable-next-line no-param-reassign
+    state.socket.onmessage = (ev: MessageEvent): void => {
+      const message: WSMessage = JSON.parse(ev.data);
+      state.listeners.forEach((l) => {
+        l(message);
+      });
+    };
+  }
+};
+
+interface AddListenerAction extends Action {
+  type: 'WS/ADD_LISTENER';
+  payload: (ev: WSMessage) => void;
+}
+
+export const addListener = (callback: (ev: WSMessage) => void): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch): void => {
   dispatch({
     type: 'WS/ADD_LISTENER',
     payload: callback,
+  });
+  dispatch({
+    type: 'WS/REFRESH_HANDLERS',
   });
 };
 
 interface RemoveListenerAction extends Action {
   type: 'WS/REMOVE_LISTENER';
-  payload: (ev: any) => void;
+  payload: (ev: WSMessage) => void;
 }
 
-export const removeListener = (callback: (ev: any) => void): ThunkAction<void, AppState, unknown, RemoveListenerAction> => (dispatch): void => {
+export const removeListener = (callback: (ev: WSMessage) => void): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch): void => {
   dispatch({
     type: 'WS/REMOVE_LISTENER',
     payload: callback,
   });
+  dispatch({
+    type: 'WS/REFRESH_HANDLERS',
+  });
 };
 
-type WebsocketAction = ConnectAction | DisconnectAction | AddListenerAction | RemoveListenerAction;
+type WebsocketAction = ConnectAction | DisconnectAction | AddListenerAction | RemoveListenerAction | RefreshHandlersAction;
 
 /** ******************************************* */
 /* Selectors                                    */
@@ -124,6 +147,11 @@ export default (state = initialState, action: WebsocketAction): WebsocketState =
       return {
         ...state,
         listeners: state.listeners.concat(action.payload),
+      };
+    case 'WS/REFRESH_HANDLERS':
+      refreshHandlers(state);
+      return {
+        ...state,
       };
     default:
       return state;
