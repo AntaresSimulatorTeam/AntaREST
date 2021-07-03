@@ -33,4 +33,4 @@ def test_compute():
         antares_solver_path="echo", study_path="Hello, World!", uuid=uuid
     )
 
-    callback.assert_called_once_with(str(uuid), JobStatus.SUCCESS, False)
+    callback.assert_called_once_with(str(uuid), JobStatus.SUCCESS)

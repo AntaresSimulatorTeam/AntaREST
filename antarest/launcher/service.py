@@ -53,18 +53,19 @@ class LauncherService:
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
 
-    def update(
-        self, job_uuid: str, status: JobStatus, failed: bool = False
-    ) -> None:
-        # TODO remove unused failed
+    def update(self, job_uuid: str, status: JobStatus) -> None:
         job_result = self.repository.get(job_uuid)
         if job_result is not None:
             job_result.job_status = status
-            job_result.completion_date = datetime.utcnow()
+            final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
+            if final_status:
+                job_result.completion_date = datetime.utcnow()
             self.repository.save(job_result)
             self.event_bus.push(
                 Event(
-                    EventType.STUDY_JOB_COMPLETED,
+                    EventType.STUDY_JOB_COMPLETED
+                    if final_status
+                    else EventType.STUDY_JOB_STATUS_UPDATE,
                     {"jid": str(job_result.id), "sid": job_result.study_id},
                 )
             )

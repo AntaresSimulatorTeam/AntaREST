@@ -27,6 +27,8 @@ def test_reading(tmp_path: Path):
     log_manager.track(log1, handler)
     log_manager.track(log2, handler)
 
+    assert len(logs) == 0
+
     with open(log1, "a") as fh:
         fh.write("hello\n")
     with open(log2, "a") as fh:
@@ -34,7 +36,6 @@ def test_reading(tmp_path: Path):
     with open(log2, "a") as fh:
         fh.write("world\n")
 
-    assert len(logs) == 0
     count = 5
     while count > 0 and len(logs) == 0:
         count -= 1

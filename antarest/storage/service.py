@@ -3,7 +3,7 @@ from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from time import time, sleep
-from typing import List, IO, Optional, cast
+from typing import List, IO, Optional, cast, Union
 from uuid import uuid4
 
 from antarest.common.custom_types import JSON
@@ -640,13 +640,16 @@ class StorageService:
         return str(study.id)
 
     def import_output(
-        self, uuid: str, stream: IO[bytes], params: RequestParameters
-    ) -> JSON:
+        self,
+        uuid: str,
+        output: Union[IO[bytes], Path],
+        params: RequestParameters,
+    ) -> Optional[str]:
         """
         Import specific output simulation inside study
         Args:
             uuid: study uuid
-            stream: zip file with simulation folder
+            output: zip file with simulation folder or simulation folder path
             params: request parameters
 
         Returns: output simulation json formatted
@@ -657,7 +660,7 @@ class StorageService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        res = self.importer_service.import_output(study, stream)
+        res = self.importer_service.import_output(study, output)
         logger.info(
             "output added to study %s by user %s", uuid, params.get_user_id()
         )

@@ -48,7 +48,7 @@ class LocalLauncher(ILauncher):
 
     def _callback(self, process: Any, uuid: UUID, status: JobStatus) -> None:
         for callback in self.callbacks:
-            callback(str(uuid), status, (not process.returncode == 0))
+            callback(str(uuid), status)
 
     def _compute(
         self, antares_solver_path: Path, study_path: Path, uuid: UUID
@@ -67,8 +67,3 @@ class LocalLauncher(ILauncher):
                 if (not process.returncode == 0)
                 else JobStatus.SUCCESS,
             )
-
-    def add_statusupdate_callback(
-        self, callback: Callable[[str, JobStatus, bool], None]
-    ) -> None:
-        self.callbacks.append(callback)

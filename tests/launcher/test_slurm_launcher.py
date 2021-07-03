@@ -1,3 +1,4 @@
+import uuid
 from pathlib import Path
 from unittest.mock import Mock, ANY
 
@@ -154,7 +155,7 @@ def test_run_study(tmp_path: Path):
     slurm_launcher.start = Mock()
     slurm_launcher._delete_study = Mock()
 
-    slurm_launcher.run_study(study_uuid, version="42", params=params)
+    slurm_launcher._run_study(study_uuid, str(uuid.uuid4()), params=params)
 
     slurm_launcher._init_launcher_arguments.assert_called_once()
     slurm_launcher._init_launcher_parameters.assert_called_once()
@@ -203,11 +204,13 @@ def test_check_state(tmp_path: Path):
     study1 = Mock()
     study1.finished = True
     study1.name = "study1"
+    study1.job_log_dir = tmp_path / "study1"
     slurm_launcher.job_id_to_study_id["study1"] = "job_id1"
 
     study2 = Mock()
     study2.finished = True
     study2.name = "study2"
+    study2.job_log_dir = tmp_path / "study2"
     slurm_launcher.job_id_to_study_id["study2"] = "job_id2"
 
     data_repo_tinydb = Mock()

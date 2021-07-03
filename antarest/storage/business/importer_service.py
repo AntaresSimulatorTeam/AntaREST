@@ -1,9 +1,10 @@
 import logging
 import os
 import shutil
+import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import IO
+from typing import IO, Optional, Union
 from uuid import uuid4
 
 from antarest.common.custom_types import JSON
@@ -81,25 +82,31 @@ class ImporterService:
         metadata.path = str(path_study)
         return metadata
 
-    def import_output(self, metadata: Study, stream: IO[bytes]) -> JSON:
+    def import_output(
+        self, metadata: Study, output: Union[IO[bytes], Path]
+    ) -> Optional[str]:
         """
         Import additional output on a existing study
         Args:
             metadata: study
-            stream: new output
+            output: new output (path or zipped data)
 
-        Returns: output imported parsed in json format.
-
+        Returns: output id
         """
         path_output = (
             self.study_service.get_study_path(metadata)
             / "output"
-            / "imported_output"
+            / f"imported_output_{str(uuid4())}"
         )
         os.makedirs(path_output)
-
+        output_name: Optional[str] = None
         try:
-            StorageServiceUtils.extract_zip(stream, path_output)
+            if isinstance(output, Path):
+                if output != path_output:
+                    shutil.copytree(output, path_output / "imported")
+            else:
+                StorageServiceUtils.extract_zip(output, path_output)
+
             fix_study_root(path_output)
 
             ini_reader = IniReader()
@@ -135,7 +142,7 @@ class ImporterService:
             logger.error("Failed to import output", exc_info=e)
             shutil.rmtree(path_output)
 
-        return data
+        return output_name
 
 
 def fix_study_root(study_path: Path) -> None:

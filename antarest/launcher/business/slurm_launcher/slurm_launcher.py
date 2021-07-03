@@ -85,11 +85,6 @@ class SlurmLauncher(ILauncher):
         self.check_state = False
         self.thread = None
 
-    def add_statusupdate_callback(
-        self, callback: Callable[[str, JobStatus, bool], None]
-    ) -> None:
-        self.callbacks.append(callback)
-
     def _init_launcher_arguments(self) -> argparse.Namespace:
         main_options_parameters = MainOptionsParameters(
             default_wait_time=self.slurm_config.default_wait_time,
@@ -146,30 +141,17 @@ class SlurmLauncher(ILauncher):
         ):
             shutil.rmtree(study_path)
 
-    def _callback(
-        self, study_name: str, status: JobStatus, with_error: bool = False
-    ) -> None:
+    def _callback(self, study_name: str, status: JobStatus) -> None:
         for callback in self.callbacks:
-            callback(study_name, status, with_error)
+            callback(study_name, status)
 
     def _import_study_output(self, job_id: str) -> None:
         study_id = self.job_id_to_study_id[job_id]
-
-        zipped_output = str(
-            self.slurm_config.local_workspace / "OUTPUT" / job_id / "output"
-        )
-        shutil.make_archive(
-            zipped_output,
-            "zip",
+        self.storage_service.import_output(
+            study_id,
             self.slurm_config.local_workspace / "OUTPUT" / job_id / "output",
+            params=RequestParameters(DEFAULT_ADMIN_USER),
         )
-
-        with open(zipped_output + ".zip", "rb") as fh:
-            self.storage_service.import_output(
-                study_id,
-                fh,
-                params=RequestParameters(DEFAULT_ADMIN_USER),
-            )
 
     def _check_studies_state(
         self,
@@ -192,11 +174,15 @@ class SlurmLauncher(ILauncher):
         all_done = True
 
         for study in study_list:
+            if study.name not in self.job_id_to_study_id:
+                # this job is handled by another worker process
+                continue
+
             all_done = all_done and (study.finished or study.with_error)
             if study.finished or study.with_error:
                 try:
                     self.log_tail_manager.stop_tracking(
-                        self._get_log_path(study)
+                        SlurmLauncher._get_log_path(study)
                     )
                     with db():
                         self._callback(
@@ -204,7 +190,6 @@ class SlurmLauncher(ILauncher):
                             JobStatus.FAILED
                             if study.with_error
                             else JobStatus.SUCCESS,
-                            study.with_error,
                         )
                         self._import_study_output(study.name)
                 finally:
@@ -217,7 +202,7 @@ class SlurmLauncher(ILauncher):
                     del self.job_id_to_study_id[study.name]
             else:
                 self.log_tail_manager.track(
-                    self._get_log_path(study),
+                    SlurmLauncher._get_log_path(study),
                     self.create_update_log(
                         study.name, self.job_id_to_study_id[study.name]
                     ),
@@ -243,8 +228,14 @@ class SlurmLauncher(ILauncher):
 
         return update_log
 
-    def _get_log_path(self, study: StudyDTO) -> Path:
-        return Path(study.job_log_dir) / "log"
+    @staticmethod
+    def _get_log_path(study: StudyDTO) -> Optional[Path]:
+        log_dir = Path(study.job_log_dir)
+        if log_dir.exists() and log_dir.is_dir():
+            for fname in os.listdir(log_dir):
+                if fname.startswith("antares-out-"):
+                    return log_dir / fname
+        return None
 
     def _clean_local_workspace(self) -> None:
         logger.info("Cleaning up slurm workspace")

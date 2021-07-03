@@ -64,13 +64,12 @@ const SingleStudyView = () => {
   };
 
   const renderStatus = () => {
-    if (studyJobs && !!studyJobs.find((j) => j.status === 'JobStatus.RUNNING')) {
-      return (
-        <PulsingDot style={{ height: '0.5em',
-          width: '0.5em',
-          marginRight: '0.5em' }}
-        />
-      );
+    if (
+      studyJobs &&
+      studyJobs.length > 0 &&
+      studyJobs[studyJobs.length - 1].status === 'JobStatus.RUNNING'
+    ) {
+      return <PulsingDot style={{ height: '0.5em', width: '0.5em', marginRight: '0.5em' }} />;
     }
     return undefined;
   };
@@ -97,12 +96,7 @@ const SingleStudyView = () => {
           {studyname}
         </div>
       </Breadcrumbs>
-      { studyId && (
-        <GenericTabView
-          items={navData}
-          initialValue="singlestudy:informations"
-        />
-      )}
+      {studyId && <GenericTabView items={navData} initialValue="singlestudy:informations" />}
     </div>
   );
 };

@@ -16,7 +16,7 @@ class ILauncher(ABC):
     def __init__(self, config: Config, storage_service: StorageService):
         self.config = config
         self.storage_service = storage_service
-        self.callbacks: List[Callable[[str, JobStatus, bool], None]] = []
+        self.callbacks: List[Callable[[str, JobStatus], None]] = []
 
     @abstractmethod
     def run_study(
@@ -25,6 +25,6 @@ class ILauncher(ABC):
         pass
 
     def add_statusupdate_callback(
-        self, callback: Callable[[str, JobStatus, bool], None]
+        self, callback: Callable[[str, JobStatus], None]
     ) -> None:
         self.callbacks.append(callback)

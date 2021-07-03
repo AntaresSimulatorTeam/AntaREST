@@ -190,11 +190,10 @@ def create_study_routes(
         zip_binary = io.BytesIO(output)
 
         params = RequestParameters(user=current_user)
-        content = str(
-            storage_service.import_output(uuid_sanitized, zip_binary, params)
+        output_id = storage_service.import_output(
+            uuid_sanitized, zip_binary, params
         )
-
-        return content
+        return output_id
 
     @bp.put(
         "/studies/{uuid}/owner/{user_id}",

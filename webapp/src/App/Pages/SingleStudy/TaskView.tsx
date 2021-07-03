@@ -89,7 +89,7 @@ const TaskView = (props: PropTypes) => {
     const init = async () => {
       try {
         const jobList = await getStudyJobs(studyId);
-        setJobs(jobList);
+        setJobs(jobList.reverse());
       } catch (e) {
         enqueueSnackbar(t('singlestudy:failtoloadjobs'), { variant: 'error' });
       }
