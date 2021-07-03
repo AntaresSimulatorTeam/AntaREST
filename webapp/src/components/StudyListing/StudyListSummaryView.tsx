@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import clsx from 'clsx';
 import { makeStyles, Button, createStyles, Theme, Paper, Typography } from '@material-ui/core';
 import FiberManualRecordIcon from '@material-ui/icons/FiberManualRecord';
 import { useTheme } from '@material-ui/core/styles';
@@ -24,8 +25,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
   },
   jobStatus: {
-    width: '20px',
-    height: '58%',
+    width: '10px',
+    height: '10px',
+    marginLeft: theme.spacing(0.5),
     display: 'flex',
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
@@ -38,6 +40,22 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     textDecoration: 'none',
+  },
+  managed: {
+    backgroundColor: theme.palette.secondary.main,
+  },
+  titleContainer: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  workspace: {
+    marginLeft: theme.spacing(1),
+  },
+  workspaceBadge: {
+    border: `1px solid ${theme.palette.primary.main}`,
+    borderRadius: '4px',
+    padding: '0 4px',
+    fontSize: '0.8em',
   },
   id: {
     fontFamily: "'Courier', sans-serif",
@@ -104,18 +122,25 @@ const StudyListSummaryView = (props: PropTypes) => {
 
   return (
     <Paper className={classes.root}>
-      {
-         !!lastJobStatus && (
-         <div className={classes.jobStatus}>
-           <FiberManualRecordIcon style={{ width: '10px', height: '10px', color: statusColor[lastJobStatus] }} />
-         </div>
-         )}
       <div className={classes.info}>
-        <Link className={classes.title} to={`/study/${encodeURI(study.id)}`}>
-          <Typography className={classes.title} component="h3">
-            {study.name}
-          </Typography>
-        </Link>
+        <div className={classes.titleContainer}>
+          <Link className={classes.title} to={`/study/${encodeURI(study.id)}`}>
+            <Typography className={classes.title} component="h3">
+              {study.name}
+            </Typography>
+          </Link>
+          {
+            !!lastJobStatus && (
+            <div className={classes.jobStatus}>
+              <FiberManualRecordIcon style={{ width: '10px', height: '10px', color: statusColor[lastJobStatus] }} />
+            </div>
+            )}
+          <div className={classes.workspace}>
+            <div className={clsx(classes.workspaceBadge, study.managed ? classes.managed : {})}>
+              {study.workspace}
+            </div>
+          </div>
+        </div>
         <Typography color="textSecondary" className={classes.id}>
           {study.id}
         </Typography>

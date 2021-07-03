@@ -1,5 +1,6 @@
 import debug from 'debug';
 import moment from 'moment';
+import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { makeStyles, createStyles, Theme, Paper, Typography, Button } from '@material-ui/core';
@@ -81,6 +82,18 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   infotxt: {
     marginLeft: theme.spacing(1),
+  },
+  managed: {
+    backgroundColor: theme.palette.secondary.main,
+  },
+  workspace: {
+    marginLeft: theme.spacing(1),
+  },
+  workspaceBadge: {
+    border: `1px solid ${theme.palette.primary.main}`,
+    borderRadius: '4px',
+    padding: '0 4px',
+    fontSize: '0.8em',
   },
   buttonContainer: {
     flex: 1,
@@ -184,6 +197,11 @@ const InformationView = (props: PropTypes) => {
           <div className={classes.infoContainer}>
             <div className={classes.mainInfo}>
               <Typography style={{ fontSize: '1.3em', fontWeight: 'bold' }}>{study.name}</Typography>
+              <div className={classes.workspace}>
+                <div className={clsx(classes.workspaceBadge, study.managed ? classes.managed : {})}>
+                  {study.workspace}
+                </div>
+              </div>
             </div>
             <div
               className={classes.mainInfo}

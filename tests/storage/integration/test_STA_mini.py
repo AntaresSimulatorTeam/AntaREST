@@ -256,11 +256,11 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/misc-gen/miscgen-fr",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/reserves/fr",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/prepro/fr/k",
@@ -445,6 +445,8 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "created": 1480683452,
             "updated": 1602678639,
             "author": "Andrea SGATTONI",
+            "workspace": "default",
+            "managed": True,
             "horizon": "2030",
             "scenario": None,
             "status": None,
