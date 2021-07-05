@@ -1,9 +1,9 @@
 from abc import abstractmethod, ABC
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union, Dict
 
 from antarest.common.custom_types import JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
-from antarest.storage.repository.filesystem.inode import INode, TREE
+from antarest.storage.repository.filesystem.inode import INode, TREE, S
 from antarest.storage.repository.filesystem.context import ContextServer
 
 
@@ -15,7 +15,7 @@ class ChildNotFoundError(Exception):
     pass
 
 
-class FolderNode(INode[JSON, JSON, JSON], ABC):
+class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
     """
     Hub node which forward request deeper in tree according to url. Or expand request according to depth.
     Its children is set node by node following antares tree structure.
@@ -76,7 +76,9 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
         else:
             return self._expand_get(depth)
 
-    def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
+    def save(
+        self, data: Union[str, bytes, JSON], url: Optional[List[str]] = None
+    ) -> None:
         children = self.build(self.config)
         url = url or []
 
@@ -86,6 +88,7 @@ class FolderNode(INode[JSON, JSON, JSON], ABC):
         else:
             if not self.config.path.exists():
                 self.config.path.mkdir()
+            assert isinstance(data, Dict)
             for key in data:
                 children[key].save(data[key])
 

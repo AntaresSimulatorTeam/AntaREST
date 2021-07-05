@@ -48,7 +48,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         return path
 
     def save(
-        self, data: Union[str, S], url: Optional[List[str]] = None
+        self, data: Union[str, bytes, S], url: Optional[List[str]] = None
     ) -> None:
         self._assert_url_end(url)
 

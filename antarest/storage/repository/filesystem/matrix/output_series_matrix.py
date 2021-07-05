@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, List, cast
+from typing import Optional, List, cast, Union
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
@@ -65,7 +65,7 @@ class OutputSeriesMatrix(MatrixNode):
 
         return cast(JSON, matrix.to_dict(orient="split"))
 
-    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
+    def _dump_json(self, data: JSON) -> None:
         df = pd.DataFrame(**data)
 
         headers = pd.DataFrame(df.columns.values.tolist()).T

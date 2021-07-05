@@ -1,6 +1,6 @@
 from io import StringIO
 from pathlib import Path
-from typing import Optional, List, IO
+from typing import Optional, List, IO, Union
 
 import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
@@ -50,7 +50,7 @@ class InputSeriesMatrix(MatrixNode):
         except EmptyDataError:
             return {}
 
-    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
+    def _dump_json(self, data: JSON) -> None:
         df = pd.DataFrame(**data)
         df.to_csv(self.config.path, sep="\t", header=False, index=False)
 
