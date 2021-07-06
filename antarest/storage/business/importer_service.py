@@ -34,29 +34,6 @@ class ImporterService:
         self.study_service = study_service
         self.study_factory = study_factory
 
-    def upload_matrix(
-        self, metadata: RawStudy, path: str, data: bytes
-    ) -> None:
-        """
-        upload content file
-        Args:
-            metadata: study
-            path: file path inside study
-            data: new content file
-
-        Returns:
-
-        """
-
-        relative_path_matrix = Path(path)
-
-        self.study_service.check_study_exists(metadata)
-        StorageServiceUtils.assert_path_can_be_matrix(relative_path_matrix)
-
-        path_matrix = Path(metadata.path) / relative_path_matrix
-
-        path_matrix.write_bytes(data)
-
     def import_study(self, metadata: RawStudy, stream: IO[bytes]) -> Study:
         """
         Import study

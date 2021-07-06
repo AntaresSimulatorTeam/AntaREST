@@ -68,7 +68,7 @@ const StudyJsonView = (props: PropTypes) => {
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
   const [isEditable, setEditable] = useState<boolean>(true);
 
-  const writeLeaf = (keys: Array<string>, dataElm: any, value: object, index = 0) => {
+  const writeLeaf = (keys: Array<string>, dataElm: any, value: any, index = 0) => {
     if (index >= keys.length || keys.length === 0) { return; }
     if (!(keys[index] in dataElm)) { return; }
     const key = keys[index];

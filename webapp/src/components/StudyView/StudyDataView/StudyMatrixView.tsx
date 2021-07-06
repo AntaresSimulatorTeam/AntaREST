@@ -8,6 +8,8 @@ import { getStudyData } from '../../../services/api/study';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
 import { MatrixType } from '../../../common/types';
 import MatrixView from './MatrixView';
+import ImportForm from './utils/ImportForm';
+import writeLeaf from './utils/utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -57,17 +59,20 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 interface PropTypes {
   study: string;
   url: string;
+  studyData: any;
+  setStudyData: (elm: any) => void;
   filterOut: Array<string>;
 }
 
 const StudyMatrixView = (props: PropTypes) => {
-  const { study, url, filterOut } = props;
+  const { study, url, filterOut, studyData, setStudyData } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
   const [data, setData] = useState<MatrixType>();
   const [loaded, setLoaded] = useState(false);
   const [changeStatus, setChangeStatus] = useState<boolean>(false);
   const [isEditable, setEditable] = useState<boolean>(true);
+  const [formatedPath, setFormatedPath] = useState<string>('');
 
   const loadFileData = async () => {
     setData(undefined);
@@ -92,9 +97,18 @@ const StudyMatrixView = (props: PropTypes) => {
     setChangeStatus(!changeStatus);
   };
 
+  const successImport = (file: File) => {
+    const tmpDataPath = url.split('/').filter((item) => item);
+    const newData = { ...studyData };
+    writeLeaf(tmpDataPath, newData, file);
+    setStudyData(newData);
+    enqueueSnackbar(<Translation>{(t) => t('studymanager:savedatasuccess')}</Translation>, { variant: 'success' });
+  };
+
   useEffect(() => {
     const urlParts = url.split('/');
     const tmpUrl = urlParts.filter((item) => item);
+    setFormatedPath(tmpUrl.join('/'));
     if (tmpUrl.length > 0) {
       setEditable(!filterOut.includes(tmpUrl[0]));
     }
@@ -108,40 +122,33 @@ const StudyMatrixView = (props: PropTypes) => {
 
   return (
     <>
-      {data && Object.keys(data).length > 0 && (
       <div className={classes.root}>
         {
           isEditable && (
           <div className={classes.header}>
-            <Button
-              variant="outlined"
-              color="primary"
-              className={classes.button}
-              style={{ border: '2px solid' }}
-            >
-              <Typography className={classes.buttonElement} style={{ fontSize: '12px' }}>
-                <Translation>{(t) => t('main:import')}</Translation>
-              </Typography>
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              className={classes.button}
-              style={{ border: '2px solid' }}
-              onClick={onChange}
-            >
-              {changeStatus && <SaveIcon className={classes.buttonElement} style={{ width: '16px', height: '16px' }} />}
-              <Typography className={classes.buttonElement} style={{ fontSize: '12px' }}>
-                <Translation>{(t) => (changeStatus ? t('main:save') : t('main:edit'))}</Translation>
-              </Typography>
-            </Button>
+            <ImportForm study={study} path={formatedPath} callback={successImport} />
+            {data && Object.keys(data).length > 0 && (
+              <Button
+                variant="outlined"
+                color="primary"
+                className={classes.button}
+                style={{ border: '2px solid' }}
+                onClick={onChange}
+              >
+                {changeStatus && <SaveIcon className={classes.buttonElement} style={{ width: '16px', height: '16px' }} />}
+                <Typography className={classes.buttonElement} style={{ fontSize: '12px' }}>
+                  <Translation>{(t) => (changeStatus ? t('main:save') : t('main:edit'))}</Translation>
+                </Typography>
+              </Button>
+            )}
           </div>
           )}
         <Paper className={classes.content}>
-          <MatrixView matrix={data} readOnly={!changeStatus} />
+          {data && Object.keys(data).length > 0 && (
+            <MatrixView matrix={data} readOnly={!changeStatus} />
+          )}
         </Paper>
       </div>
-      )}
       {!loaded && (
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           <MainContentLoader />

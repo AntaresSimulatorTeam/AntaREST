@@ -34,10 +34,10 @@ const StudyDataView = (props: PropTypes) => {
 
   const renderData = (): RenderData => {
     if (type === 'file') {
-      return { css: { overflow: 'auto' }, data: <StudyFileView study={study} url={data as string} filterOut={filterOut} /> };
+      return { css: { overflow: 'auto' }, data: <StudyFileView study={study} url={data as string} filterOut={filterOut} studyData={studyData} setStudyData={setStudyData} /> };
     }
     if (type === 'matrix' || type === 'matrixfile') {
-      return { css: { overflow: 'auto' }, data: <StudyMatrixView study={study} url={data as string} filterOut={filterOut}/> };
+      return { css: { overflow: 'auto' }, data: <StudyMatrixView study={study} url={data as string} filterOut={filterOut} studyData={studyData} setStudyData={setStudyData} /> };
     }
     return { css: { overflow: 'hidden', paddingTop: '0px' }, data: <StudyJsonView studyData={studyData} setStudyData={setStudyData} updateViewedData={updateViewedData} study={study} data={data as DataType} filterOut={filterOut} /> };
   };

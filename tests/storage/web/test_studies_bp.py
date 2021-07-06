@@ -354,56 +354,6 @@ def test_delete_study() -> None:
 
 
 @pytest.mark.unit_test
-def test_import_matrix() -> None:
-    mock_storage_service = Mock()
-
-    app = FastAPI(title=__name__)
-    build_storage(
-        app,
-        storage_service=mock_storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(),
-    )
-    client = TestClient(app)
-
-    data = io.BytesIO(b"hello")
-    path = "path/to/matrix.txt"
-    result = client.post("/v1/file/" + path, files={"matrix": data})
-
-    mock_storage_service.upload_matrix.assert_called_once_with(
-        path, b"hello", PARAMS
-    )
-    assert result.status_code == HTTPStatus.NO_CONTENT.value
-
-
-@pytest.mark.unit_test
-def test_import_matrix_with_wrong_path() -> None:
-    mock_storage_service = Mock()
-    mock_storage_service.upload_matrix = Mock(
-        side_effect=IncorrectPathError("")
-    )
-
-    app = FastAPI(title=__name__)
-    build_storage(
-        app,
-        storage_service=mock_storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(),
-    )
-    client = TestClient(app)
-
-    data = io.BytesIO(b"hello")
-    path = "path/to/matrix.txt"
-    result = client.post(
-        "/v1/file/" + path, data={"matrix": (data, "matrix.txt")}
-    )
-
-    assert result.status_code == HTTPStatus.NOT_FOUND.value
-
-
-@pytest.mark.unit_test
 def test_edit_study() -> None:
     mock_storage_service = Mock()
     mock_storage_service.edit_study.return_value = {}

@@ -552,52 +552,6 @@ class StorageService:
 
         self.study_service.set_reference_output(study, output_id, status)
 
-    def get_matrix(self, route: str, params: RequestParameters) -> BytesIO:
-        """
-        Download matrix
-        Args:
-            route: matrix path
-            params: request parameters
-
-        Returns: raw content file
-
-        """
-        uuid, path = StorageServiceUtils.extract_info_from_url(route)
-        study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.READ)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
-
-        logger.info("matrix %s asked by user %s", route, params.get_user_id())
-        return self.exporter_service.get_matrix(study, path)
-
-    def upload_matrix(
-        self, path: str, data: bytes, params: RequestParameters
-    ) -> None:
-        """
-        Upload matrix
-        Args:
-            path: matrix path
-            data: raw file content
-            params: request parameters
-
-        Returns:
-
-        """
-        uuid, matrix_path = StorageServiceUtils.extract_info_from_url(path)
-        study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
-
-        self.importer_service.upload_matrix(study, matrix_path, data)
-
-        self.event_bus.push(
-            Event(EventType.STUDY_EDITED, study.to_json_summary())
-        )
-
-        logger.info("matrix %s updated by user %s", path, params.get_user_id())
-
     def import_study(
         self,
         stream: IO[bytes],

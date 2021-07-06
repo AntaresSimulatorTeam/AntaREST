@@ -2,8 +2,9 @@ import subprocess
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional
-
+from glob import escape
 from fastapi import APIRouter, HTTPException, File, Depends
+from fastapi.params import Param
 from starlette.responses import StreamingResponse
 
 from antarest import __version__
@@ -13,7 +14,7 @@ from antarest.common.requests import (
     RequestParameters,
 )
 from antarest.common.utils.web import APITag
-from antarest.login.auth import Auth
+from antarest.common.swagger import get_path_examples
 from antarest.storage.service import StorageService
 
 
@@ -54,39 +55,6 @@ def create_utils_routes(
 
     """
     bp = APIRouter()
-
-    auth = Auth(config)
-
-    @bp.get(
-        "/v1/file/{path:path}", tags=[APITag.study_data], summary="Get file"
-    )
-    def get_file(
-        path: str, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
-        try:
-            params = RequestParameters(user=current_user)
-            return StreamingResponse(storage_service.get_matrix(path, params))
-        except FileNotFoundError:
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND.value,
-                detail=f"{path} not found",
-            )
-
-    @bp.post(
-        "/v1/file/{path:path}",
-        status_code=HTTPStatus.NO_CONTENT.value,
-        tags=[APITag.study_data],
-        summary="Post file",
-    )
-    def post_file(
-        path: str,
-        matrix: bytes = File(...),
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        params = RequestParameters(user=current_user)
-        storage_service.upload_matrix(path, matrix, params)
-
-        return ""
 
     @bp.get("/health", tags=[APITag.misc])
     def health() -> Any:

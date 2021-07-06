@@ -1,10 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
-import { makeStyles, Theme, createStyles, Paper, Typography, Button } from '@material-ui/core';
+import { makeStyles, Theme, createStyles, Paper } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { Translation } from 'react-i18next';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
 import { getStudyData } from '../../../services/api/study';
+import ImportForm from './utils/ImportForm';
+import writeLeaf from './utils/utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -33,21 +35,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'flex-start',
     overflow: 'auto',
   },
-  importButton: {
-    display: 'flex',
-    flexFlow: 'row nowrap',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    height: '30px',
-    marginBottom: theme.spacing(1),
-  },
-  grayButton: {
-    border: '2px solid gray',
-    color: 'gray',
-  },
-  buttonElement: {
-    margin: theme.spacing(0.2),
-  },
   code: {
     whiteSpace: 'pre',
   },
@@ -56,16 +43,19 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 interface PropTypes {
   study: string;
   url: string;
+  studyData: any;
+  setStudyData: (elm: any) => void;
   filterOut: Array<string>;
 }
 
 const StudyDataView = (props: PropTypes) => {
-  const { study, url, filterOut } = props;
+  const { study, url, filterOut, studyData, setStudyData } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
   const [data, setData] = useState<string>();
   const [loaded, setLoaded] = useState(false);
   const [isEditable, setEditable] = useState<boolean>(true);
+  const [formatedPath, setFormatedPath] = useState<string>('');
 
   const loadFileData = async () => {
     setData(undefined);
@@ -80,9 +70,18 @@ const StudyDataView = (props: PropTypes) => {
     }
   };
 
+  const successImport = (file: File) => {
+    const tmpDataPath = url.split('/').filter((item) => item);
+    const newData = { ...studyData };
+    writeLeaf(tmpDataPath, newData, file);
+    setStudyData(newData);
+    enqueueSnackbar(<Translation>{(t) => t('studymanager:savedatasuccess')}</Translation>, { variant: 'success' });
+  };
+
   useEffect(() => {
     const urlParts = url.split('/');
     const tmpUrl = urlParts.filter((item) => item);
+    setFormatedPath(tmpUrl.join('/'));
     if (tmpUrl.length > 0) {
       setEditable(!filterOut.includes(tmpUrl[0]));
     }
@@ -100,16 +99,7 @@ const StudyDataView = (props: PropTypes) => {
         {
            isEditable && (
            <div className={classes.header}>
-             <Button
-               variant="outlined"
-               color="primary"
-               className={classes.importButton}
-               style={{ border: '2px solid' }}
-             >
-               <Typography className={classes.buttonElement} style={{ fontSize: '12px' }}>
-                 <Translation>{(t) => t('main:import')}</Translation>
-               </Typography>
-             </Button>
+             <ImportForm study={study} path={formatedPath} callback={successImport} />
            </div>
            )}
         <Paper className={classes.content}>

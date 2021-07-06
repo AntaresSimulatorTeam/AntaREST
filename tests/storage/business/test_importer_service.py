@@ -28,32 +28,6 @@ def build_storage_service(workspace: Path, uuid: str) -> RawStudyService:
 
 
 @pytest.mark.unit_test
-def test_upload_matrix(tmp_path: Path, storage_service_builder) -> None:
-
-    study_uuid = "my-study"
-    study_path = tmp_path / study_uuid
-    study_path.mkdir()
-    (study_path / "study.antares").touch()
-
-    importer_service = ImporterService(
-        study_service=build_storage_service(tmp_path, study_uuid),
-        study_factory=Mock(),
-    )
-
-    matrix_path = "WRONG_MATRIX_PATH"
-    md = RawStudy(
-        id=study_uuid, workspace=DEFAULT_WORKSPACE_NAME, path=study_path
-    )
-    with pytest.raises(IncorrectPathError):
-        importer_service.upload_matrix(md, matrix_path, b"")
-
-    matrix_path = "matrix.txt"
-    data = b"hello"
-    importer_service.upload_matrix(md, matrix_path, data)
-    assert (study_path / matrix_path).read_bytes() == data
-
-
-@pytest.mark.unit_test
 def test_import_study(tmp_path: Path, storage_service_builder) -> None:
 
     name = "my-study"

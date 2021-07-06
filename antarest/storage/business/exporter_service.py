@@ -51,16 +51,3 @@ class ExporterService:
         self.study_service.check_study_exists(metadata)
 
         self.exporter.export_flat(path_study, dest, outputs)
-
-    def get_matrix(self, metadata: Study, path: str) -> BytesIO:
-        """
-        Get matrix file content
-        Args:
-            metadata: study with matrix inside
-            path: path inside study
-
-        Returns: content file
-
-        """
-        file = self.study_service.get_study_path(metadata) / path
-        return BytesIO(file.read_bytes())
