@@ -3,6 +3,7 @@ import { Paper, makeStyles, Theme, createStyles } from '@material-ui/core';
 import StudyFileView from './StudyFileView';
 import StudyJsonView from './StudyJsonView';
 import StudyMatrixView from './StudyMatrixView';
+import { StudyDataType } from '../../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -14,7 +15,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
   study: string;
-  type: 'json' | 'file' | 'matrix' | 'studyfile';
+  type: StudyDataType;
   data: string;
 }
 
@@ -22,10 +23,10 @@ const StudyDataView = (props: PropTypes) => {
   const { study, type, data } = props;
   const classes = useStyles();
   const renderData = () => {
-    if (type === 'file' || type === 'studyfile') {
+    if (type === 'file') {
       return <StudyFileView study={study} url={data} />;
     }
-    if (type === 'matrix') {
+    if (type === 'matrix' || type === 'matrixfile') {
       return (<StudyMatrixView study={study} url={data} />);
     }
     return <StudyJsonView data={data} />;

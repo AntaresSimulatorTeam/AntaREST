@@ -80,7 +80,7 @@ def test_get_expanded_txt(tmp_path: Path):
         context=ContextServer(matrix=Mock(), resolver=Mock()),
         config=config,
     )
-    assert "[LAZY] Lazy content of lazy.txt" == node.get(expanded=True)
+    assert "file://lazy.txt" == node.get(expanded=True)
 
 
 def test_get_expanded_link(tmp_path: Path):

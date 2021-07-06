@@ -97,21 +97,25 @@ class SetsIniReader(IReader):
 
     @staticmethod
     def fetch_cleaned_lines(path: Path) -> List[str]:
-        return [l for l in path.read_text().split("\n") if l != ""]
+        return [l for l in path.read_text().split("\n") if l.strip() != ""]
 
     def read(self, path: Path) -> JSON:
         data: JSON = dict()
         curr_part = ""
         lines = SetsIniReader.fetch_cleaned_lines(path)
 
-        for line in lines:
+        for l in lines:
+            line = l.strip()
             regex = re.search("^\[(.*)\]$", line)
             if regex:
                 curr_part = regex.group(1)
                 data[curr_part] = dict()
             else:
-                key, string = line.split(" = ")
-                value = IniReader.parse_value(string)
+                elements = line.split(" = ")
+                key = elements[0]
+                value = None
+                if len(elements) == 2:
+                    value = IniReader.parse_value(elements[1])
                 if key not in data[curr_part]:
                     data[curr_part][key] = value
                 else:

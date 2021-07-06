@@ -667,7 +667,11 @@ class StorageService:
         return res
 
     def edit_study(
-        self, uuid: str, url: str, new: JSON, params: RequestParameters
+        self,
+        uuid: str,
+        url: str,
+        new: Union[str, bytes, JSON],
+        params: RequestParameters,
     ) -> JSON:
         """
         Replace data inside study.

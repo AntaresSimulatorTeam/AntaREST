@@ -26,6 +26,7 @@ def build_empty_files(tmp: Path) -> Path:
     (study_path / "input/thermal/clusters").mkdir(parents=True)
 
     (study_path / "settings").mkdir(parents=True)
+    (study_path / "settings/generaldata.ini").touch()
 
     return study_path
 

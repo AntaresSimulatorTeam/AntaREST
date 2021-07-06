@@ -2,7 +2,7 @@ import os
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, List, cast
+from typing import Optional, List, cast, Union
 
 from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.matrixstore.model import MatrixDTO, MatrixFreq
@@ -11,7 +11,7 @@ from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 
-class MatrixNode(LazyNode[JSON, JSON, JSON], ABC):
+class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):
     def __init__(
         self, context: ContextServer, config: StudyConfig, freq: str
     ) -> None:
@@ -24,7 +24,7 @@ class MatrixNode(LazyNode[JSON, JSON, JSON], ABC):
         depth: int = -1,
         expanded: bool = False,
     ) -> str:
-        return f"matrix://{self.config.path.name}"
+        return f"matrixfile://{self.config.path.name}"
 
     @abstractmethod
     def load(
@@ -47,7 +47,7 @@ class MatrixNode(LazyNode[JSON, JSON, JSON], ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
+    def _dump_json(self, data: JSON) -> None:
         """
         Store data on tree.
 
@@ -58,4 +58,14 @@ class MatrixNode(LazyNode[JSON, JSON, JSON], ABC):
         Returns:
 
         """
+
         raise NotImplementedError()
+
+    def dump(
+        self, data: Union[bytes, JSON], url: Optional[List[str]] = None
+    ) -> None:
+        if isinstance(data, bytes):
+            self.config.path.parent.mkdir(exist_ok=True, parents=True)
+            self.config.path.write_bytes(data)
+        else:
+            self._dump_json(data)

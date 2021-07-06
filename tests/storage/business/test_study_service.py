@@ -164,7 +164,7 @@ def test_create_study(
     path_studies = Path(tmp_path)
 
     study = Mock()
-    data = {"study": {"antares": {"caption": None}}}
+    data = {"antares": {"caption": None}}
     study.get.return_value = data
 
     study_factory = Mock()
@@ -210,15 +210,12 @@ def test_copy_study(
     path_study_info.touch()
 
     value = {
-        "study": {
-            "antares": {
-                "caption": "ex1",
-                "created": 1480683452,
-                "lastsave": 1602678639,
-                "author": "unknown",
-            },
-            "output": [],
-        }
+        "antares": {
+            "caption": "ex1",
+            "created": 1480683452,
+            "lastsave": 1602678639,
+            "author": "unknown",
+        },
     }
 
     study = Mock()
@@ -253,7 +250,7 @@ def test_copy_study(
     md = study_service.copy_study(src_md, dest_md)
 
     assert str(md.path) == f"{tmp_path}{os.sep}study2"
-    study.get.assert_called_once_with()
+    study.get.assert_called_once_with(["study"])
 
 
 @pytest.mark.unit_test

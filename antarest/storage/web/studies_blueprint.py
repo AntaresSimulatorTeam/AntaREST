@@ -324,7 +324,7 @@ def create_study_routes(
         "/studies/{uuid}/raw",
         status_code=HTTPStatus.NO_CONTENT.value,
         tags=[APITag.study_data],
-        summary="Update data",
+        summary="Update data by posting formatted data",
     )
     def edit_study(
         uuid: str,
@@ -341,6 +341,25 @@ def create_study_routes(
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
         storage_service.edit_study(uuid, path, new, params)
+        content = ""
+
+        return content
+
+    @bp.put(
+        "/studies/{uuid}/raw",
+        status_code=HTTPStatus.NO_CONTENT.value,
+        tags=[APITag.study_data],
+        summary="Update data by posting a raw file",
+    )
+    def replace_study_file(
+        uuid: str,
+        path: str = Param("/", examples=get_path_examples()),  # type: ignore
+        file: bytes = File(...),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        path = sanitize_uuid(path)
+        params = RequestParameters(user=current_user)
+        storage_service.edit_study(uuid, path, file, params)
         content = ""
 
         return content

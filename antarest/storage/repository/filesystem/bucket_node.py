@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Union, Dict
 
 from antarest.common.custom_types import JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
@@ -12,7 +12,10 @@ class BucketNode(FolderNode):
     Node to handle structure free, user purpose folder. BucketNode accept any file or sub folder as children.
     """
 
-    def save(self, data: JSON, url: Optional[List[str]] = None) -> None:
+    def save(
+        self, data: Union[str, bytes, JSON], url: Optional[List[str]] = None
+    ) -> None:
+        assert isinstance(data, Dict)
         for key, value in data.items():
             if isinstance(value, (str, bytes)):
                 RawFileNode(self.context, self.config.next_file(key)).save(

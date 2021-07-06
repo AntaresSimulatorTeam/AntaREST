@@ -48,7 +48,7 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_parameters(path: Path) -> Tuple[bool]:
-        general = IniReader().read(path / "settings/generaldata.ini")
+        general = SetsIniReader().read(path / "settings/generaldata.ini")
         store_new_set: bool = general.get("output", {}).get(
             "storenewset", False
         )
