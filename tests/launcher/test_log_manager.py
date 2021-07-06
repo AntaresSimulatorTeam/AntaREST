@@ -43,8 +43,8 @@ def test_reading(tmp_path: Path):
 
     assert len(logs) > 0
 
-    logs.clear()
     log_manager.stop_tracking(log1)
+    logs.clear()
     with open(log1, "a") as fh:
         fh.write("world\n")
 
