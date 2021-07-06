@@ -3,6 +3,7 @@ import json
 import shutil
 from http import HTTPStatus
 from pathlib import Path
+from typing import Any, Union
 from unittest.mock import Mock, call
 
 import pytest
@@ -34,7 +35,7 @@ ADMIN = JWTUser(
 
 
 def assert_url_content(
-    storage_service: StorageService, url: str, expected_output: str
+    storage_service: StorageService, url: str, expected_output: dict
 ) -> None:
     app = FastAPI(title=__name__)
     build_storage(
@@ -50,7 +51,9 @@ def assert_url_content(
 
 
 def assert_with_errors(
-    storage_service: StorageService, url: str, expected_output: dict
+    storage_service: StorageService,
+    url: str,
+    expected_output: Union[str, dict],
 ) -> None:
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
@@ -240,10 +243,10 @@ def test_sta_mini_study_antares(
         (
             "/v1/studies/STA-mini/raw?path=input/load/series",
             {
-                "load_de": "[LAZY] matrix://load_de.txt",
-                "load_es": "[LAZY] matrix://load_es.txt",
-                "load_fr": "[LAZY] matrix://load_fr.txt",
-                "load_it": "[LAZY] matrix://load_it.txt",
+                "load_de": "matrixfile://load_de.txt",
+                "load_es": "matrixfile://load_es.txt",
+                "load_fr": "matrixfile://load_fr.txt",
+                "load_it": "matrixfile://load_it.txt",
             },
         ),
         (
@@ -280,7 +283,7 @@ def test_sta_mini_study_antares(
         ),
     ],
 )
-def test_sta_mini_input(storage_service, url: str, expected_output: str):
+def test_sta_mini_input(storage_service, url: str, expected_output: dict):
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -342,7 +345,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr",
-            {"values-hourly": "[LAZY] matrix://values-hourly.txt"},
+            {"values-hourly": "matrixfile://values-hourly.txt"},
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
@@ -378,7 +381,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
         ),
     ],
 )
-def test_sta_mini_output(storage_service, url: str, expected_output: str):
+def test_sta_mini_output(storage_service, url: str, expected_output: dict):
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -414,10 +417,10 @@ def test_sta_mini_copy(storage_service) -> None:
     data_destination = storage_service.get(uuid, "/", -1, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
-    assert "[LAZY] matrix://fr.txt" == link_url_source
+    assert "matrixfile://fr.txt" == link_url_source
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
-    assert "[LAZY] matrix://fr.txt" == link_url_destination
+    assert "matrixfile://fr.txt" == link_url_destination
 
     def replace_study_name(data: JSON) -> None:
         if isinstance(data, dict):

@@ -8,6 +8,9 @@ from markupsafe import escape
 
 from antarest.common.custom_types import JSON
 from antarest.storage.model import Study
+from antarest.storage.repository.filesystem.root.study import (
+    Study as StudyTree,
+)
 from antarest.storage.web.exceptions import (
     StudyValidationError,
     BadZipBinary,
@@ -94,22 +97,24 @@ class StorageServiceUtils:
             )
 
     @staticmethod
-    def update_antares_info(metadata: Study, study_data: JSON) -> None:
+    def update_antares_info(metadata: Study, studytree: StudyTree) -> None:
         """
         Update study.antares data
         Args:
             metadata: study information
-            study_data: study data formatted in json
+            studytree: study tree
 
         Returns: none, update is directly apply on study_data
 
         """
-        info_antares = study_data["study"]["antares"]
-
-        info_antares["caption"] = metadata.name
-        info_antares["created"] = metadata.created_at.timestamp()
-        info_antares["lastsave"] = metadata.updated_at.timestamp()
-        info_antares["version"] = metadata.version
+        study_data_info = studytree.get(["study"])
+        study_data_info["antares"]["caption"] = metadata.name
+        study_data_info["antares"]["created"] = metadata.created_at.timestamp()
+        study_data_info["antares"][
+            "lastsave"
+        ] = metadata.updated_at.timestamp()
+        study_data_info["antares"]["version"] = metadata.version
+        studytree.save(study_data_info, ["study"])
 
     @staticmethod
     def extract_info_from_url(route: str) -> Tuple[str, str]:

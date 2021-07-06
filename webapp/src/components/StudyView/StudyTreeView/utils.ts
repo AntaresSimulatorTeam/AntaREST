@@ -19,7 +19,7 @@ export const isJsonLeaf = (studyDataNode: any) => {
     if (
       typeof element !== 'object' &&
       (typeof element !== 'string' ||
-        !(element.includes('file://') || element.includes('matrix://')))
+        !(element.includes('file://') || element.includes('matrix://') || element.includes('matrixfile://')))
     ) {
       return true;
     }
@@ -33,7 +33,7 @@ export const getStudyParams = (
   itemkey: string,
 ): StudyParams | undefined => {
   if (typeof data !== 'object') {
-    const tmp = data.substr('[LAZY] '.length).split('://');
+    const tmp = data.split('://');
     if (tmp && tmp.length > 0) {
       return { type: tmp[0] as StudyDataType, icon: 'file-alt', data: `${path}/${itemkey}` };
     }

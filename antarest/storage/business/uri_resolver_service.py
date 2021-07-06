@@ -16,7 +16,7 @@ class UriResolverService:
         self.matrix_service = matrix_service
 
     def resolve(self, uri: str) -> Union[bytes, SUB_JSON]:
-        match = re.match(r"^(\w+)://([\w-]+)$", uri)
+        match = re.match(r"^(\w+)://(.+)$", uri)
         if not match:
             return None
 

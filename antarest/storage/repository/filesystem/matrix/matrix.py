@@ -24,7 +24,7 @@ class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):
         depth: int = -1,
         expanded: bool = False,
     ) -> str:
-        return f"matrix://{self.config.path.name}"
+        return f"matrixfile://{self.config.path.name}"
 
     @abstractmethod
     def load(

@@ -1,3 +1,4 @@
+import os
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -12,8 +13,6 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     """
     Abstract left with implemented a lazy loading for its daughter implementation.
     """
-
-    LAZY_PLACEHOLDER_PREFIX: str = "[LAZY] "
 
     def __init__(
         self,
@@ -39,7 +38,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
                 return cast(G, self.context.resolver.resolve(link))
 
         if expanded:
-            return LazyNode.LAZY_PLACEHOLDER_PREFIX + self.get_lazy_content()
+            return self.get_lazy_content()
         else:
             return self.load(url, depth, expanded)
 
@@ -51,9 +50,6 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         self, data: Union[str, bytes, S], url: Optional[List[str]] = None
     ) -> None:
         self._assert_url_end(url)
-
-        if isinstance(data, str) and LazyNode.LAZY_PLACEHOLDER_PREFIX in data:
-            return None
 
         if isinstance(data, str) and self.context.resolver.resolve(data):
             self.get_link_path().write_text(data)
@@ -72,7 +68,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         depth: int = -1,
         expanded: bool = False,
     ) -> str:
-        return f"Lazy content of {self.config.path.name}"
+        return f"file://{self.config.path.name}"
 
     @abstractmethod
     def load(

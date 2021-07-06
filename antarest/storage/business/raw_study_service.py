@@ -254,11 +254,8 @@ class RawStudyService:
         with ZipFile(empty_study_zip) as zip_output:
             zip_output.extractall(path=path_study)
 
-        study_data = self.get(metadata, url="", depth=10)
-        StorageServiceUtils.update_antares_info(metadata, study_data)
-
         _, study = self.study_factory.create_from_fs(path_study, metadata.id)
-        study.save(study_data["study"], url=["study"])
+        StorageServiceUtils.update_antares_info(metadata, study)
 
         metadata.path = str(path_study)
         return metadata
@@ -286,9 +283,7 @@ class RawStudyService:
         _, study = self.study_factory.create_from_fs(
             dest_path, study_id=dest_meta.id
         )
-        data_destination = study.get()
-        StorageServiceUtils.update_antares_info(dest_meta, data_destination)
-        study.save(data_destination)
+        StorageServiceUtils.update_antares_info(dest_meta, study)
 
         del study
         return dest_meta
