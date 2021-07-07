@@ -49,26 +49,3 @@ def test_version() -> None:
 
     assert result.status_code == HTTPStatus.OK.value
     assert result.json()["version"] == __version__
-
-
-@pytest.mark.unit_test
-def test_get_matrix() -> None:
-
-    mock_storage_service = Mock()
-    mock_storage_service.get_matrix.return_value = BytesIO(b"Hello World")
-
-    app = FastAPI(title=__name__)
-    build_storage(
-        app,
-        storage_service=mock_storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(),
-    )
-    client = TestClient(app)
-
-    path = "/v1/file/my-study/matrix.txt"
-    result = client.get(path, stream=True)
-
-    assert result.status_code == HTTPStatus.OK.value
-    assert result.raw.data == b"Hello World"

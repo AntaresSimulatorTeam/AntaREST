@@ -32,6 +32,11 @@ export const createStudy = async (name: string): Promise<string> => {
   return res.data;
 };
 
+export const editStudy = async (data: object, sid: string, path = '', depth = 1): Promise<any> => {
+  const res = await client.post(`/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`, data);
+  return res.data;
+};
+
 export const deleteStudy = async (sid: string): Promise<any> => {
   const res = await client.delete(`/v1/studies/${sid}`);
   return res.data;
@@ -58,6 +63,27 @@ export const importStudy = async (file: File, onProgress?: (progress: number) =>
     },
   };
   const res = await client.post('/v1/studies/_import', formData, restconfig);
+  return res.data;
+};
+
+export const importFile = async (file: File, study: string, path: string, onProgress?: (progress: number) => void): Promise<string> => {
+  const options: AxiosRequestConfig = {};
+  if (onProgress) {
+    options.onUploadProgress = (progressEvent): void => {
+      const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+      onProgress(percentCompleted);
+    };
+  }
+  const formData = new FormData();
+  formData.append('file', file);
+  const restconfig = {
+    ...options,
+    headers: {
+      'content-type': 'multipart/form-data',
+      'Access-Control-Allow-Origin': '*',
+    },
+  };
+  const res = await client.put(`/v1/studies/${study}/raw?path=${encodeURIComponent(path)}`, formData, restconfig);
   return res.data;
 };
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Paper, makeStyles, Theme, createStyles } from '@material-ui/core';
+import { makeStyles, Theme, createStyles } from '@material-ui/core';
 import StudyFileView from './StudyFileView';
 import StudyJsonView from './StudyJsonView';
 import StudyMatrixView from './StudyMatrixView';
@@ -7,35 +7,46 @@ import { StudyDataType } from '../../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
-    padding: theme.spacing(2),
-    overflow: 'auto',
     flexGrow: 1,
+    padding: theme.spacing(2),
   },
 }));
 
+type DataType = {path: string; json: object};
 interface PropTypes {
   study: string;
   type: StudyDataType;
-  data: string;
+  data: string | DataType;
+  studyData: any;
+  setStudyData: (elm: any) => void;
+  updateViewedData: (json: object) => void;
+}
+
+interface RenderData {
+  css: React.CSSProperties;
+  data: JSX.Element;
 }
 
 const StudyDataView = (props: PropTypes) => {
-  const { study, type, data } = props;
+  const { study, type, data, studyData, setStudyData, updateViewedData } = props;
   const classes = useStyles();
-  const renderData = () => {
+  const filterOut = ['output', 'logs', 'Desktop'];
+
+  const renderData = (): RenderData => {
     if (type === 'file') {
-      return <StudyFileView study={study} url={data} />;
+      return { css: { overflow: 'auto' }, data: <StudyFileView study={study} url={data as string} filterOut={filterOut} studyData={studyData} setStudyData={setStudyData} /> };
     }
     if (type === 'matrix' || type === 'matrixfile') {
-      return (<StudyMatrixView study={study} url={data} />);
+      return { css: { overflow: 'auto' }, data: <StudyMatrixView study={study} url={data as string} filterOut={filterOut} studyData={studyData} setStudyData={setStudyData} /> };
     }
-    return <StudyJsonView data={data} />;
+    return { css: { overflow: 'hidden', paddingTop: '0px' }, data: <StudyJsonView studyData={studyData} setStudyData={setStudyData} updateViewedData={updateViewedData} study={study} data={data as DataType} filterOut={filterOut} /> };
   };
 
+  const rd = renderData();
   return (
-    <Paper className={classes.root}>
-      {renderData()}
-    </Paper>
+    <div className={classes.root} style={rd.css}>
+      {rd.data}
+    </div>
   );
 };
 

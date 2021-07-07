@@ -13,7 +13,7 @@ interface ItemPropTypes {
   itemkey: string;
   data: any;
   path?: string;
-  viewer: (type: StudyDataType, data: string) => void;
+  viewer: (type: StudyDataType, data: string | {path: string; json: object}) => void;
 }
 
 const StudyTreeItem = (props: ItemPropTypes) => {
@@ -48,7 +48,7 @@ const StudyTreeItem = (props: ItemPropTypes) => {
 
 interface PropTypes {
   data: any;
-  view: (type: StudyDataType, data: string) => void;
+  view: (type: StudyDataType, data: string | {path: string; json: object}) => void;
 }
 
 const StudyTreeView = (props: PropTypes) => {

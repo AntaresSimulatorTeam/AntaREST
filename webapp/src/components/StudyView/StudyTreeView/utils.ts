@@ -3,7 +3,7 @@ import { StudyDataType } from '../../../common/types';
 export interface StudyParams {
   type: StudyDataType;
   icon: 'file-alt' | 'file-code';
-  data: string;
+  data: string | {path: string; json: object};
 }
 
 export const isJsonLeaf = (studyDataNode: any) => {
@@ -40,7 +40,7 @@ export const getStudyParams = (
     return { type: 'file', icon: 'file-alt', data: `${path}/${itemkey}` };
   }
   if (isJsonLeaf(data)) {
-    return { type: 'json', icon: 'file-code', data: JSON.stringify(data) };
+    return { type: 'json', icon: 'file-code', data: { path: `${path}/${itemkey}`, json: data } };
   }
   return undefined;
 };

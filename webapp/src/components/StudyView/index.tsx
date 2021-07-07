@@ -47,7 +47,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface ElementView {
   type: StudyDataType;
-  data: string;
+  data: string | {path: string; json: object};
 }
 
 interface PropTypes {
@@ -75,6 +75,15 @@ const StudyView = (props: PropTypes) => {
     }
   }, [enqueueSnackbar]);
 
+  const updateViewedData = (json: object) => {
+    if (elementView && elementView.type === 'json' && typeof elementView.data !== 'string') {
+      setElementView({
+        ...elementView,
+        data: { ...elementView.data, json },
+      });
+    }
+  };
+
   useEffect(() => {
     initStudyData(study);
   }, [study, initStudyData]);
@@ -91,7 +100,7 @@ const StudyView = (props: PropTypes) => {
             </div>
             <div className={classes.main}>
               <div className={classes.maincontent}>
-                {elementView && <StudyDataView study={study} type={elementView.type} data={elementView.data} />}
+                {elementView && <StudyDataView study={study} studyData={studyData} setStudyData={setStudyData} updateViewedData={updateViewedData} type={elementView.type} data={elementView.data} />}
               </div>
             </div>
           </>

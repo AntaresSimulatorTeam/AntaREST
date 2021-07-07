@@ -13,7 +13,8 @@ const useStyles = makeStyles(() => createStyles({
 }));
 
 interface PropTypes {
-  data: MatrixType;
+  matrix: MatrixType;
+  readOnly: boolean;
 }
 
 type CellType = Array<number | string | boolean>;
@@ -21,15 +22,16 @@ type ColumnsType = {title: string; readOnly: boolean};
 
 export default function MatrixView(props: PropTypes) {
   // eslint-disable-next-line react/destructuring-assignment
-  const { data = [], columns = [], index = [] } = props.data;
+  const { readOnly, matrix } = props;
+  const { data = [], columns = [], index = [] } = matrix;
   const classes = useStyles();
   const prependIndex = index.length > 0 && typeof index[0] === 'string';
   const [grid, setGrid] = useState<Array<CellType>>([]);
   const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
 
   useEffect(() => {
-    const columnsData: Array<ColumnsType> = (prependIndex ? [{ title: 'Time', readOnly: false }] : []).concat(
-      columns.map((title) => ({ title: String(title), readOnly: false })),
+    const columnsData: Array<ColumnsType> = (prependIndex ? [{ title: 'Time', readOnly }] : []).concat(
+      columns.map((title) => ({ title: String(title), readOnly })),
     );
     setColumns(columnsData);
 
@@ -37,7 +39,7 @@ export default function MatrixView(props: PropTypes) {
       prependIndex ? [index[i]].concat(row) : row
     ));
     setGrid(tmpData);
-  }, [columns, data, index, prependIndex]);
+  }, [columns, data, index, prependIndex, readOnly]);
 
   return (
     <div className={classes.root}>
