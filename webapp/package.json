@@ -75,7 +75,8 @@
     "build": "react-scripts build",
     "check": "bash -c scripts/test_extracted_srclib.sh",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "test": " react-scripts test",
+    "test": " react-scripts test ",
+    "test-coverage": "CI=true npm test -- --coverage --testResultsProcessor=jest-sonar-reporter",
     "eject": "react-scripts eject"
   },
   "browserslist": {

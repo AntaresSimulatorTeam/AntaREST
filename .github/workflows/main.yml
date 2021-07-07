@@ -97,6 +97,11 @@ jobs:
         run: npm run lint
         working-directory: webapp
       - name: Run tests
-        run: npm run test
+        run: npm run test-coverage
         working-directory: webapp
-
+      - name: SonarCloud Scan
+        if: matrix.os == 'ubuntu-latest'
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
