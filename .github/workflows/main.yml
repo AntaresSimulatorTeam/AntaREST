@@ -62,12 +62,11 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sed -i 's/\/home\/runner\/work\/AntaREST\/AntaREST/\/github\/workspace/g' coverage.xml
-      - name: SonarCloud Scan
-        if: matrix.os == 'ubuntu-latest'
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-code-coverage-report
+          path: coverage.xml
 
   npm-test:
     runs-on: ${{ matrix.os }}
@@ -90,11 +89,38 @@ jobs:
         working-directory: webapp
         env:
           NODE_OPTIONS: --max-old-space-size=8192
+          DISABLE_ESLINT_PLUGIN: true
       - name: Lint
         if: matrix.os == 'ubuntu-latest'
         run: npm run lint
         working-directory: webapp
       - name: Run tests
-        run: npm run test
+        run: npm run test-coverage
         working-directory: webapp
+        env:
+          CI: true
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: js-code-coverage-report
+          path: webapp/coverage/lcov.info
 
+  sonarcloud:
+    runs-on: ubuntu-latest
+    needs: [python-test, npm-test]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Download a single artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: python-code-coverage-report
+    - name: Download a single artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: js-code-coverage-report
+        path: webapp/coverage
+    - name: SonarCloud Scan
+      uses: sonarsource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
