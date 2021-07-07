@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testExecutions version="1">
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/ui/GlobalPageLoadingError.test.tsx">
+    <testCase name="Test GlobalPageLoadingError component Test 1" duration="5"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudyCreationTools/CreateStudyForm.test.tsx">
+    <testCase name="Test CreateStudyForm component Test 1" duration="4"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudyListing/StudyListSummaryView.test.tsx">
+    <testCase name="Test StudyListSummaryView component Test 1" duration="4"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudyListing/StudyBlockSummaryView.test.tsx">
+    <testCase name="Test StudyBlockSummaryView component Test 1" duration="5"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/ui/FullPageContainer.test.tsx">
+    <testCase name="Test FullPageContainer component Test 1" duration="5"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudyCreationTools/ImportStudyForm.test.tsx">
+    <testCase name="Test ImportStudyForm component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudyCreationTools/index.test.tsx">
+    <testCase name="Test StudyCreationTools component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/ui/loaders/MainContentLoader/index.test.tsx">
+    <testCase name="Test MainContentLoader component Test 1" duration="3"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudyView/StudyDataView/StudyJsonView.test.tsx">
+    <testCase name="Test StudyJsonView component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudyView/StudyDataView/StudyFileView.test.tsx">
+    <testCase name="Test StudyFileView component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/ducks/global.test.ts">
+    <testCase name="Test global actions should test add action" duration="8"/>
+    <testCase name="Test global actions should test remove action" duration="1"/>
+    <testCase name="Test global reducer should test global reducer after a dummy action" duration="1"/>
+    <testCase name="Test global reducer should test global reducer after adding listener action" duration="1"/>
+    <testCase name="Test global reducer should test global reducer after removing listener action" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudySearchTool/index.test.tsx">
+    <testCase name="Test StudySearchTool component Test 1" duration="2"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudyView/StudyTreeView/index.test.tsx">
+    <testCase name="Test StudyTreeView component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudyView/StudyDataView/index.test.tsx">
+    <testCase name="Test StudyDataView component Test 1" duration="3"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudyListing/index.test.tsx">
+    <testCase name="Test StudyListing component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/ui/DownloadLink.test.tsx">
+    <testCase name="Test DownloadLink component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/UserBadge.test.tsx">
+    <testCase name="Test UserBadge component Test 1" duration="2"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/JobListing/index.test.tsx">
+    <testCase name="Test JobListing component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/ui/PulsingDot/index.test.tsx">
+    <testCase name="Test PulsingDot component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/ui/loaders/AppLoader/index.test.tsx">
+    <testCase name="Test AppLoader component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/StudyView/index.test.tsx">
+    <testCase name="Test StudyView component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/components/JobListing/JobView.test.tsx">
+    <testCase name="Test Jobview component Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/ducks/auth.test.ts">
+    <testCase name="Test auth reducer should test auth reducer after a dummy action" duration="5"/>
+    <testCase name="Test auth reducer should test auth reducer after LoginAction" duration="1"/>
+    <testCase name="Test auth reducer should test auth reducer after LogoutAction" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/ducks/upload.test.ts">
+    <testCase name="Test upload reducer Test 1" duration="0"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/ducks/websockets.test.ts">
+    <testCase name="Test websockets reducer Test 1" duration="1"/>
+  </file>
+  <file path="/home/buiquangpau/projects/antares/AntaREST/webapp/src/ducks/study.test.ts">
+    <testCase name="Test study reducer Test 1" duration="0"/>
+  </file>
+</testExecutions>
