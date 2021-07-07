@@ -12,7 +12,7 @@ import CreateIcon from '@material-ui/icons/Create';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import DeleteIcon from '@material-ui/icons/Delete';
 
-import { UserDTO, BotDTO } from '../../common/types';
+import { UserDTO, BotDTO, MatrixMetadataDTO, IDType } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -52,12 +52,12 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropTypes {
-  data: Array<UserDTO | BotDTO>;
+  data: Array<UserDTO | BotDTO | MatrixMetadataDTO>;
   filter: string;
   view: boolean;
   excludeName?: Array<string>;
-  onDeleteClick: (userId: number) => void;
-  onActionClick: (userId: number) => void;
+  onDeleteClick: (id: IDType) => void;
+  onActionClick: (id: IDType) => void;
 }
 
 const GenericListView = (props: PropTypes) => {

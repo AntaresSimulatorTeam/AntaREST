@@ -6,34 +6,10 @@ import { Translation } from 'react-i18next';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
 import { getStudyData } from '../../../services/api/study';
 import ImportForm from './utils/ImportForm';
+import { CommonStudyStyle } from './utils/utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
-  root: {
-    flex: 1,
-    height: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-  },
-  header: {
-    width: '100%',
-    display: 'flex',
-    flexFlow: 'row nowrap',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  content: {
-    padding: theme.spacing(3),
-    boxSizing: 'border-box',
-    flex: 1,
-    width: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    overflow: 'auto',
-  },
+  ...CommonStudyStyle(theme),
   code: {
     whiteSpace: 'pre',
   },

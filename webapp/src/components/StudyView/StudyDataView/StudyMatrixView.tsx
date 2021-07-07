@@ -9,34 +9,10 @@ import MainContentLoader from '../../ui/loaders/MainContentLoader';
 import { MatrixType } from '../../../common/types';
 import MatrixView from './MatrixView';
 import ImportForm from './utils/ImportForm';
+import { CommonStudyStyle } from './utils/utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
-  root: {
-    flex: 1,
-    height: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-  },
-  header: {
-    width: '100%',
-    display: 'flex',
-    flexFlow: 'row nowrap',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  content: {
-    padding: theme.spacing(3),
-    boxSizing: 'border-box',
-    flex: 1,
-    width: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    overflow: 'auto',
-  },
+  ...CommonStudyStyle(theme),
   button: {
     display: 'flex',
     flexFlow: 'row nowrap',
@@ -45,10 +21,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     height: '30px',
     marginBottom: theme.spacing(1),
     marginRight: theme.spacing(1),
-  },
-  grayButton: {
-    border: '2px solid gray',
-    color: 'gray',
   },
   buttonElement: {
     margin: theme.spacing(0.2),

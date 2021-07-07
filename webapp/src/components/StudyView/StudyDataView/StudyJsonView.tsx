@@ -5,34 +5,10 @@ import ReactJson from 'react-json-view';
 import { makeStyles, Theme, createStyles, Button, Paper, Typography } from '@material-ui/core';
 import SaveIcon from '@material-ui/icons/Save';
 import { editStudy } from '../../../services/api/study';
+import { CommonStudyStyle, writeLeaf } from './utils/utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
-  root: {
-    flex: 1,
-    height: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-  },
-  header: {
-    width: '100%',
-    display: 'flex',
-    flexFlow: 'row nowrap',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  content: {
-    padding: theme.spacing(3),
-    boxSizing: 'border-box',
-    flex: 1,
-    width: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    overflow: 'auto',
-  },
+  ...CommonStudyStyle(theme),
   saveButton: {
     display: 'flex',
     flexFlow: 'row nowrap',
@@ -40,10 +16,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
     height: '30px',
     marginBottom: theme.spacing(1),
-  },
-  grayButton: {
-    border: '2px solid gray',
-    color: 'gray',
   },
   buttonElement: {
     margin: theme.spacing(0.2),
@@ -67,18 +39,6 @@ const StudyJsonView = (props: PropTypes) => {
   const [jsonData, setJsonData] = useState<object>(data.json);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
   const [isEditable, setEditable] = useState<boolean>(true);
-
-  const writeLeaf = (keys: Array<string>, dataElm: any, value: any, index = 0) => {
-    if (index >= keys.length || keys.length === 0) { return; }
-    if (!(keys[index] in dataElm)) { return; }
-    const key = keys[index];
-    if (index === keys.length - 1) {
-      // eslint-disable-next-line no-param-reassign
-      dataElm[key] = value;
-    } else {
-      writeLeaf(keys, dataElm[key], value, index + 1);
-    }
-  };
 
   const saveData = async () => {
     const tmpDataPath = data.path.split('/').filter((item) => item);
