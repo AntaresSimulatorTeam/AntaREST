@@ -86,7 +86,7 @@
     "build": "react-app-rewired build",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "test": "react-app-rewired test",
-    "test-coverage": "CI=true npm test -- --coverage --testResultsProcessor=jest-sonar-reporter",
+    "test-coverage": "npm test -- --coverage --testResultsProcessor=jest-sonar-reporter",
     "eject": "react-app-rewired eject"
   },
   "browserslist": {
