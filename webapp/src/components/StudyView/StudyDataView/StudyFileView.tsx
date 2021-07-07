@@ -6,7 +6,6 @@ import { Translation } from 'react-i18next';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
 import { getStudyData } from '../../../services/api/study';
 import ImportForm from './utils/ImportForm';
-import writeLeaf from './utils/utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -70,10 +69,9 @@ const StudyDataView = (props: PropTypes) => {
     }
   };
 
-  const successImport = (file: File) => {
-    const tmpDataPath = url.split('/').filter((item) => item);
+  const successImport = () => {
+    // this is to refresh the tree / view
     const newData = { ...studyData };
-    writeLeaf(tmpDataPath, newData, file);
     setStudyData(newData);
     enqueueSnackbar(<Translation>{(t) => t('studymanager:savedatasuccess')}</Translation>, { variant: 'success' });
   };

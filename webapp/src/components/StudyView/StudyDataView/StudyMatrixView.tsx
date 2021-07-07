@@ -9,7 +9,6 @@ import MainContentLoader from '../../ui/loaders/MainContentLoader';
 import { MatrixType } from '../../../common/types';
 import MatrixView from './MatrixView';
 import ImportForm from './utils/ImportForm';
-import writeLeaf from './utils/utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -97,10 +96,9 @@ const StudyMatrixView = (props: PropTypes) => {
     setChangeStatus(!changeStatus);
   };
 
-  const successImport = (file: File) => {
-    const tmpDataPath = url.split('/').filter((item) => item);
+  const successImport = () => {
+    // this is to refresh the tree / view
     const newData = { ...studyData };
-    writeLeaf(tmpDataPath, newData, file);
     setStudyData(newData);
     enqueueSnackbar(<Translation>{(t) => t('studymanager:savedatasuccess')}</Translation>, { variant: 'success' });
   };
