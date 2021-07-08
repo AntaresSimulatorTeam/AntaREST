@@ -12,7 +12,6 @@ from antarest.login.model import User, Password, Group, Identity
 from antarest.login.repository import UserRepository, GroupRepository
 from antarest.matrixstore.model import (
     Matrix,
-    MatrixFreq,
     MatrixContent,
     MatrixDataSet,
     MatrixDataSetRelation,
@@ -37,17 +36,12 @@ def test_db_cyclelife():
         repo = MatrixRepository()
         m = Matrix(
             id="hello",
-            freq=MatrixFreq.WEEKLY,
             created_at=datetime.now(),
         )
         repo.save(m)
         assert m.id
         assert m == repo.get(m.id)
-        assert [m] == repo.get_by_freq(freq=MatrixFreq.WEEKLY)
-        assert [] == repo.get_by_freq(freq=MatrixFreq.HOURLY)
-
         assert repo.exists(m.id)
-
         repo.delete(m.id)
         assert repo.get(m.id) is None
 
@@ -98,13 +92,11 @@ def test_dataset():
 
         m1 = Matrix(
             id="hello",
-            freq=MatrixFreq.WEEKLY,
             created_at=datetime.now(),
         )
         repo.save(m1)
         m2 = Matrix(
             id="world",
-            freq=MatrixFreq.WEEKLY,
             created_at=datetime.now(),
         )
         repo.save(m2)
@@ -165,13 +157,11 @@ def test_datastore_query():
         repo = MatrixRepository()
         m1 = Matrix(
             id="hello",
-            freq=MatrixFreq.WEEKLY,
             created_at=datetime.now(),
         )
         repo.save(m1)
         m2 = Matrix(
             id="world",
-            freq=MatrixFreq.WEEKLY,
             created_at=datetime.now(),
         )
         repo.save(m2)
@@ -210,7 +200,6 @@ def test_datastore_query():
         assert len(res[0].matrices) == 1
         assert res[0].matrices[0].name == "m1"
         assert res[0].matrices[0].matrix.id == m1.id
-        assert res[0].matrices[0].matrix.freq == m1.freq
         assert len(dataset_repo.query("name 2")) == 1
         assert len(dataset_repo.query("name")) == 2
         assert len(dataset_repo.query(None, user1.id)) == 1

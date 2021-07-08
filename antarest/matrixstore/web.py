@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, List
 
-from fastapi import APIRouter, Depends, Body, Query
+from fastapi import APIRouter, Depends, Body, Query, File
 
 from antarest.common.config import Config
 from antarest.common.jwt import JWTUser
@@ -12,7 +12,6 @@ from antarest.common.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.model import (
     MatrixDTO,
-    MatrixFreq,
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
 )
@@ -43,21 +42,20 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
             return service.create(matrix)
         raise UserHasNotPermissionError()
 
+    @bp.post("/matrix/_import", tags=[APITag.matrix])
+    def create_by_importation(
+        file: bytes = File(...),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        if current_user.id is not None:
+            return service.create_by_importation(file)
+        raise UserHasNotPermissionError()
+
     @bp.get("/matrix/{id}", tags=[APITag.matrix])
     def get(id: str, user: JWTUser = Depends(auth.get_current_user)) -> Any:
         if user.id is not None:
             return service.get(id)
         raise UserHasNotPermissionError()
-
-    @bp.get("/matrix", tags=[APITag.matrix])
-    def get_by_type_or_freq(
-        freq: int = Query(None),
-        user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        if user.id is not None:
-            return service.get_by_freq(
-                freq=MatrixFreq(freq) if freq else None,
-            )
 
     @bp.post("/matrixdataset", tags=[APITag.matrix])
     def create_dataset(
@@ -76,6 +74,7 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
         metadata: MatrixDataSetUpdateDTO,
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        print("GROUPS: ", groups)
         request_params = RequestParameters(user=user)
         return service.update_dataset(id, metadata, request_params).to_dto()
 

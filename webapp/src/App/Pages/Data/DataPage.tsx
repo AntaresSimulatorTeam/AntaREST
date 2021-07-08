@@ -48,7 +48,7 @@ const Data = (props: PropTypes) => {
 
   const manageDataDeletion = async () => {
     try {
-      //await deleteUser(idForDeletion as number);
+      // await deleteUser(idForDeletion as number);
       setDataList(dataList.filter((item) => item.id !== idForDeletion));
       enqueueSnackbar(t('data:onMatrixDeleteSuccess'), { variant: 'success' });
     } catch (e) {
@@ -62,16 +62,23 @@ const Data = (props: PropTypes) => {
     setOpenModal(false);
   };
 
-  const onNewDataCreation = (newData: MatrixMetadataDTO): void => {
-    setDataList(dataList.concat(newData));
+  const onNewDataUpdate = (newData: MatrixMetadataDTO): void => {
+    const tmpList = ([] as Array<MatrixMetadataDTO>).concat(dataList);
+    const index = tmpList.findIndex((elm) => elm.id === newData.id);
+    if (index >= 0) {
+      tmpList[index] = newData;
+      setDataList(tmpList);
+    } else {
+      setDataList(dataList.concat(newData));
+    }
   };
 
   useEffect(() => {
     const init = async () => {
       try {
-        const query : MatrixUserMetadataQuery = {
-          metadata: {}
-        }
+        const query: MatrixUserMetadataQuery = {
+          metadata: {},
+        };
         const matrix = await getMatrixList(query);
         setDataList(matrix);
       } catch (e) {
@@ -80,7 +87,7 @@ const Data = (props: PropTypes) => {
     };
     init();
     return () => {
-        setDataList([]);
+      setDataList([]);
     };
   }, [user, t, enqueueSnackbar]);
 
@@ -105,8 +112,7 @@ const Data = (props: PropTypes) => {
         <DataModal
           open={openModal} // Why 'openModal &&' ? => Otherwise previous data are still present
           data={currentData}
-          onNewDataCreation={onNewDataCreation}
-          userId={user?.id}
+          onNewDataUpdate={onNewDataUpdate}
           onClose={onModalClose}
         />
       )}

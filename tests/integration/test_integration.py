@@ -274,7 +274,8 @@ def test_matrix(app: FastAPI):
     admin_credentials = res.json()
 
     matrix = {
-        "freq": 1,
+        "width": 2,
+        "height": 2,
         "index": ["1", "2"],
         "columns": ["a", "b"],
         "data": [[1, 2], [3, 4]],
@@ -301,16 +302,6 @@ def test_matrix(app: FastAPI):
     stored = res.json()
     assert stored["created_at"] > 0
     assert stored["id"] != ""
-
-    res = client.get(
-        f"/v1/matrix?freq=1",
-        headers={
-            "Authorization": f'Bearer {admin_credentials["access_token"]}'
-        },
-    )
-
-    assert res.status_code == 200
-    assert res.json() == [stored]
 
     matrix_id = stored["id"]
 

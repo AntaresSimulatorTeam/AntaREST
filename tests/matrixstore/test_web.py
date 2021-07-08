@@ -9,7 +9,7 @@ from starlette.testclient import TestClient
 from antarest.common.config import Config, SecurityConfig
 from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrixstore
-from antarest.matrixstore.model import MatrixDTO, MatrixFreq
+from antarest.matrixstore.model import MatrixDTO
 from tests.login.test_web import create_auth_token
 
 
@@ -40,7 +40,8 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
 def test_create() -> None:
     matrix = MatrixDTO(
         id="id",
-        freq=MatrixFreq.WEEKLY,
+        width=2,
+        height=2,
         created_at=0,
         index=["1", "2"],
         columns=["a", "b"],
@@ -63,7 +64,8 @@ def test_create() -> None:
 def test_get() -> None:
     matrix = MatrixDTO(
         id="123",
-        freq=MatrixFreq.WEEKLY,
+        width=2,
+        height=2,
         created_at=0,
         index=["1", "2"],
         columns=["a", "b"],
@@ -79,28 +81,3 @@ def test_get() -> None:
     assert res.status_code == 200
     assert res.json() == matrix.dict()
     service.get.assert_called_once_with("123")
-
-
-@pytest.mark.unit_test
-def test_get_filter() -> None:
-    matrix = MatrixDTO(
-        id="123",
-        freq=MatrixFreq.WEEKLY,
-        created_at=0,
-        index=["1", "2"],
-        columns=["a", "b"],
-        data=[[1, 2], [3, 4]],
-    )
-
-    service = Mock()
-    service.get_by_freq.return_value = [matrix]
-
-    app = create_app(service)
-    client = TestClient(app)
-    res = client.get(
-        "/v1/matrix?type=2&freq=3",
-        headers=create_auth_token(app),
-    )
-    assert res.status_code == 200
-    assert res.json()[0] == matrix.dict()
-    service.get_by_freq.assert_called_once_with(freq=MatrixFreq.WEEKLY)

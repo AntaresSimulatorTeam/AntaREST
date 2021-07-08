@@ -38,20 +38,20 @@ export interface LaunchJob {
 }
 
 export interface MatrixMetadata {
-  [key:string]: string
+  [key: string]: string;
 }
 export interface MatrixMetadataDTO {
   id: string;
   name: string;
-  metadata: MatrixMetadata
+  metadata: MatrixMetadata;
   public: boolean;
-  groups: GroupDTO
+  groups: Array<GroupDTO>;
 }
 
 export interface MatrixUserMetadataQuery{
   name?: string;
-  metadata: MatrixMetadata
-  owner?: number  
+  metadata: MatrixMetadata;
+  owner?: number;
 }
 
 export enum MatrixFreq{
@@ -70,7 +70,6 @@ export interface MatrixDTO{
   created_at: number;
   id: string;
 }
-
 
 export enum RoleType {
   ADMIN = 40,

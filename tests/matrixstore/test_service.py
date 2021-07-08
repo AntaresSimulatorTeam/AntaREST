@@ -13,7 +13,6 @@ from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
     MatrixDTO,
-    MatrixFreq,
     Matrix,
     MatrixContent,
     MatrixDataSetUpdateDTO,
@@ -34,8 +33,9 @@ def test_save():
 
     # Input
     dto = MatrixDTO(
-        freq=MatrixFreq.WEEKLY,
         created_at=42,
+        width=2,
+        height=1,
         data=[[1, 2]],
         index=["1", "2"],
         columns=["a", "b"],
@@ -44,7 +44,8 @@ def test_save():
     # Expected
     matrix = Matrix(
         id="my-id",
-        freq=MatrixFreq.WEEKLY,
+        width=2,
+        height=1,
         created_at=ANY,
     )
 
@@ -79,7 +80,8 @@ def test_get():
     repo = Mock()
     repo.get.return_value = Matrix(
         id="my-id",
-        freq=MatrixFreq.WEEKLY,
+        width=2,
+        height=1,
         created_at=datetime.datetime.fromtimestamp(42),
     )
 
@@ -88,9 +90,10 @@ def test_get():
     # Expected
     exp = MatrixDTO(
         id="my-id",
-        freq=MatrixFreq.WEEKLY,
         created_at=42,
         updated_at=101,
+        width=2,
+        height=1,
         data=[[1, 2]],
         index=["1", "2"],
         columns=["a", "b"],
@@ -100,43 +103,6 @@ def test_get():
     service = MatrixService(repo, repo_meta, content, Mock())
     res = service.get("my-id")
     assert exp == res
-
-
-def test_get_by_type_freq():
-    content = Mock()
-    content.get.return_value = MatrixContent(
-        data=[[1, 2]],
-        index=["1", "2"],
-        columns=["a", "b"],
-    )
-
-    repo = Mock()
-    repo.get_by_freq.return_value = [
-        Matrix(
-            id="my-id",
-            freq=MatrixFreq.WEEKLY,
-            created_at=datetime.datetime.fromtimestamp(42),
-        )
-    ]
-
-    repo_meta = Mock()
-
-    # Expected
-    exp = MatrixDTO(
-        id="my-id",
-        freq=MatrixFreq.WEEKLY,
-        created_at=42,
-        updated_at=101,
-        data=[[1, 2]],
-        index=["1", "2"],
-        columns=["a", "b"],
-    )
-
-    # Test
-    service = MatrixService(repo, repo_meta, content, Mock())
-    res = service.get_by_freq(freq=MatrixFreq.WEEKLY)
-    assert [exp] == res
-    repo.get_by_freq.assert_called_once_with(MatrixFreq.WEEKLY)
 
 
 def test_delete():

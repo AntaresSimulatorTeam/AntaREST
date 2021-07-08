@@ -4,7 +4,7 @@ from typing import Optional, List
 from unittest.mock import Mock
 
 from antarest.common.custom_types import JSON
-from antarest.matrixstore.model import MatrixDTO, MatrixFreq
+from antarest.matrixstore.model import MatrixDTO
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.inode import TREE
@@ -12,6 +12,8 @@ from antarest.storage.repository.filesystem.matrix.matrix import MatrixNode
 
 
 MOCK_MATRIX_JSON = {
+    "width": 2,
+    "height": 2,
     "index": ["1", "2"],
     "columns": ["a", "b"],
     "data": [[1, 2], [3, 4]],
@@ -19,7 +21,8 @@ MOCK_MATRIX_JSON = {
 
 
 MOCK_MATRIX_DTO = MatrixDTO(
-    freq=MatrixFreq.ANNUAL,
+    width=2,
+    height=2,
     index=["1", "2"],
     columns=["a", "b"],
     data=[[1, 2], [3, 4]],

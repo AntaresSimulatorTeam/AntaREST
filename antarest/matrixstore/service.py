@@ -1,4 +1,5 @@
 import time
+import csv
 from datetime import datetime
 from http import HTTPStatus
 from typing import List, Optional, Tuple, Dict, Any
@@ -15,7 +16,6 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
     MatrixDTO,
-    MatrixFreq,
     Matrix,
     MatrixContent,
     MatrixDataSet,
@@ -48,7 +48,8 @@ class MatrixService:
     def _to_dto(matrix: Matrix, content: MatrixContent) -> MatrixDTO:
         return MatrixDTO(
             id=matrix.id,
-            freq=matrix.freq,
+            width=matrix.width,
+            height=matrix.height,
             created_at=int(time.mktime(datetime.timetuple(matrix.created_at))),
             index=content.index,
             columns=content.columns,
@@ -59,7 +60,8 @@ class MatrixService:
     def _from_dto(dto: MatrixDTO) -> Tuple[Matrix, MatrixContent]:
         matrix = Matrix(
             id=dto.id,
-            freq=dto.freq,
+            width=dto.width,
+            height=dto.height,
             created_at=datetime.fromtimestamp(dto.created_at),
         )
 
@@ -76,6 +78,28 @@ class MatrixService:
         self.repo.save(matrix)
 
         return matrix.id
+
+    def create_by_importation(self, file: bytes) -> str:
+        str_file = str(file, "UTF-8")
+        reader = csv.reader(str_file.split("\n"), delimiter="\t")
+        data = []
+        columns: List[int] = []
+        for row in reader:
+            if row:
+                print("ROW: ", row)
+                data.append([int(elm) for elm in row])
+            if len(columns) == 0:
+                columns = list(range(0, len(row)))
+
+        matrix = MatrixDTO(
+            width=len(columns),
+            height=len(data),
+            index=[],
+            columns=columns,
+            data=data,
+        )
+        print("WIDTH: ", matrix.width, "; HEIGHT: ", matrix.height)
+        return self.create(matrix)
 
     def get_dataset(
         self,
@@ -200,18 +224,6 @@ class MatrixService:
             return MatrixService._to_dto(matrix, data)
         else:
             return None
-
-    def get_by_freq(
-        self,
-        freq: Optional[MatrixFreq] = None,
-    ) -> List[MatrixDTO]:
-        matrices = self.repo.get_by_freq(freq)
-        contents = [self.repo_content.get(m.id) for m in matrices]
-        return [
-            MatrixService._to_dto(m, c)
-            for m, c in zip(matrices, contents)
-            if c
-        ]
 
     def delete(self, id: str) -> None:
         self.repo_content.delete(id)

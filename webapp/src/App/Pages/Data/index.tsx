@@ -2,7 +2,7 @@ import React from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { AppState } from '../../reducers';
 import GenericNavView from '../../../components/ui/NavComponents/GenericNavView';
-import DataPage from "./DataPage"
+import DataPage from './DataPage';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -24,7 +24,7 @@ const DataManagement = (props: PropTypes) => {
     return (
       <GenericNavView
         items={mainTab}
-        initialValue={'data:data'}
+        initialValue="data:data"
       />
     );
   }
