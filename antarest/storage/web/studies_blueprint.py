@@ -10,7 +10,7 @@ from fastapi.params import Param
 from starlette.responses import StreamingResponse, Response, FileResponse
 
 from antarest.common.config import Config
-from antarest.common.custom_types import JSON
+from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.common.jwt import JWTUser
 from antarest.common.requests import (
     RequestParameters,

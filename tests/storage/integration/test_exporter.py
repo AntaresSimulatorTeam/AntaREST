@@ -12,10 +12,6 @@ from antarest.common.config import (
     WorkspaceConfig,
 )
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.storage.repository.antares_io.exporter.export_file import (
-    Exporter,
-)
-from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.main import build_storage
 from antarest.storage.service import StorageService
 

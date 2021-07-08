@@ -9,6 +9,12 @@ from antarest.storage.repository.filesystem.inode import TREE, INode
 
 
 class TestSubNode(INode[int, int, int]):
+    def normalize(self) -> None:
+        pass
+
+    def denormalize(self) -> None:
+        pass
+
     def build(self, config: StudyConfig) -> "TREE":
         pass
 

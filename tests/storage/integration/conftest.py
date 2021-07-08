@@ -16,9 +16,6 @@ from antarest.storage.business.importer_service import ImporterService
 from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.main import build_storage
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.storage.repository.antares_io.exporter.export_file import (
-    Exporter,
-)
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.service import StorageService
 

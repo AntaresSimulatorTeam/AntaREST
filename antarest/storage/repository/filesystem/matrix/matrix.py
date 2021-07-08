@@ -8,6 +8,9 @@ from antarest.common.custom_types import JSON, SUB_JSON
 from antarest.matrixstore.model import MatrixDTO, MatrixFreq
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.context import ContextServer
+from antarest.storage.repository.filesystem.exceptions import (
+    DenormalizationException,
+)
 from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 
@@ -25,6 +28,38 @@ class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):
         expanded: bool = False,
     ) -> str:
         return f"matrixfile://{self.config.path.name}"
+
+    def normalize(self) -> None:
+        if self.get_link_path().exists():
+            return
+
+        matrix = self.load()
+        dto = MatrixDTO(
+            freq=MatrixFreq.from_str(self.freq),
+            index=matrix["index"],
+            columns=matrix["columns"],
+            data=matrix["data"],
+        )
+
+        uuid = self.context.matrix.create(dto)
+        self.get_link_path().write_text(
+            self.context.resolver.build_matrix_uri(uuid)
+        )
+        self.config.path.unlink()
+
+    def denormalize(self) -> None:
+        if self.config.path.exists():
+            return
+
+        uuid = self.get_link_path().read_text()
+        matrix = self.context.resolver.resolve(uuid)
+        if not matrix or not isinstance(matrix, dict):
+            raise DenormalizationException(
+                f"Failed to retrieve original matrix for {self.config.path}"
+            )
+
+        self.dump(matrix)
+        self.get_link_path().unlink()
 
     @abstractmethod
     def load(
