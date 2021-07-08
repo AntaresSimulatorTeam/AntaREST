@@ -38,7 +38,7 @@ class MockMatrixNode(MatrixNode):
     ) -> JSON:
         return MOCK_MATRIX_JSON
 
-    def dump(self, data: JSON, url: Optional[List[str]] = None) -> None:
+    def _dump_json(self, data: JSON) -> None:
         json.dump(data, self.config.path.open("w"))
 
     def build(self, config: StudyConfig) -> TREE:

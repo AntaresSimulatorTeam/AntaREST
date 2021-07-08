@@ -12,9 +12,6 @@ from antarest.storage.business.patch_service import PatchService
 from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.business.uri_resolver_service import UriResolverService
 from antarest.storage.business.watcher import Watcher
-from antarest.storage.repository.antares_io.exporter.export_file import (
-    Exporter,
-)
 from antarest.storage.repository.filesystem.factory import StudyFactory
 from antarest.storage.repository.patch_repository import PatchRepository
 from antarest.storage.repository.study import StudyMetadataRepository
@@ -30,7 +27,6 @@ def build_storage(
     user_service: LoginService,
     matrix_service: MatrixService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
-    exporter: Optional[Exporter] = None,
     storage_service: Optional[StorageService] = None,
     patch_service: Optional[PatchService] = None,
     event_bus: IEventBus = DummyEventBusService(),
@@ -42,9 +38,8 @@ def build_storage(
         application: flask application
         config: server config
         user_service: user service facade
+        matrix_service: matrix store service
         metadata_repository: used by testing to inject mock. Let None to use true instantiation
-        study_factory: used by testing to inject mock. Let None to use true instantiation
-        exporter: used by testing to inject mock. Let None to use true instantiation
         storage_service: used by testing to inject mock. Let None to use true instantiation
         patch_service: used by testing to inject mock. Let None to use true instantiation
         event_bus: used by testing to inject mock. Let None to use true instantiation
@@ -57,7 +52,6 @@ def build_storage(
 
     resolver = UriResolverService(config, matrix_service=matrix_service)
     study_factory = StudyFactory(matrix=matrix_service, resolver=resolver)
-    exporter = exporter or Exporter()
     metadata_repository = metadata_repository or StudyMetadataRepository()
 
     patch_service = patch_service or PatchService(PatchRepository())
@@ -75,7 +69,7 @@ def build_storage(
     exporter_service = ExporterService(
         study_service=study_service,
         study_factory=study_factory,
-        exporter=exporter,
+        config=config,
     )
 
     storage_service = storage_service or StorageService(

@@ -329,7 +329,7 @@ def create_study_routes(
     def edit_study(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
-        data: SUB_JSON = Body(...),
+        data: JSON = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         new = data
