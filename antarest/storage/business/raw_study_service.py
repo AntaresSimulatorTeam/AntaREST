@@ -271,6 +271,7 @@ class RawStudyService:
         Args:
             src_meta: source study
             dest_meta: destination study
+            with_outputs: indicate weither to copy the output or not
 
         Returns: destination study
 
