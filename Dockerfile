@@ -19,10 +19,4 @@ RUN cp /antares-launcher/requirements.txt /conf/antares-launcher/requirements.tx
 RUN pip3 install --upgrade pip \
     && pip3 install -r /conf/requirements.txt
 
-ENTRYPOINT uvicorn \
-    --workers $UVICORN_WORKERS \
-    --root-path $UVICORN_ROOT_PATH \
-    --timeout-keep-alive $UVICORN_TIMEOUT \
-    --host 0.0.0.0 \
-    --port 5000 \
-    antarest.wsgi:app
+ENTRYPOINT gunicorn --config /conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
