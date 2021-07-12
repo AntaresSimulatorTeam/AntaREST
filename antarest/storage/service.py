@@ -319,6 +319,7 @@ class StorageService:
         dest_study_name: str,
         group_ids: List[str],
         params: RequestParameters,
+        with_outputs: bool = False,
     ) -> str:
         """
         Copy study to an other location.
@@ -328,6 +329,7 @@ class StorageService:
             dest_study_name: destination study
             group_ids: group to attach on new study
             params: request parameters
+            with_outputs: indicate if outputs should be copied too
 
         Returns:
 
@@ -353,7 +355,9 @@ class StorageService:
             version=src_study.version,
         )
 
-        study = self.study_service.copy_study(src_study, dest_study)
+        study = self.study_service.copy_study(
+            src_study, dest_study, with_outputs
+        )
         self._save_study(study, params.user, group_ids)
         self.event_bus.push(
             Event(EventType.STUDY_CREATED, study.to_json_summary())
