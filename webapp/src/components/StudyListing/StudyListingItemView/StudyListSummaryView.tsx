@@ -9,7 +9,6 @@ import { getExportUrl } from '../../../services/api/study';
 import DownloadLink from '../../ui/DownloadLink';
 import { jobStatusColors } from '../../../App/theme';
 import { StudyListingItemPropTypes } from './types';
-import MultiButton from '../../ui/MultiButton';
 import ButtonLoader from '../../ui/ButtonLoader';
 
 const useStyles = makeStyles((theme: Theme) =>
