@@ -91,6 +91,7 @@ def create_study_routes(
     def copy_study(
         uuid: str,
         dest: str,
+        with_outputs: bool = False,
         groups: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -105,10 +106,11 @@ def create_study_routes(
             src_uuid=source_uuid_sanitized,
             dest_study_name=destination_name_sanitized,
             group_ids=group_ids,
+            with_outputs=with_outputs,
             params=params,
         )
 
-        return f"/studies/{destination_uuid}"
+        return destination_uuid
 
     @bp.post(
         "/studies",

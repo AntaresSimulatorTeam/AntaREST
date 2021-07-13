@@ -260,12 +260,18 @@ class RawStudyService:
         metadata.path = str(path_study)
         return metadata
 
-    def copy_study(self, src_meta: RawStudy, dest_meta: RawStudy) -> RawStudy:
+    def copy_study(
+        self,
+        src_meta: RawStudy,
+        dest_meta: RawStudy,
+        with_outputs: bool = False,
+    ) -> RawStudy:
         """
         Copy study to a new destination
         Args:
             src_meta: source study
             dest_meta: destination study
+            with_outputs: indicate weither to copy the output or not
 
         Returns: destination study
 
@@ -277,7 +283,7 @@ class RawStudyService:
         shutil.copytree(src_path, dest_path)
 
         output = dest_path / "output"
-        if output.exists():
+        if not with_outputs and output.exists():
             shutil.rmtree(output)
 
         _, study = self.study_factory.create_from_fs(

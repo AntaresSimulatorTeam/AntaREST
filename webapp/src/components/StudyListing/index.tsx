@@ -4,11 +4,10 @@ import { connect, ConnectedProps } from 'react-redux';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import StudyBlockSummaryView from './StudyBlockSummaryView';
-import StudyListSummaryView from './StudyListSummaryView';
 import { StudyMetadata } from '../../common/types';
 import { removeStudies } from '../../ducks/study';
-import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy } from '../../services/api/study';
+import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy, copyStudy as callCopyStudy } from '../../services/api/study';
+import StudyListElementView from './StudyListingItemView';
 
 const logError = debug('antares:studyblockview:error');
 
@@ -64,6 +63,16 @@ const StudyListing = (props: PropTypes) => {
     }
   };
 
+  const importStudy = async (study: StudyMetadata, withOutputs = false) => {
+    try {
+      await callCopyStudy(study.id, `${study.name} (${t('main:copy')})`, withOutputs);
+      enqueueSnackbar(t('studymanager:studycopiedsuccess', { studyname: study.name }), { variant: 'success' });
+    } catch (e) {
+      enqueueSnackbar(t('studymanager:failtocopystudy'), { variant: 'error' });
+      logError('Failed to copy/import study', study, e);
+    }
+  };
+
   const deleteStudy = async (study: StudyMetadata) => {
     // eslint-disable-next-line no-alert
     try {
@@ -79,21 +88,16 @@ const StudyListing = (props: PropTypes) => {
     <div className={classes.root}>
       <div className={isList ? classes.containerList : classes.containerGrid}>
         {
-          studies.map((s) => (isList ? (
-            <StudyListSummaryView
+          studies.map((s) => (
+            <StudyListElementView
               key={s.id}
               study={s}
+              listMode={isList}
+              importStudy={importStudy}
               launchStudy={launchStudy}
               deleteStudy={deleteStudy}
             />
-          ) : (
-            <StudyBlockSummaryView
-              key={s.id}
-              study={s}
-              launchStudy={launchStudy}
-              deleteStudy={deleteStudy}
-            />
-          )))
+          ))
         }
       </div>
     </div>

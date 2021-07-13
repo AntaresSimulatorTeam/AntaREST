@@ -134,7 +134,7 @@ def test_main(app: FastAPI):
 
     # Study delete
     client.delete(
-        f"/v1{copied.json()}",
+        f"/v1/studies/{copied.json()}",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },

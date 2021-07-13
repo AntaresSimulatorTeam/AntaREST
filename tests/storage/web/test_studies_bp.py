@@ -221,6 +221,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
         src_uuid="existing-study",
         dest_study_name="study-copied",
         group_ids=[],
+        with_outputs=False,
         params=PARAMS,
     )
     assert result.status_code == HTTPStatus.CREATED.value
