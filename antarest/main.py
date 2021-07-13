@@ -130,12 +130,14 @@ def fastapi_app(
     logging.getLogger(__name__).info("Initiating application")
 
     # Database
+    connect_args = {}
+    if config.db_url.startswith("sqlite"):
+        connect_args["check_same_thread"] = False
+
     engine = create_engine(
         config.db_url,
         echo=config.debug,
-        connect_args={
-            "check_same_thread": not config.db_url.startswith("sqlite")
-        },
+        connect_args=connect_args,
     )
     # Base.metadata.create_all(engine)
     # db.get_current()

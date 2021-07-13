@@ -1,8 +1,8 @@
 """base
 
-Revision ID: e9fdcf2ad62b
+Revision ID: 6a04e38b8704
 Revises: 
-Create Date: 2021-06-11 18:48:48.008101
+Create Date: 2021-07-13 15:42:32.381300
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'e9fdcf2ad62b'
+revision = '6a04e38b8704'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -34,12 +34,45 @@ def upgrade():
     op.create_table('job_result',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('study_id', sa.String(length=36), nullable=True),
+    sa.Column('launcher', sa.String(), nullable=True),
     sa.Column('job_status', sa.Enum('PENDING', 'FAILED', 'SUCCESS', 'RUNNING', name='jobstatus'), nullable=True),
     sa.Column('creation_date', sa.DateTime(), nullable=True),
     sa.Column('completion_date', sa.DateTime(), nullable=True),
     sa.Column('msg', sa.String(), nullable=True),
+    sa.Column('output_id', sa.String(), nullable=True),
     sa.Column('exit_code', sa.Integer(), nullable=True),
     sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('matrix',
+    sa.Column('id', sa.String(length=64), nullable=False),
+    sa.Column('freq', sa.Enum('HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'ANNUAL', name='matrixfreq'), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('matrix_group',
+    sa.Column('matrix_id', sa.String(length=64), nullable=False),
+    sa.Column('owner_id', sa.Integer(), nullable=False),
+    sa.Column('group_id', sa.String(length=36), nullable=False),
+    sa.ForeignKeyConstraint(['group_id'], ['groups.id'], ),
+    sa.ForeignKeyConstraint(['matrix_id'], ['matrix.id'], ),
+    sa.ForeignKeyConstraint(['owner_id'], ['identities.id'], ),
+    sa.PrimaryKeyConstraint('matrix_id', 'owner_id', 'group_id')
+    )
+    op.create_table('matrix_metadata',
+    sa.Column('matrix_id', sa.String(length=64), nullable=False),
+    sa.Column('owner_id', sa.Integer(), nullable=False),
+    sa.Column('key', sa.String(), nullable=False),
+    sa.Column('value', sa.String(), nullable=True),
+    sa.ForeignKeyConstraint(['matrix_id'], ['matrix.id'], ),
+    sa.ForeignKeyConstraint(['owner_id'], ['identities.id'], ),
+    sa.PrimaryKeyConstraint('matrix_id', 'owner_id', 'key')
+    )
+    op.create_table('matrix_user_metadata',
+    sa.Column('matrix_id', sa.String(length=64), nullable=False),
+    sa.Column('owner_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['matrix_id'], ['matrix.id'], name='fk_matrix_user_metadata_matrix_id'),
+    sa.ForeignKeyConstraint(['owner_id'], ['identities.id'], name='fk_matrix_user_metadata_identities_id'),
+    sa.PrimaryKeyConstraint('matrix_id', 'owner_id')
     )
     op.create_table('roles',
     sa.Column('type', sa.Enum('ADMIN', 'RUNNER', 'WRITER', 'READER', name='roletype'), nullable=True),
@@ -109,7 +142,18 @@ def downgrade():
     op.drop_table('users')
     op.drop_table('study')
     op.drop_table('roles')
+    op.drop_table('matrix_user_metadata')
+    op.drop_table('matrix_metadata')
+    op.drop_table('matrix_group')
+    op.drop_table('matrix')
     op.drop_table('job_result')
     op.drop_table('identities')
     op.drop_table('groups')
     # ### end Alembic commands ###
+
+    op.execute("DROP TYPE jobstatus;")
+    op.execute("DROP TYPE matrixfreq;")
+    op.execute("DROP TYPE publicmode;")
+    op.execute("DROP TYPE roletype;")
+    op.execute("DROP TYPE studycontentstatus;")
+
