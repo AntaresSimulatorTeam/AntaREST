@@ -3,6 +3,6 @@
 CURDIR=$(cd `dirname $0` && pwd)
 BASEDIR=`dirname $CURDIR`
 
-pushd $BASEDIR
+cd $BASEDIR
 alembic upgrade head
-popd
+cd -
