@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE alembic_version (
     version_num VARCHAR(32) NOT NULL, 
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
@@ -16,29 +14,25 @@ CREATE TABLE groups (
 );
 
 CREATE TABLE identities (
-    id SERIAL NOT NULL, 
+    id INTEGER NOT NULL, 
     name VARCHAR(255), 
     type VARCHAR(50), 
     PRIMARY KEY (id)
 );
 
-CREATE TYPE jobstatus AS ENUM ('PENDING', 'FAILED', 'SUCCESS', 'RUNNING');
-
 CREATE TABLE job_result (
     id VARCHAR(36) NOT NULL, 
     study_id VARCHAR(36), 
-    job_status jobstatus, 
-    creation_date TIMESTAMP WITHOUT TIME ZONE, 
-    completion_date TIMESTAMP WITHOUT TIME ZONE, 
+    job_status VARCHAR(7), 
+    creation_date DATETIME, 
+    completion_date DATETIME, 
     msg VARCHAR, 
     exit_code INTEGER, 
     PRIMARY KEY (id)
 );
 
-CREATE TYPE roletype AS ENUM ('ADMIN', 'RUNNER', 'WRITER', 'READER');
-
 CREATE TABLE roles (
-    type roletype, 
+    type VARCHAR(6), 
     identity_id INTEGER NOT NULL, 
     group_id VARCHAR(36) NOT NULL, 
     PRIMARY KEY (identity_id, group_id), 
@@ -46,17 +40,15 @@ CREATE TABLE roles (
     FOREIGN KEY(identity_id) REFERENCES identities (id)
 );
 
-CREATE TYPE publicmode AS ENUM ('NONE', 'READ', 'EXECUTE', 'EDIT', 'FULL');
-
 CREATE TABLE study (
     id VARCHAR(36) NOT NULL, 
     name VARCHAR(255), 
     type VARCHAR(50), 
     version VARCHAR(255), 
     author VARCHAR(255), 
-    created_at TIMESTAMP WITHOUT TIME ZONE, 
-    updated_at TIMESTAMP WITHOUT TIME ZONE, 
-    public_mode publicmode, 
+    created_at DATETIME, 
+    updated_at DATETIME, 
+    public_mode VARCHAR(7), 
     owner_id INTEGER, 
     PRIMARY KEY (id), 
     FOREIGN KEY(owner_id) REFERENCES identities (id), 
@@ -93,11 +85,9 @@ CREATE TABLE group_metadata (
     FOREIGN KEY(study_id) REFERENCES study (id)
 );
 
-CREATE TYPE studycontentstatus AS ENUM ('VALID', 'WARNING', 'ERROR');
-
 CREATE TABLE rawstudy (
     id VARCHAR(36) NOT NULL, 
-    content_status studycontentstatus, 
+    content_status VARCHAR(7), 
     workspace VARCHAR(255), 
     path VARCHAR(255), 
     PRIMARY KEY (id), 
@@ -105,6 +95,4 @@ CREATE TABLE rawstudy (
 );
 
 INSERT INTO alembic_version (version_num) VALUES ('e9fdcf2ad62b');
-
-COMMIT;
 

@@ -5,7 +5,9 @@ from zipfile import ZipFile
 
 import jinja2
 import pytest
+from sqlalchemy import create_engine
 
+from antarest import main
 from antarest.main import fastapi_app
 
 
@@ -43,6 +45,11 @@ def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
                 launcher_mock=str(cur_dir / "launcher_mock.sh"),
             )
         )
+
+    engine = create_engine(
+        db_url,
+    )
+    main.Base.metadata.create_all(engine)
 
     return fastapi_app(
         config_path, project_path / "resources", mount_front=False
