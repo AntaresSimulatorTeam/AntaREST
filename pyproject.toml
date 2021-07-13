@@ -1,4 +1,4 @@
 [tool.black]
 target-version = ["py36"]
 line-length = 79
-exclude = "antares-?launcher/*"
+exclude = "(antares-?launcher/*|alembic/*)"

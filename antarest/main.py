@@ -133,10 +133,10 @@ def fastapi_app(
     engine = create_engine(
         config.db_url,
         echo=config.debug,
-#        connect_args={"check_same_thread": False},
+        #        connect_args={"check_same_thread": False},
     )
-    #Base.metadata.create_all(engine)
-    #db.get_current()
+    # Base.metadata.create_all(engine)
+    # db.get_current()
 
     application = FastAPI(
         title="AntaREST",

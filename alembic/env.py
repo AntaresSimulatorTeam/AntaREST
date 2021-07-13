@@ -1,9 +1,12 @@
 from logging.config import fileConfig
-
+import os
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+from antarest.common.config import Config
+from antarest import main
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -14,11 +17,15 @@ config = context.config
 # uncomment this to have
 #fileConfig(config.config_file_name)
 
+antarest_conf = Config.from_yaml_file(os.getenv('ANTAREST_CONF') or main.get_default_config_path())
+config.set_main_option("sqlalchemy.url", antarest_conf.db_url)
+
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from antarest import main
+
+
 target_metadata = main.Base.metadata
 
 # other values from the config, defined by the needs of env.py,
