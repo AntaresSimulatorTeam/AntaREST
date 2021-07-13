@@ -7,8 +7,6 @@ ENV UVICORN_TIMEOUT 60
 
 RUN mkdir -p examples/studies
 
-WORKDIR /app
-
 COPY ./requirements.txt /conf/
 COPY ./antarest /antarest
 COPY ./resources /resources
@@ -22,6 +20,6 @@ RUN mkdir /conf/antares-launcher
 RUN cp /antares-launcher/requirements.txt /conf/antares-launcher/requirements.txt
 
 RUN pip3 install --upgrade pip \
-    && pip3 install -r /app/conf/requirements.txt
+    && pip3 install -r /conf/requirements.txt
 
 ENTRYPOINT ./scripts/start.sh
