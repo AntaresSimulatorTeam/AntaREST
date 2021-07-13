@@ -18,7 +18,7 @@ config = context.config
 #fileConfig(config.config_file_name)
 
 antarest_conf = Config.from_yaml_file(os.getenv('ANTAREST_CONF') or main.get_default_config_path())
-config.set_main_option("sqlalchemy.url", antarest_conf.db_url)
+config.set_main_option("sqlalchemy.url", antarest_conf.db_admin_url or antarest_conf.db_url)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
