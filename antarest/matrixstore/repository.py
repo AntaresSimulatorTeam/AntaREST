@@ -13,12 +13,12 @@ from antarest.matrixstore.model import (
     Matrix,
     MatrixFreq,
     MatrixContent,
-    MatrixUserMetadata,
-    MatrixMetadata,
+    MatrixDataSet,
+    MatrixDataSetRelation,
 )
 
 
-class MatrixMetadataRepository:
+class MatrixDataSetRepository:
     """
     Database connector to manage Matrix metadata entity
     """
@@ -26,18 +26,9 @@ class MatrixMetadataRepository:
     def __init__(self) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def save(
-        self, matrix_user_metadata: MatrixUserMetadata
-    ) -> MatrixUserMetadata:
+    def save(self, matrix_user_metadata: MatrixDataSet) -> MatrixDataSet:
         res = db.session.query(
-            exists().where(
-                and_(
-                    MatrixUserMetadata.matrix_id
-                    == matrix_user_metadata.matrix_id,
-                    MatrixUserMetadata.owner_id
-                    == matrix_user_metadata.owner_id,
-                )
-            )
+            exists().where(MatrixDataSet.id == matrix_user_metadata.id)
         ).scalar()
         if res:
             db.session.merge(matrix_user_metadata)
@@ -46,88 +37,40 @@ class MatrixMetadataRepository:
         db.session.commit()
 
         self.logger.debug(
-            f"Matrix ownership between matrix {matrix_user_metadata.matrix_id} and {matrix_user_metadata.owner_id} saved"
+            f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved"
         )
         return matrix_user_metadata
 
-    def get(
-        self, matrix_id: str, owner_id: int
-    ) -> Optional[MatrixUserMetadata]:
-        matrix: MatrixUserMetadata = db.session.query(MatrixUserMetadata).get(
-            {"matrix_id": matrix_id, "owner_id": owner_id}
-        )
+    def get(self, id: str) -> Optional[MatrixDataSet]:
+        matrix: MatrixDataSet = db.session.query(MatrixDataSet).get(id)
         return matrix
 
     def query(
         self,
         name: Optional[str],
-        metadata: Dict[str, str] = {},
         owner: Optional[int] = None,
-    ) -> List[MatrixUserMetadata]:
+    ) -> List[MatrixDataSet]:
         """
         Query a list of MatrixUserMetadata by searching for each one separatly if a set of filter match
         Args:
-            name: the partial name of the matrix
-            metadata: a dict of metadata to match exactly
+            name: the partial name of dataset
             owner: owner id to filter the result with
 
         Returns:
             the list of metadata per user, matching the query
         """
-        filters = []
+        query = db.session.query(MatrixDataSet)
         if name is not None:
-            filters.append(
-                db.session.query(MatrixMetadata)
-                .filter(
-                    and_(
-                        MatrixMetadata.key == "name",
-                        MatrixMetadata.value.ilike(f"%{name}%"),
-                    )
-                )
-                .subquery()
-            )
+            query = query.filter(MatrixDataSet.name.ilike(f"%{name}%"))
         if owner is not None:
-            filters.append(
-                db.session.query(MatrixMetadata)
-                .filter(MatrixMetadata.owner_id == owner)
-                .subquery()
-            )
-        for key in metadata:
-            if key not in ["name", "public"]:
-                filters.append(
-                    db.session.query(MatrixMetadata)
-                    .filter(
-                        and_(
-                            MatrixMetadata.key == key,
-                            MatrixMetadata.value == metadata[key],
-                        )
-                    )
-                    .subquery()
-                )
-        query = db.session.query(MatrixMetadata)
-        for filter in filters:
-            query = query.join(
-                filter,
-                and_(
-                    filter.c.matrix_id == MatrixMetadata.matrix_id,
-                    filter.c.owner_id == MatrixMetadata.owner_id,
-                ),
-            )
-        stmt = query.subquery()
-        metaalias = aliased(MatrixMetadata, stmt)
-        users_metadata: List[MatrixUserMetadata] = (
-            db.session.query(MatrixUserMetadata)
-            .join(
-                metaalias,
-                and_(
-                    MatrixUserMetadata.matrix_id == metaalias.matrix_id,
-                    MatrixUserMetadata.owner_id == metaalias.owner_id,
-                ),
-            )
-            .distinct()
-            .all()
-        )
-        return users_metadata
+            query = query.filter(MatrixDataSet.owner_id == owner)
+        datasets: List[MatrixDataSet] = query.distinct().all()
+        return datasets
+
+    def delete(self, dataset_id: str) -> None:
+        dataset = db.session.query(MatrixDataSet).get(dataset_id)
+        db.session.delete(dataset)
+        db.session.commit()
 
 
 class MatrixRepository:

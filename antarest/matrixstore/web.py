@@ -13,8 +13,8 @@ from antarest.login.auth import Auth
 from antarest.matrixstore.model import (
     MatrixDTO,
     MatrixFreq,
-    MatrixUserMetadataQuery,
-    MatrixUserMetadata,
+    MatrixDataSetUpdateDTO,
+    MatrixInfoDTO,
 )
 from antarest.matrixstore.service import MatrixService
 
@@ -59,35 +59,33 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
                 freq=MatrixFreq(freq) if freq else None,
             )
 
-    @bp.put("/matrix/{id}/metadata", tags=[APITag.matrix])
-    def update_metadata(
-        id: str,
-        name: Optional[str] = Query(None),
-        groups: Optional[List[str]] = Query(None),
-        public: Optional[bool] = Query(None),
-        metadata: Optional[Dict[str, str]] = Body(default=None, embed=False),
+    @bp.post("/matrixdataset", tags=[APITag.matrix])
+    def create_dataset(
+        metadata: MatrixDataSetUpdateDTO,
+        matrices: List[MatrixInfoDTO],
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         request_params = RequestParameters(user=user)
-        if metadata is not None:
-            service.update_metadata(id, user.id, metadata, request_params)
-        if name is not None:
-            service.set_name(id, user.id, name, request_params)
-        if groups is not None:
-            service.update_group(id, user.id, groups, request_params)
-        if public is not None:
-            service.set_public(id, user.id, public, request_params)
-        result = service.get_metadata(
-            matrix_id=id, user_id=user.id, params=request_params
-        )
-        return result.to_dto() if result is not None else None
+        return service.create_dataset(
+            metadata, matrices, request_params
+        ).to_dto()
 
-    @bp.post("/matrix/_search", tags=[APITag.matrix])
-    def query_metadata(
-        query: MatrixUserMetadataQuery,
+    @bp.put("/matrixdataset/{id}/metadata", tags=[APITag.matrix])
+    def update_dataset_metadata(
+        id: str,
+        metadata: MatrixDataSetUpdateDTO,
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         request_params = RequestParameters(user=user)
-        return service.list(query, request_params)
+        return service.update_dataset(id, metadata, request_params).to_dto()
+
+    @bp.post("/matrixdataset/_search", tags=[APITag.matrix])
+    def query_datasets(
+        name: Optional[str],
+        filter_own: bool = False,
+        user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        request_params = RequestParameters(user=user)
+        return service.list(name, filter_own, request_params)
 
     return bp

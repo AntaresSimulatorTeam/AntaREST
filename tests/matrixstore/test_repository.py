@@ -8,19 +8,19 @@ from sqlalchemy import create_engine, and_
 from antarest.common.config import Config, MatrixStoreConfig, SecurityConfig
 from antarest.common.persistence import Base
 from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.login.model import User, Password, Group
+from antarest.login.model import User, Password, Group, Identity
 from antarest.login.repository import UserRepository, GroupRepository
 from antarest.matrixstore.model import (
     Matrix,
     MatrixFreq,
     MatrixContent,
-    MatrixMetadata,
-    MatrixUserMetadata,
+    MatrixDataSet,
+    MatrixDataSetRelation,
 )
 from antarest.matrixstore.repository import (
     MatrixRepository,
     MatrixContentRepository,
-    MatrixMetadataRepository,
+    MatrixDataSetRepository,
 )
 
 
@@ -76,7 +76,7 @@ def test_bucket_cyclelife(tmp_path: Path):
     assert repo.get(aid) is None
 
 
-def test_metadata():
+def test_dataset():
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
@@ -89,86 +89,66 @@ def test_metadata():
         repo = MatrixRepository()
 
         user_repo = UserRepository(Config(security=SecurityConfig()))
-        user_repo.save(User(name="foo", password=Password("bar")))
+        user = user_repo.save(User(name="foo", password=Password("bar")))
 
         group_repo = GroupRepository()
         group = group_repo.save(Group(name="group"))
 
-        meta_repo = MatrixMetadataRepository()
+        dataset_repo = MatrixDataSetRepository()
 
-        m = Matrix(
+        m1 = Matrix(
             id="hello",
             freq=MatrixFreq.WEEKLY,
             created_at=datetime.now(),
         )
-        repo.save(m)
+        repo.save(m1)
+        m2 = Matrix(
+            id="world",
+            freq=MatrixFreq.WEEKLY,
+            created_at=datetime.now(),
+        )
+        repo.save(m2)
 
-        metadata = MatrixMetadata(
-            matrix_id="hello", owner_id=1, key="name", value="some ts"
-        )
-        metadata2 = MatrixMetadata(
-            matrix_id="hello", owner_id=1, key="public", value="true"
-        )
-        user_metadata = MatrixUserMetadata(
-            matrix_id="hello",
-            owner_id=1,
-            metadata_={"name": metadata, "public": metadata2},
+        dataset = MatrixDataSet(
+            name="some name",
+            public=True,
+            owner_id=user.id,
             groups=[group],
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
         )
-        meta_repo.save(user_metadata)
-        meta_res: Optional[MatrixUserMetadata] = meta_repo.get("hello", 1)
-        assert meta_res is not None
-        assert meta_res.metadata_["name"].value == "some ts"
-        assert meta_res.metadata_["public"].value == "true"
-        assert len(meta_res.groups) == 1
-        assert len(db.session.query(MatrixMetadata).all()) == 2
 
-        user_metadata_update = MatrixUserMetadata(
-            matrix_id="hello",
-            owner_id=1,
-            metadata_={
-                "name": metadata,
-                "additional": MatrixMetadata(
-                    matrix_id="hello",
-                    owner_id=1,
-                    key="additional",
-                    value="test",
-                ),
-            },
+        matrix_relation = MatrixDataSetRelation(name="m1")
+        matrix_relation.matrix_id = "hello"
+        dataset.matrices.append(matrix_relation)
+        matrix_relation = MatrixDataSetRelation(name="m2")
+        matrix_relation.matrix_id = "world"
+        dataset.matrices.append(matrix_relation)
+
+        dataset = dataset_repo.save(dataset)
+        dataset_query_result: Optional[MatrixDataSet] = dataset_repo.get(
+            dataset.id
         )
-        meta_repo.save(user_metadata_update)
-        meta_res: Optional[MatrixUserMetadata] = meta_repo.get("hello", 1)
-        assert meta_res is not None
-        assert meta_res.metadata_["name"].value == "some ts"
-        assert meta_res.metadata_["additional"].value == "test"
-        assert "public" not in meta_res.metadata_
-        assert len(meta_res.groups) == 1
-        assert len(db.session.query(MatrixMetadata).all()) == 2
+        assert dataset_query_result is not None
+        assert dataset_query_result.name == "some name"
+        assert len(dataset_query_result.matrices) == 2
 
-        user_metadata_update_group = MatrixUserMetadata(
-            matrix_id="hello", owner_id=1, groups=[]
+        dataset_update = MatrixDataSet(
+            id=dataset.id,
+            name="some name change",
+            public=False,
+            updated_at=datetime.now(),
         )
-        meta_repo.save(user_metadata_update_group)
-        meta_res: Optional[MatrixUserMetadata] = meta_repo.get("hello", 1)
-        assert meta_res is not None
-        assert meta_res.metadata_["name"].value == "some ts"
-        assert meta_res.metadata_["additional"].value == "test"
-        assert "public" not in meta_res.metadata_
-        assert len(meta_res.groups) == 0
-        assert len(db.session.query(MatrixMetadata).all()) == 2
-
-        user_metadata_delete_all = MatrixUserMetadata(
-            matrix_id="hello", owner_id=1, metadata_={}, groups=[]
+        dataset_repo.save(dataset_update)
+        dataset_query_result: Optional[MatrixDataSet] = dataset_repo.get(
+            dataset.id
         )
-        meta_repo.save(user_metadata_delete_all)
-        meta_res: Optional[MatrixUserMetadata] = meta_repo.get("hello", 1)
-        assert meta_res is not None
-        assert len(meta_res.metadata_.keys()) == 0
-        assert len(meta_res.groups) == 0
-        assert len(db.session.query(MatrixMetadata).all()) == 0
+        assert dataset_query_result is not None
+        assert dataset_query_result.name == "some name change"
+        assert dataset_query_result.owner_id == user.id
 
 
-def test_metadata_query():
+def test_datastore_query():
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
@@ -178,89 +158,72 @@ def test_metadata_query():
     )
 
     with db():
+        user_repo = UserRepository(Config(security=SecurityConfig()))
+        user1 = user_repo.save(User(name="foo", password=Password("bar")))
+        user2 = user_repo.save(User(name="hello", password=Password("world")))
+
         repo = MatrixRepository()
-        m = Matrix(
+        m1 = Matrix(
             id="hello",
             freq=MatrixFreq.WEEKLY,
             created_at=datetime.now(),
         )
-        repo.save(m)
-        repo.save(
-            Matrix(
-                id="hallo",
-                freq=MatrixFreq.HOURLY,
-                created_at=datetime.now(),
+        repo.save(m1)
+        m2 = Matrix(
+            id="world",
+            freq=MatrixFreq.WEEKLY,
+            created_at=datetime.now(),
+        )
+        repo.save(m2)
+
+        dataset_repo = MatrixDataSetRepository()
+
+        dataset = MatrixDataSet(
+            name="some name",
+            public=True,
+            owner_id=user1.id,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+        matrix_relation = MatrixDataSetRelation(name="m1")
+        matrix_relation.matrix_id = "hello"
+        dataset.matrices.append(matrix_relation)
+        matrix_relation = MatrixDataSetRelation(name="m2")
+        matrix_relation.matrix_id = "world"
+        dataset.matrices.append(matrix_relation)
+        dataset_repo.save(dataset)
+
+        dataset = MatrixDataSet(
+            name="some name 2",
+            public=False,
+            owner_id=user2.id,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+        matrix_relation = MatrixDataSetRelation(name="m1")
+        matrix_relation.matrix_id = "hello"
+        dataset.matrices.append(matrix_relation)
+        dataset_repo.save(dataset)
+
+        res = dataset_repo.query("name 2")
+        assert len(res) == 1
+        assert len(res[0].matrices) == 1
+        assert res[0].matrices[0].name == "m1"
+        assert res[0].matrices[0].matrix.id == m1.id
+        assert res[0].matrices[0].matrix.freq == m1.freq
+        assert len(dataset_repo.query("name 2")) == 1
+        assert len(dataset_repo.query("name")) == 2
+        assert len(dataset_repo.query(None, user1.id)) == 1
+        assert len(dataset_repo.query("name 2", user1.id)) == 0
+
+        dataset_repo.delete(dataset.id)
+        assert len(dataset_repo.query("name 2")) == 0
+        assert repo.get(m1.id) is not None
+        assert (
+            len(
+                db.session.query(MatrixDataSetRelation)
+                .filter(MatrixDataSetRelation.dataset_id == dataset.id)
+                .all()
             )
+            == 0
         )
-
-        user_repo = UserRepository(Config(security=SecurityConfig()))
-        user_repo.save(User(name="foo", password=Password("bar")))
-
-        group_repo = GroupRepository()
-        group = group_repo.save(Group(name="group"))
-        group2 = group_repo.save(Group(name="group2"))
-
-        meta_repo = MatrixMetadataRepository()
-
-        user_1_metadata_1 = MatrixUserMetadata(
-            matrix_id="hello",
-            owner_id=0,
-            metadata_={
-                "name": MatrixMetadata(
-                    matrix_id="hello",
-                    owner_id=0,
-                    key="name",
-                    value="another ts",
-                ),
-                "tag2": MatrixMetadata(
-                    matrix_id="hello", owner_id=0, key="tag2", value="false"
-                ),
-            },
-            groups=[group2],
-        )
-        user_2_metadata_1 = MatrixUserMetadata(
-            matrix_id="hello",
-            owner_id=1,
-            metadata_={
-                "name": MatrixMetadata(
-                    matrix_id="hello", owner_id=1, key="name", value="some ts"
-                ),
-                "tag": MatrixMetadata(
-                    matrix_id="hello", owner_id=1, key="tag", value="true"
-                ),
-            },
-            groups=[group],
-        )
-        user_2_metadata_2 = MatrixUserMetadata(
-            matrix_id="hallo",
-            owner_id=1,
-            metadata_={
-                "name": MatrixMetadata(
-                    matrix_id="hallo", owner_id=1, key="name", value="da ts"
-                ),
-                "tag": MatrixMetadata(
-                    matrix_id="hallo", owner_id=1, key="tag", value="false"
-                ),
-            },
-            groups=[group],
-        )
-        meta_repo.save(user_1_metadata_1)
-        meta_repo.save(user_2_metadata_1)
-        meta_repo.save(user_2_metadata_2)
-
-        res = meta_repo.query("ts")
-        assert len(res) == 3
-        res = meta_repo.query("some")
-        assert len(res) == 1
-        res = meta_repo.query(None, {"tag": "true"})
-        assert len(res) == 1
-        res = meta_repo.query("ts", {"tag": "true", "tag2": "true"})
-        assert len(res) == 0
-        res = meta_repo.query("another")
-        assert len(res) == 1
-        res = meta_repo.query("another", {"tag2": "false"})
-        assert len(res) == 1
-        res = meta_repo.query("another", {"tag": "true"})
-        assert len(res) == 0
-        res = meta_repo.query(None, {}, 0)
-        assert len(res) == 1

@@ -1,17 +1,18 @@
 import enum
+import uuid
 from distutils.util import strtobool
 from typing import List, Any, Dict, Optional
 
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin  # type: ignore
+from datetime import datetime
 from pydantic import BaseModel
-from sqlalchemy import Column, String, Enum, DateTime, Table, ForeignKey, Integer  # type: ignore
+from sqlalchemy import Column, String, Enum, DateTime, Table, ForeignKey, Integer, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from sqlalchemy.orm.collections import attribute_mapped_collection  # type: ignore
 
 from antarest.common.persistence import Base
-from antarest.login.model import Identity, Group, GroupDTO
-from antarest.matrixstore.exceptions import MetadataKeyNotAllowed
+from antarest.login.model import Identity, Group, GroupDTO, UserInfo
 
 
 class MatrixFreq(enum.IntEnum):
@@ -36,24 +37,12 @@ class MatrixFreq(enum.IntEnum):
         raise NotImplementedError()
 
 
-groups_matrix_metadata = Table(
-    "matrix_group",
-    Base.metadata,
-    Column("matrix_id", String(64), ForeignKey("matrix.id"), primary_key=True),
-    Column(
-        "owner_id", Integer(), ForeignKey("identities.id"), primary_key=True
-    ),
-    Column("group_id", String(36), ForeignKey("groups.id"), primary_key=True),
-)
-
-
 class Matrix(Base):  # type: ignore
     __tablename__ = "matrix"
 
     id = Column(String(64), primary_key=True)
     freq = Column(Enum(MatrixFreq))
     created_at = Column(DateTime)
-    users_metadata = relationship("MatrixUserMetadata")
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Matrix):
@@ -67,141 +56,118 @@ class Matrix(Base):  # type: ignore
         return res
 
 
-class MatrixMetadataDTO(BaseModel):
+class MatrixInfoDTO(BaseModel):
     id: str
-    name: Optional[str] = None
-    metadata: Dict[str, str] = {}
-    public: bool = True
-    groups: List[GroupDTO] = []
+    name: str
 
 
-MATRIX_METADATA_PUBLIC_MODE = "is_public"
-MATRIX_METADATA_NAME = "name"
-MATRIX_METADATA_RESERVED_KEYS = [
-    MATRIX_METADATA_NAME,
-    MATRIX_METADATA_PUBLIC_MODE,
-]
+class MatrixDataSetDTO(BaseModel):
+    id: str
+    name: str
+    matrices: List[MatrixInfoDTO]
+    owner: UserInfo
+    groups: List[GroupDTO]
+    public: bool
+    created_at: datetime
+    updated_at: datetime
 
 
-class MatrixUserMetadata(Base):  # type: ignore
-    __tablename__ = "matrix_user_metadata"
+groups_dataset_relation = Table(
+    "matrix_dataset_group",
+    Base.metadata,
+    Column(
+        "dataset_id", String(64), ForeignKey("dataset.id"), primary_key=True
+    ),
+    Column("group_id", String(36), ForeignKey("groups.id"), primary_key=True),
+)
 
-    matrix_id = Column(
-        String(64),
-        ForeignKey(
-            "matrix.id",
-            name="fk_matrix_user_metadata_matrix_id",
-            deferrable=False,
-        ),
+
+class MatrixDataSetRelation(Base):  # type: ignore
+    __tablename__ = "dataset_matrices"
+    dataset_id = Column(
+        String,
+        ForeignKey("dataset.id", name="fk_matrixdatasetrelation_dataset_id"),
         primary_key=True,
     )
+    matrix_id = Column(
+        String,
+        ForeignKey("matrix.id", name="fk_matrixdatasetrelation_matrix_id"),
+        primary_key=True,
+    )
+    name = Column(String)
+    matrix = relationship(Matrix)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, MatrixDataSetRelation):
+            return False
+
+        res: bool = (
+            self.matrix_id == other.matrix_id
+            and self.dataset_id == other.dataset_id
+            and self.name == other.name
+        )
+
+        return res
+
+
+class MatrixDataSet(Base):  # type: ignore
+    __tablename__ = "dataset"
+
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+        unique=True,
+    )
+    name = Column(String)
     owner_id = Column(
         Integer,
-        ForeignKey(
-            "identities.id",
-            name="fk_matrix_user_metadata_identities_id",
-            deferrable=False,
-        ),
-        primary_key=True,
+        ForeignKey("identities.id", name="fk_matrixdataset_identities_id"),
     )
+    public = Column(Boolean, default=False)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
 
-    matrix = relationship(
-        Matrix,
-        foreign_keys="MatrixUserMetadata.matrix_id",
-        back_populates="users_metadata",
-    )
     owner = relationship(Identity)
     groups = relationship(
         "Group",
-        secondary=lambda: groups_matrix_metadata,
-        primaryjoin="and_(MatrixUserMetadata.matrix_id==matrix_group.c.matrix_id, MatrixUserMetadata.owner_id==matrix_group.c.owner_id)",
+        secondary=lambda: groups_dataset_relation,
     )
-    metadata_ = relationship(
-        "MatrixMetadata",
-        primaryjoin="and_(MatrixUserMetadata.matrix_id==foreign(MatrixMetadata.matrix_id), MatrixUserMetadata.owner_id==foreign(MatrixMetadata.owner_id))",
-        collection_class=attribute_mapped_collection("key"),
-        cascade="all, delete-orphan",
+    matrices = relationship(
+        MatrixDataSetRelation, cascade="all, delete, delete-orphan"
     )
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, MatrixUserMetadata):
-            return False
-
-        res: bool = (
-            self.matrix_id == other.matrix_id
-            and self.owner_id == other.owner_id
-            and self.groups == other.groups
-            and self.metadata_ == other.metadata_
-        )
-        return res
-
-    def is_public(self) -> bool:
-        return MATRIX_METADATA_PUBLIC_MODE in self.metadata_.keys() and bool(
-            strtobool(self.metadata_[MATRIX_METADATA_PUBLIC_MODE].value)
-        )
-
-    def get_name(self) -> Optional[str]:
-        if MATRIX_METADATA_NAME in self.metadata_.keys():
-            return str(self.metadata_[MATRIX_METADATA_NAME].value)
-        return None
-
-    def to_dto(self) -> MatrixMetadataDTO:
-        return MatrixMetadataDTO(
-            id=self.matrix_id,
-            name=self.get_name(),
+    def to_dto(self) -> MatrixDataSetDTO:
+        return MatrixDataSetDTO(
+            id=self.id,
+            name=self.name,
+            matrices=[
+                MatrixInfoDTO(name=matrix.name, id=matrix.matrix.id)
+                for matrix in self.matrices
+            ],
+            owner=UserInfo(id=self.owner.id, name=self.owner.name),
             groups=[
                 GroupDTO(id=group.id, name=group.name) for group in self.groups
             ],
-            public=self.is_public(),
-            metadata=MatrixUserMetadata.strip_metadata_reserved_keys(
-                {
-                    key: self.metadata_[key].value
-                    for key in self.metadata_.keys()
-                }
-            ),
+            public=self.public,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
         )
 
-    @staticmethod
-    def strip_metadata_reserved_keys(
-        metadata: Dict[str, str], raise_exception: bool = False
-    ) -> Dict[str, Any]:
-        stripped = {
-            key: metadata[key]
-            for key in metadata.keys()
-            if key not in MATRIX_METADATA_RESERVED_KEYS
-        }
-        if raise_exception and len(stripped.keys()) != len(metadata.keys()):
-            raise MetadataKeyNotAllowed(
-                f"Cannot use reserved key {MATRIX_METADATA_RESERVED_KEYS}"
-            )
-        return stripped
-
-
-class MatrixMetadata(Base):  # type: ignore
-    __tablename__ = "matrix_metadata"
-
-    matrix_id = Column(String(64), ForeignKey("matrix.id"), primary_key=True)
-    owner_id = Column(Integer, ForeignKey("identities.id"), primary_key=True)
-    key = Column(String, primary_key=True)
-    value = Column(String)
-
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, MatrixMetadata):
+        if not isinstance(other, MatrixDataSet):
             return False
 
         res: bool = (
-            self.matrix_id == other.matrix_id
-            and self.owner_id == other.owner_id
-            and self.key == other.key
-            and self.value == other.value
+            self.id == other.id
+            and self.name == other.name
+            and self.public == other.public
+            and self.matrices == self.matrices
+            and self.groups == self.groups
+            and self.owner_id == self.owner_id
         )
+
         return res
-
-
-class MatrixUserMetadataQuery(BaseModel):
-    name: Optional[str]
-    metadata: Dict[str, str] = {}
-    owner: Optional[int]
 
 
 class MatrixDTO(BaseModel):
@@ -218,3 +184,9 @@ class MatrixContent(DataClassJsonMixin):  # type: ignore
     data: List[List[int]]
     index: List[str]
     columns: List[str]
+
+
+class MatrixDataSetUpdateDTO(BaseModel):
+    name: str
+    groups: List[str]
+    public: bool

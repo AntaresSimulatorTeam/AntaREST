@@ -5,30 +5,29 @@ from typing import List, Optional, Tuple, Dict, Any
 
 from fastapi import HTTPException
 
+from antarest.common.jwt import JWTUser
 from antarest.common.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
 from antarest.login.model import Group, GroupDTO
 from antarest.login.service import LoginService
-from antarest.matrixstore.exceptions import MetadataKeyNotAllowed
+from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
     MatrixDTO,
     MatrixFreq,
     Matrix,
     MatrixContent,
-    MatrixUserMetadata,
-    MatrixMetadata,
-    MATRIX_METADATA_PUBLIC_MODE,
-    MatrixUserMetadataQuery,
-    MATRIX_METADATA_NAME,
-    MatrixMetadataDTO,
-    MATRIX_METADATA_RESERVED_KEYS,
+    MatrixDataSet,
+    MatrixDataSetUpdateDTO,
+    MatrixDataSetDTO,
+    MatrixInfoDTO,
+    MatrixDataSetRelation,
 )
 from antarest.matrixstore.repository import (
     MatrixRepository,
     MatrixContentRepository,
-    MatrixMetadataRepository,
+    MatrixDataSetRepository,
 )
 
 
@@ -36,12 +35,12 @@ class MatrixService:
     def __init__(
         self,
         repo: MatrixRepository,
-        repo_meta: MatrixMetadataRepository,
+        repo_dataset: MatrixDataSetRepository,
         content: MatrixContentRepository,
         user_service: LoginService,
     ):
         self.repo = repo
-        self.repo_meta = repo_meta
+        self.repo_dataset = repo_dataset
         self.repo_content = content
         self.user_service = user_service
 
@@ -78,122 +77,91 @@ class MatrixService:
 
         return matrix.id
 
-    def get_metadata(
+    def get_dataset(
         self,
-        matrix_id: str,
-        user_id: int,
+        id: str,
         params: RequestParameters,
-    ) -> Optional[MatrixUserMetadata]:
-        if not params.user or not params.user.is_or_impersonate(user_id):
+    ) -> Optional[MatrixDataSet]:
+        if not params.user:
             raise UserHasNotPermissionError()
-        return self.repo_meta.get(matrix_id, user_id)
+        dataset = self.repo_dataset.get(id)
+        if dataset is None:
+            raise MatrixDataSetNotFound()
 
-    def update_metadata(
-        self,
-        matrix_id: str,
-        user_id: int,
-        metadata: Dict[str, str],
-        params: RequestParameters,
-    ) -> MatrixUserMetadata:
-        if not params.user or not params.user.is_or_impersonate(user_id):
-            raise UserHasNotPermissionError()
-        valid_metadata = MatrixUserMetadata.strip_metadata_reserved_keys(
-            metadata, raise_exception=True
+        MatrixService.check_access_permission(
+            dataset, params.user, raise_error=True
         )
-        user_meta = MatrixUserMetadata(
-            matrix_id=matrix_id,
-            owner_id=user_id,
-            metadata_={
-                key: MatrixMetadata(
-                    matrix_id=matrix_id,
-                    owner_id=user_id,
-                    key=key,
-                    value=valid_metadata[key],
-                )
-                for key in valid_metadata.keys()
-            },
-        )
-        return self.repo_meta.save(user_meta)
+        return dataset
 
-    def update_group(
+    def create_dataset(
         self,
-        matrix_id: str,
-        user_id: int,
-        group_ids: List[str],
+        dataset_info: MatrixDataSetUpdateDTO,
+        matrices: List[MatrixInfoDTO],
         params: RequestParameters,
-    ) -> MatrixUserMetadata:
-        if not params.user or not params.user.is_or_impersonate(user_id):
+    ) -> MatrixDataSet:
+        if not params.user:
             raise UserHasNotPermissionError()
 
         groups = [
             self.user_service.get_group(group_id, params)
-            for group_id in group_ids
+            for group_id in dataset_info.groups
         ]
-        user_meta = MatrixUserMetadata(
-            matrix_id=matrix_id,
-            owner_id=user_id,
+        dataset = MatrixDataSet(
+            name=dataset_info.name,
+            public=dataset_info.public,
+            owner_id=params.user.impersonator,
             groups=groups,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
         )
-        return self.repo_meta.save(user_meta)
+        for matrix in matrices:
+            matrix_relation = MatrixDataSetRelation(name=matrix.name)
+            matrix_relation.matrix_id = matrix.id
+            dataset.matrices.append(matrix_relation)
 
-    def _patch_metadata(
+        return self.repo_dataset.save(dataset)
+
+    def update_dataset(
         self,
-        matrix_id: str,
-        user_id: int,
-        key: str,
-        value: str,
+        dataset_id: str,
+        dataset_info: MatrixDataSetUpdateDTO,
         params: RequestParameters,
-    ) -> MatrixUserMetadata:
-        if not params.user or not params.user.is_or_impersonate(user_id):
+    ) -> MatrixDataSet:
+        if not params.user:
             raise UserHasNotPermissionError()
 
-        user_meta = self.repo_meta.get(matrix_id, user_id)
-        if not user_meta:
-            user_meta = MatrixUserMetadata(
-                matrix_id=matrix_id,
-                owner_id=user_id,
-                metadata_={},
-            )
+        dataset = self.repo_dataset.get(dataset_id)
+        if dataset is None:
+            raise MatrixDataSetNotFound()
 
-        user_meta.metadata_[key] = MatrixMetadata(
-            matrix_id=matrix_id, owner_id=user_id, key=key, value=value
+        MatrixService.check_access_permission(
+            dataset, params.user, write=True, raise_error=True
         )
-        return self.repo_meta.save(user_meta)
-
-    def set_name(
-        self,
-        matrix_id: str,
-        user_id: int,
-        name: str,
-        params: RequestParameters,
-    ) -> MatrixUserMetadata:
-        return self._patch_metadata(
-            matrix_id, user_id, MATRIX_METADATA_NAME, name, params
+        groups = [
+            self.user_service.get_group(group_id, params)
+            for group_id in dataset_info.groups
+        ]
+        updated_dataset = MatrixDataSet(
+            id=dataset_id,
+            name=dataset_info.name,
+            public=dataset_info.public,
+            groups=groups,
+            updated_at=datetime.now(),
         )
-
-    def set_public(
-        self,
-        matrix_id: str,
-        user_id: int,
-        public_status: bool,
-        params: RequestParameters,
-    ) -> MatrixUserMetadata:
-        return self._patch_metadata(
-            matrix_id,
-            user_id,
-            MATRIX_METADATA_PUBLIC_MODE,
-            str(public_status),
-            params,
-        )
+        return self.repo_dataset.save(updated_dataset)
 
     def list(
-        self, query: MatrixUserMetadataQuery, params: RequestParameters
-    ) -> List[MatrixMetadataDTO]:
+        self,
+        dataset_name: Optional[str],
+        filter_own: bool,
+        params: RequestParameters,
+    ) -> List[MatrixDataSetDTO]:
         """
         List matrix user metadata
 
         Args:
-            query: the metadata search query
+            dataset_name: the dataset name search query
+            filter_own: indicate if only the current user datasets should be returned
             params: The request parameter containing user information
 
         Returns:
@@ -203,23 +171,26 @@ class MatrixService:
         if not user:
             raise UserHasNotPermissionError()
 
-        users_metadata = self.repo_meta.query(
-            query.name, query.metadata, query.owner
+        datasets = self.repo_dataset.query(
+            dataset_name, user.impersonator if filter_own else None
         )
         return [
-            metadata.to_dto()
-            for metadata in users_metadata
-            if metadata.is_public()
-            or user.is_or_impersonate(metadata.owner_id)
+            dataset.to_dto()
+            for dataset in datasets
+            if dataset.public
+            or user.is_or_impersonate(dataset.owner_id)
             or len(
                 [
                     group
-                    for group in metadata.groups
+                    for group in dataset.groups
                     if group.id in [jwtgroup.id for jwtgroup in user.groups]
                 ]
             )
             > 0
         ]
+
+    def delete_dataset(self, id: str) -> None:
+        self.repo_dataset.delete(id)
 
     def get(self, id: str) -> Optional[MatrixDTO]:
         data = self.repo_content.get(id)
@@ -245,3 +216,24 @@ class MatrixService:
     def delete(self, id: str) -> None:
         self.repo_content.delete(id)
         self.repo.delete(id)
+
+    @staticmethod
+    def check_access_permission(
+        dataset: MatrixDataSet,
+        user: JWTUser,
+        write: bool = False,
+        raise_error: bool = False,
+    ) -> bool:
+        if user.is_site_admin():
+            return True
+        dataset_groups = [group.id for group in dataset.groups]
+        access = (
+            dataset.owner_id == user.id
+            or dataset.owner_id == user.impersonator
+        ) or (
+            any([group.id in dataset_groups for group in user.groups])
+            and not write
+        )
+        if not access and raise_error:
+            raise UserHasNotPermissionError()
+        return access
