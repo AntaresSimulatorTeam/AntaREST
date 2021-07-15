@@ -54,7 +54,10 @@ def test_save():
 
     # Test
     service = MatrixService(
-        repo=repo, repo_dataset=Mock(), content=repo_content, user_service=Mock()
+        repo=repo,
+        repo_dataset=Mock(),
+        content=repo_content,
+        user_service=Mock(),
     )
     id = service.create(dto)
 
