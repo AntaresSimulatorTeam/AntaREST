@@ -37,33 +37,35 @@ export interface LaunchJob {
   exitCode: number;
 }
 
-export interface MatrixMetadata {
-  [key: string]: string;
-}
-export interface MatrixMetadataDTO {
+export interface MatrixInfoDTO {
   id: string;
   name: string;
-  metadata: MatrixMetadata;
+}
+
+export interface MatrixDataSetDTO {
+  id: string;
+  name: string;
+  owner: string;
   public: boolean;
   groups: Array<GroupDTO>;
+  matrix: Array<MatrixInfoDTO>;
+}
+
+export interface MatrixDataSetUpdateDTO {
+  name: string;
+  groups: Array<string>;
+  public: boolean;
 }
 
 export interface MatrixUserMetadataQuery{
   name?: string;
-  metadata: MatrixMetadata;
+  group_name?: string;
   owner?: number;
 }
 
-export enum MatrixFreq{
-  HOURLY = 1,
-  DAILY = 2,
-  WEEKLY = 3,
-  MONTHLY = 4,
-  ANNUAL = 5
-}
-
 export interface MatrixDTO{
-  freq: MatrixFreq;
+  width: number;
+  height: number;
   index: Array<string>;
   columns: Array<string>;
   data: Array<Array<number>>;

@@ -12,7 +12,7 @@ import CreateIcon from '@material-ui/icons/Create';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import DeleteIcon from '@material-ui/icons/Delete';
 
-import { UserDTO, BotDTO, MatrixMetadataDTO, IDType } from '../../common/types';
+import { UserDTO, BotDTO, MatrixDataSetDTO, IDType } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -52,7 +52,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropTypes {
-  data: Array<UserDTO | BotDTO | MatrixMetadataDTO>;
+  data: Array<UserDTO | BotDTO | MatrixDataSetDTO>;
   filter: string;
   view: boolean;
   excludeName?: Array<string>;

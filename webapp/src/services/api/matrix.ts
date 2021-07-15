@@ -1,9 +1,9 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { MatrixDTO, MatrixUserMetadataQuery, MatrixMetadataDTO } from '../../common/types';
+import { MatrixDTO, MatrixUserMetadataQuery, MatrixDataSetDTO, MatrixInfoDTO, MatrixDataSetUpdateDTO } from '../../common/types';
 
-export const getMatrixList = async (query: MatrixUserMetadataQuery): Promise<Array<MatrixMetadataDTO>> => {
-  const res = await client.post('/v1//matrix/_search', query);
+export const getMatrixList = async (query: MatrixUserMetadataQuery): Promise<Array<MatrixDataSetDTO>> => {
+  const res = await client.post('/v1//matrixdataset/_search', query);
   return res.data;
 };
 
@@ -12,12 +12,7 @@ export const getMatrix = async (id: string): Promise<MatrixDTO> => {
   return res.data;
 };
 
-export const createMatrix = async (matrix: MatrixDTO): Promise<string> => {
-  const res = await client.post('/v1/matrix', matrix);
-  return res.data;
-};
-
-export const createMatrixByImportation = async (file: File, onProgress?: (progress: number) => void): Promise<string> => {
+export const createMatrixByImportation = async (file: File, onProgress?: (progress: number) => void): Promise<Array<MatrixInfoDTO>> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
@@ -38,20 +33,13 @@ export const createMatrixByImportation = async (file: File, onProgress?: (progre
   return res.data;
 };
 
-function parameterizeArray(key: string, arr: Array<string>): string {
-  const newArr = arr.map(encodeURIComponent);
-  return `&${key}=${newArr.join(`&${key}=`)}`;
-}
+export const createDataSet = async (metadata: MatrixDataSetUpdateDTO, matrices: Array<MatrixInfoDTO>): Promise<MatrixDataSetDTO> => {
+  const res = await client.post('/v1/matrixdataset', { metadata, matrices });
+  return res.data;
+};
 
-export const updateMetadata = async (metadata: MatrixMetadataDTO): Promise<MatrixMetadataDTO> => {
-  const name = encodeURIComponent(metadata.name);
-  const publicStatus = encodeURIComponent(metadata.public);
-  const { length } = metadata.groups;
-  let groupUrl = '&';
-  if (length > 0) {
-    groupUrl = `${parameterizeArray('groups', metadata.groups.map((elm) => encodeURIComponent(elm.id)))}&`;
-  }
-  const res = await client.put(`v1/matrix/${metadata.id}/metadata?name=${name}${groupUrl}public=${publicStatus}`, metadata.metadata);
+export const updateDataSet = async (id: string, metadata: MatrixDataSetUpdateDTO): Promise<MatrixDataSetUpdateDTO> => {
+  const res = await client.put(`/v1/matrixdataset/${id}/metadata`, metadata);
   return res.data;
 };
 

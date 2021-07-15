@@ -1,56 +1,67 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { GroupDTO, MatrixMetadata, MatrixMetadataDTO } from '../../../common/types';
-import { Metadata } from '../../../components/Data/KeyValue';
-import { createMatrixByImportation, updateMetadata } from '../../../services/api/matrix';
+import { GroupDTO, MatrixDataSetDTO, MatrixDataSetUpdateDTO, MatrixInfoDTO } from '../../../common/types';
+import { createMatrixByImportation, updateDataSet, createDataSet } from '../../../services/api/matrix';
 
 const updateMatrix = async (
-  id: string,
+  data: MatrixDataSetDTO,
   name: string,
   publicStatus: boolean,
-  metadataList: Array<Metadata>,
   selectedGroupList: Array<GroupDTO>,
-  onNewDataUpdate: (newData: MatrixMetadataDTO) => void,
+  onNewDataUpdate: (newData: MatrixDataSetDTO) => void,
 ): Promise<any> => {
-  const metadata: MatrixMetadata = {};
-  metadataList.forEach((elm) => {
-    if (!elm.editStatus) {
-      metadata[elm.key] = elm.value;
-    }
-  });
-  const matrixMetadata: MatrixMetadataDTO = {
-    id,
+  const matrixMetadata: MatrixDataSetUpdateDTO = {
     name,
-    metadata,
     public: publicStatus,
-    groups: publicStatus ? [] : selectedGroupList,
+    groups: publicStatus ? [] : selectedGroupList.map((elm) => elm.id),
   };
 
-  const newData = await updateMetadata(matrixMetadata);
+  const newData = await updateDataSet(data.id, matrixMetadata);
+  const newDataset: MatrixDataSetDTO = data;
+  newDataset.name = newData.name;
+  newDataset.public = newData.public;
+  newDataset.groups = selectedGroupList;
+  onNewDataUpdate(newDataset);
+};
+
+const createMatrix = async (
+  name: string,
+  publicStatus: boolean,
+  selectedGroupList: Array<GroupDTO>,
+  matrices: Array<MatrixInfoDTO>,
+  onNewDataUpdate: (newData: MatrixDataSetDTO) => void,
+): Promise<any> => {
+  const matrixMetadata: MatrixDataSetUpdateDTO = {
+    name,
+    public: publicStatus,
+    groups: publicStatus ? [] : selectedGroupList.map((elm) => elm.id),
+  };
+
+  const newData = await createDataSet(matrixMetadata, matrices);
   onNewDataUpdate(newData);
 };
 
 export const saveMatrix = async (
   name: string,
   publicStatus: boolean,
-  metadataList: Array<Metadata>,
   selectedGroupList: Array<GroupDTO>,
-  onNewDataUpdate: (newData: MatrixMetadataDTO) => void,
+  onNewDataUpdate: (newData: MatrixDataSetDTO) => void,
   file?: File,
-  data?: MatrixMetadataDTO,
+  data?: MatrixDataSetDTO,
 ): Promise<string> => {
-  let id = '';
   if (!name.replace(/\s/g, '')) throw Error('data:emptyName');
 
   if (data === undefined) {
     if (file) {
-      id = await createMatrixByImportation(file);
+      const matrixInfos = await createMatrixByImportation(file);
+      await createMatrix(name, publicStatus, selectedGroupList, matrixInfos, onNewDataUpdate);
     } else throw Error('data:fileNotUploaded');
   } else {
-    id = data.id;
+    await updateMatrix(data, name, publicStatus, selectedGroupList, onNewDataUpdate);
   }
 
-  await updateMatrix(id, name, publicStatus, metadataList, selectedGroupList, onNewDataUpdate);
   return data ? 'data:onMatrixUpdate' : 'data:onMatrixCreation';
 };
 
+//export const updateDataset = async (id: string, metadata: MatrixDataSetUpdateDTO): Promise<MatrixDataSetUpdateDTO>
+//export const createDataset = async (metadata: MatrixDataSetUpdateDTO, matrices: Array<MatrixInfoDTO>): Promise<MatrixDataSetDTO>
 export default {};

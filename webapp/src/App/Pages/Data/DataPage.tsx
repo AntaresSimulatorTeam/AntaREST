@@ -4,9 +4,9 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { AppState } from '../../reducers';
 import GenericSettingView from '../../../components/Settings/GenericSettingView';
-import GenericListView from '../../../components/Settings/GenericListView';
+import DataView from '../../../components/Data/DataView';
 import { getMatrixList } from '../../../services/api/matrix';
-import { MatrixMetadataDTO, IDType, MatrixUserMetadataQuery } from '../../../common/types';
+import { MatrixDataSetDTO, IDType, MatrixUserMetadataQuery } from '../../../common/types';
 import DataModal from './DataModal';
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
@@ -21,7 +21,7 @@ type PropTypes = ReduxProps;
 const Data = (props: PropTypes) => {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const [dataList, setDataList] = useState<Array<MatrixMetadataDTO>>([]);
+  const [dataList, setDataList] = useState<Array<MatrixDataSetDTO>>([]);
   const [idForDeletion, setIdForDeletion] = useState<IDType>(-1);
   const [filter, setFilter] = useState<string>('');
   const { user } = props;
@@ -29,7 +29,7 @@ const Data = (props: PropTypes) => {
   // User modal
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
-  const [currentData, setCurrentData] = useState<MatrixMetadataDTO|undefined>();
+  const [currentData, setCurrentData] = useState<MatrixDataSetDTO|undefined>();
 
   const createNewData = () => {
     setCurrentData(undefined);
@@ -62,8 +62,8 @@ const Data = (props: PropTypes) => {
     setOpenModal(false);
   };
 
-  const onNewDataUpdate = (newData: MatrixMetadataDTO): void => {
-    const tmpList = ([] as Array<MatrixMetadataDTO>).concat(dataList);
+  const onNewDataUpdate = (newData: MatrixDataSetDTO): void => {
+    const tmpList = ([] as Array<MatrixDataSetDTO>).concat(dataList);
     const index = tmpList.findIndex((elm) => elm.id === newData.id);
     if (index >= 0) {
       tmpList[index] = newData;
@@ -73,14 +73,19 @@ const Data = (props: PropTypes) => {
     }
   };
 
+  const onMatrixClick = async (datasetId: string, matrixId: string) => {
+    /*
+      Afficher la modale
+    */
+  };
+
   useEffect(() => {
     const init = async () => {
       try {
         const query: MatrixUserMetadataQuery = {
-          metadata: {},
         };
-        const matrix = await getMatrixList(query);
-        setDataList(matrix);
+        // const matrix = await getMatrixList(query);
+        // setDataList(matrix);
       } catch (e) {
         enqueueSnackbar(t('data:matrixError'), { variant: 'error' });
       }
@@ -99,13 +104,12 @@ const Data = (props: PropTypes) => {
       onButtonClick={() => createNewData()}
     >
 
-      <GenericListView
+      <DataView
         data={dataList}
         filter={filter}
-        view={false}
-        excludeName={['admin']}
         onDeleteClick={onDeleteClick}
-        onActionClick={onUpdateClick}
+        onUpdateClick={onUpdateClick}
+        onMatrixClick={onMatrixClick}
       />
 
       {openModal && (

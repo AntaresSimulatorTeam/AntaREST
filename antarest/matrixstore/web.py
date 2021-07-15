@@ -74,7 +74,6 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
         metadata: MatrixDataSetUpdateDTO,
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        print("GROUPS: ", groups)
         request_params = RequestParameters(user=user)
         return service.update_dataset(id, metadata, request_params).to_dto()
 

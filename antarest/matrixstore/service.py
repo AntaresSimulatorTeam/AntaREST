@@ -2,7 +2,9 @@ import time
 import csv
 from datetime import datetime
 from http import HTTPStatus
+from io import BytesIO
 from typing import List, Optional, Tuple, Dict, Any
+from zipfile import ZipFile
 
 from fastapi import HTTPException
 
@@ -80,6 +82,19 @@ class MatrixService:
         return matrix.id
 
     def create_by_importation(self, file: bytes) -> str:
+        input_zip = ZipFile(BytesIO(file))
+        files = {name: input_zip.read(name) for name in input_zip.namelist()}
+        for name in files.keys():
+            if all(
+                [
+                    not name.startswith("__MACOSX/"),
+                    not name.startswith(".DS_Store"),
+                ]
+            ):
+                print("FILENAME: ", name)
+            # self.file_importation(files[name])
+
+    def file_importation(self, file: bytes) -> str:
         str_file = str(file, "UTF-8")
         reader = csv.reader(str_file.split("\n"), delimiter="\t")
         data = []

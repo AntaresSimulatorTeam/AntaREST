@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useState, useEffect } from 'react';
 import { createStyles, makeStyles, Theme, TextField, Typography, Button, Checkbox, Chip } from '@material-ui/core';
-import AddBoxIcon from '@material-ui/icons/AddBox';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import GenericModal from '../../../components/Settings/GenericModal';
 import { getGroups } from '../../../services/api/user';
-import { GroupDTO, MatrixMetadataDTO } from '../../../common/types';
-import { KeyValue, Metadata } from '../../../components/Data/KeyValue';
+import { GroupDTO, MatrixDataSetDTO } from '../../../common/types';
 import { saveMatrix } from './utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
@@ -61,13 +59,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     marginRight: theme.spacing(1),
     fontWeight: 'bold',
   },
-  metadataList: {
-    width: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-  },
   input: {
     display: 'none',
   },
@@ -113,8 +104,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
     open: boolean;
-    onNewDataUpdate: (newData: MatrixMetadataDTO) => void;
-    data: MatrixMetadataDTO | undefined;
+    onNewDataUpdate: (newData: MatrixDataSetDTO) => void;
+    data: MatrixDataSetDTO | undefined;
     onClose: () => void;
 }
 
@@ -126,14 +117,14 @@ const DataModal = (props: PropTypes) => {
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
   const [selectedGroupList, setSelectedGroupList] = useState<Array<GroupDTO>>([]);
   const [name, setName] = useState<string>('');
-  const [metadataList, setMetadata] = useState<Array<Metadata>>([]);
   const [currentFile, setFile] = useState<File|undefined>();
   const [publicStatus, setPublic] = useState<boolean>(false);
 
   const onSave = async () => {
     let closeModal = true;
     try {
-      const msg = await saveMatrix(name, publicStatus, metadataList, selectedGroupList, onNewDataUpdate, currentFile, data);
+      const owner = 'me';
+      const msg = await saveMatrix(name, owner, publicStatus, selectedGroupList, onNewDataUpdate, currentFile, data);
       enqueueSnackbar(t(msg), { variant: 'success' });
     } catch (e) {
       const error = e as Error;
@@ -150,34 +141,6 @@ const DataModal = (props: PropTypes) => {
     if (target && target.files && target.files.length === 1) {
       setFile(target.files[0]);
     }
-  };
-
-  const addNewMetadata = () => {
-    setMetadata(metadataList.concat({ key: '', value: '', editStatus: true }));
-  };
-
-  const onMetadataChange = (newMetadata: Metadata, index: number): void => {
-    if (index >= 0 && index < metadataList.length) {
-      if (newMetadata.key.replace(/\s/g, '') && newMetadata.value.replace(/\s/g, '')) {
-        if (metadataList.findIndex((item) => item.key === newMetadata.key && !item.editStatus) < 0) {
-          let tmpList: Array<Metadata> = [];
-          tmpList = tmpList.concat(metadataList);
-          tmpList[index] = { ...newMetadata, editStatus: false };
-          setMetadata(tmpList);
-        }
-      }
-    }
-  };
-
-  const metadataEditToogle = (index: number): void => {
-    let tmpList: Array<Metadata> = [];
-    tmpList = tmpList.concat(metadataList);
-    tmpList[index] = { ...metadataList[index], editStatus: !metadataList[index].editStatus };
-    setMetadata(tmpList);
-  };
-
-  const onMetadataDeletion = (index: number): void => {
-    setMetadata(metadataList.filter((value, idx) => idx !== index));
   };
 
   const onGroupClick = (add: boolean, item: GroupDTO) => {
@@ -199,7 +162,6 @@ const DataModal = (props: PropTypes) => {
           setSelectedGroupList(data.groups);
           setPublic(data.public);
           setName(data.name);
-          setMetadata(Object.keys(data.metadata).map((elm) => ({ key: elm, value: data.metadata[elm], editStatus: false })));
         }
       } catch (e) {
         enqueueSnackbar(t('settings:groupsError'), { variant: 'error' });
@@ -248,32 +210,6 @@ const DataModal = (props: PropTypes) => {
               </div>
               )
             }
-        </div>
-        <div className={classes.parameters}>
-          <div className={classes.parameterHeader}>
-            <Typography className={classes.parameterTitle}>
-              {t('data:metadata')}
-            </Typography>
-            <AddBoxIcon
-              className={classes.addElement}
-              onClick={addNewMetadata}
-            />
-          </div>
-          <div className={classes.metadataList}>
-            {
-              metadataList.map((element: Metadata, index: number) => (
-                <KeyValue
-                  // eslint-disable-next-line react/no-array-index-key
-                  key={`${element.key}_${index}`}
-                  index={index}
-                  metadata={element}
-                  onConfirmation={onMetadataChange}
-                  editToogle={metadataEditToogle}
-                  onDeletion={onMetadataDeletion}
-                />
-              ))
-            }
-          </div>
         </div>
         <div className={classes.parameters}>
           <div className={classes.parameterHeader}>
