@@ -139,8 +139,6 @@ def fastapi_app(
         echo=config.debug,
         connect_args=connect_args,
     )
-    # Base.metadata.create_all(engine)
-    # db.get_current()
 
     application = FastAPI(
         title="AntaREST",
