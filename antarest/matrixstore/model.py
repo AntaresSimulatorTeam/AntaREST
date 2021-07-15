@@ -162,9 +162,9 @@ class MatrixDataSet(Base):  # type: ignore
             self.id == other.id
             and self.name == other.name
             and self.public == other.public
-            and self.matrices == self.matrices
-            and self.groups == self.groups
-            and self.owner_id == self.owner_id
+            and self.matrices == other.matrices
+            and self.groups == other.groups
+            and self.owner_id == other.owner_id
         )
 
         return res
