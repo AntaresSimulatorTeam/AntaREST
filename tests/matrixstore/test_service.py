@@ -210,7 +210,7 @@ def test_dataset_lifecycle():
         name=dataset_info.name,
         public=dataset_info.public,
         owner_id=userA.user.id,
-        groups=["groupA"],
+        groups=[Group(id="groupA", name="groupA")],
         created_at=ANY,
         updated_at=ANY,
         matrices=[
