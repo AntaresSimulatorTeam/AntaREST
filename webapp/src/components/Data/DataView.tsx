@@ -125,7 +125,7 @@ const DataView = (props: PropTypes) => {
               </ListItem>
               <Collapse in={toogleList[index]} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding className={classes.matrixList}>
-                  {dataset.matrix.map((matrixItem) => (
+                  {dataset.matrices.map((matrixItem) => (
                     <ListItem key={matrixItem.id} className={classes.matrixItem}>
                       <ListItemText
                         primary={matrixItem.name}

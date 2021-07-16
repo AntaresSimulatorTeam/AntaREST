@@ -1,9 +1,9 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { MatrixDTO, MatrixUserMetadataQuery, MatrixDataSetDTO, MatrixInfoDTO, MatrixDataSetUpdateDTO } from '../../common/types';
+import { MatrixDTO, MatrixDataSetDTO, MatrixInfoDTO, MatrixDataSetUpdateDTO } from '../../common/types';
 
-export const getMatrixList = async (query: MatrixUserMetadataQuery): Promise<Array<MatrixDataSetDTO>> => {
-  const res = await client.post('/v1//matrixdataset/_search', query);
+export const getMatrixList = async (name: string = "", filter_own: boolean = false): Promise<Array<MatrixDataSetDTO>> => {
+  const res = await client.get(`/v1/matrixdataset/_search?name=${encodeURI(name)}&filter_own=${filter_own}`);
   return res.data;
 };
 
@@ -34,11 +34,13 @@ export const createMatrixByImportation = async (file: File, onProgress?: (progre
 };
 
 export const createDataSet = async (metadata: MatrixDataSetUpdateDTO, matrices: Array<MatrixInfoDTO>): Promise<MatrixDataSetDTO> => {
-  const res = await client.post('/v1/matrixdataset', { metadata, matrices });
+  const data = { metadata, matrices };
+  const res = await client.post('/v1/matrixdataset', data);
   return res.data;
 };
 
 export const updateDataSet = async (id: string, metadata: MatrixDataSetUpdateDTO): Promise<MatrixDataSetUpdateDTO> => {
+  console.log('UPDATE: ', metadata);
   const res = await client.put(`/v1/matrixdataset/${id}/metadata`, metadata);
   return res.data;
 };

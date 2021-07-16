@@ -42,7 +42,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
-    marginBottom: theme.spacing(3),
+    marginBottom: theme.spacing(2),
   },
   parameterHeader: {
     width: '100%',
@@ -123,8 +123,7 @@ const DataModal = (props: PropTypes) => {
   const onSave = async () => {
     let closeModal = true;
     try {
-      const owner = 'me';
-      const msg = await saveMatrix(name, owner, publicStatus, selectedGroupList, onNewDataUpdate, currentFile, data);
+      const msg = await saveMatrix(name, publicStatus, selectedGroupList, onNewDataUpdate, currentFile, data);
       enqueueSnackbar(t(msg), { variant: 'success' });
     } catch (e) {
       const error = e as Error;

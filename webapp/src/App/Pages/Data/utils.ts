@@ -32,8 +32,8 @@ const createMatrix = async (
 ): Promise<any> => {
   const matrixMetadata: MatrixDataSetUpdateDTO = {
     name,
-    public: publicStatus,
     groups: publicStatus ? [] : selectedGroupList.map((elm) => elm.id),
+    public: publicStatus,
   };
 
   const newData = await createDataSet(matrixMetadata, matrices);

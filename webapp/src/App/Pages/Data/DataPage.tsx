@@ -6,7 +6,7 @@ import { AppState } from '../../reducers';
 import GenericSettingView from '../../../components/Settings/GenericSettingView';
 import DataView from '../../../components/Data/DataView';
 import { getMatrixList } from '../../../services/api/matrix';
-import { MatrixDataSetDTO, IDType, MatrixUserMetadataQuery } from '../../../common/types';
+import { MatrixDataSetDTO, IDType } from '../../../common/types';
 import DataModal from './DataModal';
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
@@ -66,6 +66,8 @@ const Data = (props: PropTypes) => {
     const tmpList = ([] as Array<MatrixDataSetDTO>).concat(dataList);
     const index = tmpList.findIndex((elm) => elm.id === newData.id);
     if (index >= 0) {
+      console.log('ON PREVIOUS: ', tmpList[index])
+      console.log('ON CREATION: ', newData)
       tmpList[index] = newData;
       setDataList(tmpList);
     } else {
@@ -82,10 +84,8 @@ const Data = (props: PropTypes) => {
   useEffect(() => {
     const init = async () => {
       try {
-        const query: MatrixUserMetadataQuery = {
-        };
-        // const matrix = await getMatrixList(query);
-        // setDataList(matrix);
+         const matrix = await getMatrixList();
+         setDataList(matrix);
       } catch (e) {
         enqueueSnackbar(t('data:matrixError'), { variant: 'error' });
       }

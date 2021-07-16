@@ -45,22 +45,21 @@ export interface MatrixInfoDTO {
 export interface MatrixDataSetDTO {
   id: string;
   name: string;
-  owner: string;
   public: boolean;
   groups: Array<GroupDTO>;
-  matrix: Array<MatrixInfoDTO>;
+  matrices: Array<MatrixInfoDTO>;
+  owner: {
+    id: number;
+    name: string;
+  }
+  created_at: string;
+  updated_at: string;
 }
 
 export interface MatrixDataSetUpdateDTO {
   name: string;
   groups: Array<string>;
   public: boolean;
-}
-
-export interface MatrixUserMetadataQuery{
-  name?: string;
-  group_name?: string;
-  owner?: number;
 }
 
 export interface MatrixDTO{

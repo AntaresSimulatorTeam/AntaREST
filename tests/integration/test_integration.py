@@ -321,7 +321,7 @@ def test_matrix(app: FastAPI):
     )
     assert res.status_code == 200
 
-    res = client.post(
+    res = client.get(
         f"/v1/matrixdataset/_search?name=myda",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
