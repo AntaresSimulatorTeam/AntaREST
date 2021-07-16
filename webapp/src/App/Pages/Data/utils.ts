@@ -62,6 +62,6 @@ export const saveMatrix = async (
   return data ? 'data:onMatrixUpdate' : 'data:onMatrixCreation';
 };
 
-//export const updateDataset = async (id: string, metadata: MatrixDataSetUpdateDTO): Promise<MatrixDataSetUpdateDTO>
-//export const createDataset = async (metadata: MatrixDataSetUpdateDTO, matrices: Array<MatrixInfoDTO>): Promise<MatrixDataSetDTO>
+// export const updateDataset = async (id: string, metadata: MatrixDataSetUpdateDTO): Promise<MatrixDataSetUpdateDTO>
+// export const createDataset = async (metadata: MatrixDataSetUpdateDTO, matrices: Array<MatrixInfoDTO>): Promise<MatrixDataSetDTO>
 export default {};

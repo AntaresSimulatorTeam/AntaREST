@@ -236,7 +236,12 @@ class MatrixService:
     def delete_dataset(self, id: str, params: RequestParameters) -> str:
         if not params.user:
             raise UserHasNotPermissionError()
+
         dataset = self.repo_dataset.get(id)
+
+        if dataset is None:
+            raise MatrixDataSetNotFound()
+
         MatrixService.check_access_permission(
             dataset, params.user, write=True, raise_error=True
         )
