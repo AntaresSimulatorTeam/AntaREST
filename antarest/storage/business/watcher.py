@@ -89,9 +89,10 @@ class Watcher:
                     folders: List[StudyFolder] = list()
                     if path.is_dir():
                         for child in path.iterdir():
-                            folders = folders + rec_scan(
-                                child, workspace, groups
-                            )
+                            if child.is_dir():
+                                folders = folders + rec_scan(
+                                    child, workspace, groups
+                                )
                     return folders
             except Exception as e:
                 logger.error(f"Failed to scan dir {path}", exc_info=e)
