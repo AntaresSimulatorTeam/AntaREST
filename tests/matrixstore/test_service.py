@@ -9,17 +9,18 @@ from antarest.common.requests import (
     UserHasNotPermissionError,
 )
 from antarest.common.roles import RoleType
-from antarest.login.model import Group, GroupDTO
-from antarest.matrixstore.exceptions import MetadataKeyNotAllowed
+from antarest.login.model import Group, GroupDTO, Identity, UserInfo
+from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
     MatrixDTO,
     MatrixFreq,
     Matrix,
     MatrixContent,
-    MatrixUserMetadata,
-    MatrixMetadata,
-    MatrixUserMetadataQuery,
-    MatrixMetadataDTO,
+    MatrixDataSetUpdateDTO,
+    MatrixDataSet,
+    MatrixDataSetRelation,
+    MatrixDataSetDTO,
+    MatrixInfoDTO,
 )
 from antarest.matrixstore.service import MatrixService
 
@@ -53,7 +54,10 @@ def test_save():
 
     # Test
     service = MatrixService(
-        repo=repo, repo_meta=Mock(), content=repo_content, user_service=Mock()
+        repo=repo,
+        repo_dataset=Mock(),
+        content=repo_content,
+        user_service=Mock(),
     )
     id = service.create(dto)
 
@@ -146,13 +150,13 @@ def test_delete():
     repo.delete.assert_called_once_with("my-id")
 
 
-def test_metadata_update():
+def test_dataset_lifecycle():
     content = Mock()
     repo = Mock()
-    repo_meta = Mock()
+    dataset_repo = Mock()
     user_service = Mock()
 
-    service = MatrixService(repo, repo_meta, content, user_service)
+    service = MatrixService(repo, dataset_repo, content, user_service)
 
     userA = RequestParameters(
         user=JWTUser(
@@ -185,162 +189,147 @@ def test_metadata_update():
         )
     )
 
-    with pytest.raises(UserHasNotPermissionError):
-        service.update_metadata("id", 1, {"hello": "world"}, userB)
-
-    with pytest.raises(MetadataKeyNotAllowed):
-        service.update_metadata("id", 1, {"name": "world"}, botA)
-
-    expected = MatrixUserMetadata(
-        matrix_id="id",
-        owner_id=1,
-        metadata_={
-            "id": MatrixMetadata(
-                matrix_id="id",
-                owner_id=1,
-                key="tag",
-                value="val",
-            )
-        },
+    dataset_info = MatrixDataSetUpdateDTO(
+        name="datasetA",
+        groups=["groupA"],
+        public=True,
     )
-    service.update_metadata("id", 1, {"tag": "val"}, userA)
-    repo_meta.save.assert_called_with(expected)
+    matrices = [
+        MatrixInfoDTO(
+            id="m1",
+            name="A",
+        ),
+        MatrixInfoDTO(
+            id="m2",
+            name="B",
+        ),
+    ]
 
     user_service.get_group.return_value = Group(id="groupA", name="groupA")
-    service.update_group("id", 1, ["groupA"], userA)
-    expected = MatrixUserMetadata(
-        matrix_id="id", owner_id=1, groups=[Group(id="groupA", name="groupA")]
+    expected = MatrixDataSet(
+        name=dataset_info.name,
+        public=dataset_info.public,
+        owner_id=userA.user.id,
+        groups=[Group(id="groupA", name="groupA")],
+        created_at=ANY,
+        updated_at=ANY,
+        matrices=[
+            MatrixDataSetRelation(name="A", matrix_id="m1"),
+            MatrixDataSetRelation(name="B", matrix_id="m2"),
+        ],
     )
-    user_service.get_group.assert_called_with("groupA", userA)
-    repo_meta.save.assert_called_with(expected)
+    service.create_dataset(dataset_info, matrices, params=userA)
+    dataset_repo.save.assert_called_with(expected)
 
-    repo_meta.get.return_value = None
-    service.set_name("id", 1, "hello", userA)
-    expected = MatrixUserMetadata(
-        matrix_id="id",
-        owner_id=1,
-        metadata_={
-            "name": MatrixMetadata(
-                matrix_id="id",
-                owner_id=1,
-                key="name",
-                value="hello",
-            )
-        },
-    )
-    repo_meta.save.assert_called_with(expected)
-
-    repo_meta.get.return_value = MatrixUserMetadata(
-        matrix_id="id",
-        owner_id=1,
-        metadata_={
-            "name": MatrixMetadata(
-                matrix_id="id",
-                owner_id=1,
-                key="name",
-                value="hello",
-            )
-        },
-    )
-    service.set_public("id", 1, True, userA)
-    expected = MatrixUserMetadata(
-        matrix_id="id",
-        owner_id=1,
-        metadata_={
-            "name": MatrixMetadata(
-                matrix_id="id",
-                owner_id=1,
-                key="name",
-                value="hello",
-            ),
-            "is_public": MatrixMetadata(
-                matrix_id="id",
-                owner_id=1,
-                key="is_public",
-                value="True",
-            ),
-        },
-    )
-    assert expected.is_public()
-    repo_meta.save.assert_called_with(expected)
-
-    repo_meta.query.return_value = [
-        MatrixUserMetadata(
-            matrix_id="id",
-            owner_id=1,
-            metadata_={
-                "name": MatrixMetadata(
-                    matrix_id="id",
-                    owner_id=1,
-                    key="name",
-                    value="hello",
-                ),
-                "is_public": MatrixMetadata(
-                    matrix_id="id",
-                    owner_id=1,
-                    key="is_public",
-                    value="True",
-                ),
-            },
-        ),
-        MatrixUserMetadata(
-            matrix_id="id2",
-            owner_id=2,
-            metadata_={
-                "name": MatrixMetadata(
-                    matrix_id="id2",
-                    owner_id=2,
-                    key="name",
-                    value="hello",
-                )
-            },
-        ),
-        MatrixUserMetadata(
-            matrix_id="id3",
-            owner_id=3,
-            metadata_={
-                "tag": MatrixMetadata(
-                    matrix_id="id3",
-                    owner_id=3,
-                    key="tag",
-                    value="hello",
-                )
-            },
+    somedate = datetime.datetime.now()
+    dataset_repo.query.return_value = [
+        MatrixDataSet(
+            id="some id",
+            name="datasetA",
+            public=True,
+            owner_id=userA.user.id,
+            owner=Identity(id=userA.user.id, name="userA", type="users"),
             groups=[Group(id="groupA", name="groupA")],
+            created_at=somedate,
+            updated_at=somedate,
+            matrices=[
+                MatrixDataSetRelation(name="A", matrix=Matrix(id="m1")),
+                MatrixDataSetRelation(name="B", matrix=Matrix(id="m2")),
+            ],
+        ),
+        MatrixDataSet(
+            id="some id 2",
+            name="datasetB",
+            public=False,
+            owner_id=userB.user.id,
+            owner=Identity(id=userB.user.id, name="userB", type="users"),
+            groups=[Group(id="groupB", name="groupB")],
+            created_at=somedate,
+            updated_at=somedate,
+            matrices=[
+                MatrixDataSetRelation(name="A", matrix=Matrix(id="m1")),
+                MatrixDataSetRelation(name="B", matrix=Matrix(id="m2")),
+            ],
         ),
     ]
-    resA = service.list(MatrixUserMetadataQuery(), params=userA)
-    assert resA == [
-        MatrixMetadataDTO(
-            id="id", name="hello", metadata={}, groups=[], public=True
-        ),
-        MatrixMetadataDTO(
-            id="id3",
-            name=None,
-            metadata={"tag": "hello"},
-            groups=[GroupDTO(id="groupA", name="groupA")],
+    res = service.list("dataset", True, botA)
+    dataset_repo.query.assert_called_with("dataset", botA.user.impersonator)
+    assert len(res) == 1
+    assert res[0] == MatrixDataSetDTO(
+        id="some id",
+        name="datasetA",
+        public=True,
+        owner=UserInfo(id=userA.user.id, name="userA"),
+        groups=[GroupDTO(id="groupA", name="groupA")],
+        created_at=somedate,
+        updated_at=somedate,
+        matrices=[
+            MatrixInfoDTO(name="A", id="m1"),
+            MatrixInfoDTO(name="B", id="m2"),
+        ],
+    )
+    service.list("dataset", False, botA)
+    dataset_repo.query.assert_called_with("dataset", None)
+    res = service.list("dataset", False, userB)
+    assert len(res) == 2
+
+    with pytest.raises(MatrixDataSetNotFound):
+        dataset_repo.get.return_value = None
+        service.update_dataset(
+            "dataset_id",
+            MatrixDataSetUpdateDTO(
+                name="datasetA",
+                groups=["groupA"],
+                public=True,
+            ),
+            userA,
+        )
+
+    dataset_repo.get.return_value = MatrixDataSet(
+        id="some id",
+        name="datasetA",
+        public=True,
+        owner_id=userA.user.id,
+        owner=Identity(id=userA.user.id, name="userA", type="users"),
+        groups=[Group(id="groupA", name="groupA")],
+        created_at=somedate,
+        updated_at=somedate,
+        matrices=[
+            MatrixDataSetRelation(name="A", matrix=Matrix(id="m1")),
+            MatrixDataSetRelation(name="B", matrix=Matrix(id="m2")),
+        ],
+    )
+    with pytest.raises(UserHasNotPermissionError):
+        service.update_dataset(
+            "dataset_id",
+            MatrixDataSetUpdateDTO(
+                name="datasetA",
+                groups=["groupA"],
+                public=True,
+            ),
+            userB,
+        )
+
+    user_service.get_group.return_value = Group(id="groupB", name="groupB")
+    service.update_dataset(
+        "some id",
+        MatrixDataSetUpdateDTO(
+            name="datasetA bis",
+            groups=["groupB"],
             public=False,
         ),
-    ]
-    resB = service.list(MatrixUserMetadataQuery(), params=userB)
-    assert resB == [
-        MatrixMetadataDTO(
-            id="id", name="hello", metadata={}, groups=[], public=True
-        ),
-        MatrixMetadataDTO(
-            id="id2", name="hello", metadata={}, groups=[], public=False
-        ),
-    ]
-    resAbot = service.list(MatrixUserMetadataQuery(), params=botA)
-    assert resAbot == [
-        MatrixMetadataDTO(
-            id="id", name="hello", metadata={}, groups=[], public=True
-        ),
-        MatrixMetadataDTO(
-            id="id3",
-            name=None,
-            metadata={"tag": "hello"},
-            groups=[GroupDTO(id="groupA", name="groupA")],
+        botA,
+    )
+    user_service.get_group.assert_called_with("groupB", botA)
+    dataset_repo.save.assert_called_with(
+        MatrixDataSet(
+            id="some id",
+            name="datasetA bis",
             public=False,
-        ),
-    ]
+            groups=[Group(id="groupB", name="groupB")],
+            updated_at=ANY,
+        )
+    )
+
+    service.delete_dataset("dataset")
+    dataset_repo.delete.assert_called_once()

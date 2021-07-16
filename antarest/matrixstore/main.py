@@ -8,7 +8,7 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.repository import (
     MatrixRepository,
     MatrixContentRepository,
-    MatrixMetadataRepository,
+    MatrixDataSetRepository,
 )
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.web import create_matrix_api
@@ -36,11 +36,11 @@ def build_matrixstore(
     if service is None:
         repo = MatrixRepository()
         content = MatrixContentRepository(config)
-        metadata_repo = MatrixMetadataRepository()
+        dataset_repo = MatrixDataSetRepository()
 
         service = MatrixService(
             repo=repo,
-            repo_meta=metadata_repo,
+            repo_dataset=dataset_repo,
             content=content,
             user_service=user_service,
         )

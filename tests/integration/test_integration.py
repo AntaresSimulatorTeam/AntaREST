@@ -1,4 +1,5 @@
 import time
+from unittest.mock import ANY
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -313,37 +314,32 @@ def test_matrix(app: FastAPI):
 
     matrix_id = stored["id"]
 
-    res = client.put(
-        f"/v1/matrix/{matrix_id}/metadata?name=test",
-        json={"foo": "bar"},
+    res = client.post(
+        f"/v1/matrixdataset",
+        json={
+            "metadata": {
+                "name": "mydataset",
+                "groups": [],
+                "public": False,
+            },
+            "matrices": [{"id": matrix_id, "name": "mymatrix"}],
+        },
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res.json() == {
-        "id": matrix_id,
-        "name": "test",
-        "metadata": {"foo": "bar"},
-        "public": False,
-        "groups": [],
-    }
+    assert res.status_code == 200
 
     res = client.post(
-        f"/v1/matrix/_search",
-        json={"name": "te"},
+        f"/v1/matrixdataset/_search?name=myda",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res.json() == [
-        {
-            "id": matrix_id,
-            "name": "test",
-            "metadata": {"foo": "bar"},
-            "public": False,
-            "groups": [],
-        }
-    ]
+    results = res.json()
+    assert len(results) == 1
+    assert len(results[0]["matrices"]) == 1
+    assert results[0]["matrices"][0]["id"] == matrix_id
 
 
 def test_area_management(app: FastAPI):
