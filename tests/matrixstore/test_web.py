@@ -81,3 +81,17 @@ def test_get() -> None:
     assert res.status_code == 200
     assert res.json() == matrix.dict()
     service.get.assert_called_once_with("123")
+
+
+@pytest.mark.unit_test
+def test_delete() -> None:
+    id = "123"
+    service = Mock()
+    service.delete.return_value = id
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.delete(
+        "/v1/matrixdataset/123", headers=create_auth_token(app)
+    )
+    assert res.status_code == 200

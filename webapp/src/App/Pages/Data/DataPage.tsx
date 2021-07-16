@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { AppState } from '../../reducers';
 import GenericSettingView from '../../../components/Settings/GenericSettingView';
 import DataView from '../../../components/Data/DataView';
-import { getMatrixList } from '../../../services/api/matrix';
+import { deleteDataSet, getMatrixList } from '../../../services/api/matrix';
 import { MatrixDataSetDTO, IDType } from '../../../common/types';
 import DataModal from './DataModal';
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
@@ -48,7 +48,7 @@ const Data = (props: PropTypes) => {
 
   const manageDataDeletion = async () => {
     try {
-      // await deleteUser(idForDeletion as number);
+      await deleteDataSet(idForDeletion as string);
       setDataList(dataList.filter((item) => item.id !== idForDeletion));
       enqueueSnackbar(t('data:onMatrixDeleteSuccess'), { variant: 'success' });
     } catch (e) {
@@ -66,8 +66,6 @@ const Data = (props: PropTypes) => {
     const tmpList = ([] as Array<MatrixDataSetDTO>).concat(dataList);
     const index = tmpList.findIndex((elm) => elm.id === newData.id);
     if (index >= 0) {
-      console.log('ON PREVIOUS: ', tmpList[index])
-      console.log('ON CREATION: ', newData)
       tmpList[index] = newData;
       setDataList(tmpList);
     } else {
@@ -79,13 +77,14 @@ const Data = (props: PropTypes) => {
     /*
       Afficher la modale
     */
+    console.log(datasetId, ', ', matrixId);
   };
 
   useEffect(() => {
     const init = async () => {
       try {
-         const matrix = await getMatrixList();
-         setDataList(matrix);
+        const matrix = await getMatrixList();
+        setDataList(matrix);
       } catch (e) {
         enqueueSnackbar(t('data:matrixError'), { variant: 'error' });
       }

@@ -63,7 +63,6 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
         matrices: List[MatrixInfoDTO] = Body(...),
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        print("HELLO")
         request_params = RequestParameters(user=user)
         return service.create_dataset(
             metadata, matrices, request_params
@@ -76,9 +75,7 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         request_params = RequestParameters(user=user)
-        s = service.update_dataset(id, metadata, request_params)
-        print("AFTER")
-        return s.to_dto()
+        return service.update_dataset(id, metadata, request_params).to_dto()
 
     @bp.get("/matrixdataset/_search", tags=[APITag.matrix])
     def query_datasets(
@@ -88,5 +85,13 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
     ) -> Any:
         request_params = RequestParameters(user=user)
         return service.list(name, filter_own, request_params)
+
+    @bp.delete("/matrixdataset/{id}", tags=[APITag.matrix])
+    def delete_datasets(
+        id: str,
+        user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        request_params = RequestParameters(user=user)
+        service.delete_dataset(id, request_params)
 
     return bp

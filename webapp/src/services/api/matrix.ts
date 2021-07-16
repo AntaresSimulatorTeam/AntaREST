@@ -2,8 +2,8 @@ import { AxiosRequestConfig } from 'axios';
 import client from './client';
 import { MatrixDTO, MatrixDataSetDTO, MatrixInfoDTO, MatrixDataSetUpdateDTO } from '../../common/types';
 
-export const getMatrixList = async (name: string = "", filter_own: boolean = false): Promise<Array<MatrixDataSetDTO>> => {
-  const res = await client.get(`/v1/matrixdataset/_search?name=${encodeURI(name)}&filter_own=${filter_own}`);
+export const getMatrixList = async (name = '', filterOwn = false): Promise<Array<MatrixDataSetDTO>> => {
+  const res = await client.get(`/v1/matrixdataset/_search?name=${encodeURI(name)}&filter_own=${filterOwn}`);
   return res.data;
 };
 
@@ -40,8 +40,12 @@ export const createDataSet = async (metadata: MatrixDataSetUpdateDTO, matrices: 
 };
 
 export const updateDataSet = async (id: string, metadata: MatrixDataSetUpdateDTO): Promise<MatrixDataSetUpdateDTO> => {
-  console.log('UPDATE: ', metadata);
   const res = await client.put(`/v1/matrixdataset/${id}/metadata`, metadata);
+  return res.data;
+};
+
+export const deleteDataSet = async (id: string): Promise<any> => {
+  const res = await client.delete(`/v1/matrixdataset/${id}`);
   return res.data;
 };
 

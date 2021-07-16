@@ -297,5 +297,5 @@ def test_dataset_lifecycle():
         )
     )
 
-    service.delete_dataset("dataset")
+    service.delete_dataset("dataset", userA)
     dataset_repo.delete.assert_called_once()

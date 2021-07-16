@@ -175,21 +175,16 @@ class MatrixService:
     ) -> MatrixDataSet:
         if not params.user:
             raise UserHasNotPermissionError()
-
-        print("DATASET")
         dataset = self.repo_dataset.get(dataset_id)
         if dataset is None:
             raise MatrixDataSetNotFound()
-        print("CHECK")
         MatrixService.check_access_permission(
             dataset, params.user, write=True, raise_error=True
         )
-        print("GROUP")
         groups = [
             self.user_service.get_group(group_id, params)
             for group_id in dataset_info.groups
         ]
-        print("UPDATED")
         updated_dataset = MatrixDataSet(
             id=dataset_id,
             name=dataset_info.name,
@@ -197,7 +192,6 @@ class MatrixService:
             groups=groups,
             updated_at=datetime.now(),
         )
-        print("SAVE")
         return self.repo_dataset.save(updated_dataset)
 
     def list(
@@ -239,8 +233,15 @@ class MatrixService:
             > 0
         ]
 
-    def delete_dataset(self, id: str) -> None:
+    def delete_dataset(self, id: str, params: RequestParameters) -> str:
+        if not params.user:
+            raise UserHasNotPermissionError()
+        dataset = self.repo_dataset.get(id)
+        MatrixService.check_access_permission(
+            dataset, params.user, write=True, raise_error=True
+        )
         self.repo_dataset.delete(id)
+        return id
 
     def get(self, id: str) -> Optional[MatrixDTO]:
         data = self.repo_content.get(id)

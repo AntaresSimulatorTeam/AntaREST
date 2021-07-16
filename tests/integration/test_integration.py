@@ -332,6 +332,15 @@ def test_matrix(app: FastAPI):
     assert len(results[0]["matrices"]) == 1
     assert results[0]["matrices"][0]["id"] == matrix_id
 
+    dataset_id = results[0]["id"]
+    res = client.delete(
+        f"/v1/matrixdataset/{dataset_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
 
 def test_area_management(app: FastAPI):
     client = TestClient(app, raise_server_exceptions=False)
