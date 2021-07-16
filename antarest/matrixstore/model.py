@@ -14,6 +14,7 @@ from sqlalchemy.orm.collections import attribute_mapped_collection  # type: igno
 from antarest.common.persistence import Base
 from antarest.login.model import Identity, Group, GroupDTO, UserInfo
 
+
 class Matrix(Base):  # type: ignore
     __tablename__ = "matrix"
 

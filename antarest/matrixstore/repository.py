@@ -30,9 +30,9 @@ class MatrixDataSetRepository:
             exists().where(MatrixDataSet.id == matrix_user_metadata.id)
         ).scalar()
         if res:
-            db.session.merge(matrix_user_metadata)
+            matrix_user_metadata = db.session.merge(matrix_user_metadata)
         else:
-            db.session.add(matrix_user_metadata)
+            matrix_user_metadata = db.session.add(matrix_user_metadata)
         db.session.commit()
 
         self.logger.debug(

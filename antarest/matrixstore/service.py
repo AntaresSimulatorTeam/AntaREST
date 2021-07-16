@@ -83,7 +83,11 @@ class MatrixService:
 
     def create_by_importation(self, file: bytes) -> List[MatrixInfoDTO]:
         input_zip = ZipFile(BytesIO(file))
-        files = {info.filename: input_zip.read(info.filename) for info in input_zip.infolist() if not info.is_dir()}
+        files = {
+            info.filename: input_zip.read(info.filename)
+            for info in input_zip.infolist()
+            if not info.is_dir()
+        }
         matrix_info: List[MatrixInfoDTO] = []
         for name in files.keys():
             if all(
@@ -93,9 +97,9 @@ class MatrixService:
                 ]
             ):
                 id = self.file_importation(files[name])
-                path = name.split(sep='/')
+                path = name.split(sep="/")
                 length = len(path)
-                filename = path[length-1] if length > 0 else ""
+                filename = path[length - 1] if length > 0 else ""
                 matrix_info.append(MatrixInfoDTO(id=id, name=filename))
         return matrix_info
 
@@ -172,20 +176,20 @@ class MatrixService:
         if not params.user:
             raise UserHasNotPermissionError()
 
-        print('DATASET')
+        print("DATASET")
         dataset = self.repo_dataset.get(dataset_id)
         if dataset is None:
             raise MatrixDataSetNotFound()
-        print('CHECK')
+        print("CHECK")
         MatrixService.check_access_permission(
             dataset, params.user, write=True, raise_error=True
         )
-        print('GROUP')
+        print("GROUP")
         groups = [
             self.user_service.get_group(group_id, params)
             for group_id in dataset_info.groups
         ]
-        print('UPDATED')
+        print("UPDATED")
         updated_dataset = MatrixDataSet(
             id=dataset_id,
             name=dataset_info.name,
@@ -193,7 +197,7 @@ class MatrixService:
             groups=groups,
             updated_at=datetime.now(),
         )
-        print('SAVE')
+        print("SAVE")
         return self.repo_dataset.save(updated_dataset)
 
     def list(

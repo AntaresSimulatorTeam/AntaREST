@@ -63,7 +63,7 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
         matrices: List[MatrixInfoDTO] = Body(...),
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        print('HELLO')
+        print("HELLO")
         request_params = RequestParameters(user=user)
         return service.create_dataset(
             metadata, matrices, request_params
@@ -77,7 +77,7 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
     ) -> Any:
         request_params = RequestParameters(user=user)
         s = service.update_dataset(id, metadata, request_params)
-        print('AFTER')
+        print("AFTER")
         return s.to_dto()
 
     @bp.get("/matrixdataset/_search", tags=[APITag.matrix])
