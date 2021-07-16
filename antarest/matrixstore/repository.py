@@ -32,7 +32,7 @@ class MatrixDataSetRepository:
         if res:
             matrix_user_metadata = db.session.merge(matrix_user_metadata)
         else:
-            matrix_user_metadata = db.session.add(matrix_user_metadata)
+            db.session.add(matrix_user_metadata)
         db.session.commit()
 
         self.logger.debug(

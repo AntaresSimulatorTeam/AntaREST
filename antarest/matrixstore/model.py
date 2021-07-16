@@ -74,7 +74,7 @@ class MatrixDataSetRelation(Base):  # type: ignore
         ForeignKey("matrix.id", name="fk_matrixdatasetrelation_matrix_id"),
         primary_key=True,
     )
-    name = Column(String)
+    name = Column(String, primary_key=True)
     matrix = relationship(Matrix)
 
     def __eq__(self, other: Any) -> bool:
