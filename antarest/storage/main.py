@@ -6,16 +6,19 @@ from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
-from antarest.storage.business.exporter_service import ExporterService
-from antarest.storage.business.importer_service import ImporterService
-from antarest.storage.business.patch_service import PatchService
-from antarest.storage.business.raw_study_service import RawStudyService
-from antarest.storage.business.uri_resolver_service import UriResolverService
-from antarest.storage.business.watcher import Watcher
+from antarest.storage.business.rawstudy.exporter_service import ExporterService
+from antarest.storage.business.rawstudy.importer_service import ImporterService
+from antarest.storage.business.rawstudy.patch_service import PatchService
+from antarest.storage.business.rawstudy.raw_study_service import (
+    RawStudyService,
+)
+from antarest.storage.business.common.uri_resolver_service import (
+    UriResolverService,
+)
+from antarest.storage.business.rawstudy.watcher import Watcher
 from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.repository.patch_repository import PatchRepository
-from antarest.storage.repository.study import StudyMetadataRepository
-from antarest.storage.service import StorageService
+from antarest.storage.repository.study_metadata import StudyMetadataRepository
+from antarest.storage.service import StudyService
 from antarest.storage.web.areas_blueprint import create_study_area_routes
 from antarest.storage.web.studies_blueprint import create_study_routes
 
@@ -26,10 +29,10 @@ def build_storage(
     user_service: LoginService,
     matrix_service: MatrixService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
-    storage_service: Optional[StorageService] = None,
+    storage_service: Optional[StudyService] = None,
     patch_service: Optional[PatchService] = None,
     event_bus: IEventBus = DummyEventBusService(),
-) -> StorageService:
+) -> StudyService:
     """
     Storage module linking dependencies.
 
@@ -53,7 +56,7 @@ def build_storage(
     study_factory = StudyFactory(matrix=matrix_service, resolver=resolver)
     metadata_repository = metadata_repository or StudyMetadataRepository()
 
-    patch_service = patch_service or PatchService(PatchRepository())
+    patch_service = patch_service or PatchService()
 
     study_service = RawStudyService(
         config=config,
@@ -71,7 +74,7 @@ def build_storage(
         config=config,
     )
 
-    storage_service = storage_service or StorageService(
+    storage_service = storage_service or StudyService(
         study_service=study_service,
         importer_service=importer_service,
         exporter_service=exporter_service,

@@ -1,4 +1,6 @@
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.folder_node import FolderNode
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.root.desktop import Desktop
@@ -20,7 +22,7 @@ class FileStudyTree(FolderNode):
     Top level node of antares tree structure
     """
 
-    def build(self, config: StudyConfig) -> TREE:
+    def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {
             "Desktop": Desktop(self.context, config.next_file("Desktop.ini")),
             "study": StudyAntares(

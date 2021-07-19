@@ -3,7 +3,9 @@ from typing import List, Optional, Union
 
 from antarest.core.custom_types import JSON
 from antarest.matrixstore.model import MatrixDTO
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.exceptions import (
     DenormalizationException,
@@ -13,7 +15,7 @@ from antarest.storage.repository.filesystem.lazy_node import LazyNode
 
 class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):
     def __init__(
-        self, context: ContextServer, config: StudyConfig, freq: str
+        self, context: ContextServer, config: FileStudyTreeConfig, freq: str
     ) -> None:
         LazyNode.__init__(self, context, config)
         self.freq = freq

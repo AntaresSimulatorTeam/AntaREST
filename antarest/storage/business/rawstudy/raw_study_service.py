@@ -7,8 +7,7 @@ from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
-from antarest.storage.business.patch_service import PatchService
-from antarest.storage.business.storage_service_utils import StorageServiceUtils
+from antarest.storage.business.rawstudy.patch_service import PatchService
 from antarest.storage.model import (
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
@@ -18,14 +17,17 @@ from antarest.storage.model import (
     StudySimResultDTO,
     StudySimSettingsDTO,
     PatchOutputs,
+    Study,
 )
 from antarest.storage.repository.filesystem.config.model import (
-    StudyConfig,
+    FileStudyTreeConfig,
     Simulation,
 )
 from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.repository.filesystem.root.filestudytree import FileStudyTree
-from antarest.storage.web.exceptions import StudyNotFoundError
+from antarest.storage.repository.filesystem.root.filestudytree import (
+    FileStudyTree,
+)
+from antarest.core.exceptions import StudyNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +123,9 @@ class RawStudyService:
         """
         return (self.get_study_path(metadata) / "study.antares").is_file()
 
-    def get_study(self, metadata: RawStudy) -> Tuple[StudyConfig, FileStudyTree]:
+    def get_study(
+        self, metadata: RawStudy
+    ) -> Tuple[FileStudyTreeConfig, FileStudyTree]:
         """
         Fetch a study object and its config
         Args:
@@ -168,7 +172,7 @@ class RawStudyService:
 
         """
         file_settings = {}
-        config = StudyConfig(
+        config = FileStudyTreeConfig(
             study_path=self.get_study_path(study), study_id=""
         )
         raw_study = self.study_factory.create_from_config(config)
@@ -253,7 +257,7 @@ class RawStudyService:
             zip_output.extractall(path=path_study)
 
         _, study = self.study_factory.create_from_fs(path_study, metadata.id)
-        StorageServiceUtils.update_antares_info(metadata, study)
+        RawStudyService._update_antares_info(metadata, study)
 
         metadata.path = str(path_study)
         return metadata
@@ -287,7 +291,7 @@ class RawStudyService:
         _, study = self.study_factory.create_from_fs(
             dest_path, study_id=dest_meta.id
         )
-        StorageServiceUtils.update_antares_info(dest_meta, study)
+        RawStudyService._update_antares_info(dest_meta, study)
 
         del study
         return dest_meta
@@ -404,3 +408,25 @@ class RawStudyService:
                     )
                 )
         return results
+
+    @staticmethod
+    def _update_antares_info(
+        metadata: Study, studytree: FileStudyTree
+    ) -> None:
+        """
+        Update study.antares data
+        Args:
+            metadata: study information
+            studytree: study tree
+
+        Returns: none, update is directly apply on study_data
+
+        """
+        study_data_info = studytree.get(["study"])
+        study_data_info["antares"]["caption"] = metadata.name
+        study_data_info["antares"]["created"] = metadata.created_at.timestamp()
+        study_data_info["antares"][
+            "lastsave"
+        ] = metadata.updated_at.timestamp()
+        study_data_info["antares"]["version"] = metadata.version
+        studytree.save(study_data_info, ["study"])

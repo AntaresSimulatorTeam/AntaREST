@@ -5,7 +5,7 @@ import pytest
 from antarest.core.custom_types import SUB_JSON
 from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.roles import RoleType
-from antarest.storage.service import StorageService
+from antarest.storage.service import StudyService
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -20,7 +20,7 @@ ADMIN = JWTUser(
 
 
 def assert_with_errors(
-    storage_service: StorageService,
+    storage_service: StudyService,
     url: str,
     new: SUB_JSON,
     expected: SUB_JSON = None,

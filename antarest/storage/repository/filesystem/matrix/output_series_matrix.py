@@ -4,7 +4,9 @@ import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 
 from antarest.core.custom_types import JSON
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.matrix.date_serializer import (
     IDateMatrixSerializer,
@@ -25,7 +27,7 @@ class OutputSeriesMatrix(MatrixNode):
     def __init__(
         self,
         context: ContextServer,
-        config: StudyConfig,
+        config: FileStudyTreeConfig,
         date_serializer: IDateMatrixSerializer,
         head_writer: HeadWriter,
         freq: str,
@@ -34,7 +36,7 @@ class OutputSeriesMatrix(MatrixNode):
         self.date_serializer = date_serializer
         self.head_writer = head_writer
 
-    def build(self, config: StudyConfig) -> TREE:
+    def build(self, config: FileStudyTreeConfig) -> TREE:
         pass  # End of tree
 
     def load(

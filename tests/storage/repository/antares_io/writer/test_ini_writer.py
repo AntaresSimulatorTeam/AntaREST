@@ -3,7 +3,7 @@ from typing import Callable
 
 import pytest
 
-from antarest.storage.repository.antares_io.writer.ini_writer import IniWriter
+from antarest.storage.business.rawstudy.io.writer.ini_writer import IniWriter
 
 
 @pytest.mark.unit_test

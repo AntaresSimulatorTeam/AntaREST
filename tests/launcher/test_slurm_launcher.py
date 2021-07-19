@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from antarest.core.config import Config, LauncherConfig, SlurmConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.launcher.business.slurm_launcher.slurm_launcher import (
+from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
 )
 from antarest.launcher.model import JobStatus

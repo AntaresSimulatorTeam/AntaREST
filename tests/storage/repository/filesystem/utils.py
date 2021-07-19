@@ -2,7 +2,9 @@ from pathlib import Path
 from typing import Optional, List
 from zipfile import ZipFile
 
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.folder_node import FolderNode
 from antarest.storage.repository.filesystem.inode import TREE, INode
@@ -15,7 +17,7 @@ class TestSubNode(INode[int, int, int]):
     def denormalize(self) -> None:
         pass
 
-    def build(self, config: StudyConfig) -> "TREE":
+    def build(self, config: FileStudyTreeConfig) -> "TREE":
         pass
 
     def __init__(self, value: int):
@@ -40,12 +42,15 @@ class TestSubNode(INode[int, int, int]):
 
 class TestMiddleNode(FolderNode):
     def __init__(
-        self, context: ContextServer, config: StudyConfig, children: TREE
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        children: TREE,
     ):
         FolderNode.__init__(self, context, config)
         self.children = children
 
-    def build(self, config: StudyConfig) -> TREE:
+    def build(self, config: FileStudyTreeConfig) -> TREE:
         return self.children
 
 

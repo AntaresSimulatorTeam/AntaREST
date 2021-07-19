@@ -3,17 +3,17 @@ from typing import Dict
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.launcher.business.abstractlauncher import (
+from antarest.launcher.adapters.abstractlauncher import (
     AbstractLauncher,
     LauncherCallbacks,
 )
-from antarest.launcher.business.local_launcher.local_launcher import (
+from antarest.launcher.adapters.local_launcher.local_launcher import (
     LocalLauncher,
 )
-from antarest.launcher.business.slurm_launcher.slurm_launcher import (
+from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
 )
-from antarest.storage.service import StorageService
+from antarest.storage.service import StudyService
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class FactoryLauncher:
     def build_launcher(
         self,
         config: Config,
-        storage_service: StorageService,
+        storage_service: StudyService,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
     ) -> Dict[str, AbstractLauncher]:

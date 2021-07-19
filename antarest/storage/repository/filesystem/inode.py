@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, TypeVar, Generic, Any
 
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 
 G = TypeVar("G")
 S = TypeVar("S")
@@ -14,7 +16,7 @@ class INode(ABC, Generic[G, S, V]):
     """
 
     @abstractmethod
-    def build(self, config: StudyConfig) -> "TREE":
+    def build(self, config: FileStudyTreeConfig) -> "TREE":
         """
         build children (next tree level) according to study config
         Args:

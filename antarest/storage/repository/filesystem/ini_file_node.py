@@ -1,10 +1,12 @@
 from typing import List, Optional, cast, Dict, Any
 
 from antarest.core.custom_types import JSON, SUB_JSON
-from antarest.storage.repository.antares_io.reader import IniReader
-from antarest.storage.repository.antares_io.reader.ini_reader import IReader
-from antarest.storage.repository.antares_io.writer.ini_writer import IniWriter
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.business.rawstudy.io.reader import IniReader
+from antarest.storage.business.rawstudy.io.reader.ini_reader import IReader
+from antarest.storage.business.rawstudy.io.writer.ini_writer import IniWriter
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.inode import INode, TREE
 from antarest.storage.repository.filesystem.context import ContextServer
 
@@ -22,7 +24,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
         context: ContextServer,
-        config: StudyConfig,
+        config: FileStudyTreeConfig,
         types: Dict[str, Any],
         reader: Optional[IReader] = None,
     ):
@@ -32,7 +34,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self.reader = reader or IniReader()
         self.writer = IniWriter()
 
-    def build(self, config: StudyConfig) -> TREE:
+    def build(self, config: FileStudyTreeConfig) -> TREE:
         pass  # end node has nothing to build
 
     def get(

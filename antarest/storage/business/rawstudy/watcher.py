@@ -10,7 +10,7 @@ from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
-from antarest.storage.service import StorageService
+from antarest.storage.service import StudyService
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class Watcher:
     LOCK = Path("watcher")
     DELAY = 2
 
-    def __init__(self, config: Config, service: StorageService):
+    def __init__(self, config: Config, service: StudyService):
         self.service = service
         self.config = config
 

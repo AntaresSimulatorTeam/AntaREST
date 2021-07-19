@@ -1,6 +1,8 @@
 from typing import List, Optional
 
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.lazy_node import LazyNode
 from antarest.storage.repository.filesystem.context import ContextServer
@@ -11,10 +13,10 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
     Basic left which handle text file as like with any parsing / serialization
     """
 
-    def __init__(self, context: ContextServer, config: StudyConfig):
+    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         LazyNode.__init__(self, config=config, context=context)
 
-    def build(self, config: StudyConfig) -> TREE:
+    def build(self, config: FileStudyTreeConfig) -> TREE:
         pass  # end node has nothing to build
 
     def get_lazy_content(

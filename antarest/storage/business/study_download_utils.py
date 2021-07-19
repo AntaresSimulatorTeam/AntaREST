@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.rawstudy.raw_study_service import (
+    RawStudyService,
+)
 from antarest.storage.model import (
     MatrixAggregationResult,
     RawStudy,
@@ -21,9 +23,11 @@ from antarest.storage.repository.filesystem.folder_node import (
     ChildNotFoundError,
     FilterError,
 )
-from antarest.storage.repository.filesystem.root.filestudytree import FileStudyTree
+from antarest.storage.repository.filesystem.root.filestudytree import (
+    FileStudyTree,
+)
 from antarest.storage.repository.filesystem.config.model import (
-    StudyConfig,
+    FileStudyTreeConfig,
     Area,
 )
 
@@ -240,7 +244,7 @@ class StudyDownloader:
         matrix: MatrixAggregationResult,
         prefix: str,
         year: int,
-        config: StudyConfig,
+        config: FileStudyTreeConfig,
         study: FileStudyTree,
         url: str,
         data: StudyDownloadDTO,
@@ -262,7 +266,7 @@ class StudyDownloader:
     @staticmethod
     def years_output_filter(
         matrix: MatrixAggregationResult,
-        config: StudyConfig,
+        config: FileStudyTreeConfig,
         output_id: str,
         study: FileStudyTree,
         url: str,

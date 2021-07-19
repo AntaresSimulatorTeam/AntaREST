@@ -1,5 +1,5 @@
 from antarest.storage.repository.filesystem.config.model import (
-    StudyConfig,
+    FileStudyTreeConfig,
     Simulation,
 )
 from antarest.storage.repository.filesystem.context import ContextServer
@@ -14,13 +14,13 @@ class OutputSimulationModeMcInd(FolderNode):
     def __init__(
         self,
         context: ContextServer,
-        config: StudyConfig,
+        config: FileStudyTreeConfig,
         simulation: Simulation,
     ):
         FolderNode.__init__(self, context, config)
         self.simulation = simulation
 
-    def build(self, config: StudyConfig) -> TREE:
+    def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {
             str("{:05d}".format(scn)): OutputSimulationModeMcIndScn(
                 self.context, config.next_file("{:05d}".format(scn))

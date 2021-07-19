@@ -26,7 +26,7 @@ from antarest.storage.model import (
 )
 from antarest.core.config import Config
 from antarest.storage.business.study_download_utils import StudyDownloader
-from antarest.storage.service import StorageService
+from antarest.storage.service import StudyService
 
 
 def sanitize_uuid(uuid: str) -> str:
@@ -38,7 +38,7 @@ def sanitize_study_name(name: str) -> str:
 
 
 def create_study_routes(
-    storage_service: StorageService, config: Config
+    storage_service: StudyService, config: Config
 ) -> APIRouter:
     """
     Endpoint implementation for studies management

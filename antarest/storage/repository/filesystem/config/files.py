@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
 from antarest.core.custom_types import JSON
-from antarest.storage.repository.antares_io.reader import (
+from antarest.storage.business.rawstudy.io.reader import (
     IniReader,
     SetsIniReader,
 )
 from antarest.storage.repository.filesystem.config.model import (
-    StudyConfig,
+    FileStudyTreeConfig,
     Area,
     Simulation,
     Link,
@@ -24,7 +24,7 @@ class ConfigPathBuilder:
     """
 
     @staticmethod
-    def build(study_path: Path, study_id: str) -> "StudyConfig":
+    def build(study_path: Path, study_id: str) -> "FileStudyTreeConfig":
         """
         Extract data from filesystem to build config study.
         Args:
@@ -36,7 +36,7 @@ class ConfigPathBuilder:
         """
         (sns,) = ConfigPathBuilder._parse_parameters(study_path)
 
-        return StudyConfig(
+        return FileStudyTreeConfig(
             study_path=study_path,
             study_id=study_id,
             areas=ConfigPathBuilder._parse_areas(study_path),

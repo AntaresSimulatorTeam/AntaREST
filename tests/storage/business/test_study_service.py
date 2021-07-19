@@ -10,10 +10,11 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.storage.business.storage_service_utils import StorageServiceUtils
-from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.rawstudy.raw_study_service import (
+    RawStudyService,
+)
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.storage.web.exceptions import (
+from antarest.core.exceptions import (
     StudyNotFoundError,
 )
 

@@ -6,7 +6,7 @@ from uuid import UUID
 from antarest.core.config import Config
 from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobStatus, LogType
-from antarest.storage.service import StorageService
+from antarest.storage.service import StudyService
 
 
 class LauncherInitException(Exception):
@@ -23,7 +23,7 @@ class AbstractLauncher(ABC):
     def __init__(
         self,
         config: Config,
-        storage_service: StorageService,
+        storage_service: StudyService,
         callbacks: LauncherCallbacks,
     ):
         self.config = config

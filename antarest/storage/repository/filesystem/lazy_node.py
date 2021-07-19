@@ -2,7 +2,9 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional, List, Generic, Union, cast
 
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.inode import INode, S, G, V
 
@@ -15,7 +17,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     def __init__(
         self,
         context: ContextServer,
-        config: StudyConfig,
+        config: FileStudyTreeConfig,
     ) -> None:
         self.context = context
         self.config = config

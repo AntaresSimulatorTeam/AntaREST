@@ -7,13 +7,15 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.config import Config
-from antarest.storage.business.importer_service import (
+from antarest.storage.business.rawstudy.importer_service import (
     ImporterService,
     fix_study_root,
 )
-from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.rawstudy.raw_study_service import (
+    RawStudyService,
+)
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.storage.web.exceptions import (
+from antarest.core.exceptions import (
     IncorrectPathError,
     BadZipBinary,
     StudyValidationError,

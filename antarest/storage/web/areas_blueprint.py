@@ -14,11 +14,11 @@ from antarest.storage.business.area_management import (
     AreaCreationDTO,
     AreaPatchUpdateDTO,
 )
-from antarest.storage.service import StorageService
+from antarest.storage.service import StudyService
 
 
 def create_study_area_routes(
-    storage_service: StorageService, config: Config
+    storage_service: StudyService, config: Config
 ) -> APIRouter:
     """
     Endpoint implementation for studies area management

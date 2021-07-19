@@ -13,10 +13,10 @@ from antarest.core.config import (
 )
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.storage.main import build_storage
-from antarest.storage.service import StorageService
+from antarest.storage.service import StudyService
 
 
-def assert_url_content(storage_service: StorageService, url: str) -> bytes:
+def assert_url_content(storage_service: StudyService, url: str) -> bytes:
     app = FastAPI(title=__name__)
     build_storage(
         app,

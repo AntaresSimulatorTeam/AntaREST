@@ -2,7 +2,9 @@ from abc import abstractmethod, ABC
 from typing import List, Optional, Tuple, Union, Dict
 
 from antarest.core.custom_types import JSON
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.inode import INode, TREE
 from antarest.storage.repository.filesystem.context import ContextServer
 
@@ -22,12 +24,14 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
     Strucuture is implemented in antarest.storage.repository.filesystem.root
     """
 
-    def __init__(self, context: ContextServer, config: StudyConfig) -> None:
+    def __init__(
+        self, context: ContextServer, config: FileStudyTreeConfig
+    ) -> None:
         self.config = config
         self.context = context
 
     @abstractmethod
-    def build(self, config: StudyConfig) -> TREE:
+    def build(self, config: FileStudyTreeConfig) -> TREE:
         pass
 
     def _forward_get(

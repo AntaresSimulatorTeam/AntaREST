@@ -1,25 +1,33 @@
+from pathlib import Path
+
 from antarest.core.custom_types import JSON
 from antarest.storage.model import Patch, PatchOutputs, RawStudy
-from antarest.storage.repository.patch_repository import PatchRepository
 
 
 class PatchService:
-    def __init__(self, repository: PatchRepository) -> None:
-        self.repository: PatchRepository = repository
-
     def get(self, study: RawStudy) -> Patch:
-        return self.repository.get(study)
+        patch_path = Path(study.path) / "patch.json"
+        if patch_path.exists():
+            return Patch.parse_file(patch_path)
+        return Patch()
 
     def set_reference_output(
         self, study: RawStudy, output_id: str, status: bool = True
     ) -> None:
-        patch = self.repository.get(study)
+        patch = self.get(study)
         if patch.outputs is not None:
             patch.outputs.reference = output_id if status else None
         elif status:
             patch.outputs = PatchOutputs(reference=output_id)
-        self.repository.save(study, patch)
+        self.save(study, patch)
+
+    def save(self, study: RawStudy, patch: Patch) -> None:
+        patch_content = patch.json()
+        patch_path = Path(study.path) / "patch.json"
+        patch_path.write_text(patch_content)
 
     def patch(self, study: RawStudy, new_patch_content: JSON) -> None:
         new_patch = Patch.parse_obj(new_patch_content)
-        self.repository.patch(study, new_patch)
+        old_patch = self.get(study)
+        merged_path = old_patch.patch(new_patch)
+        self.save(study, merged_path)

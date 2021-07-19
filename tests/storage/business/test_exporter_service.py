@@ -7,8 +7,10 @@ from checksumdir import dirhash
 import pytest
 
 from antarest.core.config import Config
-from antarest.storage.business.exporter_service import ExporterService
-from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.rawstudy.exporter_service import ExporterService
+from antarest.storage.business.rawstudy.raw_study_service import (
+    RawStudyService,
+)
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 
 

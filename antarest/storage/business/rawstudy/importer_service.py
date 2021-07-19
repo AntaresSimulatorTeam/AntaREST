@@ -6,12 +6,15 @@ from pathlib import Path
 from typing import IO, Optional, Union
 from uuid import uuid4
 
-from antarest.storage.business.raw_study_service import RawStudyService
-from antarest.storage.business.storage_service_utils import StorageServiceUtils
+from antarest.storage.business.rawstudy.raw_study_service import (
+    RawStudyService,
+)
+
+from antarest.core.utils.utils import extract_zip
 from antarest.storage.model import Study, RawStudy
-from antarest.storage.repository.antares_io.reader import IniReader
+from antarest.storage.business.rawstudy.io.reader import IniReader
 from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.web.exceptions import (
+from antarest.core.exceptions import (
     BadOutputError,
     StudyValidationError,
 )
@@ -46,7 +49,7 @@ class ImporterService:
         path_study.mkdir()
 
         try:
-            StorageServiceUtils.extract_zip(stream, path_study)
+            extract_zip(stream, path_study)
             fix_study_root(path_study)
             self.study_service.update_from_raw_meta(metadata)
 
@@ -80,7 +83,7 @@ class ImporterService:
                 if output != path_output:
                     shutil.copytree(output, path_output / "imported")
             else:
-                StorageServiceUtils.extract_zip(output, path_output)
+                extract_zip(output, path_output)
 
             fix_study_root(path_output)
 

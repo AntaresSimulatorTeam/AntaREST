@@ -5,6 +5,8 @@ from time import time
 from typing import List, IO, Optional, cast, Union
 from uuid import uuid4
 
+from markupsafe import escape
+
 from antarest.core.custom_types import JSON
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import JWTUser
@@ -22,14 +24,15 @@ from antarest.storage.business.area_management import (
     AreaCreationDTO,
     AreaPatchUpdateDTO,
 )
-from antarest.storage.business.exporter_service import ExporterService
-from antarest.storage.business.importer_service import ImporterService
+from antarest.storage.business.rawstudy.exporter_service import ExporterService
+from antarest.storage.business.rawstudy.importer_service import ImporterService
 from antarest.storage.business.permissions import (
     StudyPermissionType,
     check_permission,
 )
-from antarest.storage.business.raw_study_service import RawStudyService
-from antarest.storage.business.storage_service_utils import StorageServiceUtils
+from antarest.storage.business.rawstudy.raw_study_service import (
+    RawStudyService,
+)
 from antarest.storage.business.study_download_utils import StudyDownloader
 from antarest.storage.model import (
     Study,
@@ -44,8 +47,8 @@ from antarest.storage.model import (
     MatrixAggregationResult,
     StudySimResultDTO,
 )
-from antarest.storage.repository.study import StudyMetadataRepository
-from antarest.storage.web.exceptions import (
+from antarest.storage.repository.study_metadata import StudyMetadataRepository
+from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
 )
@@ -53,7 +56,7 @@ from antarest.storage.web.exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class StorageService:
+class StudyService:
     """
     Storage module facade service to handle studies management.
     """
@@ -876,7 +879,7 @@ class StorageService:
 
         study = self.repository.get(uuid)
         if not study:
-            sanitized = StorageServiceUtils.sanitize(uuid)
+            sanitized = str(escape(uuid))
             logger.warning(
                 "Study %s not found in metadata db",
                 sanitized,

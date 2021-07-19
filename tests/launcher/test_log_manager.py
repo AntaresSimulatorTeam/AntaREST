@@ -2,7 +2,7 @@ import os
 import time
 from pathlib import Path
 
-from antarest.launcher.business.log_manager import (
+from antarest.launcher.adapters.log_manager import (
     LogTailManager,
 )
 

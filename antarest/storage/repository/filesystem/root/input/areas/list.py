@@ -1,6 +1,8 @@
 from typing import Optional, List
 
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.inode import INode, TREE
 
@@ -12,11 +14,11 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
     def denormalize(self) -> None:
         pass  # no external store in this node
 
-    def __init__(self, context: ContextServer, config: StudyConfig):
+    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         self.config = config
         self.context = context
 
-    def build(self, config: StudyConfig) -> TREE:
+    def build(self, config: FileStudyTreeConfig) -> TREE:
         pass  # End of root. No build
 
     def get(

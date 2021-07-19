@@ -4,7 +4,7 @@ from antarest.storage.repository.filesystem.config.files import (
     ConfigPathBuilder,
 )
 from antarest.storage.repository.filesystem.config.model import (
-    StudyConfig,
+    FileStudyTreeConfig,
     Area,
     Link,
     Simulation,
@@ -41,7 +41,9 @@ def test_parse_output_parmeters(tmp_path) -> None:
     """
     (study / "settings/generaldata.ini").write_text(content)
 
-    config = StudyConfig(study_path=study, store_new_set=True, study_id="id")
+    config = FileStudyTreeConfig(
+        study_path=study, store_new_set=True, study_id="id"
+    )
     assert ConfigPathBuilder.build(study, "id") == config
 
 
@@ -59,7 +61,7 @@ def test_parse_bindings(tmp_path: Path) -> None:
         study_path / "input/bindingconstraints/bindingconstraints.ini"
     ).write_text(content)
 
-    config = StudyConfig(
+    config = FileStudyTreeConfig(
         study_path=study_path, bindings=["bindA", "bindB"], study_id="id"
     )
     assert ConfigPathBuilder.build(study_path, "id") == config
@@ -84,7 +86,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
 
     (output_path / "checkIntegrity.txt").touch()
 
-    config = StudyConfig(
+    config = FileStudyTreeConfig(
         study_path,
         "id",
         outputs={
@@ -128,7 +130,7 @@ def test_parse_area(tmp_path: Path) -> None:
     """
     (study_path / "input/areas/fr/optimization.ini").write_text(content)
 
-    config = StudyConfig(
+    config = FileStudyTreeConfig(
         study_path,
         "id",
         areas={

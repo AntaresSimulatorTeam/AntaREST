@@ -12,12 +12,12 @@ from antarest.core.config import (
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.storage.business.exporter_service import ExporterService
-from antarest.storage.business.importer_service import ImporterService
-from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.rawstudy.raw_study_service import (
+    RawStudyService,
+)
 from antarest.storage.main import build_storage
 from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME
-from antarest.storage.service import StorageService
+from antarest.storage.service import StudyService
 
 project_dir: Path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_dir))
@@ -55,7 +55,7 @@ def storage_service_builder() -> Callable:
         path_studies=Path(),
         path_resources=Path(),
         user_service=Mock(),
-    ) -> StorageService:
+    ) -> StudyService:
 
         config = Config(
             resources_path=path_resources,
@@ -309,58 +309,3 @@ def lite_path(tmp_path: Path) -> Path:
     create_area(path, "area3")
 
     return path_folder
-
-
-def get_strategy(project_path: Path, strategy: str):
-    content = 42
-    if strategy == "S12":
-        path = project_path / "tests/engine/resources/s12/output"
-        jsm_dict = {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "rte-metadata": {"strategy": "S12"},
-            "type": "object",
-            "properties": {},
-            "additionalProperties": {
-                "type": "object",
-                "properties": {
-                    "hello": {"type": "string"},
-                    "world": {"type": "string"},
-                },
-            },
-        }
-        json_data = {
-            "1": {
-                "date": "19450623-0565",
-                "mode": "adequacy",
-                "name": "",
-                "hello": content,
-            },
-            "2": {
-                "date": "20201009-1221",
-                "mode": "economy",
-                "name": "hello-world",
-                "hello": content,
-                "world": content,
-            },
-        }
-    elif strategy == "S15":
-        path = project_path / "tests/engine/resources/s15/links"
-
-        jsm_dict = {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "rte-metadata": {"strategy": "S15"},
-            "type": "object",
-            "properties": {},
-            "additionalProperties": {
-                "type": "object",
-                "properties": {},
-                "additionalProperties": {"type": "number"},
-            },
-        }
-
-        json_data = {
-            "de": {"fr": content, "it": content},
-            "es": {"fr": content},
-            "fr": {"it": content},
-        }
-    return JsonSchema(jsm_dict), json_data, path

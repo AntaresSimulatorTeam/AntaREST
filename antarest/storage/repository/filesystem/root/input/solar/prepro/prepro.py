@@ -1,4 +1,6 @@
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.folder_node import FolderNode
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.root.input.solar.prepro.area.area import (
@@ -10,7 +12,7 @@ from antarest.storage.repository.filesystem.root.input.solar.prepro.correlation 
 
 
 class InputSolarPrepro(FolderNode):
-    def build(self, config: StudyConfig) -> TREE:
+    def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {
             a: InputSolarPreproArea(self.context, config.next_file(a))
             for a in config.area_names()

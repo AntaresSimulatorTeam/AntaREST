@@ -8,10 +8,12 @@ from antarest.storage.business.area_management import (
     AreaInfoDTO,
     AreaPatchUpdateDTO,
 )
-from antarest.storage.business.raw_study_service import RawStudyService
+from antarest.storage.business.rawstudy.raw_study_service import (
+    RawStudyService,
+)
 from antarest.storage.model import RawStudy, Patch, PatchLeafDict, PatchArea
 from antarest.storage.repository.filesystem.config.model import (
-    StudyConfig,
+    FileStudyTreeConfig,
     Area,
     Set,
 )
@@ -28,7 +30,7 @@ def test_get_all_area():
     area_manager = AreaManager(raw_study_service=raw_study_service)
 
     study = RawStudy()
-    config = StudyConfig(
+    config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         study_id="",
         areas={
@@ -115,7 +117,7 @@ def test_update_area():
     area_manager = AreaManager(raw_study_service=raw_study_service)
 
     study = RawStudy()
-    config = StudyConfig(
+    config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         study_id="",
         areas={

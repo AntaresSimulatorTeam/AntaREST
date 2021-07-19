@@ -1,4 +1,6 @@
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.matrix.date_serializer import (
     FactoryDateSerializer,
@@ -15,7 +17,7 @@ class OutputSimulationModeMcIndScnLinksItemValues(OutputSeriesMatrix):
     def __init__(
         self,
         context: ContextServer,
-        config: StudyConfig,
+        config: FileStudyTreeConfig,
         freq: str,
         src: str,
         dest: str,

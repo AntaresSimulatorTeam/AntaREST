@@ -29,7 +29,7 @@ from antarest.storage.model import (
     StudySimResultDTO,
     StudySimSettingsDTO,
 )
-from antarest.storage.web.exceptions import (
+from antarest.core.exceptions import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
 )

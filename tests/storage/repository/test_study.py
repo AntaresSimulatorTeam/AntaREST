@@ -16,7 +16,7 @@ from antarest.storage.model import (
     StudyContentStatus,
     PublicMode,
 )
-from antarest.storage.repository.study import StudyMetadataRepository
+from antarest.storage.repository.study_metadata import StudyMetadataRepository
 
 
 def test_cyclelife():

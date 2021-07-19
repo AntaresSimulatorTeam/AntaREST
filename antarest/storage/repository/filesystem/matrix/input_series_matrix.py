@@ -4,7 +4,9 @@ import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
 
 from antarest.core.custom_types import JSON
-from antarest.storage.repository.filesystem.config.model import StudyConfig
+from antarest.storage.repository.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.storage.repository.filesystem.inode import TREE
 from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.matrix.matrix import MatrixNode
@@ -18,13 +20,13 @@ class InputSeriesMatrix(MatrixNode):
     def __init__(
         self,
         context: ContextServer,
-        config: StudyConfig,
+        config: FileStudyTreeConfig,
         nb_columns: Optional[int] = None,
     ):
         super().__init__(context=context, config=config, freq="hourly")
         self.nb_columns = nb_columns
 
-    def build(self, config: StudyConfig) -> TREE:
+    def build(self, config: FileStudyTreeConfig) -> TREE:
         pass  # end node has nothing to build
 
     def load(

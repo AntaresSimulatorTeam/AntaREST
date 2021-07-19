@@ -15,7 +15,7 @@ from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.roles import RoleType
 from antarest.storage.main import build_storage
 
-from antarest.storage.service import StorageService
+from antarest.storage.service import StudyService
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -35,7 +35,7 @@ ADMIN = JWTUser(
 
 
 def assert_url_content(
-    storage_service: StorageService, url: str, expected_output: dict
+    storage_service: StudyService, url: str, expected_output: dict
 ) -> None:
     app = FastAPI(title=__name__)
     build_storage(
@@ -51,7 +51,7 @@ def assert_url_content(
 
 
 def assert_with_errors(
-    storage_service: StorageService,
+    storage_service: StudyService,
     url: str,
     expected_output: Union[str, dict],
 ) -> None:
@@ -466,7 +466,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
 
 @pytest.mark.integration_test
 def notest_sta_mini_with_wrong_output_folder(
-    storage_service: StorageService, sta_mini_path: Path
+    storage_service: StudyService, sta_mini_path: Path
 ) -> None:
     # TODO why a wrong test should success
     (sta_mini_path / "output" / "maps").mkdir()

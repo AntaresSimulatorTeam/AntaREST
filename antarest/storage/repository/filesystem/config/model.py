@@ -103,7 +103,7 @@ class Simulation(DTO):
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
 
-class StudyConfig(DTO):
+class FileStudyTreeConfig(DTO):
     """
     Root object to handle all study parameters which impact tree structure
     """
@@ -127,8 +127,8 @@ class StudyConfig(DTO):
         self.store_new_set = store_new_set
         self.study_id = study_id
 
-    def next_file(self, name: str) -> "StudyConfig":
-        copy = StudyConfig(
+    def next_file(self, name: str) -> "FileStudyTreeConfig":
+        copy = FileStudyTreeConfig(
             self.root_path,
             self.study_id,
             self.areas,
