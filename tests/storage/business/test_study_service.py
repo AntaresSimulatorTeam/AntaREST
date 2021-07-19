@@ -125,7 +125,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     metadata = RawStudy(
         id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2)
     )
-    study_service.check_study_exists(metadata)
+    study_service._check_study_exists(metadata)
 
 
 @pytest.mark.unit_test
@@ -154,7 +154,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2)
     )
     with pytest.raises(StudyNotFoundError):
-        study_service.check_study_exists(metadata)
+        study_service._check_study_exists(metadata)
 
 
 @pytest.mark.unit_test
@@ -186,7 +186,7 @@ def test_create_study(
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
     )
-    md = study_service.create_study(metadata)
+    md = study_service.create(metadata)
 
     assert md.path == f"{tmp_path}{os.sep}study1"
     path_study = path_studies / md.id
@@ -248,7 +248,7 @@ def test_copy_study(
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
     )
-    md = study_service.copy_study(src_md, dest_md)
+    md = study_service.copy(src_md, dest_md)
 
     assert str(md.path) == f"{tmp_path}{os.sep}study2"
     study.get.assert_called_once_with(["study"])
@@ -272,7 +272,7 @@ def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
     md = RawStudy(
         id=name, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path)
     )
-    study_service.delete_study(md)
+    study_service.delete(md)
 
     assert not study_path.exists()
 

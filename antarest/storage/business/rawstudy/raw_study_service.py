@@ -7,6 +7,11 @@ from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.storage.business.common.studystorage import (
+    IStudyStorageService,
+    T,
+)
+from antarest.storage.business.rawstudy.model import FileStudy
 from antarest.storage.business.rawstudy.patch_service import PatchService
 from antarest.storage.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -32,7 +37,7 @@ from antarest.core.exceptions import StudyNotFoundError
 logger = logging.getLogger(__name__)
 
 
-class RawStudyService:
+class RawStudyService(IStudyStorageService[RawStudy]):
     """
     Manage set of raw studies stored in the workspaces.
     Instantiate and manage tree struct for each request
@@ -53,7 +58,7 @@ class RawStudyService:
         self.path_resources: Path = path_resources
         self.patch_service = patch_service
 
-    def check_study_exists(self, metadata: RawStudy) -> None:
+    def _check_study_exists(self, metadata: RawStudy) -> None:
         """
         Check study on filesystem.
 
@@ -63,7 +68,7 @@ class RawStudyService:
         Returns: none or raise error if not found
 
         """
-        if not self.study_exists(metadata):
+        if not self.exists(metadata):
             raise StudyNotFoundError(
                 f"Study with the uuid {metadata.id} does not exist."
             )
@@ -112,7 +117,7 @@ class RawStudyService:
         _, study = self.study_factory.create_from_fs(path, metadata.id)
         return study.check_errors(study.get())
 
-    def study_exists(self, metadata: RawStudy) -> bool:
+    def exists(self, metadata: RawStudy) -> bool:
         """
         Check study exist.
         Args:
@@ -123,9 +128,7 @@ class RawStudyService:
         """
         return (self.get_study_path(metadata) / "study.antares").is_file()
 
-    def get_study(
-        self, metadata: RawStudy
-    ) -> Tuple[FileStudyTreeConfig, FileStudyTree]:
+    def get_raw(self, metadata: RawStudy) -> FileStudy:
         """
         Fetch a study object and its config
         Args:
@@ -134,9 +137,12 @@ class RawStudyService:
         Returns: the config and study tree object
 
         """
-        self.check_study_exists(metadata)
+        self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
-        return self.study_factory.create_from_fs(study_path, metadata.id)
+        study_config, study_tree = self.study_factory.create_from_fs(
+            study_path, metadata.id
+        )
+        return FileStudy(config=study_config, tree=study_tree)
 
     def get(self, metadata: RawStudy, url: str = "", depth: int = 3) -> JSON:
         """
@@ -149,7 +155,7 @@ class RawStudyService:
         Returns: study data formatted in json
 
         """
-        self.check_study_exists(metadata)
+        self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
 
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)
@@ -239,7 +245,7 @@ class RawStudyService:
         path: Path = Path(metadata.path)
         return path
 
-    def create_study(self, metadata: RawStudy) -> RawStudy:
+    def create(self, metadata: RawStudy) -> RawStudy:
         """
         Create empty new study
         Args:
@@ -262,7 +268,7 @@ class RawStudyService:
         metadata.path = str(path_study)
         return metadata
 
-    def copy_study(
+    def copy(
         self,
         src_meta: RawStudy,
         dest_meta: RawStudy,
@@ -278,7 +284,7 @@ class RawStudyService:
         Returns: destination study
 
         """
-        self.check_study_exists(src_meta)
+        self._check_study_exists(src_meta)
         src_path = self.get_study_path(src_meta)
         dest_path = self.get_study_path(dest_meta)
 
@@ -296,7 +302,7 @@ class RawStudyService:
         del study
         return dest_meta
 
-    def delete_study(self, metadata: RawStudy) -> None:
+    def delete(self, metadata: RawStudy) -> None:
         """
         Delete study
         Args:
@@ -305,7 +311,7 @@ class RawStudyService:
         Returns:
 
         """
-        self.check_study_exists(metadata)
+        self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         shutil.rmtree(study_path)
 
@@ -336,7 +342,7 @@ class RawStudyService:
 
         """
         # Get data
-        self.check_study_exists(metadata)
+        self._check_study_exists(metadata)
 
         study_path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)

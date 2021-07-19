@@ -237,7 +237,7 @@ class StudyService:
             version=RawStudyService.new_default_version,
         )
 
-        raw = self.study_service.create_study(raw)
+        raw = self.study_service.create(raw)
         self._save_study(raw, params.user, group_ids)
         self.event_bus.push(
             Event(EventType.STUDY_CREATED, raw.to_json_summary())
@@ -357,9 +357,7 @@ class StudyService:
             version=src_study.version,
         )
 
-        study = self.study_service.copy_study(
-            src_study, dest_study, with_outputs
-        )
+        study = self.study_service.copy(src_study, dest_study, with_outputs)
         self._save_study(study, params.user, group_ids)
         self.event_bus.push(
             Event(EventType.STUDY_CREATED, study.to_json_summary())
@@ -426,7 +424,7 @@ class StudyService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        self.study_service.delete_study(study)
+        self.study_service.delete(study)
         self.repository.delete(study.id)
         self.event_bus.push(
             Event(EventType.STUDY_DELETED, study.to_json_summary())

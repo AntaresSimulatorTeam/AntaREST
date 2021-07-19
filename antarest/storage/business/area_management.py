@@ -40,12 +40,12 @@ class AreaManager:
     def get_all_areas(
         self, study: RawStudy, area_type: Optional[AreaType] = None
     ) -> List[AreaInfoDTO]:
-        config, study_tree = self.raw_study_service.get_study(study)
+        file_study = self.raw_study_service.get_raw(study)
         metadata = self.raw_study_service.patch_service.get(study)
         areas_metadata: Dict[str, PatchArea] = metadata.areas or {}  # type: ignore
         result = []
         if area_type is None or area_type == AreaType.AREA:
-            for area_name in config.areas:
+            for area_name in file_study.config.areas:
                 result.append(
                     AreaInfoDTO(
                         id=area_name,
@@ -56,13 +56,13 @@ class AreaManager:
                 )
 
         if area_type is None or area_type == AreaType.CLUSTER:
-            for set_name in config.sets:
+            for set_name in file_study.config.sets:
                 result.append(
                     AreaInfoDTO(
                         id=set_name,
                         name=set_name,
                         type=AreaType.CLUSTER,
-                        set=config.sets[set_name].areas,
+                        set=file_study.config.sets[set_name].areas,
                         metadata=areas_metadata.get(set_name, PatchArea()),
                     )
                 )
@@ -81,8 +81,10 @@ class AreaManager:
         area_creation_info: AreaPatchUpdateDTO,
     ) -> AreaInfoDTO:
         if area_creation_info.metadata:
-            config, study_tree = self.raw_study_service.get_study(study)
-            area_or_set = config.areas.get(area_id) or config.sets.get(area_id)
+            file_study = self.raw_study_service.get_raw(study)
+            area_or_set = file_study.config.areas.get(
+                area_id
+            ) or file_study.config.sets.get(area_id)
             patch = self.raw_study_service.patch_service.get(study)
             patch.areas = (patch.areas or PatchLeafDict()).patch(
                 PatchLeafDict({area_id: area_creation_info.metadata})
