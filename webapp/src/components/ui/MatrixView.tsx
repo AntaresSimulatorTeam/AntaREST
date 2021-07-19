@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { HotTable, HotColumn } from '@handsontable/react';
 import { createStyles, makeStyles } from '@material-ui/core';
-import { MatrixType } from '../../../../common/types';
+import { MatrixType } from '../../common/types';
 import 'handsontable/dist/handsontable.min.css';
 
 const useStyles = makeStyles(() => createStyles({

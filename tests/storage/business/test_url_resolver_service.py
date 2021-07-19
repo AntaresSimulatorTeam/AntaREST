@@ -4,7 +4,7 @@ from unittest.mock import Mock
 from antarest.common.config import Config
 from antarest.common.jwt import DEFAULT_ADMIN_USER
 from antarest.common.requests import RequestParameters
-from antarest.matrixstore.model import MatrixDTO, MatrixFreq
+from antarest.matrixstore.model import MatrixDTO
 from antarest.storage.business.uri_resolver_service import UriResolverService
 from antarest.storage.service import StorageService
 
@@ -15,7 +15,8 @@ MOCK_MATRIX_JSON = {
 }
 
 MOCK_MATRIX_DTO = MatrixDTO(
-    freq=MatrixFreq.ANNUAL,
+    width=2,
+    height=2,
     index=["1", "2"],
     columns=["a", "b"],
     data=[[1, 2], [3, 4]],

@@ -61,6 +61,9 @@ const MenuBar = () => {
           <Typography className={classes.menuitem}>
             <Link to="/jobs">{t('main:jobs')}</Link>
           </Typography>
+          <Typography className={classes.menuitem}>
+            <Link to="/data">{t('main:data')}</Link>
+          </Typography>
         </div>
         <Typography className={classes.altmenuitem}>
           <Link to="/swagger">API</Link>

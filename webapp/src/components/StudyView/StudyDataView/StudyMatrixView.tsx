@@ -1,42 +1,21 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import { makeStyles, Theme, createStyles, Paper, Typography, Button } from '@material-ui/core';
+import debug from 'debug';
 import SaveIcon from '@material-ui/icons/Save';
 import { useSnackbar } from 'notistack';
-import { Translation } from 'react-i18next';
-import { getStudyData } from '../../../services/api/study';
+import { useTranslation } from 'react-i18next';
+import { getStudyData, importFile } from '../../../services/api/study';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
 import { MatrixType } from '../../../common/types';
-import MatrixView from './MatrixView';
-import ImportForm from './utils/ImportForm';
+import MatrixView from '../../ui/MatrixView';
+import ImportForm from '../../ui/ImportForm';
+import { CommonStudyStyle } from './utils/utils';
+
+const logErr = debug('antares:createimportform:error');
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
-  root: {
-    flex: 1,
-    height: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-  },
-  header: {
-    width: '100%',
-    display: 'flex',
-    flexFlow: 'row nowrap',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  content: {
-    padding: theme.spacing(3),
-    boxSizing: 'border-box',
-    flex: 1,
-    width: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    overflow: 'auto',
-  },
+  ...CommonStudyStyle(theme),
   button: {
     display: 'flex',
     flexFlow: 'row nowrap',
@@ -45,10 +24,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     height: '30px',
     marginBottom: theme.spacing(1),
     marginRight: theme.spacing(1),
-  },
-  grayButton: {
-    border: '2px solid gray',
-    color: 'gray',
   },
   buttonElement: {
     margin: theme.spacing(0.2),
@@ -67,6 +42,7 @@ const StudyMatrixView = (props: PropTypes) => {
   const { study, url, filterOut, studyData, setStudyData } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
+  const [t] = useTranslation();
   const [data, setData] = useState<MatrixType>();
   const [loaded, setLoaded] = useState(false);
   const [changeStatus, setChangeStatus] = useState<boolean>(false);
@@ -85,7 +61,7 @@ const StudyMatrixView = (props: PropTypes) => {
         setData(res);
       }
     } catch (e) {
-      enqueueSnackbar(<Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, { variant: 'error' });
+      enqueueSnackbar(t('studymanager:failtoretrievedata'), { variant: 'error' });
     } finally {
       setLoaded(true);
     }
@@ -96,11 +72,16 @@ const StudyMatrixView = (props: PropTypes) => {
     setChangeStatus(!changeStatus);
   };
 
-  const successImport = () => {
-    // this is to refresh the tree / view
+  const onImport = async (file: File) => {
+    try {
+      await importFile(file, study, formatedPath);
+    } catch (e) {
+      logErr('Failed to import file', file, e);
+      enqueueSnackbar(t('studymanager:failtosavedata'), { variant: 'error' });
+    }
     const newData = { ...studyData };
     setStudyData(newData);
-    enqueueSnackbar(<Translation>{(t) => t('studymanager:savedatasuccess')}</Translation>, { variant: 'success' });
+    enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
   };
 
   useEffect(() => {
@@ -111,7 +92,7 @@ const StudyMatrixView = (props: PropTypes) => {
       setEditable(!filterOut.includes(tmpUrl[0]));
     }
     if (urlParts.length < 2) {
-      enqueueSnackbar(<Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, { variant: 'error' });
+      enqueueSnackbar(t('studymanager:failtoretrievedata'), { variant: 'error' });
       return;
     }
     loadFileData();
@@ -124,7 +105,7 @@ const StudyMatrixView = (props: PropTypes) => {
         {
           isEditable && (
           <div className={classes.header}>
-            <ImportForm study={study} path={formatedPath} callback={successImport} />
+            <ImportForm text={t('main:import')} onImport={onImport} />
             {data && Object.keys(data).length > 0 && (
               <Button
                 variant="outlined"
@@ -135,7 +116,7 @@ const StudyMatrixView = (props: PropTypes) => {
               >
                 {changeStatus && <SaveIcon className={classes.buttonElement} style={{ width: '16px', height: '16px' }} />}
                 <Typography className={classes.buttonElement} style={{ fontSize: '12px' }}>
-                  <Translation>{(t) => (changeStatus ? t('main:save') : t('main:edit'))}</Translation>
+                  {changeStatus ? t('main:save') : t('main:edit')}
                 </Typography>
               </Button>
             )}

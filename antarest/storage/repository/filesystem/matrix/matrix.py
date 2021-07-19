@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional, List, cast, Union
 
 from antarest.common.custom_types import JSON, SUB_JSON
-from antarest.matrixstore.model import MatrixDTO, MatrixFreq
+from antarest.matrixstore.model import MatrixDTO
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.context import ContextServer
 from antarest.storage.repository.filesystem.exceptions import (
@@ -35,7 +35,8 @@ class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):
 
         matrix = self.load()
         dto = MatrixDTO(
-            freq=MatrixFreq.from_str(self.freq),
+            width=matrix["width"],
+            height=matrix["height"],
             index=matrix["index"],
             columns=matrix["columns"],
             data=matrix["data"],

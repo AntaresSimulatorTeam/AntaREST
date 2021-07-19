@@ -37,6 +37,41 @@ export interface LaunchJob {
   exitCode: number;
 }
 
+export interface MatrixInfoDTO {
+  id: string;
+  name: string;
+}
+
+export interface MatrixDataSetDTO {
+  id: string;
+  name: string;
+  public: boolean;
+  groups: Array<GroupDTO>;
+  matrices: Array<MatrixInfoDTO>;
+  owner: {
+    id: number;
+    name: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MatrixDataSetUpdateDTO {
+  name: string;
+  groups: Array<string>;
+  public: boolean;
+}
+
+export interface MatrixDTO{
+  width: number;
+  height: number;
+  index: Array<string>;
+  columns: Array<string>;
+  data: Array<Array<number>>;
+  created_at: number;
+  id: string;
+}
+
 export enum RoleType {
   ADMIN = 40,
   RUNNER = 30,

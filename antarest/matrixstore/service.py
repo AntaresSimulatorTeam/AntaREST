@@ -1,9 +1,12 @@
 import time
+import csv
 from datetime import datetime
 from http import HTTPStatus
+from io import BytesIO
 from typing import List, Optional, Tuple, Dict, Any
+from zipfile import ZipFile
 
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 
 from antarest.common.jwt import JWTUser
 from antarest.common.requests import (
@@ -15,7 +18,6 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
     MatrixDTO,
-    MatrixFreq,
     Matrix,
     MatrixContent,
     MatrixDataSet,
@@ -48,7 +50,8 @@ class MatrixService:
     def _to_dto(matrix: Matrix, content: MatrixContent) -> MatrixDTO:
         return MatrixDTO(
             id=matrix.id,
-            freq=matrix.freq,
+            width=matrix.width,
+            height=matrix.height,
             created_at=int(time.mktime(datetime.timetuple(matrix.created_at))),
             index=content.index,
             columns=content.columns,
@@ -59,7 +62,8 @@ class MatrixService:
     def _from_dto(dto: MatrixDTO) -> Tuple[Matrix, MatrixContent]:
         matrix = Matrix(
             id=dto.id,
-            freq=dto.freq,
+            width=dto.width,
+            height=dto.height,
             created_at=datetime.fromtimestamp(dto.created_at),
         )
 
@@ -76,6 +80,50 @@ class MatrixService:
         self.repo.save(matrix)
 
         return matrix.id
+
+    def create_by_importation(self, file: UploadFile) -> List[MatrixInfoDTO]:
+        with file.file as f:
+            if file.content_type == "application/zip":
+                input_zip = ZipFile(BytesIO(f.read()))
+                files = {
+                    info.filename: input_zip.read(info.filename)
+                    for info in input_zip.infolist()
+                    if not info.is_dir()
+                }
+                matrix_info: List[MatrixInfoDTO] = []
+                for name in files.keys():
+                    if all(
+                        [
+                            not name.startswith("__MACOSX/"),
+                            not name.startswith(".DS_Store"),
+                        ]
+                    ):
+                        id = self.file_importation(files[name])
+                        matrix_info.append(MatrixInfoDTO(id=id, name=name))
+                return matrix_info
+            else:
+                id = self.file_importation(f.read())
+                return [MatrixInfoDTO(id=id, name=file.filename)]
+
+    def file_importation(self, file: bytes) -> str:
+        str_file = str(file, "UTF-8")
+        reader = csv.reader(str_file.split("\n"), delimiter="\t")
+        data = []
+        columns: List[int] = []
+        for row in reader:
+            if row:
+                data.append([int(elm) for elm in row])
+            if len(columns) == 0:
+                columns = list(range(0, len(row)))
+
+        matrix = MatrixDTO(
+            width=len(columns),
+            height=len(data),
+            index=[],
+            columns=columns,
+            data=data,
+        )
+        return self.create(matrix)
 
     def get_dataset(
         self,
@@ -129,11 +177,9 @@ class MatrixService:
     ) -> MatrixDataSet:
         if not params.user:
             raise UserHasNotPermissionError()
-
         dataset = self.repo_dataset.get(dataset_id)
         if dataset is None:
             raise MatrixDataSetNotFound()
-
         MatrixService.check_access_permission(
             dataset, params.user, write=True, raise_error=True
         )
@@ -189,8 +235,20 @@ class MatrixService:
             > 0
         ]
 
-    def delete_dataset(self, id: str) -> None:
+    def delete_dataset(self, id: str, params: RequestParameters) -> str:
+        if not params.user:
+            raise UserHasNotPermissionError()
+
+        dataset = self.repo_dataset.get(id)
+
+        if dataset is None:
+            raise MatrixDataSetNotFound()
+
+        MatrixService.check_access_permission(
+            dataset, params.user, write=True, raise_error=True
+        )
         self.repo_dataset.delete(id)
+        return id
 
     def get(self, id: str) -> Optional[MatrixDTO]:
         data = self.repo_content.get(id)
@@ -200,18 +258,6 @@ class MatrixService:
             return MatrixService._to_dto(matrix, data)
         else:
             return None
-
-    def get_by_freq(
-        self,
-        freq: Optional[MatrixFreq] = None,
-    ) -> List[MatrixDTO]:
-        matrices = self.repo.get_by_freq(freq)
-        contents = [self.repo_content.get(m.id) for m in matrices]
-        return [
-            MatrixService._to_dto(m, c)
-            for m, c in zip(matrices, contents)
-            if c
-        ]
 
     def delete(self, id: str) -> None:
         self.repo_content.delete(id)

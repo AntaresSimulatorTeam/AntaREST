@@ -1,39 +1,18 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import { makeStyles, Theme, createStyles, Paper } from '@material-ui/core';
+import debug from 'debug';
 import { useSnackbar } from 'notistack';
-import { Translation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
-import { getStudyData } from '../../../services/api/study';
-import ImportForm from './utils/ImportForm';
+import { getStudyData, importFile } from '../../../services/api/study';
+import ImportForm from '../../ui/ImportForm';
+import { CommonStudyStyle } from './utils/utils';
+
+const logErr = debug('antares:createimportform:error');
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
-  root: {
-    flex: 1,
-    height: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-  },
-  header: {
-    width: '100%',
-    display: 'flex',
-    flexFlow: 'row nowrap',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  content: {
-    padding: theme.spacing(3),
-    boxSizing: 'border-box',
-    flex: 1,
-    width: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    overflow: 'auto',
-  },
+  ...CommonStudyStyle(theme),
   code: {
     whiteSpace: 'pre',
   },
@@ -51,6 +30,7 @@ const StudyDataView = (props: PropTypes) => {
   const { study, url, filterOut, studyData, setStudyData } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
+  const [t] = useTranslation();
   const [data, setData] = useState<string>();
   const [loaded, setLoaded] = useState(false);
   const [isEditable, setEditable] = useState<boolean>(true);
@@ -63,17 +43,22 @@ const StudyDataView = (props: PropTypes) => {
       const res = await getStudyData(study, url);
       setData(res);
     } catch (e) {
-      enqueueSnackbar(<Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, { variant: 'error' });
+      enqueueSnackbar(t('studymanager:failtoretrievedata'), { variant: 'error' });
     } finally {
       setLoaded(true);
     }
   };
 
-  const successImport = () => {
-    // this is to refresh the tree / view
+  const onImport = async (file: File) => {
+    try {
+      await importFile(file, study, formatedPath);
+    } catch (e) {
+      logErr('Failed to import file', file, e);
+      enqueueSnackbar(t('studymanager:failtosavedata'), { variant: 'error' });
+    }
     const newData = { ...studyData };
     setStudyData(newData);
-    enqueueSnackbar(<Translation>{(t) => t('studymanager:savedatasuccess')}</Translation>, { variant: 'success' });
+    enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
   };
 
   useEffect(() => {
@@ -84,7 +69,7 @@ const StudyDataView = (props: PropTypes) => {
       setEditable(!filterOut.includes(tmpUrl[0]));
     }
     if (urlParts.length < 2) {
-      enqueueSnackbar(<Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, { variant: 'error' });
+      enqueueSnackbar(t('studymanager:failtoretrievedata'), { variant: 'error' });
       return;
     }
     loadFileData();
@@ -97,7 +82,7 @@ const StudyDataView = (props: PropTypes) => {
         {
            isEditable && (
            <div className={classes.header}>
-             <ImportForm study={study} path={formatedPath} callback={successImport} />
+             <ImportForm text={t('main:import')} onImport={onImport} />
            </div>
            )}
         <Paper className={classes.content}>

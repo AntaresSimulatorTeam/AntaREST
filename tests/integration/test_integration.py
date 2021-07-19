@@ -274,7 +274,8 @@ def test_matrix(app: FastAPI):
     admin_credentials = res.json()
 
     matrix = {
-        "freq": 1,
+        "width": 2,
+        "height": 2,
         "index": ["1", "2"],
         "columns": ["a", "b"],
         "data": [[1, 2], [3, 4]],
@@ -302,16 +303,6 @@ def test_matrix(app: FastAPI):
     assert stored["created_at"] > 0
     assert stored["id"] != ""
 
-    res = client.get(
-        f"/v1/matrix?freq=1",
-        headers={
-            "Authorization": f'Bearer {admin_credentials["access_token"]}'
-        },
-    )
-
-    assert res.status_code == 200
-    assert res.json() == [stored]
-
     matrix_id = stored["id"]
 
     res = client.post(
@@ -330,7 +321,7 @@ def test_matrix(app: FastAPI):
     )
     assert res.status_code == 200
 
-    res = client.post(
+    res = client.get(
         f"/v1/matrixdataset/_search?name=myda",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
@@ -340,6 +331,15 @@ def test_matrix(app: FastAPI):
     assert len(results) == 1
     assert len(results[0]["matrices"]) == 1
     assert results[0]["matrices"][0]["id"] == matrix_id
+
+    dataset_id = results[0]["id"]
+    res = client.delete(
+        f"/v1/matrixdataset/{dataset_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
 
 
 def test_area_management(app: FastAPI):

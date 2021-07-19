@@ -14,6 +14,7 @@ import theme, { TOOLBAR_HEIGHT } from './theme';
 import SwaggerDoc from './Pages/SwaggerDoc';
 import JobManagement from './Pages/JobManagement';
 import UserSettings from './Pages/Settings';
+import Data from './Pages/Data';
 
 const reduxStore = createStore();
 
@@ -38,6 +39,9 @@ const App: React.FC<{}> = () => (
                   </Route>
                   <Route path="/jobs" key="module">
                     <JobManagement />
+                  </Route>
+                  <Route path="/data" key="data">
+                    <Data />
                   </Route>
                   <Route path="/swagger">
                     <SwaggerDoc />

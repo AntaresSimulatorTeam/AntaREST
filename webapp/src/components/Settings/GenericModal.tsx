@@ -21,6 +21,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
   },
   titlebox: {
+    flex: 'none',
     height: '40px',
     width: '100%',
     display: 'flex',
@@ -45,6 +46,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     overflow: 'hidden',
   },
   footer: {
+    flex: 'none',
     height: '60px',
     width: '100%',
     display: 'flex',

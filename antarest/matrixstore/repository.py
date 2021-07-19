@@ -11,7 +11,6 @@ from antarest.common.config import Config
 from antarest.common.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import (
     Matrix,
-    MatrixFreq,
     MatrixContent,
     MatrixDataSet,
     MatrixDataSetRelation,
@@ -31,7 +30,7 @@ class MatrixDataSetRepository:
             exists().where(MatrixDataSet.id == matrix_user_metadata.id)
         ).scalar()
         if res:
-            db.session.merge(matrix_user_metadata)
+            matrix_user_metadata = db.session.merge(matrix_user_metadata)
         else:
             db.session.add(matrix_user_metadata)
         db.session.commit()
@@ -99,15 +98,6 @@ class MatrixRepository:
     def exists(self, id: str) -> bool:
         res: bool = db.session.query(exists().where(Matrix.id == id)).scalar()
         return res
-
-    def get_by_freq(
-        self,
-        freq: Optional[MatrixFreq] = None,
-    ) -> List[Matrix]:
-        matrix: List[Matrix] = (
-            db.session.query(Matrix).filter((Matrix.freq == freq)).all()
-        )
-        return matrix
 
     def delete(self, id: str) -> None:
         g = db.session.query(Matrix).get(id)

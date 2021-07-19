@@ -15,33 +15,12 @@ from antarest.common.persistence import Base
 from antarest.login.model import Identity, Group, GroupDTO, UserInfo
 
 
-class MatrixFreq(enum.IntEnum):
-    HOURLY = 1
-    DAILY = 2
-    WEEKLY = 3
-    MONTHLY = 4
-    ANNUAL = 5
-
-    @staticmethod
-    def from_str(data: str) -> "MatrixFreq":
-        if data == "hourly":
-            return MatrixFreq.HOURLY
-        elif data == "daily":
-            return MatrixFreq.DAILY
-        elif data == "weekly":
-            return MatrixFreq.WEEKLY
-        elif data == "monthly":
-            return MatrixFreq.MONTHLY
-        elif data == "annual":
-            return MatrixFreq.ANNUAL
-        raise NotImplementedError()
-
-
 class Matrix(Base):  # type: ignore
     __tablename__ = "matrix"
 
     id = Column(String(64), primary_key=True)
-    freq = Column(Enum(MatrixFreq))
+    width = Column(Integer)
+    height = Column(Integer)
     created_at = Column(DateTime)
 
     def __eq__(self, other: Any) -> bool:
@@ -50,7 +29,8 @@ class Matrix(Base):  # type: ignore
 
         res: bool = (
             self.id == other.id
-            and self.freq == other.freq
+            and self.width == other.width
+            and self.height == other.height
             and self.created_at == other.created_at
         )
         return res
@@ -94,7 +74,7 @@ class MatrixDataSetRelation(Base):  # type: ignore
         ForeignKey("matrix.id", name="fk_matrixdatasetrelation_matrix_id"),
         primary_key=True,
     )
-    name = Column(String)
+    name = Column(String, primary_key=True)
     matrix = relationship(Matrix)
 
     def __eq__(self, other: Any) -> bool:
@@ -171,7 +151,8 @@ class MatrixDataSet(Base):  # type: ignore
 
 
 class MatrixDTO(BaseModel):
-    freq: MatrixFreq
+    width: int
+    height: int
     index: List[str]
     columns: List[str]
     data: List[List[int]]
