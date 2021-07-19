@@ -15,7 +15,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
-import { MatrixDataSetDTO } from '../../common/types';
+import { MatrixDataSetDTO, MatrixInfoDTO, UserInfo } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -42,6 +42,9 @@ const useStyles = makeStyles((theme: Theme) =>
       flexFlow: 'row nowrap',
       justifyContent: 'space-evenly',
       alignItems: 'center',
+      '&:hover': {
+        backgroundColor: theme.palette.action.hover,
+      },
     },
     datasetItem: {
       display: 'flex',
@@ -71,14 +74,15 @@ const useStyles = makeStyles((theme: Theme) =>
 interface PropTypes {
   data: Array<MatrixDataSetDTO>;
   filter: string;
+  user: UserInfo | undefined;
   onDeleteClick: (datasetId: string) => void;
   onUpdateClick: (datasetId: string) => void;
-  onMatrixClick: (datasetId: string, matrixId: string) => void;
+  onMatrixClick: (matrixInfo: MatrixInfoDTO) => void;
 }
 
 const DataView = (props: PropTypes) => {
   const classes = useStyles();
-  const { data, filter, onDeleteClick, onUpdateClick, onMatrixClick } = props;
+  const { data, user, filter, onDeleteClick, onUpdateClick, onMatrixClick } = props;
   const [toogleList, setToogleList] = useState<Array<boolean>>([]);
 
   const onButtonChange = (index: number) => {
@@ -114,23 +118,29 @@ const DataView = (props: PropTypes) => {
               >
                 <Typography>{dataset.name}</Typography>
                 <div className={classes.iconsContainer}>
-                  <Button onClick={() => onUpdateClick(dataset.id)}>
-                    <CreateIcon className={classes.createIcon} />
-                  </Button>
-                  <Button onClick={() => onDeleteClick(dataset.id)}>
-                    <DeleteIcon className={classes.deleteIcon} />
-                  </Button>
+                  {
+                        user && user.id === dataset.owner.id && (
+                        <>
+                          <Button onClick={() => onUpdateClick(dataset.id)}>
+                            <CreateIcon className={classes.createIcon} />
+                          </Button>
+                          <Button onClick={() => onDeleteClick(dataset.id)}>
+                            <DeleteIcon className={classes.deleteIcon} />
+                          </Button>
+                        </>
+                        )}
                 </div>
                 {toogleList[index] ? <ExpandLess /> : <ExpandMore />}
               </ListItem>
               <Collapse in={toogleList[index]} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding className={classes.matrixList}>
                   {dataset.matrices.map((matrixItem) => (
-                    <ListItem key={matrixItem.id} className={classes.matrixItem}>
-                      <ListItemText
-                        primary={matrixItem.name}
-                        onClick={() => onMatrixClick(dataset.id, matrixItem.id)}
-                      />
+                    <ListItem
+                      key={matrixItem.id}
+                      className={classes.matrixItem}
+                      onClick={() => onMatrixClick(matrixItem)}
+                    >
+                      <ListItemText primary={matrixItem.name} />
                     </ListItem>
                   ))}
                 </List>

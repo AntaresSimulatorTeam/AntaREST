@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { getStudyData, importFile } from '../../../services/api/study';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
 import { MatrixType } from '../../../common/types';
-import MatrixView from './MatrixView';
+import MatrixView from '../../ui/MatrixView';
 import ImportForm from '../../ui/ImportForm';
 import { CommonStudyStyle } from './utils/utils';
 

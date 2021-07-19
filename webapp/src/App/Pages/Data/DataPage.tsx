@@ -6,9 +6,10 @@ import { AppState } from '../../reducers';
 import GenericSettingView from '../../../components/Settings/GenericSettingView';
 import DataView from '../../../components/Data/DataView';
 import { deleteDataSet, getMatrixList } from '../../../services/api/matrix';
-import { MatrixDataSetDTO, IDType } from '../../../common/types';
+import { MatrixDataSetDTO, IDType, MatrixInfoDTO } from '../../../common/types';
 import DataModal from './DataModal';
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
+import MatrixModal from './MatrixModal';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -29,7 +30,9 @@ const Data = (props: PropTypes) => {
   // User modal
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
+  const [matrixModal, setMatrixModal] = useState<boolean>(false);
   const [currentData, setCurrentData] = useState<MatrixDataSetDTO|undefined>();
+  const [currentMatrix, setCurrentMatrix] = useState<MatrixInfoDTO|undefined>();
 
   const createNewData = () => {
     setCurrentData(undefined);
@@ -62,6 +65,11 @@ const Data = (props: PropTypes) => {
     setOpenModal(false);
   };
 
+  const onMatrixModalClose = () => {
+    setCurrentMatrix(undefined);
+    setMatrixModal(false);
+  };
+
   const onNewDataUpdate = (newData: MatrixDataSetDTO): void => {
     const tmpList = ([] as Array<MatrixDataSetDTO>).concat(dataList);
     const index = tmpList.findIndex((elm) => elm.id === newData.id);
@@ -73,11 +81,10 @@ const Data = (props: PropTypes) => {
     }
   };
 
-  const onMatrixClick = async (datasetId: string, matrixId: string) => {
-    /*
-      Afficher la modale
-    */
-    console.log(datasetId, ', ', matrixId);
+  const onMatrixClick = async (matrixInfo: MatrixInfoDTO) => {
+    setCurrentMatrix(matrixInfo);
+    setMatrixModal(true);
+    console.log(matrixInfo);
   };
 
   useEffect(() => {
@@ -106,11 +113,18 @@ const Data = (props: PropTypes) => {
       <DataView
         data={dataList}
         filter={filter}
+        user={user}
         onDeleteClick={onDeleteClick}
         onUpdateClick={onUpdateClick}
         onMatrixClick={onMatrixClick}
       />
-
+      {matrixModal && (
+        <MatrixModal
+          open={matrixModal} // Why 'openModal &&' ? => Otherwise previous data are still present
+          matrixInfo={currentMatrix}
+          onClose={onMatrixModalClose}
+        />
+      )}
       {openModal && (
         <DataModal
           open={openModal} // Why 'openModal &&' ? => Otherwise previous data are still present

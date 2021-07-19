@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, List
 
-from fastapi import APIRouter, Depends, Body, Query, File
+from fastapi import APIRouter, Depends, Body, Query, File, UploadFile
 
 from antarest.common.config import Config
 from antarest.common.jwt import JWTUser
@@ -44,7 +44,7 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
 
     @bp.post("/matrix/_import", tags=[APITag.matrix])
     def create_by_importation(
-        file: bytes = File(...),
+        file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         if current_user.id is not None:

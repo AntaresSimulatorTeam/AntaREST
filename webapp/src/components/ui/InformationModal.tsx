@@ -10,6 +10,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'center',
     alignItems: 'center',
     overflowY: 'auto',
+    boxSizing: 'border-box',
+    padding: theme.spacing(2),
   },
   main: {
     backgroundColor: 'white',
@@ -37,12 +39,14 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   content: {
     flex: '1',
+    minWidth: '100px',
     width: '100%',
     display: 'flex',
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
     overflow: 'hidden',
+    boxSizing: 'border-box',
     padding: theme.spacing(3),
   },
   footer: {

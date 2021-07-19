@@ -195,6 +195,7 @@ const DataModal = (props: PropTypes) => {
                 <input
                   className={classes.input}
                   id="upload-file"
+                  accept=".csv, .txt, .zip"
                   onChange={onUpload}
                   type="file"
                 />

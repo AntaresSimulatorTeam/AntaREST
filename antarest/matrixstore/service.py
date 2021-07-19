@@ -6,7 +6,7 @@ from io import BytesIO
 from typing import List, Optional, Tuple, Dict, Any
 from zipfile import ZipFile
 
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 
 from antarest.common.jwt import JWTUser
 from antarest.common.requests import (
@@ -81,27 +81,32 @@ class MatrixService:
 
         return matrix.id
 
-    def create_by_importation(self, file: bytes) -> List[MatrixInfoDTO]:
-        input_zip = ZipFile(BytesIO(file))
-        files = {
-            info.filename: input_zip.read(info.filename)
-            for info in input_zip.infolist()
-            if not info.is_dir()
-        }
-        matrix_info: List[MatrixInfoDTO] = []
-        for name in files.keys():
-            if all(
-                [
-                    not name.startswith("__MACOSX/"),
-                    not name.startswith(".DS_Store"),
-                ]
-            ):
-                id = self.file_importation(files[name])
-                path = name.split(sep="/")
-                length = len(path)
-                filename = path[length - 1] if length > 0 else ""
-                matrix_info.append(MatrixInfoDTO(id=id, name=filename))
-        return matrix_info
+    def create_by_importation(self, file: UploadFile) -> List[MatrixInfoDTO]:
+        with file.file as f:
+            if file.content_type == "application/zip":
+                input_zip = ZipFile(BytesIO(f.read()))
+                files = {
+                    info.filename: input_zip.read(info.filename)
+                    for info in input_zip.infolist()
+                    if not info.is_dir()
+                }
+                matrix_info: List[MatrixInfoDTO] = []
+                for name in files.keys():
+                    if all(
+                        [
+                            not name.startswith("__MACOSX/"),
+                            not name.startswith(".DS_Store"),
+                        ]
+                    ):
+                        id = self.file_importation(files[name])
+                        path = name.split(sep="/")
+                        length = len(path)
+                        filename = path[length - 1] if length > 0 else ""
+                        matrix_info.append(MatrixInfoDTO(id=id, name=filename))
+                return matrix_info
+            else:
+                id = self.file_importation(f.read())
+                return [MatrixInfoDTO(id=id, name=file.filename)]
 
     def file_importation(self, file: bytes) -> str:
         str_file = str(file, "UTF-8")
