@@ -1,11 +1,10 @@
 import subprocess
 import threading
 from pathlib import Path
-from typing import Callable, Any, Dict, Optional
+from typing import Dict, Optional
 from uuid import UUID, uuid4
 
 from antarest.core.config import Config
-from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.business.abstractlauncher import (

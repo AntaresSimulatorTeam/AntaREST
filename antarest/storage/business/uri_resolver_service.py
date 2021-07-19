@@ -1,13 +1,9 @@
 import re
-from pathlib import Path
-from typing import Union, Optional, Callable, Tuple
+from typing import Union
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
-from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.requests import RequestParameters
 from antarest.matrixstore.service import MatrixService
-from antarest.storage.model import DEFAULT_WORKSPACE_NAME
 
 
 class UriResolverService:

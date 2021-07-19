@@ -5,7 +5,7 @@ import re
 import tarfile
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Callable, Tuple, Any, List, Dict, Union, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.storage.business.raw_study_service import RawStudyService

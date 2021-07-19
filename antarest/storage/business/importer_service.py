@@ -1,13 +1,11 @@
 import logging
 import os
 import shutil
-import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import IO, Optional, Union
 from uuid import uuid4
 
-from antarest.core.custom_types import JSON
 from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.model import Study, RawStudy

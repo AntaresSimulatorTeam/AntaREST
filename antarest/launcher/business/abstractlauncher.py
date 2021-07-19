@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Callable, List, Optional, NamedTuple
+from typing import Callable, NamedTuple, Optional
 from uuid import UUID
 
-from dataclasses import dataclass
 
 from antarest.core.config import Config
 from antarest.core.requests import RequestParameters

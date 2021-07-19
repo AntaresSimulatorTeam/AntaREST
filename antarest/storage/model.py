@@ -1,9 +1,8 @@
-from datetime import datetime
 import enum
 import uuid
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, List, Dict, Optional, TypeVar, Union
+from typing import Any, Dict, List, Optional, TypeVar
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic import BaseModel

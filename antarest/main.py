@@ -22,7 +22,7 @@ from antarest import __version__
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.persistence import Base
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.web import tags_metadata
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher

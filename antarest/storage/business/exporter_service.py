@@ -4,7 +4,6 @@ import os
 import shutil
 import tempfile
 import time
-from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 

@@ -7,10 +7,10 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, File, Depends, Body, Request
 from fastapi.params import Param
-from starlette.responses import StreamingResponse, Response, FileResponse
+from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.core.custom_types import JSON
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,

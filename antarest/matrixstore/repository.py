@@ -1,8 +1,7 @@
 import hashlib
 import json
 import logging
-import os
-from typing import Optional, List, Dict
+from typing import List, Optional
 
 from sqlalchemy import exists, and_  # type: ignore
 from sqlalchemy.orm import aliased  # type: ignore
@@ -13,7 +12,6 @@ from antarest.matrixstore.model import (
     Matrix,
     MatrixContent,
     MatrixDataSet,
-    MatrixDataSetRelation,
 )
 
 

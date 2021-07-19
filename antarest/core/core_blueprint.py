@@ -1,21 +1,11 @@
 import subprocess
-from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional
-from glob import escape
-from fastapi import APIRouter, HTTPException, File, Depends
-from fastapi.params import Param
-from starlette.responses import StreamingResponse
+from fastapi import APIRouter
 
 from antarest import __version__
 from antarest.core.config import Config
-from antarest.core.jwt import JWTUser
-from antarest.core.requests import (
-    RequestParameters,
-)
 from antarest.core.utils.web import APITag
-from antarest.core.swagger import get_path_examples
-from antarest.storage.service import StorageService
 
 
 def get_commit_id(path_resources: Path) -> Optional[str]:

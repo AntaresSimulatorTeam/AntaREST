@@ -1,9 +1,8 @@
-import copy
 import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 from zipfile import ZipFile
 
 from antarest.core.config import Config
@@ -15,7 +14,6 @@ from antarest.storage.model import (
     RawStudy,
     StudyMetadataPatchDTO,
     StudyMetadataDTO,
-    Patch,
     PatchStudy,
     StudySimResultDTO,
     StudySimSettingsDTO,

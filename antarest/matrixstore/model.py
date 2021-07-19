@@ -1,7 +1,6 @@
 import enum
 import uuid
-from distutils.util import strtobool
-from typing import List, Any, Dict, Optional
+from typing import Any, List
 
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin  # type: ignore
@@ -12,7 +11,7 @@ from sqlalchemy.orm import relationship  # type: ignore
 from sqlalchemy.orm.collections import attribute_mapped_collection  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.login.model import Identity, Group, GroupDTO, UserInfo
+from antarest.login.model import GroupDTO, Identity, UserInfo
 
 
 class Matrix(Base):  # type: ignore

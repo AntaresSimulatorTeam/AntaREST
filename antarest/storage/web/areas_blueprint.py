@@ -1,20 +1,12 @@
-import io
-import json
-from glob import escape
-from http import HTTPStatus
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, File, Depends, Body
-from fastapi.params import Param
-from starlette.responses import StreamingResponse, Response
+from fastapi import APIRouter, Depends
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.core.swagger import get_path_examples
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.storage.business.area_management import (

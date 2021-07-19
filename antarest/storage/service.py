@@ -1,14 +1,13 @@
 import logging
 from datetime import datetime
-from io import BytesIO
 from pathlib import Path
-from time import time, sleep
+from time import time
 from typing import List, IO, Optional, cast, Union
 from uuid import uuid4
 
 from antarest.core.custom_types import JSON
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
