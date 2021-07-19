@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -9,7 +10,7 @@ from starlette.testclient import TestClient
 from antarest.common.config import Config, SecurityConfig
 from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrixstore
-from antarest.matrixstore.model import MatrixDTO
+from antarest.matrixstore.model import MatrixDTO, MatrixInfoDTO
 from tests.login.test_web import create_auth_token
 
 
@@ -95,3 +96,20 @@ def test_delete() -> None:
         "/v1/matrixdataset/123", headers=create_auth_token(app)
     )
     assert res.status_code == 200
+
+
+@pytest.mark.unit_test
+def test_import() -> None:
+    matrix_info = [MatrixInfoDTO(id="123", name="Matrix/matrix.txt")]
+    service = Mock()
+    service.create_by_importation.return_value = matrix_info
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.post(
+        "/v1/matrix/_import",
+        headers=create_auth_token(app),
+        files={"file": ("Matrix.zip", bytes(5), "application/zip")},
+    )
+    assert res.status_code == 200
+    assert res.json() == matrix_info

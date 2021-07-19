@@ -99,10 +99,7 @@ class MatrixService:
                         ]
                     ):
                         id = self.file_importation(files[name])
-                        path = name.split(sep="/")
-                        length = len(path)
-                        filename = path[length - 1] if length > 0 else ""
-                        matrix_info.append(MatrixInfoDTO(id=id, name=filename))
+                        matrix_info.append(MatrixInfoDTO(id=id, name=name))
                 return matrix_info
             else:
                 id = self.file_importation(f.read())

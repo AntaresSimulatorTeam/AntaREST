@@ -1,7 +1,10 @@
 import datetime
+import io
 from unittest.mock import Mock, ANY
+from zipfile import ZipFile, ZIP_DEFLATED
 
 import pytest
+from fastapi import UploadFile
 
 from antarest.common.jwt import JWTUser, JWTGroup
 from antarest.common.requests import (
@@ -299,3 +302,47 @@ def test_dataset_lifecycle():
 
     service.delete_dataset("dataset", userA)
     dataset_repo.delete.assert_called_once()
+
+
+def test_import():
+    # Init Mock
+    repo_content = Mock()
+    repo = Mock()
+
+    file_str = "1\t2\t3\t4\t5\n6\t7\t8\t9\t10"
+    matrix_content = str.encode(file_str)
+
+    # Expected
+    id = "123"
+    exp_matrix_info = [MatrixInfoDTO(id="123", name="matrix.txt")]
+    exp_matrix = Matrix(id=id, width=5, height=2)
+    # Test
+    service = MatrixService(
+        repo=repo,
+        repo_dataset=Mock(),
+        content=repo_content,
+        user_service=Mock(),
+    )
+    service.repo_content.save.return_value = id
+    service.repo.save.return_value = exp_matrix
+
+    # CSV importation
+    zip_file = UploadFile(
+        filename="matrix.txt",
+        file=io.BytesIO(matrix_content),
+        content_type="test/plain",
+    )
+    matrix = service.create_by_importation(zip_file)
+    assert matrix == exp_matrix_info
+
+    # Zip importation
+    zip_content = io.BytesIO()
+    with ZipFile(zip_content, "w", ZIP_DEFLATED) as output_data:
+        output_data.writestr("matrix.txt", file_str)
+
+    zip_content.seek(0)
+    zip_file = UploadFile(
+        filename="Matrix.zip", file=zip_content, content_type="application/zip"
+    )
+    matrix = service.create_by_importation(zip_file)
+    assert matrix == exp_matrix_info
