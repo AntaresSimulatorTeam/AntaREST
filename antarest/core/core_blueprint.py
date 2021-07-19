@@ -41,9 +41,7 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
     return commit_id
 
 
-def create_utils_routes(
-    storage_service: StorageService, config: Config
-) -> APIRouter:
+def create_utils_routes(config: Config) -> APIRouter:
     """
     Utility endpoints
 
@@ -64,7 +62,7 @@ def create_utils_routes(
     def version() -> Any:
         version_data = {"version": __version__}
 
-        commit_id = get_commit_id(storage_service.study_service.path_resources)
+        commit_id = get_commit_id(config.resources_path)
         if commit_id is not None:
             version_data["gitcommit"] = commit_id
 

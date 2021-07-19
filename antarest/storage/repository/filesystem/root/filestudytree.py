@@ -15,7 +15,7 @@ from antarest.storage.repository.filesystem.root.study_antares import (
 from antarest.storage.repository.filesystem.root.user import User
 
 
-class Study(FolderNode):
+class FileStudyTree(FolderNode):
     """
     Top level node of antares tree structure
     """

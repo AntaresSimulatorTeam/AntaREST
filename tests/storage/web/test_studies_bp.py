@@ -271,21 +271,6 @@ def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
 
 
 @pytest.mark.unit_test
-def test_server_health() -> None:
-    app = FastAPI(title=__name__)
-    build_storage(
-        app,
-        storage_service=Mock(),
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(),
-    )
-    client = TestClient(app)
-    result = client.get("/health", stream=True)
-    assert result.json() == {"status": "available"}
-
-
-@pytest.mark.unit_test
 def test_export_files(tmp_path: Path) -> None:
     mock_storage_service = Mock()
     file_export = tmp_path / "export.zip"

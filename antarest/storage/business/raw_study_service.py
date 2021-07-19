@@ -26,7 +26,7 @@ from antarest.storage.repository.filesystem.config.model import (
     Simulation,
 )
 from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.repository.filesystem.root.study import Study
+from antarest.storage.repository.filesystem.root.filestudytree import FileStudyTree
 from antarest.storage.web.exceptions import StudyNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -123,7 +123,7 @@ class RawStudyService:
         """
         return (self.get_study_path(metadata) / "study.antares").is_file()
 
-    def get_study(self, metadata: RawStudy) -> Tuple[StudyConfig, Study]:
+    def get_study(self, metadata: RawStudy) -> Tuple[StudyConfig, FileStudyTree]:
         """
         Fetch a study object and its config
         Args:

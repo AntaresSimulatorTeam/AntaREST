@@ -15,6 +15,7 @@ from antarest.core.config import (
     StorageConfig,
     WorkspaceConfig,
 )
+from antarest.core.core_blueprint import create_utils_routes
 from antarest.storage.main import build_storage
 from antarest.storage.model import DEFAULT_WORKSPACE_NAME
 
@@ -35,13 +36,7 @@ def test_version() -> None:
     mock_storage_service.study_service.path_resources = Path("/")
 
     app = FastAPI(title=__name__)
-    build_storage(
-        app,
-        storage_service=mock_storage_service,
-        config=Config(),
-        user_service=Mock(),
-        matrix_service=Mock(),
-    )
+    app.include_router(create_utils_routes(Config()))
     client = TestClient(app)
 
     path = "/version"
@@ -49,3 +44,12 @@ def test_version() -> None:
 
     assert result.status_code == HTTPStatus.OK.value
     assert result.json()["version"] == __version__
+
+
+@pytest.mark.unit_test
+def test_server_health() -> None:
+    app = FastAPI(title=__name__)
+    app.include_router(create_utils_routes(Config()))
+    client = TestClient(app)
+    result = client.get("/health", stream=True)
+    assert result.json() == {"status": "available"}

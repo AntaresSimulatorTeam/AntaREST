@@ -185,7 +185,7 @@ def test_sta_mini_study_antares(
             1,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/core/capacity/reservoir_fr",
+            "/v1/studies/STA-mini/raw?path=input/hydro/common/capacity/reservoir_fr",
             {
                 "columns": [0, 1, 2],
                 "index": list(range(365)),

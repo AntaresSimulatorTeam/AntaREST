@@ -8,8 +8,8 @@ from markupsafe import escape
 
 from antarest.core.custom_types import JSON
 from antarest.storage.model import Study
-from antarest.storage.repository.filesystem.root.study import (
-    Study as StudyTree,
+from antarest.storage.repository.filesystem.root.filestudytree import (
+    FileStudyTree as StudyTree,
 )
 from antarest.storage.web.exceptions import (
     StudyValidationError,

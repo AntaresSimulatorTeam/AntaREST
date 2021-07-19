@@ -21,7 +21,7 @@ from antarest.storage.repository.filesystem.folder_node import (
     ChildNotFoundError,
     FilterError,
 )
-from antarest.storage.repository.filesystem.root.study import Study
+from antarest.storage.repository.filesystem.root.filestudytree import FileStudyTree
 from antarest.storage.repository.filesystem.config.model import (
     StudyConfig,
     Area,
@@ -39,7 +39,7 @@ class StudyDownloader:
         prefix: str,
         year: int,
         area_name: str,
-        study: Study,
+        study: FileStudyTree,
         url: str,
         data: StudyDownloadDTO,
     ) -> None:
@@ -79,7 +79,7 @@ class StudyDownloader:
         prefix: str,
         year: int,
         area_name: str,
-        study: Study,
+        study: FileStudyTree,
         url: str,
         data: StudyDownloadDTO,
     ) -> None:
@@ -103,7 +103,7 @@ class StudyDownloader:
         year: int,
         type_elm: Any,
         elm: str,
-        study: Study,
+        study: FileStudyTree,
         url: str,
         data: StudyDownloadDTO,
         first_element_type_condition: bool,
@@ -150,7 +150,7 @@ class StudyDownloader:
         prefix: str,
         year: int,
         type_elm: Any,
-        study: Study,
+        study: FileStudyTree,
         url: str,
         data: StudyDownloadDTO,
     ) -> None:
@@ -241,7 +241,7 @@ class StudyDownloader:
         prefix: str,
         year: int,
         config: StudyConfig,
-        study: Study,
+        study: FileStudyTree,
         url: str,
         data: StudyDownloadDTO,
     ) -> None:
@@ -264,7 +264,7 @@ class StudyDownloader:
         matrix: MatrixAggregationResult,
         config: StudyConfig,
         output_id: str,
-        study: Study,
+        study: FileStudyTree,
         url: str,
         data: StudyDownloadDTO,
     ) -> None:

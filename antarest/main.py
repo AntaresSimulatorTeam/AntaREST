@@ -20,6 +20,7 @@ from starlette.templating import Jinja2Templates
 
 from antarest import __version__
 from antarest.core.config import Config
+from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.core.utils.web import tags_metadata
@@ -191,6 +192,7 @@ def fastapi_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    application.include_router(create_utils_routes(config))
 
     @application.exception_handler(HTTPException)
     def handle_http_exception(request: Request, exc: HTTPException) -> Any:
