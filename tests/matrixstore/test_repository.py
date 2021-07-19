@@ -5,9 +5,9 @@ from unittest.mock import Mock
 
 from sqlalchemy import create_engine, and_
 
-from antarest.common.config import Config, MatrixStoreConfig, SecurityConfig
-from antarest.common.persistence import Base
-from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.config import Config, MatrixStoreConfig, SecurityConfig
+from antarest.core.persistence import Base
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.login.model import User, Password, Group, Identity
 from antarest.login.repository import UserRepository, GroupRepository
 from antarest.matrixstore.model import (

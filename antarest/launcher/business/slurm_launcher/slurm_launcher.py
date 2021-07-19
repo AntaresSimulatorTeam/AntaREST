@@ -16,11 +16,11 @@ from antareslauncher.main_option_parser import (
 )
 from antareslauncher.study_dto import StudyDTO
 
-from antarest.common.config import Config, SlurmConfig
-from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.common.jwt import DEFAULT_ADMIN_USER
-from antarest.common.requests import RequestParameters
-from antarest.common.utils.fastapi_sqlalchemy import db
+from antarest.core.config import Config, SlurmConfig
+from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.requests import RequestParameters
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.business.abstractlauncher import (
     AbstractLauncher,
     LauncherInitException,

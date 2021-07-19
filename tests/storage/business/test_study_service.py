@@ -6,8 +6,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.common.config import Config, StorageConfig, WorkspaceConfig
-from antarest.common.requests import (
+from antarest.core.config import Config, StorageConfig, WorkspaceConfig
+from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.storage.business.storage_service_utils import StorageServiceUtils

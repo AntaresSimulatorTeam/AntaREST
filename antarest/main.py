@@ -19,10 +19,10 @@ from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
 from antarest import __version__
-from antarest.common.config import Config
-from antarest.common.persistence import Base
-from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.common.utils.web import tags_metadata
+from antarest.core.config import Config
+from antarest.core.persistence import Base
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.web import tags_metadata
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
 from antarest.login.auth import Auth

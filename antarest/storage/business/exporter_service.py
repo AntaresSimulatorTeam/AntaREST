@@ -8,7 +8,7 @@ from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from antarest.common.config import Config
+from antarest.core.config import Config
 from antarest.storage.business.raw_study_service import RawStudyService
 from antarest.storage.model import Study
 from antarest.storage.repository.filesystem.factory import StudyFactory

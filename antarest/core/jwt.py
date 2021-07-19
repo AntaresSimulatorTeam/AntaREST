@@ -2,8 +2,8 @@ from typing import List, Union
 
 from dataclasses import dataclass, field
 
-from antarest.common.custom_types import JSON
-from antarest.common.roles import RoleType
+from antarest.core.custom_types import JSON
+from antarest.core.roles import RoleType
 from antarest.login.model import Group, Identity
 
 

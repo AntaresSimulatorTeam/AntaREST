@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest import __version__
-from antarest.common.config import (
+from antarest.core.config import (
     Config,
     SecurityConfig,
     StorageConfig,

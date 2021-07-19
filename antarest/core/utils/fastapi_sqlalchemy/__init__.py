@@ -1,4 +1,4 @@
-from antarest.common.utils.fastapi_sqlalchemy.middleware import (
+from antarest.core.utils.fastapi_sqlalchemy.middleware import (
     DBSessionMiddleware,
     db,
 )

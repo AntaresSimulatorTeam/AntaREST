@@ -11,7 +11,7 @@ from sqlalchemy import Column, String, Enum, DateTime, Table, ForeignKey, Intege
 from sqlalchemy.orm import relationship  # type: ignore
 from sqlalchemy.orm.collections import attribute_mapped_collection  # type: ignore
 
-from antarest.common.persistence import Base
+from antarest.core.persistence import Base
 from antarest.login.model import Identity, Group, GroupDTO, UserInfo
 
 

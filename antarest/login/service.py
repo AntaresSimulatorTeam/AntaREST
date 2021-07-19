@@ -3,13 +3,13 @@ from typing import Optional, List
 
 from fastapi import HTTPException
 
-from antarest.common.interfaces.eventbus import IEventBus
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.requests import (
+from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.common.roles import RoleType
+from antarest.core.roles import RoleType
 from antarest.login.ldap import LdapService
 from antarest.login.model import (
     User,

@@ -5,13 +5,13 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from antarest.common.config import Config
-from antarest.common.interfaces.eventbus import (
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import (
     IEventBus,
     Event,
     EventType,
 )
-from antarest.common.requests import (
+from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.launcher.business.abstractlauncher import LauncherCallbacks

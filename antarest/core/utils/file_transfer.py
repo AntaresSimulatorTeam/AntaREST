@@ -4,7 +4,7 @@ from typing import Optional
 
 from starlette.background import BackgroundTasks
 
-from antarest.common.config import Config
+from antarest.core.config import Config
 
 
 class FileTransferManager:

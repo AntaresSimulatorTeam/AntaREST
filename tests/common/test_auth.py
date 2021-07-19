@@ -3,7 +3,7 @@ from unittest.mock import Mock
 from fastapi import FastAPI
 
 from antarest.login.auth import Auth
-from antarest.common.config import Config, SecurityConfig
+from antarest.core.config import Config, SecurityConfig
 from antarest.login.model import RoleType
 
 

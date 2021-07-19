@@ -8,14 +8,14 @@ from fastapi import APIRouter, HTTPException, File, Depends, Body
 from fastapi.params import Param
 from starlette.responses import StreamingResponse, Response
 
-from antarest.common.config import Config
-from antarest.common.custom_types import JSON
-from antarest.common.jwt import JWTUser
-from antarest.common.requests import (
+from antarest.core.config import Config
+from antarest.core.custom_types import JSON
+from antarest.core.jwt import JWTUser
+from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.common.swagger import get_path_examples
-from antarest.common.utils.web import APITag
+from antarest.core.swagger import get_path_examples
+from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.storage.business.area_management import (
     AreaType,

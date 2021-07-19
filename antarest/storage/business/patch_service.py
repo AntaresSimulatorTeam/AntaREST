@@ -1,4 +1,4 @@
-from antarest.common.custom_types import JSON
+from antarest.core.custom_types import JSON
 from antarest.storage.model import Patch, PatchOutputs, RawStudy
 from antarest.storage.repository.patch_repository import PatchRepository
 

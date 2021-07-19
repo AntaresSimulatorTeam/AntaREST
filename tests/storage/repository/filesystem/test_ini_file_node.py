@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.common.custom_types import JSON
+from antarest.core.custom_types import JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
 

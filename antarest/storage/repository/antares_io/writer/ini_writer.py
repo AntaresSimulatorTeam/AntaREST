@@ -1,7 +1,7 @@
 from configparser import RawConfigParser
 from pathlib import Path
 
-from antarest.common.custom_types import JSON
+from antarest.core.custom_types import JSON
 
 
 class IniWriter:

@@ -11,14 +11,14 @@ from fastapi import FastAPI
 from markupsafe import Markup
 from starlette.testclient import TestClient
 
-from antarest.common.config import (
+from antarest.core.config import (
     Config,
     SecurityConfig,
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.roles import RoleType
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.roles import RoleType
 from antarest.storage.main import build_storage
 from antarest.storage.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -33,7 +33,7 @@ from antarest.storage.web.exceptions import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
 )
-from antarest.common.requests import (
+from antarest.core.requests import (
     RequestParameters,
 )
 

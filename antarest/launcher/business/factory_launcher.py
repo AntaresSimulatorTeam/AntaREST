@@ -1,8 +1,8 @@
 import logging
 from typing import Dict
 
-from antarest.common.config import Config
-from antarest.common.interfaces.eventbus import IEventBus
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import IEventBus
 from antarest.launcher.business.abstractlauncher import (
     AbstractLauncher,
     LauncherCallbacks,

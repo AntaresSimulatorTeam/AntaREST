@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 from typing import Tuple
 
-from antarest.common.custom_types import JSON
+from antarest.core.custom_types import JSON
 from antarest.matrixstore.service import MatrixService
 from antarest.storage.business.uri_resolver_service import UriResolverService
 from antarest.storage.repository.filesystem.config.files import (

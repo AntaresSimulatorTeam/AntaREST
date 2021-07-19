@@ -3,8 +3,8 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from unittest.mock import Mock
 
-from antarest.common.config import Config, SecurityConfig, ExternalAuthConfig
-from antarest.common.roles import RoleType
+from antarest.core.config import Config, SecurityConfig, ExternalAuthConfig
+from antarest.core.roles import RoleType
 from antarest.login.ldap import ExternalUser, LdapService, AuthDTO
 from antarest.login.model import UserCreateDTO, UserLdap, Role, Group
 

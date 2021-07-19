@@ -13,7 +13,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from antarest.common.utils.fastapi_sqlalchemy.exceptions import (
+from antarest.core.utils.fastapi_sqlalchemy.exceptions import (
     MissingSessionError,
     SessionNotInitialisedError,
 )

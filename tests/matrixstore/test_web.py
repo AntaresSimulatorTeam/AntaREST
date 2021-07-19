@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi_jwt_auth import AuthJWT
 from starlette.testclient import TestClient
 
-from antarest.common.config import Config, SecurityConfig
+from antarest.core.config import Config, SecurityConfig
 from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrixstore
 from antarest.matrixstore.model import MatrixDTO, MatrixInfoDTO

@@ -10,13 +10,13 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.common.custom_types import JSON
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.roles import RoleType
+from antarest.core.custom_types import JSON
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.roles import RoleType
 from antarest.storage.main import build_storage
 
 from antarest.storage.service import StorageService
-from antarest.common.requests import (
+from antarest.core.requests import (
     RequestParameters,
 )
 from tests.conftest import assert_study
@@ -185,7 +185,7 @@ def test_sta_mini_study_antares(
             1,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/common/capacity/reservoir_fr",
+            "/v1/studies/STA-mini/raw?path=input/hydro/core/capacity/reservoir_fr",
             {
                 "columns": [0, 1, 2],
                 "index": list(range(365)),

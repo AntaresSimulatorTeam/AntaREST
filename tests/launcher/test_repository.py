@@ -2,11 +2,11 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
-from antarest.common.utils.fastapi_sqlalchemy import db, DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy import db, DBSessionMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from antarest.common.persistence import Base
+from antarest.core.persistence import Base
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
 

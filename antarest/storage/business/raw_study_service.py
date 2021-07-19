@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 from zipfile import ZipFile
 
-from antarest.common.config import Config
-from antarest.common.custom_types import JSON, SUB_JSON
+from antarest.core.config import Config
+from antarest.core.custom_types import JSON, SUB_JSON
 from antarest.storage.business.patch_service import PatchService
 from antarest.storage.business.storage_service_utils import StorageServiceUtils
 from antarest.storage.model import (

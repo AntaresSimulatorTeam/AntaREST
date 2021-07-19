@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.common.config import (
+from antarest.core.config import (
     Config,
     SecurityConfig,
     StorageConfig,
@@ -22,7 +22,7 @@ from antarest.storage.service import StorageService
 project_dir: Path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_dir))
 
-from antarest.common.custom_types import JSON
+from antarest.core.custom_types import JSON
 
 
 @pytest.fixture

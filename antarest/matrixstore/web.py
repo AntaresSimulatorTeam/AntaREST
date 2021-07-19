@@ -2,13 +2,13 @@ from typing import Any, Dict, Optional, List
 
 from fastapi import APIRouter, Depends, Body, Query, File, UploadFile
 
-from antarest.common.config import Config
-from antarest.common.jwt import JWTUser
-from antarest.common.requests import (
+from antarest.core.config import Config
+from antarest.core.jwt import JWTUser
+from antarest.core.requests import (
     UserHasNotPermissionError,
     RequestParameters,
 )
-from antarest.common.utils.web import APITag
+from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.model import (
     MatrixDTO,

@@ -5,10 +5,10 @@ from uuid import uuid4
 
 import pytest
 
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.roles import RoleType
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.roles import RoleType
 from antarest.login.model import User, Group
-from antarest.common.requests import (
+from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.storage.business.permissions import StudyPermissionType

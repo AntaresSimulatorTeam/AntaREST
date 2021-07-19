@@ -2,8 +2,8 @@ from typing import Optional
 
 from fastapi import FastAPI
 
-from antarest.common.config import Config
-from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.launcher.repository import JobResultRepository
 from antarest.launcher.service import LauncherService
 from antarest.launcher.web import create_launcher_api

@@ -4,9 +4,9 @@ from uuid import uuid4
 import pytest
 from sqlalchemy import create_engine
 
-from antarest.common.config import Config
-from antarest.common.persistence import Base
-from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.config import Config
+from antarest.core.persistence import Base
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.launcher.business.local_launcher.local_launcher import (
     LocalLauncher,
 )

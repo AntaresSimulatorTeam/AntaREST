@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional, List
 from unittest.mock import Mock
 
-from antarest.common.custom_types import JSON
+from antarest.core.custom_types import JSON
 from antarest.matrixstore.model import MatrixDTO
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.context import ContextServer

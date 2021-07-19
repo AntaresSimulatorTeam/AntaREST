@@ -7,8 +7,8 @@ from typing import Optional, List, Dict
 from sqlalchemy import exists, and_  # type: ignore
 from sqlalchemy.orm import aliased  # type: ignore
 
-from antarest.common.config import Config
-from antarest.common.utils.fastapi_sqlalchemy import db
+from antarest.core.config import Config
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import (
     Matrix,
     MatrixContent,

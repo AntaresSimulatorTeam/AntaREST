@@ -8,8 +8,8 @@ from zipfile import ZipFile
 
 from fastapi import HTTPException, UploadFile
 
-from antarest.common.jwt import JWTUser
-from antarest.common.requests import (
+from antarest.core.jwt import JWTUser
+from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )

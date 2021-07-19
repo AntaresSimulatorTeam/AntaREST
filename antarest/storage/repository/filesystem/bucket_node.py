@@ -1,6 +1,6 @@
 from typing import Optional, List, Union, Dict
 
-from antarest.common.custom_types import JSON
+from antarest.core.custom_types import JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.folder_node import FolderNode
 from antarest.storage.repository.filesystem.inode import TREE

@@ -1,6 +1,6 @@
 from typing import List, Optional, cast, Dict, Any
 
-from antarest.common.custom_types import JSON, SUB_JSON
+from antarest.core.custom_types import JSON, SUB_JSON
 from antarest.storage.repository.antares_io.reader import IniReader
 from antarest.storage.repository.antares_io.reader.ini_reader import IReader
 from antarest.storage.repository.antares_io.writer.ini_writer import IniWriter

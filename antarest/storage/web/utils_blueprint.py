@@ -8,13 +8,13 @@ from fastapi.params import Param
 from starlette.responses import StreamingResponse
 
 from antarest import __version__
-from antarest.common.config import Config
-from antarest.common.jwt import JWTUser
-from antarest.common.requests import (
+from antarest.core.config import Config
+from antarest.core.jwt import JWTUser
+from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.common.utils.web import APITag
-from antarest.common.swagger import get_path_examples
+from antarest.core.utils.web import APITag
+from antarest.core.swagger import get_path_examples
 from antarest.storage.service import StorageService
 
 

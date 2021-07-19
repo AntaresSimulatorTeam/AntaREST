@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 from typing import List, Optional, Tuple, Union, Dict
 
-from antarest.common.custom_types import JSON
+from antarest.core.custom_types import JSON
 from antarest.storage.repository.filesystem.config.model import StudyConfig
 from antarest.storage.repository.filesystem.inode import INode, TREE, S
 from antarest.storage.repository.filesystem.context import ContextServer

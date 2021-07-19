@@ -5,10 +5,10 @@ from uuid import uuid4
 
 import pytest
 
-from antarest.common.config import Config
-from antarest.common.interfaces.eventbus import Event, EventType
-from antarest.common.jwt import JWTUser
-from antarest.common.requests import RequestParameters
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import Event, EventType
+from antarest.core.jwt import JWTUser
+from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth

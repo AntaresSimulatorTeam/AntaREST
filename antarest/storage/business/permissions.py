@@ -1,8 +1,8 @@
 import enum
 import logging
 
-from antarest.common.jwt import JWTUser
-from antarest.common.roles import RoleType
+from antarest.core.jwt import JWTUser
+from antarest.core.roles import RoleType
 from antarest.storage.model import PublicMode, Study
 
 logger = logging.getLogger(__name__)

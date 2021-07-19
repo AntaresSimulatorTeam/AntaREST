@@ -5,7 +5,7 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.common.config import (
+from antarest.core.config import (
     Config,
     SecurityConfig,
     StorageConfig,

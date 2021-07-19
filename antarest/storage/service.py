@@ -6,14 +6,14 @@ from time import time, sleep
 from typing import List, IO, Optional, cast, Union
 from uuid import uuid4
 
-from antarest.common.custom_types import JSON
-from antarest.common.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.common.jwt import JWTUser, DEFAULT_ADMIN_USER
-from antarest.common.requests import (
+from antarest.core.custom_types import JSON
+from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.common.roles import RoleType
+from antarest.core.roles import RoleType
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.storage.business.area_management import (

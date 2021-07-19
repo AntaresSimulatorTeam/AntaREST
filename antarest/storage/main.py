@@ -2,8 +2,8 @@ from typing import Optional
 
 from fastapi import FastAPI
 
-from antarest.common.config import Config
-from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
 from antarest.storage.business.exporter_service import ExporterService

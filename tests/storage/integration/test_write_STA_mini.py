@@ -2,11 +2,11 @@ from typing import Optional
 
 import pytest
 
-from antarest.common.custom_types import SUB_JSON
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.roles import RoleType
+from antarest.core.custom_types import SUB_JSON
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.roles import RoleType
 from antarest.storage.service import StorageService
-from antarest.common.requests import (
+from antarest.core.requests import (
     RequestParameters,
 )
 from tests.storage.integration.data.de_details_hourly import de_details_hourly

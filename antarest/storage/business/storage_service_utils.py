@@ -6,7 +6,7 @@ from zipfile import ZipFile, BadZipFile
 
 from markupsafe import escape
 
-from antarest.common.custom_types import JSON
+from antarest.core.custom_types import JSON
 from antarest.storage.model import Study
 from antarest.storage.repository.filesystem.root.study import (
     Study as StudyTree,

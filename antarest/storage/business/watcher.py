@@ -6,8 +6,8 @@ from typing import List
 
 from filelock import FileLock  # type: ignore
 
-from antarest.common.config import Config
-from antarest.common.utils.fastapi_sqlalchemy import db
+from antarest.core.config import Config
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
 from antarest.storage.service import StorageService

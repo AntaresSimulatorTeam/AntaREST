@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from fastapi import HTTPException
 from markupsafe import escape
 
-from antarest.common.jwt import JWTUser
+from antarest.core.jwt import JWTUser
 
 
 @dataclass

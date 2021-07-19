@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
 
-from antarest.common.config import Config
+from antarest.core.config import Config
 from antarest.login.service import LoginService
 from antarest.matrixstore.repository import (
     MatrixRepository,

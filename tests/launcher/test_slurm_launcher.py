@@ -5,9 +5,9 @@ from unittest.mock import Mock, ANY
 import pytest
 from sqlalchemy import create_engine
 
-from antarest.common.config import Config, LauncherConfig, SlurmConfig
-from antarest.common.persistence import Base
-from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.config import Config, LauncherConfig, SlurmConfig
+from antarest.core.persistence import Base
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.launcher.business.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
 )

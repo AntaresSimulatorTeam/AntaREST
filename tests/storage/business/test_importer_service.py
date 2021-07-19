@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.common.config import Config
+from antarest.core.config import Config
 from antarest.storage.business.importer_service import (
     ImporterService,
     fix_study_root,

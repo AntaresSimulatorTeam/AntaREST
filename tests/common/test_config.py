@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from antarest.common.config import Config
+from antarest.core.config import Config
 
 
 @pytest.mark.unit_test
