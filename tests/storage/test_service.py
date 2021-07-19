@@ -130,7 +130,7 @@ def test_create_study() -> None:
             "lastsave": 9876,
         }
     }
-    study_service.create_study.return_value = expected
+    study_service.create.return_value = expected
 
     service = StudyService(
         study_service=study_service,
@@ -163,7 +163,7 @@ def test_create_study() -> None:
         ),
     )
 
-    study_service.create_study.assert_called()
+    study_service.create.assert_called()
     repository.save.assert_called_once_with(expected)
 
 

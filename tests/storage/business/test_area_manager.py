@@ -8,6 +8,7 @@ from antarest.storage.business.area_management import (
     AreaInfoDTO,
     AreaPatchUpdateDTO,
 )
+from antarest.storage.business.rawstudy.model import FileStudy
 from antarest.storage.business.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -16,6 +17,9 @@ from antarest.storage.repository.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
     Set,
+)
+from antarest.storage.repository.filesystem.root.filestudytree import (
+    FileStudyTree,
 )
 
 
@@ -39,7 +43,9 @@ def test_get_all_area():
         },
         sets={"s1": Set(["a1"])},
     )
-    raw_study_service.get_study.return_value = (config, None)
+    raw_study_service.get_raw.return_value = FileStudy(
+        config=config, tree=FileStudyTree(context=Mock(), config=config)
+    )
 
     raw_study_service.patch_service = Mock()
     raw_study_service.patch_service.get.return_value = Patch(
@@ -126,7 +132,9 @@ def test_update_area():
         },
         sets={"s1": Set(["a1"])},
     )
-    raw_study_service.get_study.return_value = (config, None)
+    raw_study_service.get_raw.return_value = FileStudy(
+        config=config, tree=FileStudyTree(context=Mock(), config=config)
+    )
 
     raw_study_service.patch_service = Mock()
     raw_study_service.patch_service.get.return_value = Patch(
