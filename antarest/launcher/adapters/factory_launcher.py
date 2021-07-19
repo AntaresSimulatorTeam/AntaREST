@@ -13,7 +13,7 @@ from antarest.launcher.adapters.local_launcher.local_launcher import (
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
 )
-from antarest.storage.service import StudyService
+from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
 

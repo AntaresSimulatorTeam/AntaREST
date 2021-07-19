@@ -1,12 +1,16 @@
 from typing import Optional, List, Union, Dict
 
 from antarest.core.custom_types import JSON
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
+    RawFileNode,
+)
 
 
 class BucketNode(FolderNode):

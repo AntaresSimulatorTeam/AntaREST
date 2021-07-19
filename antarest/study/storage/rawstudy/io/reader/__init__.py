@@ -1,4 +1,4 @@
-from antarest.storage.business.rawstudy.io.reader.ini_reader import (
+from antarest.study.storage.rawstudy.io.reader.ini_reader import (
     IniReader,
     SetsIniReader,
 )

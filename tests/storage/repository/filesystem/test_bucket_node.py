@@ -1,11 +1,15 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.storage.repository.filesystem.bucket_node import BucketNode
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
+    BucketNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.repository.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
 
 
 def build_bucket(tmp: Path) -> Path:

@@ -73,7 +73,7 @@ class WorkspaceConfig:
 @dataclass(frozen=True)
 class StorageConfig:
     """
-    Sub config object dedicated to storage module
+    Sub config object dedicated to study module
     """
 
     workspaces: Dict[str, WorkspaceConfig] = field(default_factory=lambda: {})

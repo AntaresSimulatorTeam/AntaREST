@@ -1,12 +1,14 @@
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.root.input.hydro.series.area.mod import (
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.area.mod import (
     InputHydroSeriesAreaMod,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.hydro.series.area.ror import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.area.ror import (
     InputHydroSeriesAreaRor,
 )
 

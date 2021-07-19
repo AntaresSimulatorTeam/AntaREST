@@ -19,8 +19,8 @@ from antarest.core.config import (
 )
 from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.roles import RoleType
-from antarest.storage.main import build_storage
-from antarest.storage.model import (
+from antarest.study.main import build_storage
+from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     PublicMode,
     StudyDownloadDTO,

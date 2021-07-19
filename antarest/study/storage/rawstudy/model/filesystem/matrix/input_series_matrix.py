@@ -4,12 +4,16 @@ import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
 
 from antarest.core.custom_types import JSON
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.context import ContextServer
-from antarest.storage.business.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
+    MatrixNode,
+)
 
 
 class InputSeriesMatrix(MatrixNode):

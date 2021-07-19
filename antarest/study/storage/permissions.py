@@ -3,7 +3,7 @@ import logging
 
 from antarest.core.jwt import JWTUser
 from antarest.core.roles import RoleType
-from antarest.storage.model import PublicMode, Study
+from antarest.study.model import PublicMode, Study
 
 logger = logging.getLogger(__name__)
 

@@ -1,15 +1,17 @@
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.mode.mcall.areas.areas import (
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.areas.areas import (
     OutputSimulationModeMcAllAreas,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.mode.mcall.grid.grid import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.grid.grid import (
     OutputSimulationModeMcAllGrid,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.mode.mcall.links.links import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.links.links import (
     OutputSimulationModeMcAllLinks,
 )
 

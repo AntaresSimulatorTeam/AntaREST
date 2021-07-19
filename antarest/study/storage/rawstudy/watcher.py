@@ -9,8 +9,8 @@ from filelock import FileLock  # type: ignore
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
-from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
-from antarest.storage.service import StudyService
+from antarest.study.model import StudyFolder, DEFAULT_WORKSPACE_NAME
+from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
 

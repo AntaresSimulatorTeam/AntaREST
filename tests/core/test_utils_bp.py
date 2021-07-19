@@ -16,8 +16,8 @@ from antarest.core.config import (
     WorkspaceConfig,
 )
 from antarest.core.core_blueprint import create_utils_routes
-from antarest.storage.main import build_storage
-from antarest.storage.model import DEFAULT_WORKSPACE_NAME
+from antarest.study.main import build_storage
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 
 
 CONFIG = Config(

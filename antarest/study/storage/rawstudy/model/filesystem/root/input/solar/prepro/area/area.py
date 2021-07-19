@@ -1,21 +1,23 @@
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.root.input.solar.prepro.area.conversion import (
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.root.input.solar.prepro.area.conversion import (
     InputSolarPreproAreaConversation,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.solar.prepro.area.data import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.solar.prepro.area.data import (
     InputSolarPreproAreaData,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.solar.prepro.area.k import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.solar.prepro.area.k import (
     InputSolarPreproAreaK,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.solar.prepro.area.settings import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.solar.prepro.area.settings import (
     InputSolarPreproAreaSettings,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.solar.prepro.area.translation import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.solar.prepro.area.translation import (
     InputSolarPreproAreaTranslation,
 )
 

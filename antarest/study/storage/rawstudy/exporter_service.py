@@ -8,11 +8,13 @@ from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.core.config import Config
-from antarest.storage.business.rawstudy.raw_study_service import (
+from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.storage.model import Study
-from antarest.storage.business.rawstudy.model.filesystem import StudyFactory
+from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.factory import (
+    StudyFactory,
+)
 
 logger = logging.getLogger(__name__)
 

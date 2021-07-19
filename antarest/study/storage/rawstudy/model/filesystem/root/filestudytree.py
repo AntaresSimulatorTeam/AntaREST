@@ -1,20 +1,30 @@
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.root.desktop import Desktop
-from antarest.storage.business.rawstudy.model.filesystem.root.input.input import Input
-from antarest.storage.business.rawstudy.model.filesystem.root.layers.layers import Layers
-from antarest.storage.business.rawstudy.model.filesystem.root.logs import Logs
-from antarest.storage.business.rawstudy.model.filesystem.root.output.output import Output
-from antarest.storage.business.rawstudy.model.filesystem.root.settings.settings import (
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.root.desktop import (
+    Desktop,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.input import (
+    Input,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.layers.layers import (
+    Layers,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.logs import Logs
+from antarest.study.storage.rawstudy.model.filesystem.root.output.output import (
+    Output,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.settings import (
     Settings,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.study_antares import (
+from antarest.study.storage.rawstudy.model.filesystem.root.study_antares import (
     StudyAntares,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.user import User
+from antarest.study.storage.rawstudy.model.filesystem.root.user import User
 
 
 class FileStudyTree(FolderNode):

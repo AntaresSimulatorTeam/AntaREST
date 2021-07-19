@@ -1,4 +1,6 @@
-from antarest.storage.business.rawstudy.model.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
+    RawFileNode,
+)
 
 
 class OutputSimulationAboutComments(RawFileNode):

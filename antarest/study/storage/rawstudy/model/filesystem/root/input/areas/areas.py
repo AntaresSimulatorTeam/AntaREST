@@ -1,15 +1,17 @@
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.root.input.areas.item.item import (
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.item import (
     InputAreasItem,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.areas.list import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import (
     InputAreasList,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.areas.sets import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.sets import (
     InputAreasSets,
 )
 

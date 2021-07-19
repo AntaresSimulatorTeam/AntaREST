@@ -9,12 +9,12 @@ from antarest.core.requests import (
 )
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.storage.business.area_management import (
+from antarest.study.storage.area_management import (
     AreaType,
     AreaCreationDTO,
     AreaPatchUpdateDTO,
 )
-from antarest.storage.service import StudyService
+from antarest.study.service import StudyService
 
 
 def create_study_area_routes(
@@ -23,7 +23,7 @@ def create_study_area_routes(
     """
     Endpoint implementation for studies area management
     Args:
-        storage_service: storage service facade to handle request
+        storage_service: study service facade to handle request
         config: main server configuration
 
     Returns:

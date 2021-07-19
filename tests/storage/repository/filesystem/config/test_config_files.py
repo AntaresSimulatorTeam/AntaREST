@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from antarest.storage.repository.filesystem.config.files import (
+from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
 )
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
     Link,

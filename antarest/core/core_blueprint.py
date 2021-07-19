@@ -36,7 +36,7 @@ def create_utils_routes(config: Config) -> APIRouter:
     Utility endpoints
 
     Args:
-        storage_service: storage service facade to handle request
+        storage_service: study service facade to handle request
         config: main server configuration
 
     Returns:

@@ -4,17 +4,19 @@ from pathlib import Path
 from typing import Tuple
 
 from antarest.matrixstore.service import MatrixService
-from antarest.storage.business.common.uri_resolver_service import (
+from antarest.study.common.uri_resolver_service import (
     UriResolverService,
 )
-from antarest.storage.business.rawstudy.model.filesystem.config.files import (
+from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
 )
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.context import ContextServer
-from antarest.storage.business.rawstudy.model.filesystem.root.filestudytree import (
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
 

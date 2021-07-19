@@ -28,7 +28,7 @@ from antarest.launcher.adapters.abstractlauncher import (
 )
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LogType
-from antarest.storage.service import StudyService
+from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")

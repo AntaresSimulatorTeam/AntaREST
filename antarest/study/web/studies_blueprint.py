@@ -19,14 +19,14 @@ from antarest.core.swagger import get_path_examples
 from antarest.core.utils.file_transfer import FileTransferManager
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.storage.model import (
+from antarest.study.model import (
     PublicMode,
     StudyDownloadDTO,
     StudyMetadataPatchDTO,
 )
 from antarest.core.config import Config
-from antarest.storage.business.study_download_utils import StudyDownloader
-from antarest.storage.service import StudyService
+from antarest.study.storage.study_download_utils import StudyDownloader
+from antarest.study.service import StudyService
 
 
 def sanitize_uuid(uuid: str) -> str:
@@ -43,7 +43,7 @@ def create_study_routes(
     """
     Endpoint implementation for studies management
     Args:
-        storage_service: storage service facade to handle request
+        storage_service: study service facade to handle request
         config: main server configuration
 
     Returns:

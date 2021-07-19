@@ -1,21 +1,23 @@
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.root.input.wind.prepro.area.conversion import (
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.root.input.wind.prepro.area.conversion import (
     InputWindPreproAreaConversation,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.wind.prepro.area.data import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.wind.prepro.area.data import (
     InputWindPreproAreaData,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.wind.prepro.area.k import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.wind.prepro.area.k import (
     InputWindPreproAreaK,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.wind.prepro.area.settings import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.wind.prepro.area.settings import (
     InputWindPreproAreaSettings,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.wind.prepro.area.translation import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.wind.prepro.area.translation import (
     InputWindPreproAreaTranslation,
 )
 

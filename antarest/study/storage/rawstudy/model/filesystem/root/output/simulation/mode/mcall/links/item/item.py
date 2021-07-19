@@ -1,13 +1,17 @@
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.context import ContextServer
-from antarest.storage.business.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.mode.mcall.links.item.id import (
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.links.item.id import (
     OutputSimulationModeMcAllLinksItemId as Id,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.mode.mcall.links.item.values import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.links.item.values import (
     OutputSimulationModeMcAllLinksItemValues as Values,
 )
 

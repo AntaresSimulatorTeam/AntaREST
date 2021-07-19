@@ -13,7 +13,7 @@ from antarest.launcher.adapters.abstractlauncher import (
     LauncherCallbacks,
 )
 from antarest.launcher.model import JobStatus, LogType
-from antarest.storage.service import StudyService
+from antarest.study.service import StudyService
 
 
 class StudyVersionNotSupported(Exception):

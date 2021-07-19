@@ -4,14 +4,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.storage.model import (
+from antarest.study.model import (
     Patch,
     PatchStudy,
     PatchArea,
     PatchOutputs,
     PatchLeafDict,
 )
-from antarest.storage.business.rawstudy.patch_service import PatchService
+from antarest.study.storage.rawstudy.patch_service import PatchService
 
 PATCH_CONTENT = """ 
 {

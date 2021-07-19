@@ -18,7 +18,7 @@ from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.model import JobResult, JobStatus, LogType
 from antarest.launcher.repository import JobResultRepository
-from antarest.storage.service import StudyService
+from antarest.study.service import StudyService
 
 
 class JobNotFound(HTTPException):

@@ -2,12 +2,14 @@ from pathlib import Path
 from typing import Optional, List
 from unittest.mock import Mock
 
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.repository.filesystem.context import ContextServer
-from antarest.storage.repository.filesystem.inode import V, S, G, TREE
-from antarest.storage.repository.filesystem.lazy_node import LazyNode
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 
 class MockLazyNode(LazyNode[str, str, str]):

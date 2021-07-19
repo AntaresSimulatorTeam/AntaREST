@@ -3,13 +3,13 @@ import pandas as pd
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.repository.filesystem.matrix.head_writer import (
+from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import (
     AreaHeadWriter,
 )
-from antarest.storage.repository.filesystem.matrix.output_series_matrix import (
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
     OutputSeriesMatrix,
 )
 

@@ -5,10 +5,12 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.custom_types import JSON
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.repository.filesystem.ini_file_node import IniFileNode
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
+    IniFileNode,
+)
 
 
 def build_dataset(tmp_path: str) -> Tuple[Path, JSON]:

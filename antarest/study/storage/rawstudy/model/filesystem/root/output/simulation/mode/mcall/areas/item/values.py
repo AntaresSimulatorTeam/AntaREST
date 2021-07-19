@@ -1,14 +1,16 @@
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.context import ContextServer
-from antarest.storage.business.rawstudy.model.filesystem.matrix.date_serializer import (
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     FactoryDateSerializer,
 )
-from antarest.storage.business.rawstudy.model.filesystem.matrix.head_writer import (
+from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import (
     AreaHeadWriter,
 )
-from antarest.storage.business.rawstudy.model.filesystem.matrix.output_series_matrix import (
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
     OutputSeriesMatrix,
 )
 

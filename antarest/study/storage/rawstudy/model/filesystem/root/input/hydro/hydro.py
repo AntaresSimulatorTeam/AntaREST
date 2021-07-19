@@ -1,21 +1,23 @@
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.root.input.hydro.allocation.allocation import (
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.allocation.allocation import (
     InputHydroAllocation,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.hydro.common.common import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.common import (
     InputHydroCommon,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.hydro.hydro_ini import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.hydro_ini import (
     InputHydroIni,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.hydro.prepro.prepro import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.prepro import (
     InputHydroPrepro,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.hydro.series.series import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.series import (
     InputHydroSeries,
 )
 

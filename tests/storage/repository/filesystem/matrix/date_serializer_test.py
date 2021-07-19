@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from antarest.storage.repository.filesystem.matrix.date_serializer import (
+from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     DailyMatrixSerializer,
     MonthlyMatrixSerializer,
     HourlyMatrixSerializer,

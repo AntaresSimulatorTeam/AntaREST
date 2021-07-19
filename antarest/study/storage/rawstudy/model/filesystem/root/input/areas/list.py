@@ -1,10 +1,15 @@
 from typing import Optional, List
 
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.context import ContextServer
-from antarest.storage.business.rawstudy.model.filesystem.inode import INode, TREE
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import (
+    INode,
+    TREE,
+)
 
 
 class InputAreasList(INode[List[str], List[str], List[str]]):

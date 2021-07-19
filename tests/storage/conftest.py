@@ -12,12 +12,12 @@ from antarest.core.config import (
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.storage.business.rawstudy.raw_study_service import (
+from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.storage.main import build_storage
-from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME
-from antarest.storage.service import StudyService
+from antarest.study.main import build_storage
+from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME
+from antarest.study.service import StudyService
 
 project_dir: Path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_dir))

@@ -8,10 +8,10 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from antarest.storage.business.rawstudy.raw_study_service import (
+from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.storage.model import (
+from antarest.study.model import (
     MatrixAggregationResult,
     RawStudy,
     StudyDownloadDTO,
@@ -19,14 +19,14 @@ from antarest.storage.model import (
     StudyDownloadType,
     MatrixIndex,
 )
-from antarest.storage.business.rawstudy.model.filesystem import (
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
     FilterError,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.filestudytree import (
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
-from antarest.storage.business.rawstudy.model.filesystem import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
 )

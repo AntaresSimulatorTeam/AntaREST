@@ -1,12 +1,12 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-import pytest
-
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.repository.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
+    RawFileNode,
+)
 
 
 def test_get(tmp_path: Path) -> None:

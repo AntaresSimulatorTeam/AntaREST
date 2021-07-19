@@ -29,7 +29,7 @@ from antarest.launcher.main import build_launcher
 from antarest.login.auth import Auth
 from antarest.login.main import build_login
 from antarest.matrixstore.main import build_matrixstore
-from antarest.storage.main import build_storage
+from antarest.study.main import build_storage
 
 
 def parse_arguments() -> argparse.Namespace:

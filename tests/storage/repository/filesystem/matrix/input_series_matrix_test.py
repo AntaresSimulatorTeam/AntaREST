@@ -1,10 +1,10 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.repository.filesystem.matrix.input_series_matrix import (
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
     InputSeriesMatrix,
 )
 

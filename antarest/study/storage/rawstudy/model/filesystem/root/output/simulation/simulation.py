@@ -1,32 +1,36 @@
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Simulation,
 )
-from antarest.storage.business.rawstudy.model.filesystem.context import ContextServer
-from antarest.storage.business.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.about.about import (
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.about import (
     OutputSimulationAbout,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.annualSystemCost import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.annualSystemCost import (
     OutputSimulationAnnualSystemCost,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.checkIntegrity import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.checkIntegrity import (
     OutputSimulationCheckIntegrity,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.info_antares_output import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.info_antares_output import (
     OutputSimulationInfoAntaresOutput,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.mode.economy import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.economy import (
     OutputSimulationMode,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.simulation_comments import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.simulation_comments import (
     OutputSimulationSimulationComments,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.simulation_log import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.simulation_log import (
     OutputSimulationSimulationLog,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers import (
     OutputSimulationTsNumbers,
 )
 

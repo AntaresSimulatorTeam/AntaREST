@@ -5,12 +5,16 @@ from unittest.mock import Mock
 
 from antarest.core.custom_types import JSON
 from antarest.matrixstore.model import MatrixDTO
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.repository.filesystem.context import ContextServer
-from antarest.storage.repository.filesystem.inode import TREE
-from antarest.storage.repository.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
+    MatrixNode,
+)
 
 
 MOCK_MATRIX_JSON = {

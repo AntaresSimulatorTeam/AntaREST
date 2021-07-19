@@ -7,7 +7,7 @@ from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.launcher.repository import JobResultRepository
 from antarest.launcher.service import LauncherService
 from antarest.launcher.web import create_launcher_api
-from antarest.storage.service import StudyService
+from antarest.study.service import StudyService
 
 
 def build_launcher(

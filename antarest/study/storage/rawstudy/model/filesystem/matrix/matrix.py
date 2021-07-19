@@ -3,14 +3,18 @@ from typing import List, Optional, Union
 
 from antarest.core.custom_types import JSON
 from antarest.matrixstore.model import MatrixDTO
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.context import ContextServer
-from antarest.storage.business.rawstudy.model.filesystem.exceptions import (
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.exceptions import (
     DenormalizationException,
 )
-from antarest.storage.business.rawstudy.model.filesystem.lazy_node import LazyNode
+from antarest.study.storage.rawstudy.model.filesystem.lazy_node import (
+    LazyNode,
+)
 
 
 class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):

@@ -2,11 +2,16 @@ from abc import abstractmethod, ABC
 from typing import List, Optional, Tuple, Union, Dict
 
 from antarest.core.custom_types import JSON
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.inode import INode, TREE
-from antarest.storage.business.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.inode import (
+    INode,
+    TREE,
+)
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
 
 
 class FilterError(Exception):

@@ -1,36 +1,38 @@
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.storage.business.rawstudy.model.filesystem.inode import TREE
-from antarest.storage.business.rawstudy.model.filesystem.root.input.areas.areas import (
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.areas import (
     InputAreas,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.bindingconstraints.bindingcontraints import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.bindingconstraints.bindingcontraints import (
     BindingConstraints,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.hydro.hydro import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.hydro import (
     InputHydro,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.link.link import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.link.link import (
     InputLink,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.load.load import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.load.load import (
     InputLoad,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.miscgen.miscgen import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.miscgen.miscgen import (
     InputMiscGen,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.reserves.reserves import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.reserves.reserves import (
     InputReserves,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.solar.solar import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.solar.solar import (
     InputSolar,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.thermal.thermal import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.thermal import (
     InputThermal,
 )
-from antarest.storage.business.rawstudy.model.filesystem.root.input.wind.wind import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.wind.wind import (
     InputWind,
 )
 

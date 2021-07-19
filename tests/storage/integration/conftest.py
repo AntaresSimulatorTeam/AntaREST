@@ -11,15 +11,9 @@ from antarest.core.config import (
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.storage.business.rawstudy.exporter_service import ExporterService
-from antarest.storage.business.rawstudy.importer_service import ImporterService
-from antarest.storage.business.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.storage.main import build_storage
-from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.service import StudyService
+from antarest.study.main import build_storage
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.service import StudyService
 
 
 @pytest.fixture

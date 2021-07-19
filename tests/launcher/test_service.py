@@ -12,7 +12,7 @@ from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
-from antarest.storage.model import StudyMetadataDTO
+from antarest.study.model import StudyMetadataDTO
 
 
 @pytest.mark.unit_test

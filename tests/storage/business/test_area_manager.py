@@ -1,24 +1,22 @@
-import json
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.storage.business.area_management import (
+from antarest.study.storage.area_management import (
     AreaManager,
     AreaType,
-    AreaInfoDTO,
     AreaPatchUpdateDTO,
 )
-from antarest.storage.business.rawstudy.model import FileStudy
-from antarest.storage.business.rawstudy.raw_study_service import (
+from antarest.study.storage.rawstudy.model import FileStudy
+from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.storage.model import RawStudy, Patch, PatchLeafDict, PatchArea
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.model import RawStudy, Patch, PatchLeafDict, PatchArea
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
     Set,
 )
-from antarest.storage.repository.filesystem.root.filestudytree import (
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
 

@@ -13,9 +13,9 @@ from starlette.testclient import TestClient
 from antarest.core.custom_types import JSON
 from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.roles import RoleType
-from antarest.storage.main import build_storage
+from antarest.study.main import build_storage
 
-from antarest.storage.service import StudyService
+from antarest.study.service import StudyService
 from antarest.core.requests import (
     RequestParameters,
 )

@@ -1,6 +1,6 @@
 import pytest
 
-from antarest.storage.model import PatchLeaf, PatchNode, PatchLeafDict
+from antarest.study.model import PatchLeaf, PatchNode, PatchLeafDict
 
 
 @pytest.mark.unit_test

@@ -6,14 +6,16 @@ from pathlib import Path
 from typing import IO, Optional, Union
 from uuid import uuid4
 
-from antarest.storage.business.rawstudy.raw_study_service import (
+from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
 
 from antarest.core.utils.utils import extract_zip
-from antarest.storage.model import Study, RawStudy
-from antarest.storage.business.rawstudy.io.reader import IniReader
-from antarest.storage.business.rawstudy.model.filesystem import StudyFactory
+from antarest.study.model import Study, RawStudy
+from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.model.filesystem.factory import (
+    StudyFactory,
+)
 from antarest.core.exceptions import (
     BadOutputError,
     StudyValidationError,

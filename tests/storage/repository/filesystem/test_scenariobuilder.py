@@ -1,12 +1,12 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     FileStudyTreeConfig,
     ThermalCluster,
 )
-from antarest.storage.repository.filesystem.root.settings.scenariobuilder import (
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import (
     ScenarioBuilder,
 )
 

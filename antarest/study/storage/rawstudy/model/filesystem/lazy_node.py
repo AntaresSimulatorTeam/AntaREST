@@ -2,11 +2,18 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional, List, Generic, Union, cast
 
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.storage.business.rawstudy.model.filesystem.context import ContextServer
-from antarest.storage.business.rawstudy.model.filesystem.inode import INode, S, G, V
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import (
+    INode,
+    S,
+    G,
+    V,
+)
 
 
 class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore

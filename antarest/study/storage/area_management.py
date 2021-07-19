@@ -3,11 +3,14 @@ from typing import Optional, Dict, List
 
 from pydantic import BaseModel
 
-from antarest.storage.business.rawstudy.raw_study_service import (
+from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.storage.model import RawStudy, PatchArea, PatchLeafDict
-from antarest.storage.business.rawstudy.model.filesystem import Area, Set
+from antarest.study.model import RawStudy, PatchArea, PatchLeafDict
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    Area,
+    Set,
+)
 
 
 class AreaType(Enum):

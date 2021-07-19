@@ -11,9 +11,9 @@ from antarest.core.config import (
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.storage.main import build_storage
-from antarest.storage.service import StudyService
+from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.main import build_storage
+from antarest.study.service import StudyService
 
 
 def assert_url_content(storage_service: StudyService, url: str) -> bytes:

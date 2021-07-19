@@ -11,8 +11,8 @@ from antarest.login.model import User, Group
 from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.storage.business.permissions import StudyPermissionType
-from antarest.storage.model import (
+from antarest.study.storage.permissions import StudyPermissionType
+from antarest.study.model import (
     Study,
     StudyContentStatus,
     StudyFolder,
@@ -24,14 +24,14 @@ from antarest.storage.model import (
     MatrixIndex,
 )
 
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     FileStudyTreeConfig,
     Simulation,
     Link,
     Set,
 )
-from antarest.storage.service import StudyService, UserHasNotPermissionError
+from antarest.study.service import StudyService, UserHasNotPermissionError
 
 
 def test_get_studies_uuid() -> None:

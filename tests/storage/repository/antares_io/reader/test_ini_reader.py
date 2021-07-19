@@ -3,8 +3,8 @@ from typing import Callable
 
 import pytest
 
-from antarest.storage.business.rawstudy.io.reader import IniReader
-from antarest.storage.business.rawstudy.io.reader.ini_reader import (
+from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.io.reader.ini_reader import (
     SetsIniReader,
 )
 

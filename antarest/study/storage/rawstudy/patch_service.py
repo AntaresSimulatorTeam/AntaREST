@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from antarest.core.custom_types import JSON
-from antarest.storage.model import Patch, PatchOutputs, RawStudy
+from antarest.study.model import Patch, PatchOutputs, RawStudy
 
 
 class PatchService:

@@ -11,8 +11,8 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.model import Group
-from antarest.storage.business.rawstudy.watcher import Watcher
-from antarest.storage.model import StudyFolder, DEFAULT_WORKSPACE_NAME
+from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.study.model import StudyFolder, DEFAULT_WORKSPACE_NAME
 
 
 def build_config(root: Path) -> Config:

@@ -3,11 +3,11 @@ from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
 from antarest.core.custom_types import JSON
-from antarest.storage.business.rawstudy.io.reader import (
+from antarest.study.storage.rawstudy.io.reader import (
     IniReader,
     SetsIniReader,
 )
-from antarest.storage.business.rawstudy.model.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
     Simulation,

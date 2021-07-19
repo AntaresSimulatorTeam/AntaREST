@@ -17,24 +17,24 @@ from antarest.core.requests import (
 from antarest.core.roles import RoleType
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.storage.business.area_management import (
+from antarest.study.storage.area_management import (
     AreaManager,
     AreaType,
     AreaInfoDTO,
     AreaCreationDTO,
     AreaPatchUpdateDTO,
 )
-from antarest.storage.business.rawstudy.exporter_service import ExporterService
-from antarest.storage.business.rawstudy.importer_service import ImporterService
-from antarest.storage.business.permissions import (
+from antarest.study.storage.rawstudy.exporter_service import ExporterService
+from antarest.study.storage.rawstudy.importer_service import ImporterService
+from antarest.study.storage.permissions import (
     StudyPermissionType,
     check_permission,
 )
-from antarest.storage.business.rawstudy.raw_study_service import (
+from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.storage.business.study_download_utils import StudyDownloader
-from antarest.storage.model import (
+from antarest.study.storage.study_download_utils import StudyDownloader
+from antarest.study.model import (
     Study,
     StudyContentStatus,
     StudyFolder,
@@ -47,7 +47,7 @@ from antarest.storage.model import (
     MatrixAggregationResult,
     StudySimResultDTO,
 )
-from antarest.storage.repository import StudyMetadataRepository
+from antarest.study.repository import StudyMetadataRepository
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
