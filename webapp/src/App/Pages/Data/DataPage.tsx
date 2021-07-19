@@ -84,7 +84,6 @@ const Data = (props: PropTypes) => {
   const onMatrixClick = async (matrixInfo: MatrixInfoDTO) => {
     setCurrentMatrix(matrixInfo);
     setMatrixModal(true);
-    console.log(matrixInfo);
   };
 
   useEffect(() => {
