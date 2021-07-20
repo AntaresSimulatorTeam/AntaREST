@@ -22,7 +22,7 @@ from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.web import tags_metadata
-from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy import create_engine
 
 from antarest import __version__
 from antarest.eventbus.main import build_eventbus
