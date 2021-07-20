@@ -5,7 +5,7 @@ import time
 from typing import List, Callable, Optional, Dict, Awaitable
 from uuid import uuid4
 
-from antarest.common.interfaces.eventbus import Event, IEventBus
+from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.eventbus.business.interfaces import IEventBusBackend
 
 logger = logging.getLogger(__name__)

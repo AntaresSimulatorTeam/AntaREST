@@ -5,18 +5,18 @@ from zipfile import ZipFile
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.common.config import (
+from antarest.core.config import (
     Config,
     SecurityConfig,
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.storage.main import build_storage
-from antarest.storage.service import StorageService
+from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.main import build_storage
+from antarest.study.service import StudyService
 
 
-def assert_url_content(storage_service: StorageService, url: str) -> bytes:
+def assert_url_content(storage_service: StudyService, url: str) -> bytes:
     app = FastAPI(title=__name__)
     build_storage(
         app,

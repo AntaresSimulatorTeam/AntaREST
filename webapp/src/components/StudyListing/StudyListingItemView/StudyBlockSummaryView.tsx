@@ -105,7 +105,7 @@ const StudyBlockSummaryView = (props: StudyListingItemPropTypes) => {
         <Grid container spacing={2} className={classes.info}>
           <Grid item xs={6}>
             <FontAwesomeIcon icon="user" />
-            <span className={classes.infotxt}>{study.author}</span>
+            <span className={classes.infotxt}>{study.owner.name}</span>
           </Grid>
           <Grid item xs={6}>
             <FontAwesomeIcon icon="clock" />

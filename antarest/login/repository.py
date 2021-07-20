@@ -3,9 +3,9 @@ from typing import Optional, List
 
 from sqlalchemy import exists  # type: ignore
 
-from antarest.common.config import Config
-from antarest.common.roles import RoleType
-from antarest.common.utils.fastapi_sqlalchemy import db
+from antarest.core.config import Config
+from antarest.core.roles import RoleType
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import (
     User,
     Password,

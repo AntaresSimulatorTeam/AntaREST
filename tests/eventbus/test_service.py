@@ -6,8 +6,8 @@ from unittest.mock import Mock, MagicMock
 import pytest
 import redis
 
-from antarest.common.config import Config, EventBusConfig, RedisConfig
-from antarest.common.interfaces.eventbus import Event
+from antarest.core.config import Config, EventBusConfig, RedisConfig
+from antarest.core.interfaces.eventbus import Event
 from antarest.eventbus.main import build_eventbus
 
 

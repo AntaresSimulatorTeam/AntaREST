@@ -11,16 +11,16 @@ from fastapi import FastAPI
 from markupsafe import Markup
 from starlette.testclient import TestClient
 
-from antarest.common.config import (
+from antarest.core.config import (
     Config,
     SecurityConfig,
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.roles import RoleType
-from antarest.storage.main import build_storage
-from antarest.storage.model import (
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.roles import RoleType
+from antarest.study.main import build_storage
+from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     PublicMode,
     StudyDownloadDTO,
@@ -29,11 +29,11 @@ from antarest.storage.model import (
     StudySimResultDTO,
     StudySimSettingsDTO,
 )
-from antarest.storage.web.exceptions import (
+from antarest.core.exceptions import (
     IncorrectPathError,
     UrlNotMatchJsonDataError,
 )
-from antarest.common.requests import (
+from antarest.core.requests import (
     RequestParameters,
 )
 
@@ -268,21 +268,6 @@ def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
     result = client.get("/v1/studies/1")
 
     assert result.json() == study
-
-
-@pytest.mark.unit_test
-def test_server_health() -> None:
-    app = FastAPI(title=__name__)
-    build_storage(
-        app,
-        storage_service=Mock(),
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(),
-    )
-    client = TestClient(app)
-    result = client.get("/health", stream=True)
-    assert result.json() == {"status": "available"}
 
 
 @pytest.mark.unit_test

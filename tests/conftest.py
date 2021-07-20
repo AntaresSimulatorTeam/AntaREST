@@ -5,7 +5,7 @@ from typing import Any, Callable
 
 import pytest
 
-from antarest.common.custom_types import JSON, SUB_JSON
+from antarest.core.custom_types import JSON, SUB_JSON
 
 project_dir: Path = Path(__file__).parent.parent
 sys.path.insert(0, str(project_dir))

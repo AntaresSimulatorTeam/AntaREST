@@ -2,7 +2,7 @@ import json
 
 import dataclasses
 
-from antarest.common.interfaces.eventbus import Event
+from antarest.core.interfaces.eventbus import Event
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 
 

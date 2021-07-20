@@ -5,20 +5,20 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from antarest.common.config import Config
-from antarest.common.interfaces.eventbus import (
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import (
     IEventBus,
     Event,
     EventType,
 )
-from antarest.common.requests import (
+from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.launcher.business.abstractlauncher import LauncherCallbacks
-from antarest.launcher.business.factory_launcher import FactoryLauncher
+from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
+from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.model import JobResult, JobStatus, LogType
 from antarest.launcher.repository import JobResultRepository
-from antarest.storage.service import StorageService
+from antarest.study.service import StudyService
 
 
 class JobNotFound(HTTPException):
@@ -37,7 +37,7 @@ class LauncherService:
     def __init__(
         self,
         config: Config,
-        storage_service: StorageService,
+        storage_service: StudyService,
         repository: JobResultRepository,
         event_bus: IEventBus,
         factory_launcher: FactoryLauncher = FactoryLauncher(),

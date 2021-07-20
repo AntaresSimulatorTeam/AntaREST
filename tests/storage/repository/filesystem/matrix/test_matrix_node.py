@@ -3,12 +3,18 @@ from pathlib import Path
 from typing import Optional, List
 from unittest.mock import Mock
 
-from antarest.common.custom_types import JSON
+from antarest.core.custom_types import JSON
 from antarest.matrixstore.model import MatrixDTO
-from antarest.storage.repository.filesystem.config.model import StudyConfig
-from antarest.storage.repository.filesystem.context import ContextServer
-from antarest.storage.repository.filesystem.inode import TREE
-from antarest.storage.repository.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
+    MatrixNode,
+)
 
 
 MOCK_MATRIX_JSON = {
@@ -30,7 +36,9 @@ MOCK_MATRIX_DTO = MatrixDTO(
 
 
 class MockMatrixNode(MatrixNode):
-    def __init__(self, context: ContextServer, config: StudyConfig) -> None:
+    def __init__(
+        self, context: ContextServer, config: FileStudyTreeConfig
+    ) -> None:
         super().__init__(config=config, context=context, freq="annual")
 
     def load(
@@ -44,7 +52,7 @@ class MockMatrixNode(MatrixNode):
     def _dump_json(self, data: JSON) -> None:
         json.dump(data, self.config.path.open("w"))
 
-    def build(self, config: StudyConfig) -> TREE:
+    def build(self, config: FileStudyTreeConfig) -> TREE:
         pass  # not used
 
     def check_errors(
@@ -65,7 +73,7 @@ def test_normalize(tmp_path: Path):
 
     node = MockMatrixNode(
         context=ContextServer(matrix=matrix_service, resolver=resolver),
-        config=StudyConfig(study_path=file, study_id="mi-id"),
+        config=FileStudyTreeConfig(study_path=file, study_id="mi-id"),
     )
 
     node.normalize()
@@ -86,7 +94,7 @@ def test_denormalize(tmp_path: Path):
 
     node = MockMatrixNode(
         context=ContextServer(matrix=Mock(), resolver=resolver),
-        config=StudyConfig(study_path=file, study_id="mi-id"),
+        config=FileStudyTreeConfig(study_path=file, study_id="mi-id"),
     )
 
     node.denormalize()

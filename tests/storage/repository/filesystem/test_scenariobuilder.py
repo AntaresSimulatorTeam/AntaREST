@@ -1,12 +1,12 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    StudyConfig,
+    FileStudyTreeConfig,
     ThermalCluster,
 )
-from antarest.storage.repository.filesystem.root.settings.scenariobuilder import (
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import (
     ScenarioBuilder,
 )
 
@@ -95,7 +95,7 @@ def test_get(tmp_path: Path):
 
     node = ScenarioBuilder(
         context=Mock(),
-        config=StudyConfig(
+        config=FileStudyTreeConfig(
             study_path=path, areas=areas, outputs=dict(), study_id="id"
         ),
     )

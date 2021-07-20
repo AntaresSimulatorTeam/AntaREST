@@ -1,8 +1,10 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.storage.repository.filesystem.config.model import StudyConfig
-from antarest.storage.repository.filesystem.root.input.areas.list import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import (
     InputAreasList,
 )
 
@@ -16,7 +18,7 @@ IT
 """
     file.write_text(content)
 
-    config = StudyConfig(
+    config = FileStudyTreeConfig(
         study_path=file,
         study_id="id",
         areas={"fr": None, "de": None, "it": None},

@@ -6,12 +6,12 @@ from zipfile import ZipFile, ZIP_DEFLATED
 import pytest
 from fastapi import UploadFile
 
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.requests import (
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.common.roles import RoleType
+from antarest.core.roles import RoleType
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (

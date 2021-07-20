@@ -4,8 +4,8 @@ from typing import Any
 
 from sqlalchemy import Integer, Column, Enum, String, DateTime  # type: ignore
 
-from antarest.common.custom_types import JSON
-from antarest.common.persistence import Base, DTO
+from antarest.core.custom_types import JSON
+from antarest.core.persistence import Base, DTO
 
 
 class LogType(enum.Enum):

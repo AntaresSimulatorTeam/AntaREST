@@ -8,14 +8,14 @@ from markupsafe import escape
 from pydantic import BaseModel
 from starlette.responses import JSONResponse
 
-from antarest.common.config import Config
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.requests import (
+from antarest.core.config import Config
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.common.roles import RoleType
-from antarest.common.utils.web import APITag
+from antarest.core.roles import RoleType
+from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.model import (
     User,

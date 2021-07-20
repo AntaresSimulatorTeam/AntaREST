@@ -1,12 +1,9 @@
-from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.common.config import Config
-from antarest.common.jwt import DEFAULT_ADMIN_USER
-from antarest.common.requests import RequestParameters
 from antarest.matrixstore.model import MatrixDTO
-from antarest.storage.business.uri_resolver_service import UriResolverService
-from antarest.storage.service import StorageService
+from antarest.study.common.uri_resolver_service import (
+    UriResolverService,
+)
 
 MOCK_MATRIX_JSON = {
     "index": ["1", "2"],

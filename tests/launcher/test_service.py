@@ -5,14 +5,14 @@ from uuid import uuid4
 
 import pytest
 
-from antarest.common.config import Config
-from antarest.common.interfaces.eventbus import Event, EventType
-from antarest.common.jwt import JWTUser
-from antarest.common.requests import RequestParameters
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import Event, EventType
+from antarest.core.jwt import JWTUser
+from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
-from antarest.storage.model import StudyMetadataDTO
+from antarest.study.model import StudyMetadataDTO, OwnerInfo, PublicMode
 
 
 @pytest.mark.unit_test
@@ -25,7 +25,9 @@ def test_service_run_study(get_current_user_mock):
         name="name",
         created=1,
         updated=1,
-        author="author",
+        owner=OwnerInfo(name="author"),
+        groups=[],
+        public_mode=PublicMode.NONE,
         version=42,
         workspace="default",
         managed=True,

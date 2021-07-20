@@ -5,10 +5,10 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.common.config import Config, SecurityConfig
-from antarest.common.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
-from antarest.common.requests import RequestParameters
-from antarest.common.roles import RoleType
+from antarest.core.config import Config, SecurityConfig
+from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
+from antarest.core.requests import RequestParameters
+from antarest.core.roles import RoleType
 from antarest.launcher.main import build_launcher
 from antarest.launcher.model import JobResult, JobStatus
 

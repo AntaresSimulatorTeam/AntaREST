@@ -3,10 +3,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from antarest.common.config import Config
-from antarest.common.jwt import JWTUser
-from antarest.common.requests import RequestParameters
-from antarest.common.utils.web import APITag
+from antarest.core.config import Config
+from antarest.core.jwt import JWTUser
+from antarest.core.requests import RequestParameters
+from antarest.core.utils.web import APITag
 from antarest.launcher.model import LogType
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth

@@ -8,8 +8,8 @@ from fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from antarest.common.config import Config
-from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.login.ldap import LdapService
 from antarest.login.repository import (
     UserRepository,

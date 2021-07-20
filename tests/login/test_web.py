@@ -10,9 +10,9 @@ from fastapi import FastAPI
 from fastapi_jwt_auth import AuthJWT
 from starlette.testclient import TestClient
 
-from antarest.common.config import Config, SecurityConfig
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.requests import RequestParameters
+from antarest.core.config import Config, SecurityConfig
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.requests import RequestParameters
 from antarest.login.main import build_login
 from antarest.login.model import (
     User,

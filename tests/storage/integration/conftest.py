@@ -5,19 +5,15 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.common.config import (
+from antarest.core.config import (
     Config,
     SecurityConfig,
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.storage.business.exporter_service import ExporterService
-from antarest.storage.business.importer_service import ImporterService
-from antarest.storage.business.raw_study_service import RawStudyService
-from antarest.storage.main import build_storage
-from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.service import StorageService
+from antarest.study.main import build_storage
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.service import StudyService
 
 
 @pytest.fixture
@@ -33,7 +29,7 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 @pytest.fixture
 def storage_service(
     tmp_path: str, project_path: Path, sta_mini_zip_path: Path
-) -> StorageService:
+) -> StudyService:
 
     path_studies = Path(tmp_path) / "studies"
 

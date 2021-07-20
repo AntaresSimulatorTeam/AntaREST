@@ -4,8 +4,8 @@ from unittest.mock import Mock
 import pytest
 from fastapi import HTTPException
 
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.requests import (
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )

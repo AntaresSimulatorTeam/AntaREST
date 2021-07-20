@@ -1,19 +1,23 @@
-import json
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.storage.business.area_management import (
+from antarest.study.storage.area_management import (
     AreaManager,
     AreaType,
-    AreaInfoDTO,
     AreaPatchUpdateDTO,
 )
-from antarest.storage.business.raw_study_service import RawStudyService
-from antarest.storage.model import RawStudy, Patch, PatchLeafDict, PatchArea
-from antarest.storage.repository.filesystem.config.model import (
-    StudyConfig,
+from antarest.study.storage.rawstudy.model import FileStudy
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
+)
+from antarest.study.model import RawStudy, Patch, PatchLeafDict, PatchArea
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
     Area,
     Set,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
+    FileStudyTree,
 )
 
 
@@ -28,7 +32,7 @@ def test_get_all_area():
     area_manager = AreaManager(raw_study_service=raw_study_service)
 
     study = RawStudy()
-    config = StudyConfig(
+    config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         study_id="",
         areas={
@@ -37,7 +41,9 @@ def test_get_all_area():
         },
         sets={"s1": Set(["a1"])},
     )
-    raw_study_service.get_study.return_value = (config, None)
+    raw_study_service.get_raw.return_value = FileStudy(
+        config=config, tree=FileStudyTree(context=Mock(), config=config)
+    )
 
     raw_study_service.patch_service = Mock()
     raw_study_service.patch_service.get.return_value = Patch(
@@ -115,7 +121,7 @@ def test_update_area():
     area_manager = AreaManager(raw_study_service=raw_study_service)
 
     study = RawStudy()
-    config = StudyConfig(
+    config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         study_id="",
         areas={
@@ -124,7 +130,9 @@ def test_update_area():
         },
         sets={"s1": Set(["a1"])},
     )
-    raw_study_service.get_study.return_value = (config, None)
+    raw_study_service.get_raw.return_value = FileStudy(
+        config=config, tree=FileStudyTree(context=Mock(), config=config)
+    )
 
     raw_study_service.patch_service = Mock()
     raw_study_service.patch_service.get.return_value = Patch(

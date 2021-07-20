@@ -211,7 +211,7 @@ const InformationView = (props: PropTypes) => {
             </div>
             <div className={classes.info}>
               <FontAwesomeIcon icon="user" />
-              <span className={classes.infotxt}>{study.author}</span>
+              <span className={classes.infotxt}>{study.owner.name}</span>
             </div>
             <div className={classes.info}>
               <FontAwesomeIcon icon="clock" />

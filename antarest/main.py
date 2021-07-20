@@ -19,16 +19,17 @@ from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
 from antarest import __version__
-from antarest.common.config import Config
-from antarest.common.persistence import Base
-from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.common.utils.web import tags_metadata
+from antarest.core.config import Config
+from antarest.core.core_blueprint import create_utils_routes
+from antarest.core.persistence import Base
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.web import tags_metadata
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
 from antarest.login.auth import Auth
 from antarest.login.main import build_login
 from antarest.matrixstore.main import build_matrixstore
-from antarest.storage.main import build_storage
+from antarest.study.main import build_storage
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -191,6 +192,7 @@ def fastapi_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    application.include_router(create_utils_routes(config))
 
     @application.exception_handler(HTTPException)
     def handle_http_exception(request: Request, exc: HTTPException) -> Any:

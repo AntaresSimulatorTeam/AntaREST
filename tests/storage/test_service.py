@@ -5,14 +5,14 @@ from uuid import uuid4
 
 import pytest
 
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.roles import RoleType
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.roles import RoleType
 from antarest.login.model import User, Group
-from antarest.common.requests import (
+from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.storage.business.permissions import StudyPermissionType
-from antarest.storage.model import (
+from antarest.study.storage.permissions import StudyPermissionType
+from antarest.study.model import (
     Study,
     StudyContentStatus,
     StudyFolder,
@@ -23,15 +23,16 @@ from antarest.storage.model import (
     MatrixAggregationResult,
     MatrixIndex,
 )
+from antarest.study.storage.rawstudy.model import FileStudy
 
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    StudyConfig,
+    FileStudyTreeConfig,
     Simulation,
     Link,
     Set,
 )
-from antarest.storage.service import StorageService, UserHasNotPermissionError
+from antarest.study.service import StudyService, UserHasNotPermissionError
 
 
 def test_get_studies_uuid() -> None:
@@ -48,7 +49,7 @@ def test_get_studies_uuid() -> None:
 
     study_service = Mock()
 
-    service = StorageService(
+    service = StudyService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -83,7 +84,7 @@ def test_sync_studies_from_disk() -> None:
     repository = Mock()
     repository.get_all.side_effect = [[ma, mb], [ma]]
 
-    service = StorageService(
+    service = StudyService(
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -130,9 +131,9 @@ def test_create_study() -> None:
             "lastsave": 9876,
         }
     }
-    study_service.create_study.return_value = expected
+    study_service.create.return_value = expected
 
-    service = StorageService(
+    service = StudyService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -163,7 +164,7 @@ def test_create_study() -> None:
         ),
     )
 
-    study_service.create_study.assert_called()
+    study_service.create.assert_called()
     repository.save.assert_called_once_with(expected)
 
 
@@ -208,7 +209,7 @@ def test_save_metadata() -> None:
         groups=[group],
     )
 
-    service = StorageService(
+    service = StudyService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -264,7 +265,7 @@ def test_download_output() -> None:
         by_year=True,
         error=False,
     )
-    config = StudyConfig(
+    config = FileStudyTreeConfig(
         study_path=input_study.path,
         study_id="",
         areas={"east": area},
@@ -277,7 +278,7 @@ def test_download_output() -> None:
 
     repository.get.return_value = input_study
 
-    service = StorageService(
+    service = StudyService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -287,8 +288,7 @@ def test_download_output() -> None:
     )
 
     res_study = {"columns": [["H. VAL|Euro/MWh"]], "data": [[0.5]]}
-    study_service.get_study_path.return_value = Path(input_study.path)
-    study_service.study_factory.create_from_fs.return_value = config, study
+    study_service.get_raw.return_value = FileStudy(config=config, tree=study)
     study.get.return_value = res_study
 
     # AREA TYPE
@@ -347,7 +347,7 @@ def test_change_owner() -> None:
     repository = Mock()
     user_service = Mock()
     study_service = Mock()
-    service = StorageService(
+    service = StudyService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -389,7 +389,7 @@ def test_manage_group() -> None:
 
     repository = Mock()
     user_service = Mock()
-    service = StorageService(
+    service = StudyService(
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -467,7 +467,7 @@ def test_set_public_mode() -> None:
 
     repository = Mock()
     user_service = Mock()
-    service = StorageService(
+    service = StudyService(
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -505,7 +505,7 @@ def test_check_errors():
     repo = Mock()
     repo.get.return_value = study
 
-    service = StorageService(
+    service = StudyService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -532,7 +532,7 @@ def test_assert_permission() -> None:
 
     repository = Mock()
 
-    service = StorageService(
+    service = StudyService(
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
