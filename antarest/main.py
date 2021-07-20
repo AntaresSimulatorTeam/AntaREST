@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 from datetime import timedelta
+from io import StringIO
 from pathlib import Path
 from typing import Tuple, Any, Optional, Union
 
@@ -19,7 +20,7 @@ from starlette.templating import Jinja2Templates
 
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
-from antarest.core.persistence import Base
+from antarest.core.persistence import Base, upgrade_db
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.web import tags_metadata
 from sqlalchemy import create_engine
@@ -31,6 +32,9 @@ from antarest.login.auth import Auth
 from antarest.login.main import build_login
 from antarest.matrixstore.main import build_matrixstore
 from antarest.study.main import build_storage
+
+
+logger = logging.getLogger(__name__)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -53,6 +57,13 @@ def parse_arguments() -> argparse.Namespace:
         "--no-front",
         dest="no_front",
         help="Not embed the front build",
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
+        "--auto-upgrade-db",
+        dest="auto_upgrade_db",
+        help="Automatically upgrade db",
         action="store_true",
         required=False,
     )
@@ -79,17 +90,27 @@ def get_default_config_path_or_raise() -> Path:
     return config_path
 
 
-def get_arguments() -> Tuple[Path, bool, bool]:
+def get_arguments() -> Tuple[Path, bool, bool, bool]:
     arguments = parse_arguments()
 
     display_version = arguments.version or False
     if display_version:
-        return Path("."), display_version, arguments.no_front
+        return (
+            Path("."),
+            display_version,
+            arguments.no_front,
+            arguments.auto_upgrade_db,
+        )
 
     config_file = Path(
         arguments.config_file or get_default_config_path_or_raise()
     )
-    return config_file, display_version, arguments.no_front
+    return (
+        config_file,
+        display_version,
+        arguments.no_front,
+        arguments.auto_upgrade_db,
+    )
 
 
 def get_local_path() -> Path:
@@ -130,14 +151,17 @@ def fastapi_app(
     config_file: Path,
     resource_path: Optional[Path] = None,
     mount_front: bool = True,
+    auto_upgrade_db: bool = False,
 ) -> FastAPI:
     res = resource_path or get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
     configure_logger(config)
 
-    logging.getLogger(__name__).info("Initiating application")
+    logger.info("Initiating application")
 
     # Database
+    if auto_upgrade_db:
+        upgrade_db(config_file)
     connect_args = {}
     if config.db_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
@@ -251,11 +275,15 @@ def fastapi_app(
 
 
 if __name__ == "__main__":
-    config_file, display_version, no_front = get_arguments()
+    config_file, display_version, no_front, auto_upgrade_db = get_arguments()
 
     if display_version:
         print(__version__)
         sys.exit()
     else:
-        app = fastapi_app(config_file, mount_front=not no_front)
+        app = fastapi_app(
+            config_file,
+            mount_front=not no_front,
+            auto_upgrade_db=auto_upgrade_db,
+        )
         uvicorn.run(app, host="0.0.0.0", port=8080)
