@@ -1,3 +1,4 @@
+from glob import escape
 from pathlib import Path
 from typing import IO, Any
 from zipfile import ZipFile, BadZipFile
@@ -31,6 +32,10 @@ class DTO:
 
     def __repr__(self) -> str:
         return self.__str__()
+
+
+def sanitize_uuid(uuid: str) -> str:
+    return str(escape(uuid))
 
 
 def extract_zip(stream: IO[bytes], dst: Path) -> None:

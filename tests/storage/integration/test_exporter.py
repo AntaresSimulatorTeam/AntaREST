@@ -23,7 +23,7 @@ def assert_url_content(storage_service: StudyService, url: str) -> bytes:
         user_service=Mock(),
         storage_service=storage_service,
         matrix_service=Mock(),
-        config=storage_service.study_service.config,
+        config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
     res = client.get(url, stream=True)

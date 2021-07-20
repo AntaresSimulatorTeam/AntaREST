@@ -4,6 +4,7 @@ class APITag:
     study_permissions = "Manage Study Permissions"
     study_management = "Manage Studies"
     study_data = "Manage Study Data"
+    study_raw_data = "Manage Study Raw File Data"
     study_outputs = "Manage Outputs"
     matrix = "Manage Matrix"
     misc = "Miscellaneous"
@@ -15,6 +16,9 @@ tags_metadata = [
     },
     {
         "name": APITag.study_data,
+    },
+    {
+        "name": APITag.study_raw_data,
     },
     {
         "name": APITag.launcher,

@@ -22,6 +22,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.web.areas_blueprint import create_study_area_routes
+from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
 
 
@@ -89,6 +90,9 @@ def build_storage(
     watcher.start()
 
     application.include_router(create_study_routes(storage_service, config))
+    application.include_router(
+        create_raw_study_routes(storage_service, config)
+    )
     application.include_router(
         create_study_area_routes(storage_service, config)
     )

@@ -18,12 +18,12 @@ from antarest.study.service import StudyService
 
 
 def create_study_area_routes(
-    storage_service: StudyService, config: Config
+    study_service: StudyService, config: Config
 ) -> APIRouter:
     """
     Endpoint implementation for studies area management
     Args:
-        storage_service: study service facade to handle request
+        study_service: study service facade to handle request
         config: main server configuration
 
     Returns:
@@ -43,7 +43,7 @@ def create_study_area_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        areas_list = storage_service.get_all_areas(uuid, type, params)
+        areas_list = study_service.get_all_areas(uuid, type, params)
         return areas_list
 
     @bp.post(
@@ -57,7 +57,7 @@ def create_study_area_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        return storage_service.create_area(uuid, area_creation_info, params)
+        return study_service.create_area(uuid, area_creation_info, params)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}",
@@ -71,7 +71,7 @@ def create_study_area_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        storage_service.update_area(uuid, area_id, area_patch_dto, params)
+        study_service.update_area(uuid, area_id, area_patch_dto, params)
         return ""
 
     @bp.delete(
@@ -85,7 +85,7 @@ def create_study_area_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        storage_service.delete_area(uuid, area_id, params)
+        study_service.delete_area(uuid, area_id, params)
         return area_id
 
     return bp

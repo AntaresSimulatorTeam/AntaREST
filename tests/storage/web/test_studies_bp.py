@@ -396,7 +396,7 @@ def test_validate() -> None:
         matrix_service=Mock(),
     )
     client = TestClient(app, raise_server_exceptions=False)
-    res = client.get("/v1/studies/my-uuid/validate")
+    res = client.get("/v1/studies/my-uuid/raw/validate")
 
     assert res.json() == ["Hello"]
     mock_service.check_errors.assert_called_once_with("my-uuid")

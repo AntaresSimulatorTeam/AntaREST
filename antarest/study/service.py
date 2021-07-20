@@ -70,13 +70,13 @@ class StudyService:
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
     ):
-        self.study_service = study_service
+        self.raw_study_service = study_service
         self.importer_service = importer_service
         self.exporter_service = exporter_service
         self.user_service = user_service
         self.repository = repository
         self.event_bus = event_bus
-        self.areas = AreaManager(self.study_service)
+        self.areas = AreaManager(self.raw_study_service)
 
     def get(
         self, uuid: str, url: str, depth: int, params: RequestParameters
@@ -99,7 +99,7 @@ class StudyService:
             logger.info(
                 "study %s data asked by user %s", uuid, params.get_user_id()
             )
-            return self.study_service.get(study, url, depth)
+            return self.raw_study_service.get(study, url, depth)
 
         raise StudyTypeUnsupported(uuid, study.type)
 
@@ -124,7 +124,7 @@ class StudyService:
         """
         logger.info("studies metadata asked by user %s", params.get_user_id())
         return {
-            study.id: self.study_service.get_study_information(
+            study.id: self.raw_study_service.get_study_information(
                 study, summary=True
             )
             for study in self._get_study_metadatas(params)
@@ -150,7 +150,7 @@ class StudyService:
         logger.info(
             "study %s metadata asked by user %s", uuid, params.get_user_id()
         )
-        return self.study_service.get_study_information(study)
+        return self.raw_study_service.get_study_information(study)
 
     def update_study_information(
         self,
@@ -180,13 +180,15 @@ class StudyService:
             self.repository.save(study)
         if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
-            study_settings = self.study_service.get(study, study_settings_url)
+            study_settings = self.raw_study_service.get(
+                study, study_settings_url
+            )
             study_settings["horizon"] = metadata_patch.horizon
-            self.study_service.edit_study(
+            self.raw_study_service.edit_study(
                 study, study_settings_url, study_settings
             )
 
-        return self.study_service.patch_update_study_metadata(
+        return self.raw_study_service.patch_update_study_metadata(
             study, metadata_patch
         )
 
@@ -209,7 +211,7 @@ class StudyService:
         logger.info(
             "study %s path asked by user %s", uuid, params.get_user_id()
         )
-        return self.study_service.get_study_path(study)
+        return self.raw_study_service.get_study_path(study)
 
     def create_study(
         self, study_name: str, group_ids: List[str], params: RequestParameters
@@ -225,7 +227,9 @@ class StudyService:
 
         """
         sid = str(uuid4())
-        study_path = str(self.study_service.get_default_workspace_path() / sid)
+        study_path = str(
+            self.raw_study_service.get_default_workspace_path() / sid
+        )
 
         raw = RawStudy(
             id=sid,
@@ -237,7 +241,7 @@ class StudyService:
             version=RawStudyService.new_default_version,
         )
 
-        raw = self.study_service.create(raw)
+        raw = self.raw_study_service.create(raw)
         self._save_study(raw, params.user, group_ids)
         self.event_bus.push(
             Event(EventType.STUDY_CREATED, raw.to_json_summary())
@@ -295,7 +299,7 @@ class StudyService:
                         else PublicMode.NONE,
                     )
 
-                    self.study_service.update_from_raw_meta(
+                    self.raw_study_service.update_from_raw_meta(
                         study, fallback_on_default=True
                     )
 
@@ -350,14 +354,16 @@ class StudyService:
             name=dest_study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(
-                self.study_service.get_default_workspace_path() / dest_id
+                self.raw_study_service.get_default_workspace_path() / dest_id
             ),
             created_at=datetime.now(),
             updated_at=datetime.now(),
             version=src_study.version,
         )
 
-        study = self.study_service.copy(src_study, dest_study, with_outputs)
+        study = self.raw_study_service.copy(
+            src_study, dest_study, with_outputs
+        )
         self._save_study(study, params.user, group_ids)
         self.event_bus.push(
             Event(EventType.STUDY_CREATED, study.to_json_summary())
@@ -424,7 +430,7 @@ class StudyService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        self.study_service.delete(study)
+        self.raw_study_service.delete(study)
         self.repository.delete(study.id)
         self.event_bus.push(
             Event(EventType.STUDY_DELETED, study.to_json_summary())
@@ -450,7 +456,7 @@ class StudyService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        self.study_service.delete_output(study, output_name)
+        self.raw_study_service.delete_output(study, output_name)
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
@@ -494,7 +500,7 @@ class StudyService:
         )
 
         matrix = StudyDownloader.build(
-            self.study_service.get_raw(study), output_id, data
+            self.raw_study_service.get_raw(study), output_id, data
         )
         return matrix
 
@@ -522,7 +528,7 @@ class StudyService:
             params.get_user_id(),
         )
 
-        return self.study_service.get_study_sim_result(study)
+        return self.raw_study_service.get_study_sim_result(study)
 
     def set_sim_reference(
         self,
@@ -556,7 +562,7 @@ class StudyService:
             study_id,
         )
 
-        self.study_service.set_reference_output(study, output_id, status)
+        self.raw_study_service.set_reference_output(study, output_id, status)
 
     def import_study(
         self,
@@ -576,7 +582,7 @@ class StudyService:
 
         """
         sid = str(uuid4())
-        path = str(self.study_service.get_default_workspace_path() / sid)
+        path = str(self.raw_study_service.get_default_workspace_path() / sid)
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
@@ -650,9 +656,9 @@ class StudyService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        updated = self.study_service.edit_study(study, url, new)
+        updated = self.raw_study_service.edit_study(study, url, new)
 
-        self.study_service.edit_study(
+        self.raw_study_service.edit_study(
             study, url="study/antares/lastsave", new=int(time())
         )
 
@@ -689,7 +695,7 @@ class StudyService:
         self.repository.save(study)
 
         if isinstance(study, RawStudy) and new_owner:
-            self.study_service.edit_study(
+            self.raw_study_service.edit_study(
                 study, url="study/antares/author", new=new_owner.name
             )
 
@@ -788,7 +794,7 @@ class StudyService:
 
     def check_errors(self, uuid: str) -> List[str]:
         study = self._get_study(uuid)
-        return self.study_service.check_errors(cast(RawStudy, study))
+        return self.raw_study_service.check_errors(cast(RawStudy, study))
 
     def get_all_areas(
         self,
@@ -936,7 +942,7 @@ class StudyService:
 
         """
         try:
-            if self.study_service.check_errors(metadata):
+            if self.raw_study_service.check_errors(metadata):
                 return StudyContentStatus.WARNING
             else:
                 return StudyContentStatus.VALID
