@@ -488,13 +488,13 @@ class StudyService:
             raise StudyTypeUnsupported(study_id, study.type)
 
         logger.info(
-            "study %s data asked by user %s",
+            "study %s output download ask by %s",
             study_id,
             params.get_user_id(),
         )
 
         matrix = StudyDownloader.build(
-            self.study_service, study, output_id, data
+            self.study_service.get_raw(study), output_id, data
         )
         return matrix
 
@@ -517,7 +517,7 @@ class StudyService:
             raise StudyTypeUnsupported(study_id, study.type)
 
         logger.info(
-            "study %s data asked by user %s",
+            "study %s output listing asked by user %s",
             study_id,
             params.get_user_id(),
         )
@@ -549,9 +549,11 @@ class StudyService:
             raise StudyTypeUnsupported(study_id, study.type)
 
         logger.info(
-            "study %s data asked by user %s",
-            study_id,
+            "output %s set by user %s as reference (%b) for study %s",
+            output_id,
             params.get_user_id(),
+            status,
+            study_id,
         )
 
         self.study_service.set_reference_output(study, output_id, status)

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from zipfile import ZipFile, ZIP_DEFLATED
 
+from antarest.study.storage.rawstudy.model import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -56,9 +57,12 @@ class StudyDownloader:
             for index, column in enumerate(columns):
                 column_name = "|".join([c for c in column if c.strip()])
                 filter_column_name = prefix + "|" + column_name
-                if data.columns and len(data.columns) > 0:
-                    if not (filter_column_name in data.columns):
-                        continue
+                if (
+                    data.columns
+                    and len(data.columns) > 0
+                    and not (filter_column_name in data.columns)
+                ):
+                    continue
 
                 if area_name not in matrix.data:
                     matrix.data[area_name] = dict()
@@ -290,16 +294,14 @@ class StudyDownloader:
 
     @staticmethod
     def build(
-        study_service: RawStudyService,
-        study: RawStudy,
+        file_study: FileStudy,
         output_id: str,
         data: StudyDownloadDTO,
     ) -> MatrixAggregationResult:
         """
         Download outputs
         Args:
-            study_service: service to manage services
-            study: study we want to parse
+            file_study: file study object
             output_id: output id
             data: Json parameters
         Returns: JSON content file
@@ -309,13 +311,12 @@ class StudyDownloader:
         matrix: MatrixAggregationResult = MatrixAggregationResult(
             index=MatrixIndex(), data=dict(), warnings=[]
         )
-        study_path = study_service.get_study_path(study)
-        config, study_root = study_service.study_factory.create_from_fs(
-            study_path, study.id
-        )
 
-        if config.outputs and output_id in config.outputs:
-            sim = config.outputs[output_id]
+        if (
+            file_study.config.outputs
+            and output_id in file_study.config.outputs
+        ):
+            sim = file_study.config.outputs[output_id]
             if sim:
                 url += (
                     f"/{sim.mode}"
@@ -326,12 +327,23 @@ class StudyDownloader:
                 if data.synthesis:
                     url += "/mc-all"
                     StudyDownloader.type_output_filter(
-                        matrix, "", 0, config, study_root, url, data
+                        matrix,
+                        "",
+                        0,
+                        file_study.config,
+                        file_study.tree,
+                        url,
+                        data,
                     )
                 else:
                     url += "/mc-ind"
                     StudyDownloader.years_output_filter(
-                        matrix, config, output_id, study_root, url, data
+                        matrix,
+                        file_study.config,
+                        output_id,
+                        file_study.tree,
+                        url,
+                        data,
                     )
         return matrix
 

@@ -18,7 +18,7 @@ class FileTransferManager:
     def get_instance(config: Optional[Config]) -> "FileTransferManager":
         if FileTransferManager._instance is None:
             if config is None:
-                raise Exception("FileTransferManager not initiated")
+                raise AssertionError("FileTransferManager not initiated")
             else:
                 FileTransferManager._instance = FileTransferManager(config)
         return FileTransferManager._instance

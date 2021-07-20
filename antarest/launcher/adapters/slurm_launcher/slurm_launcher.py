@@ -157,7 +157,7 @@ class SlurmLauncher(AbstractLauncher):
                 show_banner=False,
             )
         except Exception as e:
-            logger.info("Could not get data on remote server")
+            logger.info("Could not get data on remote server", exc_info=e)
 
         study_list = self.data_repo_tinydb.get_list_of_studies()
 
