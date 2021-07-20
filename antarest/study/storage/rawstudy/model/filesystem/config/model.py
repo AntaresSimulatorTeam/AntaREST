@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional, List, Dict
 
 from antarest.core.custom_types import JSON
-from antarest.core.persistence import DTO
+from antarest.core.utils.utils import DTO
 
 
 class ThermalCluster(DTO):
