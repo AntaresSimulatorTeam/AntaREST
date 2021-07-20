@@ -1,10 +1,12 @@
 from logging.config import fileConfig
 import os
+from pathlib import Path
+
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from antarest.common.config import Config
+from antarest.core.config import Config
 from antarest import main
 
 
@@ -17,8 +19,10 @@ config = context.config
 # uncomment this to have
 #fileConfig(config.config_file_name)
 
-antarest_conf = Config.from_yaml_file(os.getenv('ANTAREST_CONF') or main.get_default_config_path())
-config.set_main_option("sqlalchemy.url", antarest_conf.db_admin_url or antarest_conf.db_url)
+config_path = os.getenv('ANTAREST_CONF') or main.get_default_config_path()
+if config_path and Path(config_path).exists():
+    antarest_conf = Config.from_yaml_file(config_path)
+    config.set_main_option("sqlalchemy.url", antarest_conf.db_admin_url or antarest_conf.db_url)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

@@ -5,10 +5,13 @@ from zipfile import ZipFile
 
 import jinja2
 import pytest
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import create_engine
 
 from antarest import main
 from antarest.main import fastapi_app
+from tests.conftest import project_dir
 
 
 @pytest.fixture
@@ -46,10 +49,14 @@ def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
             )
         )
 
+    alembic_cfg = Config()
+    alembic_cfg.set_main_option("script_location", str(project_dir / "alembic"))
+    alembic_cfg.set_main_option("sqlalchemy.url", db_url)
+    command.upgrade(alembic_cfg, "head")
+
     engine = create_engine(
         db_url,
     )
-    main.Base.metadata.create_all(engine)
 
     return fastapi_app(
         config_path, project_path / "resources", mount_front=False

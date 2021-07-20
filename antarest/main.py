@@ -59,7 +59,7 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_default_config_path() -> Path:
+def get_default_config_path() -> Optional[Path]:
     config = Path("config.yaml")
     if config.exists():
         return config
@@ -67,10 +67,16 @@ def get_default_config_path() -> Path:
     config = Path.home() / ".antares/config.yaml"
     if config.exists():
         return config
+    return None
 
-    raise ValueError(
-        "Config file not found. Set it by '-c' with command line or place it at ./config.yaml or ~/.antares/config.yaml"
-    )
+
+def get_default_config_path_or_raise() -> Path:
+    config_path = get_default_config_path()
+    if not config_path:
+        raise ValueError(
+            "Config file not found. Set it by '-c' with command line or place it at ./config.yaml or ~/.antares/config.yaml"
+        )
+    return config_path
 
 
 def get_arguments() -> Tuple[Path, bool, bool]:
@@ -80,7 +86,7 @@ def get_arguments() -> Tuple[Path, bool, bool]:
     if display_version:
         return Path("."), display_version, arguments.no_front
 
-    config_file = Path(arguments.config_file or get_default_config_path())
+    config_file = Path(arguments.config_file or get_default_config_path_or_raise())
     return config_file, display_version, arguments.no_front
 
 
