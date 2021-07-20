@@ -12,7 +12,7 @@ from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
-from antarest.study.model import StudyMetadataDTO
+from antarest.study.model import StudyMetadataDTO, OwnerInfo, PublicMode
 
 
 @pytest.mark.unit_test
@@ -25,7 +25,9 @@ def test_service_run_study(get_current_user_mock):
         name="name",
         created=1,
         updated=1,
-        author="author",
+        owner=OwnerInfo(name="author"),
+        groups=[],
+        public_mode=PublicMode.NONE,
         version=42,
         workspace="default",
         managed=True,

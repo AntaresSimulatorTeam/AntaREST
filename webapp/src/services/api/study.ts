@@ -38,7 +38,7 @@ export const editStudy = async (data: object, sid: string, path = '', depth = 1)
 };
 
 export const copyStudy = async (sid: string, name: string, withOutputs = false): Promise<any> => {
-  const res = await client.post(`/v1/studies/${sid}/copy?dest=${name}?with_outputs=${withOutputs}`);
+  const res = await client.post(`/v1/studies/${sid}/copy?dest=${encodeURIComponent(name)}&with_outputs=${withOutputs}`);
   return res.data;
 };
 

@@ -7,6 +7,7 @@ from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import (
     IStudyStorageService,
 )
@@ -22,6 +23,8 @@ from antarest.study.model import (
     StudySimSettingsDTO,
     PatchOutputs,
     Study,
+    OwnerInfo,
+    PublicMode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -205,9 +208,14 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             updated=study.updated_at.timestamp(),
             workspace=study.workspace,
             managed=study.workspace == DEFAULT_WORKSPACE_NAME,
-            author=study.owner.name
+            owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
             if study.owner is not None
-            else file_metadata.get("author", "Unknown"),
+            else OwnerInfo(name=file_metadata.get("author", "Unknown")),
+            groups=[
+                GroupDTO(id=group.id, name=group.name)
+                for group in study.groups
+            ],
+            public_mode=study.public_mode or PublicMode.NONE,
             horizon=file_settings.get("horizon", None),
             scenario=patch_metadata.scenario,
             status=patch_metadata.status,

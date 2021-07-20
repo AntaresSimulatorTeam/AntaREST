@@ -10,7 +10,7 @@ from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enu
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.login.model import Group, Identity
+from antarest.login.model import Group, Identity, UserInfo, GroupDTO
 
 DEFAULT_WORKSPACE_NAME = "default"
 
@@ -189,13 +189,20 @@ class Patch(BaseModel, PatchNode):
     outputs: Optional[PatchOutputs] = None
 
 
+class OwnerInfo(BaseModel):
+    id: Optional[int] = None
+    name: str
+
+
 class StudyMetadataDTO(BaseModel):
     id: str
     name: str
     version: int
     created: int
     updated: int
-    author: str
+    owner: OwnerInfo
+    groups: List[GroupDTO]
+    public_mode: PublicMode
     workspace: str
     managed: bool
     horizon: Optional[str]

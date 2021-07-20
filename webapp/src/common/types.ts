@@ -3,14 +3,18 @@ import { Moment } from 'moment';
 
 export type StudyDataType = 'json' | 'file' | 'matrixfile' | 'matrix';
 
+export type StudyPublicMode = 'NONE' | 'READ' | 'EXECUTE' | 'EDIT' | 'FULL';
+
 export interface StudyMetadataDTO {
-  author: string;
+  owner: { id?: number; name: string };
   name: string;
   created: number;
   updated: number;
   version: number;
   workspace: string;
   managed: boolean;
+  groups: Array<{ id: string; name: string }>;
+  public_mode: StudyPublicMode;
 }
 
 export interface StudyMetadata {
@@ -18,13 +22,19 @@ export interface StudyMetadata {
   name: string;
   creationDate: number;
   modificationDate: number;
-  author: string;
+  owner: { id?: number; name: string };
   version: string;
   workspace: string;
   managed: boolean;
+  groups: Array<{ id: string; name: string }>;
+  publicMode: StudyPublicMode;
 }
 
-export type JobStatus = 'JobStatus.RUNNING' | 'JobStatus.PENDING' | 'JobStatus.SUCCESS' | 'JobStatus.FAILED';
+export type JobStatus =
+  | 'JobStatus.RUNNING'
+  | 'JobStatus.PENDING'
+  | 'JobStatus.SUCCESS'
+  | 'JobStatus.FAILED';
 
 export interface LaunchJob {
   id: string;
@@ -62,7 +72,7 @@ export interface MatrixDataSetUpdateDTO {
   public: boolean;
 }
 
-export interface MatrixDTO{
+export interface MatrixDTO {
   width: number;
   height: number;
   index: Array<string>;
@@ -76,7 +86,7 @@ export enum RoleType {
   ADMIN = 40,
   RUNNER = 30,
   WRITER = 20,
-  READER = 10
+  READER = 10,
 }
 
 export type IDType = number | string;
@@ -145,7 +155,7 @@ export interface BotRoleCreateDTO {
   role: RoleType;
 }
 
-export interface BotCreateDTO{
+export interface BotCreateDTO {
   name: string;
   is_author: boolean;
   roles: Array<BotRoleCreateDTO>;
@@ -169,9 +179,9 @@ export interface UserGroup {
 }
 
 export interface MatrixType {
-    columns: Array<string>;
-    index: Array<string | number>;
-    data: Array<Array<number>>;
+  columns: Array<string>;
+  index: Array<string | number>;
+  data: Array<Array<number>>;
 }
 
 export interface WSMessage {

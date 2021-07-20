@@ -23,6 +23,7 @@ from antarest.study.model import (
     MatrixAggregationResult,
     MatrixIndex,
 )
+from antarest.study.storage.rawstudy.model import FileStudy
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -287,8 +288,7 @@ def test_download_output() -> None:
     )
 
     res_study = {"columns": [["H. VAL|Euro/MWh"]], "data": [[0.5]]}
-    study_service.get_study_path.return_value = Path(input_study.path)
-    study_service.study_factory.create_from_fs.return_value = config, study
+    study_service.get_raw.return_value = FileStudy(config=config, tree=study)
     study.get.return_value = res_study
 
     # AREA TYPE
