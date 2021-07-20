@@ -10,6 +10,9 @@ RUN mkdir -p examples/studies
 COPY ./requirements.txt /conf/
 COPY ./antarest /antarest
 COPY ./resources /resources
+COPY ./scripts /scripts
+COPY ./alembic /alembic
+COPY ./alembic.ini /alembic.ini
 
 COPY ./antares-launcher /antares-launcher
 RUN ln -s /antares-launcher/antareslauncher /antareslauncher
@@ -19,4 +22,4 @@ RUN cp /antares-launcher/requirements.txt /conf/antares-launcher/requirements.tx
 RUN pip3 install --upgrade pip \
     && pip3 install -r /conf/requirements.txt
 
-ENTRYPOINT gunicorn --config /conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
+ENTRYPOINT ./scripts/start.sh

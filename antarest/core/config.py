@@ -246,6 +246,7 @@ class Config:
     matrixstore: MatrixStoreConfig = MatrixStoreConfig()
     tmp_dir: Path = Path(tempfile.gettempdir())
     db_url: str = ""
+    db_admin_url: Optional[str] = None
     logging: LoggingConfig = LoggingConfig()
     debug: bool = True
     resources_path: Path = Path()
@@ -269,6 +270,7 @@ class Config:
             launcher=LauncherConfig.from_dict(data["launcher"]),
             matrixstore=MatrixStoreConfig.from_dict(data["matrixstore"]),
             db_url=data["db"]["url"],
+            db_admin_url=data["db"].get("admin_url", None),
             logging=LoggingConfig.from_dict(data["logging"]),
             debug=data["debug"],
             resources_path=res or Path(),

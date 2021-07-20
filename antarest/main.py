@@ -11,19 +11,20 @@ import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from pydantic.main import BaseModel
-from sqlalchemy import create_engine
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from antarest import __version__
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.web import tags_metadata
+from sqlalchemy import create_engine
+
+from antarest import __version__
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
 from antarest.login.auth import Auth
@@ -58,7 +59,7 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_default_config_path() -> Path:
+def get_default_config_path() -> Optional[Path]:
     config = Path("config.yaml")
     if config.exists():
         return config
@@ -66,10 +67,16 @@ def get_default_config_path() -> Path:
     config = Path.home() / ".antares/config.yaml"
     if config.exists():
         return config
+    return None
 
-    raise ValueError(
-        "Config file not found. Set it by '-c' with command line or place it at ./config.yaml or ~/.antares/config.yaml"
-    )
+
+def get_default_config_path_or_raise() -> Path:
+    config_path = get_default_config_path()
+    if not config_path:
+        raise ValueError(
+            "Config file not found. Set it by '-c' with command line or place it at ./config.yaml or ~/.antares/config.yaml"
+        )
+    return config_path
 
 
 def get_arguments() -> Tuple[Path, bool, bool]:
@@ -79,7 +86,9 @@ def get_arguments() -> Tuple[Path, bool, bool]:
     if display_version:
         return Path("."), display_version, arguments.no_front
 
-    config_file = Path(arguments.config_file or get_default_config_path())
+    config_file = Path(
+        arguments.config_file or get_default_config_path_or_raise()
+    )
     return config_file, display_version, arguments.no_front
 
 
@@ -124,18 +133,20 @@ def fastapi_app(
 ) -> FastAPI:
     res = resource_path or get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
-
     configure_logger(config)
 
     logging.getLogger(__name__).info("Initiating application")
 
     # Database
+    connect_args = {}
+    if config.db_url.startswith("sqlite"):
+        connect_args["check_same_thread"] = False
+
     engine = create_engine(
         config.db_url,
         echo=config.debug,
-        connect_args={"check_same_thread": False},
+        connect_args=connect_args,
     )
-    Base.metadata.create_all(engine)
 
     application = FastAPI(
         title="AntaREST",
