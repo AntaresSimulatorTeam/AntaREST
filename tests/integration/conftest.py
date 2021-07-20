@@ -50,7 +50,9 @@ def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
         )
 
     alembic_cfg = Config()
-    alembic_cfg.set_main_option("script_location", str(project_dir / "alembic"))
+    alembic_cfg.set_main_option(
+        "script_location", str(project_dir / "alembic")
+    )
     alembic_cfg.set_main_option("sqlalchemy.url", db_url)
     command.upgrade(alembic_cfg, "head")
 

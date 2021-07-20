@@ -55,4 +55,3 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
         _assert_pointer_path(a, b)
     else:
         _assert_others(a, b)
-
