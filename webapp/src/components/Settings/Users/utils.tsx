@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { RoleCreationDTO, RoleDTO, UserDTO } from '../../../../common/types';
-import { createNewUser, createRole, deleteAllRoles } from '../../../../services/api/user';
+import { RoleCreationDTO, RoleDTO, UserDTO } from '../../../common/types';
+import { createNewUser, createRole, deleteAllRoles } from '../../../services/api/user';
 
 export const saveUser = async (
   username: string,

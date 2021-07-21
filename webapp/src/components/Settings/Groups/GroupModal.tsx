@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createStyles, makeStyles, Theme, TextField } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
-import GenericModal from '../../../../components/Settings/GenericModal';
-import { GroupDTO } from '../../../../common/types';
+import GenericModal from '../GenericModal';
+import { GroupDTO } from '../../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   infos: {

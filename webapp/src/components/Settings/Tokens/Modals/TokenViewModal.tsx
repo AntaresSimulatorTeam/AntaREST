@@ -11,10 +11,10 @@ import { createStyles,
   TableRow } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { BotDTO, BotIdentityDTO } from '../../../../../common/types';
-import { getBotInfos } from '../../../../../services/api/user';
-import InformationModal from '../../../../../components/ui/InformationModal';
-import { roleToString } from '../../../../../services/utils';
+import { BotDTO, BotIdentityDTO } from '../../../../common/types';
+import { getBotInfos } from '../../../../services/api/user';
+import InformationModal from '../../../ui/InformationModal';
+import { roleToString } from '../../../../services/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

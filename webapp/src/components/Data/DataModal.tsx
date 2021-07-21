@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { createStyles, makeStyles, Theme, TextField, Typography, Button, Checkbox, Chip } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import GenericModal from '../../../components/Settings/GenericModal';
-import { getGroups } from '../../../services/api/user';
-import { GroupDTO, MatrixDataSetDTO } from '../../../common/types';
+import GenericModal from '../Settings/GenericModal';
+import { getGroups } from '../../services/api/user';
+import { GroupDTO, MatrixDataSetDTO } from '../../common/types';
 import { saveMatrix } from './utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({

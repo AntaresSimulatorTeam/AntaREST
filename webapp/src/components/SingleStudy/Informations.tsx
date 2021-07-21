@@ -2,7 +2,7 @@ import React from 'react';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import InformationView from './InformationView';
 import TaskView from './TaskView';
-import { LaunchJob } from '../../../common/types';
+import { LaunchJob } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {

@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { AppState } from '../../../reducers';
-import GenericSettingView from '../../../../components/Settings/GenericSettingView';
+import { AppState } from '../../../App/reducers';
+import GenericSettingView from '../GenericSettingView';
 import GroupModal from './GroupModal';
-import { getGroups, createGroup, updateGroup, deleteGroup, getGroupInfos } from '../../../../services/api/user';
-import { GroupDTO, UserGroup } from '../../../../common/types';
-import ConfirmationModal from '../../../../components/ui/ConfirmationModal';
-import UserGroupView from '../../../../components/Settings/UserGroupView';
+import { getGroups, createGroup, updateGroup, deleteGroup, getGroupInfos } from '../../../services/api/user';
+import { GroupDTO, UserGroup } from '../../../common/types';
+import ConfirmationModal from '../../ui/ConfirmationModal';
+import UserGroupView from '../UserGroupView';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
