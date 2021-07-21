@@ -3,7 +3,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { AppState } from '../../../App/reducers';
-import GenericSettingView from '../GenericSettingView';
+import GenericListingView from '../../ui/NavComponents/GenericListingView';
 import GroupModal from './GroupModal';
 import { getGroups, createGroup, updateGroup, deleteGroup, getGroupInfos } from '../../../services/api/user';
 import { GroupDTO, UserGroup } from '../../../common/types';
@@ -125,7 +125,7 @@ const GroupsSettings = (props: PropTypes) => {
   }, [user, t, enqueueSnackbar]);
 
   return (
-    <GenericSettingView
+    <GenericListingView
       searchFilter={(input: string) => setFilter(input)}
       placeholder={t('settings:groupsSearchbarPlaceholder')}
       buttonValue={t('settings:createGroup')}
@@ -155,7 +155,7 @@ const GroupsSettings = (props: PropTypes) => {
           handleNo={() => setOpenConfirmationModal(false)}
         />
       )}
-    </GenericSettingView>
+    </GenericListingView>
   );
 };
 

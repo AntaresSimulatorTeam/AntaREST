@@ -3,7 +3,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { AppState } from '../../../App/reducers';
-import GenericSettingView from '../GenericSettingView';
+import GenericListingView from '../../ui/NavComponents/GenericListingView';
 import GenericListView from '../GenericListView';
 import { getUsers, deleteUser } from '../../../services/api/user';
 import { UserDTO, IDType } from '../../../common/types';
@@ -83,7 +83,7 @@ const UsersSettings = (props: PropTypes) => {
   }, [user, t, enqueueSnackbar]);
 
   return (
-    <GenericSettingView
+    <GenericListingView
       searchFilter={(input: string) => setFilter(input)}
       placeholder={t('settings:usersSearchbarPlaceholder')}
       buttonValue={t('settings:createUser')}
@@ -116,7 +116,7 @@ const UsersSettings = (props: PropTypes) => {
           handleNo={() => setOpenConfirmationModal(false)}
         />
       )}
-    </GenericSettingView>
+    </GenericListingView>
 
   );
 };

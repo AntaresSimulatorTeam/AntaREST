@@ -3,7 +3,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { AppState } from '../../App/reducers';
-import GenericSettingView from '../Settings/GenericSettingView';
+import GenericListingView from '../ui/NavComponents/GenericListingView';
 import DataView from './DataView';
 import { deleteDataSet, getMatrixList } from '../../services/api/matrix';
 import { MatrixDataSetDTO, IDType, MatrixInfoDTO } from '../../common/types';
@@ -102,7 +102,7 @@ const Data = (props: PropTypes) => {
   }, [user, t, enqueueSnackbar]);
 
   return (
-    <GenericSettingView
+    <GenericListingView
       searchFilter={(input: string) => setFilter(input)}
       placeholder={t('data:matrixSearchbarPlaceholder')}
       buttonValue={t('data:createMatrix')}
@@ -141,7 +141,7 @@ const Data = (props: PropTypes) => {
           handleNo={() => setOpenConfirmationModal(false)}
         />
       )}
-    </GenericSettingView>
+    </GenericListingView>
 
   );
 };

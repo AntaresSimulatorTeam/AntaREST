@@ -50,7 +50,7 @@ interface PropTypes {
     onButtonClick: () => void;
 }
 
-const GenericSettingView = (props: PropsWithChildren<PropTypes>) => {
+const GenericListingView = (props: PropsWithChildren<PropTypes>) => {
   const { searchFilter, placeholder, buttonValue, onButtonClick, children } = props;
   const classes = useStyles();
 
@@ -82,4 +82,4 @@ const GenericSettingView = (props: PropsWithChildren<PropTypes>) => {
   );
 };
 
-export default GenericSettingView;
+export default GenericListingView;

@@ -3,7 +3,7 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { UserInfo, BotDTO, IDType } from '../../../common/types';
 import { deleteBot, getBots } from '../../../services/api/user';
-import GenericSettingView from '../GenericSettingView';
+import GenericListingView from '../../ui/NavComponents/GenericListingView';
 import TokenPrinter from '../TokenPrinter';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import TokenCreationModal from './Modals/TokenCreationModal';
@@ -99,7 +99,7 @@ const TokenNormal = (props: PropTypes) => {
     );
   }
   return (
-    <GenericSettingView
+    <GenericListingView
       searchFilter={(input: string) => setFilter(input)}
       placeholder={t('settings:tokensSearchbarPlaceholder')}
       buttonValue={t('settings:createToken')}
@@ -138,7 +138,7 @@ const TokenNormal = (props: PropTypes) => {
           onButtonClick={() => setOpenViewModal(false)}
         />
       )}
-    </GenericSettingView>
+    </GenericListingView>
   );
 };
 
