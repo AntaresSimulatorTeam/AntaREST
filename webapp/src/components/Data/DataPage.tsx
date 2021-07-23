@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { AppState } from '../../reducers';
-import GenericSettingView from '../../../components/Settings/GenericSettingView';
-import DataView from '../../../components/Data/DataView';
-import { deleteDataSet, getMatrixList } from '../../../services/api/matrix';
-import { MatrixDataSetDTO, IDType, MatrixInfoDTO } from '../../../common/types';
+import { AppState } from '../../App/reducers';
+import GenericListingView from '../ui/NavComponents/GenericListingView';
+import DataView from './DataView';
+import { deleteDataSet, getMatrixList } from '../../services/api/matrix';
+import { MatrixDataSetDTO, IDType, MatrixInfoDTO } from '../../common/types';
 import DataModal from './DataModal';
-import ConfirmationModal from '../../../components/ui/ConfirmationModal';
+import ConfirmationModal from '../ui/ConfirmationModal';
 import MatrixModal from './MatrixModal';
 
 const mapState = (state: AppState) => ({
@@ -102,7 +102,7 @@ const Data = (props: PropTypes) => {
   }, [user, t, enqueueSnackbar]);
 
   return (
-    <GenericSettingView
+    <GenericListingView
       searchFilter={(input: string) => setFilter(input)}
       placeholder={t('data:matrixSearchbarPlaceholder')}
       buttonValue={t('data:createMatrix')}
@@ -141,7 +141,7 @@ const Data = (props: PropTypes) => {
           handleNo={() => setOpenConfirmationModal(false)}
         />
       )}
-    </GenericSettingView>
+    </GenericListingView>
 
   );
 };

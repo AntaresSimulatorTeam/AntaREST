@@ -8,14 +8,14 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { StudyMetadata } from '../../../common/types';
+import { StudyMetadata } from '../../common/types';
 import { deleteStudy as callDeleteStudy,
   launchStudy as callLaunchStudy,
   getExportUrl,
-  getStudyMetadata } from '../../../services/api/study';
-import { removeStudies } from '../../../ducks/study';
-import DownloadLink from '../../../components/ui/DownloadLink';
-import ConfirmationModal from '../../../components/ui/ConfirmationModal';
+  getStudyMetadata } from '../../services/api/study';
+import { removeStudies } from '../../ducks/study';
+import DownloadLink from '../ui/DownloadLink';
+import ConfirmationModal from '../ui/ConfirmationModal';
 
 const logError = debug('antares:singlestudyview:error');
 

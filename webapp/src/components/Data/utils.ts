@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { GroupDTO, MatrixDataSetDTO, MatrixDataSetUpdateDTO, MatrixInfoDTO } from '../../../common/types';
-import { createMatrixByImportation, updateDataSet, createDataSet } from '../../../services/api/matrix';
+import { GroupDTO, MatrixDataSetDTO, MatrixDataSetUpdateDTO, MatrixInfoDTO } from '../../common/types';
+import { createMatrixByImportation, updateDataSet, createDataSet } from '../../services/api/matrix';
 
 const updateMatrix = async (
   data: MatrixDataSetDTO,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { AppState } from '../../../reducers';
-import { isUserAdmin } from '../../../../services/utils';
+import { AppState } from '../../../App/reducers';
+import { isUserAdmin } from '../../../services/utils';
 import TokenAdmin from './TokenAdmin';
 import TokenNormal from './TokenNormal';
 

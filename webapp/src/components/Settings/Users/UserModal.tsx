@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { createStyles, makeStyles, Theme, TextField } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import GenericModal from '../../../../components/Settings/GenericModal';
-import GroupsAssignmentView from '../../../../components/Settings/GroupsAssignmentView';
-import { getGroups, getUserInfos } from '../../../../services/api/user';
-import { GroupDTO, RoleType, RoleDTO, UserDTO } from '../../../../common/types';
+import GenericModal from '../GenericModal';
+import GroupsAssignmentView from '../GroupsAssignmentView';
+import { getGroups, getUserInfos } from '../../../services/api/user';
+import { GroupDTO, RoleType, RoleDTO, UserDTO } from '../../../common/types';
 import { saveUser } from './utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({

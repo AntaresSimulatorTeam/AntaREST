@@ -4,15 +4,13 @@ import {
   createStyles,
   Theme,
   Typography,
-  Button,
   List,
   ListItem,
-  ListItemText,
   Collapse,
 } from '@material-ui/core';
+import clsx from 'clsx';
 import CreateIcon from '@material-ui/icons/Create';
-import DeleteIcon from '@material-ui/icons/Delete';
-
+import DeleteIcon from '@material-ui/icons/HighlightOff';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import { useTranslation } from 'react-i18next';
@@ -42,18 +40,24 @@ const useStyles = makeStyles((theme: Theme) =>
       margin: theme.spacing(0.2),
       display: 'flex',
       flexFlow: 'row nowrap',
-      justifyContent: 'space-evenly',
+      justifyContent: 'space-between',
       alignItems: 'center',
     },
     groupItem: {
       display: 'flex',
       padding: theme.spacing(1),
+      paddingLeft: theme.spacing(2),
       flexFlow: 'row nowrap',
       justifyContent: 'flex-start',
       color: theme.palette.primary.main,
       backgroundColor: 'white',
-      border: `1px solid ${theme.palette.primary.main}`,
+      borderRadius: theme.shape.borderRadius,
+      borderLeft: `7px solid ${theme.palette.primary.main}`,
       margin: theme.spacing(0.2),
+      height: '50px',
+      '&:hover': {
+        backgroundColor: theme.palette.action.hover,
+      },
     },
     iconsContainer: {
       flex: '1',
@@ -62,11 +66,35 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: 'flex-end',
       alignItems: 'center',
     },
+    title: {
+      fontWeight: 'bold',
+    },
+    text: {
+      backgroundColor: theme.palette.action.selected,
+      paddingLeft: theme.spacing(1),
+      paddingRight: theme.spacing(1),
+      borderRadius: theme.shape.borderRadius,
+    },
+    role: {
+      backgroundColor: theme.palette.primary.main,
+      color: 'white',
+      paddingLeft: theme.spacing(1),
+      paddingRight: theme.spacing(1),
+      borderRadius: theme.shape.borderRadius,
+    },
     deleteIcon: {
-      color: theme.palette.error.main,
+      color: theme.palette.error.light,
+      marginLeft: theme.spacing(2),
+      marginRight: theme.spacing(2),
+      '&:hover': {
+        color: theme.palette.error.main,
+      },
     },
     createIcon: {
       color: theme.palette.primary.main,
+      '&:hover': {
+        color: theme.palette.primary.light,
+      },
     },
   }));
 
@@ -117,14 +145,10 @@ const UserGroupView = (props: PropTypes) => {
                 button
                 onClick={() => onButtonChange(index, groupItem.group.id)}
               >
-                <Typography>{groupItem.group.name}</Typography>
+                <Typography className={clsx(classes.text, classes.title)}>{groupItem.group.name}</Typography>
                 <div className={classes.iconsContainer}>
-                  <Button onClick={() => onUpdateClick(groupItem.group.id)}>
-                    <CreateIcon className={classes.createIcon} />
-                  </Button>
-                  <Button onClick={() => onDeleteClick(groupItem.group.id)}>
-                    <DeleteIcon className={classes.deleteIcon} />
-                  </Button>
+                  <CreateIcon className={classes.createIcon} onClick={() => onUpdateClick(groupItem.group.id)} />
+                  <DeleteIcon className={classes.deleteIcon} onClick={() => onDeleteClick(groupItem.group.id)} />
                 </div>
                 {toogleList[index] ? <ExpandLess /> : <ExpandMore />}
               </ListItem>
@@ -132,8 +156,8 @@ const UserGroupView = (props: PropTypes) => {
                 <List component="div" disablePadding className={classes.userList}>
                   {groupItem.users.map((userItem) => (
                     <ListItem key={userItem.id} className={classes.userItem}>
-                      <ListItemText primary={userItem.name} />
-                      <Typography>{t(roleToString(userItem.role))}</Typography>
+                      <Typography className={classes.text}>{userItem.name}</Typography>
+                      <Typography className={classes.role}>{t(roleToString(userItem.role))}</Typography>
                     </ListItem>
                   ))}
                 </List>

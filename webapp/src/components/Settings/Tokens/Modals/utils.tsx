@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/camelcase */
 // eslint-disable-next-line camelcase
 import jwt_decode from 'jwt-decode';
-import { BotCreateDTO, RoleDTO, BotDTO } from '../../../../../common/types';
-import { createNewBot } from '../../../../../services/api/user';
+import { BotCreateDTO, RoleDTO, BotDTO } from '../../../../common/types';
+import { createNewBot } from '../../../../services/api/user';
 
 export const saveToken = async (
   name: string,

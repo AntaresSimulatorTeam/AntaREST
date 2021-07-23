@@ -12,9 +12,9 @@ import {
 } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { getStudyJobLog } from '../../../services/api/study';
-import { LaunchJob } from '../../../common/types';
-import LogModal from '../../../components/ui/LogModal';
+import { getStudyJobLog } from '../../services/api/study';
+import { LaunchJob } from '../../common/types';
+import LogModal from '../ui/LogModal';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

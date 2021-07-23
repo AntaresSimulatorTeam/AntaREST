@@ -4,15 +4,13 @@ import {
   createStyles,
   Theme,
   Typography,
-  Button,
   List,
   ListItem,
-  ListItemText,
   Collapse,
 } from '@material-ui/core';
+import clsx from 'clsx';
 import VisibilityIcon from '@material-ui/icons/Visibility';
-import DeleteIcon from '@material-ui/icons/Delete';
-
+import DeleteIcon from '@material-ui/icons/HighlightOff';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import { UserToken } from '../../common/types';
@@ -36,9 +34,20 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: 'flex-start',
     },
     userItem: {
+      display: 'flex',
+      padding: theme.spacing(1),
+      paddingLeft: theme.spacing(2),
+      flexFlow: 'row nowrap',
+      justifyContent: 'space-between',
+      color: theme.palette.primary.main,
       backgroundColor: 'white',
+      borderRadius: theme.shape.borderRadius,
+      borderLeft: `7px solid ${theme.palette.primary.main}`,
       margin: theme.spacing(0.2),
-      border: `1px solid ${theme.palette.primary.main}`,
+      height: '50px',
+      '&:hover': {
+        backgroundColor: theme.palette.action.hover,
+      },
     },
     botItem: {
       display: 'flex',
@@ -49,6 +58,15 @@ const useStyles = makeStyles((theme: Theme) =>
       backgroundColor: 'white',
       margin: theme.spacing(0.2),
     },
+    title: {
+      fontWeight: 'bold',
+    },
+    text: {
+      backgroundColor: theme.palette.action.selected,
+      paddingLeft: theme.spacing(1),
+      paddingRight: theme.spacing(1),
+      borderRadius: theme.shape.borderRadius,
+    },
     iconsContainer: {
       flex: '1',
       display: 'flex',
@@ -57,10 +75,18 @@ const useStyles = makeStyles((theme: Theme) =>
       alignItems: 'center',
     },
     deleteIcon: {
-      color: theme.palette.error.main,
+      color: theme.palette.error.light,
+      marginLeft: theme.spacing(2),
+      marginRight: theme.spacing(2),
+      '&:hover': {
+        color: theme.palette.error.main,
+      },
     },
     seeIcon: {
       color: theme.palette.primary.main,
+      '&:hover': {
+        color: theme.palette.primary.light,
+      },
     },
   }));
 
@@ -100,8 +126,8 @@ const UserTokensView = (props: PropTypes) => {
         (userItem, index) =>
           userItem.bots.length > 0 && (
             <Fragment key={userItem.user.id}>
-              <ListItem className={classes.userItem} button onClick={() => onButtonChange(index)}>
-                <ListItemText primary={userItem.user.name} />
+              <ListItem className={classes.userItem} onClick={() => onButtonChange(index)}>
+                <Typography className={clsx(classes.text, classes.title)}>{userItem.user.name}</Typography>
                 {toogleList[index] ? <ExpandLess /> : <ExpandMore />}
               </ListItem>
               <Collapse in={toogleList[index]} timeout="auto" unmountOnExit>
@@ -110,14 +136,10 @@ const UserTokensView = (props: PropTypes) => {
                     (botItem) =>
                       matchFilter(botItem.name) && (
                         <ListItem key={botItem.id} className={classes.botItem}>
-                          <Typography>{botItem.name}</Typography>
+                          <Typography className={classes.text}>{botItem.name}</Typography>
                           <div className={classes.iconsContainer}>
-                            <Button onClick={() => onWatchClick(userItem.user.id, botItem.id)}>
-                              <VisibilityIcon className={classes.seeIcon} />
-                            </Button>
-                            <Button onClick={() => onDeleteClick(userItem.user.id, botItem.id)}>
-                              <DeleteIcon className={classes.deleteIcon} />
-                            </Button>
+                            <VisibilityIcon className={classes.seeIcon} onClick={() => onWatchClick(userItem.user.id, botItem.id)} />
+                            <DeleteIcon className={classes.deleteIcon} onClick={() => onDeleteClick(userItem.user.id, botItem.id)} />
                           </div>
                         </ListItem>
                       ),

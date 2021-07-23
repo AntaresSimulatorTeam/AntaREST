@@ -1,8 +1,8 @@
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { AppState } from '../../reducers';
-import GenericNavView from '../../../components/ui/NavComponents/GenericNavView';
-import DataPage from './DataPage';
+import { AppState } from '../reducers';
+import GenericNavView from '../../components/ui/NavComponents/GenericNavView';
+import DataPage from '../../components/Data/DataPage';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,

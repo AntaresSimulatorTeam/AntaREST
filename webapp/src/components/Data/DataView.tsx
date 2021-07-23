@@ -4,15 +4,13 @@ import {
   createStyles,
   Theme,
   Typography,
-  Button,
   List,
   ListItem,
-  ListItemText,
   Collapse,
 } from '@material-ui/core';
+import clsx from 'clsx';
 import CreateIcon from '@material-ui/icons/Create';
-import DeleteIcon from '@material-ui/icons/Delete';
-
+import DeleteIcon from '@material-ui/icons/HighlightOff';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import { MatrixDataSetDTO, MatrixInfoDTO, UserInfo } from '../../common/types';
@@ -40,7 +38,7 @@ const useStyles = makeStyles((theme: Theme) =>
       margin: theme.spacing(0.2),
       display: 'flex',
       flexFlow: 'row nowrap',
-      justifyContent: 'space-evenly',
+      justifyContent: 'flex-start',
       alignItems: 'center',
       '&:hover': {
         backgroundColor: theme.palette.action.hover,
@@ -49,12 +47,18 @@ const useStyles = makeStyles((theme: Theme) =>
     datasetItem: {
       display: 'flex',
       padding: theme.spacing(1),
+      paddingLeft: theme.spacing(2),
       flexFlow: 'row nowrap',
       justifyContent: 'flex-start',
       color: theme.palette.primary.main,
       backgroundColor: 'white',
-      border: `1px solid ${theme.palette.primary.main}`,
+      borderRadius: theme.shape.borderRadius,
+      borderLeft: `7px solid ${theme.palette.primary.main}`,
       margin: theme.spacing(0.2),
+      height: '50px',
+      '&:hover': {
+        backgroundColor: theme.palette.action.hover,
+      },
     },
     iconsContainer: {
       flex: '1',
@@ -63,11 +67,28 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: 'flex-end',
       alignItems: 'center',
     },
+    title: {
+      fontWeight: 'bold',
+    },
+    text: {
+      backgroundColor: theme.palette.action.selected,
+      paddingLeft: theme.spacing(1),
+      paddingRight: theme.spacing(1),
+      borderRadius: theme.shape.borderRadius,
+    },
     deleteIcon: {
-      color: theme.palette.error.main,
+      color: theme.palette.error.light,
+      marginLeft: theme.spacing(2),
+      marginRight: theme.spacing(2),
+      '&:hover': {
+        color: theme.palette.error.main,
+      },
     },
     createIcon: {
       color: theme.palette.primary.main,
+      '&:hover': {
+        color: theme.palette.primary.light,
+      },
     },
   }));
 
@@ -116,17 +137,13 @@ const DataView = (props: PropTypes) => {
                 button
                 onClick={() => onButtonChange(index)}
               >
-                <Typography>{dataset.name}</Typography>
+                <Typography className={clsx(classes.text, classes.title)}>{dataset.name}</Typography>
                 <div className={classes.iconsContainer}>
                   {
                         user && user.id === dataset.owner.id && (
                         <>
-                          <Button onClick={() => onUpdateClick(dataset.id)}>
-                            <CreateIcon className={classes.createIcon} />
-                          </Button>
-                          <Button onClick={() => onDeleteClick(dataset.id)}>
-                            <DeleteIcon className={classes.deleteIcon} />
-                          </Button>
+                          <CreateIcon className={classes.createIcon} onClick={() => onUpdateClick(dataset.id)} />
+                          <DeleteIcon className={classes.deleteIcon} onClick={() => onDeleteClick(dataset.id)} />
                         </>
                         )}
                 </div>
@@ -140,7 +157,7 @@ const DataView = (props: PropTypes) => {
                       className={classes.matrixItem}
                       onClick={() => onMatrixClick(matrixItem)}
                     >
-                      <ListItemText primary={matrixItem.name} />
+                      <Typography className={classes.text}>{matrixItem.name}</Typography>
                     </ListItem>
                   ))}
                 </List>

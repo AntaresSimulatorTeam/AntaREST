@@ -1,11 +1,11 @@
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { AppState } from '../../reducers';
-import { isUserAdmin } from '../../../services/utils';
-import GenericNavView from '../../../components/ui/NavComponents/GenericNavView';
-import GroupsSettings from './Groups';
-import TokensSettings from './Tokens';
-import UsersSettings from './Users';
+import { AppState } from '../reducers';
+import { isUserAdmin } from '../../services/utils';
+import GenericNavView from '../../components/ui/NavComponents/GenericNavView';
+import GroupsSettings from '../../components/Settings/Groups';
+import TokensSettings from '../../components/Settings/Tokens';
+import UsersSettings from '../../components/Settings/Users';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,

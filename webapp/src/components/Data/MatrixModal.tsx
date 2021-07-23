@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
-import { MatrixInfoDTO, MatrixType } from '../../../common/types';
-import InformationModal from '../../../components/ui/InformationModal';
-import MatrixView from '../../../components/ui/MatrixView';
-import { getMatrix } from '../../../services/api/matrix';
+import { MatrixInfoDTO, MatrixType } from '../../common/types';
+import InformationModal from '../ui/InformationModal';
+import MatrixView from '../ui/MatrixView';
+import { getMatrix } from '../../services/api/matrix';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     matrixView: {
       width: '100%',
-      height: 'calc(70vh - 100px)',
+      height: '100%',
       padding: theme.spacing(2),
     },
   }));
@@ -55,6 +55,7 @@ const MatrixModal = (props: PropTypes) => {
   return (
     <InformationModal
       open={open}
+      fixedSize
       title={`Matrix${matrixInfo ? ` - ${matrixInfo.name}` : ''}`}
       onButtonClick={onClose}
     >

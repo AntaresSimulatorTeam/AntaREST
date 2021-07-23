@@ -4,10 +4,10 @@ import { createStyles, makeStyles, Theme, TextField, Typography } from '@materia
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import Checkbox from '@material-ui/core/Checkbox';
-import GenericModal from '../../../../../components/Settings/GenericModal';
-import GroupsAssignmentView from '../../../../../components/Settings/GroupsAssignmentView';
-import { getGroups } from '../../../../../services/api/user';
-import { GroupDTO, RoleType, RoleDTO, BotDTO, JWTGroup } from '../../../../../common/types';
+import GenericModal from '../../GenericModal';
+import GroupsAssignmentView from '../../GroupsAssignmentView';
+import { getGroups } from '../../../../services/api/user';
+import { GroupDTO, RoleType, RoleDTO, BotDTO, JWTGroup } from '../../../../common/types';
 import { saveToken } from './utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
