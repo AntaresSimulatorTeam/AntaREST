@@ -70,7 +70,7 @@ class WorkspaceConfig:
         return WorkspaceConfig(
             path=Path(data["path"]),
             groups=data.get("groups", list()),
-            filter_in=data.get("filter_in", list()),
+            filter_in=data.get("filter_in", [".*"]),
             filter_out=data.get("filter_out", list()),
         )
 
