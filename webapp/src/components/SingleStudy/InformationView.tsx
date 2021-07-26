@@ -8,7 +8,8 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { StudyMetadata } from '../../common/types';
+import { AppState } from '../../App/reducers';
+import { GroupDTO, RoleType, StudyMetadata, StudyPublicMode } from '../../common/types';
 import { deleteStudy as callDeleteStudy,
   launchStudy as callLaunchStudy,
   getExportUrl,
@@ -16,6 +17,7 @@ import { deleteStudy as callDeleteStudy,
 import { removeStudies } from '../../ducks/study';
 import DownloadLink from '../ui/DownloadLink';
 import ConfirmationModal from '../ui/ConfirmationModal';
+import PermissionModal from './PermissionModal';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -126,7 +128,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
 }));
 
-const mapState = () => ({ /* noop */ });
+const mapState = (state: AppState) => ({
+  user: state.auth.user,
+});
 
 const mapDispatch = ({
   removeStudy: (sid: string) => removeStudies([sid]),
@@ -140,13 +144,14 @@ interface OwnProps {
 type PropTypes = PropsFromRedux & OwnProps;
 
 const InformationView = (props: PropTypes) => {
-  const { studyId, removeStudy } = props;
+  const { studyId, removeStudy, user } = props;
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const history = useHistory();
   const [study, setStudy] = useState<StudyMetadata>();
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
+  const [openPermissionModal, setOpenPermissionModal] = useState<boolean>(false);
 
   const launchStudy = async () => {
     if (study) {
@@ -172,6 +177,36 @@ const InformationView = (props: PropTypes) => {
         logError('Failed to delete study', study, e);
       }
       setOpenConfirmationModal(false);
+    }
+  };
+
+  const permissionAuthorization = (): boolean => {
+    if (user) {
+      // User is super admin
+      if (user.groups.find((elm) => elm.id === 'admin')) {
+        return true;
+      }
+
+      if (study) {
+        // User is owner of this study
+        if (study.owner.id && study.owner.id === user.id) {
+          return true;
+        }
+        // User is admin of 1 of study groups
+        return study.groups.findIndex((studyGroupElm) => user.groups.find((userGroupElm) => studyGroupElm.id === userGroupElm.id && userGroupElm.role === RoleType.ADMIN)) >= 0;
+      }
+    }
+    return false;
+  };
+
+  const updateInfos = (newOwnerId: number, newOwnerName: string, newGroups: Array<GroupDTO>, newPublicMode: StudyPublicMode) => {
+    if (study) {
+      const newStudy: StudyMetadata = study;
+      newStudy.owner.id = newOwnerId;
+      newStudy.owner.name = newOwnerName;
+      newStudy.groups = newGroups;
+      newStudy.publicMode = newPublicMode;
+      setStudy(newStudy);
     }
   };
 
@@ -225,8 +260,21 @@ const InformationView = (props: PropTypes) => {
               <FontAwesomeIcon icon="history" />
               <span className={classes.infotxt}>{moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm')}</span>
             </div>
+            <div className={classes.info}>
+              <FontAwesomeIcon icon="clock" />
+              <span className={classes.infotxt}>{study.publicMode}</span>
+            </div>
           </div>
           <div className={classes.buttonContainer}>
+            {
+              permissionAuthorization() && (
+              <Button
+                className={classes.launchButton}
+                onClick={() => setOpenPermissionModal(true)}
+              >
+                {t('studymanager:permission')}
+              </Button>
+              )}
             <Button
               className={classes.launchButton}
               onClick={launchStudy}
@@ -254,6 +302,19 @@ const InformationView = (props: PropTypes) => {
             message={t('studymanager:confirmdelete')}
             handleYes={deleteStudy}
             handleNo={() => setOpenConfirmationModal(false)}
+          />
+          )}
+          {openPermissionModal && study && user && (
+          <PermissionModal
+            studyId={study.id}
+            ownerId={study.owner.id ? study.owner.id : user.id}
+            ownerName={study.owner.name}
+            groups={study.groups}
+            publicMode={study.publicMode}
+            name={study.name}
+            open={openPermissionModal}
+            updateInfos={updateInfos}
+            onClose={() => setOpenPermissionModal(false)}
           />
           )}
         </Paper>

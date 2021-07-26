@@ -3,7 +3,7 @@ import { Moment } from 'moment';
 
 export type StudyDataType = 'json' | 'file' | 'matrixfile' | 'matrix';
 
-export type StudyPublicMode = 'NONE' | 'READ' | 'EXECUTE' | 'EDIT' | 'FULL';
+export type StudyPublicMode = "'NONE' | 'READ' | 'EXECUTE' | 'EDIT' | 'FULL'";
 
 export interface StudyMetadataDTO {
   owner: { id?: number; name: string };
@@ -135,6 +135,12 @@ export interface UserInfo {
   accessToken: string;
   refreshToken: string;
   expirationDate?: Moment;
+}
+
+export interface Identity {
+  id: number;
+  name: string;
+  type: string;
 }
 
 export interface IdentityDTO {

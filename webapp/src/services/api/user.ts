@@ -6,6 +6,7 @@ import {
   RoleDTO,
   UserToken,
   UserGroup,
+  Identity,
   IdentityDTO,
   BotCreateDTO,
   BotIdentityDTO,
@@ -27,7 +28,7 @@ export const createNewUser = async (name: string, password: string): Promise<any
   return res.data;
 };
 
-export const getUser = async (id: number): Promise<IdentityDTO> => {
+export const getUser = async (id: number): Promise<Identity> => {
   const res = await client.get(`/v1/users/${id}`);
   return res.data;
 };

@@ -11,5 +11,10 @@
   "taskOutputId": "Simulation output Id",
   "taskLog": "Logs",
   "noTasks": "No tasks",
-  "failtofetchlogs": "Failed to fetch logs"
+  "failtofetchlogs": "Failed to fetch logs",
+  "owner": "Owner ID",
+  "groupsLabel": "Groups",
+  "publicMode": "Public mode",
+  "onPermissionUpdate": "Permission successfully updated",
+  "onPermissionError": "Permission not updated"
 }

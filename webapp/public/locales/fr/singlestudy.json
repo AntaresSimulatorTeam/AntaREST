@@ -11,5 +11,10 @@
   "taskOutputId": "Id de la simulation",
   "taskLog": "Logs",
   "noTasks": "Pas de tâches en cours",
-  "failtofetchlogs": "Echec du chargement des logs"
+  "failtofetchlogs": "Echec du chargement des logs",
+  "owner": "Id propriétaire",
+  "groupsLabel": "Groupes",
+  "publicMode": "Status",
+  "onPermissionUpdate": "Permissions modifié avec succès",
+  "onPermissionError": "Permissions non modifié"
 }

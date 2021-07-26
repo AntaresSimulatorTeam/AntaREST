@@ -11,5 +11,6 @@
   "savedatasuccess": "Data saved with success",
   "failtosavedata": "Failed to save data",
   "failtocopystudy": "Failed to copy study",
-  "studycopiedsuccess": "Success copying study"
+  "studycopiedsuccess": "Success copying study",
+  "permission": "Permission"
 }
