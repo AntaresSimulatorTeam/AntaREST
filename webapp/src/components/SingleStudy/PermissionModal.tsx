@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useState, useEffect } from 'react';
 import { createStyles, makeStyles, Theme, TextField, Typography, Chip, Select, MenuItem } from '@material-ui/core';
+import Autocomplete from '@material-ui/lab/Autocomplete';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import GenericModal from '../Settings/GenericModal';
-import { getGroups } from '../../services/api/user';
-import { GroupDTO, StudyPublicMode } from '../../common/types';
+import { getGroups, getUsers } from '../../services/api/user';
+import { GroupDTO, StudyMetadataOwner, StudyPublicMode, UserDTO } from '../../common/types';
 import { updatePermission } from './utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
@@ -26,14 +27,14 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
+    marginBottom: theme.spacing(2),
     padding: theme.spacing(2),
-    marginBottom: theme.spacing(1),
   },
   owner: {
     width: '400px',
     height: '30px',
+    marginLeft: theme.spacing(1),
     boxSizing: 'border-box',
-    margin: theme.spacing(2),
   },
   parameters: {
     flex: '1',
@@ -46,7 +47,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   parameterHeader: {
     width: '100%',
-    height: '40px',
     display: 'flex',
     flexFlow: 'row nowrap',
     justifyContent: 'flex-start',
@@ -72,18 +72,18 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   select: {
     margin: theme.spacing(2),
+    marginTop: theme.spacing(0.5),
   },
 }));
 
 interface PropTypes {
     open: boolean;
     studyId: string;
-    ownerId: number;
-    ownerName: string;
+    owner: StudyMetadataOwner;
     groups: Array<GroupDTO>;
     publicMode: StudyPublicMode;
     name: string;
-    updateInfos: (newOwnerId: number, newOwnerName: string, newGroups: Array<GroupDTO>, newPublicMode: StudyPublicMode,) => void;
+    updateInfos: (newOwner: StudyMetadataOwner, newGroups: Array<GroupDTO>, newPublicMode: StudyPublicMode,) => void;
     onClose: () => void;
 }
 
@@ -91,15 +91,16 @@ const PermissionModal = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { open, studyId, ownerId, ownerName, groups, publicMode, name, updateInfos, onClose } = props;
+  const { open, studyId, groups, publicMode, name, owner, updateInfos, onClose } = props;
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
-  const [currentOwner, setOwner] = useState<number>(ownerId);
+  const [selectedOwner, setOwner] = useState<UserDTO>();
+  const [userList, setUserList] = useState<Array<UserDTO>>([]);
   const [currentPublicMode, setCurrentPublicMode] = useState<StudyPublicMode>(publicMode);
   const [selectedGroupList, setSelectedGroupList] = useState<Array<GroupDTO>>(groups);
 
   const onSave = async () => {
     try {
-      await updatePermission(studyId, ownerId, ownerName, groups, publicMode, currentOwner, selectedGroupList, currentPublicMode, updateInfos);
+      await updatePermission(studyId, groups, publicMode, owner, selectedOwner, selectedGroupList, currentPublicMode, updateInfos);
       enqueueSnackbar(t('singlestudy:onPermissionUpdate'), { variant: 'success' });
     } catch (e) {
       enqueueSnackbar(t('singlestudy:onPermissionError'), { variant: 'error' });
@@ -119,9 +120,16 @@ const PermissionModal = (props: PropTypes) => {
   useEffect(() => {
     const init = async () => {
       try {
-        const res = await getGroups();
-        const filteredGroup = res.filter((item) => item.id !== 'admin');
+        const groupRes = await getGroups();
+        const filteredGroup = groupRes.filter((item) => item.id !== 'admin');
         setGroupList(filteredGroup);
+
+        const userRes = await getUsers();
+        setUserList(userRes);
+        const foundUser = userRes.find((elm) => elm.id === owner.id);
+        if (foundUser) {
+          setOwner(foundUser);
+        }
       } catch (e) {
         enqueueSnackbar(t('settings:groupsError'), { variant: 'error' });
       }
@@ -130,7 +138,7 @@ const PermissionModal = (props: PropTypes) => {
     return () => {
       setGroupList([]);
     };
-  }, [t, enqueueSnackbar]);
+  }, [owner.id, t, enqueueSnackbar]);
 
   return (
     <GenericModal
@@ -141,14 +149,22 @@ const PermissionModal = (props: PropTypes) => {
     >
       <div className={classes.root}>
         <div className={classes.ownerContainer}>
-          <TextField
+          <Autocomplete
+            options={userList}
+            getOptionLabel={(option) => option.name}
             className={classes.owner}
-            size="small"
-            type="number"
-            value={currentOwner}
-            onChange={(event) => setOwner(Number(event.target.value))}
-            label={t('singlestudy:owner')}
-            variant="outlined"
+            value={selectedOwner || null}
+            onChange={(event: any, newValue: UserDTO | null) => setOwner(newValue || undefined)}
+            renderInput={(params) => (
+              <TextField
+                // eslint-disable-next-line react/jsx-props-no-spreading
+                {...params}
+                className={classes.owner}
+                size="small"
+                label={t('singlestudy:owner')}
+                variant="outlined"
+              />
+            )}
           />
         </div>
         <div className={classes.parameters}>
@@ -158,7 +174,7 @@ const PermissionModal = (props: PropTypes) => {
             </Typography>
           </div>
           <Select
-            value={currentPublicMode as string}
+            value={(currentPublicMode as string)}
             onChange={(event: React.ChangeEvent<{ value: unknown }>) =>
               setCurrentPublicMode(event.target.value as StudyPublicMode)
           }
@@ -166,19 +182,19 @@ const PermissionModal = (props: PropTypes) => {
             className={classes.select}
           >
             <MenuItem value="NONE">
-              NONE
+              {t('singlestudy:nonePublicMode')}
             </MenuItem>
             <MenuItem value="READ">
-              READ
+              {t('singlestudy:readPublicMode')}
             </MenuItem>
             <MenuItem value="EXECUTE">
-              EXECUTE
+              {t('singlestudy:executePublicMode')}
             </MenuItem>
             <MenuItem value="EDIT">
-              EDIT
+              {t('singlestudy:editPublicMode')}
             </MenuItem>
             <MenuItem value="FULL">
-              FULL
+              {t('singlestudy:fullPublicMode')}
             </MenuItem>
           </Select>
         </div>

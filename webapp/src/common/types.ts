@@ -5,8 +5,13 @@ export type StudyDataType = 'json' | 'file' | 'matrixfile' | 'matrix';
 
 export type StudyPublicMode = "'NONE' | 'READ' | 'EXECUTE' | 'EDIT' | 'FULL'";
 
+export interface StudyMetadataOwner {
+  id?: number;
+  name: string;
+}
+
 export interface StudyMetadataDTO {
-  owner: { id?: number; name: string };
+  owner: StudyMetadataOwner;
   name: string;
   created: number;
   updated: number;
@@ -22,7 +27,7 @@ export interface StudyMetadata {
   name: string;
   creationDate: number;
   modificationDate: number;
-  owner: { id?: number; name: string };
+  owner: StudyMetadataOwner;
   version: string;
   workspace: string;
   managed: boolean;

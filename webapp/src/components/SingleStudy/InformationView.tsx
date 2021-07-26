@@ -3,13 +3,13 @@ import moment from 'moment';
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { makeStyles, createStyles, Theme, Paper, Typography, Button } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, Paper, Typography, Button, Chip, useTheme } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { AppState } from '../../App/reducers';
-import { GroupDTO, RoleType, StudyMetadata, StudyPublicMode } from '../../common/types';
+import { GroupDTO, RoleType, StudyMetadata, StudyMetadataOwner, StudyPublicMode } from '../../common/types';
 import { deleteStudy as callDeleteStudy,
   launchStudy as callLaunchStudy,
   getExportUrl,
@@ -25,7 +25,7 @@ const buttonStyle = (theme: Theme, color: string) => ({
   width: '120px',
   border: `2px solid ${color}`,
   color,
-  margin: theme.spacing(1.5),
+  margin: theme.spacing(0.5),
   '&:hover': {
     color: 'white',
     backgroundColor: color,
@@ -48,7 +48,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   header: {
     width: '100%',
-    height: '40px',
+    flex: '0 0 40px',
     display: 'flex',
     flexFlow: 'row nowrap',
     justifyContent: 'flex-start',
@@ -60,30 +60,66 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     fontWeight: 'bold',
     color: 'white',
   },
-  infoContainer: {
+  container: {
+    width: '100%',
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    boxSizing: 'border-box',
+  },
+  scrollInfoContainer: {
+    flex: 1,
+    padding: theme.spacing(1),
+    marginBottom: theme.spacing(1),
     width: '100%',
     display: 'flex',
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: theme.spacing(2),
+    boxSizing: 'border-box',
+    overflowX: 'hidden',
+    overflowY: 'scroll',
   },
   info: {
-    width: '80%',
-    margin: theme.spacing(0.7),
+    width: '90%',
+    marginBottom: theme.spacing(0.7),
     color: theme.palette.primary.main,
+    display: 'flex',
+    flexFlow: 'row nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    boxSizing: 'border-box',
   },
   mainInfo: {
-    width: '80%',
-    margin: theme.spacing(0.1),
+    width: '90%',
     color: theme.palette.primary.main,
     display: 'flex',
     flexFlow: 'row nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
-  infotxt: {
-    marginLeft: theme.spacing(1),
+  infoTitleContainer: {
+    marginBottom: theme.spacing(1),
+  },
+  infoTitle: {
+    marginRight: theme.spacing(2),
+    textDecoration: 'underline',
+  },
+  infoLabel: {
+    marginRight: theme.spacing(1),
+    fontWeight: 'bold',
+  },
+  groupList: {
+    flex: 1,
+    display: 'flex',
+    flexFlow: 'row nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    '& > *': {
+      margin: theme.spacing(0.5),
+    },
   },
   managed: {
     backgroundColor: theme.palette.secondary.main,
@@ -98,7 +134,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     fontSize: '0.8em',
   },
   buttonContainer: {
-    flex: 1,
+    flex: '0 0 100px',
     width: '100%',
     display: 'flex',
     flexFlow: 'column nowrap',
@@ -108,23 +144,37 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     padding: theme.spacing(1),
   },
   deleteContainer: {
+    flex: '0 0 30px',
     width: '100%',
     display: 'flex',
     flexFlow: 'column nowrap',
     justifyContent: 'flex-end',
     alignItems: 'flex-end',
+    boxSizing: 'border-box',
   },
-  launchButton: buttonStyle(theme, theme.palette.primary.main),
-  exportButton: buttonStyle(theme, theme.palette.secondary.main),
+  launchButton: { ...buttonStyle(theme, theme.palette.primary.main), boxSizing: 'border-box' },
+  exportButton: { ...buttonStyle(theme, theme.palette.primary.main), boxSizing: 'border-box' },
   deleteButton: {
     color: theme.palette.error.main,
     padding: theme.spacing(0),
-    margin: theme.spacing(1),
     marginRight: theme.spacing(2),
     fontSize: '0.8em',
     '&:hover': {
       backgroundColor: '#0000',
     },
+  },
+  editIcon: {
+    '&:hover': {
+      color: theme.palette.secondary.main,
+    },
+  },
+  groupLabel: {
+    height: '100%',
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    boxSizing: 'border-box',
   },
 }));
 
@@ -147,6 +197,7 @@ const InformationView = (props: PropTypes) => {
   const { studyId, removeStudy, user } = props;
   const classes = useStyles();
   const [t] = useTranslation();
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const history = useHistory();
   const [study, setStudy] = useState<StudyMetadata>();
@@ -199,11 +250,11 @@ const InformationView = (props: PropTypes) => {
     return false;
   };
 
-  const updateInfos = (newOwnerId: number, newOwnerName: string, newGroups: Array<GroupDTO>, newPublicMode: StudyPublicMode) => {
+  const updateInfos = (newOwner: StudyMetadataOwner, newGroups: Array<GroupDTO>, newPublicMode: StudyPublicMode) => {
     if (study) {
       const newStudy: StudyMetadata = study;
-      newStudy.owner.id = newOwnerId;
-      newStudy.owner.name = newOwnerName;
+      newStudy.owner.id = newOwner.id;
+      newStudy.owner.name = newOwner.name;
       newStudy.groups = newGroups;
       newStudy.publicMode = newPublicMode;
       setStudy(newStudy);
@@ -229,71 +280,90 @@ const InformationView = (props: PropTypes) => {
           <div className={classes.header}>
             <Typography className={classes.title}>{t('singlestudy:informations')}</Typography>
           </div>
-          <div className={classes.infoContainer}>
-            <div className={classes.mainInfo}>
-              <Typography style={{ fontSize: '1.3em', fontWeight: 'bold' }}>{study.name}</Typography>
-              <div className={classes.workspace}>
-                <div className={clsx(classes.workspaceBadge, study.managed ? classes.managed : {})}>
-                  {study.workspace}
+          <div className={classes.container} style={{ height: 'calc(100% - 40px)' }}>
+            <div className={classes.container} style={{ marginTop: theme.spacing(2), marginBottom: theme.spacing(3) }}>
+              <div className={classes.mainInfo}>
+                <Typography style={{ fontSize: '1.3em', fontWeight: 'bold' }}>{study.name}</Typography>
+                <div className={classes.workspace}>
+                  <div className={clsx(classes.workspaceBadge, study.managed ? classes.managed : {})}>
+                    {study.workspace}
+                  </div>
                 </div>
               </div>
+              <div className={classes.mainInfo}>
+                <Typography style={{ fontSize: '0.9em', color: 'gray' }}>{study.id}</Typography>
+              </div>
             </div>
-            <div
-              className={classes.mainInfo}
-              style={{ marginBottom: '10px' }}
-            >
-              <Typography style={{ fontSize: '0.9em', color: 'gray' }}>{study.id}</Typography>
+            <div className={classes.scrollInfoContainer}>
+              <div className={classes.container} style={{ flex: 'none', marginBottom: theme.spacing(3) }}>
+                <div className={clsx(classes.info, classes.infoTitleContainer)}>
+                  <Typography className={classes.infoTitle}>Informations générales</Typography>
+                </div>
+                <div className={classes.info}>
+                  <Typography className={classes.infoLabel}>{t('singlestudy:creationDate')}</Typography>
+                  <Typography variant="body2">{moment.unix(study.creationDate).format('YYYY/MM/DD HH:mm')}</Typography>
+                </div>
+                <div className={classes.info}>
+                  <Typography className={classes.infoLabel}>{t('singlestudy:modificationDate')}</Typography>
+                  <Typography variant="body2">{moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
+                </div>
+                <div className={classes.info}>
+                  <Typography className={classes.infoLabel}>{t('singlestudy:version')}</Typography>
+                  <Typography variant="body2">{study.version}</Typography>
+                </div>
+              </div>
+              <div className={classes.container} style={{ flex: 'none' }}>
+                <div className={clsx(classes.info, classes.infoTitleContainer)}>
+                  <Typography className={classes.infoTitle}>{t('singlestudy:permission')}</Typography>
+                  {permissionAuthorization() && <FontAwesomeIcon icon="edit" className={classes.editIcon} onClick={() => setOpenPermissionModal(true)} />}
+                </div>
+                <div className={classes.info}>
+                  <FontAwesomeIcon className={classes.infoLabel} icon="user" />
+                  <Typography>{study.owner.name}</Typography>
+                </div>
+                <div className={classes.info}>
+                  <FontAwesomeIcon className={classes.infoLabel} icon="shield-alt" />
+                  <Typography>{t(`singlestudy:${(study.publicMode as string).toLowerCase()}PublicModeText`)}</Typography>
+                </div>
+                {
+                    study.groups.length > 0 && (
+                      <div className={classes.info}>
+                        <div className={classes.groupLabel}>
+                          <Typography className={classes.infoLabel} style={{ fontWeight: 'normal' }}>
+                            <FontAwesomeIcon className={classes.infoLabel} icon="circle" />
+                            {t('singlestudy:groupsLabel')}
+                          </Typography>
+                        </div>
+                        <div className={classes.groupList}>
+                          {
+                              study.groups.map((item) => <Chip key={item.id} label={item.name} color="primary" />)
+                          }
+                        </div>
+                      </div>
+                    )}
+              </div>
             </div>
-            <div className={classes.info}>
-              <FontAwesomeIcon icon="user" />
-              <span className={classes.infotxt}>{study.owner.name}</span>
-            </div>
-            <div className={classes.info}>
-              <FontAwesomeIcon icon="clock" />
-              <span className={classes.infotxt}>{moment.unix(study.creationDate).format('YYYY/MM/DD HH:mm')}</span>
-            </div>
-            <div className={classes.info}>
-              <FontAwesomeIcon icon="code-branch" />
-              <span className={classes.infotxt}>{study.version}</span>
-            </div>
-            <div className={classes.info}>
-              <FontAwesomeIcon icon="history" />
-              <span className={classes.infotxt}>{moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm')}</span>
-            </div>
-            <div className={classes.info}>
-              <FontAwesomeIcon icon="clock" />
-              <span className={classes.infotxt}>{study.publicMode}</span>
-            </div>
-          </div>
-          <div className={classes.buttonContainer}>
-            {
-              permissionAuthorization() && (
+            <div className={classes.buttonContainer}>
               <Button
                 className={classes.launchButton}
-                onClick={() => setOpenPermissionModal(true)}
+                onClick={launchStudy}
               >
-                {t('studymanager:permission')}
+                {t('main:launch')}
               </Button>
-              )}
-            <Button
-              className={classes.launchButton}
-              onClick={launchStudy}
-            >
-              {t('main:launch')}
-            </Button>
-            <DownloadLink url={getExportUrl(studyId, false)}>
-              <Button className={classes.exportButton}>
-                {t('main:export')}
+              <DownloadLink url={getExportUrl(studyId, false)}>
+                <Button className={classes.exportButton}>
+                  {t('main:export')}
+                </Button>
+              </DownloadLink>
+            </div>
+            <div className={classes.deleteContainer}>
+              <Button
+                className={classes.deleteButton}
+                onClick={() => setOpenConfirmationModal(true)}
+              >
+                {t('main:delete')}
               </Button>
-            </DownloadLink>
-          </div>
-          <div className={classes.deleteContainer}>
-            <Button
-              className={classes.deleteButton}
-              onClick={() => setOpenConfirmationModal(true)}
-            >
-              {t('main:delete')}
-            </Button>
+            </div>
           </div>
           {openConfirmationModal && (
           <ConfirmationModal
@@ -307,8 +377,7 @@ const InformationView = (props: PropTypes) => {
           {openPermissionModal && study && user && (
           <PermissionModal
             studyId={study.id}
-            ownerId={study.owner.id ? study.owner.id : user.id}
-            ownerName={study.owner.name}
+            owner={study.owner}
             groups={study.groups}
             publicMode={study.publicMode}
             name={study.name}

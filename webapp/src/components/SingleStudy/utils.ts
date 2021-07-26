@@ -1,24 +1,18 @@
-import { GroupDTO, StudyPublicMode } from '../../common/types';
+import { GroupDTO, StudyMetadataOwner, StudyPublicMode, UserDTO } from '../../common/types';
 import { changeStudyOwner, addStudyGroup, deleteStudyGroup, changePublicMode } from '../../services/api/study';
-import { getUser } from '../../services/api/user';
 
 export const updatePermission = async (
   studyId: string,
-  initOwnerId: number,
-  initOwnerName: string,
   initGroups: Array<GroupDTO>,
   initPublicMode: StudyPublicMode,
-  newOwnerId: number,
+  owner: StudyMetadataOwner,
+  newOwner: UserDTO | undefined,
   newGroups: Array<GroupDTO>,
   newPublicMode: StudyPublicMode,
-  updateInfos: (newOwnerId: number, newOwnerName: string, newGroups: Array<GroupDTO>, newPublicMode: StudyPublicMode,) => void,
+  updateInfos: (newOwner: StudyMetadataOwner, newGroups: Array<GroupDTO>, newPublicMode: StudyPublicMode,) => void,
 ): Promise<any> => {
-  let newOwnerName = initOwnerName;
-
-  if (initOwnerId !== newOwnerId) {
-    await changeStudyOwner(studyId, newOwnerId);
-    const res = await getUser(newOwnerId);
-    newOwnerName = res.name;
+  if (newOwner) {
+    await changeStudyOwner(studyId, newOwner.id);
   }
 
   if (initPublicMode !== newPublicMode) {
@@ -37,7 +31,7 @@ export const updatePermission = async (
     }
   }));
 
-  updateInfos(newOwnerId, newOwnerName, newGroups, newPublicMode);
+  updateInfos(newOwner ? newOwner as StudyMetadataOwner : owner, newGroups, newPublicMode);
 };
 
 export default {};
