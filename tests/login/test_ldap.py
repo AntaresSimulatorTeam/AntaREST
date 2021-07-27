@@ -62,13 +62,17 @@ def test_ldap():
 
     assert res
     assert "extid" == res.name
-    repo.save.assert_called_once_with(UserLdap(name="extid"))
+    repo.save.assert_called_once_with(
+        UserLdap(name="extid", firstname="John", lastname="Smith")
+    )
     group_repo.save.assert_called_once_with(
         Group(id="groupB", name="some other group name")
     )
     role_repo.save.assert_called_once_with(
         Role(
-            identity=UserLdap(name="extid"),
+            identity=UserLdap(
+                name="extid", firstname="John", lastname="Smith"
+            ),
             group=Group(id="groupB", name="some other group name"),
             type=RoleType.WRITER,
         )
