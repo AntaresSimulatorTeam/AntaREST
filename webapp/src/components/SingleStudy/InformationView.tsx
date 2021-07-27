@@ -71,7 +71,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   scrollInfoContainer: {
     flex: 1,
-    padding: theme.spacing(1),
     marginBottom: theme.spacing(1),
     width: '100%',
     display: 'flex',
@@ -170,14 +169,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
       color: theme.palette.secondary.main,
       cursor: 'pointer',
     },
-  },
-  groupLabel: {
-    height: '100%',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    boxSizing: 'border-box',
   },
 }));
 
@@ -330,12 +321,10 @@ const InformationView = (props: PropTypes) => {
                 </div>
                 {
                     study.groups.length > 0 && (
-                      <div className={classes.info}>
-                        <div className={classes.groupLabel}>
-                          <div className={classes.info} style={{ minHeight: '30px', marginTop: theme.spacing(0.5) }}>
-                            <FontAwesomeIcon className={classes.infoLabel} icon="users" />
-                            <Typography className={classes.infoLabel} style={{ fontWeight: 'normal' }}>{t('singlestudy:groupsLabel')}</Typography>
-                          </div>
+                      <div className={classes.info} style={{ alignItems: 'flex-start' }}>
+                        <div className={classes.info} style={{ width: 'auto', minHeight: '38px', paddingRight: theme.spacing(1) }}>
+                          <FontAwesomeIcon style={{ marginRight: theme.spacing(0.8) }} icon="users" />
+                          <Typography>{t('singlestudy:groupsLabel')}</Typography>
                         </div>
                         <div className={classes.groupList}>
                           {
