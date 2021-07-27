@@ -131,6 +131,8 @@ class UserLdap(Identity):
         ForeignKey("identities.id"),
         primary_key=True,
     )
+    firstname = Column(String)
+    lastname = Column(String)
     __mapper_args__ = {
         "polymorphic_identity": "users_ldap",
     }
