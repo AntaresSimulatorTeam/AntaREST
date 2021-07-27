@@ -41,11 +41,8 @@ class MockMatrixNode(MatrixNode):
     ) -> None:
         super().__init__(config=config, context=context, freq="annual")
 
-    def load(
+    def parse(
         self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
     ) -> JSON:
         return MOCK_MATRIX_JSON
 

@@ -34,6 +34,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
+        formatted: bool = True,
     ) -> Union[str, G]:
         self._assert_url_end(url)
 
@@ -47,7 +48,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         if expanded:
             return self.get_lazy_content()
         else:
-            return self.load(url, depth, expanded)
+            return self.load(url, depth, expanded, formatted)
 
     def get_link_path(self) -> Path:
         path = self.config.path.parent / (self.config.path.name + ".link")
@@ -83,6 +84,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
+        formatted: bool = True,
     ) -> G:
         """
         Fetch data on disk.
@@ -91,6 +93,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             url: data path to retrieve
             depth: after url is reached, node expand tree until matches depth asked
             expanded: context parameter to determine if current node become from a expansion
+            formatted: ask for raw file transformation
 
         Returns:
 

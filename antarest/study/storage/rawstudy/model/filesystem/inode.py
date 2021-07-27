@@ -33,6 +33,7 @@ class INode(ABC, Generic[G, S, V]):
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
+        formatted: bool = True,
     ) -> G:
         """
         Ask data inside tree.
@@ -41,6 +42,7 @@ class INode(ABC, Generic[G, S, V]):
             url: data path to retrieve
             depth: after url is reached, node expand tree until matches depth asked
             expanded: context parameter to determine if current node become from a expansion
+            formatted: ask for raw file transformation (for matrix)
 
         Returns: json
 

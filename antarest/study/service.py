@@ -79,7 +79,12 @@ class StudyService:
         self.areas = AreaManager(self.raw_study_service)
 
     def get(
-        self, uuid: str, url: str, depth: int, params: RequestParameters
+        self,
+        uuid: str,
+        url: str,
+        depth: int,
+        formatted: bool,
+        params: RequestParameters,
     ) -> JSON:
         """
         Get study data inside filesystem
@@ -87,6 +92,7 @@ class StudyService:
             uuid: study uuid
             url: route to follow inside study structure
             depth: depth to expand tree when route matched
+            formatted: indicate if raw files must be parsed and formatted
             params: request parameters
 
         Returns: data study formatted in json
@@ -99,7 +105,7 @@ class StudyService:
             logger.info(
                 "study %s data asked by user %s", uuid, params.get_user_id()
             )
-            return self.raw_study_service.get(study, url, depth)
+            return self.raw_study_service.get(study, url, depth, formatted)
 
         raise StudyTypeUnsupported(uuid, study.type)
 

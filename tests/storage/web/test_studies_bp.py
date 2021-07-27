@@ -71,7 +71,7 @@ def test_server() -> None:
     client.get("/v1/studies/study1/raw?path=settings/general/params")
 
     mock_service.get.assert_called_once_with(
-        "study1", "settings/general/params", 3, PARAMS
+        "study1", "settings/general/params", 3, True, PARAMS
     )
 
 
@@ -116,7 +116,7 @@ def test_server_with_parameters() -> None:
 
     assert result.status_code == 200
     mock_storage_service.get.assert_called_once_with(
-        "study1", "/", 4, parameters
+        "study1", "/", 4, True, parameters
     )
 
     result = client.get("/v1/studies/study2/raw?depth=WRONG_TYPE")
@@ -127,7 +127,7 @@ def test_server_with_parameters() -> None:
 
     excepted_parameters = RequestParameters(user=ADMIN)
     mock_storage_service.get.assert_called_with(
-        "study2", "/", 3, excepted_parameters
+        "study2", "/", 3, True, excepted_parameters
     )
 
 

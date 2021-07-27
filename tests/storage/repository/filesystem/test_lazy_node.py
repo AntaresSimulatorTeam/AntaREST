@@ -32,6 +32,7 @@ class MockLazyNode(LazyNode[str, str, str]):
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
+        formatted: bool = False,
     ) -> str:
         return "Mock Matrix Content"
 
