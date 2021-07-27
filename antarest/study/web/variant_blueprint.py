@@ -177,7 +177,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def generate_variant(
+    def create_from_variant(
         uuid: str,
         name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
