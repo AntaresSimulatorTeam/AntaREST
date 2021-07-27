@@ -69,6 +69,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     '& > *': {
       margin: theme.spacing(0.5),
     },
+    paddingLeft: theme.spacing(1.5),
   },
   select: {
     margin: theme.spacing(2),

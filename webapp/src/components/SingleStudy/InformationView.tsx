@@ -3,7 +3,7 @@ import moment from 'moment';
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { makeStyles, createStyles, Theme, Paper, Typography, Button, Chip, useTheme } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, Paper, Typography, Button, Chip, Tooltip, useTheme } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
@@ -91,6 +91,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
     boxSizing: 'border-box',
   },
+  alignBaseline: {
+    alignItems: 'baseline',
+  },
   mainInfo: {
     width: '90%',
     color: theme.palette.primary.main,
@@ -98,6 +101,13 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'row nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
+  },
+  studyName: {
+    fontSize: '1.3em',
+    fontWeight: 'bold',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
   infoTitleContainer: {
     marginBottom: theme.spacing(1),
@@ -109,6 +119,14 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   infoLabel: {
     marginRight: theme.spacing(1),
     fontWeight: 'bold',
+  },
+  iconLabel: {
+    marginRight: theme.spacing(1),
+    width: '20px',
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   groupList: {
     flex: 1,
@@ -277,7 +295,9 @@ const InformationView = (props: PropTypes) => {
           <div className={classes.container} style={{ height: 'calc(100% - 40px)' }}>
             <div className={classes.container} style={{ marginTop: theme.spacing(2), marginBottom: theme.spacing(3) }}>
               <div className={classes.mainInfo}>
-                <Typography style={{ fontSize: '1.3em', fontWeight: 'bold' }}>{study.name}</Typography>
+                <Tooltip title={study.name}>
+                  <Typography className={classes.studyName}>{study.name}</Typography>
+                </Tooltip>
                 <div className={classes.workspace}>
                   <div className={clsx(classes.workspaceBadge, study.managed ? classes.managed : {})}>
                     {study.workspace}
@@ -293,15 +313,15 @@ const InformationView = (props: PropTypes) => {
                 <div className={clsx(classes.info, classes.infoTitleContainer)}>
                   <Typography className={classes.infoTitle}>{t('singlestudy:generalInfo')}</Typography>
                 </div>
-                <div className={classes.info}>
+                <div className={clsx(classes.info, classes.alignBaseline)}>
                   <Typography className={classes.infoLabel}>{t('singlestudy:creationDate')}</Typography>
                   <Typography variant="body2">{moment.unix(study.creationDate).format('YYYY/MM/DD HH:mm')}</Typography>
                 </div>
-                <div className={classes.info}>
+                <div className={clsx(classes.info, classes.alignBaseline)}>
                   <Typography className={classes.infoLabel}>{t('singlestudy:modificationDate')}</Typography>
                   <Typography variant="body2">{moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
                 </div>
-                <div className={classes.info}>
+                <div className={clsx(classes.info, classes.alignBaseline)}>
                   <Typography className={classes.infoLabel}>{t('singlestudy:version')}</Typography>
                   <Typography variant="body2">{study.version}</Typography>
                 </div>
@@ -312,18 +332,24 @@ const InformationView = (props: PropTypes) => {
                   {permissionAuthorization() && <FontAwesomeIcon icon="edit" className={classes.editIcon} onClick={() => setOpenPermissionModal(true)} />}
                 </div>
                 <div className={classes.info}>
-                  <FontAwesomeIcon className={classes.infoLabel} icon="user" />
+                  <div className={classes.iconLabel}>
+                    <FontAwesomeIcon icon="user" />
+                  </div>
                   <Typography>{study.owner.name}</Typography>
                 </div>
                 <div className={classes.info}>
-                  <FontAwesomeIcon className={classes.infoLabel} icon="shield-alt" />
+                  <div className={classes.iconLabel}>
+                    <FontAwesomeIcon icon="shield-alt" />
+                  </div>
                   <Typography>{t(`singlestudy:${(study.publicMode as string).toLowerCase()}PublicModeText`)}</Typography>
                 </div>
                 {
                     study.groups.length > 0 && (
                       <div className={classes.info} style={{ alignItems: 'flex-start' }}>
                         <div className={classes.info} style={{ width: 'auto', minHeight: '38px', paddingRight: theme.spacing(1) }}>
-                          <FontAwesomeIcon style={{ marginRight: theme.spacing(0.8) }} icon="users" />
+                          <div className={classes.iconLabel}>
+                            <FontAwesomeIcon icon="users" />
+                          </div>
                           <Typography>{t('singlestudy:groupsLabel')}</Typography>
                         </div>
                         <div className={classes.groupList}>
