@@ -12,7 +12,7 @@
   "taskLog": "Logs",
   "noTasks": "No tasks",
   "failtofetchlogs": "Failed to fetch logs",
-  "owner": "Owner ID",
+  "owner": "Owner",
   "groupsLabel": "Groups",
   "publicMode": "Public mode",
   "onPermissionUpdate": "Permission successfully updated",
@@ -30,5 +30,6 @@
   "readPublicModeText": "Public permission read",
   "executePublicModeText": "Public permission execution",
   "editPublicModeText": "Public permission write",
-  "fullPublicModeText": "Total public permission"
+  "fullPublicModeText": "Total public permission",
+  "generalInfo": "General informations"
 }

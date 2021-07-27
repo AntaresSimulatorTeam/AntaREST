@@ -14,7 +14,7 @@ import {
   faUserCircle,
   faEdit,
   faShieldAlt,
-  faCircle,
+  faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function (): void {
@@ -31,6 +31,6 @@ export default function (): void {
     faUserCircle,
     faEdit,
     faShieldAlt,
-    faCircle,
+    faUsers,
   );
 }

@@ -12,7 +12,7 @@
   "taskLog": "Logs",
   "noTasks": "Pas de tâches en cours",
   "failtofetchlogs": "Echec du chargement des logs",
-  "owner": "Id propriétaire",
+  "owner": "Propriétaire",
   "groupsLabel": "Groupes",
   "publicMode": "Mode public",
   "onPermissionUpdate": "Permissions modifié avec succès",
@@ -30,5 +30,6 @@
   "readPublicModeText": "Permission publique en lecture",
   "executePublicModeText": "Permission publique de lancement",
   "editPublicModeText": "Permission publique en écriture",
-  "fullPublicModeText": "Permission publique totale"
+  "fullPublicModeText": "Permission publique totale",
+  "generalInfo": "Informations générales"
 }

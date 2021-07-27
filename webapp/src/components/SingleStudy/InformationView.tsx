@@ -15,6 +15,7 @@ import { deleteStudy as callDeleteStudy,
   getExportUrl,
   getStudyMetadata } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
+import { isUserAdmin } from '../../services/utils';
 import DownloadLink from '../ui/DownloadLink';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import PermissionModal from './PermissionModal';
@@ -103,7 +104,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     marginBottom: theme.spacing(1),
   },
   infoTitle: {
-    marginRight: theme.spacing(2),
+    marginRight: theme.spacing(1),
     textDecoration: 'underline',
   },
   infoLabel: {
@@ -113,6 +114,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   groupList: {
     flex: 1,
     display: 'flex',
+    height: '100%',
     flexFlow: 'row nowrap',
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
@@ -166,6 +168,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   editIcon: {
     '&:hover': {
       color: theme.palette.secondary.main,
+      cursor: 'pointer',
     },
   },
   groupLabel: {
@@ -234,7 +237,7 @@ const InformationView = (props: PropTypes) => {
   const permissionAuthorization = (): boolean => {
     if (user) {
       // User is super admin
-      if (user.groups.find((elm) => elm.id === 'admin')) {
+      if (isUserAdmin(user)) {
         return true;
       }
 
@@ -297,7 +300,7 @@ const InformationView = (props: PropTypes) => {
             <div className={classes.scrollInfoContainer}>
               <div className={classes.container} style={{ flex: 'none', marginBottom: theme.spacing(3) }}>
                 <div className={clsx(classes.info, classes.infoTitleContainer)}>
-                  <Typography className={classes.infoTitle}>Informations générales</Typography>
+                  <Typography className={classes.infoTitle}>{t('singlestudy:generalInfo')}</Typography>
                 </div>
                 <div className={classes.info}>
                   <Typography className={classes.infoLabel}>{t('singlestudy:creationDate')}</Typography>
@@ -329,10 +332,10 @@ const InformationView = (props: PropTypes) => {
                     study.groups.length > 0 && (
                       <div className={classes.info}>
                         <div className={classes.groupLabel}>
-                          <Typography className={classes.infoLabel} style={{ fontWeight: 'normal' }}>
-                            <FontAwesomeIcon className={classes.infoLabel} icon="circle" />
-                            {t('singlestudy:groupsLabel')}
-                          </Typography>
+                          <div className={classes.info} style={{ minHeight: '30px', marginTop: theme.spacing(0.5) }}>
+                            <FontAwesomeIcon className={classes.infoLabel} icon="users" />
+                            <Typography className={classes.infoLabel} style={{ fontWeight: 'normal' }}>{t('singlestudy:groupsLabel')}</Typography>
+                          </div>
                         </div>
                         <div className={classes.groupList}>
                           {
