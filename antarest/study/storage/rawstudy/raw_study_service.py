@@ -148,13 +148,20 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         )
         return FileStudy(config=study_config, tree=study_tree)
 
-    def get(self, metadata: RawStudy, url: str = "", depth: int = 3) -> JSON:
+    def get(
+        self,
+        metadata: RawStudy,
+        url: str = "",
+        depth: int = 3,
+        formatted: bool = True,
+    ) -> JSON:
         """
         Entry point to fetch data inside study.
         Args:
             metadata: study
             url: path data inside study to reach
             depth: tree depth to reach after reach data path
+            formatted: indicate if raw files must be parsed and formatted
 
         Returns: study data formatted in json
 
@@ -165,7 +172,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         parts = [item for item in url.split("/") if item]
 
-        data = study.get(parts, depth=depth)
+        data = study.get(parts, depth=depth, formatted=formatted)
         del study
         return data
 

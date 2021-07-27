@@ -43,6 +43,7 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
         self,
         url: List[str],
         depth: int = -1,
+        formatted: bool = True,
     ) -> JSON:
         children = self.build(self.config)
         names, sub_url = self.extract_child(children, url)
@@ -50,25 +51,28 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
         # item is unique in url
         if len(names) == 1:
             return children[names[0]].get(  # type: ignore
-                sub_url, depth=depth, expanded=False
+                sub_url, depth=depth, expanded=False, formatted=formatted
             )
         # many items asked or * asked
         else:
             return {
-                key: children[key].get(sub_url, depth=depth, expanded=False)
+                key: children[key].get(
+                    sub_url, depth=depth, expanded=False, formatted=formatted
+                )
                 for key in names
             }
 
     def _expand_get(
         self,
         depth: int = -1,
+        formatted: bool = True,
     ) -> JSON:
         children = self.build(self.config)
 
         if depth == 0:
             return {}
         return {
-            name: node.get(depth=depth - 1, expanded=True)
+            name: node.get(depth=depth - 1, expanded=True, formatted=formatted)
             if depth - 1 != 0
             else {}
             for name, node in children.items()
@@ -79,11 +83,12 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
+        formatted: bool = True,
     ) -> JSON:
         if url and url != [""]:
-            return self._forward_get(url, depth)
+            return self._forward_get(url, depth, formatted)
         else:
-            return self._expand_get(depth)
+            return self._expand_get(depth, formatted)
 
     def save(
         self, data: Union[str, bytes, JSON], url: Optional[List[str]] = None

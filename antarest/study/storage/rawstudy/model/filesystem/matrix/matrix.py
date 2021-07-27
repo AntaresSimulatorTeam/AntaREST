@@ -17,7 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import (
 )
 
 
-class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):
+class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
     def __init__(
         self, context: ContextServer, config: FileStudyTreeConfig, freq: str
     ) -> None:
@@ -36,7 +36,7 @@ class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):
         if self.get_link_path().exists():
             return
 
-        matrix = self.load()
+        matrix = self.parse()
         dto = MatrixDTO(
             width=matrix["width"],
             height=matrix["height"],
@@ -65,23 +65,22 @@ class MatrixNode(LazyNode[JSON, Union[bytes, JSON], JSON], ABC):
         self.dump(matrix)
         self.get_link_path().unlink()
 
-    @abstractmethod
     def load(
         self,
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-    ) -> JSON:
+        formatted: bool = True,
+    ) -> Union[bytes, JSON]:
+        if not formatted:
+            return self.config.path.read_bytes()
+
+        return self.parse()
+
+    @abstractmethod
+    def parse(self) -> JSON:
         """
-        Fetch data on disk.
-
-        Args:
-            url: data path to retrieve
-            depth: after url is reached, node expand tree until matches depth asked
-            expanded: context parameter to determine if current node become from a expansion
-
-        Returns:
-
+        Parse the matrix content
         """
         raise NotImplementedError()
 

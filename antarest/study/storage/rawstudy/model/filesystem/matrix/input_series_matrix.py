@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
@@ -33,11 +33,8 @@ class InputSeriesMatrix(MatrixNode):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         pass  # end node has nothing to build
 
-    def load(
+    def parse(
         self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
     ) -> JSON:
         try:
             matrix: pd.DataFrame = pd.read_csv(

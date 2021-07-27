@@ -5,7 +5,6 @@ import { Button, LinearProgress } from '@material-ui/core';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
 import { getStudyMetadata, importStudy } from '../../services/api/study';
-import { getStudyIdFromUrl } from '../../services/utils';
 import { addStudies } from '../../ducks/study';
 import { StudyMetadata } from '../../common/types';
 import { addUpload, updateUpload, completeUpload } from '../../ducks/upload';
@@ -44,8 +43,7 @@ const ImportStudyForm = (props: PropTypes) => {
     if (data.study && data.study.length === 1) {
       const uploadId = createUpload('Study import');
       try {
-        const res = await importStudy(data.study[0], (completion) => { updateUploadCompletion(uploadId, completion); setUploadProgress(completion); });
-        const sid = getStudyIdFromUrl(res);
+        const sid = await importStudy(data.study[0], (completion) => { updateUploadCompletion(uploadId, completion); setUploadProgress(completion); });
         const metadata = await getStudyMetadata(sid);
         addStudy(metadata);
       } catch (e) {

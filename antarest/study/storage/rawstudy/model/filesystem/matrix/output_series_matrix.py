@@ -1,4 +1,4 @@
-from typing import List, Optional, cast
+from typing import List, Optional, cast, Union
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
@@ -43,13 +43,9 @@ class OutputSeriesMatrix(MatrixNode):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         pass  # End of tree
 
-    def load(
+    def parse(
         self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
     ) -> JSON:
-
         df = pd.read_csv(
             self.config.path, sep="\t", skiprows=4, na_values="N/A"
         )

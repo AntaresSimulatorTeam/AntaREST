@@ -35,6 +35,7 @@ class TestSubNode(INode[int, int, int]):
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = True,
+        formatted: bool = True,
     ) -> int:
         return self.value
 

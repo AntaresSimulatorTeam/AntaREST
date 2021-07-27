@@ -36,6 +36,7 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
+        formatted: bool = True,
     ) -> bytes:
         return self.config.path.read_bytes()
 

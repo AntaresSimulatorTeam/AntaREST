@@ -71,7 +71,7 @@ def test_server() -> None:
     client.get("/v1/studies/study1/raw?path=settings/general/params")
 
     mock_service.get.assert_called_once_with(
-        "study1", "settings/general/params", 3, PARAMS
+        "study1", "settings/general/params", 3, True, PARAMS
     )
 
 
@@ -116,7 +116,7 @@ def test_server_with_parameters() -> None:
 
     assert result.status_code == 200
     mock_storage_service.get.assert_called_once_with(
-        "study1", "/", 4, parameters
+        "study1", "/", 4, True, parameters
     )
 
     result = client.get("/v1/studies/study2/raw?depth=WRONG_TYPE")
@@ -127,7 +127,7 @@ def test_server_with_parameters() -> None:
 
     excepted_parameters = RequestParameters(user=ADMIN)
     mock_storage_service.get.assert_called_with(
-        "study2", "/", 3, excepted_parameters
+        "study2", "/", 3, True, excepted_parameters
     )
 
 
@@ -156,7 +156,7 @@ def test_create_study(
     result_right = client.post("/v1/studies?name=study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
-    assert result_right.json() == "/studies/my-uuid"
+    assert result_right.json() == "my-uuid"
     storage_service.create_study.assert_called_once_with("study2", [], PARAMS)
 
 
@@ -195,7 +195,7 @@ def test_import_study_zipped(
     study_data = io.BytesIO(path_zip.read_bytes())
     result = client.post("/v1/studies/_import", files={"study": study_data})
 
-    assert result.json() == "/studies/" + study_name
+    assert result.json() == study_name
     assert result.status_code == HTTPStatus.CREATED.value
     mock_storage_service.import_study.assert_called_once()
 

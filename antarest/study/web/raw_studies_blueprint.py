@@ -34,7 +34,6 @@ def create_raw_study_routes(
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
-    ftm = FileTransferManager.get_instance(config)
 
     @bp.get(
         "/studies/{uuid}/raw",
@@ -45,10 +44,11 @@ def create_raw_study_routes(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         depth: int = 3,
+        formatted: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         parameters = RequestParameters(user=current_user)
-        output = storage_service.get(uuid, path, depth, parameters)
+        output = storage_service.get(uuid, path, depth, formatted, parameters)
 
         try:
             # try to decode string

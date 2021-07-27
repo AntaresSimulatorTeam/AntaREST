@@ -74,7 +74,7 @@ def test_get(tmp_path: str, project_path) -> None:
 
     assert output == data
 
-    study.get.assert_called_once_with(["settings"], depth=2)
+    study.get.assert_called_once_with(["settings"], depth=2, formatted=True)
 
 
 @pytest.mark.unit_test

@@ -14,11 +14,6 @@ export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDT
   managed: metadata.managed,
 });
 
-export const getStudyIdFromUrl = (url: string): string => {
-  const parts = url.trim().split('/');
-  return parts[2];
-};
-
 export const useNotif = (): (message: React.ReactNode, options?: OptionsObject | undefined) => React.ReactText => {
   const { enqueueSnackbar } = useSnackbar();
   return enqueueSnackbar;

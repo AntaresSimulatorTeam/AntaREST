@@ -66,9 +66,8 @@ def create_study_routes(
         group_ids = groups.split(",") if groups is not None else []
 
         uuid = storage_service.import_study(zip_binary, group_ids, params)
-        content = "/studies/" + uuid
 
-        return content
+        return uuid
 
     @bp.post(
         "/studies/{uuid}/copy",
@@ -118,9 +117,7 @@ def create_study_routes(
         params = RequestParameters(user=current_user)
         uuid = storage_service.create_study(name_sanitized, group_ids, params)
 
-        content = "/studies/" + uuid
-
-        return content
+        return uuid
 
     @bp.get(
         "/studies/{uuid}/export",

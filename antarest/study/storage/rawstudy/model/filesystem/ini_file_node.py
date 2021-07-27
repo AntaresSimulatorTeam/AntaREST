@@ -47,6 +47,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
+        formatted: bool = True,
     ) -> SUB_JSON:
         if depth == 0:
             return {}

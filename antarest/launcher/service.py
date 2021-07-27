@@ -144,6 +144,7 @@ class LauncherService:
                         job_result.study_id,
                         f"/output/{job_result.output_id}/simulation",
                         depth=1,
+                        formatted=True,
                         params=params,
                     ),
                 )

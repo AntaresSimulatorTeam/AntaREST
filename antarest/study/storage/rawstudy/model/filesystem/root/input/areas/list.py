@@ -31,6 +31,7 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
+        formatted: bool = True,
     ) -> List[str]:
         lines = self.config.path.read_text().lower().split("\n")
         return [l.strip() for l in lines if l.strip()]

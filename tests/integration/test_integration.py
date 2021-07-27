@@ -119,7 +119,7 @@ def test_main(app: FastAPI):
 
     # Study copy
     copied = client.post(
-        f"/v1{created.json()}/copy?dest=copied",
+        f"/v1/studies/{created.json()}/copy?dest=copied",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -355,9 +355,9 @@ def test_area_management(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    study_path = created.json()
+    study_id = created.json()
     res_areas = client.get(
-        f"/v1{study_path}/areas",
+        f"/v1/studies/{study_id}/areas",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
@@ -365,21 +365,21 @@ def test_area_management(app: FastAPI):
     assert res_areas.json() == []
 
     res_create = client.post(
-        f"/v1{study_path}/areas",
+        f"/v1/studies/{study_id}/areas",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
         json={"name": "test", "type": "AREA"},
     )
     res_update = client.put(
-        f"/v1{study_path}/areas/test",
+        f"/v1/studies/{study_id}/areas/test",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
         json={"name": "test", "type": "AREA"},
     )
     res_delete = client.delete(
-        f"/v1{study_path}/areas/test",
+        f"/v1/studies/{study_id}/areas/test",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
