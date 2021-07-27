@@ -11,7 +11,10 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
 from antarest.study.service import StudyService
-from antarest.study.storage.variantstudy.model import GenerationResultInfoDTO, CommandDTO
+from antarest.study.storage.variantstudy.model import (
+    GenerationResultInfoDTO,
+    CommandDTO,
+)
 
 
 def create_study_variant_routes(
@@ -37,8 +40,7 @@ def create_study_variant_routes(
             200: {
                 "description": "The id of the new study variant",
             }
-        }
-
+        },
     )
     def create_variant(
         uuid: str,
@@ -55,9 +57,9 @@ def create_study_variant_routes(
         responses={
             200: {
                 "description": "The list of children study variant",
-                "model": List[StudyMetadataDTO]
+                "model": List[StudyMetadataDTO],
             }
-        }
+        },
     )
     def get_variants(
         uuid: str,
@@ -73,10 +75,9 @@ def create_study_variant_routes(
         responses={
             200: {
                 "description": "The detail of a command content",
-                "model": List[CommandDTO]
+                "model": List[CommandDTO],
             }
-        }
-
+        },
     )
     def list_commands(
         uuid: str,
@@ -93,8 +94,7 @@ def create_study_variant_routes(
             200: {
                 "description": "The id a the appended command",
             }
-        }
-
+        },
     )
     def append_command(
         uuid: str,
@@ -112,7 +112,7 @@ def create_study_variant_routes(
             200: {
                 "description": "The detail of a command content",
             }
-        }
+        },
     )
     def get_command(
         uuid: str,
@@ -158,7 +158,7 @@ def create_study_variant_routes(
                 "description": "The result of the generation process",
                 "model": GenerationResultInfoDTO,
             }
-        }
+        },
     )
     def generate_variant(
         uuid: str,
@@ -175,7 +175,7 @@ def create_study_variant_routes(
             200: {
                 "description": "The id of the new study",
             }
-        }
+        },
     )
     def generate_variant(
         uuid: str,
