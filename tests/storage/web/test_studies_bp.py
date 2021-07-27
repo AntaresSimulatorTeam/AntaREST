@@ -156,7 +156,7 @@ def test_create_study(
     result_right = client.post("/v1/studies?name=study2")
 
     assert result_right.status_code == HTTPStatus.CREATED.value
-    assert result_right.json() == "/studies/my-uuid"
+    assert result_right.json() == "my-uuid"
     storage_service.create_study.assert_called_once_with("study2", [], PARAMS)
 
 
@@ -195,7 +195,7 @@ def test_import_study_zipped(
     study_data = io.BytesIO(path_zip.read_bytes())
     result = client.post("/v1/studies/_import", files={"study": study_data})
 
-    assert result.json() == "/studies/" + study_name
+    assert result.json() == study_name
     assert result.status_code == HTTPStatus.CREATED.value
     mock_storage_service.import_study.assert_called_once()
 
