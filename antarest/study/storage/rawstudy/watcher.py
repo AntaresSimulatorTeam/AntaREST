@@ -1,4 +1,5 @@
 import logging
+import re
 import threading
 from pathlib import Path
 from time import time, sleep
@@ -78,10 +79,13 @@ class Watcher:
         """
 
         def rec_scan(
-            path: Path, workspace: str, groups: List[Group]
+            path: Path,
+            workspace: str,
+            groups: List[Group],
+            filter_in: List[str],
+            filter_out: List[str],
         ) -> List[StudyFolder]:
             try:
-                sleep(0.2)
                 if (path / "study.antares").exists():
                     logger.debug(f"Study {path.name} found in {workspace}")
                     return [StudyFolder(path, workspace, groups)]
@@ -89,9 +93,32 @@ class Watcher:
                     folders: List[StudyFolder] = list()
                     if path.is_dir():
                         for child in path.iterdir():
-                            if child.is_dir():
-                                folders = folders + rec_scan(
-                                    child, workspace, groups
+                            try:
+                                if (
+                                    child.is_dir()
+                                    and any(
+                                        [
+                                            re.search(regex, child.stem)
+                                            for regex in filter_in
+                                        ]
+                                    )
+                                    and not any(
+                                        [
+                                            re.search(regex, child.stem)
+                                            for regex in filter_out
+                                        ]
+                                    )
+                                ):
+                                    folders = folders + rec_scan(
+                                        child,
+                                        workspace,
+                                        groups,
+                                        filter_in,
+                                        filter_out,
+                                    )
+                            except Exception as e:
+                                logger.error(
+                                    f"Failed to scan dir {child}", exc_info=e
                                 )
                     return folders
             except Exception as e:
@@ -103,7 +130,13 @@ class Watcher:
             if name != DEFAULT_WORKSPACE_NAME:
                 path = Path(workspace.path)
                 groups = [Group(id=g) for g in workspace.groups]
-                studies = studies + rec_scan(path, name, groups)
+                studies = studies + rec_scan(
+                    path,
+                    name,
+                    groups,
+                    workspace.filter_in,
+                    workspace.filter_out,
+                )
 
         with db():
             self.service.sync_studies_on_disk(studies)

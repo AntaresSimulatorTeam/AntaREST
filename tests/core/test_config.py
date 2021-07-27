@@ -14,6 +14,6 @@ def test_get_yaml(project_path: Path):
 
     assert config.security.admin_pwd == "admin"
     assert config.storage.workspaces["default"].path == Path(
-        "examples/studies/"
+        "examples/internal_studies/"
     )
     assert config.logging.level == "INFO"

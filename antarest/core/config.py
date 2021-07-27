@@ -60,13 +60,18 @@ class WorkspaceConfig:
     Sub config object dedicated to workspace
     """
 
+    filter_in: List[str] = field(default_factory=lambda: [".*"])
+    filter_out: List[str] = field(default_factory=lambda: [])
     groups: List[str] = field(default_factory=lambda: [])
     path: Path = Path()
 
     @staticmethod
     def from_dict(data: JSON) -> "WorkspaceConfig":
         return WorkspaceConfig(
-            path=Path(data["path"]), groups=data.get("groups", list())
+            path=Path(data["path"]),
+            groups=data.get("groups", list()),
+            filter_in=data.get("filter_in", [".*"]),
+            filter_out=data.get("filter_out", list()),
         )
 
 

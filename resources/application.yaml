@@ -15,14 +15,18 @@ db:
 matrixstore:
   bucket: ./bucket
 
+# default temporary directory
 #tmp_dir: /tmp
 
 storage:
   workspaces:
     tmp:
       path: examples/studies/
-    default:
-      path: examples/studies/
+      # filter_in: ['.*'] # default to '.*'
+      # filter_out: [] # default to empty
+      # groups: [] # default empty
+    default: # required, no filters applied, this folder is not watched
+      path: examples/internal_studies/
 
 launcher:
   default: local

@@ -255,7 +255,7 @@ def create_study_routes(
     @bp.get(
         "/studies/{uuid}",
         tags=[APITag.study_management],
-        summary="Get Study informations",
+        summary="Get Study information",
     )
     def get_study_metadata(
         uuid: str,
@@ -268,7 +268,7 @@ def create_study_routes(
     @bp.put(
         "/studies/{uuid}",
         tags=[APITag.study_management],
-        summary="Get Study informations",
+        summary="Update Study information",
     )
     def update_study_metadata(
         uuid: str,
