@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { LaunchJob, StudyMetadata, StudyMetadataDTO } from '../../common/types';
+import { LaunchJob, StudyMetadata, StudyMetadataDTO, StudyPublicMode } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 
@@ -117,6 +117,26 @@ export const getStudyJobs = async (sid?: string): Promise<LaunchJob[]> => {
 
 export const getStudyJobLog = async (jid: string, logType = 'STDOUT'): Promise<string|undefined> => {
   const res = await client.get(`/v1/launcher/jobs/${jid}/logs?log_type=${logType}`);
+  return res.data;
+};
+
+export const changeStudyOwner = async (studyId: string, newOwner: number): Promise<string|undefined> => {
+  const res = await client.put(`/v1/studies/${studyId}/owner/${newOwner}`);
+  return res.data;
+};
+
+export const deleteStudyGroup = async (studyId: string, groupId: string): Promise<any> => {
+  const res = await client.delete(`/v1/studies/${studyId}/groups/${groupId}`);
+  return res.data;
+};
+
+export const addStudyGroup = async (studyId: string, groupId: string): Promise<any> => {
+  const res = await client.put(`/v1/studies/${studyId}/groups/${groupId}`);
+  return res.data;
+};
+
+export const changePublicMode = async (studyId: string, publicMode: StudyPublicMode): Promise<string|undefined> => {
+  const res = await client.put(`/v1/studies/${studyId}/public_mode/${publicMode}`);
   return res.data;
 };
 

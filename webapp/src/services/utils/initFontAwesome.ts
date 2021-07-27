@@ -12,6 +12,9 @@ import {
   faCalendarCheck,
   faCalendar,
   faUserCircle,
+  faEdit,
+  faShieldAlt,
+  faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function (): void {
@@ -26,5 +29,8 @@ export default function (): void {
     faCalendarCheck,
     faCalendar,
     faUserCircle,
+    faEdit,
+    faShieldAlt,
+    faUsers,
   );
 }
