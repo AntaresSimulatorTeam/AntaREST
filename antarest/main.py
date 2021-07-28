@@ -22,6 +22,7 @@ from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.persistence import Base, upgrade_db
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.utils import get_default_config_path, get_local_path
 from antarest.core.utils.web import tags_metadata
 from sqlalchemy import create_engine
 
@@ -70,17 +71,6 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_default_config_path() -> Optional[Path]:
-    config = Path("config.yaml")
-    if config.exists():
-        return config
-
-    config = Path.home() / ".antares/config.yaml"
-    if config.exists():
-        return config
-    return None
-
-
 def get_default_config_path_or_raise() -> Path:
     config_path = get_default_config_path()
     if not config_path:
@@ -111,14 +101,6 @@ def get_arguments() -> Tuple[Path, bool, bool, bool]:
         arguments.no_front,
         arguments.auto_upgrade_db,
     )
-
-
-def get_local_path() -> Path:
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        return Path(sys._MEIPASS)  # type: ignore
-    except Exception:
-        return Path(os.path.abspath(""))
 
 
 def configure_logger(config: Config) -> None:

@@ -6,8 +6,10 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+
+from antarest.core import persistence
 from antarest.core.config import Config
-from antarest import main
+from antarest.core.utils import utils
 
 
 # this is the Alembic Config object, which provides
@@ -19,7 +21,7 @@ config = context.config
 # uncomment this to have
 #fileConfig(config.config_file_name)
 
-config_path = os.getenv('ANTAREST_CONF') or main.get_default_config_path()
+config_path = os.getenv('ANTAREST_CONF') or utils.get_default_config_path()
 if config_path and Path(config_path).exists():
     antarest_conf = Config.from_yaml_file(config_path)
     config.set_main_option("sqlalchemy.url", antarest_conf.db_admin_url or antarest_conf.db_url)
@@ -30,7 +32,7 @@ if config_path and Path(config_path).exists():
 # target_metadata = mymodel.Base.metadata
 
 
-target_metadata = main.Base.metadata
+target_metadata = persistence.Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
