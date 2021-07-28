@@ -1,4 +1,5 @@
 import os
+import sys
 from glob import escape
 from pathlib import Path
 from typing import IO, Any, Optional
@@ -68,8 +69,6 @@ def get_default_config_path() -> Optional[Path]:
 
 
 def get_local_path() -> Path:
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        return Path(sys._MEIPASS)  # type: ignore
-    except Exception:
-        return Path(os.path.abspath(""))
+    # https: // pyinstaller.readthedocs.io / en / stable / runtime - information.html
+    filepath = Path(__file__).parent.parent.parent.parent
+    return filepath
