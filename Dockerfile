@@ -1,9 +1,6 @@
 FROM python:3.8-slim-buster
 
 ENV ANTAREST_CONF /resources/application.yaml
-ENV UVICORN_WORKERS 8
-ENV UVICORN_ROOT_PATH /
-ENV UVICORN_TIMEOUT 60
 
 RUN mkdir -p examples/studies
 
