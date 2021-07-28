@@ -1,6 +1,5 @@
 import json
 from datetime import timedelta
-from html import unescape
 from typing import Any, Optional
 
 from fastapi import Depends, APIRouter, HTTPException
@@ -174,18 +173,17 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        gid = unescape(id)
         params = RequestParameters(user=current_user)
         group = (
-            service.get_group_info(gid, params)
+            service.get_group_info(id, params)
             if details
-            else service.get_group(gid, params)
+            else service.get_group(id, params)
         )
         if group:
             return group.to_dict()
         else:
             return HTTPException(
-                status_code=404, detail=f"Group {gid} not found"
+                status_code=404, detail=f"Group {id} not found"
             )
 
     @bp.post("/groups", tags=[APITag.users])
@@ -205,7 +203,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         id: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
         params = RequestParameters(user=current_user)
-        service.delete_group(unescape(id), params)
+        service.delete_group(id, params)
         return id
 
     @bp.get("/roles/group/{group}", tags=[APITag.users])
@@ -216,7 +214,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         return [
             r.to_dict()
             for r in service.get_all_roles_in_group(
-                group=unescape(group), params=params
+                group=group, params=params
             )
         ]
 
@@ -235,7 +233,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        service.delete_role(user, unescape(group), params)
+        service.delete_role(user, group, params)
         return user, group
 
     @bp.post("/bots", tags=[APITag.users], summary="Create bot token")
