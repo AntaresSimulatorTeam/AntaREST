@@ -52,7 +52,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         self.config.path.unlink()
 
     def denormalize(self) -> None:
-        if self.config.path.exists():
+        if self.config.path.exists() or not self.get_link_path().exists():
             return
 
         uuid = self.get_link_path().read_text()
