@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 
@@ -15,6 +16,8 @@ from antarest.study.storage.rawstudy.model.filesystem.exceptions import (
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import (
     LazyNode,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
@@ -73,7 +76,11 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         formatted: bool = True,
     ) -> Union[bytes, JSON]:
         if not formatted:
-            return self.config.path.read_bytes()
+            if self.config.path.exists():
+                return self.config.path.read_bytes()
+
+            logger.warning(f"Missing file {self.config.path}")
+            return b""
 
         return self.parse()
 
