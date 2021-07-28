@@ -176,6 +176,7 @@ def fastapi_app(
         title="AntaREST",
         version=__version__,
         docs_url=None,
+        root_path=config.root_path,
         openapi_tags=tags_metadata,
     )
 

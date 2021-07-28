@@ -57,6 +57,8 @@ launcher:
 
 debug: true
 
+root_path: ""
+
 logging:
   level: INFO
 
