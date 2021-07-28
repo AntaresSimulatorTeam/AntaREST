@@ -1,6 +1,7 @@
+import os
 from glob import escape
 from pathlib import Path
-from typing import IO, Any
+from typing import IO, Any, Optional
 from zipfile import ZipFile, BadZipFile
 
 from antarest.core.exceptions import BadZipBinary
@@ -53,3 +54,22 @@ def extract_zip(stream: IO[bytes], dst: Path) -> None:
             zip_output.extractall(path=dst)
     except BadZipFile:
         raise BadZipBinary("Only zip file are allowed.")
+
+
+def get_default_config_path() -> Optional[Path]:
+    config = Path("config.yaml")
+    if config.exists():
+        return config
+
+    config = Path.home() / ".antares/config.yaml"
+    if config.exists():
+        return config
+    return None
+
+
+def get_local_path() -> Path:
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        return Path(sys._MEIPASS)  # type: ignore
+    except Exception:
+        return Path(os.path.abspath(""))
