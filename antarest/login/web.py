@@ -213,9 +213,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         params = RequestParameters(user=current_user)
         return [
             r.to_dict()
-            for r in service.get_all_roles_in_group(
-                group=group, params=params
-            )
+            for r in service.get_all_roles_in_group(group=group, params=params)
         ]
 
     @bp.post("/roles", tags=[APITag.users])
