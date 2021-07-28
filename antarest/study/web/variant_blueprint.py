@@ -98,7 +98,7 @@ def create_study_variant_routes(
     )
     def append_command(
         uuid: str,
-        command: CommandDTO,
+        command: List[CommandDTO],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         params = RequestParameters(user=current_user)
