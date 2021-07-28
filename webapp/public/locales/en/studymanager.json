@@ -12,5 +12,8 @@
   "failtosavedata": "Failed to save data",
   "failtocopystudy": "Failed to copy study",
   "studycopiedsuccess": "Success copying study",
-  "permission": "Permission"
+  "permission": "Permission",
+  "refresh": "Refresh studies",
+  "sortByName": "Sort by name",
+  "sortByDate": "Sort by date"
 }
