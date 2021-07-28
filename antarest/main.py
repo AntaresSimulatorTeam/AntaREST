@@ -215,6 +215,7 @@ def fastapi_app(
     @application.exception_handler(HTTPException)
     def handle_http_exception(request: Request, exc: HTTPException) -> Any:
         """Return JSON instead of HTML for HTTP errors."""
+        logger.error("HTTP Exception", exc_info=exc)
         return JSONResponse(
             content={
                 "description": exc.detail,
@@ -226,6 +227,7 @@ def fastapi_app(
     @application.exception_handler(Exception)
     def handle_all_exception(request: Request, exc: Exception) -> Any:
         """Return JSON instead of HTML for HTTP errors."""
+        logger.error("Unexpected Exception", exc_info=exc)
         return JSONResponse(
             content={
                 "description": "Unexpected server error",
