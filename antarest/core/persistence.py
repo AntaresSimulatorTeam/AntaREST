@@ -19,7 +19,9 @@ def upgrade_db(config_file: Path) -> None:
     os.environ.setdefault("ANTAREST_CONF", str(config_file))
     alembic_cfg = Config(get_local_path() / "alembic.ini")
     alembic_cfg.stdout = StringIO()
-    alembic_cfg.script_location = get_local_path() / "alembic"
+    alembic_cfg.set_main_option(
+        "script_location", str(get_local_path() / "alembic")
+    )
     try:
         command.current(alembic_cfg)
         current_version_output = alembic_cfg.stdout.getvalue()
