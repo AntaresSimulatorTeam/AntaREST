@@ -256,17 +256,25 @@ class SlurmLauncher(AbstractLauncher):
             if not self.thread:
                 self._clean_local_workspace()
 
-            # export study
-            self.storage_service.export_study_flat(
-                study_uuid, params, study_path, outputs=False
-            )
+            try:
+                # export study
+                self.storage_service.export_study_flat(
+                    study_uuid, params, study_path, outputs=False
+                )
 
-            run_with(
-                self.launcher_args, self.launcher_params, show_banner=False
-            )
-            self.callbacks.update_status(
-                str(launch_uuid), JobStatus.RUNNING, None, None
-            )
+                run_with(
+                    self.launcher_args, self.launcher_params, show_banner=False
+                )
+                self.callbacks.update_status(
+                    str(launch_uuid), JobStatus.RUNNING, None, None
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to launch study {study_uuid}", exc_info=e
+                )
+                self.callbacks.update_status(
+                    str(launch_uuid), JobStatus.FAILED, None, None
+                )
 
             if not self.thread:
                 self.start()
