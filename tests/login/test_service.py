@@ -4,8 +4,8 @@ from unittest.mock import Mock
 import pytest
 from fastapi import HTTPException
 
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.requests import (
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
@@ -525,7 +525,7 @@ def test_get_all_users():
 
     assert_permission(
         test=lambda x: service.get_all_users(x),
-        values=[(SADMIN, True), (GADMIN, False), (USER3, False)],
+        values=[(SADMIN, True), (GADMIN, True), (USER3, True)],
     )
 
 

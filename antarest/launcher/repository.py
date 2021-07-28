@@ -2,7 +2,7 @@ from typing import Optional, List
 
 from sqlalchemy import exists  # type: ignore
 
-from antarest.common.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import JobResult
 
 

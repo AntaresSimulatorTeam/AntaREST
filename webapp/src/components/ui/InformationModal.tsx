@@ -3,6 +3,7 @@ import { createStyles, makeStyles, Theme, Button, Paper, Typography } from '@mat
 import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
+import clsx from 'clsx';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -10,16 +11,24 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'center',
     alignItems: 'center',
     overflowY: 'auto',
+    boxSizing: 'border-box',
+    padding: theme.spacing(2),
   },
   main: {
     backgroundColor: 'white',
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    alignItems: 'center',
+  },
+  autosize: {
     minWidth: '300px',
     minHeight: '300px',
     maxWidth: '800px',
     maxHeight: '800px',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    alignItems: 'center',
+  },
+  fixedSize: {
+    width: '75%',
+    height: '70%',
   },
   titlebox: {
     height: '40px',
@@ -37,12 +46,14 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   content: {
     flex: '1',
+    minWidth: '100px',
     width: '100%',
     display: 'flex',
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
     overflow: 'hidden',
+    boxSizing: 'border-box',
     padding: theme.spacing(3),
   },
   footer: {
@@ -64,10 +75,11 @@ interface PropTypes {
     open: boolean;
     title: string;
     onButtonClick: () => void;
+    fixedSize?: boolean;
 }
 
 const InformationModal = (props: PropsWithChildren<PropTypes>) => {
-  const { title, open, onButtonClick, children } = props;
+  const { title, open, onButtonClick, fixedSize, children } = props;
   const classes = useStyles();
 
   return (
@@ -83,7 +95,7 @@ const InformationModal = (props: PropsWithChildren<PropTypes>) => {
       }}
     >
       <Fade in={open}>
-        <Paper className={classes.main}>
+        <Paper className={fixedSize ? clsx(classes.main, classes.fixedSize) : clsx(classes.main, classes.autosize)}>
           <div className={classes.titlebox}>
             <Typography className={classes.title}>
               {title}

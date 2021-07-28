@@ -5,28 +5,25 @@ from zipfile import ZipFile
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.common.config import (
+from antarest.core.config import (
     Config,
     SecurityConfig,
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.storage.repository.antares_io.exporter.export_file import (
-    Exporter,
-)
-from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.main import build_storage
-from antarest.storage.service import StorageService
+from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.main import build_storage
+from antarest.study.service import StudyService
 
 
-def assert_url_content(storage_service: StorageService, url: str) -> bytes:
+def assert_url_content(storage_service: StudyService, url: str) -> bytes:
     app = FastAPI(title=__name__)
     build_storage(
         app,
         user_service=Mock(),
         storage_service=storage_service,
-        config=storage_service.study_service.config,
+        matrix_service=Mock(),
+        config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
     res = client.get(url, stream=True)
@@ -66,6 +63,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         application=Mock(),
         config=config,
         user_service=Mock(),
+        matrix_service=Mock(),
         metadata_repository=repo,
     )
 
@@ -102,6 +100,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
         application=Mock(),
         config=config,
         user_service=Mock(),
+        matrix_service=Mock(),
         metadata_repository=repo,
     )
 

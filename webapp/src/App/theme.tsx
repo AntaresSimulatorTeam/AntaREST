@@ -2,6 +2,13 @@ import { createMuiTheme } from '@material-ui/core';
 
 export const TOOLBAR_HEIGHT = '48px';
 
+export const jobStatusColors = {
+  'JobStatus.RUNNING': 'orange',
+  'JobStatus.PENDING': 'orange',
+  'JobStatus.SUCCESS': 'green',
+  'JobStatus.FAILED': 'red',
+};
+
 export default createMuiTheme({
   overrides: {
     MuiToolbar: {

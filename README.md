@@ -11,22 +11,44 @@
 First clone the projet:
 
 ```shell script
-git clone https://github.com/AntaresSimulatorTeam/api-iso-antares.git
-cd api-iso-antares
+git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
+cd AntaREST
+git submodule init
+git submodule update
 ```
+
+Install back dependencies
+
+```shell script
+python -m pip install --upgrade pip
+pip install pydantic --no-binary pydantic
+pip install -r requirements.txt  # use requirements-dev.txt if building a single binary with pyinstaller 
+```
+
+Build front
+
+```shell script
+cd webapp
+npm install
+cd ..
+NODE_OPTIONS="--max-old-space-size=8192" ./scripts/build-front.sh
+```
+
 
 ### Using pyinstaller
 
 Linux system:
 
 ```shell script
-pyinstaller -F api_iso_antares/main.py -n server --add-data resources:resources
+git log -1 HEAD --format=%H > ./resources/commit_id
+pyinstaller -F antarest/main.py -n server --additional-hooks-dir extra-hooks --add-data resources:resources
 ```
 
 Windows system:
 
 ```shell script
-pyinstaller -F api_iso_antares\main.py -n server --add-data ".\resources;.\resources"
+git log -1 HEAD --format=%H > .\resources\commit_id
+pyinstaller -F api_iso_antares\main.py -n server --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources"
 ```
 
 You can test the build is ok using:
@@ -41,7 +63,7 @@ dist\server.exe -v   # Windows system
 To build the docker image, use the following command:
 
 ```shell script
-docker build --tag api-iso-antares -f docker/Dockerfile .
+docker build --tag antarest -f docker/Dockerfile .
 ```
 
 ## Start the API
@@ -62,7 +84,7 @@ docker run \
   -p 80:5000 \
   -e GUNICORN_WORKERS=4 \
   -v $STUDIES_ABSOLUTE_PATH:/studies \
-  api-iso-antares
+  antarest
 ```
 
 * Setting the environment variable GUNICORN_WORKERS to *ALL_AVAILABLE* will make GUNICORN use 2 * nb_cpu +1 workers
@@ -115,13 +137,13 @@ The address (the port mostly) depends of the way you started the server. If you 
 To test the server, you can list the available studies in your workspace using:
 
 ```shell script
-curl http://0.0.0.0:8080/studies
+curl http://localhost:8080/v1/studies
 ```
 
 Or data of a specific study using:
 
 ```shell script
-curl http://0.0.0.0:8080/studies/{study_uuid}
+curl http://localhost:8080/v1/studies/{study_uuid}
 ```
 
 The current API handle hundreds of html end point (get and post) to manipulate your studies.
@@ -129,28 +151,9 @@ The best way to discover the API is using it's swagger documentation (see below)
 
 ## Swagger
 
-The ANTARES API do not have a public UI swagger available for the moment.
-Use the following command to save the swagger metadata of the API ANTARES into a json file.
+The ANTARES API doc is available within the application (open your browser to `http://localhost:8080`)
+You can also fetch the raw open api spec :
 
 ```shell script
-curl http://0.0.0.0:8080/swagger > swagger.json
+curl http://localhost:8080/openapi.json > swagger.json
 ```
-
-Then, use the script *script/swagger-ui.sh* to start a Swagger UI.
-
-```shell script
-chmod a+x ./script/swagger-ui.sh
-./script/swagger-ui.sh
-```
-
-Do not forget to start the API ANTARES alongside (and to modify the port you decide to use into the Swagger UI).
-
-
-## Strategies for JssonSchema Engines
-
-| Strategy | Description                           |
-|----------|---------------------------------------|
-| S1       | Mix folder with complete set of zones |
-| S...     |                                       |
-| Sn       |                                       |
-

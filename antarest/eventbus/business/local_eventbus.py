@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from antarest.common.interfaces.eventbus import Event
+from antarest.core.interfaces.eventbus import Event
 from antarest.eventbus.business.interfaces import IEventBusBackend
 
 logger = logging.getLogger(__name__)

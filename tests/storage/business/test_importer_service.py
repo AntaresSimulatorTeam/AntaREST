@@ -6,14 +6,16 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.common.config import Config
-from antarest.storage.business.importer_service import (
+from antarest.core.config import Config
+from antarest.study.storage.rawstudy.importer_service import (
     ImporterService,
     fix_study_root,
 )
-from antarest.storage.business.raw_study_service import RawStudyService
-from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.storage.web.exceptions import (
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
+)
+from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.core.exceptions import (
     IncorrectPathError,
     BadZipBinary,
     StudyValidationError,
@@ -25,32 +27,6 @@ def build_storage_service(workspace: Path, uuid: str) -> RawStudyService:
     service.get_workspace_path.return_value = workspace
     service.get_study_path.return_value = workspace / uuid
     return service
-
-
-@pytest.mark.unit_test
-def test_upload_matrix(tmp_path: Path, storage_service_builder) -> None:
-
-    study_uuid = "my-study"
-    study_path = tmp_path / study_uuid
-    study_path.mkdir()
-    (study_path / "study.antares").touch()
-
-    importer_service = ImporterService(
-        study_service=build_storage_service(tmp_path, study_uuid),
-        study_factory=Mock(),
-    )
-
-    matrix_path = "WRONG_MATRIX_PATH"
-    md = RawStudy(
-        id=study_uuid, workspace=DEFAULT_WORKSPACE_NAME, path=study_path
-    )
-    with pytest.raises(IncorrectPathError):
-        importer_service.upload_matrix(md, matrix_path, b"")
-
-    matrix_path = "matrix.txt"
-    data = b"hello"
-    importer_service.upload_matrix(md, matrix_path, data)
-    assert (study_path / matrix_path).read_bytes() == data
 
 
 @pytest.mark.unit_test

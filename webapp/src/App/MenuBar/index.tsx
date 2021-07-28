@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useTranslation } from 'react-i18next';
 import logo from './logo.png';
 import UserBadge from '../../components/UserBadge';
+import { getConfig } from '../../services/config';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -30,6 +31,13 @@ const useStyles = makeStyles((theme: Theme) =>
       fontSize: 'x-large',
       fontWeight: 'bold',
     },
+    version: {
+      fontSize: 'small',
+      color: theme.palette.primary.light,
+      marginLeft: theme.spacing(0.5),
+      marginBottom: '-10px',
+      marginRight: theme.spacing(1.5),
+    },
   }));
 
 const MenuBar = () => {
@@ -44,6 +52,7 @@ const MenuBar = () => {
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <img src={logo} alt="logo" className={classes.logo} />
               <Link to="/">AntaREST</Link>
+              <div className={classes.version}>{getConfig().version.version}</div>
             </div>
           </div>
           <Typography className={classes.menuitem}>
@@ -52,15 +61,28 @@ const MenuBar = () => {
           <Typography className={classes.menuitem}>
             <Link to="/jobs">{t('main:jobs')}</Link>
           </Typography>
+          <Typography className={classes.menuitem}>
+            <Link to="/data">{t('main:data')}</Link>
+          </Typography>
         </div>
         <Typography className={classes.altmenuitem}>
           <Link to="/swagger">API</Link>
         </Typography>
         <Typography className={classes.altmenuitem}>
-          <a href="https://api-antares.readthedocs.io/en/dev/inside.html" target="_blank" rel="noopener noreferrer">Docs</a>
+          <a
+            href="https://api-antares.readthedocs.io/en/dev/inside.html"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Docs
+          </a>
         </Typography>
         <div className={classes.altmenuitem}>
-          <a href="https://github.com/AntaresSimulatorTeam/AntaREST" target="_blank" rel="noopener noreferrer">
+          <a
+            href="https://github.com/AntaresSimulatorTeam/AntaREST"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <FontAwesomeIcon size="2x" icon={['fab', 'github']} />
           </a>
         </div>

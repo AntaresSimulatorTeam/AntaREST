@@ -3,9 +3,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from antarest.common.config import Config
-from antarest.common.jwt import JWTUser
-from antarest.common.requests import RequestParameters
+from antarest.core.config import Config
+from antarest.core.jwt import JWTUser
+from antarest.core.requests import RequestParameters
+from antarest.core.utils.web import APITag
+from antarest.launcher.model import LogType
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
 
@@ -17,7 +19,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.post(
         "/launcher/run/{study_id}",
-        tags=["Run Studies"],
+        tags=[APITag.launcher],
         summary="Run study",
     )
     def run(
@@ -65,26 +67,41 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         params = RequestParameters(user=current_user)
         return {"job_id": service.run_study(study_id, params, selected_engine)}
 
-    @bp.get("/launcher/jobs", tags=["Run Studies"], summary="Retrieve jobs")
+    @bp.get("/launcher/jobs", tags=[APITag.launcher], summary="Retrieve jobs")
     def get_job(
         study: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        return [job.to_dict() for job in service.get_jobs(study)]
+        params = RequestParameters(user=current_user)
+        return [job.to_dict() for job in service.get_jobs(study, params)]
 
     @bp.get(
         "/launcher/jobs/{job_id}",
-        tags=["Run Studies"],
+        tags=[APITag.launcher],
         summary="Retrieve job info from job id",
     )
     def get_result(
         job_id: UUID, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
-        return service.get_result(job_id).to_dict()
+        params = RequestParameters(user=current_user)
+        return service.get_result(job_id, params).to_dict()
+
+    @bp.get(
+        "/launcher/jobs/{job_id}/logs",
+        tags=[APITag.launcher],
+        summary="Retrieve job logs from job id",
+    )
+    def get_job_log(
+        job_id: str,
+        log_type: LogType = LogType.STDOUT,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        return service.get_log(job_id, log_type, params)
 
     @bp.get(
         "/launcher/engines",
-        tags=["Run Studies"],
+        tags=[APITag.launcher],
         summary="Retrieve available engines",
     )
     def get_engines() -> Any:

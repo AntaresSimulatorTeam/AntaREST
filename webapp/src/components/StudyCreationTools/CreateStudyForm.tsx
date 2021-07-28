@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Input } from '@material-ui/core';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
-import { createStudy, getStudyData } from '../../services/api/study';
-import { getStudyIdFromUrl, convertStudyDtoToMetadata } from '../../services/utils';
+import { createStudy, getStudyMetadata } from '../../services/api/study';
 import { addStudies } from '../../ducks/study';
 import { StudyMetadata } from '../../common/types';
 
@@ -37,10 +36,9 @@ const CreateStudyForm = (props: PropTypes) => {
   const onSubmit = async (data: Inputs) => {
     if (data.studyname) {
       try {
-        const res = await createStudy(data.studyname);
-        const sid = getStudyIdFromUrl(res);
-        const metadata = await getStudyData(sid, 'study/antares', 1);
-        addStudy(convertStudyDtoToMetadata(sid, metadata));
+        const sid = await createStudy(data.studyname);
+        const metadata = await getStudyMetadata(sid);
+        addStudy(metadata);
       } catch (e) {
         logErr('Failed to create new study', data.studyname, e);
       }

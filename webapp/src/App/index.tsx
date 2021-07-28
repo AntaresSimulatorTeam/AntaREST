@@ -1,7 +1,7 @@
 /* eslint-disable react/destructuring-assignment */
 import { Provider } from 'react-redux';
 import React from 'react';
-import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { ThemeProvider } from '@material-ui/core/styles';
 import { SnackbarProvider } from 'notistack';
 import createStore from './reducers';
@@ -14,6 +14,7 @@ import theme, { TOOLBAR_HEIGHT } from './theme';
 import SwaggerDoc from './Pages/SwaggerDoc';
 import JobManagement from './Pages/JobManagement';
 import UserSettings from './Pages/Settings';
+import Data from './Pages/Data';
 
 const reduxStore = createStore();
 
@@ -21,7 +22,6 @@ const App: React.FC<{}> = () => (
   <Provider store={reduxStore}>
     <Router basename={getConfig().applicationHome}>
       <ThemeProvider theme={theme}>
-        {getConfig().hidden && <Redirect to="/info" />}
         <SnackbarProvider maxSnack={5}>
           <div style={{ height: '100vh' }}>
             <LoginWrapper>
@@ -39,6 +39,9 @@ const App: React.FC<{}> = () => (
                   </Route>
                   <Route path="/jobs" key="module">
                     <JobManagement />
+                  </Route>
+                  <Route path="/data" key="data">
+                    <Data />
                   </Route>
                   <Route path="/swagger">
                     <SwaggerDoc />

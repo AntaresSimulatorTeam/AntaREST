@@ -7,5 +7,10 @@
   "failtodeletestudy": "Echec de la suppression de l'étude",
   "failtoloadstudy": "Echec du chargement de l'étude",
   "failtorunstudy": "Echec du lancement de l'étude",
-  "studylaunched": "{{studyname}} lancée !"
+  "studylaunched": "{{studyname}} lancée !",
+  "savedatasuccess": "Données sauvegardées avec succès",
+  "failtosavedata": "Erreur lors de la sauvegarde des données",
+  "failtocopystudy": "Erreur lors de la copie de l'étude",
+  "studycopiedsuccess": "Etude copiée avec succès",
+  "permission": "Permission"
 }

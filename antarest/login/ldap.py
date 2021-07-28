@@ -4,8 +4,8 @@ from typing import List, Optional, Dict
 import requests
 from dataclasses import dataclass
 
-from antarest.common.config import Config
-from antarest.common.custom_types import JSON
+from antarest.core.config import Config
+from antarest.core.custom_types import JSON
 from antarest.login.model import UserLdap, Group, Role
 from antarest.login.repository import (
     UserLdapRepository,
@@ -120,7 +120,13 @@ class LdapService:
         """
         existing_user = self.users.get_by_name(user.external_id)
         if not existing_user:
-            existing_user = self.users.save(UserLdap(name=user.external_id))
+            existing_user = self.users.save(
+                UserLdap(
+                    name=user.external_id,
+                    firstname=user.first_name,
+                    lastname=user.last_name,
+                )
+            )
 
         existing_roles = self.roles.get_all_by_user(existing_user.id)
 

@@ -3,13 +3,13 @@ from typing import Optional, List
 
 from fastapi import HTTPException
 
-from antarest.common.interfaces.eventbus import IEventBus
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.requests import (
+from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.common.roles import RoleType
+from antarest.core.roles import RoleType
 from antarest.login.ldap import LdapService
 from antarest.login.model import (
     User,
@@ -348,6 +348,7 @@ class LoginService:
                 params.user.is_site_admin(),
                 params.user.is_group_admin(groups),
                 params.user.is_himself(user),
+                params.user.is_bot_of(user),
             )
         ):
             return user
@@ -570,7 +571,7 @@ class LoginService:
                     groups.append(tmp)
             return groups
 
-    def get_all_users(self, params: RequestParameters) -> List[User]:
+    def get_all_users(self, params: RequestParameters) -> List[Identity]:
         """
         Get all users.
         Permission: SADMIN
@@ -580,7 +581,7 @@ class LoginService:
         Returns: list of groups
 
         """
-        if params.user and params.user.is_site_admin():
+        if params.user:
             return self.ldap.get_all() + self.users.get_all()
         else:
             self.logger.error(

@@ -3,19 +3,20 @@ import json
 import shutil
 from http import HTTPStatus
 from pathlib import Path
+from typing import Any, Union
 from unittest.mock import Mock, call
 
 import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.common.custom_types import JSON
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.roles import RoleType
-from antarest.storage.main import build_storage
+from antarest.core.custom_types import JSON
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.roles import RoleType
+from antarest.study.main import build_storage
 
-from antarest.storage.service import StorageService
-from antarest.common.requests import (
+from antarest.study.service import StudyService
+from antarest.core.requests import (
     RequestParameters,
 )
 from tests.conftest import assert_study
@@ -34,14 +35,15 @@ ADMIN = JWTUser(
 
 
 def assert_url_content(
-    storage_service: StorageService, url: str, expected_output: str
+    storage_service: StudyService, url: str, expected_output: dict
 ) -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
         user_service=Mock(),
         storage_service=storage_service,
-        config=storage_service.study_service.config,
+        matrix_service=Mock(),
+        config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
     res = client.get(url)
@@ -49,13 +51,19 @@ def assert_url_content(
 
 
 def assert_with_errors(
-    storage_service: StorageService, url: str, expected_output: dict
+    storage_service: StudyService,
+    url: str,
+    expected_output: Union[str, dict],
+    formatted: bool = True,
 ) -> None:
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
     params = RequestParameters(user=ADMIN)
+    output = storage_service.get(
+        uuid=uuid, url=url, depth=3, formatted=formatted, params=params
+    )
     assert_study(
-        storage_service.get(uuid=uuid, url=url, depth=3, params=params),
+        output,
         expected_output,
     )
 
@@ -205,7 +213,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/prepro/fr/energy",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
@@ -233,15 +241,15 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/series",
             {
-                "load_de": "matrix:///...../input/load/series/load_de.txt",
-                "load_es": "matrix:///...../input/load/series/load_es.txt",
-                "load_fr": "matrix:///...../input/load/series/load_fr.txt",
-                "load_it": "matrix:///...../input/load/series/load_it.txt",
+                "load_de": "matrixfile://load_de.txt",
+                "load_es": "matrixfile://load_es.txt",
+                "load_fr": "matrixfile://load_fr.txt",
+                "load_it": "matrixfile://load_it.txt",
             },
         ),
         (
@@ -254,15 +262,15 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/misc-gen/miscgen-fr",
-            "",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/reserves/fr",
-            "",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/prepro/fr/k",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/series/solar_fr",
@@ -270,7 +278,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/prepro/fr/k",
-            "",
+            b"",
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/series/wind_fr",
@@ -278,7 +286,7 @@ def test_sta_mini_study_antares(
         ),
     ],
 )
-def test_sta_mini_input(storage_service, url: str, expected_output: str):
+def test_sta_mini_input(storage_service, url: str, expected_output: dict):
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -291,12 +299,12 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=output/3/annualSystemCost",
-            "EXP : 185808000\nSTD : 0\nMIN : 185808000\nMAX : 185808000\n",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/annualSystemCost",
+            b"EXP : 185808000\nSTD : 0\nMIN : 185808000\nMAX : 185808000\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/checkIntegrity",
-            """1.85808475215665e+08
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/checkIntegrity",
+            b"""1.85808475215665e+08
 0.00000000000000e+00
 1.85808475215665e+08
 1.85808475215665e+08
@@ -307,82 +315,76 @@ def test_sta_mini_input(storage_service, url: str, expected_output: str):
 """,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/4/simulation-comments",
-            "",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1425eco-goodbye/simulation-comments",
+            b"",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/2/simulation",
-            simulation_log,
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/about-the-study/areas",
+            b"DE\r\nES\r\nFR\r\nIT\r\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/about-the-study/areas",
-            "DE\nES\nFR\nIT\n",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1425eco-goodbye/about-the-study/comments",
+            b"",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/2/about-the-study/comments",
-            "",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1427eco/about-the-study/links",
+            b"de\n\tfr\nes\n\tfr\nfr\n\tit\nit\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/3/about-the-study/links",
-            "de\n\tfr\nes\n\tfr\nfr\n\tit\nit\n",
-        ),
-        (
-            "/v1/studies/STA-mini/raw?path=output/4/about-the-study/parameters/general/horizon",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1430adq/about-the-study/parameters/general/horizon",
             2030,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/about-the-study/study/antares/author",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/about-the-study/study/antares/author",
             "Andrea SGATTONI",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-all/grid/areas",
-            "id\tname\nde\tDE\nes\tES\nfr\tFR\nit\tIT\n",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/areas",
+            b"id\tname\nde\tDE\nes\tES\nfr\tFR\nit\tIT\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-all/links/de/fr",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/links/de/fr",
             {},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/links/de/fr",
-            {
-                "values-hourly": "matrix://...../economy/mc-inde/0001/links/de - fr/values-hourly.txt"
-            },
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr",
+            {"values-hourly": "matrixfile://values-hourly.txt"},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/links/de/fr/values-hourly",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
             de_fr_values_hourly,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/economy/mc-ind/00001/areas/de/details-annual",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual",
             de_details_hourly,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/de",
-            "size:1x1\n1\n",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de",
+            b"size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/load/de",
-            "size:1x1\n1\n",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/load/de",
+            b"size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/solar/de",
-            "size:1x1\n1\n",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/solar/de",
+            b"size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/wind/de",
-            "size:1x1\n1\n",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/wind/de",
+            b"size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/thermal/de/07_gas",
-            "size:1x1\n1\n",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/thermal/de/07_gas",
+            b"size:1x1\n1\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/info/general/version",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/info/general/version",
             700,
         ),
     ],
 )
-def test_sta_mini_output(storage_service, url: str, expected_output: str):
+def test_sta_mini_output(storage_service, url: str, expected_output: dict):
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -402,7 +404,8 @@ def test_sta_mini_copy(storage_service) -> None:
         app,
         user_service=Mock(),
         storage_service=storage_service,
-        config=storage_service.study_service.config,
+        matrix_service=Mock(),
+        config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
     result = client.post(
@@ -410,17 +413,19 @@ def test_sta_mini_copy(storage_service) -> None:
     )
 
     assert result.status_code == HTTPStatus.CREATED.value
-    uuid = result.json()[len("/studies/") :]
+    uuid = result.json()
 
     parameters = RequestParameters(user=ADMIN)
-    data_source = storage_service.get(source_study_name, "/", -1, parameters)
-    data_destination = storage_service.get(uuid, "/", -1, parameters)
+    data_source = storage_service.get(
+        source_study_name, "/", -1, True, parameters
+    )
+    data_destination = storage_service.get(uuid, "/", -1, True, parameters)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
-    assert input_link in link_url_source
+    assert "matrixfile://fr.txt" == link_url_source
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
-    assert input_link in link_url_destination
+    assert "matrixfile://fr.txt" == link_url_destination
 
     def replace_study_name(data: JSON) -> None:
         if isinstance(data, dict):
@@ -442,13 +447,20 @@ def test_sta_mini_copy(storage_service) -> None:
 def test_sta_mini_list_studies(storage_service) -> None:
     expected_output = {
         "STA-mini": {
-            "antares": {
-                "author": "Andrea SGATTONI",
-                "caption": "STA-mini",
-                "created": 1480683452,
-                "lastsave": 1602678639,
-                "version": 700,
-            }
+            "id": "STA-mini",
+            "name": "STA-mini",
+            "version": 700,
+            "created": 1480683452,
+            "updated": 1602678639,
+            "owner": {"id": None, "name": "Andrea SGATTONI"},
+            "groups": [],
+            "public_mode": "NONE",
+            "workspace": "default",
+            "managed": True,
+            "horizon": "2030",
+            "scenario": None,
+            "status": None,
+            "doc": None,
         }
     }
     url = "/v1/studies"
@@ -461,7 +473,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
 
 @pytest.mark.integration_test
 def notest_sta_mini_with_wrong_output_folder(
-    storage_service: StorageService, sta_mini_path: Path
+    storage_service: StudyService, sta_mini_path: Path
 ) -> None:
     # TODO why a wrong test should success
     (sta_mini_path / "output" / "maps").mkdir()
@@ -489,12 +501,13 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         user_service=Mock(),
-        config=storage_service.study_service.config,
+        matrix_service=Mock(),
+        config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
 
     study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
-    result = client.post("/v1/studies", files={"study": study_data})
+    result = client.post("/v1/studies/_import", files={"study": study_data})
 
     assert result.status_code == HTTPStatus.CREATED.value
 
@@ -521,7 +534,8 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         app,
         storage_service=storage_service,
         user_service=Mock(),
-        config=storage_service.study_service.config,
+        matrix_service=Mock(),
+        config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
 
@@ -539,19 +553,19 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/de,fr/",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de,fr/",
             {
-                "de": "size:1x1\n1\n",
-                "fr": "size:1x1\n1\n",
+                "de": b"size:1x1\n1\n",
+                "fr": b"size:1x1\n1\n",
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/1/ts-numbers/hydro/*/",
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/*/",
             {
-                "de": "size:1x1\n1\n",
-                "fr": "size:1x1\n1\n",
-                "it": "size:1x1\n1\n",
-                "es": "size:1x1\n1\n",
+                "de": b"size:1x1\n1\n",
+                "fr": b"size:1x1\n1\n",
+                "it": b"size:1x1\n1\n",
+                "es": b"size:1x1\n1\n",
             },
         ),
     ],

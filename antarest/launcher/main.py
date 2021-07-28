@@ -2,18 +2,18 @@ from typing import Optional
 
 from fastapi import FastAPI
 
-from antarest.common.config import Config
-from antarest.common.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.launcher.repository import JobResultRepository
 from antarest.launcher.service import LauncherService
 from antarest.launcher.web import create_launcher_api
-from antarest.storage.service import StorageService
+from antarest.study.service import StudyService
 
 
 def build_launcher(
     application: FastAPI,
     config: Config,
-    service_storage: Optional[StorageService] = None,
+    service_storage: Optional[StudyService] = None,
     service_launcher: Optional[LauncherService] = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> None:

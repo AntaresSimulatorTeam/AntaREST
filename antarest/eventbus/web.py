@@ -7,8 +7,8 @@ from fastapi import FastAPI, Query, HTTPException, Depends
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from antarest.common.config import Config
-from antarest.common.interfaces.eventbus import IEventBus, Event
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import IEventBus, Event
 from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)

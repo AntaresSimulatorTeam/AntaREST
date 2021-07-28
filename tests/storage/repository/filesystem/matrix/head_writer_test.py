@@ -1,4 +1,4 @@
-from antarest.storage.repository.filesystem.matrix.head_writer import (
+from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import (
     AreaHeadWriter,
     LinkHeadWriter,
 )

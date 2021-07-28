@@ -4,8 +4,8 @@ from unittest.mock import Mock
 import dataclasses
 import pytest
 
-from antarest.common.config import RedisConfig
-from antarest.common.interfaces.eventbus import Event
+from antarest.core.config import RedisConfig
+from antarest.core.interfaces.eventbus import Event
 from antarest.eventbus.business.redis_eventbus import (
     RedisEventBus,
 )

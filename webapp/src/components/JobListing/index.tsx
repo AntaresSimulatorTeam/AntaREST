@@ -1,8 +1,8 @@
 import React from 'react';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import moment from 'moment';
-import { LaunchJob } from '../../services/api/study';
 import JobView from './JobView';
+import { LaunchJob } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {

@@ -7,5 +7,10 @@
   "failtodeletestudy": "Failed to delete study",
   "failtoloadstudy": "Failed to load study",
   "failtorunstudy": "Failed to run study",
-  "studylaunched": "{{studyname}} launched !"
+  "studylaunched": "{{studyname}} launched !",
+  "savedatasuccess": "Data saved with success",
+  "failtosavedata": "Failed to save data",
+  "failtocopystudy": "Failed to copy study",
+  "studycopiedsuccess": "Success copying study",
+  "permission": "Permission"
 }

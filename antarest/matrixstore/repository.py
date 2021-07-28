@@ -1,18 +1,73 @@
 import hashlib
 import json
 import logging
-import os
-from typing import Optional, List, Any
+from typing import List, Optional
 
-from sqlalchemy import exists  # type: ignore
+from sqlalchemy import exists, and_  # type: ignore
+from sqlalchemy.orm import aliased  # type: ignore
 
-from antarest.common.config import Config
-from antarest.common.utils.fastapi_sqlalchemy import db
+from antarest.core.config import Config
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import (
     Matrix,
-    MatrixFreq,
     MatrixContent,
+    MatrixDataSet,
 )
+
+
+class MatrixDataSetRepository:
+    """
+    Database connector to manage Matrix metadata entity
+    """
+
+    def __init__(self) -> None:
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+    def save(self, matrix_user_metadata: MatrixDataSet) -> MatrixDataSet:
+        res = db.session.query(
+            exists().where(MatrixDataSet.id == matrix_user_metadata.id)
+        ).scalar()
+        if res:
+            matrix_user_metadata = db.session.merge(matrix_user_metadata)
+        else:
+            db.session.add(matrix_user_metadata)
+        db.session.commit()
+
+        self.logger.debug(
+            f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved"
+        )
+        return matrix_user_metadata
+
+    def get(self, id: str) -> Optional[MatrixDataSet]:
+        matrix: MatrixDataSet = db.session.query(MatrixDataSet).get(id)
+        return matrix
+
+    def query(
+        self,
+        name: Optional[str],
+        owner: Optional[int] = None,
+    ) -> List[MatrixDataSet]:
+        """
+        Query a list of MatrixUserMetadata by searching for each one separatly if a set of filter match
+        Args:
+            name: the partial name of dataset
+            owner: owner id to filter the result with
+
+        Returns:
+            the list of metadata per user, matching the query
+        """
+        query = db.session.query(MatrixDataSet)
+        if name is not None:
+            query = query.filter(MatrixDataSet.name.ilike(f"%{name}%"))
+        if owner is not None:
+            query = query.filter(MatrixDataSet.owner_id == owner)
+        datasets: List[MatrixDataSet] = query.distinct().all()
+        return datasets
+
+    def delete(self, dataset_id: str) -> None:
+        dataset = db.session.query(MatrixDataSet).get(dataset_id)
+        db.session.delete(dataset)
+        db.session.commit()
 
 
 class MatrixRepository:
@@ -21,7 +76,7 @@ class MatrixRepository:
     """
 
     def __init__(self) -> None:
-        self.logger = logging.Logger(self.__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def save(self, matrix: Matrix) -> Matrix:
         res = db.session.query(exists().where(Matrix.id == matrix.id)).scalar()
@@ -41,15 +96,6 @@ class MatrixRepository:
     def exists(self, id: str) -> bool:
         res: bool = db.session.query(exists().where(Matrix.id == id)).scalar()
         return res
-
-    def get_by_freq(
-        self,
-        freq: Optional[MatrixFreq] = None,
-    ) -> List[Matrix]:
-        matrix: List[Matrix] = (
-            db.session.query(Matrix).filter((Matrix.freq == freq)).all()
-        )
-        return matrix
 
     def delete(self, id: str) -> None:
         g = db.session.query(Matrix).get(id)
@@ -86,4 +132,4 @@ class MatrixContentRepository:
     def delete(self, id: str) -> None:
         file = self.bucket / id
         if file.exists():
-            os.remove(file)
+            file.unlink()

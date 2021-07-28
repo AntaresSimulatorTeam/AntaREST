@@ -9,9 +9,9 @@ from sqlalchemy import Column, Integer, Sequence, String, ForeignKey, Enum, Bool
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
-from antarest.common.custom_types import JSON
-from antarest.common.persistence import Base
-from antarest.common.roles import RoleType
+from antarest.core.custom_types import JSON
+from antarest.core.persistence import Base
+from antarest.core.roles import RoleType
 
 
 class UserInfo(BaseModel):
@@ -131,6 +131,8 @@ class UserLdap(Identity):
         ForeignKey("identities.id"),
         primary_key=True,
     )
+    firstname = Column(String)
+    lastname = Column(String)
     __mapper_args__ = {
         "polymorphic_identity": "users_ldap",
     }
@@ -238,6 +240,12 @@ class Group(Base):  # type: ignore
 
     def to_dict(self) -> JSON:
         return {"id": self.id, "name": self.name}
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Group):
+            return False
+
+        return bool(self.id == other.id and self.name == other.name)
 
 
 class RoleCreationDTO(BaseModel):

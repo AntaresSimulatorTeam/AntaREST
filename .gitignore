@@ -150,3 +150,5 @@ resources/commit_id
 
 watcher.lock
 watcher
+
+**/bucket

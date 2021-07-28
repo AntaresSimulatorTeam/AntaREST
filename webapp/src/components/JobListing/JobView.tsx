@@ -5,8 +5,8 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import moment from 'moment';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { LaunchJob } from '../../services/api/study';
 import { AppState } from '../../App/reducers';
+import { LaunchJob } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {

@@ -5,10 +5,10 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.common.config import Config, SecurityConfig
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.requests import RequestParameters
-from antarest.common.roles import RoleType
+from antarest.core.config import Config, SecurityConfig
+from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
+from antarest.core.requests import RequestParameters
+from antarest.core.roles import RoleType
 from antarest.launcher.main import build_launcher
 from antarest.launcher.model import JobResult, JobStatus
 
@@ -69,7 +69,9 @@ def test_result() -> None:
 
     assert res.status_code == 200
     assert res.json() == result.to_dict()
-    service.get_result.assert_called_once_with(job)
+    service.get_result.assert_called_once_with(
+        job, RequestParameters(DEFAULT_ADMIN_USER)
+    )
 
 
 @pytest.mark.unit_test
@@ -96,4 +98,9 @@ def test_jobs() -> None:
     res = client.get(f"/v1/launcher/jobs")
     assert res.status_code == 200
     assert res.json() == [result.to_dict()]
-    service.get_jobs.assert_has_calls([call(str(study_id)), call(None)])
+    service.get_jobs.assert_has_calls(
+        [
+            call(str(study_id), RequestParameters(DEFAULT_ADMIN_USER)),
+            call(None, RequestParameters(DEFAULT_ADMIN_USER)),
+        ]
+    )

@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from antarest.storage.repository.filesystem.config.files import (
+from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
 )
-from antarest.storage.repository.filesystem.config.model import (
-    StudyConfig,
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
     Area,
     Link,
     Simulation,
@@ -26,6 +26,7 @@ def build_empty_files(tmp: Path) -> Path:
     (study_path / "input/thermal/clusters").mkdir(parents=True)
 
     (study_path / "settings").mkdir(parents=True)
+    (study_path / "settings/generaldata.ini").touch()
 
     return study_path
 
@@ -40,8 +41,10 @@ def test_parse_output_parmeters(tmp_path) -> None:
     """
     (study / "settings/generaldata.ini").write_text(content)
 
-    config = StudyConfig(study_path=study, store_new_set=True)
-    assert ConfigPathBuilder.build(study) == config
+    config = FileStudyTreeConfig(
+        study_path=study, store_new_set=True, study_id="id"
+    )
+    assert ConfigPathBuilder.build(study, "id") == config
 
 
 def test_parse_bindings(tmp_path: Path) -> None:
@@ -58,8 +61,10 @@ def test_parse_bindings(tmp_path: Path) -> None:
         study_path / "input/bindingconstraints/bindingconstraints.ini"
     ).write_text(content)
 
-    config = StudyConfig(study_path=study_path, bindings=["bindA", "bindB"])
-    assert ConfigPathBuilder.build(study_path) == config
+    config = FileStudyTreeConfig(
+        study_path=study_path, bindings=["bindA", "bindB"], study_id="id"
+    )
+    assert ConfigPathBuilder.build(study_path, "id") == config
 
 
 def test_parse_outputs(tmp_path: Path) -> None:
@@ -81,10 +86,11 @@ def test_parse_outputs(tmp_path: Path) -> None:
 
     (output_path / "checkIntegrity.txt").touch()
 
-    config = StudyConfig(
+    config = FileStudyTreeConfig(
         study_path,
+        "id",
         outputs={
-            1: Simulation(
+            "20201220-1456eco-hello": Simulation(
                 name="hello",
                 date="20201220-1456",
                 mode="economy",
@@ -95,7 +101,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
             )
         },
     )
-    assert ConfigPathBuilder.build(study_path) == config
+    assert ConfigPathBuilder.build(study_path, "id") == config
 
 
 def test_parse_sets(tmp_path: Path) -> None:
@@ -124,8 +130,9 @@ def test_parse_area(tmp_path: Path) -> None:
     """
     (study_path / "input/areas/fr/optimization.ini").write_text(content)
 
-    config = StudyConfig(
+    config = FileStudyTreeConfig(
         study_path,
+        "id",
         areas={
             "fr": Area(
                 thermals=[],
@@ -135,7 +142,7 @@ def test_parse_area(tmp_path: Path) -> None:
             )
         },
     )
-    assert ConfigPathBuilder.build(study_path) == config
+    assert ConfigPathBuilder.build(study_path, "id") == config
 
 
 def test_parse_thermal(tmp_path: Path) -> None:

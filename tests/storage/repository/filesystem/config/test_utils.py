@@ -1,6 +1,4 @@
-import pytest
-
-from antarest.storage.repository.filesystem.config.model import (
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 

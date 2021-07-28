@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import List
 
-from antarest.common.interfaces.eventbus import Event
+from antarest.core.interfaces.eventbus import Event
 
 
 class IEventBusBackend:

@@ -3,17 +3,16 @@ import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType } from '.
 
 export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDTO): StudyMetadata => ({
   id: sid,
-  name: metadata.caption,
+  name: metadata.name,
   creationDate: metadata.created,
-  modificationDate: metadata.lastsave,
-  author: metadata.author,
+  modificationDate: metadata.updated,
+  owner: metadata.owner,
+  groups: metadata.groups,
+  publicMode: metadata.public_mode,
   version: metadata.version.toString(),
+  workspace: metadata.workspace,
+  managed: metadata.managed,
 });
-
-export const getStudyIdFromUrl = (url: string): string => {
-  const parts = url.trim().split('/');
-  return parts[2];
-};
 
 export const useNotif = (): (message: React.ReactNode, options?: OptionsObject | undefined) => React.ReactText => {
   const { enqueueSnackbar } = useSnackbar();

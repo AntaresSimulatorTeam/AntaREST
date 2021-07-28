@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -6,10 +7,10 @@ from fastapi import FastAPI
 from fastapi_jwt_auth import AuthJWT
 from starlette.testclient import TestClient
 
-from antarest.common.config import Config, SecurityConfig
+from antarest.core.config import Config, SecurityConfig
 from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrixstore
-from antarest.matrixstore.model import MatrixDTO, MatrixFreq
+from antarest.matrixstore.model import MatrixDTO, MatrixInfoDTO
 from tests.login.test_web import create_auth_token
 
 
@@ -26,6 +27,7 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
 
     build_matrixstore(
         app,
+        user_service=Mock(),
         service=service,
         config=Config(
             resources_path=Path(),
@@ -39,7 +41,8 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
 def test_create() -> None:
     matrix = MatrixDTO(
         id="id",
-        freq=MatrixFreq.WEEKLY,
+        width=2,
+        height=2,
         created_at=0,
         index=["1", "2"],
         columns=["a", "b"],
@@ -62,7 +65,8 @@ def test_create() -> None:
 def test_get() -> None:
     matrix = MatrixDTO(
         id="123",
-        freq=MatrixFreq.WEEKLY,
+        width=2,
+        height=2,
         created_at=0,
         index=["1", "2"],
         columns=["a", "b"],
@@ -81,25 +85,31 @@ def test_get() -> None:
 
 
 @pytest.mark.unit_test
-def test_get_filter() -> None:
-    matrix = MatrixDTO(
-        id="123",
-        freq=MatrixFreq.WEEKLY,
-        created_at=0,
-        index=["1", "2"],
-        columns=["a", "b"],
-        data=[[1, 2], [3, 4]],
-    )
-
+def test_delete() -> None:
+    id = "123"
     service = Mock()
-    service.get_by_freq.return_value = [matrix]
+    service.delete.return_value = id
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get(
-        "/v1/matrix?type=2&freq=3",
-        headers=create_auth_token(app),
+    res = client.delete(
+        "/v1/matrixdataset/123", headers=create_auth_token(app)
     )
     assert res.status_code == 200
-    assert res.json()[0] == matrix.dict()
-    service.get_by_freq.assert_called_once_with(freq=MatrixFreq.WEEKLY)
+
+
+@pytest.mark.unit_test
+def test_import() -> None:
+    matrix_info = [MatrixInfoDTO(id="123", name="Matrix/matrix.txt")]
+    service = Mock()
+    service.create_by_importation.return_value = matrix_info
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.post(
+        "/v1/matrix/_import",
+        headers=create_auth_token(app),
+        files={"file": ("Matrix.zip", bytes(5), "application/zip")},
+    )
+    assert res.status_code == 200
+    assert res.json() == matrix_info

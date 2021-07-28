@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.storage.repository.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from tests.storage.repository.filesystem.utils import (
     TestSubNode,
     TestMiddleNode,
@@ -13,6 +13,7 @@ def build_tree() -> INode:
     config = Mock()
     config.path.exist.return_value = True
     return TestMiddleNode(
+        context=Mock(),
         config=config,
         children={
             "input": TestSubNode(value=100),
@@ -37,6 +38,7 @@ def test_get_depth():
     config = Mock()
     config.path.exist.return_value = True
     tree = TestMiddleNode(
+        context=Mock(),
         config=config,
         children={"childA": build_tree(), "childB": build_tree()},
     )
@@ -53,6 +55,7 @@ def test_validate():
     config = Mock()
     config.path.exist.return_value = True
     tree = TestMiddleNode(
+        context=Mock(),
         config=config,
         children={"childA": build_tree(), "childB": build_tree()},
     )

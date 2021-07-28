@@ -18,5 +18,10 @@
   "confirmationModalTitle": "Confirmation",
   "yesButton": "Oui",
   "noButton": "Non",
-  "backButton": "Retour"
+  "backButton": "Retour",
+  "closeButton": "Fermer",
+  "save": "Sauvegarder",
+  "edit": "Editer",
+  "copy": "Copie",
+  "data": "Données"
 }

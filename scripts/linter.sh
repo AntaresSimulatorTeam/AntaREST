@@ -33,6 +33,6 @@ printf "%s=======\n" "$grn"
 printf " black"
 printf "\n=======\n %s" "$end"
 
-black --diff .
+black --diff antarest
 
 printf "\n\n\n"

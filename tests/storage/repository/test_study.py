@@ -1,22 +1,20 @@
 from datetime import datetime
 from unittest.mock import Mock
 
-from antarest.common.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
 
-from antarest.common.config import Config
-from antarest.common.persistence import Base
-from antarest.login.model import User, RoleType, Group
-from antarest.login.repository import UserRepository
-from antarest.storage.model import (
+from antarest.core.persistence import Base
+from antarest.login.model import User, Group
+from antarest.study.model import (
     Study,
     RawStudy,
     DEFAULT_WORKSPACE_NAME,
     StudyContentStatus,
     PublicMode,
 )
-from antarest.storage.repository.study import StudyMetadataRepository
+from antarest.study.repository import StudyMetadataRepository
 
 
 def test_cyclelife():

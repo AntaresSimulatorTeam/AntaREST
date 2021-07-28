@@ -1,4 +1,5 @@
 import time
+from unittest.mock import ANY
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -103,7 +104,7 @@ def test_main(app: FastAPI):
 
     # study creation
     created = client.post(
-        "/v1/studies/foo",
+        "/v1/studies?name=foo",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -118,7 +119,7 @@ def test_main(app: FastAPI):
 
     # Study copy
     copied = client.post(
-        f"/v1{created.json()}/copy?dest=copied",
+        f"/v1/studies/{created.json()}/copy?dest=copied",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -134,7 +135,7 @@ def test_main(app: FastAPI):
 
     # Study delete
     client.delete(
-        f"/v1{copied.json()}",
+        f"/v1/studies/{copied.json()}",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -202,7 +203,7 @@ def test_main(app: FastAPI):
     )
     fred_credentials = res.json()
     res = client.post(
-        f"/v1/studies/bar?groups={group_id}",
+        f"/v1/studies?name=bar&groups={group_id}",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -227,7 +228,7 @@ def test_main(app: FastAPI):
     studies = [
         study_id
         for study_id in res.json()
-        if res.json()[study_id]["antares"]["caption"] == "STA-mini"
+        if res.json()[study_id]["name"] == "STA-mini"
     ]
     study_id = studies[0]
     res = client.post(
@@ -245,6 +246,25 @@ def test_main(app: FastAPI):
     )
     assert res.json()[0]["id"] == job_id
 
+    # update metadata
+    res = client.put(
+        f"/v1/studies/{study_id}",
+        headers={
+            "Authorization": f'Bearer {fred_credentials["access_token"]}'
+        },
+        json={"name": "STA-mini-copy", "status": "copied", "horizon": "2035"},
+    )
+    new_meta = client.get(
+        f"/v1/studies/{study_id}",
+        headers={
+            "Authorization": f'Bearer {fred_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == new_meta.json()
+    assert new_meta.json()["status"] == "copied"
+    assert new_meta.json()["name"] == "STA-mini-copy"
+    assert new_meta.json()["horizon"] == "2035"
+
 
 def test_matrix(app: FastAPI):
     client = TestClient(app, raise_server_exceptions=False)
@@ -254,7 +274,8 @@ def test_matrix(app: FastAPI):
     admin_credentials = res.json()
 
     matrix = {
-        "freq": 1,
+        "width": 2,
+        "height": 2,
         "index": ["1", "2"],
         "columns": ["a", "b"],
         "data": [[1, 2], [3, 4]],
@@ -282,12 +303,96 @@ def test_matrix(app: FastAPI):
     assert stored["created_at"] > 0
     assert stored["id"] != ""
 
-    res = client.get(
-        f"/v1/matrix?freq=1",
+    matrix_id = stored["id"]
+
+    res = client.post(
+        f"/v1/matrixdataset",
+        json={
+            "metadata": {
+                "name": "mydataset",
+                "groups": [],
+                "public": False,
+            },
+            "matrices": [{"id": matrix_id, "name": "mymatrix"}],
+        },
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-
     assert res.status_code == 200
-    assert res.json() == [stored]
+
+    res = client.get(
+        f"/v1/matrixdataset/_search?name=myda",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    results = res.json()
+    assert len(results) == 1
+    assert len(results[0]["matrices"]) == 1
+    assert results[0]["matrices"][0]["id"] == matrix_id
+
+    dataset_id = results[0]["id"]
+    res = client.delete(
+        f"/v1/matrixdataset/{dataset_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+
+def test_area_management(app: FastAPI):
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.post(
+        "/v1/login", json={"username": "admin", "password": "admin"}
+    )
+    admin_credentials = res.json()
+
+    created = client.post(
+        "/v1/studies?name=foo",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    study_id = created.json()
+    res_areas = client.get(
+        f"/v1/studies/{study_id}/areas",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res_areas.json() == []
+
+    res_create = client.post(
+        f"/v1/studies/{study_id}/areas",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={"name": "test", "type": "AREA"},
+    )
+    res_update = client.put(
+        f"/v1/studies/{study_id}/areas/test",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={"name": "test", "type": "AREA"},
+    )
+    res_delete = client.delete(
+        f"/v1/studies/{study_id}/areas/test",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert (
+        res_create.status_code == 500
+        and res_create.json()["exception"] == "NotImplementedError"
+    )
+    assert (
+        res_update.status_code == 500
+        and res_update.json()["exception"] == "NotImplementedError"
+    )
+    assert (
+        res_delete.status_code == 500
+        and res_delete.json()["exception"] == "NotImplementedError"
+    )

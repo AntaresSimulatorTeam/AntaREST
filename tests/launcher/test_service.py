@@ -1,16 +1,18 @@
+import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pytest
 
-from antarest.common.config import Config
-from antarest.common.interfaces.eventbus import Event, EventType
-from antarest.common.jwt import JWTUser
-from antarest.common.requests import RequestParameters
+from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import Event, EventType
+from antarest.core.jwt import JWTUser
+from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
+from antarest.study.model import StudyMetadataDTO, OwnerInfo, PublicMode
 
 
 @pytest.mark.unit_test
@@ -18,9 +20,18 @@ from antarest.login.auth import Auth
 def test_service_run_study(get_current_user_mock):
     get_current_user_mock.return_value = None
     storage_service_mock = Mock()
-    storage_service_mock.get_study_information.return_value = {
-        "antares": {"version": "42"}
-    }
+    storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
+        id="id",
+        name="name",
+        created=1,
+        updated=1,
+        owner=OwnerInfo(name="author"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+        version=42,
+        workspace="default",
+        managed=True,
+    )
     storage_service_mock.get_study_path.return_value = Path("path/to/study")
 
     uuid = uuid4()
@@ -34,7 +45,10 @@ def test_service_run_study(get_current_user_mock):
     event_bus = Mock()
 
     pending = JobResult(
-        id=str(uuid), study_id="study_uuid", job_status=JobStatus.PENDING
+        id=str(uuid),
+        study_id="study_uuid",
+        job_status=JobStatus.PENDING,
+        launcher="local",
     )
     repository = Mock()
     repository.save.return_value = pending
@@ -64,7 +78,7 @@ def test_service_run_study(get_current_user_mock):
     event_bus.push.assert_called_once_with(
         Event(
             EventType.STUDY_JOB_STARTED,
-            {"jid": str(uuid), "sid": "study_uuid"},
+            pending.to_dict(),
         )
     )
 
@@ -77,6 +91,7 @@ def test_service_get_result_from_launcher():
         job_status=JobStatus.SUCCESS,
         msg="Hello, World!",
         exit_code=0,
+        launcher="local",
     )
     factory_launcher_mock = Mock()
     factory_launcher_mock.build_launcher.return_value = {
@@ -96,7 +111,10 @@ def test_service_get_result_from_launcher():
 
     job_id = uuid4()
     assert (
-        launcher_service.get_result(job_uuid=job_id) == fake_execution_result
+        launcher_service.get_result(
+            job_uuid=job_id, params=RequestParameters()
+        )
+        == fake_execution_result
     )
 
 
@@ -127,7 +145,10 @@ def test_service_get_result_from_database():
     )
 
     assert (
-        launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
+        launcher_service.get_result(
+            job_uuid=uuid4(), params=RequestParameters()
+        )
+        == fake_execution_result
     )
 
 
@@ -161,7 +182,13 @@ def test_service_get_jobs_from_database():
     )
 
     study_id = uuid4()
-    assert launcher_service.get_jobs(str(study_id)) == fake_execution_result
+    assert (
+        launcher_service.get_jobs(str(study_id), params=RequestParameters())
+        == fake_execution_result
+    )
     repository.find_by_study.assert_called_once_with(str(study_id))
-    assert launcher_service.get_jobs() == fake_execution_result
+    assert (
+        launcher_service.get_jobs(None, params=RequestParameters())
+        == fake_execution_result
+    )
     repository.get_all.assert_called_once()

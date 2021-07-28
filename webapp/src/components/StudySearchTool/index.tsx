@@ -13,9 +13,10 @@ const useStyles = makeStyles((theme: Theme) =>
       marginTop: theme.spacing(1),
       marginBottom: theme.spacing(1),
       marginLeft: theme.spacing(3),
-      marginRight: theme.spacing(3),
+      marginRight: theme.spacing(2),
       display: 'flex',
       alignItems: 'center',
+      flex: 1,
     },
     form: {
       width: '100%',

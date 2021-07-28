@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, LinearProgress } from '@material-ui/core';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
-import { getStudyData, importStudy } from '../../services/api/study';
-import { getStudyIdFromUrl, convertStudyDtoToMetadata } from '../../services/utils';
+import { getStudyMetadata, importStudy } from '../../services/api/study';
 import { addStudies } from '../../ducks/study';
 import { StudyMetadata } from '../../common/types';
 import { addUpload, updateUpload, completeUpload } from '../../ducks/upload';
@@ -44,10 +43,9 @@ const ImportStudyForm = (props: PropTypes) => {
     if (data.study && data.study.length === 1) {
       const uploadId = createUpload('Study import');
       try {
-        const res = await importStudy(data.study[0], (completion) => { updateUploadCompletion(uploadId, completion); setUploadProgress(completion); });
-        const sid = getStudyIdFromUrl(res);
-        const metadata = await getStudyData(sid, 'study/antares', 1);
-        addStudy(convertStudyDtoToMetadata(sid, metadata));
+        const sid = await importStudy(data.study[0], (completion) => { updateUploadCompletion(uploadId, completion); setUploadProgress(completion); });
+        const metadata = await getStudyMetadata(sid);
+        addStudy(metadata);
       } catch (e) {
         logErr('Failed to import study', data.study, e);
       } finally {

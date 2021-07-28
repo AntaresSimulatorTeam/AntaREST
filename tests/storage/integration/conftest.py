@@ -1,25 +1,19 @@
+import datetime
 from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
 
-from antarest.common.config import (
+from antarest.core.config import (
     Config,
     SecurityConfig,
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.storage.business.exporter_service import ExporterService
-from antarest.storage.business.importer_service import ImporterService
-from antarest.storage.business.raw_study_service import RawStudyService
-from antarest.storage.main import build_storage
-from antarest.storage.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.storage.repository.antares_io.exporter.export_file import (
-    Exporter,
-)
-from antarest.storage.repository.filesystem.factory import StudyFactory
-from antarest.storage.service import StorageService
+from antarest.study.main import build_storage
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.service import StudyService
 
 
 @pytest.fixture
@@ -35,7 +29,7 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 @pytest.fixture
 def storage_service(
     tmp_path: str, project_path: Path, sta_mini_zip_path: Path
-) -> StorageService:
+) -> StudyService:
 
     path_studies = Path(tmp_path) / "studies"
 
@@ -46,14 +40,22 @@ def storage_service(
 
     md = RawStudy(
         id="STA-mini",
+        name="STA-mini",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / "STA-mini"),
+        created_at=datetime.datetime.fromtimestamp(1480683452),
+        updated_at=datetime.datetime.fromtimestamp(1602678639),
+        version=700,
     )
     repo = Mock()
     repo.get.side_effect = lambda name: RawStudy(
         id=name,
+        name=name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / name),
+        created_at=datetime.datetime.fromtimestamp(1480683452),
+        updated_at=datetime.datetime.fromtimestamp(1602678639),
+        version=700,
     )
     repo.get_all.return_value = [md]
 
@@ -70,6 +72,7 @@ def storage_service(
     storage_service = build_storage(
         application=Mock(),
         user_service=Mock(),
+        matrix_service=Mock(),
         config=config,
         metadata_repository=repo,
     )

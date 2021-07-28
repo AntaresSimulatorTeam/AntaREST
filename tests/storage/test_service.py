@@ -1,27 +1,38 @@
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
 
-from antarest.common.jwt import JWTUser, JWTGroup
-from antarest.common.roles import RoleType
+from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.roles import RoleType
 from antarest.login.model import User, Group
-from antarest.common.requests import (
+from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.login.service import GroupNotFoundError
-from antarest.storage.business.permissions import StudyPermissionType
-from antarest.storage.model import (
+from antarest.study.storage.permissions import StudyPermissionType
+from antarest.study.model import (
     Study,
     StudyContentStatus,
     StudyFolder,
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
     PublicMode,
+    StudyDownloadDTO,
+    MatrixAggregationResult,
+    MatrixIndex,
 )
-from antarest.storage.service import StorageService, UserHasNotPermissionError
+from antarest.study.storage.rawstudy.model import FileStudy
+
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    Area,
+    FileStudyTreeConfig,
+    Simulation,
+    Link,
+    Set,
+)
+from antarest.study.service import StudyService, UserHasNotPermissionError
 
 
 def test_get_studies_uuid() -> None:
@@ -38,7 +49,7 @@ def test_get_studies_uuid() -> None:
 
     study_service = Mock()
 
-    service = StorageService(
+    service = StudyService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -73,7 +84,7 @@ def test_sync_studies_from_disk() -> None:
     repository = Mock()
     repository.get_all.side_effect = [[ma, mb], [ma]]
 
-    service = StorageService(
+    service = StudyService(
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -120,9 +131,9 @@ def test_create_study() -> None:
             "lastsave": 9876,
         }
     }
-    study_service.create_study.return_value = expected
+    study_service.create.return_value = expected
 
-    service = StorageService(
+    service = StudyService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -153,7 +164,7 @@ def test_create_study() -> None:
         ),
     )
 
-    study_service.create_study.assert_called()
+    study_service.create.assert_called()
     repository.save.assert_called_once_with(expected)
 
 
@@ -198,7 +209,7 @@ def test_save_metadata() -> None:
         groups=[group],
     )
 
-    service = StorageService(
+    service = StudyService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -214,6 +225,120 @@ def test_save_metadata() -> None:
     repository.save.assert_called_once_with(study)
 
 
+def test_download_output() -> None:
+    study_service = Mock()
+    repository = Mock()
+
+    input_study = RawStudy(
+        id="c",
+        path="c",
+        name="c",
+        content_status=StudyContentStatus.WARNING,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=User(id=0),
+    )
+    input_data = StudyDownloadDTO(
+        type="AREA",
+        years=[],
+        level="annual",
+        filterIn="",
+        filterOut="",
+        filter=[],
+        columns=[],
+        synthesis=False,
+        includeClusters=True,
+    )
+
+    area = Area(
+        links={"west": Link(filters_synthesis=[], filters_year=[])},
+        thermals=[],
+        filters_synthesis=[],
+        filters_year=[],
+    )
+
+    sim = Simulation(
+        name="",
+        date="",
+        mode="",
+        nbyears=1,
+        synthesis=True,
+        by_year=True,
+        error=False,
+    )
+    config = FileStudyTreeConfig(
+        study_path=input_study.path,
+        study_id="",
+        areas={"east": area},
+        sets={"north": Set()},
+        outputs={"output-id": sim},
+        bindings=None,
+        store_new_set=False,
+    )
+    study = Mock()
+
+    repository.get.return_value = input_study
+
+    service = StudyService(
+        study_service=study_service,
+        importer_service=Mock(),
+        exporter_service=Mock(),
+        user_service=Mock(),
+        repository=repository,
+        event_bus=Mock(),
+    )
+
+    res_study = {"columns": [["H. VAL|Euro/MWh"]], "data": [[0.5]]}
+    study_service.get_raw.return_value = FileStudy(config=config, tree=study)
+    study.get.return_value = res_study
+
+    # AREA TYPE
+    res_matrix = MatrixAggregationResult(
+        index=MatrixIndex(),
+        data={"east": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        warnings=[],
+    )
+    result = service.download_outputs(
+        "study-id",
+        "output-id",
+        input_data,
+        RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    )
+    assert result == res_matrix
+
+    # LINK TYPE
+    input_data.type = "LINK"
+    input_data.filter = ["east>west"]
+    res_matrix = MatrixAggregationResult(
+        index=MatrixIndex(),
+        data={"east^west": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        warnings=[],
+    )
+    result = service.download_outputs(
+        "study-id",
+        "output-id",
+        input_data,
+        RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    )
+    assert result == res_matrix
+
+    # CLUSTER TYPE
+    input_data.type = "CLUSTER"
+    input_data.filter = []
+    input_data.filterIn = "n"
+    res_matrix = MatrixAggregationResult(
+        index=MatrixIndex(),
+        data={"north": {1: {"H. VAL|Euro/MWh": [0.5]}}},
+        warnings=[],
+    )
+    result = service.download_outputs(
+        "study-id",
+        "output-id",
+        input_data,
+        RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    )
+    assert result == res_matrix
+
+
 def test_change_owner() -> None:
     uuid = str(uuid4())
     alice = User(id=1)
@@ -222,7 +347,7 @@ def test_change_owner() -> None:
     repository = Mock()
     user_service = Mock()
     study_service = Mock()
-    service = StorageService(
+    service = StudyService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -264,7 +389,7 @@ def test_manage_group() -> None:
 
     repository = Mock()
     user_service = Mock()
-    service = StorageService(
+    service = StudyService(
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -342,7 +467,7 @@ def test_set_public_mode() -> None:
 
     repository = Mock()
     user_service = Mock()
-    service = StorageService(
+    service = StudyService(
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -380,7 +505,7 @@ def test_check_errors():
     repo = Mock()
     repo.get.return_value = study
 
-    service = StorageService(
+    service = StudyService(
         study_service=study_service,
         importer_service=Mock(),
         exporter_service=Mock(),
@@ -407,7 +532,7 @@ def test_assert_permission() -> None:
 
     repository = Mock()
 
-    service = StorageService(
+    service = StudyService(
         study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
