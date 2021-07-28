@@ -40,7 +40,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pydantic --no-binary pydantic
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      - name: Fix symlink for windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          rm antareslauncher
+          ln -s antares-launcher\antareslauncher antareslauncher
       - name: Generate binary Unix
         if: matrix.os != 'windows-latest'
         run: |
