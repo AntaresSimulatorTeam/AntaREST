@@ -1,6 +1,7 @@
 import logging
 import re
 import threading
+from html import escape
 from pathlib import Path
 from time import time, sleep
 from typing import List
@@ -129,7 +130,10 @@ class Watcher:
         for name, workspace in self.config.storage.workspaces.items():
             if name != DEFAULT_WORKSPACE_NAME:
                 path = Path(workspace.path)
-                groups = [Group(id=g, name=g) for g in workspace.groups]
+                groups = [
+                    Group(id=escape(g), name=escape(g))
+                    for g in workspace.groups
+                ]
                 studies = studies + rec_scan(
                     path,
                     name,

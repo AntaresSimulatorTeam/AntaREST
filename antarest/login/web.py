@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+from html import unescape
 from typing import Any, Optional
 
 from fastapi import Depends, APIRouter, HTTPException
@@ -173,7 +174,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        gid = str(escape(id))
+        gid = unescape(id)
         params = RequestParameters(user=current_user)
         group = (
             service.get_group_info(gid, params)
@@ -193,27 +194,30 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        group = Group(id=group_dto.id, name=group_dto.name)
+        group = Group(
+            id=escape(group_dto.id) if group_dto.id else None,
+            name=group_dto.name,
+        )
         return service.save_group(group, params).to_dict()
 
     @bp.delete("/groups/{id}", tags=[APITag.users])
     def groups_delete(
         id: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
-        gid = str(escape(id))
         params = RequestParameters(user=current_user)
-        service.delete_group(gid, params)
+        service.delete_group(unescape(id), params)
         return id
 
     @bp.get("/roles/group/{group}", tags=[APITag.users])
     def roles_get_all(
         group: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
-        group = str(escape(group))
         params = RequestParameters(user=current_user)
         return [
             r.to_dict()
-            for r in service.get_all_roles_in_group(group=group, params=params)
+            for r in service.get_all_roles_in_group(
+                group=unescape(group), params=params
+            )
         ]
 
     @bp.post("/roles", tags=[APITag.users])
@@ -230,9 +234,8 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         group: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        group = str(escape(group))
         params = RequestParameters(user=current_user)
-        service.delete_role(user, group, params)
+        service.delete_role(user, unescape(group), params)
         return user, group
 
     @bp.post("/bots", tags=[APITag.users], summary="Create bot token")
