@@ -129,7 +129,7 @@ class Watcher:
         for name, workspace in self.config.storage.workspaces.items():
             if name != DEFAULT_WORKSPACE_NAME:
                 path = Path(workspace.path)
-                groups = [Group(id=g) for g in workspace.groups]
+                groups = [Group(id=g, name=g) for g in workspace.groups]
                 studies = studies + rec_scan(
                     path,
                     name,
