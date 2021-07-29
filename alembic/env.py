@@ -7,7 +7,7 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from antarest.core import persistence
+from antarest.dbmodel import Base
 from antarest.core.config import Config
 from antarest.core.utils import utils
 
@@ -32,7 +32,7 @@ if config_path and Path(config_path).exists():
 # target_metadata = mymodel.Base.metadata
 
 
-target_metadata = persistence.Base.metadata
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

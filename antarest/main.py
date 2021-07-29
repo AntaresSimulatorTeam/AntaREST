@@ -20,7 +20,8 @@ from starlette.templating import Jinja2Templates
 
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
-from antarest.core.persistence import Base, upgrade_db
+from antarest.core.persistence import upgrade_db
+from antarest.dbmodel import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_default_config_path, get_local_path
 from antarest.core.utils.web import tags_metadata
