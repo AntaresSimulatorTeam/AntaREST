@@ -1,5 +1,7 @@
-from antarest.core.persistence import Base
-from antarest.study import model
-from antarest.launcher import model
-from antarest.login import model
-from antarest.matrixstore import model
+from antarest.core.persistence import Base as PersistenceBase
+from antarest.study import model as studymodel
+from antarest.launcher import model as launchermodel
+from antarest.login import model as loginmodel
+from antarest.matrixstore import model as matrixstoremodel
+
+Base = PersistenceBase
