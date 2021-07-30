@@ -5,21 +5,20 @@ import StudyJsonView from './StudyJsonView';
 import StudyMatrixView from './StudyMatrixView';
 import { StudyDataType } from '../../../common/types';
 
-const useStyles = makeStyles((theme: Theme) => createStyles({
-  root: {
-    flexGrow: 1,
-    padding: theme.spacing(2),
-  },
-}));
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: {
+      flexGrow: 1,
+      padding: theme.spacing(2),
+    },
+  }));
 
-type DataType = {path: string; json: object};
 interface PropTypes {
   study: string;
   type: StudyDataType;
-  data: string | DataType;
+  data: string;
   studyData: any;
   setStudyData: (elm: any) => void;
-  updateViewedData: (json: object) => void;
 }
 
 interface RenderData {
@@ -28,18 +27,42 @@ interface RenderData {
 }
 
 const StudyDataView = (props: PropTypes) => {
-  const { study, type, data, studyData, setStudyData, updateViewedData } = props;
+  const { study, type, data, studyData, setStudyData } = props;
   const classes = useStyles();
   const filterOut = ['output', 'logs', 'Desktop'];
 
+  const refreshView = () => {
+    setStudyData({ ...studyData });
+  };
+
   const renderData = (): RenderData => {
     if (type === 'file') {
-      return { css: { overflow: 'auto' }, data: <StudyFileView study={study} url={data as string} filterOut={filterOut} studyData={studyData} setStudyData={setStudyData} /> };
+      return {
+        css: { overflow: 'auto' },
+        data: (
+          <StudyFileView study={study} url={data} filterOut={filterOut} refreshView={refreshView} />
+        ),
+      };
     }
     if (type === 'matrix' || type === 'matrixfile') {
-      return { css: { overflow: 'auto' }, data: <StudyMatrixView study={study} url={data as string} filterOut={filterOut} studyData={studyData} setStudyData={setStudyData} /> };
+      return {
+        css: { overflow: 'auto' },
+        data: (
+          <StudyMatrixView
+            study={study}
+            url={data}
+            filterOut={filterOut}
+            refreshView={refreshView}
+          />
+        ),
+      };
     }
-    return { css: { overflow: 'hidden', paddingTop: '0px' }, data: <StudyJsonView studyData={studyData} setStudyData={setStudyData} updateViewedData={updateViewedData} study={study} data={data as DataType} filterOut={filterOut} /> };
+    return {
+      css: { overflow: 'hidden', paddingTop: '0px' },
+      data: (
+        <StudyJsonView refreshView={refreshView} study={study} data={data} filterOut={filterOut} />
+      ),
+    };
   };
 
   const rd = renderData();

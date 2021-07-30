@@ -1,11 +1,13 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import ReactJson from 'react-json-view';
 import { makeStyles, Theme, createStyles, Button, Paper, Typography } from '@material-ui/core';
 import SaveIcon from '@material-ui/icons/Save';
-import { editStudy } from '../../../services/api/study';
-import { CommonStudyStyle, writeLeaf } from './utils/utils';
+import { editStudy, getStudyData } from '../../../services/api/study';
+import { CommonStudyStyle } from './utils/utils';
+import MainContentLoader from '../../ui/loaders/MainContentLoader';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   ...CommonStudyStyle(theme),
@@ -23,47 +25,59 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 }));
 
 interface PropTypes {
-  data: {path: string; json: object};
+  data: string;
   study: string;
-  studyData: any;
-  setStudyData: (elm: any) => void;
-  updateViewedData: (json: object) => void;
+  refreshView: () => void;
   filterOut: Array<string>;
 }
 
 const StudyJsonView = (props: PropTypes) => {
-  const { data, study, studyData, setStudyData, updateViewedData, filterOut } = props;
+  const { data, study, refreshView, filterOut } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
-  const [jsonData, setJsonData] = useState<object>(data.json);
+  const [jsonData, setJsonData] = useState<object>();
+  const [loaded, setLoaded] = useState(false);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
   const [isEditable, setEditable] = useState<boolean>(true);
 
   const saveData = async () => {
-    const tmpDataPath = data.path.split('/').filter((item) => item);
+    const tmpDataPath = data.split('/').filter((item) => item);
     const tmpPath = tmpDataPath.join('/');
-
-    try {
-      await editStudy(jsonData, study, tmpPath);
-      const newData = { ...studyData };
-      writeLeaf(tmpDataPath, newData, jsonData);
-      setStudyData(newData);
-      updateViewedData(jsonData);
-      enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
-      setSaveAllowed(false);
-    } catch (e) {
+    if (!loaded && jsonData) {
+      try {
+        await editStudy(jsonData, study, tmpPath);
+        refreshView();
+        enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
+        setSaveAllowed(false);
+      } catch (e) {
+        enqueueSnackbar(t('studymanager:failtosavedata'), { variant: 'error' });
+      }
+    } else {
       enqueueSnackbar(t('studymanager:failtosavedata'), { variant: 'error' });
     }
   };
+
   useEffect(() => {
-    const tmpDataPath = data.path.split('/').filter((item) => item);
-    if (tmpDataPath.length > 0) {
-      setEditable(!filterOut.includes(tmpDataPath[0]));
-    }
-    setJsonData(data.json);
-    setSaveAllowed(false);
+    (async () => {
+      setJsonData(undefined);
+      setLoaded(false);
+      const tmpDataPath = data.split('/').filter((item) => item);
+      if (tmpDataPath.length > 0) {
+        setEditable(!filterOut.includes(tmpDataPath[0]));
+      }
+      try {
+        const res = await getStudyData(study, data, -1);
+        setJsonData(res);
+        setSaveAllowed(false);
+      } catch (e) {
+        enqueueSnackbar(t('studymanager:failtoretrievedata'), { variant: 'error' });
+      } finally {
+        setLoaded(true);
+      }
+    })();
   }, [data, filterOut]);
+
   return (
     <div className={classes.root}>
       {
@@ -83,7 +97,12 @@ const StudyJsonView = (props: PropTypes) => {
         </div>
         )}
       <Paper className={classes.content}>
-        <ReactJson src={jsonData} onEdit={isEditable ? (e) => { setJsonData(e.updated_src); setSaveAllowed(true); } : undefined} />
+        {jsonData && <ReactJson src={jsonData} onEdit={isEditable ? (e) => { setJsonData(e.updated_src); setSaveAllowed(true); } : undefined} />}
+        {!loaded && (
+          <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+            <MainContentLoader />
+          </div>
+        )}
       </Paper>
     </div>
   );
