@@ -60,7 +60,7 @@ const StudyDataView = (props: PropTypes) => {
     return {
       css: { overflow: 'hidden', paddingTop: '0px' },
       data: (
-        <StudyJsonView refreshView={refreshView} study={study} data={data} filterOut={filterOut} />
+        <StudyJsonView study={study} data={data} filterOut={filterOut} />
       ),
     };
   };

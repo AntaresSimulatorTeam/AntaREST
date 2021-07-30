@@ -27,12 +27,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 interface PropTypes {
   data: string;
   study: string;
-  refreshView: () => void;
   filterOut: Array<string>;
 }
 
 const StudyJsonView = (props: PropTypes) => {
-  const { data, study, refreshView, filterOut } = props;
+  const { data, study, filterOut } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
@@ -44,10 +43,9 @@ const StudyJsonView = (props: PropTypes) => {
   const saveData = async () => {
     const tmpDataPath = data.split('/').filter((item) => item);
     const tmpPath = tmpDataPath.join('/');
-    if (!loaded && jsonData) {
+    if (loaded && jsonData) {
       try {
         await editStudy(jsonData, study, tmpPath);
-        refreshView();
         enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
         setSaveAllowed(false);
       } catch (e) {
