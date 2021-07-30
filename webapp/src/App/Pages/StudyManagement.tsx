@@ -153,7 +153,12 @@ const StudyManagement = (props: PropTypes) => {
           <StudySearchTool setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
           <SortView itemNames={sortList} onClick={(item: SortItem) => sortStudies(item)} />
           <Tooltip title={t('studymanager:refresh') as string} style={{ marginRight: theme.spacing(0.5) }}>
-            <RefreshIcon className={classes.icon} onClick={() => getAllStudies(true)} />
+            <Button
+              color="primary"
+              onClick={() => getAllStudies(true)}
+            >
+              <RefreshIcon />
+            </Button>
           </Tooltip>
           <Button
             color="primary"
