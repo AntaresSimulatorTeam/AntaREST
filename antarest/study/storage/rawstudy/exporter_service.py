@@ -61,7 +61,9 @@ class ExporterService:
     def export_file(
         self, path_study: Path, export_path: Path, outputs: bool = True
     ) -> Path:
-        with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
+        with tempfile.TemporaryDirectory(
+            dir=self.config.storage.tmp_dir
+        ) as tmpdir:
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_flat(path_study, tmp_study_path, outputs)
             start_time = time.time()
@@ -107,10 +109,10 @@ class ExporterService:
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study {path_study} denormalized in {duration}s")
 
-    def archive(self, study: RawStudy):
+    def archive(self, study: RawStudy) -> None:
         archive_path = self.get_archive_path(study)
         self.export_file(study, archive_path)
         os.rmdir(study.path)
 
-    def get_archive_path(self, study: RawStudy):
-        return self.config.storage.archive_dir / study.id / ".zip"
+    def get_archive_path(self, study: RawStudy) -> Path:
+        return Path(self.config.storage.archive_dir / study.id / ".zip")

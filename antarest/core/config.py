@@ -80,9 +80,10 @@ class StorageConfig:
     """
     Sub config object dedicated to study module
     """
-    matrixstore: Path
-    archive_dir: Path
-    tmp_dir: Path
+
+    matrixstore: Path = Path("./matrixstore")
+    archive_dir: Path = Path("./archives")
+    tmp_dir: Path = Path(tempfile.gettempdir())
     workspaces: Dict[str, WorkspaceConfig] = field(default_factory=lambda: {})
     watcher_lock: bool = True
 

@@ -274,9 +274,13 @@ class StudyService:
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
         for study in self.repository.get_all():
-            if isinstance(study, RawStudy) and not study.archived and (
-                study.workspace != DEFAULT_WORKSPACE_NAME
-                and study.path not in paths
+            if (
+                isinstance(study, RawStudy)
+                and not study.archived
+                and (
+                    study.workspace != DEFAULT_WORKSPACE_NAME
+                    and study.path not in paths
+                )
             ):
                 logger.info(
                     "Study=%s is not present in disk and will be deleted",
@@ -843,11 +847,9 @@ class StudyService:
         self._assert_permission(params.user, study, StudyPermissionType.WRITE)
         return self.areas.delete_area(study, area_id)
 
-    def archive(self, uuid: str, params: RequestParameters):
+    def archive(self, uuid: str, params: RequestParameters) -> None:
         study = self._get_study(uuid)
-        self._assert_permission(
-            params.user, study, StudyPermissionType.DELETE
-        )
+        self._assert_permission(params.user, study, StudyPermissionType.DELETE)
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
@@ -856,19 +858,20 @@ class StudyService:
         study.archived = True
         self.repository.save(study)
 
-    def unarchive(self, uuid: str, params: RequestParameters):
+    def unarchive(self, uuid: str, params: RequestParameters) -> None:
         study = self._get_study(uuid)
         if not study.archived:
-            raise HTTPException(HTTPStatus.BAD_REQUEST, "Study is not archived")
+            raise HTTPException(
+                HTTPStatus.BAD_REQUEST, "Study is not archived"
+            )
 
-        self._assert_permission(
-            params.user, study, StudyPermissionType.DELETE
-        )
+        self._assert_permission(params.user, study, StudyPermissionType.DELETE)
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
-        self.importer_service.import_study(study, io.BytesIO(self.exporter_service.get_archive_path(study)))
+        with open(self.exporter_service.get_archive_path(study), "rb") as fh:
+            self.importer_service.import_study(study, io.BytesIO(fh.read()))
         study.archived = False
         self.repository.save(study)
 
