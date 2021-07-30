@@ -12,7 +12,7 @@ class FileTransferManager:
 
     def __init__(self, config: Config):
         self.config = config
-        self.tmp_dir = config.tmp_dir
+        self.tmp_dir = config.storage.tmp_dir
 
     @staticmethod
     def get_instance(config: Optional[Config]) -> "FileTransferManager":

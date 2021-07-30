@@ -1,10 +1,13 @@
+import io
 import logging
 from datetime import datetime
+from http import HTTPStatus
 from pathlib import Path
 from time import time
 from typing import List, IO, Optional, cast, Union
 from uuid import uuid4
 
+from fastapi import HTTPException
 from markupsafe import escape
 
 from antarest.core.custom_types import JSON
@@ -271,7 +274,7 @@ class StudyService:
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
         for study in self.repository.get_all():
-            if isinstance(study, RawStudy) and (
+            if isinstance(study, RawStudy) and not study.archived and (
                 study.workspace != DEFAULT_WORKSPACE_NAME
                 and study.path not in paths
             ):
@@ -839,6 +842,35 @@ class StudyService:
         study = self._get_study(uuid)
         self._assert_permission(params.user, study, StudyPermissionType.WRITE)
         return self.areas.delete_area(study, area_id)
+
+    def archive(self, uuid: str, params: RequestParameters):
+        study = self._get_study(uuid)
+        self._assert_permission(
+            params.user, study, StudyPermissionType.DELETE
+        )
+
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(uuid, study.type)
+
+        self.exporter_service.archive(study)
+        study.archived = True
+        self.repository.save(study)
+
+    def unarchive(self, uuid: str, params: RequestParameters):
+        study = self._get_study(uuid)
+        if not study.archived:
+            raise HTTPException(HTTPStatus.BAD_REQUEST, "Study is not archived")
+
+        self._assert_permission(
+            params.user, study, StudyPermissionType.DELETE
+        )
+
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(uuid, study.type)
+
+        self.importer_service.import_study(study, io.BytesIO(self.exporter_service.get_archive_path(study)))
+        study.archived = False
+        self.repository.save(study)
 
     def _save_study(
         self,

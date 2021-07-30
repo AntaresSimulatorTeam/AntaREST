@@ -80,17 +80,22 @@ class StorageConfig:
     """
     Sub config object dedicated to study module
     """
-
+    matrixstore: Path
+    archive_dir: Path
+    tmp_dir: Path
     workspaces: Dict[str, WorkspaceConfig] = field(default_factory=lambda: {})
     watcher_lock: bool = True
 
     @staticmethod
     def from_dict(data: JSON) -> "StorageConfig":
         return StorageConfig(
+            tmp_dir=data.get("tmp_dir", Path(tempfile.gettempdir())),
+            matrixstore=Path(data["matrixstore"]),
             workspaces={
                 n: WorkspaceConfig.from_dict(w)
                 for n, w in data["workspaces"].items()
             },
+            archive_dir=Path(data["archive_dir"]),
             watcher_lock=data.get("watcher_lock", True),
         )
 
@@ -248,8 +253,6 @@ class Config:
     security: SecurityConfig = SecurityConfig()
     storage: StorageConfig = StorageConfig()
     launcher: LauncherConfig = LauncherConfig()
-    matrixstore: MatrixStoreConfig = MatrixStoreConfig()
-    tmp_dir: Path = Path(tempfile.gettempdir())
     db_url: str = ""
     db_admin_url: Optional[str] = None
     logging: LoggingConfig = LoggingConfig()
@@ -274,7 +277,6 @@ class Config:
             security=SecurityConfig.from_dict(data["security"]),
             storage=StorageConfig.from_dict(data["storage"]),
             launcher=LauncherConfig.from_dict(data["launcher"]),
-            matrixstore=MatrixStoreConfig.from_dict(data["matrixstore"]),
             db_url=data["db"]["url"],
             db_admin_url=data["db"].get("admin_url", None),
             logging=LoggingConfig.from_dict(data["logging"]),
