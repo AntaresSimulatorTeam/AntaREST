@@ -233,19 +233,6 @@ class EventBusConfig:
 
 
 @dataclass(frozen=True)
-class MatrixStoreConfig:
-    """
-    Sub config object dedicated to matrix store module
-    """
-
-    bucket: Path = Path("")
-
-    @staticmethod
-    def from_dict(data: JSON) -> "MatrixStoreConfig":
-        return MatrixStoreConfig(bucket=Path(data["bucket"]))
-
-
-@dataclass(frozen=True)
 class Config:
     """
     Root server config

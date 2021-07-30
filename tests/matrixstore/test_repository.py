@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import Optional
 from unittest.mock import Mock
 
-from sqlalchemy import create_engine, and_
+from sqlalchemy import create_engine
 
-from antarest.core.config import Config, MatrixStoreConfig, SecurityConfig
+from antarest.core.config import Config, SecurityConfig, StorageConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.login.model import User, Password, Group, Identity
+from antarest.login.model import User, Password, Group
 from antarest.login.repository import UserRepository, GroupRepository
 from antarest.matrixstore.model import (
     Matrix,
@@ -47,7 +47,7 @@ def test_db_cyclelife():
 
 
 def test_bucket_cyclelife(tmp_path: Path):
-    config = Config(matrixstore=MatrixStoreConfig(bucket=tmp_path))
+    config = Config(storage=StorageConfig(matrix_store=tmp_path))
     repo = MatrixContentRepository(config)
 
     a = MatrixContent(
