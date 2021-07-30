@@ -1,3 +1,8 @@
+from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import (
+    AreaMatrixList,
+    AreaMultipleMatrixList,
+    ThermalMatrixList,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -5,40 +10,39 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.hydro.hydro import (
-    OutputSimulationTsNumbersHydro,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.load.load import (
-    OutputSimulationTsNumbersLoad,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.solar.solar import (
-    OutputSimulationTsNumbersSolar,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.thermal.thermal import (
-    OutputSimulationTsNumbersThermal,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.wind.wind import (
-    OutputSimulationTsNumbersWind,
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
+    RawFileNode,
 )
 
 
 class OutputSimulationTsNumbers(FolderNode):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {
-            "hydro": OutputSimulationTsNumbersHydro(
-                self.context, config.next_file("hydro")
+            "hydro": AreaMatrixList(
+                self.context,
+                config.next_file("hydro"),
+                matrix_class=RawFileNode,
             ),
-            "load": OutputSimulationTsNumbersLoad(
-                self.context, config.next_file("load")
+            "load": AreaMatrixList(
+                self.context,
+                config.next_file("load"),
+                matrix_class=RawFileNode,
             ),
-            "solar": OutputSimulationTsNumbersSolar(
-                self.context, config.next_file("solar")
+            "solar": AreaMatrixList(
+                self.context,
+                config.next_file("solar"),
+                matrix_class=RawFileNode,
             ),
-            "wind": OutputSimulationTsNumbersWind(
-                self.context, config.next_file("wind")
+            "wind": AreaMatrixList(
+                self.context,
+                config.next_file("wind"),
+                matrix_class=RawFileNode,
             ),
-            "thermal": OutputSimulationTsNumbersThermal(
-                self.context, config.next_file("thermal")
+            "thermal": AreaMultipleMatrixList(
+                self.context,
+                config.next_file("thermal"),
+                ThermalMatrixList,
+                RawFileNode,
             ),
         }
         return children

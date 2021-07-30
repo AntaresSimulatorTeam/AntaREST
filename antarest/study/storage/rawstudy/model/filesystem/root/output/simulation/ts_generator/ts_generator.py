@@ -16,6 +16,9 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+)
 
 
 class OutputSimulationTsGeneratorSimpleMatrixList(FolderNode):
@@ -32,7 +35,15 @@ class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         klass: Callable[
-            [ContextServer, FileStudyTreeConfig, str], INode[Any, Any, Any]
+            [
+                ContextServer,
+                FileStudyTreeConfig,
+                str,
+                Callable[
+                    [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
+                ],
+            ],
+            INode[Any, Any, Any],
         ],
     ):
         super().__init__(context, config)
@@ -41,7 +52,10 @@ class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {
             "mc-0": AreaMultipleMatrixList(
-                self.context, config.next_file("mc-0"), self.klass
+                self.context,
+                config.next_file("mc-0"),
+                self.klass,
+                InputSeriesMatrix,
             ),
         }
         return children

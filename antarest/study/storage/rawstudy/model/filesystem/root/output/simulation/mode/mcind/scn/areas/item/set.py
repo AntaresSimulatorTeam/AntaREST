@@ -8,8 +8,8 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcind.scn.areas.item.values import (
-    OutputSimulationModeMcIndScnAreasItemValues as Values,
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
+    AreaOutputSeriesMatrix,
 )
 
 
@@ -24,7 +24,7 @@ class OutputSimulationModeMcIndScnAreasSet(FolderNode):
         children: TREE = dict()
 
         for timing in config.get_filters_year(self.set):
-            children[f"values-{timing}"] = Values(
+            children[f"values-{timing}"] = AreaOutputSeriesMatrix(
                 self.context,
                 config.next_file(f"values-{timing}.txt"),
                 timing,
