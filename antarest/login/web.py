@@ -173,18 +173,17 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        gid = str(escape(id))
         params = RequestParameters(user=current_user)
         group = (
-            service.get_group_info(gid, params)
+            service.get_group_info(id, params)
             if details
-            else service.get_group(gid, params)
+            else service.get_group(id, params)
         )
         if group:
             return group.to_dict()
         else:
             return HTTPException(
-                status_code=404, detail=f"Group {gid} not found"
+                status_code=404, detail=f"Group {id} not found"
             )
 
     @bp.post("/groups", tags=[APITag.users])
@@ -193,23 +192,24 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
-        group = Group(id=group_dto.id, name=group_dto.name)
+        group = Group(
+            id=escape(group_dto.id) if group_dto.id else None,
+            name=group_dto.name,
+        )
         return service.save_group(group, params).to_dict()
 
     @bp.delete("/groups/{id}", tags=[APITag.users])
     def groups_delete(
         id: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
-        gid = str(escape(id))
         params = RequestParameters(user=current_user)
-        service.delete_group(gid, params)
+        service.delete_group(id, params)
         return id
 
     @bp.get("/roles/group/{group}", tags=[APITag.users])
     def roles_get_all(
         group: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
-        group = str(escape(group))
         params = RequestParameters(user=current_user)
         return [
             r.to_dict()
@@ -230,7 +230,6 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         group: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        group = str(escape(group))
         params = RequestParameters(user=current_user)
         service.delete_role(user, group, params)
         return user, group

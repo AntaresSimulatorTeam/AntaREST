@@ -8,11 +8,8 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.links.item.id import (
-    OutputSimulationModeMcAllLinksItemId as Id,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.links.item.values import (
-    OutputSimulationModeMcAllLinksItemValues as Values,
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
+    LinkOutputSeriesMatrix,
 )
 
 
@@ -31,14 +28,14 @@ class OutputSimulationModeMcAllLinksItem(FolderNode):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {}
         for timing in config.get_filters_synthesis(self.area, self.link):
-            children[f"values-{timing}"] = Values(
+            children[f"values-{timing}"] = LinkOutputSeriesMatrix(
                 self.context,
                 config.next_file(f"values-{timing}.txt"),
                 timing,
                 self.area,
                 self.link,
             )
-            children[f"id-{timing}"] = Id(
+            children[f"id-{timing}"] = LinkOutputSeriesMatrix(
                 self.context,
                 config.next_file(f"id-{timing}.txt"),
                 timing,

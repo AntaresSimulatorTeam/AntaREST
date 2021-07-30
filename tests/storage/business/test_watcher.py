@@ -72,7 +72,7 @@ def test_scan(tmp_path: Path):
 
     service.sync_studies_on_disk.assert_called_once_with(
         [
-            StudyFolder(c, "diese", [Group(id="tata")]),
+            StudyFolder(c, "diese", [Group(id="tata", name="tata")]),
         ]
     )
 

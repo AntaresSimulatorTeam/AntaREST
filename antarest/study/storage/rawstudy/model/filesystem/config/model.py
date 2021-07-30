@@ -117,6 +117,7 @@ class FileStudyTreeConfig(DTO):
         outputs: Optional[Dict[str, Simulation]] = None,
         bindings: Optional[List[str]] = None,
         store_new_set: bool = False,
+        archive_input_series: Optional[List[str]] = None,
     ):
         self.root_path = study_path
         self.path = study_path
@@ -126,6 +127,7 @@ class FileStudyTreeConfig(DTO):
         self.bindings = bindings or list()
         self.store_new_set = store_new_set
         self.study_id = study_id
+        self.archive_input_series = archive_input_series or list()
 
     def next_file(self, name: str) -> "FileStudyTreeConfig":
         copy = FileStudyTreeConfig(
@@ -136,6 +138,7 @@ class FileStudyTreeConfig(DTO):
             self.outputs,
             self.bindings,
             self.store_new_set,
+            self.archive_input_series,
         )
         copy.path = self.path / name
         return copy

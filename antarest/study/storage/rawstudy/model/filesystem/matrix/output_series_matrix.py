@@ -10,9 +10,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     IDateMatrixSerializer,
+    FactoryDateSerializer,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import (
     HeadWriter,
+    LinkHeadWriter,
+    AreaHeadWriter,
 )
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
@@ -101,3 +104,38 @@ class OutputSeriesMatrix(MatrixNode):
                 f"Output Series Matrix f{self.config.path} not exists"
             )
         return errors
+
+
+class LinkOutputSeriesMatrix(OutputSeriesMatrix):
+    def __init__(
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        freq: str,
+        src: str,
+        dest: str,
+    ):
+        super(LinkOutputSeriesMatrix, self).__init__(
+            context=context,
+            config=config,
+            date_serializer=FactoryDateSerializer.create(freq, src),
+            head_writer=LinkHeadWriter(src, dest, freq),
+            freq=freq,
+        )
+
+
+class AreaOutputSeriesMatrix(OutputSeriesMatrix):
+    def __init__(
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        freq: str,
+        area: str,
+    ):
+        super(AreaOutputSeriesMatrix, self).__init__(
+            context,
+            config=config,
+            date_serializer=FactoryDateSerializer.create(freq, area),
+            head_writer=AreaHeadWriter(area, freq),
+            freq=freq,
+        )

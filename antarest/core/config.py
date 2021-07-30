@@ -256,6 +256,7 @@ class Config:
     debug: bool = True
     resources_path: Path = Path()
     eventbus: EventBusConfig = EventBusConfig()
+    root_path: str = ""
 
     @staticmethod
     def from_dict(data: JSON, res: Optional[Path] = None) -> "Config":
@@ -279,6 +280,7 @@ class Config:
             logging=LoggingConfig.from_dict(data["logging"]),
             debug=data["debug"],
             resources_path=res or Path(),
+            root_path=data.get("root_path", ""),
             eventbus=EventBusConfig.from_dict(data["eventbus"])
             if "eventbus" in data
             else EventBusConfig(),

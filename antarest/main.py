@@ -5,7 +5,7 @@ import sys
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Tuple, Any, Optional, Union
+from typing import Tuple, Any, Optional, Union, List, Dict
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
@@ -20,8 +20,10 @@ from starlette.templating import Jinja2Templates
 
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
-from antarest.core.persistence import Base, upgrade_db
+from antarest.core.persistence import upgrade_db
+from antarest.dbmodel import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.utils import get_default_config_path, get_local_path
 from antarest.core.utils.web import tags_metadata
 from sqlalchemy import create_engine
 
@@ -70,17 +72,6 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_default_config_path() -> Optional[Path]:
-    config = Path("config.yaml")
-    if config.exists():
-        return config
-
-    config = Path.home() / ".antares/config.yaml"
-    if config.exists():
-        return config
-    return None
-
-
 def get_default_config_path_or_raise() -> Path:
     config_path = get_default_config_path()
     if not config_path:
@@ -111,14 +102,6 @@ def get_arguments() -> Tuple[Path, bool, bool, bool]:
         arguments.no_front,
         arguments.auto_upgrade_db,
     )
-
-
-def get_local_path() -> Path:
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        return Path(sys._MEIPASS)  # type: ignore
-    except Exception:
-        return Path(os.path.abspath(""))
 
 
 def configure_logger(config: Config) -> None:
@@ -152,7 +135,7 @@ def fastapi_app(
     resource_path: Optional[Path] = None,
     mount_front: bool = True,
     auto_upgrade_db: bool = False,
-) -> FastAPI:
+) -> Tuple[FastAPI, Dict[str, Any]]:
     res = resource_path or get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
     configure_logger(config)
@@ -176,6 +159,7 @@ def fastapi_app(
         title="AntaREST",
         version=__version__,
         docs_url=None,
+        root_path=config.root_path,
         openapi_tags=tags_metadata,
     )
 
@@ -232,6 +216,7 @@ def fastapi_app(
     @application.exception_handler(HTTPException)
     def handle_http_exception(request: Request, exc: HTTPException) -> Any:
         """Return JSON instead of HTML for HTTP errors."""
+        logger.error("HTTP Exception", exc_info=exc)
         return JSONResponse(
             content={
                 "description": exc.detail,
@@ -243,6 +228,7 @@ def fastapi_app(
     @application.exception_handler(Exception)
     def handle_all_exception(request: Request, exc: Exception) -> Any:
         """Return JSON instead of HTML for HTTP errors."""
+        logger.error("Unexpected Exception", exc_info=exc)
         return JSONResponse(
             content={
                 "description": "Unexpected server error",
@@ -250,6 +236,8 @@ def fastapi_app(
             },
             status_code=500,
         )
+
+    services: Dict[str, Any] = {}
 
     event_bus = build_eventbus(application, config)
     user_service = build_login(application, config, event_bus=event_bus)
@@ -264,14 +252,20 @@ def fastapi_app(
         event_bus=event_bus,
     )
 
-    build_launcher(
+    launcher = build_launcher(
         application,
         config,
         service_storage=storage,
         event_bus=event_bus,
     )
 
-    return application
+    services["event_bus"] = event_bus
+    services["study"] = storage
+    services["launcher"] = launcher
+    services["matrix"] = matrix_service
+    services["user"] = user_service
+
+    return application, services
 
 
 if __name__ == "__main__":
@@ -281,7 +275,7 @@ if __name__ == "__main__":
         print(__version__)
         sys.exit()
     else:
-        app = fastapi_app(
+        app, _ = fastapi_app(
             config_file,
             mount_front=not no_front,
             auto_upgrade_db=auto_upgrade_db,

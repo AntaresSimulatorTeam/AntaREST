@@ -33,13 +33,12 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 interface PropTypes {
   study: string;
   url: string;
-  studyData: any;
-  setStudyData: (elm: any) => void;
+  refreshView: () => void;
   filterOut: Array<string>;
 }
 
 const StudyMatrixView = (props: PropTypes) => {
-  const { study, url, filterOut, studyData, setStudyData } = props;
+  const { study, url, filterOut, refreshView } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
@@ -79,8 +78,7 @@ const StudyMatrixView = (props: PropTypes) => {
       logErr('Failed to import file', file, e);
       enqueueSnackbar(t('studymanager:failtosavedata'), { variant: 'error' });
     }
-    const newData = { ...studyData };
-    setStudyData(newData);
+    refreshView();
     enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
   };
 

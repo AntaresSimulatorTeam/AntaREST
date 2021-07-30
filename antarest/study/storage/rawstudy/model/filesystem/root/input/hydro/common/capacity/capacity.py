@@ -5,8 +5,8 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity.item import (
-    InputHydroCommonCapacityItem,
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
 )
 
 
@@ -22,7 +22,7 @@ class InputHydroCommonCapacity(FolderNode):
                 "waterValues",
             ]:
                 name = f"{file}_{area}"
-                children[name] = InputHydroCommonCapacityItem(
+                children[name] = InputSeriesMatrix(
                     self.context, config.next_file(f"{name}.txt")
                 )
         return children

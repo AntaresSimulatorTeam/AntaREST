@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -10,6 +11,8 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class RawFileNode(LazyNode[bytes, bytes, str]):
@@ -38,7 +41,11 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> bytes:
-        return self.config.path.read_bytes()
+        if self.config.path.exists():
+            return self.config.path.read_bytes()
+
+        logger.warning(f"Missing file {self.config.path}")
+        return b""
 
     def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
         self.config.path.parent.mkdir(exist_ok=True, parents=True)
