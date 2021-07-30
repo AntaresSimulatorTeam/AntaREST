@@ -5,15 +5,15 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.series.area.thermal.series import (
-    InputThermalSeriesAreaThermalSeries,
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
 )
 
 
 class InputThermalSeriesAreaThermal(FolderNode):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {
-            "series": InputThermalSeriesAreaThermalSeries(
+            "series": InputSeriesMatrix(
                 self.context, config.next_file("series.txt")
             ),
         }
