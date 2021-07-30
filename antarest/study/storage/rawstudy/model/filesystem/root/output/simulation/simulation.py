@@ -30,6 +30,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.sim
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.simulation_log import (
     OutputSimulationSimulationLog,
 )
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_generator.ts_generator import (
+    OutputSimulationTsGenerator,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers import (
     OutputSimulationTsNumbers,
 )
@@ -73,6 +76,11 @@ class OutputSimulation(FolderNode):
             if config.store_new_set:
                 children["ts-numbers"] = OutputSimulationTsNumbers(
                     self.context, config.next_file("ts-numbers")
+                )
+
+            if config.archive_input_series:
+                children["ts-generator"] = OutputSimulationTsGenerator(
+                    self.context, config.next_file("ts-generator")
                 )
 
             if self.simulation.mode == "economy":
