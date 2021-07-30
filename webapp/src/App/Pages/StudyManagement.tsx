@@ -9,7 +9,6 @@ import RefreshIcon from '@material-ui/icons/Refresh';
 import SortByAlphaIcon from '@material-ui/icons/SortByAlpha';
 import DateRangeIcon from '@material-ui/icons/DateRange';
 import debug from 'debug';
-import moment from 'moment';
 import { AppState } from '../reducers';
 import StudyCreationTools from '../../components/StudyCreationTools';
 import StudyListing from '../../components/StudyListing';
@@ -80,38 +79,12 @@ const StudyManagement = (props: PropTypes) => {
   const sortList = [{ id: t('studymanager:sortByName'), elm: () => <SortByAlphaIcon /> },
     { id: t('studymanager:sortByDate'), elm: () => <DateRangeIcon /> }];
 
-  const sortStudies = (sortItem: SortItem) => {
-    const tmpStudies: Array<StudyMetadata> = ([] as Array<StudyMetadata>).concat(filteredStudies);
-    if (sortItem.status !== 'NONE') {
-      tmpStudies.sort((studyA: StudyMetadata, studyB: StudyMetadata) => {
-        const firstElm = sortItem.status === 'INCREASE' ? studyA : studyB;
-        const secondElm = sortItem.status === 'INCREASE' ? studyB : studyA;
-        if (sortItem.element.id === sortList[0].id) {
-          return firstElm.name.localeCompare(secondElm.name);
-        }
-        return (moment(firstElm.modificationDate).isAfter(moment(secondElm.modificationDate)) ? -1 : 1);
-      });
-      setFilteredStudies(tmpStudies);
-    } else {
-      setFilteredStudies(studies);
-    }
-    setCurrentSortItem(sortItem);
-  };
-
   const getAllStudies = async (refresh: boolean) => {
-    if (currentSortItem) {
-      sortStudies(currentSortItem);
-    }
     setLoaded(false);
     try {
       if (studies.length === 0 || refresh) {
         const allStudies = await getStudies();
         loadStudies(allStudies);
-
-        if (currentSortItem) {
-          setFilteredStudies(allStudies);
-          sortStudies(currentSortItem);
-        }
       }
     } catch (e) {
       logError('woops', e);
@@ -150,8 +123,8 @@ const StudyManagement = (props: PropTypes) => {
       <div className={classes.header}>
         <StudyCreationTools />
         <div className={classes.view}>
-          <StudySearchTool setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
-          <SortView itemNames={sortList} onClick={(item: SortItem) => sortStudies(item)} />
+          <StudySearchTool sortList={sortList} sortItem={currentSortItem} setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
+          <SortView itemNames={sortList} onClick={(item: SortItem) => setCurrentSortItem({ ...item })} />
           <Tooltip title={t('studymanager:refresh') as string} style={{ marginRight: theme.spacing(0.5) }}>
             <Button
               color="primary"
