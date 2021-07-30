@@ -60,6 +60,7 @@ def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
         db_url,
     )
 
-    return fastapi_app(
+    app, _ = fastapi_app(
         config_path, project_path / "resources", mount_front=False
     )
+    return app

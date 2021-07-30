@@ -5,7 +5,7 @@ import sys
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Tuple, Any, Optional, Union
+from typing import Tuple, Any, Optional, Union, List, Dict
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
@@ -135,7 +135,7 @@ def fastapi_app(
     resource_path: Optional[Path] = None,
     mount_front: bool = True,
     auto_upgrade_db: bool = False,
-) -> FastAPI:
+) -> Tuple[FastAPI, Dict[str, Any]]:
     res = resource_path or get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
     configure_logger(config)
@@ -237,6 +237,8 @@ def fastapi_app(
             status_code=500,
         )
 
+    services: Dict[str, Any] = {}
+
     event_bus = build_eventbus(application, config)
     user_service = build_login(application, config, event_bus=event_bus)
 
@@ -250,14 +252,20 @@ def fastapi_app(
         event_bus=event_bus,
     )
 
-    build_launcher(
+    launcher = build_launcher(
         application,
         config,
         service_storage=storage,
         event_bus=event_bus,
     )
 
-    return application
+    services["event_bus"] = event_bus
+    services["study"] = storage
+    services["launcher"] = launcher
+    services["matrix"] = matrix_service
+    services["user"] = user_service
+
+    return application, services
 
 
 if __name__ == "__main__":
@@ -267,7 +275,7 @@ if __name__ == "__main__":
         print(__version__)
         sys.exit()
     else:
-        app = fastapi_app(
+        app, _ = fastapi_app(
             config_file,
             mount_front=not no_front,
             auto_upgrade_db=auto_upgrade_db,
