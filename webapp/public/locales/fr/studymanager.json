@@ -12,5 +12,8 @@
   "failtosavedata": "Erreur lors de la sauvegarde des données",
   "failtocopystudy": "Erreur lors de la copie de l'étude",
   "studycopiedsuccess": "Etude copiée avec succès",
-  "permission": "Permission"
+  "permission": "Permission",
+  "refresh": "Charger les études",
+  "sortByName": "Trier par nom",
+  "sortByDate": "Trier par date"
 }

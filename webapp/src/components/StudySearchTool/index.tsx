@@ -4,8 +4,10 @@ import { connect, ConnectedProps } from 'react-redux';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { InputBase, makeStyles, Theme, createStyles, MenuItem, Select } from '@material-ui/core';
+import moment from 'moment';
 import { AppState } from '../../App/reducers';
 import { StudyMetadata } from '../../common/types';
+import { SortElement, SortItem } from '../ui/SortView/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -53,30 +55,47 @@ type ReduxProps = ConnectedProps<typeof connector>;
 interface OwnProps {
   setLoading: (isLoading: boolean) => void;
   setFiltered: (studies: StudyMetadata[]) => void;
+  sortItem: SortItem | undefined;
+  sortList: Array<SortElement>;
 }
 type PropTypes = ReduxProps & OwnProps;
 
 const StudySearchTool = (props: PropTypes) => {
-  const { setLoading, setFiltered, studies } = props;
+  const { setLoading, setFiltered, sortItem, sortList, studies } = props;
   const classes = useStyles();
   const [t] = useTranslation();
   const { register, handleSubmit, watch, control } = useForm<Inputs>({
     defaultValues: { versions: [] },
   });
 
-  const filter = (studylist: StudyMetadata[], filters: Inputs): StudyMetadata[] => studylist
+  const sortStudies = (): Array<StudyMetadata> => {
+    const tmpStudies: Array<StudyMetadata> = ([] as Array<StudyMetadata>).concat(studies);
+    if (sortItem && sortItem.status !== 'NONE') {
+      tmpStudies.sort((studyA: StudyMetadata, studyB: StudyMetadata) => {
+        const firstElm = sortItem.status === 'INCREASE' ? studyA : studyB;
+        const secondElm = sortItem.status === 'INCREASE' ? studyB : studyA;
+        if (sortItem.element.id === sortList[0].id) {
+          return firstElm.name.localeCompare(secondElm.name);
+        }
+        return (moment(firstElm.modificationDate).isAfter(moment(secondElm.modificationDate)) ? 1 : -1);
+      });
+    }
+    return tmpStudies;
+  };
+
+  const filter = (filters: Inputs): StudyMetadata[] => sortStudies()
     .filter((s) => !filters.searchstring || s.name.search(new RegExp(filters.searchstring, 'i')) !== -1)
     .filter((s) => filters.versions.length === 0 || filters.versions.indexOf(s.version) !== -1);
 
   const onSubmit = async (data: Inputs) => {
     setLoading(true);
-    setFiltered(filter(studies, data));
+    setFiltered(filter(data));
     setLoading(false);
   };
 
   useEffect(() => {
-    setFiltered(filter(studies, watch()));
-  }, [studies]);
+    setFiltered(filter(watch()));
+  }, [studies, sortItem]);
 
   return (
     <div className={classes.root}>

@@ -52,7 +52,6 @@ const StudyListing = (props: PropTypes) => {
   const { studies, removeStudy, isList } = props;
   const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
-
   const launchStudy = async (study: StudyMetadata) => {
     try {
       await callLaunchStudy(study.id);
