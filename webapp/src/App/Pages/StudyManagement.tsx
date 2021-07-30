@@ -2,22 +2,24 @@
 import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { makeStyles, createStyles, Tooltip } from '@material-ui/core';
+import { makeStyles, createStyles, Tooltip, Button } from '@material-ui/core';
 import ListIcon from '@material-ui/icons/List';
 import ViewCompactIcon from '@material-ui/icons/ViewCompact';
 import RefreshIcon from '@material-ui/icons/Refresh';
+import SortByAlphaIcon from '@material-ui/icons/SortByAlpha';
+import DateRangeIcon from '@material-ui/icons/DateRange';
 import debug from 'debug';
 import moment from 'moment';
 import { AppState } from '../reducers';
 import StudyCreationTools from '../../components/StudyCreationTools';
 import StudyListing from '../../components/StudyListing';
-import { initStudies } from '../../ducks/study';
-import { getStudies } from '../../services/api/study';
+import { initStudies, addStudies, removeStudies } from '../../ducks/study';
+import { getStudies, getStudyMetadata } from '../../services/api/study';
 import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
 import SortView from '../../components/ui/SortView';
 import { SortItem } from '../../components/ui/SortView/utils';
 import StudySearchTool from '../../components/StudySearchTool';
-import { StudyMetadata, WSMessage } from '../../common/types';
+import { StudyMetadata, StudySummary, WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 import theme from '../theme';
 
@@ -57,6 +59,8 @@ const mapState = (state: AppState) => ({
 const mapDispatch = ({
   loadStudies: initStudies,
   addWsListener: addListener,
+  addStudy: (study: StudyMetadata) => addStudies([study]),
+  deleteStudy: (id: string) => removeStudies([id]),
   removeWsListener: removeListener,
 });
 
@@ -65,7 +69,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const StudyManagement = (props: PropTypes) => {
-  const { studies, loadStudies, addWsListener, removeWsListener } = props;
+  const { studies, addStudy, deleteStudy, loadStudies, addWsListener, removeWsListener } = props;
   const classes = useStyles();
   const [t] = useTranslation();
   const [filteredStudies, setFilteredStudies] = useState<StudyMetadata[]>(studies);
@@ -73,7 +77,8 @@ const StudyManagement = (props: PropTypes) => {
   const [isList, setViewState] = useState(true);
   const [currentSortItem, setCurrentSortItem] = useState<SortItem>();
 
-  const sortList = [t('studymanager:sortByName'), t('studymanager:sortByDate')];
+  const sortList = [{ id: t('studymanager:sortByName'), elm: () => <SortByAlphaIcon /> },
+    { id: t('studymanager:sortByDate'), elm: () => <DateRangeIcon /> }];
 
   const sortStudies = (sortItem: SortItem) => {
     const tmpStudies: Array<StudyMetadata> = ([] as Array<StudyMetadata>).concat(filteredStudies);
@@ -81,29 +86,32 @@ const StudyManagement = (props: PropTypes) => {
       tmpStudies.sort((studyA: StudyMetadata, studyB: StudyMetadata) => {
         const firstElm = sortItem.status === 'INCREASE' ? studyA : studyB;
         const secondElm = sortItem.status === 'INCREASE' ? studyB : studyA;
-        if (sortItem.name === sortList[0]) {
+        if (sortItem.element.id === sortList[0].id) {
           return firstElm.name.localeCompare(secondElm.name);
         }
         return (moment(firstElm.modificationDate).isAfter(moment(secondElm.modificationDate)) ? -1 : 1);
       });
+      setFilteredStudies(tmpStudies);
+    } else {
+      setFilteredStudies(studies);
     }
-    setFilteredStudies(tmpStudies);
     setCurrentSortItem(sortItem);
   };
 
-  const getAllStudies = async () => {
-    const allStudies = await getStudies();
-    loadStudies(allStudies);
-
+  const getAllStudies = async (refresh: boolean) => {
     if (currentSortItem) {
       sortStudies(currentSortItem);
     }
-  };
-  const init = async () => {
     setLoaded(false);
     try {
-      if (studies.length === 0) {
-        await getAllStudies();
+      if (studies.length === 0 || refresh) {
+        const allStudies = await getStudies();
+        loadStudies(allStudies);
+
+        if (currentSortItem) {
+          setFilteredStudies(allStudies);
+          sortStudies(currentSortItem);
+        }
       }
     } catch (e) {
       logError('woops', e);
@@ -112,13 +120,28 @@ const StudyManagement = (props: PropTypes) => {
     }
   };
 
-  const listen = (ev: WSMessage) => {
+  const listen = async (ev: WSMessage) => {
+    const studySummary = ev.payload as StudySummary;
+    switch (ev.type) {
+      case WSEvent.STUDY_CREATED:
+        addStudy(await getStudyMetadata(studySummary.id));
+        break;
+      case WSEvent.STUDY_DELETED:
+        deleteStudy(studySummary.id);
+        break;
+      case WSEvent.STUDY_EDITED:
+        addStudy(await getStudyMetadata(studySummary.id));
+        break;
+
+      default:
+        break;
+    }
     console.log(ev);
   };
 
   useEffect(() => {
     addWsListener(listen);
-    init();
+    getAllStudies(false);
     return () => removeWsListener(listen);
   }, []);
 
@@ -130,16 +153,14 @@ const StudyManagement = (props: PropTypes) => {
           <StudySearchTool setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
           <SortView itemNames={sortList} onClick={(item: SortItem) => sortStudies(item)} />
           <Tooltip title={t('studymanager:refresh') as string} style={{ marginRight: theme.spacing(0.5) }}>
-            <RefreshIcon className={classes.icon} onClick={() => getAllStudies()} />
+            <RefreshIcon className={classes.icon} onClick={() => getAllStudies(true)} />
           </Tooltip>
-          {
-              isList ? (
-                <ViewCompactIcon
-                  className={classes.icon}
-                  onClick={() => setViewState(!isList)}
-                />
-              ) : <ListIcon className={classes.icon} onClick={() => setViewState(!isList)} />
-            }
+          <Button
+            color="primary"
+            onClick={() => setViewState(!isList)}
+          >
+            {isList ? <ViewCompactIcon /> : <ListIcon />}
+          </Button>
         </div>
       </div>
       {!loaded && <MainContentLoader />}

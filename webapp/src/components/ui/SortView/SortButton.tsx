@@ -3,7 +3,7 @@ import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
-import { SortStatus } from './utils';
+import { SortStatus, SortElement } from './utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -11,19 +11,19 @@ const useStyles = makeStyles((theme: Theme) =>
       backgroundColor: '#00000000',
       border: 'none',
       color: theme.palette.primary.main,
-      marginLeft: theme.spacing(0.5),
+      padding: 0,
     },
   }));
 
   interface PropsType {
     status: SortStatus;
-    label: string;
+    element: SortElement;
     onClick: () => void;
   }
 
 const SortButton = (props: PropsType) => {
   const classes = useStyles(props);
-  const { label, status, onClick } = props;
+  const { element, status, onClick } = props;
 
   const getIcon = (): JSX.Element => {
     switch (status) {
@@ -42,7 +42,7 @@ const SortButton = (props: PropsType) => {
       onClick={onClick}
       endIcon={getIcon()}
     >
-      {label}
+      {typeof element.elm === 'string' ? element : element.elm()}
     </Button>
   );
 };

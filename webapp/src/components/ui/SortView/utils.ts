@@ -1,5 +1,10 @@
+export interface SortElement {
+    id: string;
+    elm: string | (() => JSX.Element);
+}
+
 export interface SortItem {
-    name: string;
+    element: SortElement;
     status: SortStatus;
 }
 
