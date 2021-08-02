@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { createStyles, makeStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import SortButton from './SortButton';
 import { SortStatus, SortItem, SortElement } from './utils';
 
-const useStyles = makeStyles(() =>
+const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       display: 'flex',
       flexFlow: 'row nowrap',
       justifyContent: 'flex-start',
       alignItems: 'center',
+      marginLeft: theme.spacing(1),
     },
   }));
 
@@ -37,7 +38,6 @@ const SortView = (props: PropsType) => {
         tmpItems[index].status = 'INCREASE';
         break;
     }
-
     setItems(tmpItems);
     onClick(tmpItems[index]);
   };

@@ -1,19 +1,18 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { InputBase, makeStyles, Theme, createStyles, MenuItem, Select } from '@material-ui/core';
+import { InputBase, makeStyles, Theme, createStyles, MenuItem, Select, FormControl, InputLabel, Input, Checkbox, ListItemText } from '@material-ui/core';
 import moment from 'moment';
 import { AppState } from '../../App/reducers';
-import { StudyMetadata } from '../../common/types';
+import { GroupDTO, StudyMetadata, UserDTO } from '../../common/types';
 import { SortElement, SortItem } from '../ui/SortView/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       marginTop: theme.spacing(1),
-      marginBottom: theme.spacing(1),
+      marginBottom: theme.spacing(2),
       marginLeft: theme.spacing(3),
       marginRight: theme.spacing(2),
       display: 'flex',
@@ -28,20 +27,20 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     searchbar: {
       flex: '80% 1 1',
-      borderRadius: '4px',
       padding: theme.spacing(1),
-      background: '#e6e6e6',
+      border: `2px solid ${theme.palette.primary.main}`,
     },
     versioninput: {
       margin: theme.spacing(1),
+      minWidth: '200px',
+      border: `2px solid ${theme.palette.primary.main}`,
+      borderRadius: theme.shape.borderRadius,
       flex: '10% 0 0',
     },
+    selectLabel: {
+      padding: theme.spacing(0.5),
+    },
   }));
-
-interface Inputs {
-  searchstring: string;
-  versions: string[];
-}
 
 const mapState = (state: AppState) => ({
   studies: state.study.studies,
@@ -54,19 +53,27 @@ const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
 interface OwnProps {
   setLoading: (isLoading: boolean) => void;
-  setFiltered: (studies: StudyMetadata[]) => void;
+  setFiltered: (studies: Array<StudyMetadata>) => void;
   sortItem: SortItem | undefined;
   sortList: Array<SortElement>;
+  userFilter: UserDTO | undefined;
+  groupFilter: GroupDTO | undefined;
+  filterManaged: boolean;
 }
 type PropTypes = ReduxProps & OwnProps;
 
 const StudySearchTool = (props: PropTypes) => {
-  const { setLoading, setFiltered, sortItem, sortList, studies } = props;
+  const { filterManaged, setLoading, setFiltered, sortItem, sortList, studies, userFilter, groupFilter } = props;
   const classes = useStyles();
   const [t] = useTranslation();
-  const { register, handleSubmit, watch, control } = useForm<Inputs>({
-    defaultValues: { versions: [] },
-  });
+  const [versions, setVersions] = useState<Array<string>>([]);
+  const [searchName, setSearchName] = useState<string>('');
+
+  const versionList = [{ key: '640', value: '6.4.0' },
+    { key: '700', value: '7.0.0' },
+    { key: '710', value: '7.1.0' },
+    { key: '720', value: '7.2.0' },
+    { key: '800', value: '8.0.0' }];
 
   const sortStudies = (): Array<StudyMetadata> => {
     const tmpStudies: Array<StudyMetadata> = ([] as Array<StudyMetadata>).concat(studies);
@@ -83,54 +90,57 @@ const StudySearchTool = (props: PropTypes) => {
     return tmpStudies;
   };
 
-  const filter = (filters: Inputs): StudyMetadata[] => sortStudies()
-    .filter((s) => !filters.searchstring || s.name.search(new RegExp(filters.searchstring, 'i')) !== -1)
-    .filter((s) => filters.versions.length === 0 || filters.versions.indexOf(s.version) !== -1);
+  const filter = (currentName: string, currentVersions: Array<string>): StudyMetadata[] => sortStudies()
+    .filter((s) => !currentName || s.name.search(new RegExp(currentName, 'i')) !== -1)
+    .filter((s) => currentVersions.length === 0 || currentVersions.indexOf(s.version) >= 0)
+    .filter((s) => (userFilter ? (s.owner.id && userFilter.id === s.owner.id) : true))
+    .filter((s) => (groupFilter ? s.groups.findIndex((elm) => elm.id === groupFilter.id) >= 0 : true))
+    .filter((s) => (filterManaged ? s.managed : true));
 
-  const onSubmit = async (data: Inputs) => {
+  const onChange = async (currentName: string, currentVersions: Array<string>) => {
     setLoading(true);
-    setFiltered(filter(data));
+    const f = filter(currentName, currentVersions);
+    setFiltered(f);
     setLoading(false);
+    if (currentName !== searchName) setSearchName(currentName);
+    if (currentVersions !== versions) setVersions(currentVersions);
   };
 
   useEffect(() => {
-    setFiltered(filter(watch()));
-  }, [studies, sortItem]);
+    const f = filter(searchName, versions);
+    setFiltered(f);
+  }, [studies, sortItem, userFilter, groupFilter, filterManaged]);
 
   return (
     <div className={classes.root}>
-      <form className={classes.form} onSubmit={handleSubmit(onSubmit)}>
-        <InputBase
-          className={classes.searchbar}
-          placeholder={`${t('studymanager:searchstudy')}...`}
-          onChange={() => onSubmit(watch())}
-          inputProps={{
-            'aria-label': 'search studies',
-            ref: register,
-            name: 'searchstring',
-          }}
-        />
-        <Controller
-          render={({ onChange, onBlur, value }) => (
-            <Select
-              className={classes.versioninput}
-              multiple
-              onChange={(e) => { onChange(e); onSubmit(watch()); }}
-              onBlur={onBlur}
-              value={value}
-            >
-              <MenuItem key="640" value="640">6.4.0</MenuItem>
-              <MenuItem key="700" value="700">7.0.0</MenuItem>
-              <MenuItem key="710" value="710">7.1.0</MenuItem>
-              <MenuItem key="720" value="720">7.2.0</MenuItem>
-              <MenuItem key="800" value="800">8.0.0</MenuItem>
-            </Select>
-          )}
-          name="versions"
-          defaultValue={[]}
-          control={control}
-        />
-      </form>
+      <InputBase
+        className={classes.searchbar}
+        placeholder={`${t('studymanager:searchstudy')}...`}
+        onChange={(e) => onChange(e.target.value as string, versions)}
+        inputProps={{
+          'aria-label': 'search studies',
+          name: 'searchstring',
+        }}
+      />
+      <FormControl className={classes.versioninput}>
+        <InputLabel className={classes.selectLabel} id="versions">{t('studymanager:versionLabel')}</InputLabel>
+        <Select
+          labelId="versions"
+          id="version-checkbox"
+          multiple
+          value={versions}
+          onChange={(e) => onChange(searchName, e.target.value as Array<string>)}
+          input={<Input />}
+          renderValue={(selected) => (selected as Array<string>).join(', ')}
+        >
+          {versionList.map((elm) => (
+            <MenuItem key={elm.value} value={elm.key}>
+              <Checkbox checked={versions.indexOf(elm.key) > -1} />
+              <ListItemText primary={elm.value} />
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
     </div>
   );
 };

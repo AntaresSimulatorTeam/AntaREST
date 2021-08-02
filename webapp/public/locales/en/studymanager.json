@@ -21,5 +21,9 @@
   "permission": "Permission",
   "refresh": "Refresh studies",
   "sortByName": "Sort by name",
-  "sortByDate": "Sort by date"
+  "sortByDate": "Sort by date",
+  "managedStudiesFilter": "Managed studies",
+  "userFilter": "Filter by user",
+  "groupFilter": "Filter by group",
+  "versionLabel": "Version"
 }
