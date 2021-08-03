@@ -38,7 +38,27 @@ const useStyles = makeStyles((theme: Theme) =>
       flex: '10% 0 0',
     },
     selectLabel: {
-      padding: theme.spacing(0.5),
+      marginBottom: theme.spacing(1),
+      marginLeft: theme.spacing(1),
+      boxSizing: 'border-box',
+    },
+    input: {
+      paddingLeft: theme.spacing(1),
+      border: '0px',
+      backgroundColor: '#00000000',
+      '&:hover': {
+        border: '0px',
+        backgroundColor: '#00000000',
+      },
+    },
+    select: {
+      border: '0px',
+      paddingLeft: theme.spacing(1),
+      backgroundColor: '#00000000',
+      '&:hover': {
+        border: 0,
+        backgroundColor: '#00000000',
+      },
     },
   }));
 
@@ -130,8 +150,9 @@ const StudySearchTool = (props: PropTypes) => {
           multiple
           value={versions}
           onChange={(e) => onChange(searchName, e.target.value as Array<string>)}
-          input={<Input />}
+          input={<Input className={classes.input} />}
           renderValue={(selected) => (selected as Array<string>).join(', ')}
+          className={classes.select}
         >
           {versionList.map((elm) => (
             <MenuItem key={elm.value} value={elm.key}>
