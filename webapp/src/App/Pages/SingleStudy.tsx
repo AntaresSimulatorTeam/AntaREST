@@ -1,5 +1,5 @@
 import debug from 'debug';
-import React, { ReactNode, useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Breadcrumbs, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,7 @@ import { getStudyJobs, getStudyMetadata, mapLaunchJobDTO } from '../../services/
 import PulsingDot from '../../components/ui/PulsingDot';
 import GenericTabView from '../../components/ui/NavComponents/GenericTabView';
 import Informations from '../../components/SingleStudy/Informations';
-import { LaunchJob, StudyMetadata, WSMessage } from '../../common/types';
+import { LaunchJob, StudyMetadata, WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 
 const logError = debug('antares:singlestudyview:error');
@@ -62,6 +62,15 @@ const SingleStudyView = (props: PropTypes) => {
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
   const { enqueueSnackbar } = useSnackbar();
 
+  const fetchStudyInfo = useCallback(async () => {
+    try {
+      const studyMetadata = await getStudyMetadata(studyId);
+      setStudy(studyMetadata);
+    } catch (e) {
+      enqueueSnackbar(t('studymanager:failtoloadstudy'), { variant: 'error' });
+    }
+  }, [studyId, enqueueSnackbar, t]);
+
   const fetchStudyJob = async (sid: string) => {
     try {
       const data = await getStudyJobs(sid);
@@ -80,13 +89,16 @@ const SingleStudyView = (props: PropTypes) => {
 
   const handleEvents = useCallback(
     (msg: WSMessage): void => {
-      if (msg.type === 'STUDY_JOB_STARTED') {
+      if (msg.type === WSEvent.STUDY_JOB_STARTED) {
         const newJob = mapLaunchJobDTO(msg.payload);
         if (newJob.studyId === studyId) {
           const existingJobs = studyJobs || [];
           setStudyJobs([newJob].concat(existingJobs));
         }
-      } else if (msg.type === 'STUDY_JOB_STATUS_UPDATE' || msg.type === 'STUDY_JOB_COMPLETED') {
+      } else if (
+        msg.type === WSEvent.STUDY_JOB_STATUS_UPDATE ||
+        msg.type === WSEvent.STUDY_JOB_COMPLETED
+      ) {
         const newJob = mapLaunchJobDTO(msg.payload);
         if (newJob.studyId === studyId) {
           const existingJobs = studyJobs || [];
@@ -103,27 +115,21 @@ const SingleStudyView = (props: PropTypes) => {
             );
           }
         }
-      } else if (msg.type === 'STUDY_JOB_LOG_UPDATE') {
+      } else if (msg.type === WSEvent.STUDY_JOB_LOG_UPDATE) {
         console.log(msg.payload);
+      } else if (msg.type === WSEvent.STUDY_EDITED) {
+        fetchStudyInfo();
       }
     },
-    [studyJobs, studyId],
+    [studyJobs, studyId, fetchStudyInfo],
   );
 
   useEffect(() => {
     if (studyId) {
-      const init = async () => {
-        try {
-          const studyMetadata = await getStudyMetadata(studyId);
-          setStudy(studyMetadata);
-        } catch (e) {
-          enqueueSnackbar(t('studymanager:failtoloadstudy'), { variant: 'error' });
-        }
-      };
-      init();
+      fetchStudyInfo();
       fetchStudyJob(studyId);
     }
-  }, [studyId, t, enqueueSnackbar]);
+  }, [studyId, t, enqueueSnackbar, fetchStudyInfo]);
 
   useEffect(() => {
     addWsListener(handleEvents);
@@ -134,8 +140,8 @@ const SingleStudyView = (props: PropTypes) => {
     'singlestudy:informations': () =>
       (study ? <Informations study={study} jobs={studyJobs || []} /> : <div />),
   };
-  if (!study?.archived) {
-    navData['singlestudy:treeView'] = () => <StudyView study={studyId} />;
+  if (study && !study.archived) {
+    navData['singlestudy:treeView'] = () => <StudyView study={study} />;
   }
 
   return (

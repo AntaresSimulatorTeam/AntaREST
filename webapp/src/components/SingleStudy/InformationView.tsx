@@ -29,6 +29,8 @@ import {
 import {
   deleteStudy as callDeleteStudy,
   launchStudy as callLaunchStudy,
+  archiveStudy as callArchiveStudy,
+  unarchiveStudy as callUnarchiveStudy,
   getExportUrl,
 } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
@@ -36,6 +38,7 @@ import { isUserAdmin } from '../../services/utils';
 import DownloadLink from '../ui/DownloadLink';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import PermissionModal from './PermissionModal';
+import ButtonLoader from '../ui/ButtonLoader';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -83,12 +86,11 @@ const useStyles = makeStyles((theme: Theme) =>
       width: '100%',
       display: 'flex',
       flexFlow: 'column nowrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       alignItems: 'center',
       boxSizing: 'border-box',
     },
     scrollInfoContainer: {
-      flex: 1,
       marginBottom: theme.spacing(1),
       width: '100%',
       display: 'flex',
@@ -171,7 +173,7 @@ const useStyles = makeStyles((theme: Theme) =>
       fontSize: '0.8em',
     },
     buttonContainer: {
-      flex: '0 0 100px',
+      flex: '1 0 100px',
       width: '100%',
       display: 'flex',
       flexFlow: 'column nowrap',
@@ -189,6 +191,7 @@ const useStyles = makeStyles((theme: Theme) =>
       alignItems: 'flex-end',
       boxSizing: 'border-box',
     },
+    archivingButton: { ...buttonStyle(theme, theme.palette.primary.light), boxSizing: 'border-box' },
     launchButton: { ...buttonStyle(theme, theme.palette.primary.main), boxSizing: 'border-box' },
     exportButton: { ...buttonStyle(theme, theme.palette.primary.main), boxSizing: 'border-box' },
     deleteButton: {
@@ -244,6 +247,24 @@ const InformationView = (props: PropTypes) => {
         enqueueSnackbar(t('studymanager:failtorunstudy'), { variant: 'error' });
         logError('Failed to launch study', study, e);
       }
+    }
+  };
+
+  const archiveStudy = async () => {
+    try {
+      await callArchiveStudy(study.id);
+      enqueueSnackbar(t('studymanager:archivesuccess', { studyname: study.name }), { variant: 'success' });
+    } catch (e) {
+      enqueueSnackbar(t('studymanager:archivesuccess', { studyname: study.name }), { variant: 'error' });
+    }
+  };
+
+  const unarchiveStudy = async () => {
+    try {
+      await callUnarchiveStudy(study.id);
+      enqueueSnackbar(t('studymanager:unarchivesuccess', { studyname: study.name }), { variant: 'success' });
+    } catch (e) {
+      enqueueSnackbar(t('studymanager:unarchivefailure', { studyname: study.name }), { variant: 'error' });
     }
   };
 
@@ -398,7 +419,11 @@ const InformationView = (props: PropTypes) => {
           </div>
         </div>
         <div className={classes.buttonContainer}>
-          {!study.archived && (
+          {study.archived ? (
+            <ButtonLoader className={classes.archivingButton} onClick={unarchiveStudy}>
+              {t('studymanager:unarchive')}
+            </ButtonLoader>
+          ) : (
             <>
               <Button className={classes.launchButton} onClick={launchStudy}>
                 {t('main:launch')}
@@ -406,6 +431,9 @@ const InformationView = (props: PropTypes) => {
               <DownloadLink url={getExportUrl(study.id, false)}>
                 <Button className={classes.exportButton}>{t('main:export')}</Button>
               </DownloadLink>
+              <ButtonLoader className={classes.archivingButton} onClick={archiveStudy}>
+                {t('studymanager:archive')}
+              </ButtonLoader>
             </>
           )}
         </div>
