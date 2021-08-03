@@ -2,7 +2,7 @@ import React from 'react';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import InformationView from './InformationView';
 import TaskView from './TaskView';
-import { LaunchJob } from '../../common/types';
+import { LaunchJob, StudyMetadata } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -19,16 +19,16 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 }));
 
 interface PropTypes {
-    studyId: string;
+    study: StudyMetadata;
     jobs: LaunchJob[];
 }
 
 const Informations = (props: PropTypes) => {
-  const { studyId, jobs } = props;
+  const { study, jobs } = props;
   const classes = useStyles();
   return (
     <div className={classes.root}>
-      <InformationView studyId={studyId} />
+      <InformationView study={study} />
       <TaskView jobs={jobs} />
     </div>
   );

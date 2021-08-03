@@ -24,6 +24,7 @@ export interface StudyMetadataDTO {
   version: number;
   workspace: string;
   managed: boolean;
+  archived: boolean;
   groups: Array<{ id: string; name: string }>;
   public_mode: StudyPublicMode;
 }
@@ -37,6 +38,7 @@ export interface StudyMetadata {
   version: string;
   workspace: string;
   managed: boolean;
+  archived: boolean;
   groups: Array<{ id: string; name: string }>;
   publicMode: StudyPublicMode;
 }

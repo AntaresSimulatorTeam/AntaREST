@@ -398,7 +398,9 @@ def test_manage_group() -> None:
         event_bus=Mock(),
     )
 
-    repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a])
+    repository.get.return_value = Study(
+        id=uuid, owner=alice, groups=[group_a], workspace="default"
+    )
 
     with pytest.raises(UserHasNotPermissionError):
         service.add_group(
@@ -476,7 +478,7 @@ def test_set_public_mode() -> None:
         event_bus=Mock(),
     )
 
-    repository.get.return_value = Study(id=uuid)
+    repository.get.return_value = Study(id=uuid, workspace="default")
 
     with pytest.raises(UserHasNotPermissionError):
         service.set_public_mode(

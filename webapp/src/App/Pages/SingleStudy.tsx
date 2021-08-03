@@ -1,15 +1,16 @@
 import debug from 'debug';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { ReactNode, useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Breadcrumbs, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
 import { connect, ConnectedProps } from 'react-redux';
 import StudyView from '../../components/StudyView';
-import { getStudyData, getStudyJobs, mapLaunchJobDTO } from '../../services/api/study';
+import { getStudyJobs, getStudyMetadata, mapLaunchJobDTO } from '../../services/api/study';
 import PulsingDot from '../../components/ui/PulsingDot';
 import GenericTabView from '../../components/ui/NavComponents/GenericTabView';
 import Informations from '../../components/SingleStudy/Informations';
-import { LaunchJob, WSMessage } from '../../common/types';
+import { LaunchJob, StudyMetadata, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 
 const logError = debug('antares:singlestudyview:error');
@@ -57,17 +58,9 @@ const SingleStudyView = (props: PropTypes) => {
   const { addWsListener, removeWsListener } = props;
   const classes = useStyles();
   const [t] = useTranslation();
-  const [studyname, setStudyname] = useState<string>();
+  const [study, setStudy] = useState<StudyMetadata>();
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
-
-  const initStudyData = async (sid: string) => {
-    try {
-      const data = await getStudyData(sid, 'study/antares', 1);
-      setStudyname(data.caption as string);
-    } catch (e) {
-      logError('Failed to fetch study data', sid, e);
-    }
-  };
+  const { enqueueSnackbar } = useSnackbar();
 
   const fetchStudyJob = async (sid: string) => {
     try {
@@ -119,32 +112,48 @@ const SingleStudyView = (props: PropTypes) => {
 
   useEffect(() => {
     if (studyId) {
-      initStudyData(studyId);
+      const init = async () => {
+        try {
+          const studyMetadata = await getStudyMetadata(studyId);
+          setStudy(studyMetadata);
+        } catch (e) {
+          enqueueSnackbar(t('studymanager:failtoloadstudy'), { variant: 'error' });
+        }
+      };
+      init();
       fetchStudyJob(studyId);
     }
-  }, [studyId]);
+  }, [studyId, t, enqueueSnackbar]);
 
   useEffect(() => {
     addWsListener(handleEvents);
     return () => removeWsListener(handleEvents);
   }, [addWsListener, removeWsListener, handleEvents]);
 
-  const navData = {
-    'singlestudy:informations': () => <Informations studyId={studyId} jobs={studyJobs || []} />,
-    'singlestudy:treeView': () => <StudyView study={studyId} />,
+  const navData: { [key: string]: () => JSX.Element } = {
+    'singlestudy:informations': () =>
+      (study ? <Informations study={study} jobs={studyJobs || []} /> : <div />),
   };
+  if (!study?.archived) {
+    navData['singlestudy:treeView'] = () => <StudyView study={studyId} />;
+  }
+
   return (
     <div className={classes.root}>
-      <Breadcrumbs aria-label="breadcrumb" className={classes.breadcrumbs}>
-        <Link to="/" className={classes.breadcrumbsfirstelement}>
-          {t('main:allStudies')}
-        </Link>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          {renderStatus()}
-          {studyname}
-        </div>
-      </Breadcrumbs>
-      {studyId && <GenericTabView items={navData} initialValue="singlestudy:informations" />}
+      {study && (
+        <>
+          <Breadcrumbs aria-label="breadcrumb" className={classes.breadcrumbs}>
+            <Link to="/" className={classes.breadcrumbsfirstelement}>
+              {t('main:allStudies')}
+            </Link>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {renderStatus()}
+              {study.name}
+            </div>
+          </Breadcrumbs>
+          <GenericTabView items={navData} initialValue="singlestudy:informations" />
+        </>
+      )}
     </div>
   );
 };

@@ -13,13 +13,15 @@ interface PropTypes {
   launchStudy: (study: StudyMetadata) => void;
   deleteStudy: (study: StudyMetadata) => void;
   importStudy: (study: StudyMetadata, withOutputs?: boolean) => void;
+  archiveStudy: (study: StudyMetadata) => void;
+  unarchiveStudy: (study: StudyMetadata) => void;
   listMode: boolean;
 }
 
 const StudyListElementView = (props: PropTypes) => {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { study, launchStudy, deleteStudy, importStudy, listMode } = props;
+  const { study, launchStudy, deleteStudy, importStudy, listMode, archiveStudy, unarchiveStudy } = props;
   const [lastJobStatus, setLastJobsStatus] = useState<JobStatus | undefined>();
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
@@ -51,6 +53,8 @@ const StudyListElementView = (props: PropTypes) => {
             importStudy={importStudy}
             launchStudy={launchStudy}
             lastJobStatus={lastJobStatus}
+            archiveStudy={archiveStudy}
+            unarchiveStudy={unarchiveStudy}
             openDeletionModal={() => setOpenConfirmationModal(true)}
           />
         ) : (
@@ -59,6 +63,8 @@ const StudyListElementView = (props: PropTypes) => {
             importStudy={importStudy}
             launchStudy={launchStudy}
             lastJobStatus={lastJobStatus}
+            archiveStudy={archiveStudy}
+            unarchiveStudy={unarchiveStudy}
             openDeletionModal={() => setOpenConfirmationModal(true)}
           />
         )

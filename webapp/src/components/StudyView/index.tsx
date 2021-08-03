@@ -7,7 +7,7 @@ import { getStudyData } from '../../services/api/study';
 import StudyTreeView from './StudyTreeView';
 import StudyDataView from './StudyDataView';
 import MainContentLoader from '../ui/loaders/MainContentLoader';
-import { StudyDataType } from '../../common/types';
+import { StudyDataType, StudyMetadata } from '../../common/types';
 
 const logError = debug('antares:studyview:error');
 
@@ -51,7 +51,7 @@ interface ElementView {
 }
 
 interface PropTypes {
-  study: string;
+  study: StudyMetadata;
 }
 
 const StudyView = (props: PropTypes) => {
@@ -76,7 +76,9 @@ const StudyView = (props: PropTypes) => {
   }, [enqueueSnackbar]);
 
   useEffect(() => {
-    initStudyData(study);
+    if (!study.archived) {
+      initStudyData(study.id);
+    }
   }, [study, initStudyData]);
 
   return (
@@ -91,7 +93,7 @@ const StudyView = (props: PropTypes) => {
             </div>
             <div className={classes.main}>
               <div className={classes.maincontent}>
-                {elementView && <StudyDataView study={study} studyData={studyData} setStudyData={setStudyData} type={elementView.type} data={elementView.data} />}
+                {elementView && <StudyDataView study={study.id} studyData={studyData} setStudyData={setStudyData} type={elementView.type} data={elementView.data} />}
               </div>
             </div>
           </>
