@@ -17,7 +17,6 @@ def init_test(app: FastAPI):
     # check default study presence
     study_count = 0
     countdown = 10
-    study_id = ""
     while study_count == 0 or countdown > 0:
         res = client.get(
             "/v1/studies",
@@ -28,15 +27,13 @@ def init_test(app: FastAPI):
         time.sleep(1)
         studies_info = res.json()
         study_count = len(studies_info)
-        if study_count > 0:
-            study_id = list(studies_info.keys())[0]
         countdown -= 1
 
-    return client, admin_credentials, study_id
+    return client, admin_credentials
 
 
 def test_main(app: FastAPI):
-    client, admin_credentials, _ = init_test(app)
+    client, admin_credentials = init_test(app)
 
     # create some new users
     # TODO check for bad username or empty password
@@ -410,7 +407,15 @@ def test_area_management(app: FastAPI):
 
 
 def test_archive(app: FastAPI, tmp_path: Path):
-    client, admin_credentials, study_id = init_test(app)
+    client, admin_credentials = init_test(app)
+
+    study_res = client.post(
+        "/v1/studies?name=foo",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    study_id = study_res.json()
 
     res = client.put(
         f"/v1/studies/{study_id}/archive",

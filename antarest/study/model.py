@@ -69,7 +69,7 @@ class Study(Base):  # type: ignore
         return f"Metadata(id={self.id}, name={self.name}, version={self.version}, owner={self.owner}, groups={[str(u)+',' for u in self.groups]}"
 
     def to_json_summary(self) -> Any:
-        return {"id": self.id, "name": self.name, "workspace": self.workspace}
+        return {"id": self.id, "name": self.name}
 
 
 @dataclass
