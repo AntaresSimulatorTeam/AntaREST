@@ -12,13 +12,10 @@ security:
 db:
   url: "sqlite:///database.db"
 
-matrixstore:
-  bucket: ./bucket
-
-# default temporary directory
-#tmp_dir: /tmp
-
 storage:
+  tmp_dir: /tmp
+  matrixstore: ./matrices
+  archive_dir: examples/archives
   workspaces:
     tmp:
       path: examples/studies/

@@ -4,6 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TypeVar
 from dataclasses import dataclass
+
 from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
@@ -58,6 +59,7 @@ class Study(Base):  # type: ignore
     updated_at = Column(DateTime)
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True)
+    archived = Column(Boolean(), default=False)
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
 
@@ -67,7 +69,7 @@ class Study(Base):  # type: ignore
         return f"Metadata(id={self.id}, name={self.name}, version={self.version}, owner={self.owner}, groups={[str(u)+',' for u in self.groups]}"
 
     def to_json_summary(self) -> Any:
-        return {"id": self.id, "name": self.name, "workspace": self.workspace}
+        return {"id": self.id, "name": self.name}
 
 
 @dataclass
@@ -205,6 +207,7 @@ class StudyMetadataDTO(BaseModel):
     public_mode: PublicMode
     workspace: str
     managed: bool
+    archived: bool
     horizon: Optional[str]
     scenario: Optional[str]
     status: Optional[str]

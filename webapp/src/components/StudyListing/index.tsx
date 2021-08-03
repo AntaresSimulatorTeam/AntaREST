@@ -6,7 +6,7 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { StudyMetadata } from '../../common/types';
 import { removeStudies } from '../../ducks/study';
-import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy, copyStudy as callCopyStudy } from '../../services/api/study';
+import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy, copyStudy as callCopyStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy } from '../../services/api/study';
 import StudyListElementView from './StudyListingItemView';
 
 const logError = debug('antares:studyblockview:error');
@@ -72,6 +72,24 @@ const StudyListing = (props: PropTypes) => {
     }
   };
 
+  const archiveStudy = async (study: StudyMetadata) => {
+    try {
+      await callArchiveStudy(study.id);
+      enqueueSnackbar(t('studymanager:archivesuccess', { studyname: study.name }), { variant: 'success' });
+    } catch (e) {
+      enqueueSnackbar(t('studymanager:archivesuccess', { studyname: study.name }), { variant: 'error' });
+    }
+  };
+
+  const unarchiveStudy = async (study: StudyMetadata) => {
+    try {
+      await callUnarchiveStudy(study.id);
+      enqueueSnackbar(t('studymanager:unarchivesuccess', { studyname: study.name }), { variant: 'success' });
+    } catch (e) {
+      enqueueSnackbar(t('studymanager:unarchivefailure', { studyname: study.name }), { variant: 'error' });
+    }
+  };
+
   const deleteStudy = async (study: StudyMetadata) => {
     // eslint-disable-next-line no-alert
     try {
@@ -95,6 +113,8 @@ const StudyListing = (props: PropTypes) => {
               importStudy={importStudy}
               launchStudy={launchStudy}
               deleteStudy={deleteStudy}
+              archiveStudy={archiveStudy}
+              unarchiveStudy={unarchiveStudy}
             />
           ))
         }

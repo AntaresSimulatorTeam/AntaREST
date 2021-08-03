@@ -6,7 +6,7 @@ from checksumdir import dirhash
 
 import pytest
 
-from antarest.core.config import Config
+from antarest.core.config import Config, StorageConfig
 from antarest.study.storage.rawstudy.exporter_service import ExporterService
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
@@ -107,7 +107,7 @@ def test_export_flat(tmp_path: Path):
     exporter_service = ExporterService(
         study_service=Mock(),
         study_factory=study_factory,
-        config=Config(tmp_dir=tmp_path),
+        config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
     )
     study_tree = Mock()
     study_factory.create_from_fs.return_value = (None, study_tree)

@@ -31,6 +31,7 @@ def test_service_run_study(get_current_user_mock):
         version=42,
         workspace="default",
         managed=True,
+        archived=False,
     )
     storage_service_mock.get_study_path.return_value = Path("path/to/study")
 

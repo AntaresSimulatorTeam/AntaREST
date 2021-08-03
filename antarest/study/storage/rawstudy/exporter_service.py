@@ -11,7 +11,7 @@ from antarest.core.config import Config
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.study.model import Study
+from antarest.study.model import Study, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
 )
@@ -61,7 +61,9 @@ class ExporterService:
     def export_file(
         self, path_study: Path, export_path: Path, outputs: bool = True
     ) -> Path:
-        with tempfile.TemporaryDirectory(dir=self.config.tmp_dir) as tmpdir:
+        with tempfile.TemporaryDirectory(
+            dir=self.config.storage.tmp_dir
+        ) as tmpdir:
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_flat(path_study, tmp_study_path, outputs)
             start_time = time.time()
@@ -106,3 +108,11 @@ class ExporterService:
         study.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study {path_study} denormalized in {duration}s")
+
+    def archive(self, study: RawStudy) -> None:
+        archive_path = self.get_archive_path(study)
+        self.export_file(study.path, archive_path)
+        shutil.rmtree(study.path)
+
+    def get_archive_path(self, study: RawStudy) -> Path:
+        return Path(self.config.storage.archive_dir / f"{study.id}.zip")
