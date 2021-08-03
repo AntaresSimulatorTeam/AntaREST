@@ -142,7 +142,7 @@ const StudyManagement = (props: PropTypes) => {
     init();
     getAllStudies(false);
     return () => removeWsListener(listen);
-  }, [user]);
+  }, []);
 
   return (
     <div className={classes.root}>
