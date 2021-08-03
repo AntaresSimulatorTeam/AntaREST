@@ -2,10 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { InputBase, makeStyles, Theme, createStyles, MenuItem, Select, FormControl, InputLabel, Input, Checkbox, ListItemText } from '@material-ui/core';
+import { InputBase, makeStyles, Theme, createStyles } from '@material-ui/core';
 import moment from 'moment';
 import { AppState } from '../../App/reducers';
-import { GroupDTO, StudyMetadata, UserDTO } from '../../common/types';
+import { GenericInfo, GroupDTO, StudyMetadata, UserDTO } from '../../common/types';
 import { SortElement, SortItem } from '../ui/SortView/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -76,6 +76,7 @@ interface OwnProps {
   setFiltered: (studies: Array<StudyMetadata>) => void;
   sortItem: SortItem | undefined;
   sortList: Array<SortElement>;
+  versionFilter: GenericInfo | undefined;
   userFilter: UserDTO | undefined;
   groupFilter: GroupDTO | undefined;
   filterManaged: boolean;
@@ -83,17 +84,10 @@ interface OwnProps {
 type PropTypes = ReduxProps & OwnProps;
 
 const StudySearchTool = (props: PropTypes) => {
-  const { filterManaged, setLoading, setFiltered, sortItem, sortList, studies, userFilter, groupFilter } = props;
+  const { filterManaged, setLoading, setFiltered, versionFilter, sortItem, sortList, studies, userFilter, groupFilter } = props;
   const classes = useStyles();
   const [t] = useTranslation();
-  const [versions, setVersions] = useState<Array<string>>([]);
   const [searchName, setSearchName] = useState<string>('');
-
-  const versionList = [{ key: '640', value: '6.4.0' },
-    { key: '700', value: '7.0.0' },
-    { key: '710', value: '7.1.0' },
-    { key: '720', value: '7.2.0' },
-    { key: '800', value: '8.0.0' }];
 
   const sortStudies = (): Array<StudyMetadata> => {
     const tmpStudies: Array<StudyMetadata> = ([] as Array<StudyMetadata>).concat(studies);
@@ -110,58 +104,37 @@ const StudySearchTool = (props: PropTypes) => {
     return tmpStudies;
   };
 
-  const filter = (currentName: string, currentVersions: Array<string>): StudyMetadata[] => sortStudies()
+  const filter = (currentName: string): StudyMetadata[] => sortStudies()
     .filter((s) => !currentName || s.name.search(new RegExp(currentName, 'i')) !== -1)
-    .filter((s) => currentVersions.length === 0 || currentVersions.indexOf(s.version) >= 0)
+    .filter((s) => !versionFilter || versionFilter.id === s.version)
     .filter((s) => (userFilter ? (s.owner.id && userFilter.id === s.owner.id) : true))
     .filter((s) => (groupFilter ? s.groups.findIndex((elm) => elm.id === groupFilter.id) >= 0 : true))
     .filter((s) => (filterManaged ? s.managed : true));
 
-  const onChange = async (currentName: string, currentVersions: Array<string>) => {
+  const onChange = async (currentName: string) => {
     setLoading(true);
-    const f = filter(currentName, currentVersions);
+    const f = filter(currentName);
     setFiltered(f);
     setLoading(false);
     if (currentName !== searchName) setSearchName(currentName);
-    if (currentVersions !== versions) setVersions(currentVersions);
   };
 
   useEffect(() => {
-    const f = filter(searchName, versions);
+    const f = filter(searchName);
     setFiltered(f);
-  }, [studies, sortItem, userFilter, groupFilter, filterManaged]);
+  }, [studies, sortItem, userFilter, groupFilter, versionFilter, filterManaged]);
 
   return (
     <div className={classes.root}>
       <InputBase
         className={classes.searchbar}
         placeholder={`${t('studymanager:searchstudy')}...`}
-        onChange={(e) => onChange(e.target.value as string, versions)}
+        onChange={(e) => onChange(e.target.value as string)}
         inputProps={{
           'aria-label': 'search studies',
           name: 'searchstring',
         }}
       />
-      <FormControl className={classes.versioninput}>
-        <InputLabel className={classes.selectLabel} id="versions">{t('studymanager:versionLabel')}</InputLabel>
-        <Select
-          labelId="versions"
-          id="version-checkbox"
-          multiple
-          value={versions}
-          onChange={(e) => onChange(searchName, e.target.value as Array<string>)}
-          input={<Input className={classes.input} />}
-          renderValue={(selected) => (selected as Array<string>).join(', ')}
-          className={classes.select}
-        >
-          {versionList.map((elm) => (
-            <MenuItem key={elm.value} value={elm.key}>
-              <Checkbox checked={versions.indexOf(elm.key) > -1} />
-              <ListItemText primary={elm.value} />
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
     </div>
   );
 };

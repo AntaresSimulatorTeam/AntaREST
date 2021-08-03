@@ -5,6 +5,11 @@ export type StudyDataType = 'json' | 'file' | 'matrixfile' | 'matrix';
 
 export type StudyPublicMode = "'NONE' | 'READ' | 'EXECUTE' | 'EDIT' | 'FULL'";
 
+export interface GenericInfo {
+  id: IDType;
+  name: string;
+}
+
 export interface StudySummary {
   id: string;
   name: string;

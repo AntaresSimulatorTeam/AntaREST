@@ -18,7 +18,7 @@ import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
 import SortView from '../../components/ui/SortView';
 import { SortItem } from '../../components/ui/SortView/utils';
 import StudySearchTool from '../../components/StudySearchTool';
-import { StudyMetadata, StudySummary, WSEvent, WSMessage, UserDTO, GroupDTO } from '../../common/types';
+import { StudyMetadata, StudySummary, WSEvent, WSMessage, UserDTO, GroupDTO, GenericInfo } from '../../common/types';
 import AutoCompleteView from '../../components/StudySearchTool/AutoCompleteView';
 import { addListener, removeListener } from '../../ducks/websockets';
 import theme from '../theme';
@@ -56,7 +56,6 @@ const useStyles = makeStyles(() => createStyles({
 
 const mapState = (state: AppState) => ({
   studies: state.study.studies,
-  user: state.auth.user,
 });
 
 const mapDispatch = ({
@@ -72,7 +71,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const StudyManagement = (props: PropTypes) => {
-  const { user, studies, addStudy, deleteStudy, loadStudies, addWsListener, removeWsListener } = props;
+  const { studies, addStudy, deleteStudy, loadStudies, addWsListener, removeWsListener } = props;
   const classes = useStyles();
   const [t] = useTranslation();
   const [filteredStudies, setFilteredStudies] = useState<Array<StudyMetadata>>(studies);
@@ -102,14 +101,18 @@ const StudyManagement = (props: PropTypes) => {
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
   const [currentUser, setCurrentUser] = useState<UserDTO>();
   const [currentGroup, setCurrentGroup] = useState<GroupDTO>();
+  const [currentVersion, setCurrentVersion] = useState<GenericInfo>();
+
+  const versionList = [{ id: '640', name: '6.4.0' },
+    { id: '700', name: '7.0.0' },
+    { id: '710', name: '7.1.0' },
+    { id: '720', name: '7.2.0' },
+    { id: '800', name: '8.0.0' }];
 
   const init = async () => {
     try {
       const userRes = await getUsers();
       setUserList(userRes);
-      if (user) {
-        setCurrentUser(userRes.find((elm) => elm.id === user.id));
-      }
 
       const groupRes = await getGroups();
       setGroupList(groupRes);
@@ -148,7 +151,7 @@ const StudyManagement = (props: PropTypes) => {
     <div className={classes.root}>
       <div className={classes.header}>
         <StudyCreationTools />
-        <StudySearchTool filterManaged={managedFilter} userFilter={currentUser} groupFilter={currentGroup} sortList={sortList} sortItem={currentSortItem} setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
+        <StudySearchTool filterManaged={managedFilter} versionFilter={currentVersion} userFilter={currentUser} groupFilter={currentGroup} sortList={sortList} sortItem={currentSortItem} setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
         <div className={classes.view}>
           <div className={classes.view} style={{ marginBottom: 0 }}>
             <Checkbox
@@ -160,6 +163,7 @@ const StudyManagement = (props: PropTypes) => {
               {t('studymanager:managedStudiesFilter')}
             </Typography>
           </div>
+          <AutoCompleteView label={t('studymanager:versionFilter')} value={currentVersion} list={versionList} setValue={(elm) => setCurrentVersion(elm as (GenericInfo | undefined))} />
           <AutoCompleteView label={t('studymanager:userFilter')} value={currentUser} list={userList} setValue={(elm) => setCurrentUser(elm as (UserDTO | undefined))} />
           <AutoCompleteView label={t('studymanager:groupFilter')} value={currentGroup} list={groupList} setValue={(elm) => setCurrentGroup(elm as (GroupDTO | undefined))} />
           <SortView itemNames={sortList} onClick={(item: SortItem) => setCurrentSortItem({ ...item })} />

@@ -2,7 +2,7 @@
 import React from 'react';
 import { makeStyles, createStyles, Theme, TextField } from '@material-ui/core';
 import Autocomplete from '@material-ui/lab/Autocomplete';
-import { UserDTO, GroupDTO } from '../../common/types';
+import { GenericInfo } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -12,13 +12,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
 }));
 
-type AutocompleteType = UserDTO | GroupDTO;
-
 interface PropTypes {
     label: string;
-    list: Array<AutocompleteType>;
-    value: AutocompleteType | undefined;
-    setValue: (value: AutocompleteType | undefined) => void;
+    list: Array<GenericInfo>;
+    value: GenericInfo | undefined;
+    setValue: (value: GenericInfo | undefined) => void;
 }
 
 const AutoCompleteView = (props: PropTypes) => {
@@ -31,7 +29,7 @@ const AutoCompleteView = (props: PropTypes) => {
       getOptionLabel={(option) => option.name}
       className={classes.root}
       value={value || null}
-      onChange={(event: any, newValue: AutocompleteType | null) => setValue(newValue !== null ? newValue : undefined)}
+      onChange={(event: any, newValue: GenericInfo | null) => setValue(newValue !== null ? newValue : undefined)}
       renderInput={(params) => (
         <TextField
           // eslint-disable-next-line react/jsx-props-no-spreading

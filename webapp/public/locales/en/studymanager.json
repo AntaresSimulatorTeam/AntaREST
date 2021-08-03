@@ -25,5 +25,5 @@
   "managedStudiesFilter": "Managed studies",
   "userFilter": "Filter by user",
   "groupFilter": "Filter by group",
-  "versionLabel": "Version"
+  "versionFilter": "Filter by version"
 }
