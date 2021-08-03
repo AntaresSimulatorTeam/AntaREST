@@ -47,7 +47,7 @@ def test_db_cyclelife():
 
 
 def test_bucket_cyclelife(tmp_path: Path):
-    config = Config(storage=StorageConfig(matrix_store=tmp_path))
+    config = Config(storage=StorageConfig(matrixstore=tmp_path))
     repo = MatrixContentRepository(config)
 
     a = MatrixContent(

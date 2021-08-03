@@ -457,6 +457,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "public_mode": "NONE",
             "workspace": "default",
             "managed": True,
+            "archived": False,
             "horizon": "2030",
             "scenario": None,
             "status": None,

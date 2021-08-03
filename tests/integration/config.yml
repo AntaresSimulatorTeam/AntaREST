@@ -12,7 +12,9 @@ db:
   url: {{dburl}}
 
 storage:
-  matrix_store: ./bucket
+  matrixstore: {{matrix_dir}}
+  archive_dir: {{archive_dir}}
+  tmp_dir: {{tmp_dir}}
   watcher_lock: false
   workspaces:
     default:

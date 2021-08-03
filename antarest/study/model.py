@@ -4,6 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TypeVar
 from dataclasses import dataclass
+
 from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
@@ -206,6 +207,7 @@ class StudyMetadataDTO(BaseModel):
     public_mode: PublicMode
     workspace: str
     managed: bool
+    archived: bool
     horizon: Optional[str]
     scenario: Optional[str]
     status: Optional[str]
