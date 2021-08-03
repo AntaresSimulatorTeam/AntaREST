@@ -1,5 +1,6 @@
 import io
 import logging
+import os
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
@@ -873,6 +874,7 @@ class StudyService:
         with open(self.exporter_service.get_archive_path(study), "rb") as fh:
             self.importer_service.import_study(study, io.BytesIO(fh.read()))
         study.archived = False
+        os.unlink(self.exporter_service.get_archive_path(study))
         self.repository.save(study)
 
     def _save_study(

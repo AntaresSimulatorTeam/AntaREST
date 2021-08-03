@@ -1,11 +1,12 @@
 import time
+from pathlib import Path
 from unittest.mock import ANY
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 
-def test_main(app: FastAPI):
+def init_test(app: FastAPI):
     client = TestClient(app, raise_server_exceptions=False)
 
     res = client.post(
@@ -16,6 +17,7 @@ def test_main(app: FastAPI):
     # check default study presence
     study_count = 0
     countdown = 10
+    study_id = ""
     while study_count == 0 or countdown > 0:
         res = client.get(
             "/v1/studies",
@@ -24,8 +26,17 @@ def test_main(app: FastAPI):
             },
         )
         time.sleep(1)
-        study_count = len(res.json())
+        studies_info = res.json()
+        study_count = len(studies_info)
+        if study_count > 0:
+            study_id = list(studies_info.keys())[0]
         countdown -= 1
+
+    return client, admin_credentials, study_id
+
+
+def test_main(app: FastAPI):
+    client, admin_credentials, _ = init_test(app)
 
     # create some new users
     # TODO check for bad username or empty password
@@ -396,3 +407,39 @@ def test_area_management(app: FastAPI):
         res_delete.status_code == 500
         and res_delete.json()["exception"] == "NotImplementedError"
     )
+
+
+def test_archive(app: FastAPI, tmp_path: Path):
+    client, admin_credentials, study_id = init_test(app)
+
+    res = client.put(
+        f"/v1/studies/{study_id}/archive",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{study_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.json()["archived"]
+    assert (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
+
+    res = client.put(
+        f"/v1/studies/{study_id}/unarchive",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res = client.get(
+        f"/v1/studies/{study_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert not res.json()["archived"]
+    assert not (tmp_path / "archive_dir" / f"{study_id}.zip").exists()

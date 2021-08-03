@@ -28,8 +28,11 @@ def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
     template = templateEnv.get_template(TEMPLATE_FILE)
 
     matrix_dir = Path(tmp_path) / "matrixstore"
+    os.mkdir(matrix_dir)
     archive_dir = Path(tmp_path) / "archive_dir"
+    os.mkdir(archive_dir)
     tmp_dir = Path(tmp_path) / "tmp"
+    os.mkdir(tmp_dir)
     default_workspace = Path(tmp_path) / "internal_workspace"
     os.mkdir(default_workspace)
     ext_workspace_path = Path(tmp_path) / "ext_workspace"

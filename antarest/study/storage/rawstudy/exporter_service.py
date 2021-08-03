@@ -111,8 +111,8 @@ class ExporterService:
 
     def archive(self, study: RawStudy) -> None:
         archive_path = self.get_archive_path(study)
-        self.export_file(study, archive_path)
-        os.rmdir(study.path)
+        self.export_file(study.path, archive_path)
+        shutil.rmtree(study.path)
 
     def get_archive_path(self, study: RawStudy) -> Path:
-        return Path(self.config.storage.archive_dir / study.id / ".zip")
+        return Path(self.config.storage.archive_dir / f"{study.id}.zip")

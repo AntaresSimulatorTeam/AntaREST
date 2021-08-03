@@ -189,14 +189,15 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
         """
         file_settings = {}
+        file_metadata = {}
         config = FileStudyTreeConfig(
             study_path=self.get_study_path(study), study_id=""
         )
-        raw_study = self.study_factory.create_from_config(config)
-        file_metadata = raw_study.get(url=["study", "antares"])
         patch_metadata = self.patch_service.get(study).study or PatchStudy()
 
         try:
+            raw_study = self.study_factory.create_from_config(config)
+            file_metadata = raw_study.get(url=["study", "antares"])
             file_settings = raw_study.get(
                 url=["settings", "generaldata", "general"]
             )
