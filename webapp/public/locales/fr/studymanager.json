@@ -21,5 +21,9 @@
   "permission": "Permission",
   "refresh": "Charger les études",
   "sortByName": "Trier par nom",
-  "sortByDate": "Trier par date"
+  "sortByDate": "Trier par date",
+  "managedStudiesFilter": "Etudes managées",
+  "userFilter": "Filtrer par utilisateur",
+  "groupFilter": "Filtrer par groupe",
+  "versionFilter": "Filtrer par version"
 }

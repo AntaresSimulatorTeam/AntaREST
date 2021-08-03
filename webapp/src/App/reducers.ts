@@ -3,7 +3,7 @@ import { composeWithDevTools } from 'redux-devtools-extension';
 import thunk from 'redux-thunk';
 import logger from 'redux-logger';
 import { throttle } from 'lodash';
-import study, { StudyState } from '../ducks/study';
+import study, { StudyState, initStudies } from '../ducks/study';
 import auth, { AuthState, logoutAction, persistState as persistAuthState } from '../ducks/auth';
 import { setLogoutInterceptor } from '../services/api/client';
 import upload, { UploadState } from '../ducks/upload';
@@ -29,7 +29,7 @@ export type AppState = CombinedState<{
 export default function createMainStore(): Store<AppState> {
   const reduxStore = createStore(reducers, composeWithDevTools(applyMiddleware(...[thunk, logger])));
 
-  setLogoutInterceptor(() => reduxStore.dispatch(logoutAction()));
+  setLogoutInterceptor(() => reduxStore.dispatch(logoutAction()), () => reduxStore.dispatch(initStudies([])));
 
   reduxStore.subscribe(
     throttle(() => {
