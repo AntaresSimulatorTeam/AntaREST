@@ -50,7 +50,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> SUB_JSON:
-        if depth == -1 and expanded:
+        if depth <= -1 and expanded:
             return f"json://{self.config.path.name}"
 
         if depth == 0:
