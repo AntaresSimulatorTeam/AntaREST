@@ -448,3 +448,121 @@ def test_archive(app: FastAPI, tmp_path: Path):
     )
     assert not res.json()["archived"]
     assert not (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
+
+
+def test_variant_manager(app: FastAPI):
+    client = TestClient(app, raise_server_exceptions=False)
+
+    res = client.post(
+        "/v1/login", json={"username": "admin", "password": "admin"}
+    )
+    admin_credentials = res.json()
+
+    base_study_res = client.post(
+        "/v1/studies?name=foo",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+
+    base_study_id = base_study_res.json()
+
+    res = client.post(
+        f"/v1/studies/{base_study_id}/variants?name=foo",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    variant_id = res.json()
+    assert res.status_code == 500
+
+    res = client.get(
+        f"/v1/studies/{base_study_id}/variants",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    # assert len(res.json()) == 1
+    assert res.status_code == 500
+
+    res = client.post(
+        f"/v1/studies/{variant_id}/commands",
+        json=[{"action": "CREATE_AREA", "args": {"name": "testZone"}}],
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 500
+
+    res = client.post(
+        f"/v1/studies/{variant_id}/commands",
+        json=[{"action": "CREATE_AREA", "args": {"name": "testZone2"}}],
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 500
+
+    res = client.get(
+        f"/v1/studies/{variant_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    # assert len(res.json()) == 2
+    assert res.status_code == 500
+
+    # command_id = res.json()[1]["id"]
+    command_id = "someid"
+    res = client.put(
+        f"/v1/studies/{variant_id}/commands/{command_id}?index=0",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 500
+
+    res = client.get(
+        f"/v1/studies/{variant_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    # assert res.json()[0]["id"] == command_id
+    assert res.status_code == 500
+
+    res = client.delete(
+        f"/v1/studies/{variant_id}/commands/{command_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    # assert len(res.json()) == 1
+    assert res.status_code == 500
+
+    res = client.put(
+        f"/v1/studies/{variant_id}/generate",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 500
+
+    res = client.post(
+        f"/v1/studies/{variant_id}/freeze?name=bar",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 500
+
+    # new_study_id = res.json()
+    new_study_id = "newid"
+
+    res = client.get(
+        f"/v1/studies/{new_study_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 404
