@@ -57,7 +57,7 @@ const ImportStudyForm = (props: PropTypes) => {
 
   return (
     <form className={classes.root} onSubmit={handleSubmit(onSubmit)}>
-      <Button className={classes.button} type="submit" variant="outlined" color="primary">{t('main:import')}</Button>
+      <Button className={classes.button} type="submit" variant="contained" color="primary">{t('main:import')}</Button>
       <input className={classes.input} type="file" name="study" accept="application/zip" ref={register({ required: true })} />
       {uploadProgress && <LinearProgress style={{ flexGrow: 1 }} variant="determinate" value={uploadProgress} />}
     </form>

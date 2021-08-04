@@ -571,7 +571,7 @@ class LoginService:
                     groups.append(tmp)
             return groups
 
-    def get_all_users(self, params: RequestParameters) -> List[User]:
+    def get_all_users(self, params: RequestParameters) -> List[Identity]:
         """
         Get all users.
         Permission: SADMIN
@@ -581,7 +581,7 @@ class LoginService:
         Returns: list of groups
 
         """
-        if params.user and params.user.is_site_admin():
+        if params.user:
             return self.ldap.get_all() + self.users.get_all()
         else:
             self.logger.error(

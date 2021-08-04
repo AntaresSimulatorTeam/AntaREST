@@ -8,14 +8,8 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.areas.item.details import (
-    OutputSimulationModeMcAllAreasItemDetails as Details,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.areas.item.id import (
-    OutputSimulationModeMcAllAreasItemId as Id,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.areas.item.values import (
-    OutputSimulationModeMcAllAreasItemValues as Values,
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
+    AreaOutputSeriesMatrix,
 )
 
 
@@ -36,7 +30,7 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
             if config.get_thermal_names(self.area, only_enabled=True)
             else []
         ):
-            children[f"details-{freq}"] = Details(
+            children[f"details-{freq}"] = AreaOutputSeriesMatrix(
                 self.context,
                 config.next_file(f"details-{freq}.txt"),
                 freq,
@@ -44,14 +38,14 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
             )
 
         for freq in filters:
-            children[f"id-{freq}"] = Id(
+            children[f"id-{freq}"] = AreaOutputSeriesMatrix(
                 self.context,
                 config.next_file(f"id-{freq}.txt"),
                 freq,
                 self.area,
             )
 
-            children[f"values-{freq}"] = Values(
+            children[f"values-{freq}"] = AreaOutputSeriesMatrix(
                 self.context,
                 config.next_file(f"values-{freq}.txt"),
                 freq,

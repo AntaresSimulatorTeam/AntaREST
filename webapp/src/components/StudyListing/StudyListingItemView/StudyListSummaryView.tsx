@@ -84,7 +84,15 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
   const classes = useStyles();
   const theme = useTheme();
   const [t] = useTranslation();
-  const { study, launchStudy, openDeletionModal, lastJobStatus, importStudy } = props;
+  const {
+    study,
+    launchStudy,
+    openDeletionModal,
+    lastJobStatus,
+    importStudy,
+    archiveStudy,
+    unarchiveStudy,
+  } = props;
 
   return (
     <Paper className={classes.root}>
@@ -113,25 +121,44 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
         </Typography>
       </div>
       <div className={classes.buttons}>
-        <Button
-          size="small"
-          style={{ color: theme.palette.secondary.main }}
-          onClick={() => launchStudy(study)}
-        >
-          {t('main:launch')}
-        </Button>
-        <ButtonLoader
-          size="small"
-          style={{ color: theme.palette.primary.main }}
-          onClick={() => importStudy(study)}
-        >
-          {t('main:import')}
-        </ButtonLoader>
-        <DownloadLink url={getExportUrl(study.id, false)}>
-          <Button size="small" style={{ color: theme.palette.primary.main }}>
-            {t('main:export')}
-          </Button>
-        </DownloadLink>
+        {study.archived ? (
+          <ButtonLoader
+            size="small"
+            style={{ color: theme.palette.primary.light }}
+            onClick={() => unarchiveStudy(study)}
+          >
+            {t('studymanager:unarchive')}
+          </ButtonLoader>
+        ) : (
+          <>
+            <Button
+              size="small"
+              style={{ color: theme.palette.secondary.main }}
+              onClick={() => launchStudy(study)}
+            >
+              {t('main:launch')}
+            </Button>
+            <ButtonLoader
+              size="small"
+              style={{ color: theme.palette.primary.main }}
+              onClick={() => importStudy(study)}
+            >
+              {t('main:import')}
+            </ButtonLoader>
+            <DownloadLink url={getExportUrl(study.id, false)}>
+              <Button size="small" style={{ color: theme.palette.primary.main }}>
+                {t('main:export')}
+              </Button>
+            </DownloadLink>
+            <ButtonLoader
+              size="small"
+              style={{ color: theme.palette.primary.light }}
+              onClick={() => archiveStudy(study)}
+            >
+              {t('studymanager:archive')}
+            </ButtonLoader>
+          </>
+        )}
         <Button
           size="small"
           style={{ float: 'right', color: theme.palette.error.main }}

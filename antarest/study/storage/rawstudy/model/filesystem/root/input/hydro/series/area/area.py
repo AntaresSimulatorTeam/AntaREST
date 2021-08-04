@@ -5,21 +5,18 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.area.mod import (
-    InputHydroSeriesAreaMod,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.area.ror import (
-    InputHydroSeriesAreaRor,
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
 )
 
 
 class InputHydroSeriesArea(FolderNode):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {
-            "mod": InputHydroSeriesAreaMod(
+            "mod": InputSeriesMatrix(
                 self.context, config.next_file("mod.txt")
             ),
-            "ror": InputHydroSeriesAreaRor(
+            "ror": InputSeriesMatrix(
                 self.context, config.next_file("ror.txt")
             ),
         }

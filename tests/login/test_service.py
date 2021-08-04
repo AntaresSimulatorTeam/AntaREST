@@ -525,7 +525,7 @@ def test_get_all_users():
 
     assert_permission(
         test=lambda x: service.get_all_users(x),
-        values=[(SADMIN, True), (GADMIN, False), (USER3, False)],
+        values=[(SADMIN, True), (GADMIN, True), (USER3, True)],
     )
 
 

@@ -6,6 +6,7 @@ import {
   RoleDTO,
   UserToken,
   UserGroup,
+  Identity,
   IdentityDTO,
   BotCreateDTO,
   BotIdentityDTO,
@@ -27,7 +28,7 @@ export const createNewUser = async (name: string, password: string): Promise<any
   return res.data;
 };
 
-export const getUser = async (id: number): Promise<IdentityDTO> => {
+export const getUser = async (id: number): Promise<Identity> => {
   const res = await client.get(`/v1/users/${id}`);
   return res.data;
 };
@@ -52,7 +53,7 @@ export const getGroups = async (): Promise<Array<GroupDTO>> => {
 };
 
 export const getGroupInfos = async (id: string): Promise<UserGroup> => {
-  const res = await client.get(`/v1/groups/${id}?details=true`);
+  const res = await client.get(`/v1/groups/${encodeURIComponent(id)}?details=true`);
   return res.data;
 };
 
@@ -69,7 +70,7 @@ export const updateGroup = async (id: string, name: string): Promise<GroupDTO> =
 };
 
 export const deleteGroup = async (id: string): Promise<string> => {
-  const res = await client.delete(`/v1/groups/${id}`);
+  const res = await client.delete(`/v1/groups/${encodeURIComponent(id)}`);
   return res.data;
 };
 

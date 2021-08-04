@@ -8,8 +8,8 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcind.scn.links.item.values import (
-    OutputSimulationModeMcIndScnLinksItemValues as Values,
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
+    LinkOutputSeriesMatrix,
 )
 
 
@@ -27,7 +27,7 @@ class OutputSimulationModeMcIndScnLinksItem(FolderNode):
 
     def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {
-            f"values-{timing}": Values(
+            f"values-{timing}": LinkOutputSeriesMatrix(
                 self.context,
                 config.next_file(f"values-{timing}.txt"),
                 timing,

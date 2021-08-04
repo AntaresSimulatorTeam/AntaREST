@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Iterator
 
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.io.reader import (
@@ -34,7 +34,7 @@ class ConfigPathBuilder:
         Returns: study config fill with data
 
         """
-        (sns,) = ConfigPathBuilder._parse_parameters(study_path)
+        (sns, asi) = ConfigPathBuilder._parse_parameters(study_path)
 
         return FileStudyTreeConfig(
             study_path=study_path,
@@ -44,15 +44,24 @@ class ConfigPathBuilder:
             outputs=ConfigPathBuilder._parse_outputs(study_path),
             bindings=ConfigPathBuilder._parse_bindings(study_path),
             store_new_set=sns,
+            archive_input_series=asi,
         )
 
     @staticmethod
-    def _parse_parameters(path: Path) -> Tuple[bool]:
+    def _parse_parameters(path: Path) -> Tuple[bool, List[str]]:
         general = SetsIniReader().read(path / "settings/generaldata.ini")
         store_new_set: bool = general.get("output", {}).get(
             "storenewset", False
         )
-        return (store_new_set,)
+        archive_input_series: List[str] = [
+            e.strip()
+            for e in general.get("output", {})
+            .get("archives", "")
+            .strip()
+            .split(",")
+            if e.strip()
+        ]
+        return store_new_set, archive_input_series
 
     @staticmethod
     def _parse_bindings(root: Path) -> List[str]:

@@ -5,8 +5,8 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.comments import (
-    Comments,
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
+    RawFileNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
     GeneralData,
@@ -31,7 +31,7 @@ class Settings(FolderNode):
             "simulations": SettingsSimulations(
                 self.context, config.next_file("simulations")
             ),
-            "comments": Comments(
+            "comments": RawFileNode(
                 self.context, config.next_file("comments.txt")
             ),
             "generaldata": GeneralData(
