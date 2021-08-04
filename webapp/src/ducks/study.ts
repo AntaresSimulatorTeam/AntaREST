@@ -8,6 +8,7 @@ import { StudyMetadata } from '../common/types';
 
 export interface StudyState {
   current?: string;
+  activeStudyInfo?: StudyMetadata;
   studies: StudyMetadata[];
 }
 
@@ -59,7 +60,17 @@ export const addStudies = (studies: StudyMetadata[]): AddStudyAction => ({
   payload: studies,
 });
 
-type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | AddStudyAction;
+interface SetStudyInfoAction extends Action {
+  type: 'STUDY/SET_STUDY_INFO';
+  payload: StudyMetadata | undefined;
+}
+
+export const setStudyInfo = (study: StudyMetadata | undefined): SetStudyInfoAction => ({
+  type: 'STUDY/SET_STUDY_INFO',
+  payload: study,
+});
+
+type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | AddStudyAction | SetStudyInfoAction;
 
 /** ******************************************* */
 /* Selectors                                    */
@@ -92,6 +103,11 @@ export default (state = initialState, action: StudyAction): StudyState => {
       return {
         ...state,
         studies: state.studies.filter((s) => action.payload.map((study) => study.id).indexOf(s.id) === -1).concat(action.payload),
+      };
+    case 'STUDY/SET_STUDY_INFO':
+      return {
+        ...state,
+        activeStudyInfo: action.payload,
       };
     default:
       return state;

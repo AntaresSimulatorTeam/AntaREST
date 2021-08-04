@@ -66,6 +66,7 @@ const SingleStudyView = (props: PropTypes) => {
     try {
       const studyMetadata = await getStudyMetadata(studyId);
       setStudy(studyMetadata);
+      console.log('YES SIR');
     } catch (e) {
       enqueueSnackbar(t('studymanager:failtoloadstudy'), { variant: 'error' });
     }
@@ -121,7 +122,7 @@ const SingleStudyView = (props: PropTypes) => {
         fetchStudyInfo();
       }
     },
-    [studyJobs, studyId, fetchStudyInfo],
+    [studyId, studyJobs, fetchStudyInfo],
   );
 
   useEffect(() => {
