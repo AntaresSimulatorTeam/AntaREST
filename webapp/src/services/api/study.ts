@@ -42,6 +42,14 @@ export const copyStudy = async (sid: string, name: string, withOutputs = false):
   return res.data;
 };
 
+export const archiveStudy = async (sid: string): Promise<void> => {
+  await client.put(`/v1/studies/${sid}/archive`);
+};
+
+export const unarchiveStudy = async (sid: string): Promise<void> => {
+  await client.put(`/v1/studies/${sid}/unarchive`);
+};
+
 export const deleteStudy = async (sid: string): Promise<any> => {
   const res = await client.delete(`/v1/studies/${sid}`);
   return res.data;

@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional, Union
 
 import pandas as pd  # type: ignore
@@ -14,6 +15,8 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class InputSeriesMatrix(MatrixNode):
@@ -48,6 +51,7 @@ class InputSeriesMatrix(MatrixNode):
 
             return data
         except EmptyDataError:
+            logger.warning(f"Empty file found when parsing {self.config.path}")
             return {}
 
     def _dump_json(self, data: JSON) -> None:

@@ -349,4 +349,32 @@ def create_study_routes(
         storage_service.set_sim_reference(study_id, output_id, status, params)
         return "OK"
 
+    @bp.put(
+        "/studies/{study_id}/archive",
+        summary="Archive a study",
+        tags=[APITag.study_management],
+    )
+    def archive_study(
+        study_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        params = RequestParameters(user=current_user)
+        storage_service.archive(study_id, params)
+        return ""
+
+    @bp.put(
+        "/studies/{study_id}/unarchive",
+        summary="Dearchive a study",
+        tags=[APITag.study_management],
+    )
+    def unarchive_study(
+        study_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        params = RequestParameters(user=current_user)
+        storage_service.unarchive(study_id, params)
+        return ""
+
     return bp

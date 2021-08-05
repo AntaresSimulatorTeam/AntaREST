@@ -189,14 +189,15 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
         """
         file_settings = {}
+        file_metadata = {}
         config = FileStudyTreeConfig(
             study_path=self.get_study_path(study), study_id=""
         )
-        raw_study = self.study_factory.create_from_config(config)
-        file_metadata = raw_study.get(url=["study", "antares"])
         patch_metadata = self.patch_service.get(study).study or PatchStudy()
 
         try:
+            raw_study = self.study_factory.create_from_config(config)
+            file_metadata = raw_study.get(url=["study", "antares"])
             file_settings = raw_study.get(
                 url=["settings", "generaldata", "general"]
             )
@@ -215,6 +216,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             updated=study.updated_at.timestamp(),
             workspace=study.workspace,
             managed=study.workspace == DEFAULT_WORKSPACE_NAME,
+            archived=study.archived if study.archived is not None else False,
             owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
             if study.owner is not None
             else OwnerInfo(name=file_metadata.get("author", "Unknown")),

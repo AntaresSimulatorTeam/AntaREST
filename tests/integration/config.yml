@@ -11,10 +11,10 @@ security:
 db:
   url: {{dburl}}
 
-matrixstore:
-  bucket: ./bucket
-
 storage:
+  matrixstore: {{matrix_dir}}
+  archive_dir: {{archive_dir}}
+  tmp_dir: {{tmp_dir}}
   watcher_lock: false
   workspaces:
     default:

@@ -5,14 +5,8 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.areas import (
-    OutputSimulationAboutAreas,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.comments import (
-    OutputSimulationAboutComments,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.links import (
-    OutputSimulationAboutLinks,
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
+    RawFileNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.parameters import (
     OutputSimulationAboutParameters,
@@ -25,15 +19,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.abo
 class OutputSimulationAbout(FolderNode):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {
-            "areas": OutputSimulationAboutAreas(
-                self.context, config.next_file("areas.txt")
-            ),
-            "comments": OutputSimulationAboutComments(
+            "areas": RawFileNode(self.context, config.next_file("areas.txt")),
+            "comments": RawFileNode(
                 self.context, config.next_file("comments.txt")
             ),
-            "links": OutputSimulationAboutLinks(
-                self.context, config.next_file("links.txt")
-            ),
+            "links": RawFileNode(self.context, config.next_file("links.txt")),
             # TODO "map": OutputSimulationAboutMap(self.context, config.next_file("map")),
             "study": OutputSimulationAboutStudy(
                 self.context, config.next_file("study.ini")

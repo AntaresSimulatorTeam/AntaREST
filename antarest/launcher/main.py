@@ -16,7 +16,7 @@ def build_launcher(
     service_storage: Optional[StudyService] = None,
     service_launcher: Optional[LauncherService] = None,
     event_bus: IEventBus = DummyEventBusService(),
-) -> None:
+) -> Optional[LauncherService]:
 
     if service_storage and not service_launcher:
         repository = JobResultRepository()
@@ -31,3 +31,5 @@ def build_launcher(
         application.include_router(
             create_launcher_api(service_launcher, config)
         )
+
+    return service_launcher

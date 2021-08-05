@@ -47,7 +47,7 @@ const CreateStudyForm = (props: PropTypes) => {
 
   return (
     <form className={classes.root} onSubmit={handleSubmit(onSubmit)}>
-      <Button className={classes.button} type="submit" variant="outlined" color="primary">{t('main:create')}</Button>
+      <Button className={classes.button} type="submit" variant="contained" color="primary">{t('main:create')}</Button>
       <Input className={classes.input} placeholder={t('studymanager:nameofstudy')} inputProps={{ id: 'studyname', name: 'studyname', ref: register({ required: true }) }} />
     </form>
   );

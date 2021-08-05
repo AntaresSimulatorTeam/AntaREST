@@ -3,13 +3,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Breadcrumbs, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
 import { connect, ConnectedProps } from 'react-redux';
 import StudyView from '../../components/StudyView';
-import { getStudyData, getStudyJobs, mapLaunchJobDTO } from '../../services/api/study';
+import { getStudyJobs, getStudyMetadata, mapLaunchJobDTO } from '../../services/api/study';
 import PulsingDot from '../../components/ui/PulsingDot';
 import GenericTabView from '../../components/ui/NavComponents/GenericTabView';
 import Informations from '../../components/SingleStudy/Informations';
-import { LaunchJob, WSMessage } from '../../common/types';
+import { LaunchJob, StudyMetadata, WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 
 const logError = debug('antares:singlestudyview:error');
@@ -57,17 +58,18 @@ const SingleStudyView = (props: PropTypes) => {
   const { addWsListener, removeWsListener } = props;
   const classes = useStyles();
   const [t] = useTranslation();
-  const [studyname, setStudyname] = useState<string>();
+  const [study, setStudy] = useState<StudyMetadata>();
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
+  const { enqueueSnackbar } = useSnackbar();
 
-  const initStudyData = async (sid: string) => {
+  const fetchStudyInfo = useCallback(async () => {
     try {
-      const data = await getStudyData(sid, 'study/antares', 1);
-      setStudyname(data.caption as string);
+      const studyMetadata = await getStudyMetadata(studyId);
+      setStudy(studyMetadata);
     } catch (e) {
-      logError('Failed to fetch study data', sid, e);
+      enqueueSnackbar(t('studymanager:failtoloadstudy'), { variant: 'error' });
     }
-  };
+  }, [studyId, enqueueSnackbar, t]);
 
   const fetchStudyJob = async (sid: string) => {
     try {
@@ -87,13 +89,16 @@ const SingleStudyView = (props: PropTypes) => {
 
   const handleEvents = useCallback(
     (msg: WSMessage): void => {
-      if (msg.type === 'STUDY_JOB_STARTED') {
+      if (msg.type === WSEvent.STUDY_JOB_STARTED) {
         const newJob = mapLaunchJobDTO(msg.payload);
         if (newJob.studyId === studyId) {
           const existingJobs = studyJobs || [];
           setStudyJobs([newJob].concat(existingJobs));
         }
-      } else if (msg.type === 'STUDY_JOB_STATUS_UPDATE' || msg.type === 'STUDY_JOB_COMPLETED') {
+      } else if (
+        msg.type === WSEvent.STUDY_JOB_STATUS_UPDATE ||
+        msg.type === WSEvent.STUDY_JOB_COMPLETED
+      ) {
         const newJob = mapLaunchJobDTO(msg.payload);
         if (newJob.studyId === studyId) {
           const existingJobs = studyJobs || [];
@@ -110,41 +115,51 @@ const SingleStudyView = (props: PropTypes) => {
             );
           }
         }
-      } else if (msg.type === 'STUDY_JOB_LOG_UPDATE') {
+      } else if (msg.type === WSEvent.STUDY_JOB_LOG_UPDATE) {
         console.log(msg.payload);
+      } else if (msg.type === WSEvent.STUDY_EDITED) {
+        fetchStudyInfo();
       }
     },
-    [studyJobs, studyId],
+    [studyId, studyJobs, fetchStudyInfo],
   );
 
   useEffect(() => {
     if (studyId) {
-      initStudyData(studyId);
+      fetchStudyInfo();
       fetchStudyJob(studyId);
     }
-  }, [studyId]);
+  }, [studyId, t, enqueueSnackbar, fetchStudyInfo]);
 
   useEffect(() => {
     addWsListener(handleEvents);
     return () => removeWsListener(handleEvents);
   }, [addWsListener, removeWsListener, handleEvents]);
 
-  const navData = {
-    'singlestudy:informations': () => <Informations studyId={studyId} jobs={studyJobs || []} />,
-    'singlestudy:treeView': () => <StudyView study={studyId} />,
+  const navData: { [key: string]: () => JSX.Element } = {
+    'singlestudy:informations': () =>
+      (study ? <Informations study={study} jobs={studyJobs || []} /> : <div />),
   };
+  if (study && !study.archived) {
+    navData['singlestudy:treeView'] = () => <StudyView study={study} />;
+  }
+
   return (
     <div className={classes.root}>
-      <Breadcrumbs aria-label="breadcrumb" className={classes.breadcrumbs}>
-        <Link to="/" className={classes.breadcrumbsfirstelement}>
-          {t('main:allStudies')}
-        </Link>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          {renderStatus()}
-          {studyname}
-        </div>
-      </Breadcrumbs>
-      {studyId && <GenericTabView items={navData} initialValue="singlestudy:informations" />}
+      {study && (
+        <>
+          <Breadcrumbs aria-label="breadcrumb" className={classes.breadcrumbs}>
+            <Link to="/" className={classes.breadcrumbsfirstelement}>
+              {t('main:allStudies')}
+            </Link>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {renderStatus()}
+              {study.name}
+            </div>
+          </Breadcrumbs>
+          <GenericTabView items={navData} initialValue="singlestudy:informations" />
+        </>
+      )}
     </div>
   );
 };

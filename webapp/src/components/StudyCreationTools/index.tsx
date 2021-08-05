@@ -21,10 +21,6 @@ const useFormStyles = makeStyles((theme: Theme) =>
     button: {
       width: '100px',
       border: `2px solid ${theme.palette.primary.main}`,
-      '&:hover': {
-        border: `2px solid ${theme.palette.secondary.main}`,
-        color: theme.palette.secondary.main,
-      },
       fontWeight: 'bold',
     },
     input: {

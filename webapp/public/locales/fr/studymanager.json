@@ -12,5 +12,18 @@
   "failtosavedata": "Erreur lors de la sauvegarde des données",
   "failtocopystudy": "Erreur lors de la copie de l'étude",
   "studycopiedsuccess": "Etude copiée avec succès",
-  "permission": "Permission"
+  "archive": "Archiver",
+  "unarchive": "Désarchiver",
+  "archivesuccess": "Etude {{studyname}} archivée",
+  "archivefailure": "Erreur lors de l'archivage de l'étude {{studyname}}",
+  "unarchivesuccess": "Etude {{studyname}} désarchivée",
+  "unarchivefailure": "Erreur lors du désarchivage de l'étude {{studyname}}",
+  "permission": "Permission",
+  "refresh": "Charger les études",
+  "sortByName": "Trier par nom",
+  "sortByDate": "Trier par date",
+  "managedStudiesFilter": "Etudes managées",
+  "userFilter": "Filtrer par utilisateur",
+  "groupFilter": "Filtrer par groupe",
+  "versionFilter": "Filtrer par version"
 }

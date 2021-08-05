@@ -9,14 +9,11 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
+    RawFileNode,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.about import (
     OutputSimulationAbout,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.annualSystemCost import (
-    OutputSimulationAnnualSystemCost,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.checkIntegrity import (
-    OutputSimulationCheckIntegrity,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.info_antares_output import (
     OutputSimulationInfoAntaresOutput,
@@ -24,11 +21,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.inf
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.economy import (
     OutputSimulationMode,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.simulation_comments import (
-    OutputSimulationSimulationComments,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.simulation_log import (
-    OutputSimulationSimulationLog,
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_generator.ts_generator import (
+    OutputSimulationTsGenerator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers import (
     OutputSimulationTsNumbers,
@@ -50,7 +44,7 @@ class OutputSimulation(FolderNode):
             "about-the-study": OutputSimulationAbout(
                 self.context, config.next_file("about-the-study")
             ),
-            "simulation": OutputSimulationSimulationLog(
+            "simulation": RawFileNode(
                 self.context, config.next_file("simulation.log")
             ),
             "info": OutputSimulationInfoAntaresOutput(
@@ -58,21 +52,24 @@ class OutputSimulation(FolderNode):
             ),
         }
         if not self.simulation.error:
-            children["annualSystemCost"] = OutputSimulationAnnualSystemCost(
+            children["annualSystemCost"] = RawFileNode(
                 self.context, config.next_file("annualSystemCost.txt")
             )
-            children["checkIntegrity"] = OutputSimulationCheckIntegrity(
+            children["checkIntegrity"] = RawFileNode(
                 self.context, config.next_file("checkIntegrity.txt")
             )
-            children[
-                "simulation-comments"
-            ] = OutputSimulationSimulationComments(
+            children["simulation-comments"] = RawFileNode(
                 self.context, config.next_file("simulation-comments.txt")
             )
 
             if config.store_new_set:
                 children["ts-numbers"] = OutputSimulationTsNumbers(
                     self.context, config.next_file("ts-numbers")
+                )
+
+            if config.archive_input_series:
+                children["ts-generator"] = OutputSimulationTsGenerator(
+                    self.context, config.next_file("ts-generator")
                 )
 
             if self.simulation.mode == "economy":

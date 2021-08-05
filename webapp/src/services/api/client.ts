@@ -9,7 +9,7 @@ const logInfo = debug('antares:client:info');
 
 const client = axios.create();
 
-export const setLogoutInterceptor = (logoutCallback: () => void): void => {
+export const setLogoutInterceptor = (logoutCallback: () => void, clearStudies: () => void): void => {
   client.interceptors.response.use(
     async (c): Promise<AxiosResponse> => c,
     async (e) => {
@@ -17,6 +17,7 @@ export const setLogoutInterceptor = (logoutCallback: () => void): void => {
       const { status } = e.response;
       if (e && status === 401) {
         client.defaults.headers.common.Authorization = null;
+        clearStudies();
         logoutCallback();
       }
       return Promise.reject(e);

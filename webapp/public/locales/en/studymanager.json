@@ -12,5 +12,18 @@
   "failtosavedata": "Failed to save data",
   "failtocopystudy": "Failed to copy study",
   "studycopiedsuccess": "Success copying study",
-  "permission": "Permission"
+  "archive": "Archive",
+  "unarchive": "Unarchive",
+  "archivesuccess": "Study {{studyname}} archived",
+  "archivefailure": "Failed to archive study {{studyname}}",
+  "unarchivesuccess": "Study {{studyname}} unarchived",
+  "unarchivefailure": "Failed to unarchive study {{studyname}}",
+  "permission": "Permission",
+  "refresh": "Refresh studies",
+  "sortByName": "Sort by name",
+  "sortByDate": "Sort by date",
+  "managedStudiesFilter": "Managed studies",
+  "userFilter": "Filter by user",
+  "groupFilter": "Filter by group",
+  "versionFilter": "Filter by version"
 }

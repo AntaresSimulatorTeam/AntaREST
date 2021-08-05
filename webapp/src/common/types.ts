@@ -5,6 +5,17 @@ export type StudyDataType = 'json' | 'file' | 'matrixfile' | 'matrix';
 
 export type StudyPublicMode = "'NONE' | 'READ' | 'EXECUTE' | 'EDIT' | 'FULL'";
 
+export interface GenericInfo {
+  id: IDType;
+  name: string;
+}
+
+export interface StudySummary {
+  id: string;
+  name: string;
+  workspace: string;
+}
+
 export interface StudyMetadataOwner {
   id?: number;
   name: string;
@@ -18,6 +29,7 @@ export interface StudyMetadataDTO {
   version: number;
   workspace: string;
   managed: boolean;
+  archived: boolean;
   groups: Array<{ id: string; name: string }>;
   public_mode: StudyPublicMode;
 }
@@ -31,6 +43,7 @@ export interface StudyMetadata {
   version: string;
   workspace: string;
   managed: boolean;
+  archived: boolean;
   groups: Array<{ id: string; name: string }>;
   publicMode: StudyPublicMode;
 }
@@ -193,6 +206,16 @@ export interface MatrixType {
   columns: Array<string>;
   index: Array<string | number>;
   data: Array<Array<number>>;
+}
+
+export enum WSEvent {
+  STUDY_CREATED='STUDY_CREATED',
+  STUDY_DELETED='STUDY_DELETED',
+  STUDY_EDITED='STUDY_EDITED',
+  STUDY_JOB_STARTED='STUDY_JOB_STARTED',
+  STUDY_JOB_LOG_UPDATE='STUDY_JOB_LOG_UPDATE',
+  STUDY_JOB_COMPLETED='STUDY_JOB_COMPLETED',
+  STUDY_JOB_STATUS_UPDATE='STUDY_JOB_STATUS_UPDATE'
 }
 
 export interface WSMessage {

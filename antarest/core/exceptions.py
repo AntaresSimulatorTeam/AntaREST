@@ -26,6 +26,14 @@ class StudyTypeUnsupported(HTTPException):
         )
 
 
+class UnsupportedOperationOnArchivedStudy(HTTPException):
+    def __init__(self, uuid: str) -> None:
+        super().__init__(
+            HTTPStatus.BAD_REQUEST,
+            f"Study {uuid} is archived",
+        )
+
+
 class BadOutputError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)

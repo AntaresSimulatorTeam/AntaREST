@@ -12,6 +12,7 @@ export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDT
   version: metadata.version.toString(),
   workspace: metadata.workspace,
   managed: metadata.managed,
+  archived: metadata.archived,
 });
 
 export const useNotif = (): (message: React.ReactNode, options?: OptionsObject | undefined) => React.ReactText => {

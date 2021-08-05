@@ -111,7 +111,7 @@ class SetsIniReader(IReader):
                 curr_part = regex.group(1)
                 data[curr_part] = dict()
             else:
-                elements = line.split(" = ")
+                elements = re.split("\s+=\s+", line)
                 key = elements[0]
                 value = None
                 if len(elements) == 2:

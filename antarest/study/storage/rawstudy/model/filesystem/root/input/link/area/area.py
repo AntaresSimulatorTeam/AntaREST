@@ -8,8 +8,8 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.link import (
-    InputLinkAreaLink,
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.properties import (
     InputLinkAreaProperties,
@@ -25,7 +25,7 @@ class InputLinkArea(FolderNode):
 
     def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {
-            l: InputLinkAreaLink(self.context, config.next_file(f"{l}.txt"))
+            l: InputSeriesMatrix(self.context, config.next_file(f"{l}.txt"))
             for l in config.get_links(self.area)
         }
         children["properties"] = InputLinkAreaProperties(
