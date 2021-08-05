@@ -7,6 +7,7 @@ from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.core.interfaces.cache import ICache
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import (
     IStudyStorageService,

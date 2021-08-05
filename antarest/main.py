@@ -19,6 +19,7 @@ from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
+from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.persistence import upgrade_db
@@ -245,11 +246,13 @@ def fastapi_app(
     user_service = build_login(application, config, event_bus=event_bus)
 
     matrix_service = build_matrixstore(application, config, user_service)
+    cache = build_cache(config)
 
     storage = build_storage(
         application,
         config,
         matrix_service=matrix_service,
+        cache=cache,
         user_service=user_service,
         event_bus=event_bus,
     )
@@ -266,6 +269,7 @@ def fastapi_app(
     services["launcher"] = launcher
     services["matrix"] = matrix_service
     services["user"] = user_service
+    services["cache"] = cache
 
     return application, services
 
