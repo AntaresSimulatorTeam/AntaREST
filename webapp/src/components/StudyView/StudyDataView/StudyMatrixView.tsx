@@ -1,8 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
-import { makeStyles, Theme, createStyles, Paper, Typography, Button } from '@material-ui/core';
+import { makeStyles, Theme, createStyles, Paper } from '@material-ui/core';
 import debug from 'debug';
-import SaveIcon from '@material-ui/icons/Save';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { getStudyData, importFile } from '../../../services/api/study';
@@ -44,7 +43,6 @@ const StudyMatrixView = (props: PropTypes) => {
   const [t] = useTranslation();
   const [data, setData] = useState<MatrixType>();
   const [loaded, setLoaded] = useState(false);
-  const [changeStatus, setChangeStatus] = useState<boolean>(false);
   const [isEditable, setEditable] = useState<boolean>(true);
   const [formatedPath, setFormatedPath] = useState<string>('');
 
@@ -64,11 +62,6 @@ const StudyMatrixView = (props: PropTypes) => {
     } finally {
       setLoaded(true);
     }
-  };
-
-  const onChange = () => {
-    // Save matrix if edited
-    setChangeStatus(!changeStatus);
   };
 
   const onImport = async (file: File) => {
@@ -94,7 +87,6 @@ const StudyMatrixView = (props: PropTypes) => {
       return;
     }
     loadFileData();
-    setChangeStatus(false);
   }, [url, filterOut]);
 
   return (
@@ -104,25 +96,11 @@ const StudyMatrixView = (props: PropTypes) => {
           isEditable && (
           <div className={classes.header}>
             <ImportForm text={t('main:import')} onImport={onImport} />
-            {data && Object.keys(data).length > 0 && (
-              <Button
-                variant="outlined"
-                color="primary"
-                className={classes.button}
-                style={{ border: '2px solid' }}
-                onClick={onChange}
-              >
-                {changeStatus && <SaveIcon className={classes.buttonElement} style={{ width: '16px', height: '16px' }} />}
-                <Typography className={classes.buttonElement} style={{ fontSize: '12px' }}>
-                  {changeStatus ? t('main:save') : t('main:edit')}
-                </Typography>
-              </Button>
-            )}
           </div>
           )}
         <Paper className={classes.content}>
           {data && Object.keys(data).length > 0 && (
-            <MatrixView matrix={data} readOnly={!changeStatus} />
+            <MatrixView matrix={data} readOnly />
           )}
         </Paper>
       </div>

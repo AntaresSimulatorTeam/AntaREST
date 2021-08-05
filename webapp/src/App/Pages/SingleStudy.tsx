@@ -121,7 +121,7 @@ const SingleStudyView = (props: PropTypes) => {
         fetchStudyInfo();
       }
     },
-    [studyJobs, studyId, fetchStudyInfo],
+    [studyId, studyJobs, fetchStudyInfo],
   );
 
   useEffect(() => {
