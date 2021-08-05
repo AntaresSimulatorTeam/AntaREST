@@ -1,3 +1,4 @@
+import multiprocessing
 import platform
 import sys
 import time
@@ -48,6 +49,7 @@ def run_server(config_file: Path, auto_upgrade_db: bool):
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     config_file, display_version, no_front, auto_upgrade_db = get_arguments()
 
     if display_version:
