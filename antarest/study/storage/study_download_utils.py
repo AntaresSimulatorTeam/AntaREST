@@ -8,10 +8,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from antarest.study.storage.rawstudy.model import FileStudy
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.model import (
     MatrixAggregationResult,
     RawStudy,

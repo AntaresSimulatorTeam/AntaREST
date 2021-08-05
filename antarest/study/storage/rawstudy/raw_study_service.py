@@ -11,7 +11,6 @@ from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import (
     IStudyStorageService,
 )
-from antarest.study.storage.rawstudy.model import FileStudy
 from antarest.study.storage.rawstudy.patch_service import PatchService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -32,6 +31,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
+    FileStudy,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,

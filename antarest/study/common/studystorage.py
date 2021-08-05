@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, List
 
-from antarest.study.storage.rawstudy.model import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.model import Study, StudySimResultDTO, StudyMetadataDTO
 
 T = TypeVar("T", bound=Study)

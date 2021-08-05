@@ -5,13 +5,16 @@ from antarest.core.custom_types import JSON
 from antarest.core.utils.utils import DTO
 
 
-class ThermalCluster(DTO):
+class Cluster(DTO):
     """
     Object linked to /input/thermal/clusters/<area>/list.ini
     """
 
-    def __init__(self, id: str, enabled: bool = True):
+    def __init__(
+        self, id: str, enabled: bool = True, name: Optional[str] = None
+    ):
         self.id = id
+        self.name = name or id
         self.enabled = enabled
 
 
@@ -46,12 +49,14 @@ class Area(DTO):
     def __init__(
         self,
         links: Dict[str, Link],
-        thermals: List[ThermalCluster],
+        thermals: List[Cluster],
+        renewables: List[Cluster],
         filters_synthesis: List[str],
         filters_year: List[str],
     ):
         self.links = links
         self.thermals = thermals
+        self.renewables = renewables
         self.filters_synthesis = filters_synthesis
         self.filters_year = filters_year
 
@@ -119,6 +124,7 @@ class FileStudyTreeConfig(DTO):
         bindings: Optional[List[str]] = None,
         store_new_set: bool = False,
         archive_input_series: Optional[List[str]] = None,
+        enr_modelling: str = "aggregated",
     ):
         self.root_path = study_path
         self.path = study_path
@@ -130,6 +136,7 @@ class FileStudyTreeConfig(DTO):
         self.store_new_set = store_new_set
         self.study_id = study_id
         self.archive_input_series = archive_input_series or list()
+        self.enr_modelling = enr_modelling
 
     def next_file(self, name: str) -> "FileStudyTreeConfig":
         copy = FileStudyTreeConfig(
@@ -142,6 +149,7 @@ class FileStudyTreeConfig(DTO):
             self.bindings,
             self.store_new_set,
             self.archive_input_series,
+            self.enr_modelling,
         )
         copy.path = self.path / name
         return copy
@@ -159,6 +167,18 @@ class FileStudyTreeConfig(DTO):
             thermal.id
             for thermal in self.areas[area].thermals
             if not only_enabled or thermal.enabled
+        ]
+
+    def get_renewable_names(
+        self,
+        area: str,
+        only_enabled: bool = False,
+        section_name: bool = True,
+    ) -> List[str]:
+        return [
+            renewable.id if section_name else renewable.name
+            for renewable in self.areas[area].renewables
+            if not only_enabled or renewable.enabled
         ]
 
     def get_links(self, area: str) -> List[str]:
