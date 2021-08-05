@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - 'master'
+      - 'pbq/cef_localapp'
 
 
 jobs:
