@@ -21,6 +21,7 @@ IT
     config = FileStudyTreeConfig(
         study_path=file,
         study_id="id",
+        version=-1,
         areas={"fr": None, "de": None, "it": None},
     )
     node = InputAreasList(context=Mock(), config=config)

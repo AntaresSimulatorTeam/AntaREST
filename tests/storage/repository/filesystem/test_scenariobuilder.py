@@ -96,7 +96,11 @@ def test_get(tmp_path: Path):
     node = ScenarioBuilder(
         context=Mock(),
         config=FileStudyTreeConfig(
-            study_path=path, areas=areas, outputs=dict(), study_id="id"
+            study_path=path,
+            version=-1,
+            areas=areas,
+            outputs=dict(),
+            study_id="id",
         ),
     )
 

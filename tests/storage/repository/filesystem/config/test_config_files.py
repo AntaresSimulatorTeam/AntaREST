@@ -42,7 +42,7 @@ def test_parse_output_parmeters(tmp_path) -> None:
     (study / "settings/generaldata.ini").write_text(content)
 
     config = FileStudyTreeConfig(
-        study_path=study, store_new_set=True, study_id="id"
+        study_path=study, version=-1, store_new_set=True, study_id="id"
     )
     assert ConfigPathBuilder.build(study, "id") == config
 
@@ -62,7 +62,10 @@ def test_parse_bindings(tmp_path: Path) -> None:
     ).write_text(content)
 
     config = FileStudyTreeConfig(
-        study_path=study_path, bindings=["bindA", "bindB"], study_id="id"
+        study_path=study_path,
+        version=-1,
+        bindings=["bindA", "bindB"],
+        study_id="id",
     )
     assert ConfigPathBuilder.build(study_path, "id") == config
 
@@ -89,6 +92,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
     config = FileStudyTreeConfig(
         study_path,
         "id",
+        version=-1,
         outputs={
             "20201220-1456eco-hello": Simulation(
                 name="hello",
@@ -133,6 +137,7 @@ def test_parse_area(tmp_path: Path) -> None:
     config = FileStudyTreeConfig(
         study_path,
         "id",
+        version=-1,
         areas={
             "fr": Area(
                 thermals=[],

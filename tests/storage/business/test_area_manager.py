@@ -35,6 +35,7 @@ def test_get_all_area():
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         study_id="",
+        version=-1,
         areas={
             "a1": Area({}, [], [], []),
             "a2": Area({}, [], [], []),
@@ -124,6 +125,7 @@ def test_update_area():
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         study_id="",
+        version=-1,
         areas={
             "a1": Area({}, [], [], []),
             "a2": Area({}, [], [], []),

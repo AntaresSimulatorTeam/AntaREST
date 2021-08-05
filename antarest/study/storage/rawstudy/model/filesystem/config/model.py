@@ -112,6 +112,7 @@ class FileStudyTreeConfig(DTO):
         self,
         study_path: Path,
         study_id: str,
+        version: int,
         areas: Optional[Dict[str, Area]] = None,
         sets: Optional[Dict[str, Set]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
@@ -121,6 +122,7 @@ class FileStudyTreeConfig(DTO):
     ):
         self.root_path = study_path
         self.path = study_path
+        self.version = version
         self.areas = areas or dict()
         self.sets = sets or dict()
         self.outputs = outputs or dict()
@@ -133,6 +135,7 @@ class FileStudyTreeConfig(DTO):
         copy = FileStudyTreeConfig(
             self.root_path,
             self.study_id,
+            self.version,
             self.areas,
             self.sets,
             self.outputs,

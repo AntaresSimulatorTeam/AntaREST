@@ -191,7 +191,9 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         file_settings = {}
         file_metadata = {}
         config = FileStudyTreeConfig(
-            study_path=self.get_study_path(study), study_id=""
+            study_path=self.get_study_path(study),
+            study_id="",
+            version=-1,
         )
         patch_metadata = self.patch_service.get(study).study or PatchStudy()
 

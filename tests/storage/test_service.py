@@ -268,6 +268,7 @@ def test_download_output() -> None:
     config = FileStudyTreeConfig(
         study_path=input_study.path,
         study_id="",
+        version=-1,
         areas={"east": area},
         sets={"north": Set()},
         outputs={"output-id": sim},

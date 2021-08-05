@@ -39,6 +39,7 @@ class ConfigPathBuilder:
         return FileStudyTreeConfig(
             study_path=study_path,
             study_id=study_id,
+            version=ConfigPathBuilder._parse_version(study_path),
             areas=ConfigPathBuilder._parse_areas(study_path),
             sets=ConfigPathBuilder._parse_sets(study_path),
             outputs=ConfigPathBuilder._parse_outputs(study_path),
@@ -46,6 +47,11 @@ class ConfigPathBuilder:
             store_new_set=sns,
             archive_input_series=asi,
         )
+
+    @staticmethod
+    def _parse_version(path: Path) -> int:
+        studyinfo = IniReader().read(path / "study.antares")
+        return studyinfo.get("version", -1)
 
     @staticmethod
     def _parse_parameters(path: Path) -> Tuple[bool, List[str]]:
