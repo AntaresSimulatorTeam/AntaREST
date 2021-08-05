@@ -49,12 +49,13 @@ class StudyFactory:
     def create_from_fs(
         self, path: Path, study_id: str
     ) -> Tuple[FileStudyTreeConfig, FileStudyTree]:
-        start_time = time.time()
-        cache_id = path.toString()
+        cache_id = str(path)
         from_cache = self.cache.get(cache_id)
         if from_cache:
-            return from_cache
+            logger.info(f"Study {study_id} obtained from cache")
+            return from_cache.data
 
+        start_time = time.time()
         config = ConfigPathBuilder.build(path, study_id)
         duration = "{:.3f}".format(time.time() - start_time)
         logger.info(f"Study {study_id} config built in {duration}s")

@@ -38,15 +38,18 @@ class LocalCache(ICache):
     def put(
         self, id: str, data: Any, duration: int = 3600
     ) -> None:  # Duration in second
+        print(f"PUT {id} in cache")
         self.cache[id] = CacheElement(
-            status=False,
             data=data,
             timeout=(time.time() + duration),
             duration=duration,
         )
 
-    def get(self, id: str, refresh_timeout: Optional[int] = None) -> Any:
+    def get(self, id: str, refresh_duration: Optional[int] = None) -> Any:
+        print(f"GET {id} in cache")
         if id in self.cache:
+            if refresh_duration:
+                self.cache[id].duration = refresh_duration
             self.cache[id].timeout = time.time() + self.cache[id].duration
             return self.cache[id]
         return None
