@@ -7,13 +7,18 @@ from antarest.core.interfaces.cache import ICache
 def build_cache(
     config: Config,
 ) -> ICache:
-    redis_conf = config.eventbus.redis
+    cache_conf = config.cache
+    redis_conf = config.cache.redis
     cache = (
         RedisCache(config=redis_conf)
         if redis_conf is not None
-        else LocalCache()
+        else LocalCache(config=cache_conf)
     )
 
-    print("LOCAL" if redis_conf is not None else "REDIS")
+    print(
+        "************************** REDIS"
+        if redis_conf is not None
+        else "************************** LOCAL"
+    )
     cache.start()
     return cache

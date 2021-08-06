@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Optional
+from typing import Optional, List
 from antarest.core.custom_types import JSON
 
 
@@ -20,4 +20,8 @@ class ICache:
 
     @abstractmethod
     def invalidate(self, id: str) -> None:
+        pass
+
+    @abstractmethod
+    def invalidate_all(self, ids: List[str]) -> None:
         pass

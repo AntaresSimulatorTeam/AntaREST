@@ -57,11 +57,13 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         study_factory: StudyFactory,
         path_resources: Path,
         patch_service: PatchService,
+        cache: ICache,
     ):
         self.config: Config = config
         self.study_factory: StudyFactory = study_factory
         self.path_resources: Path = path_resources
         self.patch_service = patch_service
+        self.cache = cache
 
     def _check_study_exists(self, metadata: RawStudy) -> None:
         """
@@ -173,7 +175,21 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         parts = [item for item in url.split("/") if item]
 
-        data = study.get(parts, depth=depth, formatted=formatted)
+        data = None
+        if url == "" and depth == -1:
+            cache_id = f"{str(study_path)}/RAW_STUDY"
+            from_cache = self.cache.get(cache_id)
+            if from_cache:
+                logger.info(f"Raw Study {metadata.id} read from cache")
+                data = from_cache.data
+            else:
+                data = study.get(parts, depth=depth, formatted=formatted)
+                self.cache.put(cache_id, data)
+                logger.info(
+                    f"Cache new entry from RawStudyService (studyID: {metadata.id})"
+                )
+        else:
+            data = study.get(parts, depth=depth, formatted=formatted)
         del study
         return data
 
@@ -323,6 +339,11 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         del study
         return dest_meta
 
+    def remove_from_cache(self, root_id: str) -> None:
+        self.cache.invalidate_all(
+            [f"{root_id}/RAW_STUDY", f"{root_id}/STUDY_FACTORY"]
+        )
+
     def delete(self, metadata: RawStudy) -> None:
         """
         Delete study
@@ -335,6 +356,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         shutil.rmtree(study_path)
+        self.remove_from_cache(str(study_path))
 
     def delete_output(self, metadata: RawStudy, output_name: str) -> None:
         """
@@ -346,8 +368,10 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         Returns:
 
         """
-        output_path = self.get_study_path(metadata) / "output" / output_name
+        study_path = self.get_study_path(metadata)
+        output_path = study_path / "output" / output_name
         shutil.rmtree(output_path, ignore_errors=True)
+        self.remove_from_cache(str(study_path))
 
     def edit_study(
         self, metadata: RawStudy, url: str, new: SUB_JSON
@@ -369,6 +393,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         study.save(new, url.split("/"))  # type: ignore
         del study
+        self.remove_from_cache(str(study_path))
         return new
 
     def patch_update_study_metadata(
@@ -384,12 +409,16 @@ class RawStudyService(IStudyStorageService[RawStudy]):
                 }
             },
         )
+        study_path = self.get_study_path(study)
+        self.remove_from_cache(str(study_path))
         return self.get_study_information(study)
 
     def set_reference_output(
         self, study: RawStudy, output_id: str, status: bool
     ) -> None:
         self.patch_service.set_reference_output(study, output_id, status)
+        study_path = self.get_study_path(study)
+        self.remove_from_cache(str(study_path))
 
     def get_study_sim_result(self, study: RawStudy) -> List[StudySimResultDTO]:
         """

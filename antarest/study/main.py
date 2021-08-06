@@ -72,6 +72,7 @@ def build_storage(
         study_factory=study_factory,
         path_resources=path_resources,
         patch_service=patch_service,
+        cache=cache,
     )
     importer_service = ImporterService(
         study_service=study_service,
