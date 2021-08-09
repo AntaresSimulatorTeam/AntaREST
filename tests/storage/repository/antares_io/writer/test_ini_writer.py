@@ -29,7 +29,7 @@ def test_write(tmp_path: str, ini_cleaner: Callable) -> None:
         key = value3
         key2 = 4,2
         key2 = 1,3
-        key3 = [1,2,3]
+        key3 = [1, 2, 3]
     """
 
     json_data = {
@@ -40,9 +40,9 @@ def test_write(tmp_path: str, ini_cleaner: Callable) -> None:
             "keyWithCapital": True,
         },
         "partWithSameKey": {
-            "key": '["value1", "value2", "value3"]',
-            "key2": '["4,2","1,3"]',
-            "key3": "[1,2,3]",
+            "key": ["value1", "value2", "value3"],
+            "key2": ["4,2", "1,3"],
+            "key3": [1, 2, 3],
         },
     }
     writer = IniWriter(special_keys=["key", "key2"])
