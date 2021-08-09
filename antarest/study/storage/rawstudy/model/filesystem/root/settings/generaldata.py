@@ -66,7 +66,6 @@ class GeneralData(IniFileNode):
             "include-exportmps": bool,
         },
         "other preferences": {
-            "initial-reservoir-levels": str,
             "power-fluctuations": str,
             "shedding-strategy": str,
             "shedding-policy": str,
@@ -95,6 +94,8 @@ class GeneralData(IniFileNode):
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         types = deepcopy(GeneralData.TYPES)
+        if config.version >= 650:
+            types["other preferences"]["initial-reservoir-levels"] = str
         if config.version >= 700:
             types["optimization"]["link-type"] = str
         if config.version >= 800:

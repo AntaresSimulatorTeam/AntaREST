@@ -15,11 +15,14 @@ class InputHydroIni(IniFileNode):
             "inter-daily-breakdown",
             "intra-daily-modulation",
             "inter-monthly-breakdown",
-            "initialize reservoir date",
-            "leeway low",
-            "leeway up",
-            "pumping efficiency",
         ]
+        if config.version >= 650:
+            sections += [
+                "initialize reservoir date",
+                "leeway low",
+                "leeway up",
+                "pumping efficiency",
+            ]
         section = {a: (int, float) for a in config.area_names()}
         types = {name: section for name in sections}
 

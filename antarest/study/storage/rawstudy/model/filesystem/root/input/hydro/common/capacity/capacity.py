@@ -14,13 +14,15 @@ class InputHydroCommonCapacity(FolderNode):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = dict()
         for area in config.area_names():
-            for file in [
-                "creditmodulations",
-                "inflowPattern",
+            config_filenames = [
                 "maxpower",
                 "reservoir",
-                "waterValues",
-            ]:
+            ]
+            if config.version >= 650:
+                config_filenames.append("inflowPattern")
+                config_filenames.append("creditmodulations")
+                config_filenames.append("waterValues")
+            for file in config_filenames:
                 name = f"{file}_{area}"
                 children[name] = InputSeriesMatrix(
                     self.context, config.next_file(f"{name}.txt")
