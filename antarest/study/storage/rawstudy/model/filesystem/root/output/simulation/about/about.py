@@ -8,11 +8,11 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.parameters import (
-    OutputSimulationAboutParameters,
-)
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.study import (
     OutputSimulationAboutStudy,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
+    GeneralData,
 )
 
 
@@ -28,7 +28,7 @@ class OutputSimulationAbout(FolderNode):
             "study": OutputSimulationAboutStudy(
                 self.context, config.next_file("study.ini")
             ),
-            "parameters": OutputSimulationAboutParameters(
+            "parameters": GeneralData(
                 self.context, config.next_file("parameters.ini")
             ),
         }

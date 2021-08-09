@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from antarest.study.storage.rawstudy.io.reader import SetsIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -93,10 +95,17 @@ class GeneralData(IniFileNode):
     }
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+        types = deepcopy(GeneralData.TYPES)
+        if config.version >= 800:
+            types["other preferences"]["hydro-heuristic-policy"] = str
+            types["optimization"]["include-exportstructure"] = bool
+        if config.version >= 810:
+            types["other preferences"]["renewable-generation-modelling"] = str
+
         IniFileNode.__init__(
             self,
             context,
             config,
-            types=GeneralData.TYPES,
+            types=types,
             reader=SetsIniReader(),
         )
