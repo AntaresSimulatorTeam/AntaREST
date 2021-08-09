@@ -24,6 +24,7 @@ from antarest.study.service import StudyService
 from antarest.study.web.areas_blueprint import create_study_area_routes
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
+from antarest.study.web.variant_blueprint import create_study_variant_routes
 
 
 def build_storage(
@@ -95,6 +96,9 @@ def build_storage(
     )
     application.include_router(
         create_study_area_routes(storage_service, config)
+    )
+    application.include_router(
+        create_study_variant_routes(storage_service, config)
     )
 
     return storage_service
