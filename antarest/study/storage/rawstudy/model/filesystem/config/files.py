@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Tuple, Iterator
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.io.reader import (
     IniReader,
-    SetsIniReader,
+    MultipleSameKeysIniReader,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -49,7 +49,9 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_parameters(path: Path) -> Tuple[bool, List[str]]:
-        general = SetsIniReader().read(path / "settings/generaldata.ini")
+        general = MultipleSameKeysIniReader().read(
+            path / "settings/generaldata.ini"
+        )
         store_new_set: bool = general.get("output", {}).get(
             "storenewset", False
         )
@@ -72,7 +74,7 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_sets(root: Path) -> Dict[str, Set]:
-        json = SetsIniReader().read(root / "input/areas/sets.ini")
+        json = MultipleSameKeysIniReader().read(root / "input/areas/sets.ini")
         return {
             name.lower(): Set(areas=item.get("+"))
             for name, item in json.items()

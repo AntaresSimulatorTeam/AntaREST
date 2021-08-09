@@ -5,7 +5,7 @@ import pytest
 
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.reader.ini_reader import (
-    SetsIniReader,
+    MultipleSameKeysIniReader,
 )
 
 
@@ -55,4 +55,4 @@ def test_read_sets_init(tmp_path: str, clean_ini_writer) -> None:
         "part2": {"key_bool": [True, False]},
     }
 
-    assert SetsIniReader().read(path) == exp_data
+    assert MultipleSameKeysIniReader().read(path) == exp_data
