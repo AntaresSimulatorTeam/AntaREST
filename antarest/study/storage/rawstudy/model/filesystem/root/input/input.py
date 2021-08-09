@@ -61,7 +61,7 @@ class Input(FolderNode):
             "wind": InputWind(self.context, config.next_file("wind")),
         }
 
-        if self.config.enr_modelling == "clustered":
+        if self.config.enr_modelling == "clusters":
             children["renewables"] = ClusteredRenewable(
                 self.context, config.next_file("renewables")
             )
