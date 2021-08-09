@@ -102,9 +102,14 @@ class GeneralData(IniFileNode):
             types["general"]["thematic-trimming"] = bool
             types["general"]["geographic-trimming"] = bool
             del types["general"]["filtering"]
+        if config.version >= 720:
+            types["other preferences"]["hydro-pricing-mode"] = str
         if config.version >= 800:
             types["other preferences"]["hydro-heuristic-policy"] = str
             types["optimization"]["include-exportstructure"] = bool
+            types["optimization"]["include-unfeasible-problem-behavior"] = str
+            types["general"]["custom-scenario"] = bool
+            del types["general"]["custom-ts-numbers"]
         if config.version >= 810:
             types["other preferences"]["renewable-generation-modelling"] = str
 
