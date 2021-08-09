@@ -1,4 +1,7 @@
-from antarest.study.storage.rawstudy.io.reader import SetsIniReader
+from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.io.writer.ini_writer import (
+    IniWriter,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -98,5 +101,6 @@ class GeneralData(IniFileNode):
             context,
             config,
             types=GeneralData.TYPES,
-            reader=SetsIniReader(),
+            reader=MultipleSameKeysIniReader(),
+            writer=IniWriter(special_keys=["playlist_year_weight"]),
         )

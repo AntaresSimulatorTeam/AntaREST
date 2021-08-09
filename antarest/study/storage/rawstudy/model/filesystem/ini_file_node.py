@@ -3,7 +3,9 @@ from typing import List, Optional, cast, Dict, Any
 from antarest.core.custom_types import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.reader.ini_reader import IReader
-from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
+from antarest.study.storage.rawstudy.io.writer.ini_writer import (
+    IniWriter,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -32,13 +34,14 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         config: FileStudyTreeConfig,
         types: Dict[str, Any],
         reader: Optional[IReader] = None,
+        writer: Optional[IniWriter] = None,
     ):
         self.context = context
         self.config = config
         self.path = config.path
         self.types = types
         self.reader = reader or IniReader()
-        self.writer = IniWriter()
+        self.writer = writer or IniWriter()
 
     def build(self, config: FileStudyTreeConfig) -> TREE:
         pass  # end node has nothing to build

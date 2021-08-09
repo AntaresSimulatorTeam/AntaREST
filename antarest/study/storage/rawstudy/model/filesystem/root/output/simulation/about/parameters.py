@@ -1,4 +1,4 @@
-from antarest.study.storage.rawstudy.io.reader import SetsIniReader
+from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -16,5 +16,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata 
 class OutputSimulationAboutParameters(IniFileNode):
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         IniFileNode.__init__(
-            self, context, config, GeneralData.TYPES, reader=SetsIniReader()
+            self,
+            context,
+            config,
+            GeneralData.TYPES,
+            reader=MultipleSameKeysIniReader(),
         )
