@@ -82,7 +82,7 @@ class IniConfigParser(configparser.RawConfigParser):
         return optionstr
 
 
-class SetsIniReader(IReader):
+class MultipleSameKeysIniReader(IReader):
     """
     Custom .ini reader for inputs/sets.ini file.
     This file has format :
@@ -102,7 +102,7 @@ class SetsIniReader(IReader):
     def read(self, path: Path) -> JSON:
         data: JSON = dict()
         curr_part = ""
-        lines = SetsIniReader.fetch_cleaned_lines(path)
+        lines = MultipleSameKeysIniReader.fetch_cleaned_lines(path)
 
         for l in lines:
             line = l.strip()
