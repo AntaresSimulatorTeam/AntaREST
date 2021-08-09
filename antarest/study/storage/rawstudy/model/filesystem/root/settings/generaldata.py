@@ -98,6 +98,10 @@ class GeneralData(IniFileNode):
             types["other preferences"]["initial-reservoir-levels"] = str
         if config.version >= 700:
             types["optimization"]["link-type"] = str
+        if config.version >= 710:
+            types["general"]["thematic-trimming"] = bool
+            types["general"]["geographic-trimming"] = bool
+            del types["general"]["filtering"]
         if config.version >= 800:
             types["other preferences"]["hydro-heuristic-policy"] = str
             types["optimization"]["include-exportstructure"] = bool
