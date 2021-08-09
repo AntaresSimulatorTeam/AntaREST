@@ -14,17 +14,30 @@ class IniConfigParser(RawConfigParser):
     def optionxform(self, optionstr: str) -> str:
         return optionstr
 
-    def _write_line(self, delimiter, fp, key, section_name, value):
-        value = self._interpolation.before_write(
+    def _write_line(  # type:ignore
+        self,
+        delimiter,
+        fp,
+        key,
+        section_name,
+        value,
+    ) -> None:
+        value = self._interpolation.before_write(  # type:ignore
             self, section_name, key, value
         )
-        if value is not None or not self._allow_no_value:
+        if value is not None or not self._allow_no_value:  # type:ignore
             value = delimiter + str(value).replace("\n", "\n\t")
         else:
             value = ""
         fp.write("{}{}\n".format(key, value))
 
-    def _write_section(self, fp, section_name, section_items, delimiter):
+    def _write_section(  # type:ignore
+        self,
+        fp,
+        section_name,
+        section_items,
+        delimiter,
+    ) -> None:
         """Write a single section to the specified `fp'."""
         fp.write("[{}]\n".format(section_name))
         for key, value in section_items:
