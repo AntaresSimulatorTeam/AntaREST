@@ -40,6 +40,7 @@ class ConfigPathBuilder:
 
         return FileStudyTreeConfig(
             study_path=study_path,
+            path=study_path,
             study_id=study_id,
             version=ConfigPathBuilder._parse_version(study_path),
             areas=ConfigPathBuilder._parse_areas(study_path),
@@ -162,6 +163,7 @@ class ConfigPathBuilder:
             Cluster(
                 transform_name_to_id(key),
                 enabled=list_ini.get(key, {}).get("enabled", True),
+                name=transform_name_to_id(key)
             )
             for key in list(list_ini.keys())
         ]

@@ -1,31 +1,36 @@
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
+
+from pydantic.main import BaseModel
 
 from antarest.core.custom_types import JSON
-from antarest.core.utils.utils import DTO
+from distutils.util import strtobool
 
 
-class Cluster(DTO):
+class Cluster(BaseModel):
     """
     Object linked to /input/thermal/clusters/<area>/list.ini
     """
+    id: str
+    enabled: bool = True
+    name: Optional[str] = None
 
-    def __init__(
-        self, id: str, enabled: bool = True, name: Optional[str] = None
-    ):
-        self.id = id
-        self.name = name or id
-        self.enabled = enabled
+    @staticmethod
+    def from_json(data: JSON) -> "Cluster":
+        return Cluster(
+            id=data["id"],
+            enabled=data["enabled"],
+            name=data["name"] if "name" in data.keys() else data["id"]
+        )
 
 
-class Link(DTO):
+class Link(BaseModel):
     """
     Object linked to /input/links/<link>/properties.ini information
     """
 
-    def __init__(self, filters_synthesis: List[str], filters_year: List[str]):
-        self.filters_synthesis = filters_synthesis
-        self.filters_year = filters_year
+    filters_synthesis: List[str]
+    filters_year: List[str]
 
     @staticmethod
     def from_json(properties: JSON) -> "Link":
@@ -41,66 +46,86 @@ class Link(DTO):
         ]
 
 
-class Area(DTO):
+class Area(BaseModel):
     """
     Object linked to /input/<area>/optimization.ini information
     """
 
-    def __init__(
-        self,
-        links: Dict[str, Link],
-        thermals: List[Cluster],
-        renewables: List[Cluster],
-        filters_synthesis: List[str],
-        filters_year: List[str],
-    ):
-        self.links = links
-        self.thermals = thermals
-        self.renewables = renewables
-        self.filters_synthesis = filters_synthesis
-        self.filters_year = filters_year
+    links: Dict[str, Link]
+    thermals: List[Cluster]
+    renewables: List[Cluster]
+    filters_synthesis: List[str]
+    filters_year: List[str]
+
+    @staticmethod
+    def from_json(data: JSON) -> "Area":
+        links = data["links"]
+        for link in links.keys():
+            tmp_elm = Link.from_json(link)
+            links[link] = tmp_elm
+
+        thermals = data["thermals"]
+        for index, thermal in enumerate(thermals):
+            tmp_elm = Cluster.from_json(thermal)
+            thermals[index] = tmp_elm
+
+        renewables = data["renewables"]
+        for index, renewable in enumerate(renewables):
+            tmp_elm = Cluster.from_json(renewable)
+            renewables[index] = tmp_elm
+
+        return Area(
+            links=links,
+            thermals=thermals,
+            renewables=renewables,
+            filters_synthesis=data["filters_synthesis"],
+            filters_year=data["filters_year"],
+        )
 
 
-class Set(DTO):
+class Set(BaseModel):
     """
     Object linked to /inputs/sets.ini information
     """
 
     ALL = ["hourly", "daily", "weekly", "monthly", "annual"]
+    areas: Optional[List[str]] = None
+    filters_synthesis: List[str] = ALL
+    filters_year: List[str] = ALL
 
-    def __init__(
-        self,
-        areas: Optional[List[str]] = None,
-        filters_synthesis: List[str] = ALL,
-        filters_year: List[str] = ALL,
-    ):
-        self.areas = areas
-        self.filters_synthesis = filters_synthesis
-        self.filters_year = filters_year
+    @staticmethod
+    def from_json(data: JSON) -> "Set":
+        return Set(
+            areas=data["areas"] if "areas" in data.keys() else None,
+            filters_synthesis=data["filters_synthesis"],
+            filters_year=data["filters_year"],
+        )
 
 
-class Simulation(DTO):
+class Simulation(BaseModel):
     """
     Object linked to /output/<simulation>/about-the-study/** informations
     """
 
-    def __init__(
-        self,
-        name: str,
-        date: str,
-        mode: str,
-        nbyears: int,
-        synthesis: bool,
-        by_year: bool,
-        error: bool,
-    ):
-        self.name = name
-        self.date = date
-        self.mode = mode
-        self.nbyears = nbyears
-        self.synthesis = synthesis
-        self.by_year = by_year
-        self.error = error
+    name: str
+    date: str
+    mode: str
+    nbyears: int
+    synthesis: bool
+    by_year: bool
+    error: bool
+
+    @staticmethod
+    def from_json(data: JSON) -> "Simulation":
+        return Simulation(
+            name=data["name"],
+            date=data["date"],
+            mode=data["mode"],
+            nbyears=int(data["nbyears"]),
+            synthesis=data["synthesis"],
+            by_year=data["by_year"],
+            error=data["error"],
+        )
 
     def get_file(self) -> str:
         modes = {"economy": "eco", "adequacy": "adq", "draft": "dft"}
@@ -108,51 +133,75 @@ class Simulation(DTO):
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
 
-class FileStudyTreeConfig(DTO):
+class FileStudyTreeConfig(BaseModel):
     """
     Root object to handle all study parameters which impact tree structure
     """
 
-    def __init__(
-        self,
-        study_path: Path,
-        study_id: str,
-        version: int,
-        areas: Optional[Dict[str, Area]] = None,
-        sets: Optional[Dict[str, Set]] = None,
-        outputs: Optional[Dict[str, Simulation]] = None,
-        bindings: Optional[List[str]] = None,
-        store_new_set: bool = False,
-        archive_input_series: Optional[List[str]] = None,
-        enr_modelling: str = "aggregated",
-    ):
-        self.root_path = study_path
-        self.path = study_path
-        self.version = version
-        self.areas = areas or dict()
-        self.sets = sets or dict()
-        self.outputs = outputs or dict()
-        self.bindings = bindings or list()
-        self.store_new_set = store_new_set
-        self.study_id = study_id
-        self.archive_input_series = archive_input_series or list()
-        self.enr_modelling = enr_modelling
+    study_path: Path
+    path: Path
+    study_id: str
+    version: int
+    areas: Optional[Dict[str, Area]] = None
+    sets: Optional[Dict[str, Set]] = None
+    outputs: Optional[Dict[str, Simulation]] = None
+    bindings: Optional[List[str]] = None
+    store_new_set: bool = False
+    archive_input_series: Optional[List[str]] = None
+    enr_modelling: str = "aggregated"
 
     def next_file(self, name: str) -> "FileStudyTreeConfig":
-        copy = FileStudyTreeConfig(
-            self.root_path,
-            self.study_id,
-            self.version,
-            self.areas,
-            self.sets,
-            self.outputs,
-            self.bindings,
-            self.store_new_set,
-            self.archive_input_series,
-            self.enr_modelling,
+        return FileStudyTreeConfig(
+            study_path=self.study_path,
+            path=self.path / name,
+            study_id=self.study_id,
+            version=self.version,
+            areas=self.areas,
+            sets=self.sets,
+            outputs=self.outputs,
+            bindings=self.bindings,
+            store_new_set=self.store_new_set,
+            archive_input_series=self.archive_input_series,
+            enr_modelling=self.enr_modelling,
         )
-        copy.path = self.path / name
-        return copy
+
+    @staticmethod
+    def from_json(data: JSON) -> "FileStudyTreeConfig":
+        areas = data["areas"] if "areas" in data.keys() else None
+        if areas is not None:
+            for area in areas.keys():
+                tmp_elm = Area.from_json(areas[area])
+                areas[area] = tmp_elm
+
+        sets = data["sets"] if "sets" in data.keys() else None
+        if sets is not None:
+            for set_elm in sets.keys():
+                tmp_elm = Set.from_json(sets[set_elm])
+                sets[set_elm] = tmp_elm
+
+        outputs = data["outputs"] if "outputs" in data.keys() else None
+        if outputs is not None:
+            for output in outputs.keys():
+                tmp_elm = Simulation.from_json(outputs[output])
+                outputs[output] = tmp_elm
+
+        return FileStudyTreeConfig(
+            study_path=Path(data["study_path"]),
+            path=Path(data["path"]),
+            study_id=data["study_id"],
+            version=int(data["version"]),
+            areas=areas,
+            sets=sets,
+            outputs=outputs,
+            bindings=data["bindings"] if "bindings" in data.keys() else None,
+            store_new_set=data["store_new_set"]
+            if "store_new_set" in data.keys()
+            else False,
+            archive_input_series=data["archive_input_series"]
+            if "archive_input_series" in data.keys()
+            else None,
+            enr_modelling=data["aggregated"],
+        )
 
     def area_names(self) -> List[str]:
         return list(self.areas.keys())

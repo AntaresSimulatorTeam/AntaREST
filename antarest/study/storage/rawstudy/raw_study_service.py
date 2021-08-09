@@ -179,9 +179,9 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         if url == "" and depth == -1:
             cache_id = f"{str(study_path)}/RAW_STUDY"
             from_cache = self.cache.get(cache_id)
-            if from_cache:
+            if from_cache is not None:
                 logger.info(f"Raw Study {metadata.id} read from cache")
-                data = from_cache.data
+                data = from_cache
             else:
                 data = study.get(parts, depth=depth, formatted=formatted)
                 self.cache.put(cache_id, data)
@@ -207,8 +207,10 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         """
         file_settings = {}
         file_metadata = {}
+        study_path = self.get_study_path(study)
         config = FileStudyTreeConfig(
-            study_path=self.get_study_path(study),
+            study_path=study_path,
+            path=study_path,
             study_id="",
             version=-1,
         )

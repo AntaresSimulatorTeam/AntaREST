@@ -246,7 +246,7 @@ def fastapi_app(
     user_service = build_login(application, config, event_bus=event_bus)
 
     matrix_service = build_matrixstore(application, config, user_service)
-    cache = build_cache(config)
+    cache = build_cache(config=config)
 
     storage = build_storage(
         application,

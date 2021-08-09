@@ -51,18 +51,19 @@ class StudyFactory:
     ) -> Tuple[FileStudyTreeConfig, FileStudyTree]:
         cache_id = f"{str(path)}/STUDY_FACTORY"
         from_cache = self.cache.get(cache_id)
-        if from_cache:
+        if from_cache is not None:
             logger.info(f"Study {study_id} read from cache")
-            return from_cache.data
+            config = FileStudyTreeConfig.from_json(from_cache)
+            return config, FileStudyTree(self.context, config)
 
         start_time = time.time()
         config = ConfigPathBuilder.build(path, study_id)
         duration = "{:.3f}".format(time.time() - start_time)
         logger.info(f"Study {study_id} config built in {duration}s")
-        to_cache = config, FileStudyTree(self.context, config)
-        self.cache.put(cache_id, to_cache)
+        result = config, FileStudyTree(self.context, config)
+        self.cache.put(cache_id, config)
         logger.info(f"Cache new entry from StudyFactory (studyID: {study_id})")
-        return to_cache
+        return result
 
     def create_from_config(self, config: FileStudyTreeConfig) -> FileStudyTree:
         return FileStudyTree(self.context, config)
