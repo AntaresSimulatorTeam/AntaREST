@@ -3,6 +3,8 @@ import time
 from pathlib import Path
 from typing import Tuple
 
+from dataclasses import dataclass
+
 from antarest.matrixstore.service import MatrixService
 from antarest.study.common.uri_resolver_service import (
     UriResolverService,
@@ -21,6 +23,12 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FileStudy:
+    config: FileStudyTreeConfig
+    tree: FileStudyTree
 
 
 class StudyFactory:

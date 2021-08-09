@@ -6,7 +6,7 @@ from antarest.study.storage.area_management import (
     AreaType,
     AreaPatchUpdateDTO,
 )
-from antarest.study.storage.rawstudy.model import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -35,9 +35,10 @@ def test_get_all_area():
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         study_id="",
+        version=-1,
         areas={
-            "a1": Area({}, [], [], []),
-            "a2": Area({}, [], [], []),
+            "a1": Area({}, [], [], [], []),
+            "a2": Area({}, [], [], [], []),
         },
         sets={"s1": Set(["a1"])},
     )
@@ -124,9 +125,10 @@ def test_update_area():
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         study_id="",
+        version=-1,
         areas={
-            "a1": Area({}, [], [], []),
-            "a2": Area({}, [], [], []),
+            "a1": Area({}, [], [], [], []),
+            "a2": Area({}, [], [], [], []),
         },
         sets={"s1": Set(["a1"])},
     )

@@ -15,19 +15,21 @@ class InputLinkAreaProperties(IniFileNode):
     ):
         section = {
             "hurdles-cost": bool,
-            "loop-flow": bool,
-            "use-phase-shifter": bool,
             "transmission-capacities": str,
-            "asset-type": str,
-            "link-style": str,
-            "link-width": int,
-            "colorr": int,
-            "colorg": int,
-            "colorb": int,
             "display-comments": bool,
             "filter-synthesis": str,
             "filter-year-by-year": str,
         }
+
+        if config.version >= 650:
+            section["loop-flow"] = bool
+            section["use-phase-shifter"] = bool
+            section["asset-type"] = str
+            section["link-style"] = str
+            section["link-width"] = int
+            section["colorr"] = int
+            section["colorg"] = int
+            section["colorb"] = int
 
         types = {link: section for link in config.get_links(area)}
         IniFileNode.__init__(self, context, config, types)

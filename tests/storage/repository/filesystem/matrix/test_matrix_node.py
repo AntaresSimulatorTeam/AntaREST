@@ -70,7 +70,9 @@ def test_normalize(tmp_path: Path):
 
     node = MockMatrixNode(
         context=ContextServer(matrix=matrix_service, resolver=resolver),
-        config=FileStudyTreeConfig(study_path=file, study_id="mi-id"),
+        config=FileStudyTreeConfig(
+            study_path=file, study_id="mi-id", version=-1
+        ),
     )
 
     node.normalize()
@@ -91,7 +93,9 @@ def test_denormalize(tmp_path: Path):
 
     node = MockMatrixNode(
         context=ContextServer(matrix=Mock(), resolver=resolver),
-        config=FileStudyTreeConfig(study_path=file, study_id="mi-id"),
+        config=FileStudyTreeConfig(
+            study_path=file, study_id="mi-id", version=-1
+        ),
     )
 
     node.denormalize()

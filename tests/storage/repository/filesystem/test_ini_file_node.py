@@ -47,7 +47,7 @@ def test_get(tmp_path: str) -> None:
     node = IniFileNode(
         context=Mock(),
         config=FileStudyTreeConfig(
-            path, areas=dict(), outputs=dict(), study_id="id"
+            path, version=-1, areas=dict(), outputs=dict(), study_id="id"
         ),
         types=types,
     )
@@ -67,7 +67,7 @@ def test_get_depth(tmp_path: str) -> None:
     node = IniFileNode(
         context=Mock(),
         config=FileStudyTreeConfig(
-            path, areas=dict(), outputs=dict(), study_id="id"
+            path, version=-1, areas=dict(), outputs=dict(), study_id="id"
         ),
         types=types,
     )
@@ -80,7 +80,7 @@ def test_validate_section():
 
     node = IniFileNode(
         context=Mock(),
-        config=FileStudyTreeConfig(Path(), study_id="id"),
+        config=FileStudyTreeConfig(Path(), version=-1, study_id="id"),
         types={"wrong-section": {}},
     )
     assert node.check_errors(data=data) == [
@@ -91,7 +91,7 @@ def test_validate_section():
 
     node = IniFileNode(
         context=Mock(),
-        config=FileStudyTreeConfig(Path(), study_id="id"),
+        config=FileStudyTreeConfig(Path(), version=-1, study_id="id"),
         types={"section": {"wrong-params": 42}},
     )
     assert node.check_errors(data=data) == [
@@ -102,7 +102,7 @@ def test_validate_section():
 
     node = IniFileNode(
         context=Mock(),
-        config=FileStudyTreeConfig(Path(), study_id="id"),
+        config=FileStudyTreeConfig(Path(), version=-1, study_id="id"),
         types={"section": {"params": str}},
     )
     assert node.check_errors(data=data) == [
@@ -133,7 +133,7 @@ key_float = 3.14
     node = IniFileNode(
         context=Mock(),
         config=FileStudyTreeConfig(
-            path, study_id="id", areas=dict(), outputs=dict()
+            path, version=-1, study_id="id", areas=dict(), outputs=dict()
         ),
         types=types,
     )

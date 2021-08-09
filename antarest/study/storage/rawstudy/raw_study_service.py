@@ -11,7 +11,6 @@ from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import (
     IStudyStorageService,
 )
-from antarest.study.storage.rawstudy.model import FileStudy
 from antarest.study.storage.rawstudy.patch_service import PatchService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -32,6 +31,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
+    FileStudy,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -191,7 +191,9 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         file_settings = {}
         file_metadata = {}
         config = FileStudyTreeConfig(
-            study_path=self.get_study_path(study), study_id=""
+            study_path=self.get_study_path(study),
+            study_id="",
+            version=-1,
         )
         patch_metadata = self.patch_service.get(study).study or PatchStudy()
 

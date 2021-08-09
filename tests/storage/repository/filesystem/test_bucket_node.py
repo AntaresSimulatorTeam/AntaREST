@@ -36,7 +36,7 @@ def test_get_bucket(tmp_path: Path):
     context = ContextServer(resolver=resolver, matrix=Mock())
 
     node = BucketNode(
-        config=FileStudyTreeConfig(study_path=file, study_id="id"),
+        config=FileStudyTreeConfig(study_path=file, study_id="id", version=-1),
         context=context,
     )
 
@@ -51,7 +51,7 @@ def test_save_bucket(tmp_path: Path):
     file = build_bucket(tmp_path)
 
     node = BucketNode(
-        config=FileStudyTreeConfig(study_path=file, study_id="id"),
+        config=FileStudyTreeConfig(study_path=file, study_id="id", version=-1),
         context=Mock(),
     )
     node.save(data={"fileA.txt": b"Hello, World"})

@@ -23,7 +23,7 @@ from antarest.study.model import (
     MatrixAggregationResult,
     MatrixIndex,
 )
-from antarest.study.storage.rawstudy.model import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -252,6 +252,7 @@ def test_download_output() -> None:
     area = Area(
         links={"west": Link(filters_synthesis=[], filters_year=[])},
         thermals=[],
+        renewables=[],
         filters_synthesis=[],
         filters_year=[],
     )
@@ -268,6 +269,7 @@ def test_download_output() -> None:
     config = FileStudyTreeConfig(
         study_path=input_study.path,
         study_id="",
+        version=-1,
         areas={"east": area},
         sets={"north": Set()},
         outputs={"output-id": sim},

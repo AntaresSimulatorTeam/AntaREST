@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<richtext version="1.0.0.0" xmlns="http://www.wxwidgets.org">
+  <paragraphlayout textcolor="#000000" fontpointsize="11" fontfamily="70" fontstyle="90" fontweight="90" fontunderlined="0" fontface="Ubuntu" alignment="1" parspacingafter="10" parspacingbefore="0" linespacing="10" margin-left="5,4098" margin-right="5,4098" margin-top="5,4098" margin-bottom="5,4098">
+    <paragraph>
+      <text>Testing 2 renewable clusters with TS as production factor</text>
+    </paragraph>
+    <paragraph>
+      <text></text>
+    </paragraph>
+    <paragraph>
+      <text>One area containing 2 renewable clusters enabled in different group</text>
+    </paragraph>
+    <paragraph>
+      <text></text>
+    </paragraph>
+    <paragraph>
+      <text>Load = 1000 MWh</text>
+    </paragraph>
+    <paragraph>
+      <text></text>
+    </paragraph>
+    <paragraph>
+      <text>cluster 1 :</text>
+    </paragraph>
+    <paragraph>
+      <text>- group = solar pv</text>
+    </paragraph>
+    <paragraph>
+      <text>- nominalcapacity = 500.000000</text>
+    </paragraph>
+    <paragraph>
+      <text>- unitcount = 3</text>
+    </paragraph>
+    <paragraph>
+      <text>- ts-interpretation = production-factor</text>
+    </paragraph>
+    <paragraph>
+      <text>- cluster production factor : 0.1 for the second day, 0.2 for the rest of calendar</text>
+    </paragraph>
+    <paragraph>
+      <text></text>
+    </paragraph>
+    <paragraph>
+      <text>cluster 2 :</text>
+    </paragraph>
+    <paragraph>
+      <text>- name = oleron</text>
+    </paragraph>
+    <paragraph>
+      <text>- group = wind offshore</text>
+    </paragraph>
+    <paragraph>
+      <text>- nominalcapacity = 1000.000000</text>
+    </paragraph>
+    <paragraph>
+      <text>- unitcount = 2</text>
+    </paragraph>
+    <paragraph>
+      <text>- ts-interpretation = production-factor</text>
+    </paragraph>
+    <paragraph>
+      <text>- cluster production factor : 0.5 for the second day, 0.3 for the rest of calendar</text>
+    </paragraph>
+    <paragraph>
+      <text></text>
+    </paragraph>
+    <paragraph>
+      <text>Expected behavior :</text>
+    </paragraph>
+    <paragraph>
+      <text>Unsupplied energy : 100 MWh except on second day (0 Mwh)</text>
+    </paragraph>
+    <paragraph>
+      <text>"Spillage : 150 MWh on the second day, no spillage otherwise "</text>
+    </paragraph>
+  </paragraphlayout>
+</richtext>

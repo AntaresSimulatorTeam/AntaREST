@@ -14,7 +14,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Link,
     Set,
     transform_name_to_id,
-    ThermalCluster,
+    Cluster,
 )
 
 
@@ -34,21 +34,30 @@ class ConfigPathBuilder:
         Returns: study config fill with data
 
         """
-        (sns, asi) = ConfigPathBuilder._parse_parameters(study_path)
+        (sns, asi, enr_modelling) = ConfigPathBuilder._parse_parameters(
+            study_path
+        )
 
         return FileStudyTreeConfig(
             study_path=study_path,
             study_id=study_id,
+            version=ConfigPathBuilder._parse_version(study_path),
             areas=ConfigPathBuilder._parse_areas(study_path),
             sets=ConfigPathBuilder._parse_sets(study_path),
             outputs=ConfigPathBuilder._parse_outputs(study_path),
             bindings=ConfigPathBuilder._parse_bindings(study_path),
             store_new_set=sns,
             archive_input_series=asi,
+            enr_modelling=enr_modelling,
         )
 
     @staticmethod
-    def _parse_parameters(path: Path) -> Tuple[bool, List[str]]:
+    def _parse_version(path: Path) -> int:
+        studyinfo = IniReader().read(path / "study.antares")
+        return studyinfo.get("version", -1)
+
+    @staticmethod
+    def _parse_parameters(path: Path) -> Tuple[bool, List[str], str]:
         general = MultipleSameKeysIniReader().read(
             path / "settings/generaldata.ini"
         )
@@ -63,7 +72,10 @@ class ConfigPathBuilder:
             .split(",")
             if e.strip()
         ]
-        return store_new_set, archive_input_series
+        enr_modelling: str = general.get("other preferences", {}).get(
+            "renewable-generation-modelling", "aggregated"
+        )
+        return store_new_set, archive_input_series, enr_modelling
 
     @staticmethod
     def _parse_bindings(root: Path) -> List[str]:
@@ -134,6 +146,7 @@ class ConfigPathBuilder:
         return Area(
             links=ConfigPathBuilder._parse_links(root, area),
             thermals=ConfigPathBuilder._parse_thermal(root, area),
+            renewables=ConfigPathBuilder._parse_renewables(root, area),
             filters_synthesis=ConfigPathBuilder._parse_filters_synthesis(
                 root, area
             ),
@@ -141,14 +154,30 @@ class ConfigPathBuilder:
         )
 
     @staticmethod
-    def _parse_thermal(root: Path, area: str) -> List[ThermalCluster]:
+    def _parse_thermal(root: Path, area: str) -> List[Cluster]:
         list_ini = IniReader().read(
             root / f"input/thermal/clusters/{area}/list.ini"
         )
         return [
-            ThermalCluster(
+            Cluster(
                 transform_name_to_id(key),
                 enabled=list_ini.get(key, {}).get("enabled", True),
+            )
+            for key in list(list_ini.keys())
+        ]
+
+    @staticmethod
+    def _parse_renewables(root: Path, area: str) -> List[Cluster]:
+        ini_path = root / f"input/renewables/clusters/{area}/list.ini"
+        if not ini_path.exists():
+            return []
+
+        list_ini = IniReader().read(ini_path)
+        return [
+            Cluster(
+                transform_name_to_id(key),
+                enabled=list_ini.get(key, {}).get("enabled", True),
+                name=list_ini.get(key, {}).get("name", None),
             )
             for key in list(list_ini.keys())
         ]

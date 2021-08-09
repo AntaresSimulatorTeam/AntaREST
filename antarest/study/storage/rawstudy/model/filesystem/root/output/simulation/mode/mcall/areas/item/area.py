@@ -25,18 +25,6 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
 
         filters = config.get_filters_synthesis(self.area)
 
-        for freq in (
-            filters
-            if config.get_thermal_names(self.area, only_enabled=True)
-            else []
-        ):
-            children[f"details-{freq}"] = AreaOutputSeriesMatrix(
-                self.context,
-                config.next_file(f"details-{freq}.txt"),
-                freq,
-                self.area,
-            )
-
         for freq in filters:
             children[f"id-{freq}"] = AreaOutputSeriesMatrix(
                 self.context,
@@ -51,5 +39,32 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
                 freq,
                 self.area,
             )
+
+            if (
+                len(
+                    config.get_thermal_names(self.area, only_enabled=True),
+                )
+                > 0
+            ):
+                children[f"details-{freq}"] = AreaOutputSeriesMatrix(
+                    self.context,
+                    config.next_file(f"details-{freq}.txt"),
+                    freq,
+                    self.area,
+                )
+
+            if (
+                self.config.enr_modelling == "clusters"
+                and len(
+                    config.get_renewable_names(self.area, only_enabled=True),
+                )
+                > 0
+            ):
+                children[f"details-res-{freq}"] = AreaOutputSeriesMatrix(
+                    self.context,
+                    config.next_file(f"details-res-{freq}.txt"),
+                    freq,
+                    self.area,
+                )
 
         return children

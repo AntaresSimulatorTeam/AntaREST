@@ -38,6 +38,20 @@ class OutputSimulationModeMcIndScnAreasArea(FolderNode):
                     self.area,
                 )
 
+            if (
+                self.config.enr_modelling == "clusters"
+                and len(
+                    config.get_thermal_names(self.area, only_enabled=True),
+                )
+                > 0
+            ):
+                children[f"details-res-{timing}"] = AreaOutputSeriesMatrix(
+                    self.context,
+                    config.next_file(f"details-res-{timing}.txt"),
+                    timing,
+                    self.area,
+                )
+
             children[f"values-{timing}"] = AreaOutputSeriesMatrix(
                 self.context,
                 config.next_file(f"values-{timing}.txt"),
