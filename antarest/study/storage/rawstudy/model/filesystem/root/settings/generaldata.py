@@ -55,7 +55,6 @@ class GeneralData(IniFileNode):
         "optimization": {
             "simplex-range": str,
             "transmission-capacities": bool,
-            "link-type": str,
             "include-constraints": bool,
             "include-hurdlecosts": bool,
             "include-tc-minstablepower": bool,
@@ -96,6 +95,8 @@ class GeneralData(IniFileNode):
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         types = deepcopy(GeneralData.TYPES)
+        if config.version >= 700:
+            types["optimization"]["link-type"] = str
         if config.version >= 800:
             types["other preferences"]["hydro-heuristic-policy"] = str
             types["optimization"]["include-exportstructure"] = bool
