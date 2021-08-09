@@ -1,4 +1,5 @@
 from copy import deepcopy
+from typing import Dict, Any
 
 from antarest.study.storage.rawstudy.io.reader import SetsIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -13,7 +14,7 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 
 
 class GeneralData(IniFileNode):
-    TYPES = {
+    TYPES: Dict[str, Dict[str, Any]] = {
         "general": {
             "mode": str,
             "horizon": (int, str),
