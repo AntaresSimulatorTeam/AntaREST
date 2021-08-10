@@ -41,7 +41,6 @@ class LocalCache(ICache):
     def put(
         self, id: str, data: Any, duration: int = 3600
     ) -> None:  # Duration in second
-        print(f"PUT {id} in cache")
         with self.lock:
             self.cache[id] = LocalCacheElement(
                 data=data,
@@ -50,7 +49,6 @@ class LocalCache(ICache):
             )
 
     def get(self, id: str, refresh_duration: Optional[int] = None) -> Any:
-        print(f"GET {id} in cache")
         res = None
         with self.lock:
             if id in self.cache:
@@ -61,13 +59,11 @@ class LocalCache(ICache):
         return res
 
     def invalidate(self, id: str) -> None:
-        print(f"DELETE  {id} from cache")
         with self.lock:
             if id in self.cache:
                 del self.cache[id]
 
     def invalidate_all(self, ids: List[str]) -> None:
-        print(f"DELETE ALL {ids} from cache")
         with self.lock:
             for id in ids:
                 if id in self.cache:

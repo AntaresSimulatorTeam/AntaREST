@@ -28,9 +28,6 @@ class RedisCache(ICache):
     def put(self, id: str, data: Any, duration: int = 3600) -> None:
         redis_element = RedisCacheElement(duration=duration, data=data)
         redis_key = f"cache:{id}"
-        print(
-            f"************************** PUT : {redis_key} => {redis_element}"
-        )
         self.redis.set(redis_key, redis_element.json())
         self.redis.expire(redis_key, duration)
 
@@ -42,9 +39,6 @@ class RedisCache(ICache):
             json_result = json.loads(result)
             redis_element = RedisCacheElement(
                 duration=json_result["duration"], data=json_result["data"]
-            )
-            print(
-                f"************************** GET IN CACHE : {redis_key} => {redis_element}"
             )
             self.redis.expire(redis_key, redis_element.duration)
             return redis_element.data
