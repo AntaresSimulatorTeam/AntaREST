@@ -12,8 +12,8 @@ class Cluster(BaseModel):
     """
 
     id: str
+    name: str
     enabled: bool = True
-    name: Optional[str] = None
 
 
 class Link(BaseModel):
@@ -89,12 +89,12 @@ class FileStudyTreeConfig(BaseModel):
     path: Path
     study_id: str
     version: int
-    areas: Optional[Dict[str, Area]] = None
-    sets: Optional[Dict[str, Set]] = None
-    outputs: Optional[Dict[str, Simulation]] = None
-    bindings: Optional[List[str]] = None
+    areas: Dict[str, Area] = dict()
+    sets: Dict[str, Set] = dict()
+    outputs: Dict[str, Simulation] = dict()
+    bindings: List[str] = list()
     store_new_set: bool = False
-    archive_input_series: Optional[List[str]] = None
+    archive_input_series: List[str] = list()
     enr_modelling: str = "aggregated"
 
     def next_file(self, name: str) -> "FileStudyTreeConfig":

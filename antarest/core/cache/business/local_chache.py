@@ -23,10 +23,10 @@ class LocalCache(ICache):
             target=self.checker, daemon=True
         )
 
-    def start(self):
+    def start(self) -> None:
         self.checker_thread.start()
 
-    def checker(self):
+    def checker(self) -> None:
         while True:
             time.sleep(self.checker_delay)
             with self.lock:
@@ -43,7 +43,7 @@ class LocalCache(ICache):
         with self.lock:
             self.cache[id] = LocalCacheElement(
                 data=data,
-                timeout=(time.time() + duration),
+                timeout=(int(time.time()) + duration),
                 duration=duration,
             )
 
@@ -53,7 +53,9 @@ class LocalCache(ICache):
             if id in self.cache:
                 if refresh_duration:
                     self.cache[id].duration = refresh_duration
-                self.cache[id].timeout = time.time() + self.cache[id].duration
+                self.cache[id].timeout = (
+                    int(time.time()) + self.cache[id].duration
+                )
                 res = self.cache[id].data
         return res
 

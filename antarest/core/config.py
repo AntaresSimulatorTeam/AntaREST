@@ -229,7 +229,7 @@ class CacheConfig:
     Sub config object dedicated to cache module
     """
 
-    checker_delay: Optional[float] = 0.2  # in ms
+    checker_delay: float = 0.2  # in ms
 
     @staticmethod
     def from_dict(data: JSON) -> "CacheConfig":

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, Any, List
 from antarest.core.custom_types import JSON
 
 
@@ -11,17 +11,15 @@ class CacheConstants(Enum):
 
 class ICache:
     @abstractmethod
-    def start(self):
+    def start(self) -> None:
         pass
 
     @abstractmethod
-    def put(self, id: str, data: JSON, timeout: int = 600000) -> None:
+    def put(self, id: str, data: Any, timeout: int = 600000) -> None:
         pass
 
     @abstractmethod
-    def get(
-        self, id: str, refresh_timeout: Optional[int] = None
-    ) -> Optional[JSON]:
+    def get(self, id: str, refresh_timeout: Optional[int] = None) -> Any:
         pass
 
     @abstractmethod

@@ -22,7 +22,7 @@ class RedisCache(ICache):
             else redis.Redis(host=config.host, port=config.port, db=0)
         )
 
-    def start(self):
+    def start(self) -> None:
         pass
 
     def put(self, id: str, data: Any, duration: int = 3600) -> None:
@@ -45,7 +45,7 @@ class RedisCache(ICache):
         return None
 
     def invalidate(self, id: str) -> None:
-        return self.redis.delete(f"cache:{id}")
+        self.redis.delete(f"cache:{id}")
 
     def invalidate_all(self, ids: List[str]) -> None:
-        return self.redis.delete(*[f"cache:{id}" for id in ids])
+        self.redis.delete(*[f"cache:{id}" for id in ids])
