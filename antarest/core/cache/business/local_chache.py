@@ -33,7 +33,6 @@ class LocalCache(ICache):
                 current_time = time.time()
                 for id in self.cache.keys():
                     if current_time >= self.cache[id].timeout:
-                        print(f"DELETE  {id} from cache")
                         del self.cache[
                             id
                         ]  # Python 3 allow us to delete items while iterating a dictionary
@@ -55,7 +54,7 @@ class LocalCache(ICache):
                 if refresh_duration:
                     self.cache[id].duration = refresh_duration
                 self.cache[id].timeout = time.time() + self.cache[id].duration
-                res = self.cache[id]
+                res = self.cache[id].data
         return res
 
     def invalidate(self, id: str) -> None:

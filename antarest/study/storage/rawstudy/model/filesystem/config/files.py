@@ -161,9 +161,9 @@ class ConfigPathBuilder:
         )
         return [
             Cluster(
-                transform_name_to_id(key),
+                id=transform_name_to_id(key),
                 enabled=list_ini.get(key, {}).get("enabled", True),
-                name=transform_name_to_id(key)
+                name=transform_name_to_id(key),
             )
             for key in list(list_ini.keys())
         ]
@@ -177,7 +177,7 @@ class ConfigPathBuilder:
         list_ini = IniReader().read(ini_path)
         return [
             Cluster(
-                transform_name_to_id(key),
+                id=transform_name_to_id(key),
                 enabled=list_ini.get(key, {}).get("enabled", True),
                 name=list_ini.get(key, {}).get("name", None),
             )

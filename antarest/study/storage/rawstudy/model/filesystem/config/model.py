@@ -10,6 +10,7 @@ class Cluster(BaseModel):
     """
     Object linked to /input/thermal/clusters/<area>/list.ini
     """
+
     id: str
     enabled: bool = True
     name: Optional[str] = None

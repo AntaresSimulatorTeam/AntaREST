@@ -52,8 +52,11 @@ class StudyFactory:
         from_cache = self.cache.get(cache_id)
         if from_cache is not None:
             logger.info(f"Study {study_id} read from cache")
-            config = FileStudyTreeConfig.parse_obj(from_cache)
-            print(f"********** CONFIG => {config}")
+            config = (
+                from_cache
+                if isinstance(from_cache, FileStudyTreeConfig)
+                else FileStudyTreeConfig.parse_obj(from_cache)
+            )
             return config, FileStudyTree(self.context, config)
 
         start_time = time.time()
