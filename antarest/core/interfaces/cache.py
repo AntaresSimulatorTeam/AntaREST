@@ -1,6 +1,12 @@
 from abc import abstractmethod
+from enum import Enum
 from typing import Optional, List
 from antarest.core.custom_types import JSON
+
+
+class CacheConstants(Enum):
+    RAW_STUDY = "RAW_STUDY"
+    STUDY_FACTORY = "STUDY_FACTORY"
 
 
 class ICache:

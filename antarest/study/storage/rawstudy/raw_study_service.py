@@ -7,7 +7,7 @@ from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
-from antarest.core.interfaces.cache import ICache
+from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import (
     IStudyStorageService,
@@ -177,7 +177,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
         data = None
         if url == "" and depth == -1:
-            cache_id = f"{str(study_path)}/RAW_STUDY"
+            cache_id = f"{metadata.id}/{CacheConstants.RAW_STUDY}"
             from_cache = self.cache.get(cache_id)
             if from_cache is not None:
                 logger.info(f"Raw Study {metadata.id} read from cache")
@@ -343,7 +343,10 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
     def remove_from_cache(self, root_id: str) -> None:
         self.cache.invalidate_all(
-            [f"{root_id}/RAW_STUDY", f"{root_id}/STUDY_FACTORY"]
+            [
+                f"{root_id}/{CacheConstants.RAW_STUDY}",
+                f"{root_id}/{CacheConstants.STUDY_FACTORY}",
+            ]
         )
 
     def delete(self, metadata: RawStudy) -> None:
@@ -358,7 +361,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         shutil.rmtree(study_path)
-        self.remove_from_cache(str(study_path))
+        self.remove_from_cache(metadata.id)
 
     def delete_output(self, metadata: RawStudy, output_name: str) -> None:
         """
@@ -373,7 +376,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         study_path = self.get_study_path(metadata)
         output_path = study_path / "output" / output_name
         shutil.rmtree(output_path, ignore_errors=True)
-        self.remove_from_cache(str(study_path))
+        self.remove_from_cache(metadata.id)
 
     def edit_study(
         self, metadata: RawStudy, url: str, new: SUB_JSON
@@ -395,7 +398,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         study.save(new, url.split("/"))  # type: ignore
         del study
-        self.remove_from_cache(str(study_path))
+        self.remove_from_cache(metadata.id)
         return new
 
     def patch_update_study_metadata(
@@ -411,16 +414,14 @@ class RawStudyService(IStudyStorageService[RawStudy]):
                 }
             },
         )
-        study_path = self.get_study_path(study)
-        self.remove_from_cache(str(study_path))
+        self.remove_from_cache(study.id)
         return self.get_study_information(study)
 
     def set_reference_output(
         self, study: RawStudy, output_id: str, status: bool
     ) -> None:
         self.patch_service.set_reference_output(study, output_id, status)
-        study_path = self.get_study_path(study)
-        self.remove_from_cache(str(study_path))
+        self.remove_from_cache(study.id)
 
     def get_study_sim_result(self, study: RawStudy) -> List[StudySimResultDTO]:
         """

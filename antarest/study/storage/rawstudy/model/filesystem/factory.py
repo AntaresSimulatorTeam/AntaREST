@@ -4,8 +4,7 @@ from pathlib import Path
 from typing import Tuple
 
 from dataclasses import dataclass
-
-from antarest.core.interfaces.cache import ICache
+from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.matrixstore.service import MatrixService
 from antarest.study.common.uri_resolver_service import (
     UriResolverService,
@@ -49,11 +48,12 @@ class StudyFactory:
     def create_from_fs(
         self, path: Path, study_id: str
     ) -> Tuple[FileStudyTreeConfig, FileStudyTree]:
-        cache_id = f"{str(path)}/STUDY_FACTORY"
+        cache_id = f"{study_id}/{CacheConstants.STUDY_FACTORY}"
         from_cache = self.cache.get(cache_id)
         if from_cache is not None:
             logger.info(f"Study {study_id} read from cache")
-            config = FileStudyTreeConfig.from_json(from_cache)
+            config = FileStudyTreeConfig.parse_obj(from_cache)
+            print(f"********** CONFIG => {config}")
             return config, FileStudyTree(self.context, config)
 
         start_time = time.time()

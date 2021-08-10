@@ -218,15 +218,9 @@ class EventBusConfig:
     Sub config object dedicated to eventbus module
     """
 
-    redis: Optional[RedisConfig] = None
-
     @staticmethod
     def from_dict(data: JSON) -> "EventBusConfig":
-        return EventBusConfig(
-            redis=RedisConfig.from_dict(data["redis"])
-            if "redis" in data
-            else None
-        )
+        return EventBusConfig()
 
 
 @dataclass(frozen=True)
@@ -235,15 +229,11 @@ class CacheConfig:
     Sub config object dedicated to cache module
     """
 
-    redis: Optional[RedisConfig] = None
     checker_delay: Optional[float] = 0.2  # in ms
 
     @staticmethod
     def from_dict(data: JSON) -> "CacheConfig":
         return CacheConfig(
-            redis=RedisConfig.from_dict(data["redis"])
-            if "redis" in data
-            else None,
             checker_delay=float(data["checker_delay"])
             if "checker_delay" in data
             else 0.2,
@@ -264,6 +254,7 @@ class Config:
     logging: LoggingConfig = LoggingConfig()
     debug: bool = True
     resources_path: Path = Path()
+    redis: Optional[RedisConfig] = None
     eventbus: EventBusConfig = EventBusConfig()
     cache: CacheConfig = CacheConfig()
     root_path: str = ""
@@ -290,6 +281,9 @@ class Config:
             debug=data["debug"],
             resources_path=res or Path(),
             root_path=data.get("root_path", ""),
+            redis=RedisConfig.from_dict(data["redis"])
+            if "redis" in data
+            else None,
             eventbus=EventBusConfig.from_dict(data["eventbus"])
             if "eventbus" in data
             else EventBusConfig(),
