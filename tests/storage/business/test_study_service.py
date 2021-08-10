@@ -62,6 +62,7 @@ def test_get(tmp_path: str, project_path) -> None:
 
     study_service = RawStudyService(
         config=build_config(path_to_studies),
+        cache=Mock(),
         study_factory=study_factory,
         path_resources=project_path / "resources",
         patch_service=Mock(),
@@ -87,6 +88,7 @@ def test_check_errors():
 
     study_service = RawStudyService(
         config=build_config(Path()),
+        cache=Mock(),
         study_factory=factory,
         path_resources=Path(),
         patch_service=Mock(),
@@ -117,6 +119,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     # Test & Verify
     study_service = RawStudyService(
         config=build_config(path_to_studies),
+        cache=Mock(),
         study_factory=Mock(),
         path_resources=project_path / "resources",
         patch_service=Mock(),
@@ -145,6 +148,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     # Test & Verify
     study_service = RawStudyService(
         config=build_config(path_to_studies),
+        cache=Mock(),
         study_factory=Mock(),
         path_resources=project_path / "resources",
         patch_service=Mock(),
@@ -173,6 +177,7 @@ def test_create_study(
 
     study_service = RawStudyService(
         config=build_config(path_studies),
+        cache=Mock(),
         study_factory=study_factory,
         path_resources=project_path / "resources",
         patch_service=Mock(),
@@ -232,6 +237,7 @@ def test_copy_study(
 
     study_service = RawStudyService(
         config=build_config(path_studies),
+        cache=Mock(),
         study_factory=study_factory,
         path_resources=Path(),
         patch_service=Mock(),
@@ -264,6 +270,7 @@ def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
 
     study_service = RawStudyService(
         config=build_config(tmp_path),
+        cache=Mock(),
         study_factory=Mock(),
         path_resources=Path(),
         patch_service=Mock(),
@@ -289,6 +296,7 @@ def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
 
     study_service = RawStudyService(
         config=build_config(tmp_path),
+        cache=Mock(),
         study_factory=study_factory,
         path_resources=Path(),
         patch_service=Mock(),

@@ -42,7 +42,11 @@ def test_parse_output_parmeters(tmp_path) -> None:
     (study / "settings/generaldata.ini").write_text(content)
 
     config = FileStudyTreeConfig(
-        study_path=study, version=-1, store_new_set=True, study_id="id"
+        study_path=study,
+        path=study,
+        version=-1,
+        store_new_set=True,
+        study_id="id",
     )
     assert ConfigPathBuilder.build(study, "id") == config
 
@@ -63,6 +67,7 @@ def test_parse_bindings(tmp_path: Path) -> None:
 
     config = FileStudyTreeConfig(
         study_path=study_path,
+        path=study_path,
         version=-1,
         bindings=["bindA", "bindB"],
         study_id="id",
@@ -90,8 +95,9 @@ def test_parse_outputs(tmp_path: Path) -> None:
     (output_path / "checkIntegrity.txt").touch()
 
     config = FileStudyTreeConfig(
-        study_path,
-        "id",
+        study_path=study_path,
+        path=study_path,
+        study_id="id",
         version=-1,
         outputs={
             "20201220-1456eco-hello": Simulation(
@@ -135,8 +141,9 @@ def test_parse_area(tmp_path: Path) -> None:
     (study_path / "input/areas/fr/optimization.ini").write_text(content)
 
     config = FileStudyTreeConfig(
-        study_path,
-        "id",
+        study_path=study_path,
+        path=study_path,
+        study_id="id",
         version=-1,
         areas={
             "fr": Area(
@@ -169,9 +176,9 @@ def test_parse_thermal(tmp_path: Path) -> None:
     (study_path / "input/thermal/clusters/fr/list.ini").write_text(content)
 
     assert ConfigPathBuilder._parse_thermal(study_path, "fr") == [
-        Cluster(id="t1", enabled=True),
-        Cluster(id="t2", enabled=False),
-        Cluster(id="t3", enabled=True),
+        Cluster(id="t1", name="t1", enabled=True),
+        Cluster(id="t2", name="t2", enabled=False),
+        Cluster(id="t3", name="t3", enabled=True),
     ]
 
 

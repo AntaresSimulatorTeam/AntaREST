@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
+    Area,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import (
     InputAreasList,
@@ -20,9 +21,32 @@ IT
 
     config = FileStudyTreeConfig(
         study_path=file,
+        path=file,
         study_id="id",
         version=-1,
-        areas={"fr": None, "de": None, "it": None},
+        areas={
+            "fr": Area(
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=[],
+                filters_year=[],
+            ),
+            "de": Area(
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=[],
+                filters_year=[],
+            ),
+            "it": Area(
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=[],
+                filters_year=[],
+            ),
+        },
     )
     node = InputAreasList(context=Mock(), config=config)
 

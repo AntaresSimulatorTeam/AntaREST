@@ -25,11 +25,11 @@ def test_service_factory():
     event_bus = build_eventbus(MagicMock(), config, autostart=False)
     assert event_bus.backend.__class__.__name__ == "LocalEventBus"
     config = Config(
-        eventbus=EventBusConfig(redis=RedisConfig(host="localhost"))
+        redis=RedisConfig(host="localhost"), eventbus=EventBusConfig()
     )
     with pytest.raises(redis.exceptions.ConnectionError):
-        # this error implies that this is the redis one...
-        build_eventbus(MagicMock(), config, autostart=False)
+        event_bus = build_eventbus(MagicMock(), config, autostart=False)
+        assert event_bus.backend.__class__.__name__ == "RedisEventBus"
 
 
 def test_lifecycle():

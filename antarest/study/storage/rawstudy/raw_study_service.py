@@ -175,7 +175,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         parts = [item for item in url.split("/") if item]
 
-        data = None
+        data: JSON = dict()
         if url == "" and depth == -1:
             cache_id = f"{metadata.id}/{CacheConstants.RAW_STUDY}"
             from_cache = self.cache.get(cache_id)
