@@ -1,5 +1,6 @@
 import argparse
 import logging
+import logging.config
 import os
 import sys
 from datetime import timedelta
@@ -105,15 +106,16 @@ def get_arguments() -> Tuple[Path, bool, bool, bool]:
 
 
 def configure_logger(config: Config) -> None:
-    logging_path = config.logging.path
-    logging_level = config.logging.level or "INFO"
-    logging_format = (
-        config.logging.format
-        or "%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    logging.basicConfig(
-        filename=logging_path, format=logging_format, level=logging_level
-    )
+    if (
+        config.logging.fileconfig is not None
+        and config.logging.fileconfig.exists()
+    ):
+        logging.config.fileConfig(
+            config.logging.fileconfig, disable_existing_loggers=False
+        )
+    else:
+        logging_format = "%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s"
+        logging.basicConfig(filename=None, format=logging_format, level="INFO")
 
 
 class JwtSettings(BaseModel):

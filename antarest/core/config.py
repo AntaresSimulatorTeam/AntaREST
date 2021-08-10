@@ -188,16 +188,13 @@ class LoggingConfig:
     Sub config object dedicated to logging
     """
 
-    level: str = "INFO"
-    path: Optional[Path] = None
-    format: Optional[str] = None
+    fileconfig: Optional[Path] = None
 
     @staticmethod
     def from_dict(data: JSON) -> "LoggingConfig":
+        fileconfig = data.get("fileconfig", None)
         return LoggingConfig(
-            level=data["level"],
-            path=data.get("path", None),
-            format=data.get("format", None),
+            fileconfig=Path(fileconfig) if fileconfig is not None else None,
         )
 
 
