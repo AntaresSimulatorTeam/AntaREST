@@ -264,7 +264,7 @@ class Config:
             launcher=LauncherConfig.from_dict(data["launcher"]),
             db_url=data["db"]["url"],
             db_admin_url=data["db"].get("admin_url", None),
-            logging=LoggingConfig.from_dict(data["logging"]),
+            logging=LoggingConfig.from_dict(data.get("logging", {})),
             debug=data["debug"],
             resources_path=res or Path(),
             root_path=data.get("root_path", ""),
