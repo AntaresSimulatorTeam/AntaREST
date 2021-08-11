@@ -62,6 +62,7 @@ def test_server() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -83,6 +84,7 @@ def test_404() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -104,6 +106,7 @@ def test_server_with_parameters() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -146,6 +149,7 @@ def test_create_study(
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -181,6 +185,7 @@ def test_import_study_zipped(
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -208,6 +213,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -240,6 +246,7 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -259,6 +266,7 @@ def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -281,6 +289,7 @@ def test_export_files(tmp_path: Path) -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -305,6 +314,7 @@ def test_export_params(tmp_path: Path) -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -328,6 +338,7 @@ def test_delete_study() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -347,6 +358,7 @@ def test_edit_study() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -369,6 +381,7 @@ def test_edit_study_fail() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -390,6 +403,7 @@ def test_validate() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -428,6 +442,7 @@ def test_output_download() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -450,6 +465,7 @@ def test_sim_reference() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -491,6 +507,7 @@ def test_sim_result() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -510,6 +527,7 @@ def test_study_permission_management(
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         storage_service=storage_service,
         user_service=Mock(),
         matrix_service=Mock(),

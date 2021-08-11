@@ -268,12 +268,12 @@ def test_download_output() -> None:
     )
     config = FileStudyTreeConfig(
         study_path=input_study.path,
+        path=input_study.path,
         study_id="",
         version=-1,
         areas={"east": area},
         sets={"north": Set()},
         outputs={"output-id": sim},
-        bindings=None,
         store_new_set=False,
     )
     study = Mock()

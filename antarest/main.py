@@ -19,12 +19,17 @@ from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
+from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.persistence import upgrade_db
 from antarest.dbmodel import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.core.utils.utils import get_default_config_path, get_local_path
+from antarest.core.utils.utils import (
+    get_default_config_path,
+    get_local_path,
+    new_redis_instance,
+)
 from antarest.core.utils.web import tags_metadata
 from sqlalchemy import create_engine
 
@@ -241,7 +246,12 @@ def fastapi_app(
 
     services: Dict[str, Any] = {}
 
-    event_bus = build_eventbus(application, config)
+    redis_client = (
+        new_redis_instance(config.redis) if config.redis is not None else None
+    )
+    event_bus = build_eventbus(application, config, True, redis_client)
+    cache = build_cache(config=config, redis_client=redis_client)
+
     user_service = build_login(application, config, event_bus=event_bus)
 
     matrix_service = build_matrixstore(application, config, user_service)
@@ -250,6 +260,7 @@ def fastapi_app(
         application,
         config,
         matrix_service=matrix_service,
+        cache=cache,
         user_service=user_service,
         event_bus=event_bus,
     )
@@ -266,6 +277,7 @@ def fastapi_app(
     services["launcher"] = launcher
     services["matrix"] = matrix_service
     services["user"] = user_service
+    services["cache"] = cache
 
     return application, services
 

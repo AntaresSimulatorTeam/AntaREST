@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import FastAPI
 
 from antarest.core.config import Config
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
@@ -32,6 +33,7 @@ def build_storage(
     config: Config,
     user_service: LoginService,
     matrix_service: MatrixService,
+    cache: ICache,
     metadata_repository: Optional[StudyMetadataRepository] = None,
     storage_service: Optional[StudyService] = None,
     patch_service: Optional[PatchService] = None,
@@ -45,6 +47,7 @@ def build_storage(
         config: server config
         user_service: user service facade
         matrix_service: matrix store service
+        cache: cache service
         metadata_repository: used by testing to inject mock. Let None to use true instantiation
         storage_service: used by testing to inject mock. Let None to use true instantiation
         patch_service: used by testing to inject mock. Let None to use true instantiation
@@ -57,7 +60,9 @@ def build_storage(
     path_resources = config.resources_path
 
     resolver = UriResolverService(config, matrix_service=matrix_service)
-    study_factory = StudyFactory(matrix=matrix_service, resolver=resolver)
+    study_factory = StudyFactory(
+        matrix=matrix_service, resolver=resolver, cache=cache
+    )
     metadata_repository = metadata_repository or StudyMetadataRepository()
 
     patch_service = patch_service or PatchService()
@@ -67,6 +72,7 @@ def build_storage(
         study_factory=study_factory,
         path_resources=path_resources,
         patch_service=patch_service,
+        cache=cache,
     )
     importer_service = ImporterService(
         study_service=study_service,
