@@ -34,12 +34,12 @@ def test_lifecycle():
     duration = 3600
     timeout = int(time.time()) + duration
     cache_element = LocalCacheElement(
-        duration=duration, data=config, timeout=timeout
+        duration=duration, data=config.dict(), timeout=timeout
     )
 
     # PUT
-    cache.put(id=id, data=config, duration=duration)
+    cache.put(id=id, data=config.dict(), duration=duration)
     assert cache.cache[id] == cache_element
 
     # GET
-    assert cache.get(id=id) == config
+    assert cache.get(id=id) == config.dict()

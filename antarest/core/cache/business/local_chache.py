@@ -5,13 +5,14 @@ from typing import Optional, Dict, Any, List
 from pydantic import BaseModel
 
 from antarest.core.config import CacheConfig
+from antarest.core.custom_types import JSON
 from antarest.core.interfaces.cache import ICache
 
 
 class LocalCacheElement(BaseModel):
     timeout: int
     duration: int
-    data: Any
+    data: JSON
 
 
 class LocalCache(ICache):
@@ -38,7 +39,7 @@ class LocalCache(ICache):
                         ]  # Python 3 allow us to delete items while iterating a dictionary
 
     def put(
-        self, id: str, data: Any, duration: int = 3600
+        self, id: str, data: JSON, duration: int = 3600
     ) -> None:  # Duration in second
         with self.lock:
             self.cache[id] = LocalCacheElement(
@@ -47,7 +48,9 @@ class LocalCache(ICache):
                 duration=duration,
             )
 
-    def get(self, id: str, refresh_duration: Optional[int] = None) -> Any:
+    def get(
+        self, id: str, refresh_duration: Optional[int] = None
+    ) -> Optional[JSON]:
         res = None
         with self.lock:
             if id in self.cache:
