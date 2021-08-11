@@ -1,4 +1,7 @@
+from typing import Optional
+
 from fastapi import FastAPI
+from redis import Redis
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
@@ -12,11 +15,12 @@ def build_eventbus(
     application: FastAPI,
     config: Config,
     autostart: bool = True,
+    redis_client: Optional[Redis] = None,
 ) -> IEventBus:
 
     redis_conf = config.redis
     eventbus = EventBusService(
-        RedisEventBus(redis_conf)
+        RedisEventBus(redis_conf, redis_client)
         if redis_conf is not None
         else LocalEventBus(),
         autostart,
