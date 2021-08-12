@@ -192,7 +192,7 @@ class LoggingConfig:
 
     @staticmethod
     def from_dict(data: JSON) -> "LoggingConfig":
-        fileconfig = data.get("fileconfig", None)
+        fileconfig = data.get("fileconfig", None) if data is not None else None
         return LoggingConfig(
             fileconfig=Path(fileconfig) if fileconfig is not None else None,
         )
@@ -277,7 +277,7 @@ class Config:
             launcher=LauncherConfig.from_dict(data["launcher"]),
             db_url=data["db"]["url"],
             db_admin_url=data["db"].get("admin_url", None),
-            logging=LoggingConfig.from_dict(data.get("logging", {}) or {}),
+            logging=LoggingConfig.from_dict(data.get("logging", {})),
             debug=data["debug"],
             resources_path=res or Path(),
             root_path=data.get("root_path", ""),
