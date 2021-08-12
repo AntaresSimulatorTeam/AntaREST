@@ -91,7 +91,7 @@ const StudyBlockSummaryView = (props: StudyListingItemPropTypes) => {
     props;
 
   return (
-    <Card className={classes.root}>
+    <Card className={clsx(classes.root, 'studylistitem')}>
       <CardContent>
         <div className={classes.titleContainer}>
           <Link className={classes.title} to={`/study/${encodeURI(study.id)}`}>

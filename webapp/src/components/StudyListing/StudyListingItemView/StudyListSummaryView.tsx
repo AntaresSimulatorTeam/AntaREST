@@ -93,7 +93,7 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
   } = props;
 
   return (
-    <Paper className={classes.root}>
+    <Paper className={clsx(classes.root, 'studylistitem')}>
       <div className={classes.info}>
         <div className={classes.titleContainer}>
           <Link className={classes.title} to={`/study/${encodeURI(study.id)}`}>
