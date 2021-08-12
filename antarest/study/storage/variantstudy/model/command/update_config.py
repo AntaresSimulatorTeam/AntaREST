@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Union, List
 
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -7,13 +7,12 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
 
-class UpdateArea(ICommand):
-    id: str
-    name: str
-    metadata: Dict[str, str]
+class UpdateConfig(ICommand):
+    target: str
+    data: Dict[str, str]
 
     def __init__(self):
-        super().__init__(command_name=CommandName.UPDATE_AREA)
+        super().__init__(command_name=CommandName.UPDATE_CONFIG)
 
     def apply(self) -> CommandOutput:
         raise NotImplementedError()

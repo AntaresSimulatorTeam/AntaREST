@@ -4,6 +4,7 @@ from pydantic import validator
 
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
+    CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
@@ -17,7 +18,7 @@ class CreateBindingConstraint(ICommand):
     values: Union[List[List[float]], str]
 
     def __init__(self):
-        super().__init__(command_name="create_binding_constraint")
+        super().__init__(command_name=CommandName.CREATE_BINDING_CONSTRAINS)
 
     @validator("time_step")
     def check_time_step(self, v):

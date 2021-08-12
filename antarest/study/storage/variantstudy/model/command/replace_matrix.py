@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Union, List
 
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -7,13 +7,12 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
 
-class UpdateArea(ICommand):
-    id: str
-    name: str
-    metadata: Dict[str, str]
+class ReplaceMatrix(ICommand):
+    target_element: str
+    matrix: Union[List[List[float]], str]
 
     def __init__(self):
-        super().__init__(command_name=CommandName.UPDATE_AREA)
+        super().__init__(command_name=CommandName.REPLACE_MATRIX)
 
     def apply(self) -> CommandOutput:
         raise NotImplementedError()
