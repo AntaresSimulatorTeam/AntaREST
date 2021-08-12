@@ -89,14 +89,17 @@ def test_scan(tmp_path: Path):
     )
 
 
-def process(x: int) -> bool:
-    return Watcher._get_lock()
+def process_builder(path: Path):
+    def process(x: int) -> bool:
+        return Watcher._get_lock(path)
+
+    return process
 
 
 @pytest.mark.unit_test
-def test_get_lock():
+def test_get_lock(tmp_path: Path):
     clean_files()
 
     pool = Pool()
-    res = sum(pool.map(process, range(4)))
+    res = sum(pool.map(process_builder(tmp_path), range(4)))
     assert res == 1

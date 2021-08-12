@@ -31,7 +31,8 @@ class Watcher:
 
         self.thread = (
             threading.Thread(target=self._loop, daemon=True)
-            if not config.storage.watcher_lock or Watcher._get_lock()
+            if not config.storage.watcher_lock
+            or Watcher._get_lock(self.config.storage.tmp_dir)
             else None
         )
 
@@ -45,14 +46,14 @@ class Watcher:
             self.thread.start()
 
     @staticmethod
-    def _get_lock() -> bool:
+    def _get_lock(base_path: Path) -> bool:
         """
         Force watcher to run only one by access a lock on filesystem.
 
         Returns: true if watcher get the lock, false else.
 
         """
-        with FileLock(f"{Watcher.LOCK}.lock"):
+        with FileLock(str(base_path / f"{Watcher.LOCK}.lock")):
             start = (
                 int(f"0{Watcher.LOCK.read_text()}")
                 if Watcher.LOCK.exists()
