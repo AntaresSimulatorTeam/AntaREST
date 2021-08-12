@@ -68,6 +68,8 @@ jobs:
       - name: Copy front build to app resources
         run: cp -r webapp/build resources/webapp
         if: matrix.os == 'ubuntu-latest'
+      - name: Install playwright
+        run: playwright install
       - name: Test with pytest
         run: |
           pytest --cov antarest --cov-report xml
