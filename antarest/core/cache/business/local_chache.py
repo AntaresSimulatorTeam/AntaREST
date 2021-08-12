@@ -1,3 +1,4 @@
+import logging
 import threading
 import time
 from typing import Optional, Dict, Any, List
@@ -7,6 +8,8 @@ from pydantic import BaseModel
 from antarest.core.config import CacheConfig
 from antarest.core.custom_types import JSON
 from antarest.core.interfaces.cache import ICache
+
+logger = logging.getLogger(__name__)
 
 
 class LocalCacheElement(BaseModel):
@@ -42,6 +45,7 @@ class LocalCache(ICache):
         self, id: str, data: JSON, duration: int = 3600
     ) -> None:  # Duration in second
         with self.lock:
+            logger.info(f"Adding cache key {id}")
             self.cache[id] = LocalCacheElement(
                 data=data,
                 timeout=(int(time.time()) + duration),
@@ -53,7 +57,9 @@ class LocalCache(ICache):
     ) -> Optional[JSON]:
         res = None
         with self.lock:
+            logger.info(f"Trying to retrieve cache key {id}")
             if id in self.cache:
+                logger.info(f"Cache key {id} found")
                 if refresh_duration:
                     self.cache[id].duration = refresh_duration
                 self.cache[id].timeout = (
@@ -64,11 +70,13 @@ class LocalCache(ICache):
 
     def invalidate(self, id: str) -> None:
         with self.lock:
+            logger.info(f"Removing cache key {id}")
             if id in self.cache:
                 del self.cache[id]
 
     def invalidate_all(self, ids: List[str]) -> None:
         with self.lock:
+            logger.info(f"Removing cache keys {ids}")
             for id in ids:
                 if id in self.cache:
                     del self.cache[id]
