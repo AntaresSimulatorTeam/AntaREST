@@ -12,7 +12,7 @@ console_log = []
 
 
 def retry(
-    assertion: Callable[[], bool], delay: float = 0.2, max_try: int = 10
+    assertion: Callable[[], bool], delay: float = 0.5, max_try: int = 10
 ):
     if assertion():
         return True
@@ -28,6 +28,7 @@ def log_console(msg):
 
 def check_studylist(page: Page, expected_nb: int):
     els = page.query_selector_all(".studylistitem")
+    print(len(els))
     return len(els) == expected_nb
 
 
@@ -38,7 +39,9 @@ def check_studylist(page: Page, expected_nb: int):
 def test_ui(running_app_with_ui: Process):
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page()
+        context = browser.new_context()
+        context.set_default_timeout(10000)
+        page = context.new_page()
         page.goto("http://localhost:8080")
         assert page.title() == "Antares Web"
 
@@ -57,7 +60,8 @@ def test_ui(running_app_with_ui: Process):
             page.fill("#studyname", "foo")
             page.click("#createstudysubmit")
             ws.value.expect_event("framereceived")
-
-            assert retry(lambda: check_studylist(page, 2))
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_selector(".studylistingcontainer")
+            assert check_studylist(page, 2)
 
         browser.close()
