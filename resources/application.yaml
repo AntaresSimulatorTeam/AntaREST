@@ -54,7 +54,7 @@ launcher:
 #      - "800"
 
 
-debug: true
+debug: false
 
 root_path: ""
 

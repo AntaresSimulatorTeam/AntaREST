@@ -1,16 +1,17 @@
 import os
+import time
+from multiprocessing import Process
 from pathlib import Path
-from unittest.mock import Mock
 from zipfile import ZipFile
 
 import jinja2
 import pytest
+import requests
+import uvicorn
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine
+from fastapi import FastAPI
 
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.dbmodel import Base
 from antarest.main import fastapi_app
 from tests.conftest import project_dir
 
@@ -20,16 +21,12 @@ def sta_mini_zip_path(project_path: Path) -> Path:
     return project_path / "examples/studies/STA-mini.zip"
 
 
-@pytest.fixture
-def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
-    engine = create_engine("sqlite:///:memory:", echo=True)
-    Base.metadata.create_all(engine)
-    DBSessionMiddleware(
-        Mock(),
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
+def app_builder(
+    tmp_path: str,
+    sta_mini_zip_path: Path,
+    project_path: Path,
+    mount_front: bool,
+):
     cur_dir: Path = Path(__file__).parent
     templateLoader = jinja2.FileSystemLoader(searchpath=cur_dir)
     templateEnv = jinja2.Environment(loader=templateLoader)
@@ -75,6 +72,42 @@ def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
     command.upgrade(alembic_cfg, "head")
 
     app, _ = fastapi_app(
-        config_path, project_path / "resources", mount_front=False
+        config_path, project_path / "resources", mount_front=mount_front
     )
     return app
+
+
+@pytest.fixture
+def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
+    return app_builder(tmp_path, sta_mini_zip_path, project_path, False)
+
+
+@pytest.fixture
+def app_with_front(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
+    return app_builder(tmp_path, sta_mini_zip_path, project_path, True)
+
+
+def run_server(app_with_front: FastAPI):
+    uvicorn.run(app_with_front, host="0.0.0.0", port=8080)
+
+
+@pytest.fixture
+def running_app_with_ui(app_with_front: FastAPI):
+    server = Process(
+        target=run_server,
+        args=(app_with_front,),
+    )
+    server.start()
+    countdown = 10
+    while countdown > 0:
+        try:
+            res = requests.get("http://localhost:8080")
+            if res.status_code == 200:
+                break
+        except requests.ConnectionError:
+            pass
+        time.sleep(1)
+        countdown -= 1
+
+    yield server
+    server.kill()

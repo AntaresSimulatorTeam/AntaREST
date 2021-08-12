@@ -55,6 +55,19 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
+      - name: Install front dependencies
+        run: npm install
+        working-directory: webapp
+        if: matrix.os == 'ubuntu-latest'
+      - name: Build front
+        run: bash ./build-front.sh
+        working-directory: scripts
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+      - name: Copy front build to app resources
+        run: cp -r webapp/build resources/webapp
+        if: matrix.os == 'ubuntu-latest'
       - name: Test with pytest
         run: |
           pytest --cov antarest --cov-report xml
