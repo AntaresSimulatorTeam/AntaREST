@@ -4,6 +4,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
+import clsx from 'clsx';
 import { StudyMetadata } from '../../common/types';
 import { removeStudies } from '../../ducks/study';
 import {
@@ -14,7 +15,6 @@ import {
   unarchiveStudy as callUnarchiveStudy,
 } from '../../services/api/study';
 import StudyListElementView from './StudyListingItemView';
-import clsx from 'clsx';
 
 const logError = debug('antares:studyblockview:error');
 
