@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Optional, List
 
 from fastapi import APIRouter, Depends
@@ -15,6 +16,8 @@ from antarest.study.storage.variantstudy.model import (
     GenerationResultInfoDTO,
     CommandDTO,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def create_study_variant_routes(
@@ -47,6 +50,10 @@ def create_study_variant_routes(
         name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
+        logger.info(
+            f"Creating new variant '{name}' from study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         raise NotImplementedError()
 
@@ -65,6 +72,10 @@ def create_study_variant_routes(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> List[StudyMetadataDTO]:
+        logger.info(
+            f"Fetching variant children of study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         raise NotImplementedError()
 
@@ -83,6 +94,10 @@ def create_study_variant_routes(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> List[CommandDTO]:
+        logger.info(
+            f"Fetching command list of variant study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         raise NotImplementedError()
 
@@ -101,6 +116,10 @@ def create_study_variant_routes(
         command: List[CommandDTO],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
+        logger.info(
+            f"Appending new command to variant study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         raise NotImplementedError()
 
@@ -119,6 +138,10 @@ def create_study_variant_routes(
         cid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> CommandDTO:
+        logger.info(
+            f"Fetching command {cid} info of variant study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         raise NotImplementedError()
 
@@ -133,6 +156,10 @@ def create_study_variant_routes(
         index: int,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
+        logger.info(
+            f"Moving command {cid} to index {index} for variant study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         raise NotImplementedError()
 
@@ -146,6 +173,10 @@ def create_study_variant_routes(
         cid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
+        logger.info(
+            f"Removing command {cid} of variant study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         raise NotImplementedError()
 
@@ -164,6 +195,10 @@ def create_study_variant_routes(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> GenerationResultInfoDTO:
+        logger.info(
+            f"Generating snapshot for variant study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         raise NotImplementedError()
 
@@ -182,6 +217,10 @@ def create_study_variant_routes(
         name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
+        logger.info(
+            f"Creating new raw study {name} from variant study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         raise NotImplementedError()
 

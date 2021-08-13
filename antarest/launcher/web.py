@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Optional
 from uuid import UUID
 
@@ -10,6 +11,8 @@ from antarest.core.utils.web import APITag
 from antarest.launcher.model import LogType
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
+
+logger = logging.getLogger(__name__)
 
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
@@ -27,39 +30,9 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         engine: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        """
-        Run study
-        ---
-        responses:
-          '200':
-            content:
-              application/json:
-                schema:
-                    $ref: '#/definitions/RunInfo'
-            description: Successful operation
-          '400':
-            description: Invalid request
-          '401':
-            description: Unauthenticated User
-          '403':
-            description: Unauthorized
-        parameters:
-        - in: path
-          name: study_id
-          required: true
-          description: study id
-          schema:
-            type: string
-        definitions:
-            - schema:
-                id: RunInfo
-                properties:
-                  job_id:
-                    type: string
-        tags:
-          - Run Studies
-        """
-
+        logger.info(
+            f"Launching study {study_id}", extra={"user": current_user.id}
+        )
         selected_engine = (
             engine if engine is not None else config.launcher.default
         )
@@ -72,6 +45,10 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         study: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Fetching execution jobs for study {study or '<all>'}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         return [job.to_dict() for job in service.get_jobs(study, params)]
 
@@ -83,6 +60,9 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     def get_result(
         job_id: UUID, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
+        logger.info(
+            f"Fetching job info {job_id}", extra={"user": current_user.id}
+        )
         params = RequestParameters(user=current_user)
         return service.get_result(job_id, params).to_dict()
 
@@ -96,6 +76,9 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         log_type: LogType = LogType.STDOUT,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Fetching logs for job {job_id}", extra={"user": current_user.id}
+        )
         params = RequestParameters(user=current_user)
         return service.get_log(job_id, log_type, params)
 
@@ -105,6 +88,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Retrieve available engines",
     )
     def get_engines() -> Any:
+        logger.info(f"Listing launch engines")
         return {"engines": service.get_launchers()}
 
     return bp
