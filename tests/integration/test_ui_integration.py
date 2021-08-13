@@ -12,13 +12,16 @@ console_log = []
 
 
 def retry(
-    assertion: Callable[[], bool], delay: float = 0.5, max_try: int = 10
+    page: Page,
+    assertion: Callable[[], bool],
+    delay: float = 500,
+    max_try: int = 10,
 ):
     if assertion():
         return True
     elif max_try > 0:
-        time.sleep(delay)
-        return retry(assertion, delay, max_try - 1)
+        page.wait_for_timeout(delay)
+        return retry(page, assertion, delay, max_try - 1)
     return False
 
 
@@ -54,14 +57,13 @@ def test_ui(running_app_with_ui: Process):
 
         with page.expect_websocket() as ws:
             page.wait_for_selector(".studylistingcontainer")
-            els = page.query_selector_all(".studylistitem")
-            assert len(els) == 1
+            assert retry(page, lambda: check_studylist(page, 1))
 
             page.fill("#studyname", "foo")
             page.click("#createstudysubmit")
             ws.value.expect_event("framereceived")
             page.reload(wait_until="domcontentloaded")
             page.wait_for_selector(".studylistingcontainer")
-            assert check_studylist(page, 2)
+            assert retry(page, lambda: check_studylist(page, 2))
 
         browser.close()
