@@ -1,4 +1,5 @@
 import io
+import logging
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional
@@ -24,6 +25,8 @@ from antarest.core.config import Config
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.service import StudyService
 
+logger = logging.getLogger(__name__)
+
 
 def create_study_routes(
     storage_service: StudyService, config: Config
@@ -45,6 +48,7 @@ def create_study_routes(
     def get_studies(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info("Fetching studies")
         params = RequestParameters(user=current_user)
         available_studies = storage_service.get_studies_information(params)
         return available_studies
@@ -258,6 +262,9 @@ def create_study_routes(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Fetching study {uuid} metadata", extra={"user": current_user.id}
+        )
         params = RequestParameters(user=current_user)
         study_metadata = storage_service.get_study_information(uuid, params)
         return study_metadata
