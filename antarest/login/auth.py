@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import timedelta
-from typing import Dict, Any, Callable, Tuple, Union
+from typing import Dict, Any, Callable, Tuple, Union, Optional
 
 from fastapi import Depends
 from fastapi_jwt_auth import AuthJWT  # type: ignore
@@ -9,6 +9,8 @@ from pydantic import BaseModel
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+
+logger = logging.getLogger(__name__)
 
 
 class Auth:
@@ -47,9 +49,13 @@ class Auth:
         return user
 
     @staticmethod
-    def get_user_from_token(token: str, jwt_manager: AuthJWT) -> JWTUser:
-        token_data = jwt_manager._verified_token(token)
-        return JWTUser.from_dict(json.loads(token_data["sub"]))
+    def get_user_from_token(token: str, jwt_manager: AuthJWT) -> Optional[JWTUser]:
+        try:
+            token_data = jwt_manager._verified_token(token)
+            return JWTUser.from_dict(json.loads(token_data["sub"]))
+        except Exception as e:
+            logger.debug("Failed to retrieve user from token", exc_info=e)
+        return None
 
 
 class JwtSettings(BaseModel):
