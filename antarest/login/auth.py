@@ -49,7 +49,9 @@ class Auth:
         return user
 
     @staticmethod
-    def get_user_from_token(token: str, jwt_manager: AuthJWT) -> Optional[JWTUser]:
+    def get_user_from_token(
+        token: str, jwt_manager: AuthJWT
+    ) -> Optional[JWTUser]:
         try:
             token_data = jwt_manager._verified_token(token)
             return JWTUser.from_dict(json.loads(token_data["sub"]))
