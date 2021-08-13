@@ -14,14 +14,13 @@ from antarest.matrixstore.model import (
     MatrixDataSet,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class MatrixDataSetRepository:
     """
     Database connector to manage Matrix metadata entity
     """
-
-    def __init__(self) -> None:
-        self.logger = logging.getLogger(self.__class__.__name__)
 
     def save(self, matrix_user_metadata: MatrixDataSet) -> MatrixDataSet:
         res = db.session.query(
@@ -33,7 +32,7 @@ class MatrixDataSetRepository:
             db.session.add(matrix_user_metadata)
         db.session.commit()
 
-        self.logger.debug(
+        logger.debug(
             f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved"
         )
         return matrix_user_metadata
@@ -75,9 +74,6 @@ class MatrixRepository:
     Database connector to manage Matrix entity.
     """
 
-    def __init__(self) -> None:
-        self.logger = logging.getLogger(self.__class__.__name__)
-
     def save(self, matrix: Matrix) -> Matrix:
         res = db.session.query(exists().where(Matrix.id == matrix.id)).scalar()
         if res:
@@ -86,7 +82,7 @@ class MatrixRepository:
             db.session.add(matrix)
         db.session.commit()
 
-        self.logger.debug(f"Matrix {matrix.id} saved")
+        logger.debug(f"Matrix {matrix.id} saved")
         return matrix
 
     def get(self, id: str) -> Optional[Matrix]:
@@ -102,7 +98,7 @@ class MatrixRepository:
         db.session.delete(g)
         db.session.commit()
 
-        self.logger.debug(f"Matrix {id} deleted")
+        logger.debug(f"Matrix {id} deleted")
 
 
 class MatrixContentRepository:
