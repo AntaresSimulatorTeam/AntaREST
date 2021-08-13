@@ -1,5 +1,6 @@
 from typing import Dict, List, Union
 
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -14,7 +15,10 @@ class UpdateLink(ICommand):
     series: Union[List[List[float]], str]
 
     def __init__(self):
-        super().__init__(command_name=CommandName.UPDATE_LINK)
+        super().__init__(command_name=CommandName.UPDATE_LINK, version=1)
 
-    def apply(self) -> CommandOutput:
+    def apply(self, study_data: FileStudy) -> CommandOutput:
+        raise NotImplementedError()
+
+    def revert(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()

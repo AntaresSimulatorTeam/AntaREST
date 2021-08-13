@@ -2,6 +2,7 @@ from typing import Dict, List, Union
 
 from pydantic import validator
 
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -18,7 +19,9 @@ class CreateBindingConstraint(ICommand):
     values: Union[List[List[float]], str]
 
     def __init__(self):
-        super().__init__(command_name=CommandName.CREATE_BINDING_CONSTRAINS)
+        super().__init__(
+            command_name=CommandName.CREATE_BINDING_CONSTRAINS, version=1
+        )
 
     @validator("time_step")
     def check_time_step(self, v):
@@ -50,5 +53,8 @@ class CreateBindingConstraint(ICommand):
         except:
             raise ValueError("Coeffs is wrong")
 
-    def apply(self) -> CommandOutput:
+    def apply(self, study_data: FileStudy) -> CommandOutput:
+        raise NotImplementedError()
+
+    def revert(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()

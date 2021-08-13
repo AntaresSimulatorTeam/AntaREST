@@ -1,5 +1,6 @@
 from typing import Dict, Union, List
 
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -15,7 +16,10 @@ class CreateCluster(ICommand):
     modulation: Union[List[List[float]], str]
 
     def __init__(self):
-        super().__init__(command_name=CommandName.CREATE_CLUSTER)
+        super().__init__(command_name=CommandName.CREATE_CLUSTER, version=1)
 
-    def apply(self) -> CommandOutput:
+    def apply(self, study_data: FileStudy) -> CommandOutput:
+        raise NotImplementedError()
+
+    def revert(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()
