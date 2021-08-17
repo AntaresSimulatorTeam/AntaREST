@@ -21,7 +21,10 @@ class TestCreateArea:
         area_name = "Area"
         area_id = transform_name_to_id(area_name)
 
-        create_area_command: ICommand = CreateArea(name=area_name)
+        # create_area_command: ICommand = CreateArea(name=area_name, metadata={})
+        create_area_command: ICommand = CreateArea.parse_obj(
+            {"name": area_name, "metadata": {}}
+        )
         create_area_command.apply(study_data=empty_study)
 
         # Areas

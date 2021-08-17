@@ -12,8 +12,10 @@ class CreateArea(ICommand):
     name: str
     metadata: Dict[str, str]
 
-    def __init__(self):
-        super().__init__(command_name=CommandName.CREATE_AREA, version=1)
+    def __init__(self, **data):
+        super().__init__(
+            command_name=CommandName.CREATE_AREA, version=1, **data
+        )
 
     def apply(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()
