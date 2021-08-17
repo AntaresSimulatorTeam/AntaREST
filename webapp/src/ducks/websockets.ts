@@ -1,10 +1,14 @@
 /* eslint-disable camelcase */
 /* eslint-disable @typescript-eslint/camelcase */
+import debug from 'debug';
 import { Action } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import { UserInfo, WSMessage } from '../common/types';
 import { AppState } from '../App/reducers';
 import { getConfig } from '../services/config';
+
+const logInfo = debug('antares:websocket:info');
+const logError = debug('antares:websocket:error');
 
 /** ******************************************* */
 /* State                                        */
@@ -23,32 +27,6 @@ const initialState: WebsocketState = {
 /* Actions                                      */
 /** ******************************************* */
 
-export interface ConnectAction extends Action {
-  type: 'WS/CONNECT';
-  payload: WebSocket;
-}
-
-export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, unknown, ConnectAction> => (dispatch, getState): void => {
-  const config = getConfig();
-  const socket = new WebSocket(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
-  const { websockets } = getState();
-  if (socket) {
-    socket.onopen = (ev) => console.log(ev);
-    socket.onclose = (ev) => console.log(ev);
-    socket.onerror = (ev) => console.log(ev);
-    socket.onmessage = (ev: MessageEvent): void => {
-      const message: WSMessage = JSON.parse(ev.data);
-      websockets.listeners.forEach((l) => {
-        l(message);
-      });
-    };
-    dispatch({
-      type: 'WS/CONNECT',
-      payload: socket,
-    });
-  }
-};
-
 export interface DisconnectAction extends Action {
   type: 'WS/DISCONNECT';
 }
@@ -61,6 +39,73 @@ export const disconnectWebsocket = (): ThunkAction<void, AppState, unknown, Disc
   dispatch({
     type: 'WS/DISCONNECT',
   });
+};
+
+export interface ConnectAction extends Action {
+  type: 'WS/CONNECT';
+  payload: WebSocket;
+}
+
+const RECONNECTION_DEFAULT_DELAY = 3000;
+let reconnectionTimer: NodeJS.Timeout | null = null;
+
+export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, unknown, ConnectAction> => (dispatch, getState): void => {
+  const config = getConfig();
+  const { websockets } = getState();
+
+  const reconnectLoop = (): void => {
+    if (!reconnectionTimer) {
+      logInfo(`Reconnecting websocket in ${RECONNECTION_DEFAULT_DELAY}ms`);
+      reconnectionTimer = setTimeout(
+        () => {
+          dispatch(disconnectWebsocket());
+          dispatch(connectWebsocket(user));
+          reconnectionTimer = null;
+        }, RECONNECTION_DEFAULT_DELAY,
+      );
+    } else {
+      logInfo('Already trying to reconnect to websockets');
+    }
+  };
+
+  if (websockets.socket) {
+    logInfo('Websocket exists, skipping reconnection');
+    return;
+  }
+
+  try {
+    const socket = new WebSocket(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
+
+    if (socket) {
+      socket.onopen = (): void => {
+        if (reconnectionTimer) {
+          clearTimeout(reconnectionTimer);
+          reconnectionTimer = null;
+        }
+      };
+      socket.onclose = (): void => {
+        logInfo('Websocket connexion is closed');
+        reconnectLoop();
+      };
+      socket.onerror = (ev): void => {
+        logError('Websocket error', ev);
+      };
+      socket.onmessage = (ev: MessageEvent): void => {
+        const message: WSMessage = JSON.parse(ev.data);
+        logInfo('Received websocket message', message);
+        websockets.listeners.forEach((l) => {
+          l(message);
+        });
+      };
+      dispatch({
+        type: 'WS/CONNECT',
+        payload: socket,
+      });
+    }
+  } catch (e) {
+    logError('Failed to connect to websockets', e);
+    reconnectionTimer = null;
+  }
 };
 
 export const reconnectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, unknown, Action> => (dispatch): void => {
