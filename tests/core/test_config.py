@@ -16,4 +16,5 @@ def test_get_yaml(project_path: Path):
     assert config.storage.workspaces["default"].path == Path(
         "examples/internal_studies/"
     )
-    assert config.logging.fileconfig is None
+    assert not config.logging.json
+    assert config.logging.level == "INFO"

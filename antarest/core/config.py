@@ -1,7 +1,7 @@
 import logging
 import tempfile
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 import yaml
 from dataclasses import dataclass, field
@@ -188,13 +188,18 @@ class LoggingConfig:
     Sub config object dedicated to logging
     """
 
-    fileconfig: Optional[Path] = None
+    logfile: Optional[Path] = None
+    json: bool = False
+    level: str = "INFO"
 
     @staticmethod
     def from_dict(data: JSON) -> "LoggingConfig":
-        fileconfig = data.get("fileconfig", None) if data is not None else None
+        logging_config: Dict[str, Any] = data or {}
+        logfile: Optional[str] = logging_config.get("logfile", None)
         return LoggingConfig(
-            fileconfig=Path(fileconfig) if fileconfig is not None else None,
+            logfile=Path(logfile) if logfile is not None else None,
+            json=logging_config.get("json", False),
+            level=logging_config.get("level", "INFO"),
         )
 
 

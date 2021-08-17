@@ -150,7 +150,12 @@ def test_save_bot():
         roles=[BotRoleCreateDTO(group="group", role=10)],
     )
     bots = Mock()
-    bots.save.side_effect = lambda b: b
+    bots.save.side_effect = lambda b: Bot(
+        name=b.name,
+        id=2,
+        is_author=b.is_author,
+        owner=b.owner,
+    )
     bots.get_by_name_and_owner.return_value = None
 
     roles = Mock()
@@ -168,7 +173,7 @@ def test_save_bot():
     )
 
     res = service.save_bot(bot_create, USER3)
-    assert res == Bot(name="bot", is_author=True, owner=3)
+    assert res == Bot(name="bot", id=2, is_author=True, owner=3)
 
 
 def test_save_bot_wrong_role():

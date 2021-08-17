@@ -1,4 +1,5 @@
 import json
+import logging
 from http import HTTPStatus
 from typing import Any
 
@@ -18,6 +19,8 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.core.config import Config
 from antarest.study.service import StudyService
+
+logger = logging.getLogger(__name__)
 
 
 def create_raw_study_routes(
@@ -47,6 +50,10 @@ def create_raw_study_routes(
         formatted: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Fetching data at {path} (depth={depth}) from study {uuid}",
+            extra={"user": current_user.id},
+        )
         parameters = RequestParameters(user=current_user)
         output = storage_service.get(uuid, path, depth, formatted, parameters)
 
@@ -77,6 +84,10 @@ def create_raw_study_routes(
         data: JSON = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Editing data at {path} for study {uuid}",
+            extra={"user": current_user.id},
+        )
         new = data
         if not new:
             raise HTTPException(
@@ -102,6 +113,10 @@ def create_raw_study_routes(
         file: bytes = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Uploading new data file at {path} for study {uuid}",
+            extra={"user": current_user.id},
+        )
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
         storage_service.edit_study(uuid, path, file, params)
@@ -114,7 +129,13 @@ def create_raw_study_routes(
         summary="Launch test validation on study",
         tags=[APITag.study_raw_data],
     )
-    def validate(uuid: str) -> Any:
+    def validate(
+        uuid: str, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
+        logger.info(
+            f"Validating data for study {uuid}",
+            extra={"user": current_user.id},
+        )
         return storage_service.check_errors(uuid)
 
     return bp

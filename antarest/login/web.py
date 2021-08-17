@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import timedelta
 from typing import Any, Optional
 
@@ -27,6 +28,8 @@ from antarest.login.model import (
     GroupDTO,
 )
 from antarest.login.service import LoginService
+
+logger = logging.getLogger(__name__)
 
 
 class UserCredentials(BaseModel):
@@ -73,6 +76,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         credentials: UserCredentials,
         jwt_manager: AuthJWT = Depends(),
     ) -> Any:
+        logger.info(f"New login for {credentials.username}")
         user = service.authenticate(credentials.username, credentials.password)
         if not user:
             raise HTTPException(
@@ -88,6 +92,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     def refresh(jwt_manager: AuthJWT = Depends()) -> Any:
         jwt_manager.jwt_refresh_token_required()
         identity = json.loads(jwt_manager.get_jwt_subject())
+        logger.debug(f"Refreshing access token for {identity['id']}")
         user = service.get_jwt(identity["id"])
         if user:
             resp = generate_tokens(user, jwt_manager)
@@ -100,6 +105,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     def users_get_all(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(f"Fetching users list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         return [u.to_dict() for u in service.get_all_users(params)]
 
@@ -109,6 +115,9 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Fetching user info for {id}", extra={"user": current_user.id}
+        )
         params = RequestParameters(user=current_user)
         u = (
             service.get_user_info(id, params)
@@ -125,6 +134,10 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         create_user: UserCreateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Creating new user '{create_user.name}'",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
 
         return service.create_user(create_user, params).to_dict()
@@ -135,6 +148,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         user_info: UserInfo,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(f"Updating user {id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
 
         if id != user_info.id:
@@ -148,6 +162,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     def users_delete(
         id: int, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
+        logger.info(f"Removing user {id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         service.delete_user(id, params)
         return id
@@ -156,6 +171,9 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     def roles_delete_by_user(
         id: int, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
+        logger.info(
+            f"Removing user {id} roles", extra={"user": current_user.id}
+        )
         params = RequestParameters(user=current_user)
         service.delete_all_roles_from_user(id, params)
         return id
@@ -164,6 +182,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     def groups_get_all(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(f"Fetching groups list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         return [g.to_dict() for g in service.get_all_groups(params)]
 
@@ -173,6 +192,9 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Fetching group {id} info", extra={"user": current_user.id}
+        )
         params = RequestParameters(user=current_user)
         group = (
             service.get_group_info(id, params)
@@ -191,6 +213,10 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         group_dto: GroupDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Creating new group '{group_dto.name}'",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         group = Group(
             id=escape(group_dto.id) if group_dto.id else None,
@@ -202,6 +228,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     def groups_delete(
         id: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
+        logger.info(f"Removing group {id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         service.delete_group(id, params)
         return id
@@ -210,6 +237,10 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     def roles_get_all(
         group: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
+        logger.info(
+            f"Fetching roles for group {group}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         return [
             r.to_dict()
@@ -221,6 +252,10 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         role: RoleCreationDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Creating new role ({role.group_id},{role.type}) for {role.identity_id}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         return service.save_role(role, params).to_dict()
 
@@ -230,6 +265,10 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         group: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Remove role in group {group} for {user}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         service.delete_role(user, group, params)
         return user, group
@@ -240,6 +279,10 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         jwt_manager: AuthJWT = Depends(),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Creating new bot '{create.name}'",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         bot = service.save_bot(create, params)
         groups = []
@@ -271,6 +314,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         verbose: Optional[int] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(f"Fetching bot {id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         bot = (
             service.get_bot_info(id, params)
@@ -286,6 +330,10 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         owner: Optional[int] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Fetching bot list for {owner or current_user.id}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
 
         bots = (
@@ -299,6 +347,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     def bots_delete(
         id: int, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
+        logger.info(f"Removing bot {id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         service.delete_bot(id, params)
         return id

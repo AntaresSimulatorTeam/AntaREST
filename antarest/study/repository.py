@@ -4,14 +4,13 @@ from typing import Optional, List
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import Study
 
+logger = logging.getLogger(__name__)
+
 
 class StudyMetadataRepository:
     """
     Database connector to manage Study entity
     """
-
-    def __init__(self) -> None:
-        self.logger = logging.getLogger(self.__class__.__name__)
 
     def save(self, metadata: Study) -> Study:
         metadata.groups = [db.session.merge(g) for g in metadata.groups]
@@ -20,7 +19,7 @@ class StudyMetadataRepository:
         db.session.add(metadata)
         db.session.commit()
 
-        self.logger.debug(f"save study {metadata.id}")
+        logger.debug(f"save study {metadata.id}")
         return metadata
 
     def get(self, id: str) -> Optional[Study]:
@@ -36,4 +35,4 @@ class StudyMetadataRepository:
         db.session.delete(u)
         db.session.commit()
 
-        self.logger.debug(f"delete study {id}")
+        logger.debug(f"delete study {id}")
