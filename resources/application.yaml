@@ -58,7 +58,7 @@ root_path: ""
 
 logging:
   level: INFO
-#  logpath: /tmp/antarest.log
+#  logfile: /tmp/antarest.log
 #  json: false
 
 # Uncomment these lines to use redis as a backend for the eventbus
