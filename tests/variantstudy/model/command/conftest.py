@@ -4,6 +4,12 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.matrixstore.repository import (
+    MatrixRepository,
+    MatrixContentRepository,
+    MatrixDataSetRepository,
+)
+from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -22,9 +28,9 @@ def empty_study(tmp_path: str) -> FileStudy:
         zip_empty_study.extractall(empty_study_destination_path)
 
     config = FileStudyTreeConfig(
-        study_path=empty_study_path,
+        study_path=empty_study_destination_path,
         study_id="",
-        version=-1,
+        version=700,
         areas={},
         sets={},
     )
@@ -32,3 +38,19 @@ def empty_study(tmp_path: str) -> FileStudy:
         config=config, tree=FileStudyTree(context=Mock(), config=config)
     )
     return file_study
+
+
+@pytest.fixture
+def matrix_service() -> MatrixService:
+    repo = Mock()
+    content = Mock()
+    content.save.return_value = "matrix_id"
+    dataset_repo = Mock()
+
+    service = MatrixService(
+        repo=repo,
+        repo_dataset=dataset_repo,
+        content=content,
+        user_service=Mock(),
+    )
+    return service

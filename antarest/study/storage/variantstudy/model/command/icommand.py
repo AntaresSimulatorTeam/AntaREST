@@ -7,6 +7,9 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
+from antarest.study.storage.variantstudy.model.command_context import (
+    CommandContext,
+)
 
 
 class ICommand(ABC, BaseModel):
@@ -14,7 +17,9 @@ class ICommand(ABC, BaseModel):
     version: int
 
     @abstractmethod
-    def apply(self, study_data: FileStudy) -> CommandOutput:
+    def apply(
+        self, study_data: FileStudy, command_context: CommandContext
+    ) -> CommandOutput:
         raise NotImplementedError()
 
     @abstractmethod
