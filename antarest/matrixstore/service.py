@@ -72,13 +72,19 @@ class MatrixService:
 
         return matrix, content
 
-    def create(self, data: MatrixDTO) -> str:
-        matrix, content = MatrixService._from_dto(data)
-        matrix.created_at = datetime.now()
-        matrix.id = self.repo_content.save(content)
-        self.repo.save(matrix)
-
-        return matrix.id
+    def create(self, data: MatrixContent) -> str:
+        MatrixService._initialize_matrix_content(data)
+        matrix_hash = self.repo_content.save(data)
+        if not self.repo.get(matrix_hash):
+            self.repo.save(
+                Matrix(
+                    id=matrix_hash,
+                    width=len(data.columns or []),
+                    height=len(data.index or []),
+                    created_at=datetime.utcnow(),
+                )
+            )
+        return matrix_hash
 
     def create_by_importation(self, file: UploadFile) -> List[MatrixInfoDTO]:
         with file.file as f:
@@ -115,11 +121,7 @@ class MatrixService:
             if len(columns) == 0:
                 columns = list(range(0, len(row)))
 
-        matrix = MatrixDTO(
-            width=len(columns),
-            height=len(data),
-            index=[],
-            columns=columns,
+        matrix = MatrixContent(
             data=data,
         )
         return self.create(matrix)
@@ -261,6 +263,23 @@ class MatrixService:
     def delete(self, id: str) -> None:
         self.repo_content.delete(id)
         self.repo.delete(id)
+
+    @staticmethod
+    def _initialize_matrix_content(data: MatrixContent) -> None:
+        if data.index is None:
+            data.index = list(range(0, len(data.data)))
+        else:
+            assert len(data.index) == len(data.data)
+        if data.columns is None:
+            if len(data.data) > 0:
+                data.columns = list(range(0, len(data.data[0])))
+            else:
+                data.columns = []
+        else:
+            if len(data.data) > 0:
+                assert len(data.columns) == len(data.data[0])
+            else:
+                assert len(data.columns) == 0
 
     @staticmethod
     def check_access_permission(

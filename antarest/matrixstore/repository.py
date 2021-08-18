@@ -120,13 +120,13 @@ class MatrixContentRepository:
             return None
 
         data = json.load(open(file))
-        return MatrixContent.from_dict(data)  # type: ignore
+        return MatrixContent.parse_obj(data)  # type: ignore
 
     def save(self, content: MatrixContent) -> str:
-        stringify = content.to_json()
+        stringify = content.json()
         h = MatrixContentRepository._compute_hash(stringify)
-        (self.bucket / h).write_text(stringify)
-
+        if not (self.bucket / h).exists():
+            (self.bucket / h).write_text(stringify)
         return h
 
     def delete(self, id: str) -> None:
