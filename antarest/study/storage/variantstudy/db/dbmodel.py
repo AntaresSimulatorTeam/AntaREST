@@ -12,14 +12,6 @@ from antarest.study.model import (
 )
 
 
-command_metadata = Table(
-    "command_metadata",
-    Base.metadata,
-    Column("commandblock_id", String(36), ForeignKey("commandblock.id")),
-    Column("variantstudy_id", String(36), ForeignKey("variantstudy.id")),
-)
-
-
 @dataclass
 class VariantStudySnapshot(Base):
     """
@@ -58,7 +50,7 @@ class CommandBlock(Base):
     study_id = Column(String(36), ForeignKey("variantstudy.id"))
     index = Column(Integer)
     command = Column(String(255))
-    args = Column(String(255))
+    args = Column(String())
     variant_study = relationship("VariantStudy")
     __mapper_args__ = {
         "polymorphic_identity": "variant_study_snapshot",
@@ -78,6 +70,7 @@ class VariantStudy(Study):
         ForeignKey("study.id"),
         primary_key=True,
     )
+    parent_id = Column(String(36), ForeignKey("study.id"))
     path = Column(String(255))
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
@@ -91,6 +84,5 @@ class VariantStudy(Study):
     command_block = relationship(
         CommandBlock,
         order_by="CommandBlock.index",
-        secondary=lambda: command_metadata,
         cascade="",
     )

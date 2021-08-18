@@ -58,6 +58,13 @@ from antarest.core.exceptions import (
     StudyTypeUnsupported,
     UnsupportedOperationOnArchivedStudy,
 )
+from antarest.study.storage.variantstudy.db.dbmodel import (
+    VariantStudy,
+    VariantStudySnapshot,
+)
+from antarest.study.storage.variantstudy.variant_study_service import (
+    VariantStudyService,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +76,8 @@ class StudyService:
 
     def __init__(
         self,
-        study_service: RawStudyService,
+        raw_study_service: RawStudyService,
+        variant_study_service: VariantStudyService,
         importer_service: ImporterService,
         exporter_service: ExporterService,
         user_service: LoginService,
@@ -77,7 +85,8 @@ class StudyService:
         event_bus: IEventBus,
         task_service: ITaskService,
     ):
-        self.raw_study_service = study_service
+        self.raw_study_service = raw_study_service
+        self.variant_study_service = variant_study_service
         self.importer_service = importer_service
         self.exporter_service = exporter_service
         self.user_service = user_service
@@ -267,6 +276,58 @@ class StudyService:
             "study %s created by user %s", raw.id, params.get_user_id()
         )
         return str(raw.id)
+
+    def create_variant_study(
+        self, uuid: str, name: str, params: RequestParameters
+    ) -> Optional[str]:
+        """
+        Create empty study
+        Args:
+            uuid: study name to set
+            name: name of study
+            params: request parameters
+
+        Returns: new study uuid
+
+        """
+        study = self._get_study(uuid)
+        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        if study is not None:
+            new_id = str(uuid4())
+            study_path = str(
+                self.raw_study_service.get_default_workspace_path() / new_id
+            )
+            variant_study = VariantStudy(
+                id=new_id,
+                name=name,
+                parent_id=uuid,
+                workspace=study.workspace,
+                path=study_path,
+                public_mode=study.public_mode,
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
+                version=study.version,
+                type=study.type,
+                groups=study.groups,  # Create inherit_group boolean
+                author=study.author,
+                owner=params.user,
+                variant_study_snapshot=VariantStudySnapshot(
+                    created_at=datetime.now(), path=study_path
+                ),
+            )
+
+            variant = self.variant_study_service.create(variant_study)
+            self.repository.save(variant)
+            self.event_bus.push(
+                Event(EventType.STUDY_CREATED, variant.to_json_summary())
+            )
+
+            logger.info(
+                "variant study %s created by user %s",
+                variant.id,
+                params.get_user_id(),
+            )
+            return str(variant.id)
 
     def sync_studies_on_disk(self, folders: List[StudyFolder]) -> None:
         """
