@@ -1,13 +1,14 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Optional, List, Any
 
 from pydantic import BaseModel
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey  # type: ignore
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Sequence  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.login.model import Identity
 
 
 class TaskStatus(Enum):
@@ -16,6 +17,7 @@ class TaskStatus(Enum):
     COMPLETED = 3
     FAILED = 4
     TIMEOUT = 5
+    CANCELLED = 6
 
 
 class TaskResult(BaseModel):
@@ -26,30 +28,43 @@ class TaskResult(BaseModel):
 class TaskDTO(BaseModel):
     id: str
     name: str
+    owner: Optional[int]
     status: TaskStatus
-    creation_date: DateTime
-    completion_date: Optional[DateTime]
+    creation_date_utc: float
+    completion_date_utc: Optional[float]
     result: Optional[TaskResult]
 
 
-class TaskListFilter:
-    status: Optional[TaskStatus] = TaskStatus.RUNNING
-    name_regex: Optional[str] = None
-    from_creation_date: Optional[DateTime] = None
-    to_creation_date: Optional[DateTime] = None
-    from_completion_date: Optional[DateTime] = None
-    to_completion_date: Optional[DateTime] = None
+class TaskListFilter(BaseModel):
+    status: List[TaskStatus] = []
+    name: Optional[str] = None
+    from_creation_date_utc: Optional[float] = None
+    to_creation_date_utc: Optional[float] = None
+    from_completion_date_utc: Optional[float] = None
+    to_completion_date_utc: Optional[float] = None
 
 
 class TaskJobLog(Base):  # type: ignore
     __tablename__ = "taskjoblog"
 
-    id = Column(Integer(), primary_key=True)
-    date = Column(DateTime, default=datetime.utcnow)
+    id = Column(Integer(), Sequence("tasklog_id_sequence"), primary_key=True)
+    message = Column(String, nullable=False)
     task_id = Column(
         String(),
         ForeignKey("taskjob.id", name="fk_log_taskjob_id"),
     )
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, TaskJobLog):
+            return False
+        return bool(
+            other.id == self.id
+            and other.message == self.message
+            and other.task_id == self.task_id
+        )
+
+    def __repr__(self) -> str:
+        return f"id={self.id}, message={self.message}, task_id={self.task_id}"
 
 
 class TaskJob(Base):  # type: ignore
@@ -62,18 +77,43 @@ class TaskJob(Base):  # type: ignore
     completion_date = Column(DateTime, nullable=True)
     result_msg = Column(String(), nullable=True)
     result_status = Column(Boolean(), nullable=True)
-    logs = relationship(TaskJobLog, useList=True)
+    logs = relationship(
+        TaskJobLog, uselist=True, cascade="all, delete, delete-orphan"
+    )
+    # this is not a foreign key to prevent the need to delete the job history if the user is deleted
+    owner_id = Column(Integer(), nullable=True)
 
     def to_dto(self) -> TaskDTO:
         return TaskDTO(
             id=self.id,
-            creation_date=self.creation_date,
-            completion_date=self.completion_date,
+            owner=self.owner_id,
+            creation_date_utc=self.creation_date.timestamp(),
+            completion_date_utc=self.completion_date.timestamp()
+            if self.completion_date
+            else None,
             name=self.name,
             status=TaskStatus(self.status),
             result=TaskResult(
-                sucess=self.result_status, message=self.result_msg
+                success=self.result_status, message=self.result_msg
             )
             if self.completion_date
             else None,
         )
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, TaskJob):
+            return False
+        return bool(
+            other.id == self.id
+            and other.owner_id == self.owner_id
+            and other.creation_date == self.creation_date
+            and other.completion_date == self.completion_date
+            and other.name == self.name
+            and other.status == self.status
+            and other.result_msg == self.result_msg
+            and other.result_status == self.result_status
+            and other.logs == self.logs
+        )
+
+    def __repr__(self) -> str:
+        return f"id={self.id}, logs={self.logs}, owner_id={self.owner_id}, creation_date={self.creation_date}, completion_date={self.completion_date}, name={self.name}, status={self.status}, result_msg={self.result_msg}, result_status={self.result_status}"
