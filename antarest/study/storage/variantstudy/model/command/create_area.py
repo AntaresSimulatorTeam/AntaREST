@@ -49,7 +49,7 @@ class CreateArea(ICommand):
         if self.area_name in study_data.config.areas.keys():
             return CommandOutput(
                 status=False,
-                message=f"Area '{self.area_name}' already exists and could not be created:",
+                message=f"Area '{self.area_name}' already exists and could not be created",
             )
 
         version = study_data.config.version
