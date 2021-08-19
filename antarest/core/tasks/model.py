@@ -19,6 +19,9 @@ class TaskStatus(Enum):
     TIMEOUT = 5
     CANCELLED = 6
 
+    def is_final(self) -> bool:
+        return self in [TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED, TaskStatus.TIMEOUT]
+
 
 class TaskResult(BaseModel):
     success: bool

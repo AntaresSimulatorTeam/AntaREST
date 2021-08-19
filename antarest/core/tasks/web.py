@@ -35,4 +35,12 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         request_params = RequestParameters(user=current_user)
         return service.list_tasks(filter, request_params)
 
+    @bp.get("/tasks/{task_id}")
+    def get_task(task_id: str, wait_for_completion: bool = False, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
+        request_params = RequestParameters(user=current_user)
+        task_status = service.status_task(task_id, request_params)
+        if wait_for_completion and not task_status.status.is_final():
+            service.await_task(task_id)
+        return service.status_task(task_id, request_params)
+
     return bp
