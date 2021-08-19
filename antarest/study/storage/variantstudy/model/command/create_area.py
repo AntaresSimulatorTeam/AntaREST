@@ -3,6 +3,10 @@ from typing import Dict, Any, Optional
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.default_values import (
+    NodalOptimization,
+    FilteringOptions,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -30,7 +34,7 @@ class CreateArea(ICommand):
     ):
         new_areas = file_study.tree.get(url=["input", "thermal", "areas"])
         if unservedenergycost is not None:
-            new_areas["unservedenergycost"][
+            new_areas["unserverdenergycost"][
                 self.area_name
             ] = unservedenergycost
         if spilledenergycost is not None:
@@ -56,9 +60,33 @@ class CreateArea(ICommand):
                 "areas": {
                     "list": study_data.config.areas.keys(),
                     self.area_name: {
-                        "optimization": {},
-                        "ui": {},
-                    },  # TODO: initialize optimization and ui with default values
+                        "optimization": {
+                            "nodal optimization": {
+                                "non-dispatchable-power": NodalOptimization.NON_DISPATCHABLE_POWER.value,
+                                "dispatchable-hydro-power": NodalOptimization.DISPATCHABLE_HYDRO_POWER.value,
+                                "other-dispatchable-power": NodalOptimization.OTHER_DISPATCHABLE_POWER.value,
+                                "spread-unsupplied-energy-cost": NodalOptimization.SPREAD_UNSUPPLIED_ENERGY_COST.value,
+                                "spread-spilled-energy-cost": NodalOptimization.SPREAD_SPILLED_ENERGY_COST.value,
+                            },
+                            "filtering": {
+                                "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS.value,
+                                "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR.value,
+                            },
+                        },
+                        "ui": {
+                            "ui": {
+                                "x": 0,
+                                "y": 0,
+                                "color_r": 230,
+                                "color_g": 108,
+                                "color_b": 44,
+                                "layers": 0,
+                            },
+                            "layerX": {"O": 0},
+                            "layerY": {"O": 0},
+                            "layerColor": {"O": "230 , 108 , 44"},
+                        },
+                    },
                 },
                 "hydro": {
                     "hydro": {
@@ -81,7 +109,7 @@ class CreateArea(ICommand):
                     },
                     "prepro": {
                         self.area_name: {
-                            "energy": command_context.generator_matrix_constants.get_hydro_energy(),
+                            "energy": command_context.generator_matrix_constants.get_null_matrix(),
                             "prepro": {
                                 "prepro": {"intermonthly-correlation": 0.5}
                             },
@@ -89,8 +117,8 @@ class CreateArea(ICommand):
                     },
                     "series": {
                         self.area_name: {
-                            "mod": command_context.generator_matrix_constants.get_hydro_series_mod(),
-                            "ror": command_context.generator_matrix_constants.get_hydro_series_ror(),
+                            "mod": command_context.generator_matrix_constants.get_null_matrix(),
+                            "ror": command_context.generator_matrix_constants.get_null_matrix(),
                         },
                     },
                 },
@@ -98,55 +126,57 @@ class CreateArea(ICommand):
                 "load": {
                     "prepro": {
                         self.area_name: {
-                            "conversion": command_context.generator_matrix_constants.get_load_prepro_conversion(),
-                            "data": command_context.generator_matrix_constants.get_load_prepro_data(),
-                            "k": command_context.generator_matrix_constants.get_load_prepro_k(),
+                            "conversion": command_context.generator_matrix_constants.get_prepro_conversion(),
+                            "data": command_context.generator_matrix_constants.get_prepro_data(),
+                            "k": command_context.generator_matrix_constants.get_null_matrix(),
                             "settings": {},
-                            "translation": command_context.generator_matrix_constants.get_load_prepro_translation(),
+                            "translation": command_context.generator_matrix_constants.get_null_matrix(),
                         }
                     },
                     "series": {
-                        f"load_{self.area_name}": command_context.generator_matrix_constants.get_load_series_load_area_name()
+                        f"load_{self.area_name}": command_context.generator_matrix_constants.get_null_matrix(),
                     },
                 },
                 "misc-gen": {
-                    f"miscgen-{self.area_name}": command_context.generator_matrix_constants.get_misc_gen()
+                    f"miscgen-{self.area_name}": command_context.generator_matrix_constants.get_null_matrix()
                 },
                 "reserves": {
-                    self.area_name: command_context.generator_matrix_constants.get_reserves()
+                    self.area_name: command_context.generator_matrix_constants.get_null_matrix()
                 },
                 "solar": {
                     "prepro": {
                         self.area_name: {
-                            "conversion": command_context.generator_matrix_constants.get_solar_prepro_conversion(),
-                            "data": command_context.generator_matrix_constants.get_solar_prepro_data(),
-                            "k": command_context.generator_matrix_constants.get_solar_prepro_k(),
+                            "conversion": command_context.generator_matrix_constants.get_prepro_conversion(),
+                            "data": command_context.generator_matrix_constants.get_prepro_data(),
+                            "k": command_context.generator_matrix_constants.get_null_matrix(),
                             "settings": {},
-                            "translation": command_context.generator_matrix_constants.get_solar_prepro_translation(),
+                            "translation": command_context.generator_matrix_constants.get_null_matrix(),
                         }
                     },
                     "series": {
-                        f"solar_{self.area_name}": command_context.generator_matrix_constants.get_solar_series_load_area_name()
+                        f"solar_{self.area_name}": command_context.generator_matrix_constants.get_null_matrix(),
                     },
                 },
                 "thermal": {
                     "clusters": {self.area_name: {"list": {}}},
-                    "areas": self._generate_new_thermal_areas_ini(  # TODO: add unservdenergycost and spilledenergycost
-                        study_data
+                    "areas": self._generate_new_thermal_areas_ini(
+                        study_data,
+                        unservedenergycost=NodalOptimization.UNSERVERDDENERGYCOST.value,
+                        spilledenergycost=NodalOptimization.SPILLEDENERGYCOST.value,
                     ),
                 },
                 "wind": {
                     "prepro": {
                         self.area_name: {
-                            "conversion": command_context.generator_matrix_constants.get_wind_prepro_conversion(),
-                            "data": command_context.generator_matrix_constants.get_wind_prepro_data(),
-                            "k": command_context.generator_matrix_constants.get_wind_prepro_k(),
+                            "conversion": command_context.generator_matrix_constants.get_prepro_conversion(),
+                            "data": command_context.generator_matrix_constants.get_prepro_data(),
+                            "k": command_context.generator_matrix_constants.get_null_matrix(),
                             "settings": {},
-                            "translation": command_context.generator_matrix_constants.get_wind_prepro_translation(),
+                            "translation": command_context.generator_matrix_constants.get_null_matrix(),
                         }
                     },
                     "series": {
-                        f"wind_{self.area_name}": command_context.generator_matrix_constants.get_wind_series_load_area_name()
+                        f"wind_{self.area_name}": command_context.generator_matrix_constants.get_null_matrix()
                     },
                 },
             }
@@ -177,9 +207,7 @@ class CreateArea(ICommand):
             )
             new_area_data["input"]["hydro"]["common"]["capacity"][
                 f"waterValues_{self.area_name}"
-            ] = (
-                command_context.generator_matrix_constants.get_hydro_water_values()
-            )
+            ] = command_context.generator_matrix_constants.get_null_matrix()
 
         study_data.tree.save(new_area_data)
 
