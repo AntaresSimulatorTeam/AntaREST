@@ -2,10 +2,10 @@ import uuid
 from dataclasses import dataclass
 from enum import Enum
 
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from sqlalchemy import Column, String, ForeignKey, DateTime, Table, Integer
+from sqlalchemy import Column, String, ForeignKey, DateTime, Table, Integer  # type: ignore
 
 from antarest.study.model import (
     Study,
@@ -13,7 +13,7 @@ from antarest.study.model import (
 
 
 @dataclass
-class VariantStudySnapshot(Base):
+class VariantStudySnapshot(Base):  # type: ignore
     """
     Variant Study Snapshot based entity implementation.
     """
@@ -27,14 +27,13 @@ class VariantStudySnapshot(Base):
     )
     created_at = Column(DateTime)
     path = Column(String(255))
-    variant_study = relationship("VariantStudy")
     __mapper_args__ = {
         "polymorphic_identity": "variant_study_snapshot",
     }
 
 
 @dataclass
-class CommandBlock(Base):
+class CommandBlock(Base):  # type: ignore
     """
     Command Block based entity implementation.
     """
@@ -50,8 +49,8 @@ class CommandBlock(Base):
     study_id = Column(String(36), ForeignKey("variantstudy.id"))
     index = Column(Integer)
     command = Column(String(255))
+    version = Column(Integer)
     args = Column(String())
-    variant_study = relationship("VariantStudy")
     __mapper_args__ = {
         "polymorphic_identity": "variant_study_snapshot",
     }
@@ -70,19 +69,15 @@ class VariantStudy(Study):
         ForeignKey("study.id"),
         primary_key=True,
     )
-    parent_id = Column(String(36), ForeignKey("study.id"))
     path = Column(String(255))
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
     }
-    variant_study_snapshot = relationship(
-        "VariantStudySnapshot", uselist=False
-    )
-    variant_snapshot_id = Column(
-        String(36), ForeignKey("variant_study_snapshot.id")
-    )
-    command_block = relationship(
+
+    snapshot = relationship(VariantStudySnapshot, uselist=False)
+    commands = relationship(
         CommandBlock,
+        uselist=True,
         order_by="CommandBlock.index",
-        cascade="",
+        cascade="all, delete, delete-orphan",
     )

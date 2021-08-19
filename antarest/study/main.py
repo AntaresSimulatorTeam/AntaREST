@@ -14,6 +14,9 @@ from antarest.study.storage.rawstudy.patch_service import PatchService
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
+from antarest.study.storage.variantstudy.repository import (
+    VariantStudyCommandRepository,
+)
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -26,7 +29,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 )
 from antarest.study.repository import (
     StudyMetadataRepository,
-    VariantStudyCommandRepository,
 )
 from antarest.study.service import StudyService
 from antarest.study.web.areas_blueprint import create_study_area_routes
@@ -102,8 +104,7 @@ def build_storage(
         importer_service=importer_service,
         exporter_service=exporter_service,
         user_service=user_service,
-        metadata_repository=metadata_repository,
-        variant_repository=variant_repository,
+        repository=metadata_repository,
         event_bus=event_bus,
         task_service=task_service,
     )

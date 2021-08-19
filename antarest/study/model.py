@@ -57,12 +57,14 @@ class Study(Base):  # type: ignore
     author = Column(String(255))
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
+    parent_id = Column(
+        String(36), ForeignKey("study.id", name="fk_study_study_id")
+    )
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True)
     archived = Column(Boolean(), default=False)
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
-
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
     def __str__(self) -> str:

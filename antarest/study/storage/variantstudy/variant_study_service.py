@@ -9,10 +9,13 @@ from antarest.study.model import (
     StudySimResultDTO,
     RawStudy,
 )
-from antarest.study.repository import VariantStudyCommandRepository
+
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.db.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model import CommandDTO
+from antarest.study.storage.variantstudy.repository import (
+    VariantStudyCommandRepository,
+)
 
 
 class VariantStudyService(IStudyStorageService[VariantStudy]):

@@ -50,11 +50,11 @@ def create_study_variant_routes(
         name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
+        params = RequestParameters(user=current_user)
         logger.info(
             f"Creating new variant '{name}' from study {uuid}",
             extra={"user": current_user.id},
         )
-        params = RequestParameters(user=current_user)
         raise NotImplementedError()
 
     @bp.get(
