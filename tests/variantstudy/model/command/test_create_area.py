@@ -41,7 +41,7 @@ class TestCreateArea:
         create_area_command: ICommand = CreateArea.parse_obj(
             {"area_name": area_name, "metadata": {}}
         )
-        create_area_command.apply(
+        output = create_area_command.apply(
             study_data=empty_study, command_context=command_context
         )
 
@@ -131,22 +131,37 @@ class TestCreateArea:
             / "hydro"
             / "prepro"
             / area_name
-            / "energy.txt"
+            / "energy.txt.link"
         ).exists()
 
-        prepro = configparser.ConfigParser()
-        prepro.read(
-            study_path / "input" / "hydro" / "allocation" / f"{area_name}.ini"
+        allocation = configparser.ConfigParser()
+        allocation.read(
+            study_path
+            / "input"
+            / "hydro"
+            / "prepro"
+            / area_name
+            / "prepro.ini"
         )
-        assert float(prepro["intermonthly-correlation"]) == 0.5
+        assert float(allocation["prepro"]["intermonthly-correlation"]) == 0.5
 
         # Series
         assert (study_path / "input" / "hydro" / "series" / area_name).is_dir()
         assert (
-            study_path / "input" / "hydro" / "series" / area_name / "mod.txt"
+            study_path
+            / "input"
+            / "hydro"
+            / "series"
+            / area_name
+            / "mod.txt.link"
         ).exists()
         assert (
-            study_path / "input" / "hydro" / "series" / area_name / "ror.txt"
+            study_path
+            / "input"
+            / "hydro"
+            / "series"
+            / area_name
+            / "ror.txt.link"
         ).exists()
 
         # Links
@@ -164,13 +179,18 @@ class TestCreateArea:
             / "load"
             / "prepro"
             / area_name
-            / "conversion.txt"
+            / "conversion.txt.link"
         ).exists()
         assert (
-            study_path / "input" / "load" / "prepro" / area_name / "data.txt"
+            study_path
+            / "input"
+            / "load"
+            / "prepro"
+            / area_name
+            / "data.txt.link"
         ).exists()
         assert (
-            study_path / "input" / "load" / "prepro" / area_name / "k.txt"
+            study_path / "input" / "load" / "prepro" / area_name / "k.txt.link"
         ).exists()
         assert (
             study_path
@@ -186,22 +206,26 @@ class TestCreateArea:
             / "load"
             / "prepro"
             / area_name
-            / "translation.txt"
+            / "translation.txt.link"
         ).exists()
 
         # Series
         assert (
-            study_path / "input" / "load" / "series" / f"load_{area_name}.txt"
+            study_path
+            / "input"
+            / "load"
+            / "series"
+            / f"load_{area_name}.txt.link"
         ).exists()
 
         # Misc-gen
         assert (
-            study_path / "input" / "misc-gen" / f"miscgen-{area_name}.txt"
+            study_path / "input" / "misc-gen" / f"miscgen-{area_name}.txt.link"
         ).exists()
 
         # Reserves
         assert (
-            study_path / "input" / "reserves" / f"{area_name}.txt"
+            study_path / "input" / "reserves" / f"{area_name}.txt.link"
         ).exists()
 
         # Solar
@@ -213,13 +237,23 @@ class TestCreateArea:
             / "solar"
             / "prepro"
             / area_name
-            / "conversion.txt"
+            / "conversion.txt.link"
         ).exists()
         assert (
-            study_path / "input" / "solar" / "prepro" / area_name / "data.txt"
+            study_path
+            / "input"
+            / "solar"
+            / "prepro"
+            / area_name
+            / "data.txt.link"
         ).exists()
         assert (
-            study_path / "input" / "solar" / "prepro" / area_name / "k.txt"
+            study_path
+            / "input"
+            / "solar"
+            / "prepro"
+            / area_name
+            / "k.txt.link"
         ).exists()
         assert (
             study_path
@@ -235,7 +269,7 @@ class TestCreateArea:
             / "solar"
             / "prepro"
             / area_name
-            / "translation.txt"
+            / "translation.txt.link"
         ).exists()
 
         # Series
@@ -244,7 +278,7 @@ class TestCreateArea:
             / "input"
             / "solar"
             / "series"
-            / f"solar_{area_name}.txt"
+            / f"solar_{area_name}.txt.link"
         ).exists()
 
         # Thermal
@@ -273,13 +307,18 @@ class TestCreateArea:
             / "wind"
             / "prepro"
             / area_name
-            / "conversion.txt"
+            / "conversion.txt.link"
         ).exists()
         assert (
-            study_path / "input" / "wind" / "prepro" / area_name / "data.txt"
+            study_path
+            / "input"
+            / "wind"
+            / "prepro"
+            / area_name
+            / "data.txt.link"
         ).exists()
         assert (
-            study_path / "input" / "wind" / "prepro" / area_name / "k.txt"
+            study_path / "input" / "wind" / "prepro" / area_name / "k.txt.link"
         ).exists()
         assert (
             study_path
@@ -295,10 +334,16 @@ class TestCreateArea:
             / "wind"
             / "prepro"
             / area_name
-            / "translation.txt"
+            / "translation.txt.link"
         ).exists()
 
         # Series
         assert (
-            study_path / "input" / "wind" / "series" / f"solar_{area_name}.txt"
+            study_path
+            / "input"
+            / "wind"
+            / "series"
+            / f"wind_{area_name}.txt.link"
         ).exists()
+
+        assert output.status

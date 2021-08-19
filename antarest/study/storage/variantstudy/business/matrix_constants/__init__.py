@@ -1,1 +1,1 @@
-from . import hydro
+from . import hydro, load, solar, wind
