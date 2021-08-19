@@ -123,7 +123,8 @@ class TaskJobService:
             task.status = TaskStatus.RUNNING.value
             self.repo.save(task)
         try:
-            result = callback(self._task_logger(task.id))
+            with db():
+                result = callback(self._task_logger(task.id))
             self._update_task_status(
                 task,
                 TaskStatus.COMPLETED if result.success else TaskStatus.FAILED,
