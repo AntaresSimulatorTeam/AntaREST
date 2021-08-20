@@ -141,7 +141,7 @@ class TaskJobService(ITaskService):
                 f"Task {task_id} not handled by this worker, will poll for task completion from db"
             )
             end = time.time() + (timeout_sec or 1)
-            while True and (timeout_sec is None or time.time() < end):
+            while timeout_sec is None or time.time() < end:
                 task = self.repo.get(task_id)
                 if not task:
                     logger.error(f"Awaited task {task_id} was not found")
