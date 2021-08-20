@@ -13,6 +13,7 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
 )
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import InputAreasList
 from tests.storage.repository.filesystem.utils import (
     TestSubNode,
     TestMiddleNode,
@@ -115,6 +116,8 @@ def test_delete(tmp_path: Path):
     folder_node.mkdir()
     sub_folder = folder_node / "sub_folder"
     sub_folder.mkdir()
+    area_list = sub_folder / "area_list.ini"
+    area_list.touch()
     ini_node1 = sub_folder / "ini_node1.txt"
     ini_node1.touch()
     ini_node2 = sub_folder / "ini_node2.txt"
@@ -124,6 +127,7 @@ def test_delete(tmp_path: Path):
     data_link_node = sub_folder / "data_link.txt.link"
     data_link_node.touch()
 
+    assert area_list.exists()
     assert ini_node1.exists()
     assert ini_node2.exists()
     assert data_node.exists()
@@ -156,6 +160,12 @@ def test_delete(tmp_path: Path):
                         ),
                         types={},
                     ),
+                    "area_list": InputAreasList(
+                        context=Mock(),
+                        config=config.next_file("sub_folder").next_file(
+                            "area_list.ini"
+                        ),
+                    ),
                     "data_node": RawFileNode(
                         context=Mock(),
                         config=config.next_file("sub_folder").next_file(
@@ -173,6 +183,8 @@ def test_delete(tmp_path: Path):
         },
     )
 
+    tree_node.delete(["sub_folder", "area_list"])
+    assert not area_list.exists()
     tree_node.delete(["sub_folder", "ini_node1"])
     assert not ini_node1.exists()
     tree_node.delete(["sub_folder", "data_node"])
