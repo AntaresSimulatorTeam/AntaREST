@@ -1,3 +1,4 @@
+import shutil
 from abc import abstractmethod, ABC
 from typing import List, Optional, Tuple, Union, Dict
 
@@ -105,6 +106,15 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
             assert isinstance(data, Dict)
             for key in data:
                 children[key].save(data[key])
+
+    def delete(self, url: Optional[List[str]] = None) -> None:
+        if url and url != [""]:
+            children = self.build(self.config)
+            names, sub_url = self.extract_child(children, url)
+            for key in names:
+                children[key].delete(sub_url)
+        elif self.config.path.exists():
+            shutil.rmtree(self.config.path)
 
     def check_errors(
         self,

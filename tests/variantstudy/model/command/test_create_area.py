@@ -34,7 +34,7 @@ class TestCreateArea:
             )
         )
         version = empty_study.config.version
-        study_path = empty_study.config.root_path
+        study_path = empty_study.config.study_path
         area_name = "Area"
         area_id = transform_name_to_id(area_name)
 
