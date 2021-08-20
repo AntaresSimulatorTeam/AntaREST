@@ -35,12 +35,9 @@ def test_save():
     repo = Mock()
 
     # Input
-    dto = MatrixDTO(
-        created_at=42,
-        width=2,
-        height=1,
+    dto = MatrixContent(
         data=[[1, 2]],
-        index=["1", "2"],
+        index=["1"],
         columns=["a", "b"],
     )
 
@@ -52,9 +49,9 @@ def test_save():
         created_at=ANY,
     )
 
-    content = MatrixContent(
-        index=["1", "2"], columns=["a", "b"], data=[[1, 2]]
-    )
+    content = MatrixContent(index=["1"], columns=["a", "b"], data=[[1, 2]])
+
+    repo.get.return_value = None
 
     # Test
     service = MatrixService(
@@ -76,7 +73,7 @@ def test_get():
     content = Mock()
     content.get.return_value = MatrixContent(
         data=[[1, 2]],
-        index=["1", "2"],
+        index=["1"],
         columns=["a", "b"],
     )
 
@@ -98,7 +95,7 @@ def test_get():
         width=2,
         height=1,
         data=[[1, 2]],
-        index=["1", "2"],
+        index=["1"],
         columns=["a", "b"],
     )
 
@@ -323,6 +320,7 @@ def test_import():
         content=repo_content,
         user_service=Mock(),
     )
+    service.repo.get.return_value = None
     service.repo_content.save.return_value = id
     service.repo.save.return_value = exp_matrix
 
@@ -333,7 +331,8 @@ def test_import():
         content_type="test/plain",
     )
     matrix = service.create_by_importation(zip_file)
-    assert matrix == exp_matrix_info
+    assert matrix[0].name == exp_matrix_info[0].name
+    assert matrix[0].id is not None
 
     # Zip importation
     zip_content = io.BytesIO()

@@ -282,8 +282,6 @@ def test_matrix(app: FastAPI):
     admin_credentials = res.json()
 
     matrix = {
-        "width": 2,
-        "height": 2,
         "index": ["1", "2"],
         "columns": ["a", "b"],
         "data": [[1, 2], [3, 4]],

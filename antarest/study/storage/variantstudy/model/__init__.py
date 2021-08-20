@@ -1,8 +1,13 @@
-from typing import List, Tuple, Optional, Union
+from typing import Tuple, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic.main import BaseModel
 
 from antarest.core.custom_types import JSON
+
+
+class GenerationResultInfoDTO(BaseModel):
+    success: bool
+    details: List[Tuple[str, bool, str]]
 
 
 class CommandDTO(BaseModel):
@@ -10,8 +15,3 @@ class CommandDTO(BaseModel):
     action: str
     # if args is a list, this mean the command will be mapped to the list of args
     args: Union[JSON, List[JSON]]
-
-
-class GenerationResultInfoDTO(BaseModel):
-    success: bool
-    details: List[Tuple[str, bool, str]]

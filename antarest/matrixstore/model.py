@@ -1,6 +1,6 @@
 import enum
 import uuid
-from typing import Any, List
+from typing import Any, List, Optional, Union
 
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin  # type: ignore
@@ -159,11 +159,10 @@ class MatrixDTO(BaseModel):
     id: str = ""
 
 
-@dataclass
-class MatrixContent(DataClassJsonMixin):  # type: ignore
-    data: List[List[int]]
-    index: List[str]
-    columns: List[str]
+class MatrixContent(BaseModel):
+    data: List[List[Union[int, float]]]
+    index: Optional[List[Union[str, int]]]
+    columns: Optional[List[Union[str, int]]]
 
 
 class MatrixDataSetUpdateDTO(BaseModel):

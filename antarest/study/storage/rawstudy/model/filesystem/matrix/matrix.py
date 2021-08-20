@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 
 from antarest.core.custom_types import JSON
-from antarest.matrixstore.model import MatrixDTO
+from antarest.matrixstore.model import MatrixDTO, MatrixContent
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -40,9 +40,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
             return
 
         matrix = self.parse()
-        dto = MatrixDTO(
-            width=matrix["width"],
-            height=matrix["height"],
+        dto = MatrixContent(
             index=matrix["index"],
             columns=matrix["columns"],
             data=matrix["data"],

@@ -8,7 +8,7 @@ export const getMatrixList = async (name = '', filterOwn = false): Promise<Array
 };
 
 export const getMatrix = async (id: string): Promise<MatrixDTO> => {
-  const res = await client.get(`/v1//matrix/${id}`);
+  const res = await client.get(`/v1/matrix/${id}`);
   return res.data;
 };
 
