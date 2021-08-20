@@ -50,6 +50,13 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         else:
             return self.load(url, depth, expanded, formatted)
 
+    def delete(self, url: Optional[List[str]] = None) -> None:
+        self._assert_url_end(url)
+        if self.get_link_path().exists():
+            self.get_link_path().unlink()
+        elif self.config.path.exists():
+            self.config.path.unlink()
+
     def get_link_path(self) -> Path:
         path = self.config.path.parent / (self.config.path.name + ".link")
         return path
