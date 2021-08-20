@@ -103,6 +103,7 @@ def build_storage(
         repository=metadata_repository,
         event_bus=event_bus,
         task_service=task_service,
+        config=config,
     )
 
     watcher = Watcher(config=config, service=storage_service)

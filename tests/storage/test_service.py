@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 
+from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.roles import RoleType
 from antarest.login.model import User, Group
@@ -51,6 +52,11 @@ def test_get_studies_uuid() -> None:
     repository.get_all.return_value = [a, b, c]
 
     study_service = Mock()
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
@@ -60,6 +66,7 @@ def test_get_studies_uuid() -> None:
         repository=repository,
         event_bus=Mock(),
         task_service=Mock(),
+        config=config,
     )
 
     studies = service._get_study_metadatas(
@@ -87,7 +94,11 @@ def test_sync_studies_from_disk() -> None:
 
     repository = Mock()
     repository.get_all.side_effect = [[ma, mb], [ma]]
-
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
     service = StudyService(
         raw_study_service=Mock(),
         variant_study_service=Mock(),
@@ -97,6 +108,7 @@ def test_sync_studies_from_disk() -> None:
         repository=repository,
         event_bus=Mock(),
         task_service=Mock(),
+        config=config,
     )
 
     service.sync_studies_on_disk([fa, fc])
@@ -138,7 +150,11 @@ def test_create_study() -> None:
         }
     }
     study_service.create.return_value = expected
-
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
@@ -148,6 +164,7 @@ def test_create_study() -> None:
         repository=repository,
         event_bus=Mock(),
         task_service=Mock(),
+        config=config,
     )
 
     with pytest.raises(UserHasNotPermissionError):
@@ -216,7 +233,11 @@ def test_save_metadata() -> None:
         owner=user,
         groups=[group],
     )
-
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
@@ -226,6 +247,7 @@ def test_save_metadata() -> None:
         repository=repository,
         event_bus=Mock(),
         task_service=Mock(),
+        config=config,
     )
 
     service._save_study(
@@ -276,7 +298,7 @@ def test_download_output() -> None:
         by_year=True,
         error=False,
     )
-    config = FileStudyTreeConfig(
+    file_config = FileStudyTreeConfig(
         study_path=input_study.path,
         path=input_study.path,
         study_id="",
@@ -289,7 +311,11 @@ def test_download_output() -> None:
     study = Mock()
 
     repository.get.return_value = input_study
-
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
@@ -299,10 +325,13 @@ def test_download_output() -> None:
         repository=repository,
         event_bus=Mock(),
         task_service=Mock(),
+        config=config,
     )
 
     res_study = {"columns": [["H. VAL|Euro/MWh"]], "data": [[0.5]]}
-    study_service.get_raw.return_value = FileStudy(config=config, tree=study)
+    study_service.get_raw.return_value = FileStudy(
+        config=file_config, tree=study
+    )
     study.get.return_value = res_study
 
     # AREA TYPE
@@ -361,6 +390,11 @@ def test_change_owner() -> None:
     repository = Mock()
     user_service = Mock()
     study_service = Mock()
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
@@ -370,6 +404,7 @@ def test_change_owner() -> None:
         repository=repository,
         event_bus=Mock(),
         task_service=Mock(),
+        config=config,
     )
 
     study = RawStudy(id=uuid, owner=alice)
@@ -405,6 +440,11 @@ def test_manage_group() -> None:
 
     repository = Mock()
     user_service = Mock()
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
     service = StudyService(
         raw_study_service=Mock(),
         variant_study_service=Mock(),
@@ -414,6 +454,7 @@ def test_manage_group() -> None:
         repository=repository,
         event_bus=Mock(),
         task_service=Mock(),
+        config=config,
     )
 
     repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a])
@@ -485,6 +526,11 @@ def test_set_public_mode() -> None:
 
     repository = Mock()
     user_service = Mock()
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
     service = StudyService(
         raw_study_service=Mock(),
         variant_study_service=Mock(),
@@ -494,6 +540,7 @@ def test_set_public_mode() -> None:
         repository=repository,
         event_bus=Mock(),
         task_service=Mock(),
+        config=config,
     )
 
     repository.get.return_value = Study(id=uuid)
@@ -524,7 +571,11 @@ def test_check_errors():
     study = Study(id="hello world")
     repo = Mock()
     repo.get.return_value = study
-
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
@@ -534,6 +585,7 @@ def test_check_errors():
         repository=repo,
         event_bus=Mock(),
         task_service=Mock(),
+        config=config,
     )
 
     assert ["Hello", "World"] == service.check_errors("hello world")
@@ -553,7 +605,11 @@ def test_assert_permission() -> None:
     wrong = User(id=2)
 
     repository = Mock()
-
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
     service = StudyService(
         raw_study_service=Mock(),
         variant_study_service=Mock(),
@@ -563,6 +619,7 @@ def test_assert_permission() -> None:
         repository=repository,
         event_bus=Mock(),
         task_service=Mock(),
+        config=config,
     )
 
     # wrong owner

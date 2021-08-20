@@ -18,6 +18,7 @@ from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.core.exceptions import (
     StudyNotFoundError,
 )
+from antarest.study.storage.utils import get_default_workspace_path
 
 
 def build_config(study_path: Path):
@@ -129,9 +130,9 @@ def test_check_errors():
 
     factory = Mock()
     factory.create_from_fs.return_value = None, study
-
+    config = build_config(Path())
     study_service = RawStudyService(
-        config=build_config(Path()),
+        config=config,
         cache=Mock(),
         study_factory=factory,
         path_resources=Path(),
@@ -141,7 +142,7 @@ def test_check_errors():
     metadata = RawStudy(
         id="study",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(study_service.get_default_workspace_path() / "study"),
+        path=str(get_default_workspace_path(config) / "study"),
     )
     assert study_service.check_errors(metadata) == ["Hello"]
 
@@ -214,9 +215,9 @@ def test_create_study(tmp_path: str, project_path) -> None:
 
     study_factory = Mock()
     study_factory.create_from_fs.return_value = (None, study)
-
+    config = build_config(path_studies)
     study_service = RawStudyService(
-        config=build_config(path_studies),
+        config=config,
         cache=Mock(),
         study_factory=study_factory,
         path_resources=project_path / "resources",
@@ -226,7 +227,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
     metadata = RawStudy(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(study_service.get_default_workspace_path() / "study1"),
+        path=str(get_default_workspace_path(config) / "study1"),
         version=0,
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
@@ -272,9 +273,9 @@ def test_copy_study(
 
     url_engine = Mock()
     url_engine.resolve.return_value = None, None, None
-
+    config = build_config(path_studies)
     study_service = RawStudyService(
-        config=build_config(path_studies),
+        config=config,
         cache=Mock(),
         study_factory=study_factory,
         path_resources=Path(),
@@ -287,7 +288,7 @@ def test_copy_study(
     dest_md = RawStudy(
         id="study2",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(study_service.get_default_workspace_path() / "study2"),
+        path=str(get_default_workspace_path(config) / "study2"),
         version=0,
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),

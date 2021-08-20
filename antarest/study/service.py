@@ -11,6 +11,7 @@ from uuid import uuid4
 from fastapi import HTTPException
 from markupsafe import escape
 
+from antarest.core.config import Config
 from antarest.core.custom_types import JSON
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.tasks.service import ITaskService
@@ -82,6 +83,7 @@ class StudyService:
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
         task_service: ITaskService,
+        config: Config,
     ):
         self.raw_study_service = raw_study_service
         self.variant_study_service = variant_study_service
@@ -92,6 +94,7 @@ class StudyService:
         self.event_bus = event_bus
         self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
+        self.config = config
 
     def get(
         self,

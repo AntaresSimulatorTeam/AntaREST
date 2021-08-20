@@ -25,7 +25,10 @@ from antarest.study.storage.permissions import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.utils import get_default_workspace_path
 from antarest.study.storage.variantstudy.model import CommandDTO
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy, CommandBlock  # type: ignore
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    VariantStudy,
+    CommandBlock,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -216,7 +219,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             updated_at=datetime.now(),
             version=study.version,
             groups=study.groups,  # Create inherit_group boolean
-            owner_id=params.user.id,
+            owner_id=params.user.id if params.user else None,
             snapshot=None,
         )
         self.repository.save(variant_study)
