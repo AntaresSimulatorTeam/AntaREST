@@ -1,6 +1,5 @@
-from enum import Enum
-
 from dataclasses import dataclass
+from enum import Enum
 
 
 @dataclass
@@ -37,9 +36,9 @@ class CommandName(Enum):
     CREATE_LINK = "create_link"
     UPDATE_LINK = "update_link"
     REMOVE_LINK = "remove_link"
-    CREATE_BINDING_CONSTRAINS = "create_binding_constrains"
-    UPDATE_BINDING_CONSTRAINS = "update_binding_constrains"
-    REMOVE_BINDING_CONSTRAINS = "remove_binding_constrains"
+    CREATE_BINDING_CONSTRAINT = "create_binding_constrains"
+    UPDATE_BINDING_CONSTRAINT = "update_binding_constrains"
+    REMOVE_BINDING_CONSTRAINT = "remove_binding_constrains"
     CREATE_CLUSTER = "create_cluster"
     UPDATE_CLUSTER = "update_cluster"
     REMOVE_CLUSTER = "remove_cluster"

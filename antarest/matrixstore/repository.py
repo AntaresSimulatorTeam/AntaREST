@@ -120,7 +120,7 @@ class MatrixContentRepository:
             return None
 
         data = json.load(open(file))
-        return MatrixContent.parse_obj(data)  # type: ignore
+        return MatrixContent.parse_obj(data)
 
     def save(self, content: MatrixContent) -> str:
         stringify = content.json()

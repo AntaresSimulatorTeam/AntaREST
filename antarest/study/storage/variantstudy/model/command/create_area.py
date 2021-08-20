@@ -31,8 +31,10 @@ class CreateArea(ICommand):
         file_study: FileStudy,
         unservedenergycost: Optional[int] = None,
         spilledenergycost: Optional[int] = None,
-    ):
-        new_areas = file_study.tree.get(url=["input", "thermal", "areas"])
+    ) -> JSON:
+        new_areas: JSON = file_study.tree.get(
+            url=["input", "thermal", "areas"]
+        )
         if unservedenergycost is not None:
             new_areas["unserverdenergycost"][
                 self.area_name

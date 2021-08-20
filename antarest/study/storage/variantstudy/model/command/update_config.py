@@ -1,4 +1,4 @@
-from typing import Dict, Union, List
+from typing import Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -6,16 +6,21 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command_context import (
+    CommandContext,
+)
 
 
 class UpdateConfig(ICommand):
     target: str
     data: Dict[str, str]
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(command_name=CommandName.UPDATE_CONFIG, version=1)
 
-    def apply(self, study_data: FileStudy) -> CommandOutput:
+    def apply(
+        self, study_data: FileStudy, command_context: CommandContext
+    ) -> CommandOutput:
         raise NotImplementedError()
 
     def revert(self, study_data: FileStudy) -> CommandOutput:

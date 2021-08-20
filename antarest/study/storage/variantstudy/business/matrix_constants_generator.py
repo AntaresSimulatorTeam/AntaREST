@@ -16,15 +16,16 @@ HYDRO_COMMON_CAPACITY_CREDIT_MODULATION = (
 )
 PREPRO_CONVERSION = "prepro/conversion"
 PREPRO_DATA = "prepro/data"
+NULL_MATRIX_NAME = "null_matrix"
 
 
 class GeneratorMatrixConstants:
-    def __init__(self, matrix_service: MatrixService):
+    def __init__(self, matrix_service: MatrixService) -> None:
         self.hashes: Dict[str, str] = {}
-        self.matrix_service = matrix_service
+        self.matrix_service: MatrixService = matrix_service
         self._init()
 
-    def _init(self):
+    def _init(self) -> None:
         self.hashes[
             HYDRO_COMMON_CAPACITY_MAX_POWER_V7
         ] = self.matrix_service.create(matrix_constants.hydro.v7.max_power)
@@ -51,30 +52,30 @@ class GeneratorMatrixConstants:
             matrix_constants.prepro.data
         )
 
-        self.hashes["null_matrix"] = self.matrix_service.create(NULL_MATRIX)
+        self.hashes[NULL_MATRIX_NAME] = self.matrix_service.create(NULL_MATRIX)
 
-    def get_hydro_max_power(self, version: int):
+    def get_hydro_max_power(self, version: int) -> str:
         if version > 650:
             return self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
         else:
-            return self.hashes[NULL_MATRIX]
+            return self.hashes[NULL_MATRIX_NAME]
 
-    def get_hydro_reservoir(self, version: int):
+    def get_hydro_reservoir(self, version: int) -> str:
         if version > 650:
             return self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
         return self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6]
 
-    def get_hydro_credit_modulations(self):
+    def get_hydro_credit_modulations(self) -> str:
         return self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION]
 
-    def get_hydro_inflow_pattern(self):
+    def get_hydro_inflow_pattern(self) -> str:
         return self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN]
 
-    def get_prepro_conversion(self):
+    def get_prepro_conversion(self) -> str:
         return self.hashes[PREPRO_CONVERSION]
 
-    def get_prepro_data(self):
+    def get_prepro_data(self) -> str:
         return self.hashes[PREPRO_DATA]
 
-    def get_null_matrix(self):
-        return self.hashes[NULL_MATRIX]
+    def get_null_matrix(self) -> str:
+        return self.hashes[NULL_MATRIX_NAME]
