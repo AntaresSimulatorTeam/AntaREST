@@ -21,6 +21,7 @@ from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.persistence import upgrade_db
+from antarest.core.tasks.main import build_taskjob_manager
 from antarest.dbmodel import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import (
@@ -225,6 +226,7 @@ def fastapi_app(
     )
     event_bus = build_eventbus(application, config, True, redis_client)
     cache = build_cache(config=config, redis_client=redis_client)
+    task_service = build_taskjob_manager(application, config, event_bus)
 
     user_service = build_login(application, config, event_bus=event_bus)
 
@@ -235,6 +237,7 @@ def fastapi_app(
         config,
         matrix_service=matrix_service,
         cache=cache,
+        task_service=task_service,
         user_service=user_service,
         event_bus=event_bus,
     )

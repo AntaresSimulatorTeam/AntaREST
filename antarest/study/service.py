@@ -13,6 +13,7 @@ from markupsafe import escape
 
 from antarest.core.custom_types import JSON
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.tasks.service import ITaskService
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
@@ -74,6 +75,7 @@ class StudyService:
         user_service: LoginService,
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
+        task_service: ITaskService,
     ):
         self.raw_study_service = study_service
         self.importer_service = importer_service
@@ -81,6 +83,7 @@ class StudyService:
         self.user_service = user_service
         self.repository = repository
         self.event_bus = event_bus
+        self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
 
     def get(

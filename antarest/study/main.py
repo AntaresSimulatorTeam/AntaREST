@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.tasks.service import ITaskService
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.exporter_service import ExporterService
@@ -34,6 +35,7 @@ def build_storage(
     user_service: LoginService,
     matrix_service: MatrixService,
     cache: ICache,
+    task_service: ITaskService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
     storage_service: Optional[StudyService] = None,
     patch_service: Optional[PatchService] = None,
@@ -48,6 +50,7 @@ def build_storage(
         user_service: user service facade
         matrix_service: matrix store service
         cache: cache service
+        task_service: task job service
         metadata_repository: used by testing to inject mock. Let None to use true instantiation
         storage_service: used by testing to inject mock. Let None to use true instantiation
         patch_service: used by testing to inject mock. Let None to use true instantiation
@@ -91,6 +94,7 @@ def build_storage(
         user_service=user_service,
         repository=metadata_repository,
         event_bus=event_bus,
+        task_service=task_service,
     )
 
     watcher = Watcher(config=config, service=storage_service)
