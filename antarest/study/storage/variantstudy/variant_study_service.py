@@ -21,8 +21,8 @@ from antarest.study.storage.permissions import (
 )
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.db.dbmodel import VariantStudy  # type: ignore
 from antarest.study.storage.variantstudy.model import CommandDTO
+from antarest.study.storage.variantstudy.model.db.dbmodel import VariantStudy  # type: ignore
 from antarest.study.storage.variantstudy.repository import (
     VariantStudyCommandRepository,
 )

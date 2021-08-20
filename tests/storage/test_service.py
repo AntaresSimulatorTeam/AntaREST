@@ -11,7 +11,10 @@ from antarest.login.model import User, Group
 from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.study.storage.permissions import StudyPermissionType
+from antarest.study.storage.permissions import (
+    StudyPermissionType,
+    assert_permission,
+)
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -48,9 +51,9 @@ def test_get_studies_uuid() -> None:
     repository.get_all.return_value = [a, b, c]
 
     study_service = Mock()
-
     service = StudyService(
-        study_service=study_service,
+        raw_study_service=study_service,
+        variant_study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
@@ -86,7 +89,8 @@ def test_sync_studies_from_disk() -> None:
     repository.get_all.side_effect = [[ma, mb], [ma]]
 
     service = StudyService(
-        study_service=Mock(),
+        raw_study_service=Mock(),
+        variant_study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
@@ -136,7 +140,8 @@ def test_create_study() -> None:
     study_service.create.return_value = expected
 
     service = StudyService(
-        study_service=study_service,
+        raw_study_service=study_service,
+        variant_study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
@@ -213,7 +218,8 @@ def test_save_metadata() -> None:
     )
 
     service = StudyService(
-        study_service=study_service,
+        raw_study_service=study_service,
+        variant_study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
@@ -285,7 +291,8 @@ def test_download_output() -> None:
     repository.get.return_value = input_study
 
     service = StudyService(
-        study_service=study_service,
+        raw_study_service=study_service,
+        variant_study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
@@ -355,7 +362,8 @@ def test_change_owner() -> None:
     user_service = Mock()
     study_service = Mock()
     service = StudyService(
-        study_service=study_service,
+        raw_study_service=study_service,
+        variant_study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
         user_service=user_service,
@@ -398,7 +406,8 @@ def test_manage_group() -> None:
     repository = Mock()
     user_service = Mock()
     service = StudyService(
-        study_service=Mock(),
+        raw_study_service=Mock(),
+        variant_study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
         user_service=user_service,
@@ -477,7 +486,8 @@ def test_set_public_mode() -> None:
     repository = Mock()
     user_service = Mock()
     service = StudyService(
-        study_service=Mock(),
+        raw_study_service=Mock(),
+        variant_study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
         user_service=user_service,
@@ -516,7 +526,8 @@ def test_check_errors():
     repo.get.return_value = study
 
     service = StudyService(
-        study_service=study_service,
+        raw_study_service=study_service,
+        variant_study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
@@ -544,7 +555,8 @@ def test_assert_permission() -> None:
     repository = Mock()
 
     service = StudyService(
-        study_service=Mock(),
+        raw_study_service=Mock(),
+        variant_study_service=Mock(),
         importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
@@ -557,50 +569,50 @@ def test_assert_permission() -> None:
     repository.get.return_value = Study(id=uuid, owner=wrong)
     study = service._get_study(uuid)
     with pytest.raises(UserHasNotPermissionError):
-        service._assert_permission(jwt, study, StudyPermissionType.READ)
-    assert not service._assert_permission(
+        assert_permission(jwt, study, StudyPermissionType.READ)
+    assert not assert_permission(
         jwt, study, StudyPermissionType.READ, raising=False
     )
 
     # good owner
     study = Study(id=uuid, owner=good)
-    assert service._assert_permission(
+    assert assert_permission(
         jwt, study, StudyPermissionType.MANAGE_PERMISSIONS
     )
 
     # wrong group
     study = Study(id=uuid, owner=wrong, groups=[Group(id="wrong")])
     with pytest.raises(UserHasNotPermissionError):
-        service._assert_permission(jwt, study, StudyPermissionType.READ)
-    assert not service._assert_permission(
+        assert_permission(jwt, study, StudyPermissionType.READ)
+    assert not assert_permission(
         jwt, study, StudyPermissionType.READ, raising=False
     )
 
     # good group
     study = Study(id=uuid, owner=wrong, groups=[Group(id="my-group")])
-    assert service._assert_permission(
+    assert assert_permission(
         jwt, study, StudyPermissionType.MANAGE_PERMISSIONS
     )
 
     # super admin can do whatever he wants..
     study = Study(id=uuid)
-    assert service._assert_permission(
+    assert assert_permission(
         admin, study, StudyPermissionType.MANAGE_PERMISSIONS
     )
 
     # when study found in workspace without group
     study = Study(id=uuid, public_mode=PublicMode.FULL)
-    assert not service._assert_permission(
+    assert not assert_permission(
         jwt, study, StudyPermissionType.MANAGE_PERMISSIONS, raising=False
     )
-    assert service._assert_permission(jwt, study, StudyPermissionType.DELETE)
-    assert service._assert_permission(jwt, study, StudyPermissionType.READ)
-    assert service._assert_permission(jwt, study, StudyPermissionType.WRITE)
-    assert service._assert_permission(jwt, study, StudyPermissionType.RUN)
+    assert assert_permission(jwt, study, StudyPermissionType.DELETE)
+    assert assert_permission(jwt, study, StudyPermissionType.READ)
+    assert assert_permission(jwt, study, StudyPermissionType.WRITE)
+    assert assert_permission(jwt, study, StudyPermissionType.RUN)
 
     # some group roles
     study = Study(id=uuid, owner=wrong, groups=[Group(id="my-group-2")])
-    assert not service._assert_permission(
+    assert not assert_permission(
         jwt_2, study, StudyPermissionType.WRITE, raising=False
     )
-    assert service._assert_permission(jwt_2, study, StudyPermissionType.READ)
+    assert assert_permission(jwt_2, study, StudyPermissionType.READ)

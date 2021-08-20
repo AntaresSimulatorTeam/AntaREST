@@ -5,7 +5,7 @@ from sqlalchemy import exists  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.variantstudy.db.dbmodel import CommandBlock  # type: ignore
+from antarest.study.storage.variantstudy.model.db.dbmodel import CommandBlock  # type: ignore
 
 logger = logging.getLogger(__name__)
 
