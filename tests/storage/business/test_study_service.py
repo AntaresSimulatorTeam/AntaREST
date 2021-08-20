@@ -205,9 +205,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_create_study(
-    tmp_path: str, storage_service_builder, project_path
-) -> None:
+def test_create_study(tmp_path: str, project_path) -> None:
     path_studies = Path(tmp_path)
 
     study = Mock()
@@ -247,7 +245,6 @@ def test_create_study(
 def test_copy_study(
     tmp_path: str,
     clean_ini_writer: Callable,
-    storage_service_builder,
 ) -> None:
     path_studies = Path(tmp_path)
     source_name = "study1"
@@ -302,7 +299,7 @@ def test_copy_study(
 
 
 @pytest.mark.unit_test
-def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
+def test_delete_study(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -331,7 +328,7 @@ def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
 
 
 @pytest.mark.unit_test
-def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
+def test_edit_study(tmp_path: Path) -> None:
     # Mock
     (tmp_path / "my-uuid").mkdir()
     (tmp_path / "my-uuid/study.antares").touch()

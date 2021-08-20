@@ -30,7 +30,7 @@ def build_storage_service(workspace: Path, uuid: str) -> RawStudyService:
 
 
 @pytest.mark.unit_test
-def test_import_study(tmp_path: Path, storage_service_builder) -> None:
+def test_import_study(tmp_path: Path) -> None:
 
     name = "my-study"
     study_path = tmp_path / name

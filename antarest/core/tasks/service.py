@@ -1,6 +1,7 @@
 import datetime
 import logging
 import time
+from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, Future
 from http import HTTPStatus
 from typing import Callable, Optional, List, Dict
@@ -12,28 +13,55 @@ from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import (
     RequestParameters,
-    UserHasNotPermissionError,
     MustBeAuthenticatedError,
 )
 from antarest.core.tasks.model import (
-    TaskResult,
     TaskDTO,
     TaskListFilter,
     TaskJob,
     TaskStatus,
     TaskJobLog,
+    TaskResult,
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
 
 logger = logging.getLogger(__name__)
 
-
 TaskUpdateNotifier = Callable[[str], None]
 Task = Callable[[TaskUpdateNotifier], TaskResult]
 
 
-class TaskJobService:
+class ITaskService(ABC):
+    @abstractmethod
+    def add_task(
+        self,
+        action: Task,
+        name: Optional[str],
+        request_params: RequestParameters,
+    ) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def status_task(
+        self, task_id: str, request_params: RequestParameters
+    ) -> TaskDTO:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def list_tasks(
+        self, task_filter: TaskListFilter, request_params: RequestParameters
+    ) -> List[TaskDTO]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def await_task(
+        self, task_id: str, timeout_sec: Optional[int] = None
+    ) -> None:
+        raise NotImplementedError()
+
+
+class TaskJobService(ITaskService):
     def __init__(
         self,
         config: Config,
@@ -103,11 +131,15 @@ class TaskJobService:
             else None,
         )
 
-    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
+    def await_task(
+        self, task_id: str, timeout_sec: Optional[int] = None
+    ) -> None:
         if task_id in self.tasks:
             self.tasks[task_id].result(timeout_sec)
         else:
-            logger.warning(f"Task {task_id} not handled by this worker, will poll for task completion from db")
+            logger.warning(
+                f"Task {task_id} not handled by this worker, will poll for task completion from db"
+            )
             end = time.time() + (timeout_sec or 1)
             while True and (timeout_sec is None or time.time() < end):
                 task = self.repo.get(task_id)
@@ -148,17 +180,20 @@ class TaskJobService:
         return log_msg
 
     def _fix_running_status(self) -> None:
-        previous_tasks = self.list_db_tasks(
-            TaskListFilter(status=[TaskStatus.RUNNING, TaskStatus.PENDING]),
-            request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
-        )
-        for task in previous_tasks:
-            self._update_task_status(
-                task,
-                TaskStatus.FAILED,
-                False,
-                "Task was interrupted due to server restart",
+        with db():
+            previous_tasks = self.list_db_tasks(
+                TaskListFilter(
+                    status=[TaskStatus.RUNNING, TaskStatus.PENDING]
+                ),
+                request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
             )
+            for task in previous_tasks:
+                self._update_task_status(
+                    task,
+                    TaskStatus.FAILED,
+                    False,
+                    "Task was interrupted due to server restart",
+                )
 
     def _update_task_status(
         self, task: TaskJob, status: TaskStatus, result: bool, message: str

@@ -20,7 +20,12 @@ class TaskStatus(Enum):
     CANCELLED = 6
 
     def is_final(self) -> bool:
-        return self in [TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED, TaskStatus.TIMEOUT]
+        return self in [
+            TaskStatus.COMPLETED,
+            TaskStatus.FAILED,
+            TaskStatus.CANCELLED,
+            TaskStatus.TIMEOUT,
+        ]
 
 
 class TaskResult(BaseModel):

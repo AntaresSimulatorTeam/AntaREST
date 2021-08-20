@@ -48,37 +48,6 @@ def clean_ini_writer(
 
 
 @pytest.fixture
-def storage_service_builder() -> Callable:
-    def build_storage_service(
-        study_factory=Mock(),
-        exporter=Mock(),
-        path_studies=Path(),
-        path_resources=Path(),
-        user_service=Mock(),
-    ) -> StudyService:
-
-        config = Config(
-            resources_path=path_resources,
-            security=SecurityConfig(disabled=True),
-            storage=StorageConfig(
-                workspaces={
-                    DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
-                }
-            ),
-        )
-
-        return build_storage(
-            application=Mock(),
-            config=config,
-            user_service=user_service,
-            study_factory=study_factory,
-            exporter=exporter,
-        )
-
-    return build_storage_service
-
-
-@pytest.fixture
 def test_json_data() -> JSON:
     json_data = {
         "part1": {"key_int": 1, "key_str": "value1"},
