@@ -1,3 +1,4 @@
+import json
 import uuid
 from dataclasses import dataclass
 from enum import Enum
@@ -9,7 +10,9 @@ from sqlalchemy import Column, String, ForeignKey, DateTime, Table, Integer  # t
 
 from antarest.study.model import (
     Study,
+    DEFAULT_WORKSPACE_NAME,
 )
+from antarest.study.storage.variantstudy.model import CommandDTO
 
 
 @dataclass
@@ -55,6 +58,11 @@ class CommandBlock(Base):  # type: ignore
         "polymorphic_identity": "variant_study_snapshot",
     }
 
+    def to_dto(self) -> CommandDTO:
+        return CommandDTO(
+            id=self.id, action=self.command, args=json.loads(self.args)
+        )
+
 
 @dataclass
 class VariantStudy(Study):
@@ -73,7 +81,7 @@ class VariantStudy(Study):
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
     }
-
+    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
     snapshot = relationship(VariantStudySnapshot, uselist=False)
     commands = relationship(
         CommandBlock,

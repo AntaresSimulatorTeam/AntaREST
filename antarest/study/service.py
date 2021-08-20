@@ -59,6 +59,7 @@ from antarest.core.exceptions import (
     StudyTypeUnsupported,
     UnsupportedOperationOnArchivedStudy,
 )
+from antarest.study.storage.utils import get_default_workspace_path
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -249,9 +250,7 @@ class StudyService:
 
         """
         sid = str(uuid4())
-        study_path = str(
-            self.raw_study_service.get_default_workspace_path() / sid
-        )
+        study_path = str(get_default_workspace_path(self.config) / sid)
 
         raw = RawStudy(
             id=sid,
@@ -377,9 +376,7 @@ class StudyService:
             id=dest_id,
             name=dest_study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=str(
-                self.raw_study_service.get_default_workspace_path() / dest_id
-            ),
+            path=str(get_default_workspace_path(self.config) / dest_id),
             created_at=datetime.now(),
             updated_at=datetime.now(),
             version=src_study.version,
@@ -611,7 +608,7 @@ class StudyService:
 
         """
         sid = str(uuid4())
-        path = str(self.raw_study_service.get_default_workspace_path() / sid)
+        path = str(get_default_workspace_path(self.config) / sid)
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,

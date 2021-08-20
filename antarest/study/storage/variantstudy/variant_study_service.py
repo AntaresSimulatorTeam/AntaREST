@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 import logging
 from pathlib import Path
@@ -5,7 +6,7 @@ from typing import List, Union, Optional
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyNotFoundError
+from antarest.core.exceptions import StudyNotFoundError, StudyTypeUnsupported
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.requests import RequestParameters
 from antarest.study.common.studystorage import IStudyStorageService
@@ -15,17 +16,16 @@ from antarest.study.model import (
     StudySimResultDTO,
     DEFAULT_WORKSPACE_NAME,
 )
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.permissions import (
     assert_permission,
     StudyPermissionType,
 )
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.utils import get_default_workspace_path
 from antarest.study.storage.variantstudy.model import CommandDTO
-from antarest.study.storage.variantstudy.model.db.dbmodel import VariantStudy  # type: ignore
-from antarest.study.storage.variantstudy.repository import (
-    VariantStudyCommandRepository,
-)
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy, CommandBlock  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class VariantStudyService(IStudyStorageService[VariantStudy]):
     def __init__(
         self,
-        repository: VariantStudyCommandRepository,
+        repository: StudyMetadataRepository,
         event_bus: IEventBus,
         config: Config,
     ):
@@ -43,50 +43,90 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         self.event_bus = event_bus
         self.config = config
 
-    def get_commands(self, study_id: str) -> List[CommandDTO]:  # List[Command]
+    def get_commands(
+        self, study_id: str, params: RequestParameters
+    ) -> List[CommandDTO]:
         """
         Get command lists
         Args:
             study_id: study id
+            params: request parameters
         Returns: List of commands
         """
-        raise NotImplementedError()
+        study = self._get_variant_study(study_id, params)
+        return [command.to_dto() for command in study.commands]
 
-    def append_command(self, study_id: str, command: CommandDTO) -> None:
+    def append_command(
+        self, study_id: str, command: CommandDTO, params: RequestParameters
+    ) -> None:
         """
         Add command to list of commands (at the end)
         Args:
             study_id: study id
             command: new command
+            params: request parameters
         Returns: None
         """
-        raise NotImplementedError()
+        study = self._get_variant_study(study_id, params)
+        index = len(study.commands)
+        study.commands.append(
+            CommandBlock(
+                command=command.action,
+                args=json.dumps(command.args),
+                index=index,
+            )
+        )
+        self.repository.save(study)
 
     def move_command(
-        self, study_id: str, command_id: str, new_parent_id: str
+        self,
+        study_id: str,
+        command_id: str,
+        new_index: int,
+        params: RequestParameters,
     ) -> None:
         """
         Move command place in the list of command
         Args:
             study_id: study id
             command_id: command_id
-            new_parent_id: new parent id of the command
+            params: request parameters
+            new_index: new index of the command
         Returns: None
         """
-        raise NotImplementedError()
+        study = self._get_variant_study(study_id, params)
+        index = [command.id for command in study.commands].index(command_id)
+        if index >= 0 and len(study.commands) > new_index >= 0:
+            command = study.commands[index]
+            study.commands.pop(index)
+            study.commands.insert(new_index, command)
+            for idx in range(len(study.commands)):
+                study.commands[idx].index = idx
+            self.repository.save(study)
 
-    def remove_command(self, study_id: str, command_id: str) -> None:
+    def remove_command(
+        self, study_id: str, command_id: str, params: RequestParameters
+    ) -> None:
         """
         Remove command
         Args:
             study_id: study id
             command_id: command_id
+            params: request parameters
         Returns: None
         """
-        raise NotImplementedError()
+        study = self._get_variant_study(study_id, params)
+        index = [command.id for command in study.commands].index(command_id)
+        if index >= 0:
+            study.commands.pop(index)
+            self.repository.save(study)
 
     def update_command(
-        self, study_id: str, command_id: str, command: CommandDTO
+        self,
+        study_id: str,
+        command_id: str,
+        command: CommandDTO,
+        params: RequestParameters,
     ) -> None:
         """
         Update a command
@@ -94,9 +134,36 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             study_id: study id
             command_id: command id
             command: new command
+            params: request parameters
         Returns: None
         """
-        raise NotImplementedError()
+        study = self._get_variant_study(study_id, params)
+        index = [command.id for command in study.commands].index(command_id)
+        if index >= 0:
+            study.commands[index].command = command.action
+            study.commands[index].args = json.dumps(command.args)
+            self.repository.save(study)
+
+    def _get_variant_study(
+        self, study_id: str, params: RequestParameters
+    ) -> VariantStudy:
+        """
+        Get variant study and check permissions
+        Args:
+            study_id: study id
+            params: request parameters
+        Returns: None
+        """
+        study = self.repository.get(study_id)
+
+        if study is None:
+            raise StudyNotFoundError(study_id)
+
+        if not isinstance(study, VariantStudy):
+            raise StudyTypeUnsupported(study_id, study.type)
+
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        return study
 
     def get_study(self, study_id: str) -> FileStudy:
         """
@@ -137,7 +204,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
 
         assert_permission(params.user, study, StudyPermissionType.READ)
         new_id = str(uuid4())
-        study_path = str(self.get_default_workspace_path() / new_id)
+        study_path = str(get_default_workspace_path(self.config) / new_id)
         variant_study = VariantStudy(
             id=new_id,
             name=name,
@@ -149,41 +216,19 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             updated_at=datetime.now(),
             version=study.version,
             groups=study.groups,  # Create inherit_group boolean
-            owner=params.user,
+            owner_id=params.user.id,
             snapshot=None,
         )
-
         self.repository.save(variant_study)
         self.event_bus.push(
             Event(EventType.STUDY_CREATED, variant_study.to_json_summary())
         )
-
         logger.info(
             "variant study %s created by user %s",
             variant_study.id,
             params.get_user_id(),
         )
         return str(variant_study.id)
-
-    def get_workspace_path(self, workspace: str) -> Path:
-        """
-        Retrieve workspace path from config
-
-        Args:
-            workspace: workspace name
-
-        Returns: path
-
-        """
-        return self.config.storage.workspaces[workspace].path
-
-    def get_default_workspace_path(self) -> Path:
-        """
-        Get path of default workspace
-        Returns: path
-
-        """
-        return self.get_workspace_path(DEFAULT_WORKSPACE_NAME)
 
     def create(self, study: VariantStudy) -> VariantStudy:
         """

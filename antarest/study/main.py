@@ -14,9 +14,6 @@ from antarest.study.storage.rawstudy.patch_service import PatchService
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.study.storage.variantstudy.repository import (
-    VariantStudyCommandRepository,
-)
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -45,7 +42,6 @@ def build_storage(
     cache: ICache,
     task_service: ITaskService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
-    variant_repository: Optional[VariantStudyCommandRepository] = None,
     storage_service: Optional[StudyService] = None,
     patch_service: Optional[PatchService] = None,
     event_bus: IEventBus = DummyEventBusService(),
@@ -61,7 +57,6 @@ def build_storage(
         cache: cache service
         task_service: task job service
         metadata_repository: used by testing to inject mock. Let None to use true instantiation
-        variant_repository: used by testing to inject mock. Let None to use true instantiation
         storage_service: used by testing to inject mock. Let None to use true instantiation
         patch_service: used by testing to inject mock. Let None to use true instantiation
         event_bus: used by testing to inject mock. Let None to use true instantiation
@@ -77,7 +72,6 @@ def build_storage(
         matrix=matrix_service, resolver=resolver, cache=cache
     )
     metadata_repository = metadata_repository or StudyMetadataRepository()
-    variant_repository = variant_repository or VariantStudyCommandRepository()
     patch_service = patch_service or PatchService()
 
     raw_study_service = RawStudyService(
@@ -88,7 +82,7 @@ def build_storage(
         cache=cache,
     )
     variant_study_service = VariantStudyService(
-        repository=variant_repository, event_bus=event_bus, config=config
+        repository=metadata_repository, event_bus=event_bus, config=config
     )
     importer_service = ImporterService(
         study_service=raw_study_service,
