@@ -13,7 +13,9 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import InputAreasList
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import (
+    InputAreasList,
+)
 from tests.storage.repository.filesystem.utils import (
     TestSubNode,
     TestMiddleNode,
