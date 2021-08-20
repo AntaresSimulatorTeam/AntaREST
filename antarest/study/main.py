@@ -87,7 +87,9 @@ def build_storage(
         patch_service=patch_service,
         cache=cache,
     )
-    variant_study_service = VariantStudyService(repository=variant_repository)
+    variant_study_service = VariantStudyService(
+        repository=variant_repository, event_bus=event_bus, config=config
+    )
     importer_service = ImporterService(
         study_service=raw_study_service,
         study_factory=study_factory,

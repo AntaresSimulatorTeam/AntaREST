@@ -1,28 +1,47 @@
+from datetime import datetime
+import logging
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Optional
+from uuid import uuid4
 
-from antarest.core.interfaces.cache import ICache
+from antarest.core.config import Config
+from antarest.core.exceptions import StudyNotFoundError
+from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.requests import RequestParameters
 from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import (
     Study,
     StudyMetadataDTO,
     StudySimResultDTO,
-    RawStudy,
+    DEFAULT_WORKSPACE_NAME,
+)
+from antarest.study.storage.permissions import (
+    assert_permission,
+    StudyPermissionType,
 )
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.db.dbmodel import VariantStudy
+from antarest.study.storage.variantstudy.db.dbmodel import VariantStudy  # type: ignore
 from antarest.study.storage.variantstudy.model import CommandDTO
 from antarest.study.storage.variantstudy.repository import (
     VariantStudyCommandRepository,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class VariantStudyService(IStudyStorageService[VariantStudy]):
-    def __init__(self, repository: VariantStudyCommandRepository):
+    def __init__(
+        self,
+        repository: VariantStudyCommandRepository,
+        event_bus: IEventBus,
+        config: Config,
+    ):
         self.raw_study_manager = "RawStudyManager"  # Temporary
         self.generator = "VariantSnapshotGenerator"
         self.repository = repository
+        self.event_bus = event_bus
+        self.config = config
 
     def get_commands(self, study_id: str) -> List[CommandDTO]:  # List[Command]
         """
@@ -97,6 +116,74 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         Returns: None
         """
         raise NotImplementedError()
+
+    def create_variant_study(
+        self, uuid: str, name: str, params: RequestParameters
+    ) -> Optional[str]:
+        """
+        Create empty study
+        Args:
+            uuid: study name to set
+            name: name of study
+            params: request parameters
+
+        Returns: new study uuid
+
+        """
+        study = self.repository.get(uuid)
+
+        if study is None:
+            raise StudyNotFoundError(uuid)
+
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        new_id = str(uuid4())
+        study_path = str(self.get_default_workspace_path() / new_id)
+        variant_study = VariantStudy(
+            id=new_id,
+            name=name,
+            parent_id=uuid,
+            workspace=study_path,
+            path=study_path,
+            public_mode=study.public_mode,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            version=study.version,
+            groups=study.groups,  # Create inherit_group boolean
+            owner=params.user,
+            snapshot=None,
+        )
+
+        self.repository.save(variant_study)
+        self.event_bus.push(
+            Event(EventType.STUDY_CREATED, variant_study.to_json_summary())
+        )
+
+        logger.info(
+            "variant study %s created by user %s",
+            variant_study.id,
+            params.get_user_id(),
+        )
+        return str(variant_study.id)
+
+    def get_workspace_path(self, workspace: str) -> Path:
+        """
+        Retrieve workspace path from config
+
+        Args:
+            workspace: workspace name
+
+        Returns: path
+
+        """
+        return self.config.storage.workspaces[workspace].path
+
+    def get_default_workspace_path(self) -> Path:
+        """
+        Get path of default workspace
+        Returns: path
+
+        """
+        return self.get_workspace_path(DEFAULT_WORKSPACE_NAME)
 
     def create(self, study: VariantStudy) -> VariantStudy:
         """
