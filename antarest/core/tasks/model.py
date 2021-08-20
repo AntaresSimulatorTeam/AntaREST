@@ -31,6 +31,8 @@ class TaskStatus(Enum):
 class TaskResult(BaseModel):
     success: bool
     message: str
+    # Can be used to store json serialized result
+    return_value: Optional[str]
 
 
 class TaskDTO(BaseModel):
