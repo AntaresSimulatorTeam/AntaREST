@@ -1,4 +1,5 @@
 import io
+import logging
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional
@@ -24,6 +25,8 @@ from antarest.core.config import Config
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.service import StudyService
 
+logger = logging.getLogger(__name__)
+
 
 def create_study_routes(
     storage_service: StudyService, config: Config
@@ -45,6 +48,7 @@ def create_study_routes(
     def get_studies(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(f"Fetching study list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         available_studies = storage_service.get_studies_information(params)
         return available_studies
@@ -60,6 +64,7 @@ def create_study_routes(
         groups: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(f"Importing new study", extra={"user": current_user.id})
         zip_binary = io.BytesIO(study)
 
         params = RequestParameters(user=current_user)
@@ -82,6 +87,10 @@ def create_study_routes(
         groups: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Copying study {uuid} into new study '{dest}'",
+            extra={"user": current_user.id},
+        )
         source_uuid = uuid
         group_ids = groups.split(",") if groups is not None else []
         source_uuid_sanitized = sanitize_uuid(source_uuid)
@@ -110,6 +119,9 @@ def create_study_routes(
         groups: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Creating new study '{name}'", extra={"user": current_user.id}
+        )
         name_sanitized = escape(name)
         group_ids = groups.split(",") if groups is not None else []
         group_ids = [sanitize_uuid(gid) for gid in group_ids]
@@ -130,6 +142,7 @@ def create_study_routes(
         request_tmp_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(f"Exporting study {uuid}", extra={"user": current_user.id})
         uuid_sanitized = sanitize_uuid(uuid)
 
         params = RequestParameters(user=current_user)
@@ -154,6 +167,7 @@ def create_study_routes(
     def delete_study(
         uuid: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
+        logger.info(f"Deleting study {uuid}", extra={"user": current_user.id})
         uuid_sanitized = sanitize_uuid(uuid)
 
         params = RequestParameters(user=current_user)
@@ -172,6 +186,10 @@ def create_study_routes(
         output: bytes = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Importing output for study {uuid}",
+            extra={"user": current_user.id},
+        )
         uuid_sanitized = sanitize_uuid(uuid)
 
         zip_binary = io.BytesIO(output)
@@ -192,6 +210,10 @@ def create_study_routes(
         user_id: int,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Changing owner to {user_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
         uuid_sanitized = sanitize_uuid(uuid)
         params = RequestParameters(user=current_user)
         storage_service.change_owner(uuid_sanitized, user_id, params)
@@ -208,6 +230,10 @@ def create_study_routes(
         group_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Adding group {group_id} to study {uuid}",
+            extra={"user": current_user.id},
+        )
         uuid_sanitized = sanitize_uuid(uuid)
         group_id = sanitize_uuid(group_id)
         params = RequestParameters(user=current_user)
@@ -225,6 +251,10 @@ def create_study_routes(
         group_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Removing group {group_id} to study {uuid}",
+            extra={"user": current_user.id},
+        )
         uuid_sanitized = sanitize_uuid(uuid)
         group_id = sanitize_uuid(group_id)
 
@@ -243,6 +273,10 @@ def create_study_routes(
         mode: PublicMode,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Setting public mode to {mode} for study {uuid}",
+            extra={"user": current_user.id},
+        )
         uuid_sanitized = sanitize_uuid(uuid)
         params = RequestParameters(user=current_user)
         storage_service.set_public_mode(uuid_sanitized, mode, params)
@@ -258,6 +292,9 @@ def create_study_routes(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Fetching study {uuid} metadata", extra={"user": current_user.id}
+        )
         params = RequestParameters(user=current_user)
         study_metadata = storage_service.get_study_information(uuid, params)
         return study_metadata
@@ -272,6 +309,10 @@ def create_study_routes(
         study_metadata_patch: StudyMetadataPatchDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Updating metadata for study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         study_metadata = storage_service.update_study_information(
             uuid, study_metadata_patch, params
@@ -300,6 +341,10 @@ def create_study_routes(
         tmp_export_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Fetching batch outputs of simulation {output_id} for study {study_id}",
+            extra={"user": current_user.id},
+        )
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_uuid(output_id)
         params = RequestParameters(user=current_user)
@@ -327,6 +372,10 @@ def create_study_routes(
         study_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Fetching output list for study {study_id}",
+            extra={"user": current_user.id},
+        )
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
         content = storage_service.get_study_sim_result(study_id, params)
@@ -343,6 +392,10 @@ def create_study_routes(
         status: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Setting output {output_id} as reference simulation for study {study_id}",
+            extra={"user": current_user.id},
+        )
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_uuid(output_id)
         params = RequestParameters(user=current_user)
@@ -358,6 +411,9 @@ def create_study_routes(
         study_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Archiving study {study_id}", extra={"user": current_user.id}
+        )
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
         storage_service.archive(study_id, params)
@@ -372,6 +428,9 @@ def create_study_routes(
         study_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        logger.info(
+            f"Unarchiving study {study_id}", extra={"user": current_user.id}
+        )
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
         storage_service.unarchive(study_id, params)

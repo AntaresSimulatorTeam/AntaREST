@@ -137,9 +137,9 @@ class LdapService:
         ]
         for group_id, group_name in grouprole_to_add:
             logger.info(
-                "Adding user %s role %d to group %s (%s) following ldap sync",
+                "Adding user %s role %s to group %s (%s) following ldap sync",
                 existing_user.name,
-                self.default_role_sync,
+                self.default_role_sync.name,
                 group_id,
                 group_name,
             )

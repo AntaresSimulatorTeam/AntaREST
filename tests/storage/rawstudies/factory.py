@@ -1,11 +1,19 @@
+import json
 from pathlib import Path
 from unittest.mock import Mock
 
+from antarest.core.interfaces.cache import CacheConstants
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
+)
+from antarest.study.storage.rawstudy.model.filesystem.factory import (
+    StudyFactory,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -44,3 +52,22 @@ def test_renewable_subtree():
             "ts-interpretation": "production-factor",
         },
     }
+
+
+def test_factory_cache():
+    path = Path(__file__).parent / "samples/v810/sample1"
+
+    cache = Mock()
+    factory = StudyFactory(matrix=Mock(), resolver=Mock(), cache=cache)
+    study_id = "study-id"
+    cache_id = f"{study_id}/{CacheConstants.STUDY_FACTORY}"
+    config = ConfigPathBuilder.build(path, study_id)
+
+    cache.get.return_value = None
+    return_conf, _ = factory.create_from_fs(path, study_id)
+    assert return_conf == config
+    cache.put.assert_called_once_with(cache_id, config.dict())
+
+    cache.get.return_value = config.dict()
+    return_conf, _ = factory.create_from_fs(path, study_id)
+    assert return_conf == config

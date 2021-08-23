@@ -1,7 +1,7 @@
 import logging
 import tempfile
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 import yaml
 from dataclasses import dataclass, field
@@ -188,13 +188,18 @@ class LoggingConfig:
     Sub config object dedicated to logging
     """
 
-    fileconfig: Optional[Path] = None
+    logfile: Optional[Path] = None
+    json: bool = False
+    level: str = "INFO"
 
     @staticmethod
     def from_dict(data: JSON) -> "LoggingConfig":
-        fileconfig = data.get("fileconfig", None)
+        logging_config: Dict[str, Any] = data or {}
+        logfile: Optional[str] = logging_config.get("logfile", None)
         return LoggingConfig(
-            fileconfig=Path(fileconfig) if fileconfig is not None else None,
+            logfile=Path(logfile) if logfile is not None else None,
+            json=logging_config.get("json", False),
+            level=logging_config.get("level", "INFO"),
         )
 
 
@@ -218,14 +223,42 @@ class EventBusConfig:
     Sub config object dedicated to eventbus module
     """
 
-    redis: Optional[RedisConfig] = None
-
     @staticmethod
     def from_dict(data: JSON) -> "EventBusConfig":
-        return EventBusConfig(
-            redis=RedisConfig.from_dict(data["redis"])
-            if "redis" in data
-            else None
+        return EventBusConfig()
+
+
+@dataclass(frozen=True)
+class CacheConfig:
+    """
+    Sub config object dedicated to cache module
+    """
+
+    checker_delay: float = 0.2  # in ms
+
+    @staticmethod
+    def from_dict(data: JSON) -> "CacheConfig":
+        return CacheConfig(
+            checker_delay=float(data["checker_delay"])
+            if "checker_delay" in data
+            else 0.2,
+        )
+
+
+@dataclass(frozen=True)
+class TaskConfig:
+    """
+    Sub config object dedicated to the task module
+    """
+
+    max_workers: int = 5
+
+    @staticmethod
+    def from_dict(data: JSON) -> "TaskConfig":
+        return TaskConfig(
+            max_workers=int(data["max_workers"])
+            if "max_workers" in data
+            else 5
         )
 
 
@@ -243,7 +276,10 @@ class Config:
     logging: LoggingConfig = LoggingConfig()
     debug: bool = True
     resources_path: Path = Path()
+    redis: Optional[RedisConfig] = None
     eventbus: EventBusConfig = EventBusConfig()
+    cache: CacheConfig = CacheConfig()
+    tasks: TaskConfig = TaskConfig()
     root_path: str = ""
 
     @staticmethod
@@ -268,9 +304,18 @@ class Config:
             debug=data["debug"],
             resources_path=res or Path(),
             root_path=data.get("root_path", ""),
+            redis=RedisConfig.from_dict(data["redis"])
+            if "redis" in data
+            else None,
             eventbus=EventBusConfig.from_dict(data["eventbus"])
             if "eventbus" in data
             else EventBusConfig(),
+            cache=CacheConfig.from_dict(data["cache"])
+            if "cache" in data
+            else CacheConfig(),
+            tasks=TaskConfig.from_dict(data["tasks"])
+            if "tasks" in data
+            else TaskConfig(),
         )
 
     @staticmethod

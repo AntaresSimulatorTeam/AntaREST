@@ -5,6 +5,9 @@ from pathlib import Path
 from typing import IO, Any, Optional
 from zipfile import ZipFile, BadZipFile
 
+import redis
+
+from antarest.core.config import RedisConfig
 from antarest.core.exceptions import BadZipBinary
 
 
@@ -72,3 +75,7 @@ def get_local_path() -> Path:
     # https: // pyinstaller.readthedocs.io / en / stable / runtime - information.html
     filepath = Path(__file__).parent.parent.parent.parent
     return filepath
+
+
+def new_redis_instance(config: RedisConfig) -> redis.Redis:
+    return redis.Redis(host=config.host, port=config.port, db=0)

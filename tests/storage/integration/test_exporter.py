@@ -20,7 +20,9 @@ def assert_url_content(storage_service: StudyService, url: str) -> bytes:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
         user_service=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         matrix_service=Mock(),
         config=storage_service.raw_study_service.config,
@@ -62,6 +64,8 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
     service = build_storage(
         application=Mock(),
         config=config,
+        cache=Mock(),
+        task_service=Mock(),
         user_service=Mock(),
         matrix_service=Mock(),
         metadata_repository=repo,
@@ -99,6 +103,8 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
     service = build_storage(
         application=Mock(),
         config=config,
+        cache=Mock(),
+        task_service=Mock(),
         user_service=Mock(),
         matrix_service=Mock(),
         metadata_repository=repo,

@@ -5,12 +5,15 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import (
     Config,
     SecurityConfig,
     StorageConfig,
     WorkspaceConfig,
+    CacheConfig,
 )
+from antarest.core.tasks.service import ITaskService
 from antarest.study.main import build_storage
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.service import StudyService
@@ -62,6 +65,7 @@ def storage_service(
     config = Config(
         resources_path=path_resources,
         security=SecurityConfig(disabled=True),
+        cache=CacheConfig(),
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
@@ -69,8 +73,11 @@ def storage_service(
         ),
     )
 
+    task_service_mock = Mock(spec=ITaskService)
     storage_service = build_storage(
         application=Mock(),
+        cache=LocalCache(config=config.cache),
+        task_service=task_service_mock,
         user_service=Mock(),
         matrix_service=Mock(),
         config=config,

@@ -1,5 +1,6 @@
 import json
 import logging
+from http import HTTPStatus
 from typing import List
 
 import dataclasses
@@ -53,10 +54,12 @@ def configure_websockets(
     ) -> None:
         if not config.security.disabled:
             try:
+                if not token:
+                    raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED)
                 user = Auth.get_user_from_token(token, jwt_manager)
                 if user is None:
                     # TODO check auth and subscribe to rooms
-                    raise HTTPException("unauthorized!")
+                    raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED)
             except Exception as e:
                 logger.error(
                     "Failed to check token from websocket connexion",

@@ -62,6 +62,8 @@ def test_server() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -83,6 +85,8 @@ def test_404() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -104,6 +108,8 @@ def test_server_with_parameters() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -132,9 +138,7 @@ def test_server_with_parameters() -> None:
 
 
 @pytest.mark.unit_test
-def test_create_study(
-    tmp_path: str, storage_service_builder, project_path
-) -> None:
+def test_create_study(tmp_path: str, project_path) -> None:
     path_studies = Path(tmp_path)
     path_study = path_studies / "study1"
     path_study.mkdir()
@@ -146,6 +150,8 @@ def test_create_study(
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -161,9 +167,7 @@ def test_create_study(
 
 
 @pytest.mark.unit_test
-def test_import_study_zipped(
-    tmp_path: Path, storage_service_builder, project_path
-) -> None:
+def test_import_study_zipped(tmp_path: Path, project_path) -> None:
     tmp_path /= "tmp"
     tmp_path.mkdir()
     study_name = "study1"
@@ -181,6 +185,8 @@ def test_import_study_zipped(
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -201,13 +207,15 @@ def test_import_study_zipped(
 
 
 @pytest.mark.unit_test
-def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
+def test_copy_study(tmp_path: Path) -> None:
     storage_service = Mock()
     storage_service.copy_study.return_value = "/studies/study-copied"
 
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -228,7 +236,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
 
 
 @pytest.mark.unit_test
-def test_list_studies(tmp_path: str, storage_service_builder) -> None:
+def test_list_studies(tmp_path: str) -> None:
     studies = {
         "study1": {"antares": {"caption": ""}},
         "study2": {"antares": {"caption": ""}},
@@ -240,6 +248,8 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -251,7 +261,7 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
     assert result.json() == studies
 
 
-def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
+def test_study_metadata(tmp_path: str) -> None:
     study = {"antares": {"caption": ""}}
     storage_service = Mock()
     storage_service.get_study_information.return_value = study
@@ -259,6 +269,8 @@ def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -281,6 +293,8 @@ def test_export_files(tmp_path: Path) -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -305,6 +319,8 @@ def test_export_params(tmp_path: Path) -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -328,6 +344,8 @@ def test_delete_study() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -347,6 +365,8 @@ def test_edit_study() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -369,6 +389,8 @@ def test_edit_study_fail() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
@@ -390,6 +412,8 @@ def test_validate() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -428,6 +452,8 @@ def test_output_download() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -450,6 +476,8 @@ def test_sim_reference() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -491,6 +519,8 @@ def test_sim_result() -> None:
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -502,14 +532,14 @@ def test_sim_result() -> None:
 
 
 @pytest.mark.unit_test
-def test_study_permission_management(
-    tmp_path: Path, storage_service_builder
-) -> None:
+def test_study_permission_management(tmp_path: Path) -> None:
     storage_service = Mock()
 
     app = FastAPI(title=__name__)
     build_storage(
         app,
+        cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         user_service=Mock(),
         matrix_service=Mock(),

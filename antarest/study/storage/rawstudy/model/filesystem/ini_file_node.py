@@ -82,6 +82,11 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             json = cast(JSON, data)
         self.writer.write(json, self.path)
 
+    def delete(self, url: Optional[List[str]] = None) -> None:
+        self._assert_url_end(url)
+        if self.config.path.exists():
+            self.config.path.unlink()
+
     def check_errors(
         self,
         data: JSON,

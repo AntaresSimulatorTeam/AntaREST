@@ -50,6 +50,15 @@ class INode(ABC, Generic[G, S, V]):
         raise NotImplementedError()
 
     @abstractmethod
+    def delete(self, url: Optional[List[str]] = None) -> None:
+        """
+        Delete a node located at some url
+
+        Args:
+            url: data path to delete
+        """
+
+    @abstractmethod
     def save(self, data: S, url: Optional[List[str]] = None) -> None:
         """
         Save data inside tree.

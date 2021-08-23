@@ -15,7 +15,9 @@ def test_get(tmp_path: Path) -> None:
 
     node = RawFileNode(
         context=Mock(),
-        config=FileStudyTreeConfig(file, version=-1, study_id="id"),
+        config=FileStudyTreeConfig(
+            study_path=file, path=file, version=-1, study_id="id"
+        ),
     )
     assert node.get() == b"Hello"
 
@@ -26,14 +28,17 @@ def test_validate(tmp_path: Path) -> None:
 
     node = RawFileNode(
         context=Mock(),
-        config=FileStudyTreeConfig(study_path=file, version=-1, study_id="id"),
+        config=FileStudyTreeConfig(
+            study_path=file, path=file, version=-1, study_id="id"
+        ),
     )
     assert not node.check_errors("")
 
+    new_path = tmp_path / "fantom.txt"
     node = RawFileNode(
         context=Mock(),
         config=FileStudyTreeConfig(
-            study_path=tmp_path / "fantom.txt", version=-1, study_id="id"
+            study_path=new_path, path=new_path, version=-1, study_id="id"
         ),
     )
     assert "not exist" in node.check_errors("")[0]
@@ -45,7 +50,9 @@ def test_save(tmp_path: Path) -> None:
 
     node = RawFileNode(
         context=Mock(),
-        config=FileStudyTreeConfig(study_path=file, version=-1, study_id="id"),
+        config=FileStudyTreeConfig(
+            study_path=file, path=file, version=-1, study_id="id"
+        ),
     )
     node.save(b"Hello")
     assert file.read_text() == "Hello"

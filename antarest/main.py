@@ -1,10 +1,7 @@
 import argparse
 import logging
-import logging.config
-import os
 import sys
 from datetime import timedelta
-from io import StringIO
 from pathlib import Path
 from typing import Tuple, Any, Optional, Union, List, Dict
 
@@ -19,19 +16,26 @@ from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
+from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
+from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.persistence import upgrade_db
+from antarest.core.tasks.main import build_taskjob_manager
 from antarest.dbmodel import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.core.utils.utils import get_default_config_path, get_local_path
+from antarest.core.utils.utils import (
+    get_default_config_path,
+    get_local_path,
+    new_redis_instance,
+)
 from antarest.core.utils.web import tags_metadata
 from sqlalchemy import create_engine
 
 from antarest import __version__
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
-from antarest.login.auth import Auth
+from antarest.login.auth import Auth, JwtSettings
 from antarest.login.main import build_login
 from antarest.matrixstore.main import build_matrixstore
 from antarest.study.main import build_storage
@@ -105,33 +109,6 @@ def get_arguments() -> Tuple[Path, bool, bool, bool]:
     )
 
 
-def configure_logger(config: Config) -> None:
-    if (
-        config.logging.fileconfig is not None
-        and config.logging.fileconfig.exists()
-    ):
-        logging.config.fileConfig(
-            config.logging.fileconfig, disable_existing_loggers=False
-        )
-    else:
-        logging_format = "%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s"
-        logging.basicConfig(filename=None, format=logging_format, level="INFO")
-
-
-class JwtSettings(BaseModel):
-    authjwt_secret_key: str
-    authjwt_token_location: Tuple[str, ...]
-    authjwt_access_token_expires: Union[
-        int, timedelta
-    ] = Auth.ACCESS_TOKEN_DURATION
-    authjwt_refresh_token_expires: Union[
-        int, timedelta
-    ] = Auth.REFRESH_TOKEN_DURATION
-    authjwt_denylist_enabled: bool = True
-    authjwt_denylist_token_checks: Any = {"access", "refresh"}
-    authjwt_cookie_csrf_protect: bool = True
-
-
 def fastapi_app(
     config_file: Path,
     resource_path: Optional[Path] = None,
@@ -171,6 +148,8 @@ def fastapi_app(
         session_args={"autocommit": False, "autoflush": False},
     )
 
+    application.add_middleware(LoggingMiddleware)
+
     if mount_front:
         application.mount(
             "/static",
@@ -196,6 +175,7 @@ def fastapi_app(
                 "index.html", {"request": request}
             )
 
+    # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
     def get_config() -> JwtSettings:
         return JwtSettings(
@@ -241,7 +221,13 @@ def fastapi_app(
 
     services: Dict[str, Any] = {}
 
-    event_bus = build_eventbus(application, config)
+    redis_client = (
+        new_redis_instance(config.redis) if config.redis is not None else None
+    )
+    event_bus = build_eventbus(application, config, True, redis_client)
+    cache = build_cache(config=config, redis_client=redis_client)
+    task_service = build_taskjob_manager(application, config, event_bus)
+
     user_service = build_login(application, config, event_bus=event_bus)
 
     matrix_service = build_matrixstore(application, config, user_service)
@@ -250,6 +236,8 @@ def fastapi_app(
         application,
         config,
         matrix_service=matrix_service,
+        cache=cache,
+        task_service=task_service,
         user_service=user_service,
         event_bus=event_bus,
     )
@@ -266,6 +254,7 @@ def fastapi_app(
     services["launcher"] = launcher
     services["matrix"] = matrix_service
     services["user"] = user_service
+    services["cache"] = cache
 
     return application, services
 

@@ -56,6 +56,7 @@ def test_get_studies_uuid() -> None:
         user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
+        task_service=Mock(),
     )
 
     studies = service._get_study_metadatas(
@@ -91,6 +92,7 @@ def test_sync_studies_from_disk() -> None:
         user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
+        task_service=Mock(),
     )
 
     service.sync_studies_on_disk([fa, fc])
@@ -140,6 +142,7 @@ def test_create_study() -> None:
         user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
+        task_service=Mock(),
     )
 
     with pytest.raises(UserHasNotPermissionError):
@@ -216,6 +219,7 @@ def test_save_metadata() -> None:
         user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
+        task_service=Mock(),
     )
 
     service._save_study(
@@ -268,12 +272,12 @@ def test_download_output() -> None:
     )
     config = FileStudyTreeConfig(
         study_path=input_study.path,
+        path=input_study.path,
         study_id="",
         version=-1,
         areas={"east": area},
         sets={"north": Set()},
         outputs={"output-id": sim},
-        bindings=None,
         store_new_set=False,
     )
     study = Mock()
@@ -287,6 +291,7 @@ def test_download_output() -> None:
         user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
+        task_service=Mock(),
     )
 
     res_study = {"columns": [["H. VAL|Euro/MWh"]], "data": [[0.5]]}
@@ -356,6 +361,7 @@ def test_change_owner() -> None:
         user_service=user_service,
         repository=repository,
         event_bus=Mock(),
+        task_service=Mock(),
     )
 
     study = RawStudy(id=uuid, owner=alice)
@@ -398,6 +404,7 @@ def test_manage_group() -> None:
         user_service=user_service,
         repository=repository,
         event_bus=Mock(),
+        task_service=Mock(),
     )
 
     repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a])
@@ -476,6 +483,7 @@ def test_set_public_mode() -> None:
         user_service=user_service,
         repository=repository,
         event_bus=Mock(),
+        task_service=Mock(),
     )
 
     repository.get.return_value = Study(id=uuid)
@@ -514,6 +522,7 @@ def test_check_errors():
         user_service=Mock(),
         repository=repo,
         event_bus=Mock(),
+        task_service=Mock(),
     )
 
     assert ["Hello", "World"] == service.check_errors("hello world")
@@ -541,6 +550,7 @@ def test_assert_permission() -> None:
         user_service=Mock(),
         repository=repository,
         event_bus=Mock(),
+        task_service=Mock(),
     )
 
     # wrong owner

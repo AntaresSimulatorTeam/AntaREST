@@ -34,13 +34,26 @@ def test_get_all_area():
     study = RawStudy()
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
+        path=Path("somepath"),
         study_id="",
         version=-1,
         areas={
-            "a1": Area({}, [], [], [], []),
-            "a2": Area({}, [], [], [], []),
+            "a1": Area(
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=[],
+                filters_year=[],
+            ),
+            "a2": Area(
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=[],
+                filters_year=[],
+            ),
         },
-        sets={"s1": Set(["a1"])},
+        sets={"s1": Set(areas=["a1"])},
     )
     raw_study_service.get_raw.return_value = FileStudy(
         config=config, tree=FileStudyTree(context=Mock(), config=config)
@@ -124,13 +137,26 @@ def test_update_area():
     study = RawStudy()
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
+        path=Path("somepath"),
         study_id="",
         version=-1,
         areas={
-            "a1": Area({}, [], [], [], []),
-            "a2": Area({}, [], [], [], []),
+            "a1": Area(
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=[],
+                filters_year=[],
+            ),
+            "a2": Area(
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=[],
+                filters_year=[],
+            ),
         },
-        sets={"s1": Set(["a1"])},
+        sets={"s1": Set(areas=["a1"])},
     )
     raw_study_service.get_raw.return_value = FileStudy(
         config=config, tree=FileStudyTree(context=Mock(), config=config)
