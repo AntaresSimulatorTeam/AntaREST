@@ -83,9 +83,30 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self.writer.write(json, self.path)
 
     def delete(self, url: Optional[List[str]] = None) -> None:
-        self._assert_url_end(url)
-        if self.config.path.exists():
-            self.config.path.unlink()
+        url = url or []
+        if len(url) == 0:
+            if self.config.path.exists():
+                self.config.path.unlink()
+        elif len(url) > 0:
+            json = self.reader.read(self.path) if self.path.exists() else {}
+            section_name = url[0]
+            if len(url) == 1:
+                try:
+                    del json[section_name]
+                except KeyError:
+                    pass
+            elif len(url) == 2:
+                # remove dict key
+                key_name = url[1]
+                try:
+                    del json[section_name][key_name]
+                except KeyError:
+                    pass
+            else:
+                raise ValueError(
+                    f"url should be fully resolved when arrives on {self.__class__.__name__}"
+                )
+            self.writer.write(json, self.path)
 
     def check_errors(
         self,
