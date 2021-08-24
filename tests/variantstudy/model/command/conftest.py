@@ -29,6 +29,7 @@ def empty_study(tmp_path: str) -> FileStudy:
 
     config = FileStudyTreeConfig(
         study_path=empty_study_destination_path,
+        path=empty_study_destination_path,
         study_id="",
         version=700,
         areas={},

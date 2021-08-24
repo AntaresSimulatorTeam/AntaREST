@@ -1,8 +1,5 @@
 import configparser
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
@@ -34,9 +31,8 @@ class TestCreateArea:
             )
         )
         version = empty_study.config.version
-        study_path = empty_study.config.root_path
+        study_path = empty_study.config.study_path
         area_name = "Area"
-        area_id = transform_name_to_id(area_name)
 
         create_area_command: ICommand = CreateArea.parse_obj(
             {"area_name": area_name, "metadata": {}}
@@ -347,3 +343,11 @@ class TestCreateArea:
         ).exists()
 
         assert output.status
+
+        create_area_command: ICommand = CreateArea.parse_obj(
+            {"area_name": area_name, "metadata": {}}
+        )
+        output = create_area_command.apply(
+            study_data=empty_study, command_context=command_context
+        )
+        assert not output.status
