@@ -252,26 +252,6 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             doc=patch_metadata.doc,
         )
 
-    def get_workspace_path(self, workspace: str) -> Path:
-        """
-        Retrieve workspace path from config
-
-        Args:
-            workspace: workspace name
-
-        Returns: path
-
-        """
-        return self.config.storage.workspaces[workspace].path
-
-    def get_default_workspace_path(self) -> Path:
-        """
-        Get path of default workspace
-        Returns: path
-
-        """
-        return self.get_workspace_path(DEFAULT_WORKSPACE_NAME)
-
     def get_study_path(self, metadata: RawStudy) -> Path:
         """
         Get study path

@@ -14,6 +14,9 @@ from antarest.study.storage.rawstudy.patch_service import PatchService
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
+from antarest.study.storage.variantstudy.variant_study_service import (
+    VariantStudyService,
+)
 from antarest.study.common.uri_resolver_service import (
     UriResolverService,
 )
@@ -21,7 +24,9 @@ from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
 )
-from antarest.study.repository import StudyMetadataRepository
+from antarest.study.repository import (
+    StudyMetadataRepository,
+)
 from antarest.study.service import StudyService
 from antarest.study.web.areas_blueprint import create_study_area_routes
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
@@ -67,34 +72,38 @@ def build_storage(
         matrix=matrix_service, resolver=resolver, cache=cache
     )
     metadata_repository = metadata_repository or StudyMetadataRepository()
-
     patch_service = patch_service or PatchService()
 
-    study_service = RawStudyService(
+    raw_study_service = RawStudyService(
         config=config,
         study_factory=study_factory,
         path_resources=path_resources,
         patch_service=patch_service,
         cache=cache,
     )
+    variant_study_service = VariantStudyService(
+        repository=metadata_repository, event_bus=event_bus, config=config
+    )
     importer_service = ImporterService(
-        study_service=study_service,
+        study_service=raw_study_service,
         study_factory=study_factory,
     )
     exporter_service = ExporterService(
-        study_service=study_service,
+        study_service=raw_study_service,
         study_factory=study_factory,
         config=config,
     )
 
     storage_service = storage_service or StudyService(
-        study_service=study_service,
+        raw_study_service=raw_study_service,
+        variant_study_service=variant_study_service,
         importer_service=importer_service,
         exporter_service=exporter_service,
         user_service=user_service,
         repository=metadata_repository,
         event_bus=event_bus,
         task_service=task_service,
+        config=config,
     )
 
     watcher = Watcher(config=config, service=storage_service)

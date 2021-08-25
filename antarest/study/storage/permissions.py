@@ -1,7 +1,9 @@
 import enum
 import logging
+from typing import Optional
 
 from antarest.core.jwt import JWTUser
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.study.model import PublicMode, Study
 
@@ -96,3 +98,40 @@ def check_permission(
         return True
 
     return study.public_mode in permission_matrix[permission]["public_modes"]  # type: ignore
+
+
+def assert_permission(
+    user: Optional[JWTUser],
+    study: Optional[Study],
+    permission_type: StudyPermissionType,
+    raising: bool = True,
+) -> bool:
+    """
+    Assert user has permission to edit or read study.
+    Args:
+        user: user logged
+        study: study asked
+        permission_type: level of permission
+        raising: raise error if permission not matched
+
+    Returns: true if permission match, false if not raising.
+
+    """
+    if not user:
+        logger.error("FAIL permission: user is not logged")
+        raise UserHasNotPermissionError()
+
+    if not study:
+        logger.error("FAIL permission: study not exist")
+        raise ValueError("Metadata is None")
+
+    ok = check_permission(user, study, permission_type)
+    if raising and not ok:
+        logger.error(
+            "FAIL permission: user %d has no permission on study %s",
+            user.id,
+            study.id,
+        )
+        raise UserHasNotPermissionError()
+
+    return ok
