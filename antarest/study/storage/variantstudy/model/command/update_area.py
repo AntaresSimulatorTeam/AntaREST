@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Any
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -16,8 +16,10 @@ class UpdateArea(ICommand):
     name: str
     metadata: Dict[str, str]
 
-    def __init__(self) -> None:
-        super().__init__(command_name=CommandName.UPDATE_AREA, version=1)
+    def __init__(self, **data: Any) -> None:
+        super().__init__(
+            command_name=CommandName.UPDATE_AREA, version=1, **data
+        )
 
     def apply(
         self, study_data: FileStudy, command_context: CommandContext

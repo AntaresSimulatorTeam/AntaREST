@@ -21,4 +21,4 @@ class CommandDTO(BaseModel):
     id: Optional[str]
     action: str
     # if args is a list, this mean the command will be mapped to the list of args
-    args: Union[JSON, List[JSON]]
+    args: Union[List[JSON], JSON]

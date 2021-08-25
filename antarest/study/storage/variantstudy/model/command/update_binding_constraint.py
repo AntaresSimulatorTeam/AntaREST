@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Any
 
 from pydantic import validator
 
@@ -22,13 +22,15 @@ class UpdateBindingConstraint(ICommand):
     coeffs: List[Dict[str, Union[str, float]]]
     values: Union[List[List[float]], str]
 
-    def __init__(self) -> None:
+    def __init__(self, **data: Any) -> None:
         super().__init__(
-            command_name=CommandName.UPDATE_BINDING_CONSTRAINT, version=1
+            command_name=CommandName.UPDATE_BINDING_CONSTRAINT,
+            version=1,
+            **data,
         )
 
     @validator("time_step")
-    def check_time_step(self, v: str) -> str:
+    def check_time_step(cls, v: str) -> str:
         if v not in ["hourly", "daily", "weekly"]:
             raise ValueError(
                 "Time step must be either hourly, daily or weekly"
@@ -36,7 +38,7 @@ class UpdateBindingConstraint(ICommand):
         return v
 
     @validator("operator")
-    def check_operator(self, v: str) -> str:
+    def check_operator(cls, v: str) -> str:
         if v not in ["both", "equal", "greater", "less"]:
             raise ValueError(
                 "Operator must be either both, equal, greater or less"
@@ -45,7 +47,7 @@ class UpdateBindingConstraint(ICommand):
 
     @validator("coeffs")
     def check_coeffs(
-        self, v: List[Dict[str, Union[str, float]]]
+        cls, v: List[Dict[str, Union[str, float]]]
     ) -> List[Dict[str, Union[str, float]]]:
         if not isinstance(v, list):
             raise ValueError("Coeffs must be a list")

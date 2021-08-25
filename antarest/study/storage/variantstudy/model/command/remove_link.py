@@ -1,3 +1,5 @@
+from typing import Any
+
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -12,8 +14,10 @@ from antarest.study.storage.variantstudy.model.command_context import (
 class RemoveLink(ICommand):
     id: str
 
-    def __init__(self) -> None:
-        super().__init__(command_name=CommandName.REMOVE_LINK, version=1)
+    def __init__(self, **data: Any) -> None:
+        super().__init__(
+            command_name=CommandName.REMOVE_LINK, version=1, **data
+        )
 
     def apply(
         self, study_data: FileStudy, command_context: CommandContext

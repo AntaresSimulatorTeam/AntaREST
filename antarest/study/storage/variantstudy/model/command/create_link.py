@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Any
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -16,8 +16,10 @@ class CreateLink(ICommand):
     parameters: Dict[str, str]
     series: Union[List[List[float]], str]
 
-    def __init__(self) -> None:
-        super().__init__(command_name=CommandName.CREATE_LINK, version=1)
+    def __init__(self, **data: Any) -> None:
+        super().__init__(
+            command_name=CommandName.CREATE_LINK, version=1, **data
+        )
 
     def apply(
         self, study_data: FileStudy, command_context: CommandContext
