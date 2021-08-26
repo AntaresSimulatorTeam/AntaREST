@@ -62,9 +62,11 @@ def create_study_variant_routes(
             f"Creating new variant '{name}' from study {uuid}",
             extra={"user": current_user.id},
         )
-        return variant_study_service.create_variant_study(
+
+        output = variant_study_service.create_variant_study(
             uuid=sanitized_uuid, name=name, params=params
         )
+        return output or ""
 
     @bp.get(
         "/studies/{uuid}/variants",
