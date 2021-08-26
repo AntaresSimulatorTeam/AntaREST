@@ -13,34 +13,21 @@ from markupsafe import escape
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON
+from antarest.core.exceptions import (
+    StudyNotFoundError,
+    StudyTypeUnsupported,
+    UnsupportedOperationOnArchivedStudy,
+)
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.core.tasks.service import ITaskService
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
 from antarest.core.roles import RoleType
+from antarest.core.tasks.service import ITaskService
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.study.storage.area_management import (
-    AreaManager,
-    AreaType,
-    AreaInfoDTO,
-    AreaCreationDTO,
-    AreaPatchUpdateDTO,
-)
-from antarest.study.storage.rawstudy.exporter_service import ExporterService
-from antarest.study.storage.rawstudy.importer_service import ImporterService
-from antarest.study.storage.permissions import (
-    StudyPermissionType,
-    check_permission,
-    assert_permission,
-)
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -55,11 +42,23 @@ from antarest.study.model import (
     StudySimResultDTO,
 )
 from antarest.study.repository import StudyMetadataRepository
-from antarest.core.exceptions import (
-    StudyNotFoundError,
-    StudyTypeUnsupported,
-    UnsupportedOperationOnArchivedStudy,
+from antarest.study.storage.area_management import (
+    AreaManager,
+    AreaType,
+    AreaInfoDTO,
+    AreaCreationDTO,
+    AreaPatchUpdateDTO,
 )
+from antarest.study.storage.permissions import (
+    StudyPermissionType,
+    assert_permission,
+)
+from antarest.study.storage.rawstudy.exporter_service import ExporterService
+from antarest.study.storage.rawstudy.importer_service import ImporterService
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
+)
+from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import get_default_workspace_path
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,

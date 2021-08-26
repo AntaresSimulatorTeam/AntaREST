@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, List, Awaitable
-
 from dataclasses import dataclass
+from typing import Any, Callable, Optional, List, Awaitable
 
 
 class EventType:

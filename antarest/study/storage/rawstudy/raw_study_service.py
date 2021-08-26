@@ -7,12 +7,12 @@ from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import (
     IStudyStorageService,
 )
-from antarest.study.storage.rawstudy.patch_service import PatchService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
@@ -37,7 +37,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
-from antarest.core.exceptions import StudyNotFoundError
+from antarest.study.storage.rawstudy.patch_service import PatchService
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from antarest.core.config import Config
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 

@@ -1,8 +1,8 @@
 import uuid
+from dataclasses import dataclass
 from typing import Any, List, Optional
 
 import bcrypt
-from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic.main import BaseModel
 from sqlalchemy import Column, Integer, Sequence, String, ForeignKey, Enum, Boolean  # type: ignore

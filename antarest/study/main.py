@@ -8,26 +8,26 @@ from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.core.tasks.service import ITaskService
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
-from antarest.study.storage.rawstudy.exporter_service import ExporterService
-from antarest.study.storage.rawstudy.importer_service import ImporterService
-from antarest.study.storage.rawstudy.patch_service import PatchService
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
 from antarest.study.common.uri_resolver_service import (
     UriResolverService,
-)
-from antarest.study.storage.rawstudy.watcher import Watcher
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
 )
 from antarest.study.repository import (
     StudyMetadataRepository,
 )
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.exporter_service import ExporterService
+from antarest.study.storage.rawstudy.importer_service import ImporterService
+from antarest.study.storage.rawstudy.model.filesystem.factory import (
+    StudyFactory,
+)
+from antarest.study.storage.rawstudy.patch_service import PatchService
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
+)
+from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.study.storage.variantstudy.variant_study_service import (
+    VariantStudyService,
+)
 from antarest.study.web.areas_blueprint import create_study_area_routes
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes

@@ -1,9 +1,9 @@
 import enum
 import uuid
 from copy import deepcopy
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TypeVar
-from dataclasses import dataclass
 
 from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic import BaseModel
@@ -11,7 +11,7 @@ from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enu
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.login.model import Group, Identity, UserInfo, GroupDTO
+from antarest.login.model import Group, Identity, GroupDTO
 
 DEFAULT_WORKSPACE_NAME = "default"
 

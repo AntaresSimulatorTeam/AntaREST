@@ -1,6 +1,5 @@
-from typing import List, Union
-
 from dataclasses import dataclass, field
+from typing import List, Union
 
 from antarest.core.custom_types import JSON
 from antarest.core.roles import RoleType

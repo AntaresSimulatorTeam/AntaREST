@@ -1,6 +1,6 @@
 import json
-from datetime import datetime
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import List, Union, Optional
 from uuid import uuid4
@@ -14,14 +14,12 @@ from antarest.study.model import (
     Study,
     StudyMetadataDTO,
     StudySimResultDTO,
-    DEFAULT_WORKSPACE_NAME,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.permissions import (
     assert_permission,
     StudyPermissionType,
 )
-
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.utils import get_default_workspace_path
 from antarest.study.storage.variantstudy.model import CommandDTO

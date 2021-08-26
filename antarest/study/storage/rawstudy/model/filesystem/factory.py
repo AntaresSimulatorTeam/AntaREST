@@ -1,9 +1,9 @@
 import logging
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple
 
-from dataclasses import dataclass
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.matrixstore.service import MatrixService
 from antarest.study.common.uri_resolver_service import (

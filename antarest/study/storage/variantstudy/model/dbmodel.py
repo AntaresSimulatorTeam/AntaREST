@@ -1,13 +1,11 @@
 import json
 import uuid
 from dataclasses import dataclass
-from enum import Enum
 
+from sqlalchemy import Column, String, ForeignKey, DateTime, Table, Integer  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from sqlalchemy import Column, String, ForeignKey, DateTime, Table, Integer  # type: ignore
-
 from antarest.study.model import (
     Study,
     DEFAULT_WORKSPACE_NAME,
