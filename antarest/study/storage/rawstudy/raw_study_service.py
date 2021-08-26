@@ -22,7 +22,6 @@ from antarest.study.model import (
     StudySimResultDTO,
     StudySimSettingsDTO,
     PatchOutputs,
-    Study,
     OwnerInfo,
     PublicMode,
 )
@@ -34,10 +33,8 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
     FileStudy,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
 from antarest.study.storage.rawstudy.patch_service import PatchService
+from antarest.study.storage.utils import update_antares_info
 
 logger = logging.getLogger(__name__)
 
@@ -282,7 +279,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             zip_output.extractall(path=path_study)
 
         _, study = self.study_factory.create_from_fs(path_study, metadata.id)
-        RawStudyService._update_antares_info(metadata, study)
+        update_antares_info(metadata, study)
 
         metadata.path = str(path_study)
         return metadata
@@ -316,7 +313,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         _, study = self.study_factory.create_from_fs(
             dest_path, study_id=dest_meta.id
         )
-        RawStudyService._update_antares_info(dest_meta, study)
+        update_antares_info(dest_meta, study)
 
         del study
         return dest_meta
@@ -447,25 +444,3 @@ class RawStudyService(IStudyStorageService[RawStudy]):
                     )
                 )
         return results
-
-    @staticmethod
-    def _update_antares_info(
-        metadata: Study, studytree: FileStudyTree
-    ) -> None:
-        """
-        Update study.antares data
-        Args:
-            metadata: study information
-            studytree: study tree
-
-        Returns: none, update is directly apply on study_data
-
-        """
-        study_data_info = studytree.get(["study"])
-        study_data_info["antares"]["caption"] = metadata.name
-        study_data_info["antares"]["created"] = metadata.created_at.timestamp()
-        study_data_info["antares"][
-            "lastsave"
-        ] = metadata.updated_at.timestamp()
-        study_data_info["antares"]["version"] = metadata.version
-        studytree.save(study_data_info, ["study"])

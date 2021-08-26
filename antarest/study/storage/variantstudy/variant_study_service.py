@@ -14,18 +14,34 @@ from antarest.study.model import (
     Study,
     StudyMetadataDTO,
     StudySimResultDTO,
+    RawStudy,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.permissions import (
     assert_permission,
     StudyPermissionType,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.utils import get_default_workspace_path
-from antarest.study.storage.variantstudy.model import CommandDTO
+from antarest.study.storage.rawstudy.exporter_service import ExporterService
+from antarest.study.storage.rawstudy.model.filesystem.factory import (
+    FileStudy,
+    StudyFactory,
+)
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.utils import (
+    get_default_workspace_path,
+)
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model import (
+    CommandDTO,
+    GenerationResultInfoDTO,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
+    VariantStudySnapshot,
+)
+from antarest.study.storage.variantstudy.variant_snapshot_generator import (
+    VariantSnapshotGenerator,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,12 +50,16 @@ logger = logging.getLogger(__name__)
 class VariantStudyService(IStudyStorageService[VariantStudy]):
     def __init__(
         self,
+        command_factory: CommandFactory,
+        study_factory: StudyFactory,
+        exporter_service: ExporterService,
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
         config: Config,
     ):
-        self.raw_study_manager = "RawStudyManager"  # Temporary
-        self.generator = "VariantSnapshotGenerator"
+        self.generator = VariantSnapshotGenerator(
+            command_factory, study_factory, exporter_service
+        )
         self.repository = repository
         self.event_bus = event_bus
         self.config = config
@@ -230,6 +250,34 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             params.get_user_id(),
         )
         return str(variant_study.id)
+
+    def generate(
+        self, variant_study_id: str, params: RequestParameters
+    ) -> GenerationResultInfoDTO:
+
+        # Get variant study
+        variant_study = self._get_variant_study(variant_study_id, params)
+
+        # Get parent study
+        if variant_study.parent_id is None:
+            raise StudyNotFoundError(variant_study_id)  # replace by another
+
+        parent_study = self.repository.get(variant_study.parent_id)
+
+        # Check parent study permission
+        assert_permission(params.user, parent_study, StudyPermissionType.READ)
+        if not isinstance(parent_study, RawStudy):
+            raise StudyNotFoundError(parent_study.id)  # replace by another
+
+        results = self.generator.generate_snapshot(variant_study, parent_study)
+        if results.success:
+            variant_study.snapshot = VariantStudySnapshot(
+                id=variant_study.id,
+                path=variant_study.path,
+                created_at=datetime.now(),
+            )
+            self.repository.save(variant_study)
+        return results
 
     def create(self, study: VariantStudy) -> VariantStudy:
         """

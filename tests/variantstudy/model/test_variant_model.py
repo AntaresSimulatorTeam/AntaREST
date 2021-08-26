@@ -9,9 +9,12 @@ from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME
+from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.variantstudy.model import CommandDTO
+from antarest.study.storage.variantstudy.model import (
+    CommandDTO,
+    GenerationResultInfoDTO,
+)
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -36,6 +39,9 @@ def test_service() -> VariantStudyService:
     )
     repository = StudyMetadataRepository()
     service = VariantStudyService(
+        command_factory=Mock(),
+        study_factory=Mock(),
+        exporter_service=Mock(),
         config=Config(
             storage=StorageConfig(
                 workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
@@ -44,10 +50,11 @@ def test_service() -> VariantStudyService:
         repository=repository,
         event_bus=Mock(),
     )
+
     with db():
         # Save a study
         origin_id = "origin-id"
-        origin_study = Study(id=origin_id, name="my-study")
+        origin_study = RawStudy(id=origin_id, name="my-study")
         repository.save(origin_study)
 
         # Create un new variant
@@ -97,3 +104,12 @@ def test_service() -> VariantStudyService:
         )
         commands = service.get_commands(saved_id, SADMIN)
         assert commands[0].action == "My-action-5"
+
+        # Generate
+        service.generator.generate_snapshot = Mock()
+        expected_result = GenerationResultInfoDTO(success=True, details=[])
+        service.generator.generate_snapshot.return_value = expected_result
+        results = service.generate(saved_id, SADMIN)
+        assert results == expected_result
+        assert study.snapshot.id == study.id
+        assert study.snapshot.path == study.path

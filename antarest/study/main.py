@@ -25,6 +25,10 @@ from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
 from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -81,17 +85,30 @@ def build_storage(
         patch_service=patch_service,
         cache=cache,
     )
-    variant_study_service = VariantStudyService(
-        repository=metadata_repository, event_bus=event_bus, config=config
-    )
-    importer_service = ImporterService(
-        study_service=raw_study_service,
-        study_factory=study_factory,
-    )
+
     exporter_service = ExporterService(
         study_service=raw_study_service,
         study_factory=study_factory,
         config=config,
+    )
+
+    generator_matrix_constants = GeneratorMatrixConstants(
+        matrix_service=matrix_service
+    )
+    command_factory = CommandFactory(
+        generator_matrix_constants=generator_matrix_constants
+    )
+    variant_study_service = VariantStudyService(
+        command_factory=command_factory,
+        study_factory=study_factory,
+        exporter_service=exporter_service,
+        repository=metadata_repository,
+        event_bus=event_bus,
+        config=config,
+    )
+    importer_service = ImporterService(
+        study_service=raw_study_service,
+        study_factory=study_factory,
     )
 
     storage_service = storage_service or StudyService(
