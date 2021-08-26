@@ -134,7 +134,11 @@ def build_storage(
         create_study_area_routes(storage_service, config)
     )
     application.include_router(
-        create_study_variant_routes(storage_service, config)
+        create_study_variant_routes(
+            study_service=storage_service,
+            variant_study_service=variant_study_service,
+            config=config,
+        )
     )
 
     return storage_service

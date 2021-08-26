@@ -471,7 +471,7 @@ def test_variant_manager(app: FastAPI):
         },
     )
     variant_id = res.json()
-    assert res.status_code == 500
+    assert res.status_code == 200
 
     res = client.get(
         f"/v1/studies/{base_study_id}/variants",

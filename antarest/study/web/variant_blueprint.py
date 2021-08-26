@@ -8,6 +8,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
 )
+from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
@@ -16,12 +17,17 @@ from antarest.study.storage.variantstudy.model import (
     GenerationResultInfoDTO,
     CommandDTO,
 )
+from antarest.study.storage.variantstudy.variant_study_service import (
+    VariantStudyService,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def create_study_variant_routes(
-    study_service: StudyService, config: Config
+    study_service: StudyService,
+    variant_study_service: VariantStudyService,
+    config: Config,
 ) -> APIRouter:
     """
     Endpoint implementation for studies area management
@@ -50,12 +56,15 @@ def create_study_variant_routes(
         name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
+        sanitized_uuid = sanitize_uuid(uuid)
         params = RequestParameters(user=current_user)
         logger.info(
             f"Creating new variant '{name}' from study {uuid}",
             extra={"user": current_user.id},
         )
-        raise NotImplementedError()
+        return variant_study_service.create_variant_study(
+            uuid=sanitized_uuid, name=name, params=params
+        )
 
     @bp.get(
         "/studies/{uuid}/variants",
