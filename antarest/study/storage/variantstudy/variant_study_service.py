@@ -6,7 +6,11 @@ from typing import List, Union, Optional
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyNotFoundError, StudyTypeUnsupported
+from antarest.core.exceptions import (
+    StudyNotFoundError,
+    StudyTypeUnsupported,
+    NoParentStudyError,
+)
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.requests import RequestParameters
 from antarest.study.common.studystorage import IStudyStorageService
@@ -26,7 +30,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     get_default_workspace_path,
 )
@@ -260,14 +263,17 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
 
         # Get parent study
         if variant_study.parent_id is None:
-            raise StudyNotFoundError(variant_study_id)  # replace by another
+            raise NoParentStudyError(variant_study_id)
 
         parent_study = self.repository.get(variant_study.parent_id)
+
+        if parent_study is None:
+            raise StudyNotFoundError(variant_study.parent_id)
 
         # Check parent study permission
         assert_permission(params.user, parent_study, StudyPermissionType.READ)
         if not isinstance(parent_study, RawStudy):
-            raise StudyNotFoundError(parent_study.id)  # replace by another
+            raise StudyTypeUnsupported(parent_study.id, parent_study.type)
 
         results = self.generator.generate_snapshot(variant_study, parent_study)
         if results.success:

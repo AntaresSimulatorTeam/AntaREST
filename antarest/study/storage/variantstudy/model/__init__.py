@@ -11,12 +11,6 @@ class GenerationResultInfoDTO(BaseModel):
     details: List[Tuple[str, bool, str]]
 
 
-class Command(BaseModel):
-    id: str
-    action: ICommand
-    args: JSON
-
-
 class CommandDTO(BaseModel):
     id: Optional[str]
     action: str

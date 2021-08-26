@@ -1,5 +1,4 @@
 import shutil
-from datetime import datetime
 from pathlib import Path
 from typing import List
 
@@ -12,12 +11,11 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 from antarest.study.storage.utils import update_antares_info
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model import (
-    ICommand,
     GenerationResultInfoDTO,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
-    VariantStudySnapshot,
 )
 
 
