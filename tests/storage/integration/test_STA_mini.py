@@ -1,10 +1,9 @@
 import io
-import json
 import shutil
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Union
-from unittest.mock import Mock, call
+from typing import Union
+from unittest.mock import Mock
 
 import pytest
 from fastapi import FastAPI
@@ -12,19 +11,17 @@ from starlette.testclient import TestClient
 
 from antarest.core.custom_types import JSON
 from antarest.core.jwt import JWTUser, JWTGroup
-from antarest.core.roles import RoleType
-from antarest.study.main import build_storage
-
-from antarest.study.service import StudyService
 from antarest.core.requests import (
     RequestParameters,
 )
+from antarest.core.roles import RoleType
+from antarest.study.main import build_storage
+from antarest.study.service import StudyService
 from tests.conftest import assert_study
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import (
     de_fr_values_hourly,
 )
-from tests.storage.integration.data.simulation_log import simulation_log
 
 ADMIN = JWTUser(
     id=1,

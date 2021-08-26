@@ -11,8 +11,8 @@ from antarest.core.config import (
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.main import build_storage
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.service import StudyService
 
 

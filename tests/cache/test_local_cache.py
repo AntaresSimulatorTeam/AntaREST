@@ -1,6 +1,7 @@
+import time
 from pathlib import Path
 from unittest import mock
-import time
+
 from antarest.core.cache.business.local_chache import (
     LocalCache,
     LocalCacheElement,

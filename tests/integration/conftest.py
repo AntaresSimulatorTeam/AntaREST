@@ -1,6 +1,6 @@
 import os
-import shutil
 from pathlib import Path
+from unittest.mock import Mock
 from zipfile import ZipFile
 
 import jinja2
@@ -9,7 +9,8 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine
 
-from antarest import main
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.dbmodel import Base
 from antarest.main import fastapi_app
 from tests.conftest import project_dir
 
@@ -21,51 +22,60 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 
 @pytest.fixture
 def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
-    cur_dir: Path = Path(__file__).parent
-    templateLoader = jinja2.FileSystemLoader(searchpath=cur_dir)
-    templateEnv = jinja2.Environment(loader=templateLoader)
-    TEMPLATE_FILE = "config.yml"
-    template = templateEnv.get_template(TEMPLATE_FILE)
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
 
-    matrix_dir = Path(tmp_path) / "matrixstore"
-    os.mkdir(matrix_dir)
-    archive_dir = Path(tmp_path) / "archive_dir"
-    os.mkdir(archive_dir)
-    tmp_dir = Path(tmp_path) / "tmp"
-    os.mkdir(tmp_dir)
-    default_workspace = Path(tmp_path) / "internal_workspace"
-    os.mkdir(default_workspace)
-    ext_workspace_path = Path(tmp_path) / "ext_workspace"
-    os.mkdir(ext_workspace_path)
-    config_path = Path(tmp_path) / "config.yml"
-    db_path = Path(tmp_path) / "db.sqlite"
-    db_path.touch()
-    db_url = "sqlite:///" + str(db_path)
+    with db():
+        cur_dir: Path = Path(__file__).parent
+        templateLoader = jinja2.FileSystemLoader(searchpath=cur_dir)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        TEMPLATE_FILE = "config.yml"
+        template = templateEnv.get_template(TEMPLATE_FILE)
 
-    with ZipFile(sta_mini_zip_path) as zip_output:
-        zip_output.extractall(path=ext_workspace_path)
+        matrix_dir = Path(tmp_path) / "matrixstore"
+        os.mkdir(matrix_dir)
+        archive_dir = Path(tmp_path) / "archive_dir"
+        os.mkdir(archive_dir)
+        tmp_dir = Path(tmp_path) / "tmp"
+        os.mkdir(tmp_dir)
+        default_workspace = Path(tmp_path) / "internal_workspace"
+        os.mkdir(default_workspace)
+        ext_workspace_path = Path(tmp_path) / "ext_workspace"
+        os.mkdir(ext_workspace_path)
+        config_path = Path(tmp_path) / "config.yml"
+        db_path = Path(tmp_path) / "db.sqlite"
+        db_path.touch()
+        db_url = "sqlite:///" + str(db_path)
 
-    with open(config_path, "w") as fh:
-        fh.write(
-            template.render(
-                dburl=db_url,
-                default_workspace_path=str(default_workspace),
-                ext_workspace_path=str(ext_workspace_path),
-                matrix_dir=str(matrix_dir),
-                archive_dir=str(archive_dir),
-                tmp_dir=str(tmp_dir),
-                launcher_mock=str(cur_dir / "launcher_mock.sh"),
+        with ZipFile(sta_mini_zip_path) as zip_output:
+            zip_output.extractall(path=ext_workspace_path)
+
+        with open(config_path, "w") as fh:
+            fh.write(
+                template.render(
+                    dburl=db_url,
+                    default_workspace_path=str(default_workspace),
+                    ext_workspace_path=str(ext_workspace_path),
+                    matrix_dir=str(matrix_dir),
+                    archive_dir=str(archive_dir),
+                    tmp_dir=str(tmp_dir),
+                    launcher_mock=str(cur_dir / "launcher_mock.sh"),
+                )
             )
+
+        alembic_cfg = Config()
+        alembic_cfg.set_main_option(
+            "script_location", str(project_dir / "alembic")
         )
+        alembic_cfg.set_main_option("sqlalchemy.url", db_url)
+        command.upgrade(alembic_cfg, "head")
 
-    alembic_cfg = Config()
-    alembic_cfg.set_main_option(
-        "script_location", str(project_dir / "alembic")
-    )
-    alembic_cfg.set_main_option("sqlalchemy.url", db_url)
-    command.upgrade(alembic_cfg, "head")
-
-    app, _ = fastapi_app(
-        config_path, project_path / "resources", mount_front=False
-    )
-    return app
+        app, _ = fastapi_app(
+            config_path, project_path / "resources", mount_front=False
+        )
+        return app

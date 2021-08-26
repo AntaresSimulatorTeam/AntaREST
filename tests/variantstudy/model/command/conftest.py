@@ -4,11 +4,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.matrixstore.repository import (
-    MatrixRepository,
-    MatrixContentRepository,
-    MatrixDataSetRepository,
-)
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,

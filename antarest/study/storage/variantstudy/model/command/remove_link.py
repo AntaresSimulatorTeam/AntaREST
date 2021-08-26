@@ -6,9 +6,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
 
 
 class RemoveLink(ICommand):

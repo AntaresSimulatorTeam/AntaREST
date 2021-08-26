@@ -1,6 +1,5 @@
 import time
 from pathlib import Path
-from unittest.mock import ANY
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient

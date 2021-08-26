@@ -2,22 +2,8 @@
 import sys
 from pathlib import Path
 from typing import Callable
-from unittest.mock import Mock
 
 import pytest
-
-from antarest.core.config import (
-    Config,
-    SecurityConfig,
-    StorageConfig,
-    WorkspaceConfig,
-)
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.study.main import build_storage
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME
-from antarest.study.service import StudyService
 
 project_dir: Path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_dir))

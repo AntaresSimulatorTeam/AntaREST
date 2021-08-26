@@ -1,13 +1,9 @@
-import json
 from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,

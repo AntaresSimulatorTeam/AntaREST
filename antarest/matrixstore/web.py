@@ -1,7 +1,7 @@
 import logging
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, Depends, Body, Query, File, UploadFile
+from fastapi import APIRouter, Depends, Body, File, UploadFile
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -12,7 +12,6 @@ from antarest.core.requests import (
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.model import (
-    MatrixDTO,
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
     MatrixContent,

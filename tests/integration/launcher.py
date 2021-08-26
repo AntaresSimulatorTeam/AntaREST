@@ -1,6 +1,6 @@
+import random
 import sys
 import time
-import random
 
 
 def main() -> int:

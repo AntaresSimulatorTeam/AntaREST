@@ -1,9 +1,6 @@
 import configparser
 
 from antarest.matrixstore.service import MatrixService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,

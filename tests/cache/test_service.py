@@ -3,7 +3,7 @@ from unittest.mock import Mock
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.cache.business.redis_cache import RedisCache
 from antarest.core.cache.main import build_cache
-from antarest.core.config import Config, RedisConfig
+from antarest.core.config import Config
 
 
 def test_service_factory():

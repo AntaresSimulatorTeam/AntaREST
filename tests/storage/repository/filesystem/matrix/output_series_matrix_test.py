@@ -1,7 +1,7 @@
-import pandas as pd
-
 from pathlib import Path
 from unittest.mock import Mock
+
+import pandas as pd
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,

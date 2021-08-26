@@ -1,4 +1,3 @@
-import datetime
 from unittest.mock import Mock
 
 from sqlalchemy import create_engine
@@ -9,7 +8,7 @@ from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model import (
     CommandDTO,
