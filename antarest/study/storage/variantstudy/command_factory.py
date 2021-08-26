@@ -1,5 +1,8 @@
 from typing import List
 
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
 from antarest.study.storage.variantstudy.model import (
     CommandDTO,
     ICommand,
@@ -58,6 +61,9 @@ from antarest.study.storage.variantstudy.model.command.update_district import (
 from antarest.study.storage.variantstudy.model.command.update_link import (
     UpdateLink,
 )
+from antarest.study.storage.variantstudy.model.command_context import (
+    CommandContext,
+)
 
 
 class CommandFactory:
@@ -65,20 +71,32 @@ class CommandFactory:
     Service to convert CommendDTO to Command
     """
 
-    @staticmethod
-    def to_command(command_dto: CommandDTO) -> List[ICommand]:
+    def __init__(self, generator_matrix_constants: GeneratorMatrixConstants):
+        self.generator_matrix_constants: GeneratorMatrixConstants = (
+            generator_matrix_constants
+        )
+
+    def to_icommand(self, command_dto: CommandDTO) -> List[ICommand]:
         if command_dto.action == CommandName.CREATE_AREA.value:
             if isinstance(args := command_dto.args, dict):
                 return [
                     CreateArea(
-                        area_name=args["area_name"], metadata=args["metadata"]
+                        area_name=args["area_name"],
+                        metadata=args["metadata"],
+                        command_context=CommandContext(
+                            generator_matrix_constants=self.generator_matrix_constants
+                        ),
                     )
                 ]
 
             else:
                 return [
                     CreateArea(
-                        area_name=args["area_name"], metadata=args["metadata"]
+                        area_name=args["area_name"],
+                        metadata=args["metadata"],
+                        command_context=CommandContext(
+                            generator_matrix_constants=self.generator_matrix_constants
+                        ),
                     )
                     for args in command_dto.args
                 ]

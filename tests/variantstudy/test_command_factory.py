@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -229,7 +231,8 @@ from antarest.study.storage.variantstudy.model.command.common import (
 )
 @pytest.mark.unit_test
 def test_command_factory(command_dto: CommandDTO):
-    command_list = CommandFactory.to_command(command_dto=command_dto)
+    command_factory = CommandFactory(generator_matrix_constants=Mock())
+    command_list = command_factory.to_icommand(command_dto=command_dto)
     if isinstance(args := command_dto.args, dict):
         assert len(command_list) == 1
     else:
@@ -242,6 +245,7 @@ def test_command_factory(command_dto: CommandDTO):
 @pytest.mark.unit_test
 def test_unknown_command():
     with pytest.raises(NotImplementedError):
-        CommandFactory.to_command(
+        command_factory = CommandFactory(generator_matrix_constants=Mock())
+        command_factory.to_icommand(
             command_dto=CommandDTO(action="unknown_command", args={})
         )

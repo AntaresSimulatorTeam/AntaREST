@@ -7,9 +7,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
 
 
 class RemoveArea(ICommand):
@@ -20,9 +17,7 @@ class RemoveArea(ICommand):
             command_name=CommandName.REMOVE_AREA, version=1, **data
         )
 
-    def apply(
-        self, study_data: FileStudy, command_context: CommandContext
-    ) -> CommandOutput:
+    def apply(self, study_data: FileStudy) -> CommandOutput:
 
         study_data.tree.delete(["input", "areas", self.id])
 

@@ -59,18 +59,18 @@ class TestRemoveArea:
         )
 
         create_area_command: ICommand = CreateArea.parse_obj(
-            {"area_name": area_name, "metadata": {}}
+            {
+                "area_name": area_name,
+                "metadata": {},
+                "command_context": command_context,
+            }
         )
-        create_area_command.apply(
-            study_data=empty_study, command_context=command_context
-        )
+        create_area_command.apply(study_data=empty_study)
 
         remove_area_commande: ICommand = RemoveArea.parse_obj(
             {"id": area_name}
         )
-        output = remove_area_commande.apply(
-            study_data=empty_study, command_context=command_context
-        )
+        output = remove_area_commande.apply(study_data=empty_study)
         assert output.status
 
         assert (

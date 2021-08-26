@@ -35,10 +35,14 @@ class TestCreateArea:
         area_name = "Area"
 
         create_area_command: ICommand = CreateArea.parse_obj(
-            {"area_name": area_name, "metadata": {}}
+            {
+                "area_name": area_name,
+                "metadata": {},
+                "command_context": command_context,
+            }
         )
         output = create_area_command.apply(
-            study_data=empty_study, command_context=command_context
+            study_data=empty_study,
         )
 
         # Areas
@@ -345,9 +349,11 @@ class TestCreateArea:
         assert output.status
 
         create_area_command: ICommand = CreateArea.parse_obj(
-            {"area_name": area_name, "metadata": {}}
+            {
+                "area_name": area_name,
+                "metadata": {},
+                "command_context": command_context,
+            }
         )
-        output = create_area_command.apply(
-            study_data=empty_study, command_context=command_context
-        )
+        output = create_area_command.apply(study_data=empty_study)
         assert not output.status
