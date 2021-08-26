@@ -24,9 +24,7 @@ class UpdateCluster(ICommand):
             command_name=CommandName.UPDATE_CLUSTER, version=1, **data
         )
 
-    def apply(
-        self, study_data: FileStudy, command_context: CommandContext
-    ) -> CommandOutput:
+    def apply(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()
 
     def revert(self, study_data: FileStudy) -> CommandOutput:

@@ -32,7 +32,7 @@ class CreateArea(ICommand):
         )
 
     @validator("command_context", each_item=True, always=True)
-    def validate(cls, v):
+    def validate_command_context(cls, v: CommandContext) -> CommandContext:
         if v.generator_matrix_constants is None:
             raise ValueError(
                 "CommandContext needs GeneratorMatrixConstants for CreateArea"
@@ -58,6 +58,8 @@ class CreateArea(ICommand):
         return new_areas
 
     def apply(self, study_data: FileStudy) -> CommandOutput:
+        if self.command_context.generator_matrix_constants is None:
+            raise ValueError()
 
         if self.area_name in study_data.config.areas.keys():
             return CommandOutput(

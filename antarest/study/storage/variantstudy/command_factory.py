@@ -5,7 +5,6 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 )
 from antarest.study.storage.variantstudy.model import (
     CommandDTO,
-    ICommand,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -25,6 +24,7 @@ from antarest.study.storage.variantstudy.model.command.create_district import (
 from antarest.study.storage.variantstudy.model.command.create_link import (
     CreateLink,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import (
     RemoveArea,
 )
@@ -89,16 +89,16 @@ class CommandFactory:
                     )
                 ]
 
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     CreateArea(
-                        area_name=args["area_name"],
-                        metadata=args["metadata"],
+                        area_name=arguments["area_name"],
+                        metadata=arguments["metadata"],
                         command_context=CommandContext(
                             generator_matrix_constants=self.generator_matrix_constants
                         ),
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
         elif command_dto.action == CommandName.UPDATE_AREA.value:
             if isinstance(args := command_dto.args, dict):
@@ -109,14 +109,14 @@ class CommandFactory:
                         metadata=args["metadata"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     UpdateArea(
-                        id=args["id"],
-                        name=args["name"],
-                        metadata=args["metadata"],
+                        id=arguments["id"],
+                        name=arguments["name"],
+                        metadata=arguments["metadata"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
         elif command_dto.action == CommandName.REMOVE_AREA.value:
             if isinstance(args := command_dto.args, dict):
@@ -125,12 +125,12 @@ class CommandFactory:
                         id=args["id"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     RemoveArea(
-                        id=args["id"],
+                        id=arguments["id"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
 
         elif command_dto.action == CommandName.CREATE_DISTRICT.value:
@@ -141,13 +141,13 @@ class CommandFactory:
                         metadata=args["metadata"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     CreateDistrict(
-                        id=args["id"],
-                        metadata=args["metadata"],
+                        id=arguments["id"],
+                        metadata=arguments["metadata"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
 
         elif command_dto.action == CommandName.UPDATE_DISTRICT.value:
@@ -160,15 +160,15 @@ class CommandFactory:
                         set=args["set"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     UpdateDistrict(
-                        id=args["id"],
-                        name=args["name"],
-                        metadata=args["metadata"],
-                        set=args["set"],
+                        id=arguments["id"],
+                        name=arguments["name"],
+                        metadata=arguments["metadata"],
+                        set=arguments["set"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
 
         elif command_dto.action == CommandName.REMOVE_DISTRICT.value:
@@ -178,12 +178,12 @@ class CommandFactory:
                         id=args["id"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     RemoveDistrict(
-                        id=args["id"],
+                        id=arguments["id"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
 
         elif command_dto.action == CommandName.CREATE_LINK.value:
@@ -195,14 +195,14 @@ class CommandFactory:
                         series=args["series"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     CreateLink(
-                        name=args["name"],
-                        parameters=args["parameters"],
-                        series=args["series"],
+                        name=arguments["name"],
+                        parameters=arguments["parameters"],
+                        series=arguments["series"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
 
         elif command_dto.action == CommandName.UPDATE_LINK.value:
@@ -215,15 +215,15 @@ class CommandFactory:
                         series=args["series"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     UpdateLink(
-                        id=args["id"],
-                        name=args["name"],
-                        parameters=args["parameters"],
-                        series=args["series"],
+                        id=arguments["id"],
+                        name=arguments["name"],
+                        parameters=arguments["parameters"],
+                        series=arguments["series"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
 
         elif command_dto.action == CommandName.REMOVE_LINK.value:
@@ -233,12 +233,12 @@ class CommandFactory:
                         id=args["id"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     RemoveLink(
-                        id=args["id"],
+                        id=arguments["id"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
 
         elif command_dto.action == CommandName.CREATE_BINDING_CONSTRAINT.value:
@@ -253,17 +253,17 @@ class CommandFactory:
                         values=args["values"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     CreateBindingConstraint(
-                        name=args["name"],
-                        enabled=args["enabled"],
-                        time_step=args["time_step"],
-                        operator=args["operator"],
-                        coeffs=args["coeffs"],
-                        values=args["values"],
+                        name=arguments["name"],
+                        enabled=arguments["enabled"],
+                        time_step=arguments["time_step"],
+                        operator=arguments["operator"],
+                        coeffs=arguments["coeffs"],
+                        values=arguments["values"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
 
         elif command_dto.action == CommandName.UPDATE_BINDING_CONSTRAINT.value:
@@ -279,18 +279,18 @@ class CommandFactory:
                         values=args["values"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     UpdateBindingConstraint(
-                        id=args["id"],
-                        name=args["name"],
-                        enabled=args["enabled"],
-                        time_step=args["time_step"],
-                        operator=args["operator"],
-                        coeffs=args["coeffs"],
-                        values=args["values"],
+                        id=arguments["id"],
+                        name=arguments["name"],
+                        enabled=arguments["enabled"],
+                        time_step=arguments["time_step"],
+                        operator=arguments["operator"],
+                        coeffs=arguments["coeffs"],
+                        values=arguments["values"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
 
         elif command_dto.action == CommandName.REMOVE_BINDING_CONSTRAINT.value:
@@ -300,12 +300,12 @@ class CommandFactory:
                         id=args["id"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     RemoveBindingConstraint(
-                        id=args["id"],
+                        id=arguments["id"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
         elif command_dto.action == CommandName.CREATE_CLUSTER.value:
             if isinstance(args := command_dto.args, dict):
@@ -318,16 +318,16 @@ class CommandFactory:
                         modulation=args["modulation"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     CreateCluster(
-                        name=args["name"],
-                        type=args["type"],
-                        parameters=args["parameters"],
-                        prepro=args["prepro"],
-                        modulation=args["modulation"],
+                        name=arguments["name"],
+                        type=arguments["type"],
+                        parameters=arguments["parameters"],
+                        prepro=arguments["prepro"],
+                        modulation=arguments["modulation"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
 
         elif command_dto.action == CommandName.UPDATE_CLUSTER.value:
@@ -342,17 +342,17 @@ class CommandFactory:
                         modulation=args["modulation"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     UpdateCluster(
-                        id=args["id"],
-                        name=args["name"],
-                        type=args["type"],
-                        parameters=args["parameters"],
-                        prepro=args["prepro"],
-                        modulation=args["modulation"],
+                        id=arguments["id"],
+                        name=arguments["name"],
+                        type=arguments["type"],
+                        parameters=arguments["parameters"],
+                        prepro=arguments["prepro"],
+                        modulation=arguments["modulation"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
 
         elif command_dto.action == CommandName.REMOVE_CLUSTER.value:
@@ -362,12 +362,12 @@ class CommandFactory:
                         id=args["id"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     RemoveCluster(
-                        id=args["id"],
+                        id=arguments["id"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
         elif command_dto.action == CommandName.REPLACE_MATRIX.value:
             if isinstance(args := command_dto.args, dict):
@@ -377,13 +377,13 @@ class CommandFactory:
                         matrix=args["matrix"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     ReplaceMatrix(
-                        target_element=args["target_element"],
-                        matrix=args["matrix"],
+                        target_element=arguments["target_element"],
+                        matrix=arguments["matrix"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
         elif command_dto.action == CommandName.UPDATE_CONFIG.value:
             if isinstance(args := command_dto.args, dict):
@@ -393,13 +393,12 @@ class CommandFactory:
                         data=args["data"],
                     )
                 ]
-            else:
+            elif isinstance(args := command_dto.args, list):
                 return [
                     UpdateConfig(
-                        target=args["target"],
-                        data=args["data"],
+                        target=arguments["target"],
+                        data=arguments["data"],
                     )
-                    for args in command_dto.args
+                    for arguments in args
                 ]
-        else:
-            raise NotImplementedError()
+        raise NotImplementedError()
