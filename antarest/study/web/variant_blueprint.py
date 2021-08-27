@@ -110,7 +110,8 @@ def create_study_variant_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        raise NotImplementedError()
+        sanitized_uuid = sanitize_uuid(uuid)
+        return variant_study_service.get_commands(sanitized_uuid, params)
 
     @bp.post(
         "/studies/{uuid}/commands",
@@ -132,7 +133,10 @@ def create_study_variant_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        raise NotImplementedError()
+        sanitized_uuid = sanitize_uuid(uuid)
+        return variant_study_service.append_commands(
+            sanitized_uuid, command, params
+        )
 
     @bp.get(
         "/studies/{uuid}/commands/{cid}",
@@ -154,7 +158,11 @@ def create_study_variant_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        raise NotImplementedError()
+        sanitized_uuid = sanitize_uuid(uuid)
+        sanitized_cid = sanitize_uuid(cid)
+        return variant_study_service.get_command(
+            sanitized_uuid, sanitized_cid, params
+        )
 
     @bp.put(
         "/studies/{uuid}/commands/{cid}",
@@ -172,7 +180,11 @@ def create_study_variant_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        raise NotImplementedError()
+        sanitized_uuid = sanitize_uuid(uuid)
+        sanitized_cid = sanitize_uuid(cid)
+        variant_study_service.move_command(
+            sanitized_uuid, sanitized_cid, index, params
+        )
 
     @bp.delete(
         "/studies/{uuid}/commands/{cid}",
@@ -189,7 +201,11 @@ def create_study_variant_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        raise NotImplementedError()
+        sanitized_uuid = sanitize_uuid(uuid)
+        sanitized_cid = sanitize_uuid(cid)
+        variant_study_service.remove_command(
+            sanitized_uuid, sanitized_cid, params
+        )
 
     @bp.put(
         "/studies/{uuid}/generate",
@@ -211,7 +227,8 @@ def create_study_variant_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        raise NotImplementedError()
+        sanitized_uuid = sanitize_uuid(uuid)
+        return variant_study_service.generate(sanitized_uuid, params)
 
     @bp.post(
         "/studies/{uuid}/freeze",

@@ -43,6 +43,9 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     VariantStudySnapshot,
 )
+from antarest.study.storage.variantstudy.repository import (
+    VariantStudyRepository,
+)
 from antarest.study.storage.variantstudy.variant_snapshot_generator import (
     VariantSnapshotGenerator,
 )
@@ -66,6 +69,21 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         self.repository = repository
         self.event_bus = event_bus
         self.config = config
+
+    def get_command(
+        self, study_id: str, command_id: str, params: RequestParameters
+    ) -> Optional[CommandDTO]:
+        """
+        Get command lists
+        Args:
+            study_id: study id
+            command_id: command id
+            params: request parameters
+        Returns: List of commands
+        """
+        study = self._get_variant_study(study_id, params)
+        index = [command.id for command in study.commands].index(command_id)
+        return study.commands[index].to_dto() if index >= 0 else None
 
     def get_commands(
         self, study_id: str, params: RequestParameters
@@ -101,6 +119,35 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             )
         )
         self.repository.save(study)
+
+    def append_commands(
+        self,
+        study_id: str,
+        commands: List[CommandDTO],
+        params: RequestParameters,
+    ) -> str:
+        """
+        Add command to list of commands (at the end)
+        Args:
+            study_id: study id
+            commands: list of new command
+            params: request parameters
+        Returns: None
+        """
+        study = self._get_variant_study(study_id, params)
+        first_index = len(study.commands)
+        study.commands.extend(
+            [
+                CommandBlock(
+                    command=command.action,
+                    args=json.dumps(command.args),
+                    index=(first_index + i),
+                )
+                for i, command in enumerate(commands)
+            ]
+        )
+        self.repository.save(study)
+        return study.id
 
     def move_command(
         self,
@@ -188,6 +235,9 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
 
         assert_permission(params.user, study, StudyPermissionType.READ)
         return study
+
+    def get_variants_child(self, parent_id: str, params: RequestParameters):
+        pass
 
     def get_study(self, study_id: str) -> FileStudy:
         """

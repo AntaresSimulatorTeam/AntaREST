@@ -69,14 +69,20 @@ def test_service() -> VariantStudyService:
         service.append_command(saved_id, command_1, SADMIN)
         command_2 = CommandDTO(action="My-action-2", args={"arg_2": "No"})
         service.append_command(saved_id, command_2, SADMIN)
-        command_3 = CommandDTO(action="My-action-3", args={"arg_3": "No"})
-        service.append_command(saved_id, command_3, SADMIN)
-        command_4 = CommandDTO(action="My-action-4", args={"arg_4": "No"})
-        service.append_command(saved_id, command_4, SADMIN)
-        assert len(study.commands) == 4
+        commands = service.get_commands(saved_id, SADMIN)
+        assert len(commands) == 2
 
+        # Append multiple commands
+        command_3 = CommandDTO(action="My-action-3", args={"arg_3": "No"})
+        command_4 = CommandDTO(action="My-action-4", args={"arg_4": "No"})
+        service.append_commands(saved_id, [command_3, command_4], SADMIN)
         commands = service.get_commands(saved_id, SADMIN)
         assert len(commands) == 4
+
+        # Get command
+        assert commands[0] == service.get_command(
+            saved_id, commands[0].id, SADMIN
+        )
 
         # Remove command
         service.remove_command(saved_id, commands[2].id, SADMIN)
