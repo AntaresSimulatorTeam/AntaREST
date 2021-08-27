@@ -13,7 +13,7 @@ class VariantStudyRepository(StudyMetadataRepository):
     Variant  study repository
     """
 
-    def get_childs(self, parent_id: str) -> List[VariantStudy]:
+    def get_children(self, parent_id: str) -> List[VariantStudy]:
         studies: List[VariantStudy] = (
             db.session.query(VariantStudy)
             .filter(VariantStudy.parent_id == parent_id)

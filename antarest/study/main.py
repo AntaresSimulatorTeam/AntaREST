@@ -29,6 +29,9 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
     GeneratorMatrixConstants,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.repository import (
+    VariantStudyRepository,
+)
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -46,6 +49,7 @@ def build_storage(
     cache: ICache,
     task_service: ITaskService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
+    variant_repository: Optional[VariantStudyRepository] = None,
     storage_service: Optional[StudyService] = None,
     patch_service: Optional[PatchService] = None,
     event_bus: IEventBus = DummyEventBusService(),
@@ -61,6 +65,7 @@ def build_storage(
         cache: cache service
         task_service: task job service
         metadata_repository: used by testing to inject mock. Let None to use true instantiation
+        variant_repository: used by testing to inject mock. Let None to use true instantiation
         storage_service: used by testing to inject mock. Let None to use true instantiation
         patch_service: used by testing to inject mock. Let None to use true instantiation
         event_bus: used by testing to inject mock. Let None to use true instantiation
@@ -76,6 +81,8 @@ def build_storage(
         matrix=matrix_service, resolver=resolver, cache=cache
     )
     metadata_repository = metadata_repository or StudyMetadataRepository()
+    variant_repository = variant_repository or VariantStudyRepository()
+
     patch_service = patch_service or PatchService()
 
     raw_study_service = RawStudyService(
@@ -102,7 +109,7 @@ def build_storage(
         command_factory=command_factory,
         study_factory=study_factory,
         exporter_service=exporter_service,
-        repository=metadata_repository,
+        repository=variant_repository,
         event_bus=event_bus,
         config=config,
     )

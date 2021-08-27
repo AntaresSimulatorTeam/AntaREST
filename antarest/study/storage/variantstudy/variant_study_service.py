@@ -59,7 +59,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         command_factory: CommandFactory,
         study_factory: StudyFactory,
         exporter_service: ExporterService,
-        repository: StudyMetadataRepository,
+        repository: VariantStudyRepository,
         event_bus: IEventBus,
         config: Config,
     ):
@@ -236,8 +236,20 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         assert_permission(params.user, study, StudyPermissionType.READ)
         return study
 
-    def get_variants_child(self, parent_id: str, params: RequestParameters):
-        pass
+    def get_variants_child(
+        self, parent_id: str, params: RequestParameters
+    ) -> List[StudyMetadataDTO]:
+        self._get_variant_study(parent_id, params)  # check permissions
+        children = self.repository.get_children(parent_id=parent_id)
+        output_list = []
+        for child in children:
+            output_list.append(
+                self.get_study_information(
+                    child,
+                )
+            )
+
+        return output_list
 
     def get_study(self, study_id: str) -> FileStudy:
         """

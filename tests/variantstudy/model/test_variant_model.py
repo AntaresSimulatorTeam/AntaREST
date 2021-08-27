@@ -9,10 +9,12 @@ from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model import (
     CommandDTO,
     GenerationResultInfoDTO,
+)
+from antarest.study.storage.variantstudy.repository import (
+    VariantStudyRepository,
 )
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
@@ -36,7 +38,7 @@ def test_service() -> VariantStudyService:
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    repository = StudyMetadataRepository()
+    repository = VariantStudyRepository()
     service = VariantStudyService(
         command_factory=Mock(),
         study_factory=Mock(),

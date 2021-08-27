@@ -489,7 +489,7 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res.status_code == 500
+    assert res.status_code == 200
 
     res = client.post(
         f"/v1/studies/{variant_id}/commands",
@@ -498,7 +498,7 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res.status_code == 500
+    assert res.status_code == 200
 
     res = client.get(
         f"/v1/studies/{variant_id}/commands",
@@ -506,8 +506,8 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    # assert len(res.json()) == 2
-    assert res.status_code == 500
+    assert len(res.json()) == 2
+    assert res.status_code == 200
 
     # command_id = res.json()[1]["id"]
     command_id = "someid"
@@ -526,7 +526,7 @@ def test_variant_manager(app: FastAPI):
         },
     )
     # assert res.json()[0]["id"] == command_id
-    assert res.status_code == 500
+    assert res.status_code == 200
 
     res = client.delete(
         f"/v1/studies/{variant_id}/commands/{command_id}",

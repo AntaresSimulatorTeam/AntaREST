@@ -191,7 +191,9 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         return data
 
     def get_study_information(
-        self, study: RawStudy, summary: bool = False
+        self,
+        study: RawStudy,
+        summary: bool = False,  # TODO: summary is never used, maybe remove it ?
     ) -> StudyMetadataDTO:
         """
         Get information present in study.antares file
