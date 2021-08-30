@@ -33,13 +33,15 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
     FileStudy,
 )
-from antarest.study.storage.patch_service import PatchService
+from antarest.study.storage.rawstudy.patch_service import PatchService
 from antarest.study.storage.utils import update_antares_info
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar("T", bound=Study)
 
-class RawStudyService(IStudyStorageService[RawStudy]):
+
+class GenericStudyService(IStudyStorageService[T]):
     """
     Manage set of raw studies stored in the workspaces.
     Instantiate and manage tree struct for each request
@@ -62,7 +64,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         self.patch_service = patch_service
         self.cache = cache
 
-    def _check_study_exists(self, metadata: RawStudy) -> None:
+    def _check_study_exists(self, metadata: T) -> None:
         """
         Check study on filesystem.
 
@@ -78,7 +80,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             )
 
     def update_from_raw_meta(
-        self, metadata: RawStudy, fallback_on_default: Optional[bool] = False
+        self, metadata: T, fallback_on_default: Optional[bool] = False
     ) -> None:
         """
         Update metadata from study raw metadata
@@ -108,7 +110,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             else:
                 raise e
 
-    def check_errors(self, metadata: RawStudy) -> List[str]:
+    def check_errors(self, metadata: T) -> List[str]:
         """
         Check study antares data integrity
         Args:
@@ -150,7 +152,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
     def get(
         self,
-        metadata: RawStudy,
+        metadata: T,
         url: str = "",
         depth: int = 3,
         formatted: bool = True,
@@ -192,7 +194,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
     def get_study_information(
         self,
-        study: RawStudy,
+        study: T,
         summary: bool = False,  # TODO: summary is never used, maybe remove it ?
     ) -> StudyMetadataDTO:
         """
@@ -251,7 +253,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             doc=patch_metadata.doc,
         )
 
-    def get_study_path(self, metadata: RawStudy) -> Path:
+    def get_study_path(self, metadata: T) -> Path:
         """
         Get study path
         Args:
@@ -263,7 +265,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         path: Path = Path(metadata.path)
         return path
 
-    def create(self, metadata: RawStudy) -> RawStudy:
+    def create(self, metadata: T) -> RawStudy:
         """
         Create empty new study
         Args:
@@ -288,8 +290,8 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
     def copy(
         self,
-        src_meta: RawStudy,
-        dest_meta: RawStudy,
+        src_meta: T,
+        dest_meta: T,
         with_outputs: bool = False,
     ) -> RawStudy:
         """
@@ -328,7 +330,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             ]
         )
 
-    def delete(self, metadata: RawStudy) -> None:
+    def delete(self, metadata: T) -> None:
         """
         Delete study
         Args:
@@ -342,7 +344,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         shutil.rmtree(study_path)
         self.remove_from_cache(metadata.id)
 
-    def delete_output(self, metadata: RawStudy, output_name: str) -> None:
+    def delete_output(self, metadata: T, output_name: str) -> None:
         """
         Delete output folder
         Args:
@@ -357,9 +359,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         shutil.rmtree(output_path, ignore_errors=True)
         self.remove_from_cache(metadata.id)
 
-    def edit_study(
-        self, metadata: RawStudy, url: str, new: SUB_JSON
-    ) -> SUB_JSON:
+    def edit_study(self, metadata: T, url: str, new: SUB_JSON) -> SUB_JSON:
         """
         Replace data on disk with new
         Args:
@@ -402,7 +402,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         self.patch_service.set_reference_output(study, output_id, status)
         self.remove_from_cache(study.id)
 
-    def get_study_sim_result(self, study: RawStudy) -> List[StudySimResultDTO]:
+    def get_study_sim_result(self, study: T) -> List[StudySimResultDTO]:
         """
         Get global result information
         Args:

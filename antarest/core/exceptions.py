@@ -13,6 +13,11 @@ class NoParentStudyError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class CommandNotFoundError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
 class StudyAlreadyExistError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)

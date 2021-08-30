@@ -20,7 +20,7 @@ from antarest.study.storage.rawstudy.importer_service import ImporterService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
 )
-from antarest.study.storage.rawstudy.patch_service import PatchService
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )

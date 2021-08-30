@@ -88,7 +88,10 @@ def create_study_variant_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        raise NotImplementedError()
+        sanitized_uuid = sanitize_uuid(uuid)
+        return variant_study_service.get_variants_children(
+            sanitized_uuid, params
+        )
 
     @bp.get(
         "/studies/{uuid}/commands",
