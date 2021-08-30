@@ -36,7 +36,7 @@ class MatrixService:
         self,
         repo: MatrixRepository,
         repo_dataset: MatrixDataSetRepository,
-        content: MatrixContentRepository,
+        content: MatrixContentRepository,  # TODO: refactor variable name
         user_service: LoginService,
     ):
         self.repo = repo

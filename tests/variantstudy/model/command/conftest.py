@@ -1,12 +1,21 @@
 import zipfile
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+from sqlalchemy import create_engine
 
+from antarest.core.config import Config
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.dbmodel import Base
 from antarest.matrixstore.service import MatrixService
+from antarest.study.common.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
+)
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
@@ -15,7 +24,38 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 
 
 @pytest.fixture
-def empty_study(tmp_path: str) -> FileStudy:
+def matrix_service() -> MatrixService:
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+    # repo = Mock()
+    # matrix_mock = Mock()
+    #
+    # matrix_mock.created_at = datetime.now()
+    # repo.get.return_value = matrix_mock
+    # content = Mock()
+    # content.save.return_value = "matrix_id"
+    # dataset_repo = Mock()
+    #
+    # service = MatrixService(
+    #     repo=repo,
+    #     repo_dataset=dataset_repo,
+    #     content=content,
+    #     user_service=Mock(),
+    # )
+
+    matrix_service = Mock()
+    matrix_service.create.return_value = "matrix_id"
+
+    return matrix_service
+
+
+@pytest.fixture
+def empty_study(tmp_path: str, matrix_service: MatrixService) -> FileStudy:
     project_dir: Path = Path(__file__).parent.parent.parent.parent.parent
     empty_study_path: Path = project_dir / "resources" / "empty-study.zip"
     empty_study_destination_path = Path(tmp_path) / "empty-study"
@@ -31,22 +71,15 @@ def empty_study(tmp_path: str) -> FileStudy:
         sets={},
     )
     file_study = FileStudy(
-        config=config, tree=FileStudyTree(context=Mock(), config=config)
+        config=config,
+        tree=FileStudyTree(
+            context=ContextServer(
+                matrix=matrix_service,
+                resolver=UriResolverService(
+                    config=Config(), matrix_service=matrix_service
+                ),
+            ),
+            config=config,
+        ),
     )
     return file_study
-
-
-@pytest.fixture
-def matrix_service() -> MatrixService:
-    repo = Mock()
-    content = Mock()
-    content.save.return_value = "matrix_id"
-    dataset_repo = Mock()
-
-    service = MatrixService(
-        repo=repo,
-        repo_dataset=dataset_repo,
-        content=content,
-        user_service=Mock(),
-    )
-    return service

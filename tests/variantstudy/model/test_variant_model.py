@@ -50,6 +50,7 @@ def test_service() -> VariantStudyService:
         ),
         repository=repository,
         event_bus=Mock(),
+        patch_service=Mock(),
     )
 
     with db():

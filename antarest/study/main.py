@@ -112,6 +112,7 @@ def build_storage(
         repository=variant_repository,
         event_bus=event_bus,
         config=config,
+        patch_service=patch_service,
     )
     importer_service = ImporterService(
         study_service=raw_study_service,

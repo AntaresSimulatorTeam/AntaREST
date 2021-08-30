@@ -60,26 +60,32 @@ class GeneratorMatrixConstants:
 
     def get_hydro_max_power(self, version: int) -> str:
         if version > 650:
-            return self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
+            return (
+                "matrix://" + self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
+            )
         else:
-            return self.hashes[NULL_MATRIX_NAME]
+            return "matrix://" + self.hashes[NULL_MATRIX_NAME]
 
     def get_hydro_reservoir(self, version: int) -> str:
         if version > 650:
-            return self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
-        return self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6]
+            return (
+                "matrix://" + self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
+            )
+        return "matrix://" + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6]
 
     def get_hydro_credit_modulations(self) -> str:
-        return self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION]
+        return (
+            "matrix://" + self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION]
+        )
 
     def get_hydro_inflow_pattern(self) -> str:
-        return self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN]
+        return "matrix://" + self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN]
 
     def get_prepro_conversion(self) -> str:
-        return self.hashes[PREPRO_CONVERSION]
+        return "matrix://" + self.hashes[PREPRO_CONVERSION]
 
     def get_prepro_data(self) -> str:
-        return self.hashes[PREPRO_DATA]
+        return "matrix://" + self.hashes[PREPRO_DATA]
 
     def get_null_matrix(self) -> str:
-        return self.hashes[NULL_MATRIX_NAME]
+        return "matrix://" + self.hashes[NULL_MATRIX_NAME]

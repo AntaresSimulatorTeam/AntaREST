@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import List, Union, Optional
+from typing import List, Union, Optional, cast
 from uuid import uuid4
 
 from antarest.core.config import Config
@@ -100,9 +100,11 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             index = [command.id for command in study.commands].index(
                 command_id
             )  # Maybe add Try catch for this
-            return study.commands[index].to_dto()
+            return cast(CommandDTO, study.commands[index].to_dto())
         except ValueError:
-            raise CommandNotFoundError()
+            raise CommandNotFoundError(
+                f"Command with id {command_id} not found"
+            )
 
     def get_commands(
         self, study_id: str, params: RequestParameters
@@ -235,7 +237,10 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             self.repository.save(study)
 
     def _get_variant_study(
-        self, study_id: str, params: RequestParameters
+        self,
+        study_id: str,
+        params: RequestParameters,
+        raw_study_accepted: bool = False,
     ) -> VariantStudy:
         """
         Get variant study and check permissions
@@ -249,7 +254,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         if study is None:
             raise StudyNotFoundError(study_id)
 
-        if not isinstance(study, VariantStudy):
+        if not isinstance(study, VariantStudy) and not raw_study_accepted:
             raise StudyTypeUnsupported(study_id, study.type)
 
         assert_permission(params.user, study, StudyPermissionType.READ)
@@ -258,15 +263,13 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
     def get_variants_children(
         self, parent_id: str, params: RequestParameters
     ) -> List[StudyMetadataDTO]:
-        self._get_variant_study(parent_id, params)  # check permissions
+        self._get_variant_study(
+            parent_id, params, raw_study_accepted=True
+        )  # check permissions
         children = self.repository.get_children(parent_id=parent_id)
         output_list: List[StudyMetadataDTO] = []
         for child in children:
-            output_list.append(
-                self.get_study_information(
-                    child,
-                )
-            )
+            output_list.append(self.get_study_information(child, summary=True))
 
         return output_list
 
