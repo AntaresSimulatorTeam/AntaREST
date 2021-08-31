@@ -14,34 +14,26 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.requests import RequestParameters
-from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import (
     Study,
     StudyMetadataDTO,
     StudySimResultDTO,
     RawStudy,
-    PatchStudy,
-    DEFAULT_WORKSPACE_NAME,
-    OwnerInfo,
-    PublicMode,
 )
-from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.permissions import (
     assert_permission,
     StudyPermissionType,
 )
 from antarest.study.storage.rawstudy.exporter_service import ExporterService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
 from antarest.study.storage.utils import (
     get_default_workspace_path,
+    get_study_information,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model import (
@@ -269,9 +261,34 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         children = self.repository.get_children(parent_id=parent_id)
         output_list: List[StudyMetadataDTO] = []
         for child in children:
-            output_list.append(self.get_study_information(child, summary=True))
+            output_list.append(
+                self.get_study_information(
+                    child,
+                    summary=True,
+                )
+            )
 
         return output_list
+
+    def get_study_information(
+        self, study: VariantStudy, summary: bool = False
+    ) -> StudyMetadataDTO:
+        """
+        Get information present in study.antares file
+        Args:
+            study: study
+            summary: if true, only retrieve basic info from database
+
+        Returns: study metadata
+
+        """
+        return get_study_information(
+            study,
+            self.patch_service,
+            self.study_factory,
+            logger,
+            summary,
+        )
 
     def get_study(self, study_id: str) -> FileStudy:
         """
@@ -402,68 +419,6 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         Returns: destination study
         """
         raise NotImplementedError()
-
-    def get_study_path(self, metadata: VariantStudy) -> Path:
-        """
-        Get study path
-        Args:
-            metadata: study information
-
-        Returns: study path
-
-        """
-        path: Path = Path(metadata.path)
-        return path
-
-    def get_study_information(
-        self, study: VariantStudy, summary: bool
-    ) -> StudyMetadataDTO:
-        file_settings = {}
-        file_metadata = {}
-        study_path = self.get_study_path(study)
-        config = FileStudyTreeConfig(
-            study_path=study_path,
-            path=study_path,
-            study_id="",
-            version=-1,
-        )
-        patch_metadata = self.patch_service.get(study).study or PatchStudy()
-
-        try:
-            raw_study = self.study_factory.create_from_config(config)
-            file_metadata = raw_study.get(url=["study", "antares"])
-            file_settings = raw_study.get(
-                url=["settings", "generaldata", "general"]
-            )
-        except Exception as e:
-            logger.error(
-                "Failed to retrieve general settings for raw study %s",
-                study.id,
-                exc_info=e,
-            )
-
-        return StudyMetadataDTO(
-            id=study.id,
-            name=study.name,
-            version=study.version,
-            created=study.created_at.timestamp(),
-            updated=study.updated_at.timestamp(),
-            workspace=study.workspace,
-            managed=study.workspace == DEFAULT_WORKSPACE_NAME,
-            archived=study.archived if study.archived is not None else False,
-            owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
-            if study.owner is not None
-            else OwnerInfo(name=file_metadata.get("author", "Unknown")),
-            groups=[
-                GroupDTO(id=group.id, name=group.name)
-                for group in study.groups
-            ],
-            public_mode=study.public_mode or PublicMode.NONE,
-            horizon=file_settings.get("horizon", None),
-            scenario=patch_metadata.scenario,
-            status=patch_metadata.status,
-            doc=patch_metadata.doc,
-        )
 
     def get_raw(self, metadata: VariantStudy) -> FileStudy:
         """
