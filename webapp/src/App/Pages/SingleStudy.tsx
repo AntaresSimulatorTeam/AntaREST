@@ -10,6 +10,7 @@ import { getStudyJobs, getStudyMetadata, mapLaunchJobDTO } from '../../services/
 import PulsingDot from '../../components/ui/PulsingDot';
 import GenericTabView from '../../components/ui/NavComponents/GenericTabView';
 import Informations from '../../components/SingleStudy/Informations';
+import VariantView from '../../components/Variants/VariantView';
 import { LaunchJob, StudyMetadata, WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 
@@ -139,11 +140,11 @@ const SingleStudyView = (props: PropTypes) => {
   const navData: { [key: string]: () => JSX.Element } = {
     'singlestudy:informations': () =>
       (study ? <Informations study={study} jobs={studyJobs || []} /> : <div />),
+    'singlestudy:variants': () => <VariantView />,
   };
   if (study && !study.archived) {
     navData['singlestudy:treeView'] = () => <StudyView study={study} />;
   }
-
   return (
     <div className={classes.root}>
       {study && (

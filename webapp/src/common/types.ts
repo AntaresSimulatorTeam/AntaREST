@@ -223,4 +223,8 @@ export interface WSMessage {
   payload: unknown;
 }
 
+export type Components = {
+  [item: string]: () => JSX.Element;
+}
+
 export default {};
