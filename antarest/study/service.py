@@ -11,34 +11,23 @@ from uuid import uuid4
 from fastapi import HTTPException
 from markupsafe import escape
 
+from antarest.core.config import Config
 from antarest.core.custom_types import JSON
+from antarest.core.exceptions import (
+    StudyNotFoundError,
+    StudyTypeUnsupported,
+    UnsupportedOperationOnArchivedStudy,
+)
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.core.tasks.service import ITaskService
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
 from antarest.core.roles import RoleType
+from antarest.core.tasks.service import ITaskService
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.study.storage.area_management import (
-    AreaManager,
-    AreaType,
-    AreaInfoDTO,
-    AreaCreationDTO,
-    AreaPatchUpdateDTO,
-)
-from antarest.study.storage.rawstudy.exporter_service import ExporterService
-from antarest.study.storage.rawstudy.importer_service import ImporterService
-from antarest.study.storage.permissions import (
-    StudyPermissionType,
-    check_permission,
-)
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -53,10 +42,29 @@ from antarest.study.model import (
     StudySimResultDTO,
 )
 from antarest.study.repository import StudyMetadataRepository
-from antarest.core.exceptions import (
-    StudyNotFoundError,
-    StudyTypeUnsupported,
-    UnsupportedOperationOnArchivedStudy,
+from antarest.study.storage.area_management import (
+    AreaManager,
+    AreaType,
+    AreaInfoDTO,
+    AreaCreationDTO,
+    AreaPatchUpdateDTO,
+)
+from antarest.study.storage.permissions import (
+    StudyPermissionType,
+    assert_permission,
+)
+from antarest.study.storage.rawstudy.exporter_service import ExporterService
+from antarest.study.storage.rawstudy.importer_service import ImporterService
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
+)
+from antarest.study.storage.study_download_utils import StudyDownloader
+from antarest.study.storage.utils import (
+    get_default_workspace_path,
+    get_study_path,
+)
+from antarest.study.storage.variantstudy.variant_study_service import (
+    VariantStudyService,
 )
 
 logger = logging.getLogger(__name__)
@@ -69,15 +77,18 @@ class StudyService:
 
     def __init__(
         self,
-        study_service: RawStudyService,
+        raw_study_service: RawStudyService,
+        variant_study_service: VariantStudyService,
         importer_service: ImporterService,
         exporter_service: ExporterService,
         user_service: LoginService,
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
         task_service: ITaskService,
+        config: Config,
     ):
-        self.raw_study_service = study_service
+        self.raw_study_service = raw_study_service
+        self.variant_study_service = variant_study_service
         self.importer_service = importer_service
         self.exporter_service = exporter_service
         self.user_service = user_service
@@ -85,6 +96,7 @@ class StudyService:
         self.event_bus = event_bus
         self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
+        self.config = config
 
     def get(
         self,
@@ -107,7 +119,7 @@ class StudyService:
 
         """
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(params.user, study, StudyPermissionType.READ)
 
         if isinstance(study, RawStudy):
             logger.info(
@@ -121,7 +133,7 @@ class StudyService:
     def _get_study_metadatas(self, params: RequestParameters) -> List[Study]:
         return list(
             filter(
-                lambda study: self._assert_permission(
+                lambda study: assert_permission(
                     params.user, study, StudyPermissionType.READ, raising=False
                 ),
                 self.repository.get_all(),
@@ -158,7 +170,7 @@ class StudyService:
 
         """
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(params.user, study, StudyPermissionType.READ)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
@@ -186,7 +198,7 @@ class StudyService:
             params.get_user_id(),
         )
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(params.user, study, StudyPermissionType.READ)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
@@ -219,7 +231,7 @@ class StudyService:
 
         """
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.RUN)
+        assert_permission(params.user, study, StudyPermissionType.RUN)
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
@@ -227,7 +239,7 @@ class StudyService:
         logger.info(
             "study %s path asked by user %s", uuid, params.get_user_id()
         )
-        return self.raw_study_service.get_study_path(study)
+        return get_study_path(study)
 
     def create_study(
         self, study_name: str, group_ids: List[str], params: RequestParameters
@@ -243,9 +255,7 @@ class StudyService:
 
         """
         sid = str(uuid4())
-        study_path = str(
-            self.raw_study_service.get_default_workspace_path() / sid
-        )
+        study_path = str(get_default_workspace_path(self.config) / sid)
 
         raw = RawStudy(
             id=sid,
@@ -361,9 +371,7 @@ class StudyService:
 
         """
         src_study = self._get_study(src_uuid)
-        self._assert_permission(
-            params.user, src_study, StudyPermissionType.READ
-        )
+        assert_permission(params.user, src_study, StudyPermissionType.READ)
         if not isinstance(src_study, RawStudy):
             raise StudyTypeUnsupported(src_uuid, src_study.type)
         self._assert_study_unarchived(src_study)
@@ -373,9 +381,7 @@ class StudyService:
             id=dest_id,
             name=dest_study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=str(
-                self.raw_study_service.get_default_workspace_path() / dest_id
-            ),
+            path=str(get_default_workspace_path(self.config) / dest_id),
             created_at=datetime.now(),
             updated_at=datetime.now(),
             version=src_study.version,
@@ -414,7 +420,7 @@ class StudyService:
 
         """
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
@@ -430,7 +436,7 @@ class StudyService:
         outputs: bool = True,
     ) -> None:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
@@ -448,7 +454,7 @@ class StudyService:
 
         """
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.DELETE)
+        assert_permission(params.user, study, StudyPermissionType.DELETE)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
 
@@ -476,7 +482,7 @@ class StudyService:
 
         """
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
@@ -513,7 +519,7 @@ class StudyService:
         """
         # GET STUDY ID
         study = self._get_study(study_id)
-        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study_id, study.type)
@@ -542,7 +548,7 @@ class StudyService:
 
         """
         study = self._get_study(study_id)
-        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study_id, study.type)
@@ -574,7 +580,7 @@ class StudyService:
 
         """
         study = self._get_study(study_id)
-        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study_id, study.type)
@@ -607,7 +613,7 @@ class StudyService:
 
         """
         sid = str(uuid4())
-        path = str(self.raw_study_service.get_default_workspace_path() / sid)
+        path = str(get_default_workspace_path(self.config) / sid)
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
@@ -647,7 +653,7 @@ class StudyService:
 
         """
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.RUN)
+        assert_permission(params.user, study, StudyPermissionType.RUN)
         self._assert_study_unarchived(study)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
@@ -678,7 +684,7 @@ class StudyService:
 
         """
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
@@ -714,7 +720,7 @@ class StudyService:
 
         """
         study = self._get_study(study_id)
-        self._assert_permission(
+        assert_permission(
             params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
         )
         self._assert_study_unarchived(study)
@@ -752,7 +758,7 @@ class StudyService:
 
         """
         study = self._get_study(study_id)
-        self._assert_permission(
+        assert_permission(
             params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
         )
         group = self.user_service.get_group(group_id, params)
@@ -785,7 +791,7 @@ class StudyService:
 
         """
         study = self._get_study(study_id)
-        self._assert_permission(
+        assert_permission(
             params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
         )
         study.groups = [
@@ -817,7 +823,7 @@ class StudyService:
 
         """
         study = self._get_study(study_id)
-        self._assert_permission(
+        assert_permission(
             params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
         )
         study.public_mode = mode
@@ -843,7 +849,7 @@ class StudyService:
         params: RequestParameters,
     ) -> List[AreaInfoDTO]:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         return self.areas.get_all_areas(study, area_type)
 
@@ -854,7 +860,7 @@ class StudyService:
         params: RequestParameters,
     ) -> AreaInfoDTO:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         return self.areas.create_area(study, area_creation_dto)
 
@@ -866,7 +872,7 @@ class StudyService:
         params: RequestParameters,
     ) -> AreaInfoDTO:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         return self.areas.update_area(study, area_id, area_patch_dto)
 
@@ -874,13 +880,13 @@ class StudyService:
         self, uuid: str, area_id: str, params: RequestParameters
     ) -> None:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         return self.areas.delete_area(study, area_id)
 
     def archive(self, uuid: str, params: RequestParameters) -> None:
         study = self._get_study(uuid)
-        self._assert_permission(params.user, study, StudyPermissionType.DELETE)
+        assert_permission(params.user, study, StudyPermissionType.DELETE)
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
@@ -900,7 +906,7 @@ class StudyService:
                 HTTPStatus.BAD_REQUEST, "Study is not archived"
             )
 
-        self._assert_permission(params.user, study, StudyPermissionType.DELETE)
+        assert_permission(params.user, study, StudyPermissionType.DELETE)
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(uuid, study.type)
@@ -979,43 +985,6 @@ class StudyService:
         if study.archived and raise_exception:
             raise UnsupportedOperationOnArchivedStudy(study.id)
         return not study.archived
-
-    def _assert_permission(
-        self,
-        user: Optional[JWTUser],
-        study: Optional[Study],
-        permission_type: StudyPermissionType,
-        raising: bool = True,
-    ) -> bool:
-        """
-        Assert user has permission to edit or read study.
-        Args:
-            user: user logged
-            study: study asked
-            permission_type: level of permission
-            raising: raise error if permission not matched
-
-        Returns: true if permission match, false if not raising.
-
-        """
-        if not user:
-            logger.error("FAIL permission: user is not logged")
-            raise UserHasNotPermissionError()
-
-        if not study:
-            logger.error("FAIL permission: study not exist")
-            raise ValueError("Metadata is None")
-
-        ok = check_permission(user, study, permission_type)
-        if raising and not ok:
-            logger.error(
-                "FAIL permission: user %d has no permission on study %s",
-                user.id,
-                study.id,
-            )
-            raise UserHasNotPermissionError()
-
-        return ok
 
     def _analyse_study(self, metadata: RawStudy) -> StudyContentStatus:
         """

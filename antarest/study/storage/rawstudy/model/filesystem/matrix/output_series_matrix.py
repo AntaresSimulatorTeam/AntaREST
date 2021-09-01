@@ -1,4 +1,4 @@
-from typing import List, Optional, cast, Union
+from typing import List, Optional, cast
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
@@ -6,6 +6,9 @@ import pandas as pd  # type: ignore
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
+)
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
@@ -16,9 +19,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import 
     HeadWriter,
     LinkHeadWriter,
     AreaHeadWriter,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,

@@ -1,6 +1,4 @@
-import json
 from http import HTTPStatus
-from io import BytesIO
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -16,9 +14,7 @@ from antarest.core.config import (
     WorkspaceConfig,
 )
 from antarest.core.core_blueprint import create_utils_routes
-from antarest.study.main import build_storage
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
-
 
 CONFIG = Config(
     resources_path=Path(),

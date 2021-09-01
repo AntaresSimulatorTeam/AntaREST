@@ -8,13 +8,14 @@ from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.core.config import Config
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
 from antarest.study.model import Study, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
 )
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
+)
+from antarest.study.storage.utils import get_study_path
 
 logger = logging.getLogger(__name__)
 
@@ -47,14 +48,14 @@ class ExporterService:
         Returns: zip file with study files compressed inside
 
         """
-        path_study = self.study_service.get_study_path(metadata)
+        path_study = get_study_path(metadata)
 
         return self.export_file(path_study, target, outputs)
 
     def export_study_flat(
         self, metadata: Study, dest: Path, outputs: bool = True
     ) -> None:
-        path_study = self.study_service.get_study_path(metadata)
+        path_study = get_study_path(metadata)
 
         self.export_flat(path_study, dest, outputs)
 

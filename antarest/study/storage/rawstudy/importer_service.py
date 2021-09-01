@@ -6,20 +6,20 @@ from pathlib import Path
 from typing import IO, Optional, Union
 from uuid import uuid4
 
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
+from antarest.core.exceptions import (
+    BadOutputError,
+    StudyValidationError,
 )
-
 from antarest.core.utils.utils import extract_zip
 from antarest.study.model import Study, RawStudy
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
 )
-from antarest.core.exceptions import (
-    BadOutputError,
-    StudyValidationError,
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
 )
+from antarest.study.storage.utils import get_study_path
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class ImporterService:
         Returns: new study information.
 
         """
-        path_study = self.study_service.get_study_path(metadata)
+        path_study = get_study_path(metadata)
         path_study.mkdir()
 
         try:
@@ -74,7 +74,7 @@ class ImporterService:
         Returns: output id
         """
         path_output = (
-            self.study_service.get_study_path(metadata)
+            get_study_path(metadata)
             / "output"
             / f"imported_output_{str(uuid4())}"
         )

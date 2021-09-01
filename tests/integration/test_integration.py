@@ -1,6 +1,5 @@
 import time
 from pathlib import Path
-from unittest.mock import ANY
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -472,7 +471,7 @@ def test_variant_manager(app: FastAPI):
         },
     )
     variant_id = res.json()
-    assert res.status_code == 500
+    assert res.status_code == 200
 
     res = client.get(
         f"/v1/studies/{base_study_id}/variants",
@@ -480,26 +479,36 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    # assert len(res.json()) == 1
-    assert res.status_code == 500
+    assert len(res.json()) == 1
+    assert res.status_code == 200
 
     res = client.post(
         f"/v1/studies/{variant_id}/commands",
-        json=[{"action": "CREATE_AREA", "args": {"name": "testZone"}}],
+        json=[
+            {
+                "action": "create_area",
+                "args": {"area_name": "testZone", "metadata": {}},
+            }
+        ],
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res.status_code == 500
+    assert res.status_code == 200
 
     res = client.post(
         f"/v1/studies/{variant_id}/commands",
-        json=[{"action": "CREATE_AREA", "args": {"name": "testZone2"}}],
+        json=[
+            {
+                "action": "create_area",
+                "args": {"area_name": "testZone2", "metadata": {}},
+            }
+        ],
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res.status_code == 500
+    assert res.status_code == 200
 
     res = client.get(
         f"/v1/studies/{variant_id}/commands",
@@ -507,18 +516,18 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    # assert len(res.json()) == 2
-    assert res.status_code == 500
+    assert len(res.json()) == 2
+    assert res.status_code == 200
 
-    # command_id = res.json()[1]["id"]
-    command_id = "someid"
+    command_id = res.json()[1]["id"]
+    # command_id = "someid"
     res = client.put(
         f"/v1/studies/{variant_id}/commands/{command_id}?index=0",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res.status_code == 500
+    assert res.status_code == 200
 
     res = client.get(
         f"/v1/studies/{variant_id}/commands",
@@ -526,8 +535,8 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    # assert res.json()[0]["id"] == command_id
-    assert res.status_code == 500
+    assert res.json()[0]["id"] == command_id
+    assert res.status_code == 200
 
     res = client.delete(
         f"/v1/studies/{variant_id}/commands/{command_id}",
@@ -535,8 +544,8 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    # assert len(res.json()) == 1
-    assert res.status_code == 500
+    # assert len(res.json()) == 1 TODO: remove this line ? delete returns nothing
+    assert res.status_code == 200
 
     res = client.put(
         f"/v1/studies/{variant_id}/generate",
@@ -544,7 +553,7 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res.status_code == 500
+    assert res.status_code == 200
 
     res = client.post(
         f"/v1/studies/{variant_id}/freeze?name=bar",

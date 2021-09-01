@@ -1,8 +1,6 @@
 import io
-import json
 import shutil
 from http import HTTPStatus
-from io import BytesIO
 from pathlib import Path
 from unittest.mock import Mock, call, ANY
 
@@ -17,7 +15,13 @@ from antarest.core.config import (
     StorageConfig,
     WorkspaceConfig,
 )
+from antarest.core.exceptions import (
+    UrlNotMatchJsonDataError,
+)
 from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.requests import (
+    RequestParameters,
+)
 from antarest.core.roles import RoleType
 from antarest.study.main import build_storage
 from antarest.study.model import (
@@ -28,13 +32,6 @@ from antarest.study.model import (
     MatrixIndex,
     StudySimResultDTO,
     StudySimSettingsDTO,
-)
-from antarest.core.exceptions import (
-    IncorrectPathError,
-    UrlNotMatchJsonDataError,
-)
-from antarest.core.requests import (
-    RequestParameters,
 )
 
 ADMIN = JWTUser(

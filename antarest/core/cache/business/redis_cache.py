@@ -1,8 +1,10 @@
 import json
 import logging
 from typing import Optional, List
+
 from pydantic import BaseModel
 from redis.client import Redis
+
 from antarest.core.custom_types import JSON
 from antarest.core.interfaces.cache import ICache
 

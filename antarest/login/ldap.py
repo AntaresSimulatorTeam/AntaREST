@@ -1,8 +1,8 @@
 import logging
+from dataclasses import dataclass
 from typing import List, Optional, Dict
 
 import requests
-from dataclasses import dataclass
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON

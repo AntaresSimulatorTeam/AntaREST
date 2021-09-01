@@ -11,7 +11,7 @@ from antarest.study.model import (
     PatchOutputs,
     PatchLeafDict,
 )
-from antarest.study.storage.rawstudy.patch_service import PatchService
+from antarest.study.storage.patch_service import PatchService
 
 PATCH_CONTENT = """ 
 {

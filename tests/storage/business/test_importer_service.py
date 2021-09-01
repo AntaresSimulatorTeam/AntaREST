@@ -1,24 +1,22 @@
+import io
 import os
 import shutil
 from pathlib import Path
-import io
 from unittest.mock import Mock
 
 import pytest
 
-from antarest.core.config import Config
+from antarest.core.exceptions import (
+    BadZipBinary,
+    StudyValidationError,
+)
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.storage.rawstudy.importer_service import (
     ImporterService,
     fix_study_root,
 )
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
-)
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.core.exceptions import (
-    IncorrectPathError,
-    BadZipBinary,
-    StudyValidationError,
 )
 
 
@@ -46,7 +44,6 @@ def test_import_study(tmp_path: Path) -> None:
 
     study_service = Mock()
     study_service.get.return_value = data
-    study_service.get_study_path.return_value = tmp_path / "other-study"
 
     importer_service = ImporterService(
         study_service=study_service,
@@ -60,7 +57,11 @@ def test_import_study(tmp_path: Path) -> None:
 
     path_zip = Path(filepath_zip)
 
-    md = RawStudy(id="other-study", workspace=DEFAULT_WORKSPACE_NAME)
+    md = RawStudy(
+        id="other-study",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=tmp_path / "other-study",
+    )
     with path_zip.open("rb") as input_file:
         md = importer_service.import_study(md, input_file)
         assert md.path == f"{tmp_path}{os.sep}other-study"

@@ -2,16 +2,15 @@ from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
+import pytest
 from checksumdir import dirhash
 
-import pytest
-
 from antarest.core.config import Config, StorageConfig
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.storage.rawstudy.exporter_service import ExporterService
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 
 
 def build_storage_service(workspace: Path, uuid: str) -> RawStudyService:

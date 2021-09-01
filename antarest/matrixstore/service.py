@@ -1,12 +1,11 @@
-import time
 import csv
+import time
 from datetime import datetime
 from io import BytesIO
+from typing import List, Optional, Tuple
 from zipfile import ZipFile
 
 from fastapi import UploadFile
-from typing import List, Optional, Tuple
-
 
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
@@ -37,7 +36,7 @@ class MatrixService:
         self,
         repo: MatrixRepository,
         repo_dataset: MatrixDataSetRepository,
-        content: MatrixContentRepository,
+        content: MatrixContentRepository,  # TODO: refactor variable name
         user_service: LoginService,
     ):
         self.repo = repo

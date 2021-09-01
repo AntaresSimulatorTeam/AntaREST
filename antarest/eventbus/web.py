@@ -1,9 +1,9 @@
+import dataclasses
 import json
 import logging
 from http import HTTPStatus
 from typing import List
 
-import dataclasses
 from fastapi import FastAPI, Query, HTTPException, Depends
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from starlette.websockets import WebSocket, WebSocketDisconnect

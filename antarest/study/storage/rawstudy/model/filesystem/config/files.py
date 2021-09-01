@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import List, Dict, Any, Tuple, Iterator
+from typing import List, Dict, Any, Tuple
 
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.io.reader import (

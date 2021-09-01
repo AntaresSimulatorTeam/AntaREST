@@ -3,6 +3,7 @@ from typing import Tuple, List, Optional, Union
 from pydantic.main import BaseModel
 
 from antarest.core.custom_types import JSON
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
 
 class GenerationResultInfoDTO(BaseModel):
@@ -14,4 +15,4 @@ class CommandDTO(BaseModel):
     id: Optional[str]
     action: str
     # if args is a list, this mean the command will be mapped to the list of args
-    args: Union[JSON, List[JSON]]
+    args: Union[List[JSON], JSON]

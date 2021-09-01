@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from unittest.mock import Mock
+
 from antarest.core.cache.business.redis_cache import (
     RedisCache,
     RedisCacheElement,

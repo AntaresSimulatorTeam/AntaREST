@@ -1,13 +1,13 @@
 from typing import Callable, Any
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import (
     AreaMultipleMatrixList,
     ThermalMatrixList,
     HydroMatrixList,
     AreaMatrixList,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,

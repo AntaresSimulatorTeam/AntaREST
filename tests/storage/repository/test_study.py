@@ -1,11 +1,11 @@
 from datetime import datetime
 from unittest.mock import Mock
 
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.login.model import User, Group
 from antarest.study.model import (
     Study,

@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from typing import Optional
 
-from dataclasses import dataclass
 from fastapi import HTTPException
 from markupsafe import escape
 
