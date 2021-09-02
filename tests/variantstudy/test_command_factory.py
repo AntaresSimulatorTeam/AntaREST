@@ -65,11 +65,23 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.CREATE_LINK.value,
-            args={"name": "name", "parameters": {}, "series": "series"},
+            args={
+                "area1": "area1",
+                "area2": "area2",
+                "parameters": {},
+                "series": "series",
+            },
         ),
         CommandDTO(
             action=CommandName.CREATE_LINK.value,
-            args=[{"name": "name", "parameters": {}, "series": "series"}],
+            args=[
+                {
+                    "area1": "area1",
+                    "area2": "area2",
+                    "parameters": {},
+                    "series": "series",
+                }
+            ],
         ),
         CommandDTO(
             action=CommandName.UPDATE_LINK.value,
@@ -231,7 +243,9 @@ from antarest.study.storage.variantstudy.model.command.common import (
 )
 @pytest.mark.unit_test
 def test_command_factory(command_dto: CommandDTO):
-    command_factory = CommandFactory(generator_matrix_constants=Mock())
+    command_factory = CommandFactory(
+        generator_matrix_constants=Mock(), matrix_service=Mock()
+    )
     command_list = command_factory.to_icommand(command_dto=command_dto)
     if isinstance(args := command_dto.args, dict):
         assert len(command_list) == 1
@@ -245,7 +259,9 @@ def test_command_factory(command_dto: CommandDTO):
 @pytest.mark.unit_test
 def test_unknown_command():
     with pytest.raises(NotImplementedError):
-        command_factory = CommandFactory(generator_matrix_constants=Mock())
+        command_factory = CommandFactory(
+            generator_matrix_constants=Mock(), matrix_service=Mock()
+        )
         command_factory.to_icommand(
             command_dto=CommandDTO(action="unknown_command", args={})
         )

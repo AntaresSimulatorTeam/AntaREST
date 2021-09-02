@@ -1,5 +1,6 @@
 from typing import List
 
+from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -71,10 +72,15 @@ class CommandFactory:
     Service to convert CommendDTO to Command
     """
 
-    def __init__(self, generator_matrix_constants: GeneratorMatrixConstants):
+    def __init__(
+        self,
+        generator_matrix_constants: GeneratorMatrixConstants,
+        matrix_service: MatrixService,
+    ):
         self.generator_matrix_constants: GeneratorMatrixConstants = (
             generator_matrix_constants
         )
+        self.matrix_service = matrix_service
 
     def to_icommand(self, command_dto: CommandDTO) -> List[ICommand]:
         if command_dto.action == CommandName.CREATE_AREA.value:
@@ -190,17 +196,25 @@ class CommandFactory:
             if isinstance(args := command_dto.args, dict):
                 return [
                     CreateLink(
-                        name=args["name"],
+                        area1=args["area1"],
+                        area2=args["area2"],
                         parameters=args["parameters"],
                         series=args["series"],
+                        command_context=CommandContext(
+                            matrix_service=self.matrix_service
+                        ),
                     )
                 ]
             elif isinstance(args := command_dto.args, list):
                 return [
                     CreateLink(
-                        name=arguments["name"],
+                        area1=arguments["area1"],
+                        area2=arguments["area2"],
                         parameters=arguments["parameters"],
                         series=arguments["series"],
+                        command_context=CommandContext(
+                            matrix_service=self.matrix_service
+                        ),
                     )
                     for arguments in args
                 ]
