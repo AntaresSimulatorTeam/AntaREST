@@ -66,6 +66,26 @@ class CreateLink(ICommand):
 
         return v
 
+    def _create_link_in_config(
+        self, area_from: str, area_to: str, study_data: FileStudy
+    ) -> None:
+        study_data.config.areas[area_from].links[area_to] = Link(
+            filters_synthesis=[
+                step.strip()
+                for step in self.parameters.get(
+                    "filter-synthesis",
+                    FilteringOptions.FILTER_SYNTHESIS.value,
+                ).split(",")
+            ],
+            filters_year=[
+                step.strip()
+                for step in self.parameters.get(
+                    "filter-year-by-year",
+                    FilteringOptions.FILTER_YEAR_BY_YEAR.value,
+                ).split(",")
+            ],
+        )
+
     def apply(self, study_data: FileStudy) -> CommandOutput:
         if self.area1 not in study_data.config.areas:
             return CommandOutput(
@@ -89,38 +109,8 @@ class CreateLink(ICommand):
 
         area_from, area_to = sorted([self.area1, self.area2])
 
-        study_data.config.areas[area_from].links[area_to] = Link(
-            filters_synthesis=[
-                step.strip()
-                for step in self.parameters.get(
-                    "filter-synthesis",
-                    FilteringOptions.FILTER_SYNTHESIS.value,
-                ).split(",")
-            ],
-            filters_year=[
-                step.strip()
-                for step in self.parameters.get(
-                    "filter-year-by-year",
-                    FilteringOptions.FILTER_YEAR_BY_YEAR.value,
-                ).split(",")
-            ],
-        )
-        study_data.config.areas[area_to].links[area_from] = Link(
-            filters_synthesis=[
-                step.strip()
-                for step in self.parameters.get(
-                    "filter-synthesis",
-                    FilteringOptions.FILTER_SYNTHESIS.value,
-                ).split(",")
-            ],
-            filters_year=[
-                step.strip()
-                for step in self.parameters.get(
-                    "filter-year-by-year",
-                    FilteringOptions.FILTER_YEAR_BY_YEAR.value,
-                ).split(",")
-            ],
-        )
+        self._create_link_in_config(area_from, area_to, study_data)
+        self._create_link_in_config(area_to, area_from, study_data)
 
         if (
             study_data.config.path

@@ -244,13 +244,15 @@ class CommandFactory:
             if isinstance(args := command_dto.args, dict):
                 return [
                     RemoveLink(
-                        id=args["id"],
+                        area1=args["area1"],
+                        area2=args["area2"],
                     )
                 ]
             elif isinstance(args := command_dto.args, list):
                 return [
                     RemoveLink(
-                        id=arguments["id"],
+                        area1=arguments["area1"],
+                        area2=arguments["area2"],
                     )
                     for arguments in args
                 ]

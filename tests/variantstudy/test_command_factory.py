@@ -105,11 +105,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.REMOVE_LINK.value,
-            args={"id": "id"},
+            args={"area1": "area1", "area2": "area2"},
         ),
         CommandDTO(
             action=CommandName.REMOVE_LINK.value,
-            args=[{"id": "id"}],
+            args=[{"area1": "area1", "area2": "area2"}],
         ),
         CommandDTO(
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,

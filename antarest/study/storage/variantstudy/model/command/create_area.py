@@ -21,7 +21,7 @@ from antarest.study.storage.variantstudy.model.command_context import (
 
 class CreateArea(ICommand):
     area_name: str
-    metadata: Dict[str, str]
+    metadata: Dict[str, str]  # TODO: use metadata
     command_context: CommandContext
 
     def __init__(self, **data: Any) -> None:
