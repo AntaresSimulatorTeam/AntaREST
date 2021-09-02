@@ -200,3 +200,17 @@ class TestCreateArea:
             str(link[area3]["filter-year-by-year"])
             == parameters["filter-year-by-year"]
         )
+
+        output = create_link_command.apply(
+            study_data=empty_study,
+        )
+        assert not output.status
+
+        output = CreateLink(
+            area1="does_not_exist",
+            area2=area2,
+            parameters={},
+            series=[[0]],
+            command_context=command_context,
+        ).apply(empty_study)
+        assert not output.status
