@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createStyles, makeStyles } from '@material-ui/core';
 import { Components } from '../../common/types';
 import VariantNav from './VariantNavSwitch';
+import VariantTreeView from './VariantTreeView/VariantTreeView';
 
 const useStyles = makeStyles(() => createStyles({
   root: {
@@ -23,7 +24,7 @@ interface PropTypes {
 const VariantView = (props: PropTypes) => {
   const { editable = false, initEditMode = false } = props;
   const items: Components = {
-    'singlestudy:variantDependencies': () => <div style={{ width: '100%', height: '100%' }}>Variant Dependencies</div>,
+    'singlestudy:variantDependencies': () => <VariantTreeView />,
     'singlestudy:createVariant': () => <div style={{ width: '100%', height: '100%' }}>Create variant</div>,
     'singlestudy:editionMode': () => <div style={{ width: '100%', height: '100%' }}>Edition variant</div>,
     'singlestudy:testGeneration': () => <div style={{ width: '100%', height: '100%' }}>Test generation</div>,

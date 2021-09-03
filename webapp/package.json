@@ -45,7 +45,7 @@
     "react": "^16.14.0",
     "react-ace": "^8.1.0",
     "react-app-polyfill": "^1.0.6",
-    "react-d3-tree": "^1.17.1",
+    "react-d3-tree": "^3.1.1",
     "react-dnd": "^10.0.2",
     "react-dnd-html5-backend": "^10.0.2",
     "react-dom": "^16.14.0",
