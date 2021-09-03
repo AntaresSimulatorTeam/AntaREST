@@ -172,9 +172,15 @@ from antarest.study.storage.variantstudy.model.command.common import (
         CommandDTO(
             action=CommandName.CREATE_CLUSTER.value,
             args={
-                "name": "name",
-                "type": "type",
-                "parameters": {},
+                "area_name": "area_name",
+                "cluster_name": "cluster_name",
+                "parameters": {
+                    "group": "group",
+                    "unitcount": "unitcount",
+                    "nominalcapacity": "nominalcapacity",
+                    "marginal-cost": "marginal-cost",
+                    "market-bid-cost": "market-bid-cost",
+                },
                 "prepro": "prepro",
                 "modulation": "modulation",
             },
@@ -183,9 +189,15 @@ from antarest.study.storage.variantstudy.model.command.common import (
             action=CommandName.CREATE_CLUSTER.value,
             args=[
                 {
-                    "name": "name",
-                    "type": "type",
-                    "parameters": {},
+                    "area_name": "area_name",
+                    "cluster_name": "cluster_name",
+                    "parameters": {
+                        "group": "group",
+                        "unitcount": "unitcount",
+                        "nominalcapacity": "nominalcapacity",
+                        "marginal-cost": "marginal-cost",
+                        "market-bid-cost": "market-bid-cost",
+                    },
                     "prepro": "prepro",
                     "modulation": "modulation",
                 }

@@ -327,21 +327,27 @@ class CommandFactory:
             if isinstance(args := command_dto.args, dict):
                 return [
                     CreateCluster(
-                        name=args["name"],
-                        type=args["type"],
+                        area_name=args["area_name"],
+                        cluster_name=args["cluster_name"],
                         parameters=args["parameters"],
                         prepro=args["prepro"],
                         modulation=args["modulation"],
+                        command_context=CommandContext(
+                            matrix_service=self.matrix_service
+                        ),
                     )
                 ]
             elif isinstance(args := command_dto.args, list):
                 return [
                     CreateCluster(
-                        name=arguments["name"],
-                        type=arguments["type"],
+                        area_name=arguments["area_name"],
+                        cluster_name=arguments["cluster_name"],
                         parameters=arguments["parameters"],
                         prepro=arguments["prepro"],
                         modulation=arguments["modulation"],
+                        command_context=CommandContext(
+                            matrix_service=self.matrix_service
+                        ),
                     )
                     for arguments in args
                 ]

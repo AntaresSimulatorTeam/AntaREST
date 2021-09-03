@@ -190,7 +190,7 @@ class CreateLink(ICommand):
 
         return CommandOutput(
             status=True,
-            message=f"Link between '{self.area1}' and {self.area2} created",
+            message=f"Link between '{self.area1}' and '{self.area2}' created",
         )
 
     def revert(self, study_data: FileStudy) -> CommandOutput:
