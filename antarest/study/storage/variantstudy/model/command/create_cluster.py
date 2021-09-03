@@ -83,7 +83,7 @@ class CreateCluster(ICommand):
             )
 
         for cluster in study_data.config.areas[self.area_name].thermals:
-            if cluster.name == self.cluster_name:
+            if cluster.id == self.cluster_name.lower():
                 return CommandOutput(
                     status=False,
                     message=f"Cluster '{self.cluster_name}' already exist",

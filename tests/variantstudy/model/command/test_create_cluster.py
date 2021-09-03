@@ -107,3 +107,27 @@ class TestCreateCluster:
             / cluster_name.lower()
             / "modulation.txt.link"
         ).exists()
+
+        output = CreateCluster.parse_obj(
+            {
+                "area_name": area_name,
+                "cluster_name": cluster_name,
+                "parameters": parameters,
+                "prepro": [[0]],
+                "modulation": [[0]],
+                "command_context": command_context,
+            }
+        ).apply(empty_study)
+        assert not output.status
+
+        output = CreateCluster.parse_obj(
+            {
+                "area_name": "non_existent_area",
+                "cluster_name": cluster_name,
+                "parameters": parameters,
+                "prepro": [[0]],
+                "modulation": [[0]],
+                "command_context": command_context,
+            }
+        ).apply(empty_study)
+        assert not output.status

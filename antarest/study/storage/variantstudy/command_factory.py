@@ -381,13 +381,15 @@ class CommandFactory:
             if isinstance(args := command_dto.args, dict):
                 return [
                     RemoveCluster(
-                        id=args["id"],
+                        area_name=args["area_name"],
+                        cluster_name=args["cluster_name"],
                     )
                 ]
             elif isinstance(args := command_dto.args, list):
                 return [
                     RemoveCluster(
-                        id=arguments["id"],
+                        area_name=arguments["area_name"],
+                        cluster_name=arguments["cluster_name"],
                     )
                     for arguments in args
                 ]

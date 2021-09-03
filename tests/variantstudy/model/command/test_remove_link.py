@@ -26,7 +26,7 @@ from antarest.study.storage.variantstudy.model.command_context import (
 )
 
 
-class TestCreateArea:
+class TestRemoveLink:
     def test_validation(self, empty_study: FileStudy):
         pass
 

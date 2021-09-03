@@ -229,11 +229,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.REMOVE_CLUSTER.value,
-            args={"id": "id"},
+            args={"area_name": "area_name", "cluster_name": "cluster_name"},
         ),
         CommandDTO(
             action=CommandName.REMOVE_CLUSTER.value,
-            args=[{"id": "id"}],
+            args=[{"area_name": "area_name", "cluster_name": "cluster_name"}],
         ),
         CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
