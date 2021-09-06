@@ -19,12 +19,13 @@ interface PropTypes {
     initEditMode?: boolean;
     // eslint-disable-next-line react/require-default-props
     editable?: boolean;
+    studyId: string;
 }
 
 const VariantView = (props: PropTypes) => {
-  const { editable = false, initEditMode = false } = props;
+  const { editable = false, initEditMode = false, studyId } = props;
   const items: Components = {
-    'singlestudy:variantDependencies': () => <VariantTreeView />,
+    'singlestudy:variantDependencies': () => <VariantTreeView studyId={studyId} />,
     'singlestudy:createVariant': () => <div style={{ width: '100%', height: '100%' }}>Create variant</div>,
     'singlestudy:editionMode': () => <div style={{ width: '100%', height: '100%' }}>Edition variant</div>,
     'singlestudy:testGeneration': () => <div style={{ width: '100%', height: '100%' }}>Test generation</div>,

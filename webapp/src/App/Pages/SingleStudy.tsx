@@ -140,7 +140,7 @@ const SingleStudyView = (props: PropTypes) => {
   const navData: { [key: string]: () => JSX.Element } = {
     'singlestudy:informations': () =>
       (study ? <Informations study={study} jobs={studyJobs || []} /> : <div />),
-    'singlestudy:variants': () => <VariantView />,
+    'singlestudy:variants': () => <VariantView studyId={studyId} editable />,
   };
   if (study && !study.archived) {
     navData['singlestudy:treeView'] = () => <StudyView study={study} />;

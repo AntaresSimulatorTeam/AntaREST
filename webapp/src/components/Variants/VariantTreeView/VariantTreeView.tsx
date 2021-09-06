@@ -1,5 +1,5 @@
 import { createStyles, makeStyles, useTheme } from '@material-ui/core';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Tree from 'react-d3-tree';
 import { CustomNodeElementProps, Point, RawNodeDatum } from 'react-d3-tree/lib/types/common';
 import VariantCard from './VariantCard';
@@ -79,10 +79,16 @@ const useStyles = makeStyles(() => createStyles({
   },
 }));
 
-const VariantTreeView = () => {
+interface PropsType {
+  studyId: string;
+}
+
+const VariantTreeView = (props: PropsType) => {
   const yOffset = 150;
   const yClearance = 250;
+  const { studyId } = props;
   const [translate, setTranslte] = useState<Point>({ x: 0, y: 0 });
+  const [data, setData] = useState<Array<RawNodeDatum>>([])
   const classes = useStyles();
   const theme = useTheme();
   const treeContainer = useCallback((node) => {
@@ -94,6 +100,11 @@ const VariantTreeView = () => {
       });
     }
   }, []);
+
+  useEffect(() => {
+      // GET ALL CHILDRENS AND BUILD DATA
+      setData(debugData);
+  }, [studyId])
 
   return (
     <div className={classes.root} ref={treeContainer}>
