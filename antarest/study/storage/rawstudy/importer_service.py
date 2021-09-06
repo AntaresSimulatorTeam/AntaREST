@@ -19,7 +19,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.study.storage.utils import get_study_path
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +46,7 @@ class ImporterService:
         Returns: new study information.
 
         """
-        path_study = get_study_path(metadata)
+        path_study = self.study_service.get_study_path(metadata)
         path_study.mkdir()
 
         try:
@@ -74,7 +73,7 @@ class ImporterService:
         Returns: output id
         """
         path_output = (
-            get_study_path(metadata)
+            self.study_service.get_study_path(metadata)
             / "output"
             / f"imported_output_{str(uuid4())}"
         )

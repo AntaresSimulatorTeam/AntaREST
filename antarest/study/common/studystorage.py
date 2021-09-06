@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import TypeVar, Generic, List
 
 from antarest.study.model import Study, StudySimResultDTO, StudyMetadataDTO
@@ -115,3 +116,14 @@ class IStudyStorageService(ABC, Generic[T]):
 
         """
         raise NotImplementedError()
+
+    def get_study_path(self, metadata: Study) -> Path:
+        """
+        Get study path
+        Args:
+            metadata: study information
+
+        Returns: study path
+
+        """
+        return Path(metadata.path)

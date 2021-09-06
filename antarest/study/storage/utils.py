@@ -64,20 +64,6 @@ def update_antares_info(metadata: Study, studytree: FileStudyTree) -> None:
     studytree.save(study_data_info, ["study"])
 
 
-def get_study_path(metadata: Study) -> Path:
-    """
-    Get study path
-    Args:
-        metadata: study information
-
-    Returns: study path
-
-    """
-    if hasattr(metadata, "path"):
-        return Path(metadata.path)
-    raise StudyTypeUnsupported(metadata.id, metadata.type)
-
-
 def get_study_information(
     study: Study,
     patch_service: PatchService,
@@ -87,7 +73,7 @@ def get_study_information(
 ) -> StudyMetadataDTO:
     file_settings = {}
     file_metadata = {}
-    study_path = get_study_path(study)
+    study_path = Path(study.path)
 
     config = FileStudyTreeConfig(
         study_path=study_path,

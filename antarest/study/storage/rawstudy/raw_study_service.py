@@ -30,7 +30,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 )
 from antarest.study.storage.utils import (
     update_antares_info,
-    get_study_path,
     get_study_information,
 )
 
@@ -84,7 +83,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             metadata: study
             fallback_on_default: use default values in case of failure
         """
-        path = get_study_path(metadata)
+        path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(path, study_id="")
         try:
             raw_meta = study.get(["study", "antares"])
@@ -115,7 +114,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         Returns: list of non integrity inside study
 
         """
-        path = get_study_path(metadata)
+        path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(path, metadata.id)
         return study.check_errors(study.get())
 
@@ -128,7 +127,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         Returns: true if study presents in disk, false else.
 
         """
-        return (get_study_path(metadata) / "study.antares").is_file()
+        return (self.get_study_path(metadata) / "study.antares").is_file()
 
     def get_raw(self, metadata: RawStudy) -> FileStudy:
         """
@@ -140,7 +139,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
         """
         self._check_study_exists(metadata)
-        study_path = get_study_path(metadata)
+        study_path = self.get_study_path(metadata)
         study_config, study_tree = self.study_factory.create_from_fs(
             study_path, metadata.id
         )
@@ -165,7 +164,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
         """
         self._check_study_exists(metadata)
-        study_path = get_study_path(metadata)
+        study_path = self.get_study_path(metadata)
 
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         parts = [item for item in url.split("/") if item]
@@ -221,7 +220,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         """
         empty_study_zip = self.path_resources / "empty-study.zip"
 
-        path_study = get_study_path(metadata)
+        path_study = self.get_study_path(metadata)
         path_study.mkdir()
 
         with ZipFile(empty_study_zip) as zip_output:
@@ -250,8 +249,8 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
         """
         self._check_study_exists(src_meta)
-        src_path = get_study_path(src_meta)
-        dest_path = get_study_path(dest_meta)
+        src_path = self.get_study_path(src_meta)
+        dest_path = self.get_study_path(dest_meta)
 
         shutil.copytree(src_path, dest_path)
 
@@ -285,7 +284,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
         """
         self._check_study_exists(metadata)
-        study_path = get_study_path(metadata)
+        study_path = self.get_study_path(metadata)
         shutil.rmtree(study_path)
         self.remove_from_cache(metadata.id)
 
@@ -299,7 +298,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         Returns:
 
         """
-        study_path = get_study_path(metadata)
+        study_path = self.get_study_path(metadata)
         output_path = study_path / "output" / output_name
         shutil.rmtree(output_path, ignore_errors=True)
         self.remove_from_cache(metadata.id)
@@ -320,7 +319,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         # Get data
         self._check_study_exists(metadata)
 
-        study_path = get_study_path(metadata)
+        study_path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         study.save(new, url.split("/"))  # type: ignore
         del study
@@ -357,7 +356,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         Returns: study output data
 
         """
-        study_path = get_study_path(study)
+        study_path = self.get_study_path(study)
         config, raw_study = self.study_factory.create_from_fs(
             study_path, study.id
         )

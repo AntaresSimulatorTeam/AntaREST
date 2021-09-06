@@ -61,7 +61,6 @@ from antarest.study.storage.rawstudy.raw_study_service import (
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import (
     get_default_workspace_path,
-    get_study_path,
 )
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
@@ -239,7 +238,7 @@ class StudyService:
         logger.info(
             "study %s path asked by user %s", uuid, params.get_user_id()
         )
-        return get_study_path(study)
+        return self.raw_study_service.get_study_path(study)
 
     def create_study(
         self, study_name: str, group_ids: List[str], params: RequestParameters
