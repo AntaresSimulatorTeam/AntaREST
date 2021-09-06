@@ -6,7 +6,7 @@ from unittest.mock import Mock
 from antarest.core.config import Config, SecurityConfig, ExternalAuthConfig
 from antarest.core.roles import RoleType
 from antarest.login.ldap import ExternalUser, LdapService, AuthDTO
-from antarest.login.model import UserCreateDTO, UserLdap, Role, Group
+from antarest.login.model import UserLdap, Role, Group
 
 
 class MockServerHandler(BaseHTTPRequestHandler):

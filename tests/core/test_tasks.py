@@ -2,10 +2,9 @@ import datetime
 from typing import Callable
 from unittest.mock import Mock, ANY, call
 
-import pytest
 from sqlalchemy import create_engine
 
-from antarest.core.config import Config, SecurityConfig
+from antarest.core.config import Config
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
@@ -20,8 +19,6 @@ from antarest.core.tasks.model import (
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import TaskJobService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.login.model import Password, User
-from antarest.login.repository import UserRepository
 
 
 def test_service() -> TaskJobService:

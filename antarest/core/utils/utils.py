@@ -1,5 +1,3 @@
-import os
-import sys
 from glob import escape
 from pathlib import Path
 from typing import IO, Any, Optional

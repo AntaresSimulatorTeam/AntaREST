@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from fastapi import FastAPI, Depends
 from starlette.testclient import TestClient

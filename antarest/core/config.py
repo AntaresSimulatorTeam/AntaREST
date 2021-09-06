@@ -1,10 +1,10 @@
 import logging
 import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
 import yaml
-from dataclasses import dataclass, field
 
 from antarest.core.custom_types import JSON
 from antarest.core.roles import RoleType

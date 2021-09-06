@@ -8,7 +8,6 @@ from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, S
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.login.model import Identity
 
 
 class TaskStatus(Enum):

@@ -10,12 +10,12 @@ from antarest.core.requests import (
 )
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.study.service import StudyService
 from antarest.study.storage.area_management import (
     AreaType,
     AreaCreationDTO,
     AreaPatchUpdateDTO,
 )
-from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
 

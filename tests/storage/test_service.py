@@ -7,15 +7,11 @@ import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.jwt import JWTUser, JWTGroup
-from antarest.core.roles import RoleType
-from antarest.login.model import User, Group
 from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.study.storage.permissions import (
-    StudyPermissionType,
-    assert_permission,
-)
+from antarest.core.roles import RoleType
+from antarest.login.model import User, Group
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -27,8 +23,11 @@ from antarest.study.model import (
     MatrixAggregationResult,
     MatrixIndex,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-
+from antarest.study.service import StudyService, UserHasNotPermissionError
+from antarest.study.storage.permissions import (
+    StudyPermissionType,
+    assert_permission,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     FileStudyTreeConfig,
@@ -36,7 +35,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Link,
     Set,
 )
-from antarest.study.service import StudyService, UserHasNotPermissionError
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
 def test_get_studies_uuid() -> None:

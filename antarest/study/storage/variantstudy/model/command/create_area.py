@@ -12,9 +12,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
 
 
 class CreateArea(ICommand):
@@ -23,7 +20,9 @@ class CreateArea(ICommand):
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
-            command_name=CommandName.CREATE_AREA, version=1, **data
+            command_name=CommandName.CREATE_AREA,
+            version=1,
+            **data,
         )
 
     def _generate_new_thermal_areas_ini(
@@ -44,9 +43,9 @@ class CreateArea(ICommand):
 
         return new_areas
 
-    def apply(
-        self, study_data: FileStudy, command_context: CommandContext
-    ) -> CommandOutput:
+    def apply(self, study_data: FileStudy) -> CommandOutput:
+        if self.command_context.generator_matrix_constants is None:
+            raise ValueError()
 
         if self.area_name in study_data.config.areas.keys():
             return CommandOutput(
@@ -108,17 +107,17 @@ class CreateArea(ICommand):
                     },
                     "common": {
                         "capacity": {
-                            f"maxpower_{self.area_name}": command_context.generator_matrix_constants.get_hydro_max_power(
+                            f"maxpower_{self.area_name}": self.command_context.generator_matrix_constants.get_hydro_max_power(
                                 version=version
                             ),
-                            f"reservoir_{self.area_name}": command_context.generator_matrix_constants.get_hydro_reservoir(
+                            f"reservoir_{self.area_name}": self.command_context.generator_matrix_constants.get_hydro_reservoir(
                                 version=version
                             ),
                         }
                     },
                     "prepro": {
                         self.area_name: {
-                            "energy": command_context.generator_matrix_constants.get_null_matrix(),
+                            "energy": self.command_context.generator_matrix_constants.get_null_matrix(),
                             "prepro": {
                                 "prepro": {"intermonthly-correlation": 0.5}
                             },
@@ -126,8 +125,8 @@ class CreateArea(ICommand):
                     },
                     "series": {
                         self.area_name: {
-                            "mod": command_context.generator_matrix_constants.get_null_matrix(),
-                            "ror": command_context.generator_matrix_constants.get_null_matrix(),
+                            "mod": self.command_context.generator_matrix_constants.get_null_matrix(),
+                            "ror": self.command_context.generator_matrix_constants.get_null_matrix(),
                         },
                     },
                 },
@@ -135,35 +134,35 @@ class CreateArea(ICommand):
                 "load": {
                     "prepro": {
                         self.area_name: {
-                            "conversion": command_context.generator_matrix_constants.get_prepro_conversion(),
-                            "data": command_context.generator_matrix_constants.get_prepro_data(),
-                            "k": command_context.generator_matrix_constants.get_null_matrix(),
+                            "conversion": self.command_context.generator_matrix_constants.get_prepro_conversion(),
+                            "data": self.command_context.generator_matrix_constants.get_prepro_data(),
+                            "k": self.command_context.generator_matrix_constants.get_null_matrix(),
                             "settings": {},
-                            "translation": command_context.generator_matrix_constants.get_null_matrix(),
+                            "translation": self.command_context.generator_matrix_constants.get_null_matrix(),
                         }
                     },
                     "series": {
-                        f"load_{self.area_name}": command_context.generator_matrix_constants.get_null_matrix(),
+                        f"load_{self.area_name}": self.command_context.generator_matrix_constants.get_null_matrix(),
                     },
                 },
                 "misc-gen": {
-                    f"miscgen-{self.area_name}": command_context.generator_matrix_constants.get_null_matrix()
+                    f"miscgen-{self.area_name}": self.command_context.generator_matrix_constants.get_null_matrix()
                 },
                 "reserves": {
-                    self.area_name: command_context.generator_matrix_constants.get_null_matrix()
+                    self.area_name: self.command_context.generator_matrix_constants.get_null_matrix()
                 },
                 "solar": {
                     "prepro": {
                         self.area_name: {
-                            "conversion": command_context.generator_matrix_constants.get_prepro_conversion(),
-                            "data": command_context.generator_matrix_constants.get_prepro_data(),
-                            "k": command_context.generator_matrix_constants.get_null_matrix(),
+                            "conversion": self.command_context.generator_matrix_constants.get_prepro_conversion(),
+                            "data": self.command_context.generator_matrix_constants.get_prepro_data(),
+                            "k": self.command_context.generator_matrix_constants.get_null_matrix(),
                             "settings": {},
-                            "translation": command_context.generator_matrix_constants.get_null_matrix(),
+                            "translation": self.command_context.generator_matrix_constants.get_null_matrix(),
                         }
                     },
                     "series": {
-                        f"solar_{self.area_name}": command_context.generator_matrix_constants.get_null_matrix(),
+                        f"solar_{self.area_name}": self.command_context.generator_matrix_constants.get_null_matrix(),
                     },
                 },
                 "thermal": {
@@ -177,15 +176,15 @@ class CreateArea(ICommand):
                 "wind": {
                     "prepro": {
                         self.area_name: {
-                            "conversion": command_context.generator_matrix_constants.get_prepro_conversion(),
-                            "data": command_context.generator_matrix_constants.get_prepro_data(),
-                            "k": command_context.generator_matrix_constants.get_null_matrix(),
+                            "conversion": self.command_context.generator_matrix_constants.get_prepro_conversion(),
+                            "data": self.command_context.generator_matrix_constants.get_prepro_data(),
+                            "k": self.command_context.generator_matrix_constants.get_null_matrix(),
                             "settings": {},
-                            "translation": command_context.generator_matrix_constants.get_null_matrix(),
+                            "translation": self.command_context.generator_matrix_constants.get_null_matrix(),
                         }
                     },
                     "series": {
-                        f"wind_{self.area_name}": command_context.generator_matrix_constants.get_null_matrix()
+                        f"wind_{self.area_name}": self.command_context.generator_matrix_constants.get_null_matrix()
                     },
                 },
             }
@@ -207,16 +206,18 @@ class CreateArea(ICommand):
             new_area_data["input"]["hydro"]["common"]["capacity"][
                 f"creditmodulations_{self.area_name}"
             ] = (
-                command_context.generator_matrix_constants.get_hydro_credit_modulations()
+                self.command_context.generator_matrix_constants.get_hydro_credit_modulations()
             )
             new_area_data["input"]["hydro"]["common"]["capacity"][
                 f"inflowPattern_{self.area_name}"
             ] = (
-                command_context.generator_matrix_constants.get_hydro_inflow_pattern()
+                self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
             )
             new_area_data["input"]["hydro"]["common"]["capacity"][
                 f"waterValues_{self.area_name}"
-            ] = command_context.generator_matrix_constants.get_null_matrix()
+            ] = (
+                self.command_context.generator_matrix_constants.get_null_matrix()
+            )
 
         study_data.tree.save(new_area_data)
 

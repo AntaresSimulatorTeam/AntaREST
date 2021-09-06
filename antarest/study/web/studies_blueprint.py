@@ -6,8 +6,9 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, File, Depends, Request
 from markupsafe import escape
-from starlette.responses import FileResponse, Response
+from starlette.responses import FileResponse
 
+from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
@@ -21,9 +22,8 @@ from antarest.study.model import (
     StudyDownloadDTO,
     StudyMetadataPatchDTO,
 )
-from antarest.core.config import Config
-from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.service import StudyService
+from antarest.study.storage.study_download_utils import StudyDownloader
 
 logger = logging.getLogger(__name__)
 

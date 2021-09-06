@@ -1,5 +1,6 @@
 import time
-from locust import HttpUser, task, between, SequentialTaskSet
+
+from locust import HttpUser, task, between
 
 
 class AdminUser(HttpUser):

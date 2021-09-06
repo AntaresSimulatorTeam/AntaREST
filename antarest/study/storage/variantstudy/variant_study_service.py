@@ -1,12 +1,17 @@
 import json
-from datetime import datetime
 import logging
+from datetime import datetime
 from pathlib import Path
-from typing import List, Union, Optional
+from typing import List, Union, Optional, cast
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyNotFoundError, StudyTypeUnsupported
+from antarest.core.exceptions import (
+    StudyNotFoundError,
+    StudyTypeUnsupported,
+    NoParentStudyError,
+    CommandNotFoundError,
+)
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.requests import RequestParameters
 from antarest.study.common.studystorage import IStudyStorageService
@@ -14,20 +19,38 @@ from antarest.study.model import (
     Study,
     StudyMetadataDTO,
     StudySimResultDTO,
-    DEFAULT_WORKSPACE_NAME,
+    RawStudy,
 )
-from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.permissions import (
     assert_permission,
     StudyPermissionType,
 )
-
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.utils import get_default_workspace_path
-from antarest.study.storage.variantstudy.model import CommandDTO
+from antarest.study.storage.rawstudy.exporter_service import ExporterService
+from antarest.study.storage.rawstudy.model.filesystem.factory import (
+    FileStudy,
+    StudyFactory,
+)
+from antarest.study.storage.utils import (
+    get_default_workspace_path,
+    get_study_information,
+)
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model import (
+    CommandDTO,
+    GenerationResultInfoDTO,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
+    VariantStudySnapshot,
+)
+from antarest.study.storage.variantstudy.repository import (
+    VariantStudyRepository,
+)
+from antarest.study.storage.variantstudy.variant_snapshot_generator import (
+    VariantSnapshotGenerator,
+    SNAPSHOT_RELATIVE_PATH,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,15 +59,45 @@ logger = logging.getLogger(__name__)
 class VariantStudyService(IStudyStorageService[VariantStudy]):
     def __init__(
         self,
-        repository: StudyMetadataRepository,
+        command_factory: CommandFactory,
+        study_factory: StudyFactory,
+        patch_service: PatchService,
+        exporter_service: ExporterService,
+        repository: VariantStudyRepository,
         event_bus: IEventBus,
         config: Config,
     ):
-        self.raw_study_manager = "RawStudyManager"  # Temporary
-        self.generator = "VariantSnapshotGenerator"
+        self.generator = VariantSnapshotGenerator(
+            command_factory, study_factory, exporter_service
+        )
+        self.study_factory = study_factory
+        self.patch_service = patch_service
         self.repository = repository
         self.event_bus = event_bus
         self.config = config
+
+    def get_command(
+        self, study_id: str, command_id: str, params: RequestParameters
+    ) -> CommandDTO:
+        """
+        Get command lists
+        Args:
+            study_id: study id
+            command_id: command id
+            params: request parameters
+        Returns: List of commands
+        """
+        study = self._get_variant_study(study_id, params)
+
+        try:
+            index = [command.id for command in study.commands].index(
+                command_id
+            )  # Maybe add Try catch for this
+            return cast(CommandDTO, study.commands[index].to_dto())
+        except ValueError:
+            raise CommandNotFoundError(
+                f"Command with id {command_id} not found"
+            )
 
     def get_commands(
         self, study_id: str, params: RequestParameters
@@ -80,6 +133,35 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             )
         )
         self.repository.save(study)
+
+    def append_commands(
+        self,
+        study_id: str,
+        commands: List[CommandDTO],
+        params: RequestParameters,
+    ) -> str:
+        """
+        Add command to list of commands (at the end)
+        Args:
+            study_id: study id
+            commands: list of new command
+            params: request parameters
+        Returns: None
+        """
+        study = self._get_variant_study(study_id, params)
+        first_index = len(study.commands)
+        study.commands.extend(
+            [
+                CommandBlock(
+                    command=command.action,
+                    args=json.dumps(command.args),
+                    index=(first_index + i),
+                )
+                for i, command in enumerate(commands)
+            ]
+        )
+        self.repository.save(study)
+        return str(study.id)
 
     def move_command(
         self,
@@ -148,7 +230,10 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             self.repository.save(study)
 
     def _get_variant_study(
-        self, study_id: str, params: RequestParameters
+        self,
+        study_id: str,
+        params: RequestParameters,
+        raw_study_accepted: bool = False,
     ) -> VariantStudy:
         """
         Get variant study and check permissions
@@ -162,11 +247,49 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         if study is None:
             raise StudyNotFoundError(study_id)
 
-        if not isinstance(study, VariantStudy):
+        if not isinstance(study, VariantStudy) and not raw_study_accepted:
             raise StudyTypeUnsupported(study_id, study.type)
 
         assert_permission(params.user, study, StudyPermissionType.READ)
         return study
+
+    def get_variants_children(
+        self, parent_id: str, params: RequestParameters
+    ) -> List[StudyMetadataDTO]:
+        self._get_variant_study(
+            parent_id, params, raw_study_accepted=True
+        )  # check permissions
+        children = self.repository.get_children(parent_id=parent_id)
+        output_list: List[StudyMetadataDTO] = []
+        for child in children:
+            output_list.append(
+                self.get_study_information(
+                    child,
+                    summary=True,
+                )
+            )
+
+        return output_list
+
+    def get_study_information(
+        self, study: VariantStudy, summary: bool = False
+    ) -> StudyMetadataDTO:
+        """
+        Get information present in study.antares file
+        Args:
+            study: study
+            summary: if true, only retrieve basic info from database
+
+        Returns: study metadata
+
+        """
+        return get_study_information(
+            study,
+            self.patch_service,
+            self.study_factory,
+            logger,
+            summary,
+        )
 
     def get_study(self, study_id: str) -> FileStudy:
         """
@@ -212,7 +335,6 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             id=new_id,
             name=name,
             parent_id=uuid,
-            workspace=study_path,
             path=study_path,
             public_mode=study.public_mode,
             created_at=datetime.now(),
@@ -232,6 +354,37 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             params.get_user_id(),
         )
         return str(variant_study.id)
+
+    def generate(
+        self, variant_study_id: str, params: RequestParameters
+    ) -> GenerationResultInfoDTO:
+
+        # Get variant study
+        variant_study = self._get_variant_study(variant_study_id, params)
+
+        # Get parent study
+        if variant_study.parent_id is None:
+            raise NoParentStudyError(variant_study_id)
+
+        parent_study = self.repository.get(variant_study.parent_id)
+
+        if parent_study is None:
+            raise StudyNotFoundError(variant_study.parent_id)
+
+        # Check parent study permission
+        assert_permission(params.user, parent_study, StudyPermissionType.READ)
+        if not isinstance(parent_study, RawStudy):
+            raise StudyTypeUnsupported(parent_study.id, parent_study.type)
+
+        results = self.generator.generate_snapshot(variant_study, parent_study)
+        if results.success:
+            variant_study.snapshot = VariantStudySnapshot(
+                id=variant_study.id,
+                path=variant_study.path,
+                created_at=datetime.now(),
+            )
+            self.repository.save(variant_study)
+        return results
 
     def create(self, study: VariantStudy) -> VariantStudy:
         """
@@ -265,11 +418,6 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             with_outputs: indicate either to copy the output or not
         Returns: destination study
         """
-        raise NotImplementedError()
-
-    def get_study_information(
-        self, metadata: VariantStudy, summary: bool
-    ) -> StudyMetadataDTO:
         raise NotImplementedError()
 
     def get_raw(self, metadata: VariantStudy) -> FileStudy:
@@ -323,3 +471,6 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         Returns:
         """
         raise NotImplementedError()
+
+    def get_study_path(self, metadata: Study) -> Path:
+        return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH

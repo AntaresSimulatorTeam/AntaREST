@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Callable, NamedTuple, Optional
 from uuid import UUID
 
-
 from antarest.core.config import Config
 from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobStatus, LogType

@@ -3,13 +3,13 @@ from typing import Optional, Dict, List
 
 from pydantic import BaseModel
 
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
 from antarest.study.model import RawStudy, PatchArea, PatchLeafDict
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     Set,
+)
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
 )
 
 

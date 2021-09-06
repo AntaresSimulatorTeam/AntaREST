@@ -7,16 +7,13 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.interfaces.cache import CacheConstants
-from antarest.core.requests import (
-    RequestParameters,
-)
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.core.exceptions import (
     StudyNotFoundError,
+)
+from antarest.core.interfaces.cache import CacheConstants
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
 )
 from antarest.study.storage.utils import get_default_workspace_path
 

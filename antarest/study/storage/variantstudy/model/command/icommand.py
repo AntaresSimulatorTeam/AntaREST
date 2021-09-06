@@ -15,13 +15,15 @@ from antarest.study.storage.variantstudy.model.command_context import (
 class ICommand(ABC, BaseModel):
     command_name: CommandName
     version: int
+    command_context: CommandContext
 
     @abstractmethod
-    def apply(
-        self, study_data: FileStudy, command_context: CommandContext
-    ) -> CommandOutput:
+    def apply(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()
 
     @abstractmethod
     def revert(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()
+
+    class Config:
+        arbitrary_types_allowed = True

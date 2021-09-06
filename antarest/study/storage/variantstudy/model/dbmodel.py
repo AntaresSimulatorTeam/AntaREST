@@ -1,13 +1,11 @@
 import json
 import uuid
 from dataclasses import dataclass
-from enum import Enum
 
+from sqlalchemy import Column, String, ForeignKey, DateTime, Table, Integer  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from sqlalchemy import Column, String, ForeignKey, DateTime, Table, Integer  # type: ignore
-
 from antarest.study.model import (
     Study,
     DEFAULT_WORKSPACE_NAME,
@@ -77,11 +75,9 @@ class VariantStudy(Study):
         ForeignKey("study.id"),
         primary_key=True,
     )
-    path = Column(String(255))
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
     }
-    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
     snapshot = relationship(VariantStudySnapshot, uselist=False)
     commands = relationship(
         CommandBlock,

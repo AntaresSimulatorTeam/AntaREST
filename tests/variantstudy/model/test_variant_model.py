@@ -1,4 +1,3 @@
-import datetime
 from unittest.mock import Mock
 
 from sqlalchemy import create_engine
@@ -9,9 +8,14 @@ from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME
-from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.variantstudy.model import CommandDTO
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.storage.variantstudy.model import (
+    CommandDTO,
+    GenerationResultInfoDTO,
+)
+from antarest.study.storage.variantstudy.repository import (
+    VariantStudyRepository,
+)
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -34,8 +38,11 @@ def test_service() -> VariantStudyService:
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    repository = StudyMetadataRepository()
+    repository = VariantStudyRepository()
     service = VariantStudyService(
+        command_factory=Mock(),
+        study_factory=Mock(),
+        exporter_service=Mock(),
         config=Config(
             storage=StorageConfig(
                 workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
@@ -43,11 +50,13 @@ def test_service() -> VariantStudyService:
         ),
         repository=repository,
         event_bus=Mock(),
+        patch_service=Mock(),
     )
+
     with db():
         # Save a study
         origin_id = "origin-id"
-        origin_study = Study(id=origin_id, name="my-study")
+        origin_study = RawStudy(id=origin_id, name="my-study")
         repository.save(origin_study)
 
         # Create un new variant
@@ -63,14 +72,20 @@ def test_service() -> VariantStudyService:
         service.append_command(saved_id, command_1, SADMIN)
         command_2 = CommandDTO(action="My-action-2", args={"arg_2": "No"})
         service.append_command(saved_id, command_2, SADMIN)
-        command_3 = CommandDTO(action="My-action-3", args={"arg_3": "No"})
-        service.append_command(saved_id, command_3, SADMIN)
-        command_4 = CommandDTO(action="My-action-4", args={"arg_4": "No"})
-        service.append_command(saved_id, command_4, SADMIN)
-        assert len(study.commands) == 4
+        commands = service.get_commands(saved_id, SADMIN)
+        assert len(commands) == 2
 
+        # Append multiple commands
+        command_3 = CommandDTO(action="My-action-3", args={"arg_3": "No"})
+        command_4 = CommandDTO(action="My-action-4", args={"arg_4": "No"})
+        service.append_commands(saved_id, [command_3, command_4], SADMIN)
         commands = service.get_commands(saved_id, SADMIN)
         assert len(commands) == 4
+
+        # Get command
+        assert commands[0] == service.get_command(
+            saved_id, commands[0].id, SADMIN
+        )
 
         # Remove command
         service.remove_command(saved_id, commands[2].id, SADMIN)
@@ -97,3 +112,12 @@ def test_service() -> VariantStudyService:
         )
         commands = service.get_commands(saved_id, SADMIN)
         assert commands[0].action == "My-action-5"
+
+        # Generate
+        service.generator.generate_snapshot = Mock()
+        expected_result = GenerationResultInfoDTO(success=True, details=[])
+        service.generator.generate_snapshot.return_value = expected_result
+        results = service.generate(saved_id, SADMIN)
+        assert results == expected_result
+        assert study.snapshot.id == study.id
+        assert study.snapshot.path == study.path

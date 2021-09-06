@@ -8,25 +8,24 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.model import (
     MatrixAggregationResult,
-    RawStudy,
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
     StudyDownloadType,
     MatrixIndex,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+    Area,
+)
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
     FilterError,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-    Area,
 )
 
 logger = logging.getLogger(__name__)

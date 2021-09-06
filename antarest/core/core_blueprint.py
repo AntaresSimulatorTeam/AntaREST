@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
+
 from fastapi import APIRouter
 
 from antarest import __version__

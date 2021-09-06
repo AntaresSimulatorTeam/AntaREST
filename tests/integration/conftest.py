@@ -1,6 +1,6 @@
 import os
-import shutil
 from pathlib import Path
+from unittest.mock import Mock
 from zipfile import ZipFile
 
 import jinja2
@@ -9,7 +9,8 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine
 
-from antarest import main
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.dbmodel import Base
 from antarest.main import fastapi_app
 from tests.conftest import project_dir
 

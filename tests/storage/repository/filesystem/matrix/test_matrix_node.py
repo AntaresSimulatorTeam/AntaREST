@@ -4,7 +4,7 @@ from typing import Optional, List
 from unittest.mock import Mock
 
 from antarest.core.custom_types import JSON
-from antarest.matrixstore.model import MatrixDTO, MatrixContent
+from antarest.matrixstore.model import MatrixContent
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -15,7 +15,6 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
-
 
 MOCK_MATRIX_JSON = {
     "index": ["1", "2"],

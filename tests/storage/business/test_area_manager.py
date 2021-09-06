@@ -1,23 +1,23 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+from antarest.study.model import RawStudy, Patch, PatchLeafDict, PatchArea
 from antarest.study.storage.area_management import (
     AreaManager,
     AreaType,
     AreaPatchUpdateDTO,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.study.model import RawStudy, Patch, PatchLeafDict, PatchArea
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
     Set,
 )
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
+)
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
 )
 
 

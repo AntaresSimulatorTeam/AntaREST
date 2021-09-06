@@ -1,12 +1,10 @@
+import dataclasses
 import json
 import logging
-from typing import List, Optional
+from typing import List
 
-import dataclasses
-import redis
 from redis.client import Redis
 
-from antarest.core.config import RedisConfig
 from antarest.core.interfaces.eventbus import Event
 from antarest.eventbus.business.interfaces import IEventBusBackend
 

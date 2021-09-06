@@ -4,11 +4,11 @@ import pytest
 
 from antarest.core.custom_types import SUB_JSON
 from antarest.core.jwt import JWTUser, JWTGroup
-from antarest.core.roles import RoleType
-from antarest.study.service import StudyService
 from antarest.core.requests import (
     RequestParameters,
 )
+from antarest.core.roles import RoleType
+from antarest.study.service import StudyService
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 
 ADMIN = JWTUser(
