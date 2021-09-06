@@ -75,8 +75,6 @@ class VariantStudy(Study):
         ForeignKey("study.id"),
         primary_key=True,
     )
-    path = Column(String(255))
-    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
     }

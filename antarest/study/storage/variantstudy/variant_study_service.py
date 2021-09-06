@@ -334,7 +334,6 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             id=new_id,
             name=name,
             parent_id=uuid,
-            workspace=study_path,
             path=study_path,
             public_mode=study.public_mode,
             created_at=datetime.now(),

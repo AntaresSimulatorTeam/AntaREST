@@ -520,7 +520,7 @@ def test_variant_manager(app: FastAPI):
     assert res.status_code == 200
 
     command_id = res.json()[1]["id"]
-    # command_id = "someid"
+
     res = client.put(
         f"/v1/studies/{variant_id}/commands/{command_id}?index=0",
         headers={
@@ -544,7 +544,7 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    # assert len(res.json()) == 1 TODO: remove this line ? delete returns nothing
+
     assert res.status_code == 200
 
     res = client.put(

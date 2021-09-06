@@ -17,19 +17,6 @@ class VariantStudyRepository(StudyMetadataRepository):
         studies: List[VariantStudy] = (
             db.session.query(VariantStudy)
             .filter(VariantStudy.parent_id == parent_id)
-            .all()
+            .first()
         )
         return studies
-
-    def get_command(
-        self, study_id: str, command_id: str
-    ) -> Optional[CommandBlock]:
-        command: CommandBlock = (
-            db.session.query(CommandBlock)
-            .filter(
-                CommandBlock.study_id == study_id
-                and CommandBlock.id == command_id
-            )
-            .all()
-        )
-        return command

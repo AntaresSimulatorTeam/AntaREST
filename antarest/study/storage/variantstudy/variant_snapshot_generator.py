@@ -40,7 +40,7 @@ class VariantSnapshotGenerator:
 
         # Copy parent study to dest
         src_path = Path(parent_study.path)
-        dest_path = Path(variant_study.path)  # Workspace or path ?
+        dest_path = Path(variant_study.path / "snapshot")
 
         self.exporter_service.export_flat(src_path, dest_path)
 
