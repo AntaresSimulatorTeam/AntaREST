@@ -18,6 +18,8 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
 )
 
+SNAPSHOT_RELATIVE_PATH = "snapshot"
+
 
 class VariantSnapshotGenerator:
     """
@@ -40,7 +42,7 @@ class VariantSnapshotGenerator:
 
         # Copy parent study to dest
         src_path = Path(parent_study.path)
-        dest_path = Path(variant_study.path / "snapshot")
+        dest_path = Path(variant_study.path) / SNAPSHOT_RELATIVE_PATH
 
         self.exporter_service.export_flat(src_path, dest_path)
 

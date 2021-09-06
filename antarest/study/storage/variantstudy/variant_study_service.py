@@ -50,6 +50,7 @@ from antarest.study.storage.variantstudy.repository import (
 )
 from antarest.study.storage.variantstudy.variant_snapshot_generator import (
     VariantSnapshotGenerator,
+    SNAPSHOT_RELATIVE_PATH,
 )
 
 logger = logging.getLogger(__name__)
@@ -470,3 +471,6 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         Returns:
         """
         raise NotImplementedError()
+
+    def get_study_path(self, metadata: Study) -> Path:
+        return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
