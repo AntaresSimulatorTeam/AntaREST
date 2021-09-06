@@ -1,7 +1,5 @@
 from typing import Dict, Any, Optional
 
-from pydantic import validator
-
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -14,9 +12,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
 
 
 class CreateArea(ICommand):
