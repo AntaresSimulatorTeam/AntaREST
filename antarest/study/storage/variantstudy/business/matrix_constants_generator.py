@@ -18,6 +18,7 @@ HYDRO_COMMON_CAPACITY_CREDIT_MODULATION = (
 PREPRO_CONVERSION = "prepro/conversion"
 PREPRO_DATA = "prepro/data"
 NULL_MATRIX_NAME = "null_matrix"
+MATRIX_PROTOCOL_PREFIX = "matrix://"
 
 
 class GeneratorMatrixConstants:
@@ -61,31 +62,40 @@ class GeneratorMatrixConstants:
     def get_hydro_max_power(self, version: int) -> str:
         if version > 650:
             return (
-                "matrix://" + self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
+                MATRIX_PROTOCOL_PREFIX
+                + self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
             )
         else:
-            return "matrix://" + self.hashes[NULL_MATRIX_NAME]
+            return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]
 
     def get_hydro_reservoir(self, version: int) -> str:
         if version > 650:
             return (
-                "matrix://" + self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
+                MATRIX_PROTOCOL_PREFIX
+                + self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
             )
-        return "matrix://" + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6]
+        return (
+            MATRIX_PROTOCOL_PREFIX
+            + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6]
+        )
 
     def get_hydro_credit_modulations(self) -> str:
         return (
-            "matrix://" + self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION]
+            MATRIX_PROTOCOL_PREFIX
+            + self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION]
         )
 
     def get_hydro_inflow_pattern(self) -> str:
-        return "matrix://" + self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN]
+        return (
+            MATRIX_PROTOCOL_PREFIX
+            + self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN]
+        )
 
     def get_prepro_conversion(self) -> str:
-        return "matrix://" + self.hashes[PREPRO_CONVERSION]
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[PREPRO_CONVERSION]
 
     def get_prepro_data(self) -> str:
-        return "matrix://" + self.hashes[PREPRO_DATA]
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[PREPRO_DATA]
 
     def get_null_matrix(self) -> str:
-        return "matrix://" + self.hashes[NULL_MATRIX_NAME]
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]
