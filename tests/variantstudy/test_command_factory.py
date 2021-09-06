@@ -2,6 +2,9 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -231,7 +234,9 @@ from antarest.study.storage.variantstudy.model.command.common import (
 )
 @pytest.mark.unit_test
 def test_command_factory(command_dto: CommandDTO):
-    command_factory = CommandFactory(generator_matrix_constants=Mock())
+    command_factory = CommandFactory(
+        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants)
+    )
     command_list = command_factory.to_icommand(command_dto=command_dto)
     if isinstance(args := command_dto.args, dict):
         assert len(command_list) == 1
@@ -245,7 +250,9 @@ def test_command_factory(command_dto: CommandDTO):
 @pytest.mark.unit_test
 def test_unknown_command():
     with pytest.raises(NotImplementedError):
-        command_factory = CommandFactory(generator_matrix_constants=Mock())
+        command_factory = CommandFactory(
+            generator_matrix_constants=Mock(spec=GeneratorMatrixConstants)
+        )
         command_factory.to_icommand(
             command_dto=CommandDTO(action="unknown_command", args={})
         )

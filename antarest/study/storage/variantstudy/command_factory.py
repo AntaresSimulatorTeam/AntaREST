@@ -73,8 +73,8 @@ class CommandFactory:
     """
 
     def __init__(self, generator_matrix_constants: GeneratorMatrixConstants):
-        self.generator_matrix_constants: GeneratorMatrixConstants = (
-            generator_matrix_constants
+        self.command_context = CommandContext(
+            generator_matrix_constants=generator_matrix_constants
         )
 
     def _to_single_icommand(self, action: str, args: JSON) -> ICommand:
@@ -83,9 +83,7 @@ class CommandFactory:
             return CreateArea(
                 area_name=args["area_name"],
                 metadata=args["metadata"],
-                command_context=CommandContext(
-                    generator_matrix_constants=self.generator_matrix_constants
-                ),
+                command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_AREA.value:
@@ -93,17 +91,20 @@ class CommandFactory:
                 id=args["id"],
                 name=args["name"],
                 metadata=args["metadata"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.REMOVE_AREA.value:
             return RemoveArea(
                 id=args["id"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.CREATE_DISTRICT.value:
             return CreateDistrict(
                 id=args["id"],
                 metadata=args["metadata"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_DISTRICT.value:
@@ -112,11 +113,13 @@ class CommandFactory:
                 name=args["name"],
                 metadata=args["metadata"],
                 set=args["set"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.REMOVE_DISTRICT.value:
             return RemoveDistrict(
                 id=args["id"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.CREATE_LINK.value:
@@ -124,6 +127,7 @@ class CommandFactory:
                 name=args["name"],
                 parameters=args["parameters"],
                 series=args["series"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_LINK.value:
@@ -132,11 +136,13 @@ class CommandFactory:
                 name=args["name"],
                 parameters=args["parameters"],
                 series=args["series"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.REMOVE_LINK.value:
             return RemoveLink(
                 id=args["id"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.CREATE_BINDING_CONSTRAINT.value:
@@ -147,6 +153,7 @@ class CommandFactory:
                 operator=args["operator"],
                 coeffs=args["coeffs"],
                 values=args["values"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_BINDING_CONSTRAINT.value:
@@ -158,11 +165,13 @@ class CommandFactory:
                 operator=args["operator"],
                 coeffs=args["coeffs"],
                 values=args["values"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.REMOVE_BINDING_CONSTRAINT.value:
             return RemoveBindingConstraint(
                 id=args["id"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.CREATE_CLUSTER.value:
@@ -172,6 +181,7 @@ class CommandFactory:
                 parameters=args["parameters"],
                 prepro=args["prepro"],
                 modulation=args["modulation"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_CLUSTER.value:
@@ -182,23 +192,27 @@ class CommandFactory:
                 parameters=args["parameters"],
                 prepro=args["prepro"],
                 modulation=args["modulation"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.REMOVE_CLUSTER.value:
             return RemoveCluster(
                 id=args["id"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.REPLACE_MATRIX.value:
             return ReplaceMatrix(
                 target_element=args["target_element"],
                 matrix=args["matrix"],
+                command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_CONFIG.value:
             return UpdateConfig(
                 target=args["target"],
                 data=args["data"],
+                command_context=self.command_context,
             )
         raise NotImplementedError()
 
