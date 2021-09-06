@@ -1,5 +1,6 @@
 from typing import List
 
+from antarest.core.custom_types import JSON
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -76,329 +77,142 @@ class CommandFactory:
             generator_matrix_constants
         )
 
+    def _to_single_icommand(self, action: str, args: JSON) -> ICommand:
+        assert isinstance(args, dict)
+        if action == CommandName.CREATE_AREA.value:
+            return CreateArea(
+                area_name=args["area_name"],
+                metadata=args["metadata"],
+                command_context=CommandContext(
+                    generator_matrix_constants=self.generator_matrix_constants
+                ),
+            )
+
+        elif action == CommandName.UPDATE_AREA.value:
+            return UpdateArea(
+                id=args["id"],
+                name=args["name"],
+                metadata=args["metadata"],
+            )
+
+        elif action == CommandName.REMOVE_AREA.value:
+            return RemoveArea(
+                id=args["id"],
+            )
+
+        elif action == CommandName.CREATE_DISTRICT.value:
+            return CreateDistrict(
+                id=args["id"],
+                metadata=args["metadata"],
+            )
+
+        elif action == CommandName.UPDATE_DISTRICT.value:
+            return UpdateDistrict(
+                id=args["id"],
+                name=args["name"],
+                metadata=args["metadata"],
+                set=args["set"],
+            )
+
+        elif action == CommandName.REMOVE_DISTRICT.value:
+            return RemoveDistrict(
+                id=args["id"],
+            )
+
+        elif action == CommandName.CREATE_LINK.value:
+            return CreateLink(
+                name=args["name"],
+                parameters=args["parameters"],
+                series=args["series"],
+            )
+
+        elif action == CommandName.UPDATE_LINK.value:
+            return UpdateLink(
+                id=args["id"],
+                name=args["name"],
+                parameters=args["parameters"],
+                series=args["series"],
+            )
+
+        elif action == CommandName.REMOVE_LINK.value:
+            return RemoveLink(
+                id=args["id"],
+            )
+
+        elif action == CommandName.CREATE_BINDING_CONSTRAINT.value:
+            return CreateBindingConstraint(
+                name=args["name"],
+                enabled=args["enabled"],
+                time_step=args["time_step"],
+                operator=args["operator"],
+                coeffs=args["coeffs"],
+                values=args["values"],
+            )
+
+        elif action == CommandName.UPDATE_BINDING_CONSTRAINT.value:
+            return UpdateBindingConstraint(
+                id=args["id"],
+                name=args["name"],
+                enabled=args["enabled"],
+                time_step=args["time_step"],
+                operator=args["operator"],
+                coeffs=args["coeffs"],
+                values=args["values"],
+            )
+
+        elif action == CommandName.REMOVE_BINDING_CONSTRAINT.value:
+            return RemoveBindingConstraint(
+                id=args["id"],
+            )
+
+        elif action == CommandName.CREATE_CLUSTER.value:
+            return CreateCluster(
+                name=args["name"],
+                type=args["type"],
+                parameters=args["parameters"],
+                prepro=args["prepro"],
+                modulation=args["modulation"],
+            )
+
+        elif action == CommandName.UPDATE_CLUSTER.value:
+            return UpdateCluster(
+                id=args["id"],
+                name=args["name"],
+                type=args["type"],
+                parameters=args["parameters"],
+                prepro=args["prepro"],
+                modulation=args["modulation"],
+            )
+
+        elif action == CommandName.REMOVE_CLUSTER.value:
+            return RemoveCluster(
+                id=args["id"],
+            )
+
+        elif action == CommandName.REPLACE_MATRIX.value:
+            return ReplaceMatrix(
+                target_element=args["target_element"],
+                matrix=args["matrix"],
+            )
+
+        elif action == CommandName.UPDATE_CONFIG.value:
+            return UpdateConfig(
+                target=args["target"],
+                data=args["data"],
+            )
+        raise NotImplementedError()
+
     def to_icommand(self, command_dto: CommandDTO) -> List[ICommand]:
-        if command_dto.action == CommandName.CREATE_AREA.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    CreateArea(
-                        area_name=args["area_name"],
-                        metadata=args["metadata"],
-                        command_context=CommandContext(
-                            generator_matrix_constants=self.generator_matrix_constants
-                        ),
-                    )
-                ]
+        args = command_dto.args
+        if isinstance(args, dict):
+            return [self._to_single_icommand(command_dto.action, args)]
 
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    CreateArea(
-                        area_name=arguments["area_name"],
-                        metadata=arguments["metadata"],
-                        command_context=CommandContext(
-                            generator_matrix_constants=self.generator_matrix_constants
-                        ),
-                    )
-                    for arguments in args
-                ]
-        elif command_dto.action == CommandName.UPDATE_AREA.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    UpdateArea(
-                        id=args["id"],
-                        name=args["name"],
-                        metadata=args["metadata"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    UpdateArea(
-                        id=arguments["id"],
-                        name=arguments["name"],
-                        metadata=arguments["metadata"],
-                    )
-                    for arguments in args
-                ]
-        elif command_dto.action == CommandName.REMOVE_AREA.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    RemoveArea(
-                        id=args["id"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    RemoveArea(
-                        id=arguments["id"],
-                    )
-                    for arguments in args
-                ]
+        elif isinstance(args, list):
+            output_list = []
+            for argument in args:
+                output_list.append(
+                    self._to_single_icommand(command_dto.action, argument)
+                )
+            return output_list
 
-        elif command_dto.action == CommandName.CREATE_DISTRICT.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    CreateDistrict(
-                        id=args["id"],
-                        metadata=args["metadata"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    CreateDistrict(
-                        id=arguments["id"],
-                        metadata=arguments["metadata"],
-                    )
-                    for arguments in args
-                ]
-
-        elif command_dto.action == CommandName.UPDATE_DISTRICT.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    UpdateDistrict(
-                        id=args["id"],
-                        name=args["name"],
-                        metadata=args["metadata"],
-                        set=args["set"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    UpdateDistrict(
-                        id=arguments["id"],
-                        name=arguments["name"],
-                        metadata=arguments["metadata"],
-                        set=arguments["set"],
-                    )
-                    for arguments in args
-                ]
-
-        elif command_dto.action == CommandName.REMOVE_DISTRICT.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    RemoveDistrict(
-                        id=args["id"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    RemoveDistrict(
-                        id=arguments["id"],
-                    )
-                    for arguments in args
-                ]
-
-        elif command_dto.action == CommandName.CREATE_LINK.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    CreateLink(
-                        name=args["name"],
-                        parameters=args["parameters"],
-                        series=args["series"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    CreateLink(
-                        name=arguments["name"],
-                        parameters=arguments["parameters"],
-                        series=arguments["series"],
-                    )
-                    for arguments in args
-                ]
-
-        elif command_dto.action == CommandName.UPDATE_LINK.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    UpdateLink(
-                        id=args["id"],
-                        name=args["name"],
-                        parameters=args["parameters"],
-                        series=args["series"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    UpdateLink(
-                        id=arguments["id"],
-                        name=arguments["name"],
-                        parameters=arguments["parameters"],
-                        series=arguments["series"],
-                    )
-                    for arguments in args
-                ]
-
-        elif command_dto.action == CommandName.REMOVE_LINK.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    RemoveLink(
-                        id=args["id"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    RemoveLink(
-                        id=arguments["id"],
-                    )
-                    for arguments in args
-                ]
-
-        elif command_dto.action == CommandName.CREATE_BINDING_CONSTRAINT.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    CreateBindingConstraint(
-                        name=args["name"],
-                        enabled=args["enabled"],
-                        time_step=args["time_step"],
-                        operator=args["operator"],
-                        coeffs=args["coeffs"],
-                        values=args["values"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    CreateBindingConstraint(
-                        name=arguments["name"],
-                        enabled=arguments["enabled"],
-                        time_step=arguments["time_step"],
-                        operator=arguments["operator"],
-                        coeffs=arguments["coeffs"],
-                        values=arguments["values"],
-                    )
-                    for arguments in args
-                ]
-
-        elif command_dto.action == CommandName.UPDATE_BINDING_CONSTRAINT.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    UpdateBindingConstraint(
-                        id=args["id"],
-                        name=args["name"],
-                        enabled=args["enabled"],
-                        time_step=args["time_step"],
-                        operator=args["operator"],
-                        coeffs=args["coeffs"],
-                        values=args["values"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    UpdateBindingConstraint(
-                        id=arguments["id"],
-                        name=arguments["name"],
-                        enabled=arguments["enabled"],
-                        time_step=arguments["time_step"],
-                        operator=arguments["operator"],
-                        coeffs=arguments["coeffs"],
-                        values=arguments["values"],
-                    )
-                    for arguments in args
-                ]
-
-        elif command_dto.action == CommandName.REMOVE_BINDING_CONSTRAINT.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    RemoveBindingConstraint(
-                        id=args["id"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    RemoveBindingConstraint(
-                        id=arguments["id"],
-                    )
-                    for arguments in args
-                ]
-        elif command_dto.action == CommandName.CREATE_CLUSTER.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    CreateCluster(
-                        name=args["name"],
-                        type=args["type"],
-                        parameters=args["parameters"],
-                        prepro=args["prepro"],
-                        modulation=args["modulation"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    CreateCluster(
-                        name=arguments["name"],
-                        type=arguments["type"],
-                        parameters=arguments["parameters"],
-                        prepro=arguments["prepro"],
-                        modulation=arguments["modulation"],
-                    )
-                    for arguments in args
-                ]
-
-        elif command_dto.action == CommandName.UPDATE_CLUSTER.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    UpdateCluster(
-                        id=args["id"],
-                        name=args["name"],
-                        type=args["type"],
-                        parameters=args["parameters"],
-                        prepro=args["prepro"],
-                        modulation=args["modulation"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    UpdateCluster(
-                        id=arguments["id"],
-                        name=arguments["name"],
-                        type=arguments["type"],
-                        parameters=arguments["parameters"],
-                        prepro=arguments["prepro"],
-                        modulation=arguments["modulation"],
-                    )
-                    for arguments in args
-                ]
-
-        elif command_dto.action == CommandName.REMOVE_CLUSTER.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    RemoveCluster(
-                        id=args["id"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    RemoveCluster(
-                        id=arguments["id"],
-                    )
-                    for arguments in args
-                ]
-        elif command_dto.action == CommandName.REPLACE_MATRIX.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    ReplaceMatrix(
-                        target_element=args["target_element"],
-                        matrix=args["matrix"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    ReplaceMatrix(
-                        target_element=arguments["target_element"],
-                        matrix=arguments["matrix"],
-                    )
-                    for arguments in args
-                ]
-        elif command_dto.action == CommandName.UPDATE_CONFIG.value:
-            if isinstance(args := command_dto.args, dict):
-                return [
-                    UpdateConfig(
-                        target=args["target"],
-                        data=args["data"],
-                    )
-                ]
-            elif isinstance(args := command_dto.args, list):
-                return [
-                    UpdateConfig(
-                        target=arguments["target"],
-                        data=arguments["data"],
-                    )
-                    for arguments in args
-                ]
         raise NotImplementedError()
