@@ -17,6 +17,6 @@ class VariantStudyRepository(StudyMetadataRepository):
         studies: List[VariantStudy] = (
             db.session.query(VariantStudy)
             .filter(VariantStudy.parent_id == parent_id)
-            .first()
+            .all()
         )
         return studies
