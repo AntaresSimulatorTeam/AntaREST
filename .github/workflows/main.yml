@@ -24,9 +24,9 @@ jobs:
         uses: psf/black@stable
         with:
           options: --check --diff
-      - name: Check Typing (mypy)
-        run: |
-          mypy
+#      - name: Check Typing (mypy)
+#        run: |
+#          mypy
 
   python-test:
     runs-on: ${{ matrix.os }}

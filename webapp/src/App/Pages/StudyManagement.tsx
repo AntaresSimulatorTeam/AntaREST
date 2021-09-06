@@ -137,7 +137,6 @@ const StudyManagement = (props: PropTypes) => {
       default:
         break;
     }
-    console.log(ev);
   };
 
   useEffect(() => {

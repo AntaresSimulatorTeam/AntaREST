@@ -1,4 +1,10 @@
-from antarest.study.storage.rawstudy.io.reader import SetsIniReader
+from copy import deepcopy
+from typing import Dict, Any
+
+from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.io.writer.ini_writer import (
+    IniWriter,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -11,7 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 
 
 class GeneralData(IniFileNode):
-    TYPES = {
+    TYPES: Dict[str, Dict[str, Any]] = {
         "general": {
             "mode": str,
             "horizon": (int, str),
@@ -53,7 +59,6 @@ class GeneralData(IniFileNode):
         "optimization": {
             "simplex-range": str,
             "transmission-capacities": bool,
-            "link-type": str,
             "include-constraints": bool,
             "include-hurdlecosts": bool,
             "include-tc-minstablepower": bool,
@@ -65,7 +70,6 @@ class GeneralData(IniFileNode):
             "include-exportmps": bool,
         },
         "other preferences": {
-            "initial-reservoir-levels": str,
             "power-fluctuations": str,
             "shedding-strategy": str,
             "shedding-policy": str,
@@ -93,10 +97,31 @@ class GeneralData(IniFileNode):
     }
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+        types = deepcopy(GeneralData.TYPES)
+        if config.version >= 650:
+            types["other preferences"]["initial-reservoir-levels"] = str
+        if config.version >= 700:
+            types["optimization"]["link-type"] = str
+        if config.version >= 710:
+            types["general"]["thematic-trimming"] = bool
+            types["general"]["geographic-trimming"] = bool
+            del types["general"]["filtering"]
+        if config.version >= 720:
+            types["other preferences"]["hydro-pricing-mode"] = str
+        if config.version >= 800:
+            types["other preferences"]["hydro-heuristic-policy"] = str
+            types["optimization"]["include-exportstructure"] = bool
+            types["optimization"]["include-unfeasible-problem-behavior"] = str
+            types["general"]["custom-scenario"] = bool
+            del types["general"]["custom-ts-numbers"]
+        if config.version >= 810:
+            types["other preferences"]["renewable-generation-modelling"] = str
+
         IniFileNode.__init__(
             self,
             context,
             config,
-            types=GeneralData.TYPES,
-            reader=SetsIniReader(),
+            types=types,
+            reader=MultipleSameKeysIniReader(),
+            writer=IniWriter(special_keys=["playlist_year_weight"]),
         )

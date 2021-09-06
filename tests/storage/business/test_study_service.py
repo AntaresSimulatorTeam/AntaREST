@@ -7,6 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
+from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -31,7 +32,6 @@ def build_config(study_path: Path):
 
 @pytest.mark.unit_test
 def test_get(tmp_path: str, project_path) -> None:
-
     """
     path_to_studies
     |_study1 (d)
@@ -62,6 +62,7 @@ def test_get(tmp_path: str, project_path) -> None:
 
     study_service = RawStudyService(
         config=build_config(path_to_studies),
+        cache=Mock(),
         study_factory=study_factory,
         path_resources=project_path / "resources",
         patch_service=Mock(),
@@ -78,6 +79,50 @@ def test_get(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
+def test_get_cache(tmp_path: str) -> None:
+
+    # Create folders
+    path_to_studies = Path(tmp_path)
+    (path_to_studies / "study1").mkdir()
+    (path_to_studies / "myfile").touch()
+    path_study = path_to_studies / "study2.py"
+    path_study.mkdir()
+    (path_study / "settings").mkdir()
+    (path_study / "study.antares").touch()
+    path = path_study / "settings"
+
+    data = {"titi": 43}
+    study = Mock()
+    study.get.return_value = data
+
+    study_factory = Mock()
+    study_factory.create_from_fs.return_value = (None, study)
+
+    cache = Mock()
+    cache.get.return_value = None
+
+    metadata = RawStudy(
+        id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
+    )
+    study_service = RawStudyService(
+        config=Mock(),
+        cache=cache,
+        study_factory=study_factory,
+        path_resources="",
+        patch_service=Mock(),
+    )
+
+    cache_id = f"{metadata.id}/{CacheConstants.RAW_STUDY}"
+    assert study_service.get(metadata=metadata, url="", depth=-1) == data
+    cache.get.assert_called_with(cache_id)
+    cache.put.assert_called_with(cache_id, data)
+
+    cache.get.return_value = data
+    assert study_service.get(metadata=metadata, url="", depth=-1) == data
+    cache.get.assert_called_with(cache_id)
+
+
+@pytest.mark.unit_test
 def test_check_errors():
     study = Mock()
     study.check_errors.return_value = ["Hello"]
@@ -87,6 +132,7 @@ def test_check_errors():
 
     study_service = RawStudyService(
         config=build_config(Path()),
+        cache=Mock(),
         study_factory=factory,
         path_resources=Path(),
         patch_service=Mock(),
@@ -102,7 +148,6 @@ def test_check_errors():
 
 @pytest.mark.unit_test
 def test_assert_study_exist(tmp_path: str, project_path) -> None:
-
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
     (tmp / "study.antares").touch()
@@ -117,6 +162,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
     # Test & Verify
     study_service = RawStudyService(
         config=build_config(path_to_studies),
+        cache=Mock(),
         study_factory=Mock(),
         path_resources=project_path / "resources",
         patch_service=Mock(),
@@ -145,6 +191,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
     # Test & Verify
     study_service = RawStudyService(
         config=build_config(path_to_studies),
+        cache=Mock(),
         study_factory=Mock(),
         path_resources=project_path / "resources",
         patch_service=Mock(),
@@ -161,7 +208,6 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 def test_create_study(
     tmp_path: str, storage_service_builder, project_path
 ) -> None:
-
     path_studies = Path(tmp_path)
 
     study = Mock()
@@ -173,6 +219,7 @@ def test_create_study(
 
     study_service = RawStudyService(
         config=build_config(path_studies),
+        cache=Mock(),
         study_factory=study_factory,
         path_resources=project_path / "resources",
         patch_service=Mock(),
@@ -202,7 +249,6 @@ def test_copy_study(
     clean_ini_writer: Callable,
     storage_service_builder,
 ) -> None:
-
     path_studies = Path(tmp_path)
     source_name = "study1"
     path_study = path_studies / source_name
@@ -232,6 +278,7 @@ def test_copy_study(
 
     study_service = RawStudyService(
         config=build_config(path_studies),
+        cache=Mock(),
         study_factory=study_factory,
         path_resources=Path(),
         patch_service=Mock(),
@@ -256,14 +303,15 @@ def test_copy_study(
 
 @pytest.mark.unit_test
 def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
-
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
+    cache = Mock()
     study_service = RawStudyService(
         config=build_config(tmp_path),
+        cache=cache,
         study_factory=Mock(),
         path_resources=Path(),
         patch_service=Mock(),
@@ -273,7 +321,12 @@ def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
         id=name, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path)
     )
     study_service.delete(md)
-
+    cache.invalidate_all.assert_called_once_with(
+        [
+            f"{name}/{CacheConstants.RAW_STUDY}",
+            f"{name}/{CacheConstants.STUDY_FACTORY}",
+        ]
+    )
     assert not study_path.exists()
 
 
@@ -287,8 +340,10 @@ def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = None, study
 
+    cache = Mock()
     study_service = RawStudyService(
         config=build_config(tmp_path),
+        cache=cache,
         study_factory=study_factory,
         path_resources=Path(),
         patch_service=Mock(),
@@ -298,12 +353,18 @@ def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
     url = "url/to/change"
     new = {"Hello": "World"}
 
+    id = "my-uuid"
     md = RawStudy(
-        id="my-uuid",
+        id=id,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(tmp_path / "my-uuid"),
     )
     res = study_service.edit_study(md, url, new)
-
+    cache.invalidate_all.assert_called_once_with(
+        [
+            f"{id}/{CacheConstants.RAW_STUDY}",
+            f"{id}/{CacheConstants.STUDY_FACTORY}",
+        ]
+    )
     assert new == res
     study.save.assert_called_once_with(new, ["url", "to", "change"])

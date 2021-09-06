@@ -1,4 +1,7 @@
-from antarest.study.storage.rawstudy.io.reader import SetsIniReader
+from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.io.writer.ini_writer import (
+    IniWriter,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -22,7 +25,11 @@ class InputAreasSets(IniFileNode):
     """
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        # TODO Implements writer sets.ini
         IniFileNode.__init__(
-            self, context, config, types={}, reader=SetsIniReader()
+            self,
+            context,
+            config,
+            types={},
+            reader=MultipleSameKeysIniReader(),
+            writer=IniWriter(special_keys=["+"]),
         )

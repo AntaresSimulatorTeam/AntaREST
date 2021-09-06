@@ -4,7 +4,7 @@ from unittest.mock import Mock
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     FileStudyTreeConfig,
-    ThermalCluster,
+    Cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import (
     ScenarioBuilder,
@@ -72,21 +72,22 @@ def test_get(tmp_path: Path):
     path.write_text(content)
 
     thermals = [
-        ThermalCluster(id="01_solar", enabled=True),
-        ThermalCluster(id="02_wind_on", enabled=True),
-        ThermalCluster(id="03_wind_off", enabled=True),
-        ThermalCluster(id="04_res", enabled=True),
-        ThermalCluster(id="05_nuclear", enabled=True),
-        ThermalCluster(id="06_coal", enabled=True),
-        ThermalCluster(id="07_gas", enabled=True),
-        ThermalCluster(id="08_non-res", enabled=True),
-        ThermalCluster(id="09_hydro_pump", enabled=True),
+        Cluster(id="01_solar", name="01_solar", enabled=True),
+        Cluster(id="02_wind_on", name="02_wind_on", enabled=True),
+        Cluster(id="03_wind_off", name="03_wind_off", enabled=True),
+        Cluster(id="04_res", name="04_res", enabled=True),
+        Cluster(id="05_nuclear", name="05_nuclear", enabled=True),
+        Cluster(id="06_coal", name="06_coal", enabled=True),
+        Cluster(id="07_gas", name="07_gas", enabled=True),
+        Cluster(id="08_non-res", name="08_non-res", enabled=True),
+        Cluster(id="09_hydro_pump", name="09_hydro_pump", enabled=True),
     ]
 
     areas = {
         n: Area(
             links=dict(),
             thermals=thermals,
+            renewables=[],
             filters_year=[],
             filters_synthesis=[],
         )
@@ -96,7 +97,12 @@ def test_get(tmp_path: Path):
     node = ScenarioBuilder(
         context=Mock(),
         config=FileStudyTreeConfig(
-            study_path=path, areas=areas, outputs=dict(), study_id="id"
+            study_path=path,
+            path=path,
+            version=-1,
+            areas=areas,
+            outputs=dict(),
+            study_id="id",
         ),
     )
 

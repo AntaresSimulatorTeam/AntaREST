@@ -15,7 +15,7 @@ def test_lifecycle():
     redis_client = Mock()
     pubsub_mock = Mock()
     redis_client.pubsub.return_value = pubsub_mock
-    eventbus = RedisEventBus(RedisConfig(), redis_client)
+    eventbus = RedisEventBus(redis_client)
     pubsub_mock.subscribe.assert_called_once_with("events")
 
     event = Event("test", "foo")

@@ -15,6 +15,8 @@ from antarest.login.model import (
     UserLdap,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class GroupRepository:
     """
@@ -22,7 +24,6 @@ class GroupRepository:
     """
 
     def __init__(self) -> None:
-        self.logger = logging.getLogger(self.__class__.__name__)
         with db():
             self.save(Group(id="admin", name="admin"))
 
@@ -34,7 +35,7 @@ class GroupRepository:
             db.session.add(group)
         db.session.commit()
 
-        self.logger.debug(f"Group {group.id} saved")
+        logger.debug(f"Group {group.id} saved")
         return group
 
     def get(self, id: str) -> Optional[Group]:
@@ -54,7 +55,7 @@ class GroupRepository:
         db.session.delete(g)
         db.session.commit()
 
-        self.logger.debug(f"Group {id} deleted")
+        logger.debug(f"Group {id} deleted")
 
 
 class UserRepository:
@@ -63,7 +64,6 @@ class UserRepository:
     """
 
     def __init__(self, config: Config) -> None:
-        self.logger = logging.getLogger(self.__class__.__name__)
         # init seed admin user from conf
         with db():
             admin_user = self.get_by_name("admin")
@@ -87,7 +87,7 @@ class UserRepository:
             db.session.add(user)
         db.session.commit()
 
-        self.logger.debug(f"User {user.id} saved")
+        logger.debug(f"User {user.id} saved")
         return user
 
     def get(self, id: int) -> Optional[User]:
@@ -107,16 +107,13 @@ class UserRepository:
         db.session.delete(u)
         db.session.commit()
 
-        self.logger.debug(f"User {id} deleted")
+        logger.debug(f"User {id} deleted")
 
 
 class UserLdapRepository:
     """
     Database connector to manage UserLdap entity.
     """
-
-    def __init__(self) -> None:
-        self.logger = logging.getLogger(self.__class__.__name__)
 
     def save(self, user_ldap: UserLdap) -> UserLdap:
         res = db.session.query(
@@ -128,7 +125,7 @@ class UserLdapRepository:
             db.session.add(user_ldap)
         db.session.commit()
 
-        self.logger.debug(f"User LDAP {user_ldap.id} saved")
+        logger.debug(f"User LDAP {user_ldap.id} saved")
         return user_ldap
 
     def get(self, id: int) -> Optional[UserLdap]:
@@ -150,16 +147,13 @@ class UserLdapRepository:
         db.session.delete(u)
         db.session.commit()
 
-        self.logger.debug(f"User LDAP {id} deleted")
+        logger.debug(f"User LDAP {id} deleted")
 
 
 class BotRepository:
     """
     Database connector to manage Bot entity.
     """
-
-    def __init__(self) -> None:
-        self.logger = logging.getLogger(self.__class__.__name__)
 
     def save(self, bot: Bot) -> Bot:
         res = db.session.query(exists().where(Bot.id == bot.id)).scalar()
@@ -169,7 +163,7 @@ class BotRepository:
             db.session.add(bot)
         db.session.commit()
 
-        self.logger.debug(f"Bot {bot.id} saved")
+        logger.debug(f"Bot {bot.id} saved")
         return bot
 
     def get(self, id: int) -> Optional[Bot]:
@@ -185,7 +179,7 @@ class BotRepository:
         db.session.delete(u)
         db.session.commit()
 
-        self.logger.debug(f"Bot {id} deleted")
+        logger.debug(f"Bot {id} deleted")
 
     def get_all_by_owner(self, owner: int) -> List[Bot]:
         bots: List[Bot] = db.session.query(Bot).filter_by(owner=owner).all()
@@ -208,7 +202,6 @@ class RoleRepository:
     """
 
     def __init__(self) -> None:
-        self.logger = logging.getLogger(self.__class__.__name__)
         with db():
             if self.get(1, "admin") is None:
                 self.save(
@@ -226,9 +219,7 @@ class RoleRepository:
         db.session.add(role)
         db.session.commit()
 
-        self.logger.debug(
-            f"Role (user={role.identity}, group={role.group} saved"
-        )
+        logger.debug(f"Role (user={role.identity}, group={role.group} saved")
         return role
 
     def get(self, user: int, group: str) -> Optional[Role]:
@@ -252,4 +243,4 @@ class RoleRepository:
         db.session.delete(r)
         db.session.commit()
 
-        self.logger.debug(f"Role (user={user}, group={group} deleted")
+        logger.debug(f"Role (user={user}, group={group} deleted")

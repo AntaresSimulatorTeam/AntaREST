@@ -1,7 +1,7 @@
 import logging
 import tempfile
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 import yaml
 from dataclasses import dataclass, field
@@ -188,16 +188,18 @@ class LoggingConfig:
     Sub config object dedicated to logging
     """
 
+    logfile: Optional[Path] = None
+    json: bool = False
     level: str = "INFO"
-    path: Optional[Path] = None
-    format: Optional[str] = None
 
     @staticmethod
     def from_dict(data: JSON) -> "LoggingConfig":
+        logging_config: Dict[str, Any] = data or {}
+        logfile: Optional[str] = logging_config.get("logfile", None)
         return LoggingConfig(
-            level=data["level"],
-            path=data.get("path", None),
-            format=data.get("format", None),
+            logfile=Path(logfile) if logfile is not None else None,
+            json=logging_config.get("json", False),
+            level=logging_config.get("level", "INFO"),
         )
 
 
@@ -221,14 +223,25 @@ class EventBusConfig:
     Sub config object dedicated to eventbus module
     """
 
-    redis: Optional[RedisConfig] = None
-
     @staticmethod
     def from_dict(data: JSON) -> "EventBusConfig":
-        return EventBusConfig(
-            redis=RedisConfig.from_dict(data["redis"])
-            if "redis" in data
-            else None
+        return EventBusConfig()
+
+
+@dataclass(frozen=True)
+class CacheConfig:
+    """
+    Sub config object dedicated to cache module
+    """
+
+    checker_delay: float = 0.2  # in ms
+
+    @staticmethod
+    def from_dict(data: JSON) -> "CacheConfig":
+        return CacheConfig(
+            checker_delay=float(data["checker_delay"])
+            if "checker_delay" in data
+            else 0.2,
         )
 
 
@@ -246,7 +259,9 @@ class Config:
     logging: LoggingConfig = LoggingConfig()
     debug: bool = True
     resources_path: Path = Path()
+    redis: Optional[RedisConfig] = None
     eventbus: EventBusConfig = EventBusConfig()
+    cache: CacheConfig = CacheConfig()
     root_path: str = ""
 
     @staticmethod
@@ -267,13 +282,19 @@ class Config:
             launcher=LauncherConfig.from_dict(data["launcher"]),
             db_url=data["db"]["url"],
             db_admin_url=data["db"].get("admin_url", None),
-            logging=LoggingConfig.from_dict(data["logging"]),
+            logging=LoggingConfig.from_dict(data.get("logging", {})),
             debug=data["debug"],
             resources_path=res or Path(),
             root_path=data.get("root_path", ""),
+            redis=RedisConfig.from_dict(data["redis"])
+            if "redis" in data
+            else None,
             eventbus=EventBusConfig.from_dict(data["eventbus"])
             if "eventbus" in data
             else EventBusConfig(),
+            cache=CacheConfig.from_dict(data["cache"])
+            if "cache" in data
+            else CacheConfig(),
         )
 
     @staticmethod

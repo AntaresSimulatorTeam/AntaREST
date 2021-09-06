@@ -1,0 +1,8 @@
+Area	area	res	annual
+	VARIABLES	BEGIN	END
+	2	1	1
+
+Area	annual	la_rochelle	oleron
+		MWh	MWh
+			
+	Annual	2617200	5251200

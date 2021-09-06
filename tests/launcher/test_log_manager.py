@@ -1,4 +1,3 @@
-import os
 import time
 from pathlib import Path
 
@@ -44,6 +43,7 @@ def test_reading(tmp_path: Path):
     assert len(logs) > 0
 
     log_manager.stop_tracking(log1)
+    log_manager.stop_tracking(log2)
     logs.clear()
     with open(log1, "a") as fh:
         fh.write("world\n")

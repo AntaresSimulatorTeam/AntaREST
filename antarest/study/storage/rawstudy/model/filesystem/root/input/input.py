@@ -23,6 +23,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.load.load impor
 from antarest.study.storage.rawstudy.model.filesystem.root.input.miscgen.miscgen import (
     InputMiscGen,
 )
+from antarest.study.storage.rawstudy.model.filesystem.root.input.renewable.renewable import (
+    ClusteredRenewable,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.input.reserves.reserves import (
     InputReserves,
 )
@@ -57,4 +60,10 @@ class Input(FolderNode):
             "thermal": InputThermal(self.context, config.next_file("thermal")),
             "wind": InputWind(self.context, config.next_file("wind")),
         }
+
+        if self.config.enr_modelling == "clusters":
+            children["renewables"] = ClusteredRenewable(
+                self.context, config.next_file("renewables")
+            )
+
         return children
