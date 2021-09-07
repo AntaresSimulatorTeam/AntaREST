@@ -999,7 +999,9 @@ class StudyService:
             logger.error(e)
             return StudyContentStatus.ERROR
 
-    def _get_study_storage_service(self, study: Study) -> IStudyStorageService:
+    def _get_study_storage_service(
+        self, study: Study
+    ) -> IStudyStorageService[Union[RawStudy, VariantStudy]]:
         if isinstance(study, RawStudy):
             return self.raw_study_service
         elif isinstance(study, VariantStudy):

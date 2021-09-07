@@ -49,7 +49,7 @@ class IStudyStorageService(ABC, Generic[T]):
 
     @abstractmethod
     def get_study_information(
-        self, metadata: T, summary: bool
+        self, metadata: T, summary: bool = False
     ) -> StudyMetadataDTO:
         raise NotImplementedError()
 
