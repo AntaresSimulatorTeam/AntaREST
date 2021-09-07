@@ -78,7 +78,11 @@ class VariantStudy(Study):
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
     }
-    snapshot = relationship(VariantStudySnapshot, uselist=False)
+    snapshot = relationship(
+        VariantStudySnapshot,
+        uselist=False,
+        cascade="all, delete, delete-orphan",
+    )
     commands = relationship(
         CommandBlock,
         uselist=True,
