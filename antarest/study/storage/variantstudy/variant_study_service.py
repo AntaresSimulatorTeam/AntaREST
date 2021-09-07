@@ -1,5 +1,6 @@
 import json
 import logging
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import List, Union, Optional, cast
@@ -285,6 +286,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         """
         return get_study_information(
             study,
+            study.snapshot.path if study.snapshot is not None else None,
             self.patch_service,
             self.study_factory,
             logger,
@@ -460,7 +462,9 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             metadata: study
         Returns:
         """
-        raise NotImplementedError()
+        study_path = self.get_study_path(metadata)
+        if study_path.exists():
+            shutil.rmtree(metadata.path)
 
     def delete_output(self, metadata: VariantStudy, output_id: str) -> None:
         """

@@ -255,7 +255,7 @@ const InformationView = (props: PropTypes) => {
       await callArchiveStudy(study.id);
       enqueueSnackbar(t('studymanager:archivesuccess', { studyname: study.name }), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('studymanager:archivesuccess', { studyname: study.name }), { variant: 'error' });
+      enqueueSnackbar(t('studymanager:archivefailure', { studyname: study.name }), { variant: 'error' });
     }
   };
 

@@ -555,6 +555,14 @@ def test_variant_manager(app: FastAPI):
     )
     assert res.status_code == 200
 
+    res = client.get(
+        f"/v1/studies/{variant_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
     res = client.post(
         f"/v1/studies/{variant_id}/freeze?name=bar",
         headers={
@@ -568,6 +576,22 @@ def test_variant_manager(app: FastAPI):
 
     res = client.get(
         f"/v1/studies/{new_study_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 404
+
+    res = client.delete(
+        f"/v1/studies/{variant_id}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{variant_id}",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
