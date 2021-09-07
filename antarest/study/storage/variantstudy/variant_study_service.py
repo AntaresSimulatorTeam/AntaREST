@@ -285,6 +285,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         """
         return get_study_information(
             study,
+            study.snapshot.path if study.snapshot is not None else None,
             self.patch_service,
             self.study_factory,
             logger,

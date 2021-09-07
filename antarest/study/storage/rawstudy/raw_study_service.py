@@ -203,6 +203,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         """
         return get_study_information(
             study,
+            study.path,
             self.patch_service,
             self.study_factory,
             logger,
