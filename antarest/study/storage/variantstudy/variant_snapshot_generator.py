@@ -48,7 +48,7 @@ class VariantSnapshotGenerator:
 
         # Build file study
         study_config, study_tree = self.study_factory.create_from_fs(
-            dest_path, study_id=variant_study.id
+            dest_path, study_id=variant_study.id, use_cache=False
         )
         update_antares_info(variant_study, study_tree)
         file_study = FileStudy(config=study_config, tree=study_tree)

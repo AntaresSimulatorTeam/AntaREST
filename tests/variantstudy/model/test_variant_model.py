@@ -117,7 +117,7 @@ def test_service() -> VariantStudyService:
         service.generator.generate_snapshot = Mock()
         expected_result = GenerationResultInfoDTO(success=True, details=[])
         service.generator.generate_snapshot.return_value = expected_result
-        results = service.generate(saved_id, SADMIN)
+        results = service.generate(saved_id, False, SADMIN)
         assert results == expected_result
         assert study.snapshot.id == study.id
-        assert study.snapshot.path == study.path
+        assert study.snapshot.path == study.path + "/snapshot"

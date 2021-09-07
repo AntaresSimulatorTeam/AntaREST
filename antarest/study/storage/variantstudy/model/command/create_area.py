@@ -1,7 +1,10 @@
 from typing import Dict, Any, Optional
 
 from antarest.core.custom_types import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    Area,
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.default_values import (
     NodalOptimization,
@@ -28,18 +31,17 @@ class CreateArea(ICommand):
     def _generate_new_thermal_areas_ini(
         self,
         file_study: FileStudy,
-        unservedenergycost: Optional[int] = None,
-        spilledenergycost: Optional[int] = None,
+        area_id: str,
+        unservedenergycost: Optional[float] = None,
+        spilledenergycost: Optional[float] = None,
     ) -> JSON:
         new_areas: JSON = file_study.tree.get(
             url=["input", "thermal", "areas"]
         )
         if unservedenergycost is not None:
-            new_areas["unserverdenergycost"][
-                self.area_name
-            ] = unservedenergycost
+            new_areas["unserverdenergycost"][area_id] = unservedenergycost
         if spilledenergycost is not None:
-            new_areas["spilledenergycost"][self.area_name] = spilledenergycost
+            new_areas["spilledenergycost"][area_id] = spilledenergycost
 
         return new_areas
 
@@ -47,7 +49,9 @@ class CreateArea(ICommand):
         if self.command_context.generator_matrix_constants is None:
             raise ValueError()
 
-        if self.area_name in study_data.config.areas.keys():
+        area_id = transform_name_to_id(self.area_name)
+
+        if area_id in study_data.config.areas.keys():
             return CommandOutput(
                 status=False,
                 message=f"Area '{self.area_name}' already exists and could not be created",
@@ -55,7 +59,8 @@ class CreateArea(ICommand):
 
         version = study_data.config.version
 
-        study_data.config.areas[self.area_name] = Area(
+        study_data.config.areas[area_id] = Area(
+            name=self.area_name,
             links={},
             thermals=[],
             renewables=[],
@@ -66,8 +71,10 @@ class CreateArea(ICommand):
         new_area_data: JSON = {
             "input": {
                 "areas": {
-                    "list": study_data.config.areas.keys(),
-                    self.area_name: {
+                    "list": [
+                        area.name for area in study_data.config.areas.values()
+                    ],
+                    area_id: {
                         "optimization": {
                             "nodal optimization": {
                                 "non-dispatchable-power": NodalOptimization.NON_DISPATCHABLE_POWER.value,
@@ -98,25 +105,23 @@ class CreateArea(ICommand):
                 },
                 "hydro": {
                     "hydro": {
-                        "inter-daily-breakdown": {self.area_name: 1},
-                        "intra-daily-modulation": {self.area_name: 24},
-                        "inter-monthly-breakdown": {self.area_name: 1},
+                        "inter-daily-breakdown": {area_id: 1},
+                        "intra-daily-modulation": {area_id: 24},
+                        "inter-monthly-breakdown": {area_id: 1},
                     },
-                    "allocation": {
-                        self.area_name: {"[allocation]": {self.area_name: 1}}
-                    },
+                    "allocation": {area_id: {"[allocation]": {area_id: 1}}},
                     "common": {
                         "capacity": {
-                            f"maxpower_{self.area_name}": self.command_context.generator_matrix_constants.get_hydro_max_power(
+                            f"maxpower_{area_id}": self.command_context.generator_matrix_constants.get_hydro_max_power(
                                 version=version
                             ),
-                            f"reservoir_{self.area_name}": self.command_context.generator_matrix_constants.get_hydro_reservoir(
+                            f"reservoir_{area_id}": self.command_context.generator_matrix_constants.get_hydro_reservoir(
                                 version=version
                             ),
                         }
                     },
                     "prepro": {
-                        self.area_name: {
+                        area_id: {
                             "energy": self.command_context.generator_matrix_constants.get_null_matrix(),
                             "prepro": {
                                 "prepro": {"intermonthly-correlation": 0.5}
@@ -124,16 +129,16 @@ class CreateArea(ICommand):
                         },
                     },
                     "series": {
-                        self.area_name: {
+                        area_id: {
                             "mod": self.command_context.generator_matrix_constants.get_null_matrix(),
                             "ror": self.command_context.generator_matrix_constants.get_null_matrix(),
                         },
                     },
                 },
-                "links": {self.area_name: {"properties": {}}},
+                "links": {area_id: {"properties": {}}},
                 "load": {
                     "prepro": {
-                        self.area_name: {
+                        area_id: {
                             "conversion": self.command_context.generator_matrix_constants.get_prepro_conversion(),
                             "data": self.command_context.generator_matrix_constants.get_prepro_data(),
                             "k": self.command_context.generator_matrix_constants.get_null_matrix(),
@@ -142,18 +147,18 @@ class CreateArea(ICommand):
                         }
                     },
                     "series": {
-                        f"load_{self.area_name}": self.command_context.generator_matrix_constants.get_null_matrix(),
+                        f"load_{area_id}": self.command_context.generator_matrix_constants.get_null_matrix(),
                     },
                 },
                 "misc-gen": {
-                    f"miscgen-{self.area_name}": self.command_context.generator_matrix_constants.get_null_matrix()
+                    f"miscgen-{area_id}": self.command_context.generator_matrix_constants.get_null_matrix()
                 },
                 "reserves": {
-                    self.area_name: self.command_context.generator_matrix_constants.get_null_matrix()
+                    area_id: self.command_context.generator_matrix_constants.get_null_matrix()
                 },
                 "solar": {
                     "prepro": {
-                        self.area_name: {
+                        area_id: {
                             "conversion": self.command_context.generator_matrix_constants.get_prepro_conversion(),
                             "data": self.command_context.generator_matrix_constants.get_prepro_data(),
                             "k": self.command_context.generator_matrix_constants.get_null_matrix(),
@@ -162,20 +167,21 @@ class CreateArea(ICommand):
                         }
                     },
                     "series": {
-                        f"solar_{self.area_name}": self.command_context.generator_matrix_constants.get_null_matrix(),
+                        f"solar_{area_id}": self.command_context.generator_matrix_constants.get_null_matrix(),
                     },
                 },
                 "thermal": {
-                    "clusters": {self.area_name: {"list": {}}},
+                    "clusters": {area_id: {"list": {}}},
                     "areas": self._generate_new_thermal_areas_ini(
                         study_data,
+                        area_id,
                         unservedenergycost=NodalOptimization.UNSERVERDDENERGYCOST.value,
                         spilledenergycost=NodalOptimization.SPILLEDENERGYCOST.value,
                     ),
                 },
                 "wind": {
                     "prepro": {
-                        self.area_name: {
+                        area_id: {
                             "conversion": self.command_context.generator_matrix_constants.get_prepro_conversion(),
                             "data": self.command_context.generator_matrix_constants.get_prepro_data(),
                             "k": self.command_context.generator_matrix_constants.get_null_matrix(),
@@ -184,7 +190,7 @@ class CreateArea(ICommand):
                         }
                     },
                     "series": {
-                        f"wind_{self.area_name}": self.command_context.generator_matrix_constants.get_null_matrix()
+                        f"wind_{area_id}": self.command_context.generator_matrix_constants.get_null_matrix()
                     },
                 },
             }
@@ -193,28 +199,28 @@ class CreateArea(ICommand):
         if version > 650:
             new_area_data["input"]["hydro"]["hydro"][
                 "initialize reservoir date"
-            ] = {self.area_name: 0}
+            ] = {area_id: 0}
             new_area_data["input"]["hydro"]["hydro"]["leeway low"] = {
-                self.area_name: 1
+                area_id: 1
             }
             new_area_data["input"]["hydro"]["hydro"]["leeway up"] = {
-                self.area_name: 1
+                area_id: 1
             }
             new_area_data["input"]["hydro"]["hydro"]["pumping efficiency"] = {
-                self.area_name: 1
+                area_id: 1
             }
             new_area_data["input"]["hydro"]["common"]["capacity"][
-                f"creditmodulations_{self.area_name}"
+                f"creditmodulations_{area_id}"
             ] = (
                 self.command_context.generator_matrix_constants.get_hydro_credit_modulations()
             )
             new_area_data["input"]["hydro"]["common"]["capacity"][
-                f"inflowPattern_{self.area_name}"
+                f"inflowPattern_{area_id}"
             ] = (
                 self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
             )
             new_area_data["input"]["hydro"]["common"]["capacity"][
-                f"waterValues_{self.area_name}"
+                f"waterValues_{area_id}"
             ] = (
                 self.command_context.generator_matrix_constants.get_null_matrix()
             )

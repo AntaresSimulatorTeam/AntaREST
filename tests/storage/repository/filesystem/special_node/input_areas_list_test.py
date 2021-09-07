@@ -26,6 +26,7 @@ IT
         version=-1,
         areas={
             "fr": Area(
+                name="fr",
                 links={},
                 thermals=[],
                 renewables=[],
@@ -33,6 +34,7 @@ IT
                 filters_year=[],
             ),
             "de": Area(
+                name="de",
                 links={},
                 thermals=[],
                 renewables=[],
@@ -40,6 +42,7 @@ IT
                 filters_year=[],
             ),
             "it": Area(
+                name="it",
                 links={},
                 thermals=[],
                 renewables=[],

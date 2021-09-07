@@ -147,6 +147,7 @@ def test_parse_area(tmp_path: Path) -> None:
         version=-1,
         areas={
             "fr": Area(
+                name="FR",
                 thermals=[],
                 renewables=[],
                 links={},

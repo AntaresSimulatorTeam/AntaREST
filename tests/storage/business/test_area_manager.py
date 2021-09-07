@@ -39,6 +39,7 @@ def test_get_all_area():
         version=-1,
         areas={
             "a1": Area(
+                name="a1",
                 links={},
                 thermals=[],
                 renewables=[],
@@ -46,6 +47,7 @@ def test_get_all_area():
                 filters_year=[],
             ),
             "a2": Area(
+                name="a2",
                 links={},
                 thermals=[],
                 renewables=[],
@@ -142,6 +144,7 @@ def test_update_area():
         version=-1,
         areas={
             "a1": Area(
+                name="a1",
                 links={},
                 thermals=[],
                 renewables=[],
@@ -149,6 +152,7 @@ def test_update_area():
                 filters_year=[],
             ),
             "a2": Area(
+                name="a2",
                 links={},
                 thermals=[],
                 renewables=[],

@@ -43,6 +43,7 @@ class Area(BaseModel):
     Object linked to /input/<area>/optimization.ini information
     """
 
+    name: str
     links: Dict[str, Link]
     thermals: List[Cluster]
     renewables: List[Cluster]

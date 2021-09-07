@@ -37,7 +37,7 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         return [l.strip() for l in lines if l.strip()]
 
     def save(self, data: List[str], url: Optional[List[str]] = None) -> None:
-        self.config.path.write_text("\n".join(data).upper())
+        self.config.path.write_text("\n".join(data))
 
     def delete(self, url: Optional[List[str]] = None) -> None:
         if self.config.path.exists():

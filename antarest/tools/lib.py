@@ -57,7 +57,7 @@ class CLIVariantManager:
         assert res.status_code == 200
         return GenerationResultInfoDTO.parse_obj(res.json())
 
-    def build_url(self, url):
+    def build_url(self, url: str) -> str:
         if self.host is not None:
             return f"{self.host}/{url}"
         return url
