@@ -1,6 +1,6 @@
 import debug from 'debug';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useHistory } from 'react-router-dom';
 import { Breadcrumbs, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
@@ -50,17 +50,24 @@ const mapDispatch = {
   removeWsListener: removeListener,
 };
 
+interface OwnProps {
+  initTab: 'informations' | 'variants' | 'treeView';
+}
+
 const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = ReduxProps;
+type PropTypes = OwnProps & ReduxProps;
 
 const SingleStudyView = (props: PropTypes) => {
   const { studyId } = useParams();
   const { addWsListener, removeWsListener } = props;
   const classes = useStyles();
+  const { initTab } = props;
+  // const history = useHistory();
   const [t] = useTranslation();
   const [study, setStudy] = useState<StudyMetadata>();
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
+  // const [initTab, setInitTab] = useState<string>('singlestudy:informations');
   const { enqueueSnackbar } = useSnackbar();
 
   const fetchStudyInfo = useCallback(async () => {
@@ -124,13 +131,23 @@ const SingleStudyView = (props: PropTypes) => {
     },
     [studyId, studyJobs, fetchStudyInfo],
   );
+  /* useEffect(() => {
+    console.log('------------ TAB: ', tab);
+    if (tab === 'informations' || tab === 'variants' || tab === 'treeView') setInitTab(tab);
+    else {
+      setInitTab('informations');
+      history.replace({ pathname: `/study/${studyId}/informations` });
+      //window.history.replaceState(null, '', `/study/${studyId}/informations`);
+    }
+  }, [history, studyId, tab]); */
 
   useEffect(() => {
     if (studyId) {
       fetchStudyInfo();
       fetchStudyJob(studyId);
     }
-  }, [studyId, t, enqueueSnackbar, fetchStudyInfo]);
+    window.history.replaceState(null, '', `/study/${studyId}/${initTab}`);
+  }, [studyId, t, enqueueSnackbar, fetchStudyInfo, initTab]);
 
   useEffect(() => {
     addWsListener(handleEvents);
@@ -138,12 +155,12 @@ const SingleStudyView = (props: PropTypes) => {
   }, [addWsListener, removeWsListener, handleEvents]);
 
   const navData: { [key: string]: () => JSX.Element } = {
-    'singlestudy:informations': () =>
+    informations: () =>
       (study ? <Informations study={study} jobs={studyJobs || []} /> : <div />),
-    'singlestudy:variants': () => <VariantView studyId={studyId} editable />,
+    variants: () => <VariantView study={study} editable />,
   };
   if (study && !study.archived) {
-    navData['singlestudy:treeView'] = () => <StudyView study={study} />;
+    navData.treeView = () => <StudyView study={study} />;
   }
   return (
     <div className={classes.root}>
@@ -158,7 +175,7 @@ const SingleStudyView = (props: PropTypes) => {
               {study.name}
             </div>
           </Breadcrumbs>
-          <GenericTabView items={navData} initialValue="singlestudy:informations" />
+          <GenericTabView items={navData} studyId={studyId} initialValue={initTab} />
         </>
       )}
     </div>

@@ -22,6 +22,7 @@ export interface StudyMetadataOwner {
 }
 
 export interface StudyMetadataDTO {
+  id: string;
   owner: StudyMetadataOwner;
   name: string;
   created: number;

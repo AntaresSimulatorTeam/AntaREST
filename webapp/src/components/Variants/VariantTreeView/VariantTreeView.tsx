@@ -1,8 +1,11 @@
 import { createStyles, makeStyles, useTheme } from '@material-ui/core';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import Tree from 'react-d3-tree';
 import { CustomNodeElementProps, Point, RawNodeDatum } from 'react-d3-tree/lib/types/common';
+import { StudyMetadata } from '../../../common/types';
 import VariantCard from './VariantCard';
+import { buildNodeFromMetadata, buildTree } from './utils';
 
 const debugData: Array<RawNodeDatum> = [
   {
@@ -80,17 +83,18 @@ const useStyles = makeStyles(() => createStyles({
 }));
 
 interface PropsType {
-  studyId: string;
+    study: StudyMetadata | undefined;
 }
 
 const VariantTreeView = (props: PropsType) => {
   const yOffset = 150;
   const yClearance = 250;
-  const { studyId } = props;
+  const { study } = props;
   const [translate, setTranslte] = useState<Point>({ x: 0, y: 0 });
-  const [data, setData] = useState<Array<RawNodeDatum>>([])
+  const [data, setData] = useState<RawNodeDatum[]>([]);
   const classes = useStyles();
   const theme = useTheme();
+  const history = useHistory();
   const treeContainer = useCallback((node) => {
     if (node !== null) {
       const dimensions = node.getBoundingClientRect();
@@ -102,24 +106,39 @@ const VariantTreeView = (props: PropsType) => {
   }, []);
 
   useEffect(() => {
-      // GET ALL CHILDRENS AND BUILD DATA
-      setData(debugData);
-  }, [studyId])
+    // Build the graph
+    const init = async () => {
+      if (study === undefined) return;
+      try {
+        const rootNode = buildNodeFromMetadata(study);
+        await buildTree(rootNode);
+        setData([{ ...rootNode }]);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    init();
+    // setData(debugData);
+  }, [study]);
 
   return (
     <div className={classes.root} ref={treeContainer}>
-      <Tree
-        data={debugData}
-        collapsible={false}
-        translate={translate}
-        scaleExtent={{ min: 1, max: 3 }}
-        pathFunc="elbow"
-        orientation="vertical"
-        nodeSize={{ x: 300, y: yClearance }}
-        renderCustomNodeElement={(rd3tProps: CustomNodeElementProps) =>
-          VariantCard({ rd3tProps, theme })
-          }
-      />
+      {
+          data !== undefined && data.length > 0 && (
+          <Tree
+            data={data}
+            collapsible={false}
+            translate={translate}
+            scaleExtent={{ min: 1, max: 3 }}
+            pathFunc="elbow"
+            orientation="vertical"
+            nodeSize={{ x: 300, y: yClearance }}
+            renderCustomNodeElement={(rd3tProps: CustomNodeElementProps) =>
+              VariantCard({ rd3tProps, theme, history })
+            }
+          />
+          )
+      }
     </div>
   );
 };

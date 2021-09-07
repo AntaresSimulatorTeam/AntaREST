@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createStyles, makeStyles } from '@material-ui/core';
-import { Components } from '../../common/types';
+import { Components, StudyMetadata } from '../../common/types';
 import VariantNav from './VariantNavSwitch';
 import VariantTreeView from './VariantTreeView/VariantTreeView';
 
@@ -19,13 +19,13 @@ interface PropTypes {
     initEditMode?: boolean;
     // eslint-disable-next-line react/require-default-props
     editable?: boolean;
-    studyId: string;
+    study: StudyMetadata | undefined;
 }
 
 const VariantView = (props: PropTypes) => {
-  const { editable = false, initEditMode = false, studyId } = props;
+  const { editable = false, initEditMode = false, study } = props;
   const items: Components = {
-    'singlestudy:variantDependencies': () => <VariantTreeView studyId={studyId} />,
+    'singlestudy:variantDependencies': () => <VariantTreeView study={study} />,
     'singlestudy:createVariant': () => <div style={{ width: '100%', height: '100%' }}>Create variant</div>,
     'singlestudy:editionMode': () => <div style={{ width: '100%', height: '100%' }}>Edition variant</div>,
     'singlestudy:testGeneration': () => <div style={{ width: '100%', height: '100%' }}>Test generation</div>,

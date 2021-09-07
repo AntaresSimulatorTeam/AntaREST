@@ -4,6 +4,7 @@ import AppBar from '@material-ui/core/AppBar';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import { useTranslation } from 'react-i18next';
+import { useHistory } from 'react-router-dom';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -29,18 +30,20 @@ interface PropTypes {
     items: {
         [item: string]: () => JSX.Element;
     };
+    studyId: string;
     initialValue: string;
 }
 
 export default function NavTabView(props: PropTypes) {
   const classes = useStyles();
-  const { items, initialValue } = props;
+  const { items, initialValue, studyId } = props;
   const [navList, setNavList] = useState<Array<string>>([]);
   const [navState, setNavState] = useState<string>(initialValue);
   const [t] = useTranslation();
 
   const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     setNavState(navList[newValue]);
+    window.history.replaceState(null, '', `/study/${studyId}/${navList[newValue]}`);
   };
 
   useEffect(() => {
@@ -69,7 +72,7 @@ export default function NavTabView(props: PropTypes) {
                 onClick={(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
                   event.preventDefault();
                 }}
-                label={t(item)}
+                label={t(`singlestudy:${item}`)}
                 id={`nav-tab-${index}`}
                 aria-controls={`nav-tabpanel-${index}`}
               />
