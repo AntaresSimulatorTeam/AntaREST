@@ -3,17 +3,12 @@ import requests
 from pathlib import Path
 from typing import List, Optional
 
-from pydantic import BaseModel
 from requests import Session
 
 from antarest.study.storage.variantstudy.model import (
     CommandDTO,
     GenerationResultInfoDTO,
 )
-
-
-class CommandList(BaseModel):
-    __root__: List[CommandDTO]
 
 
 class CLIVariantManager:
@@ -52,13 +47,14 @@ class CLIVariantManager:
 
         res = self.session.post(
             self.build_url(f"/v1/studies/{study_id}/commands"),
-            json=CommandList(__root__=commands).dict(),
+            json=[command.dict() for command in commands],
         )
         assert res.status_code == 200
 
-        res = self.session.get(
-            self.build_url(f"/v1/studies/{study_id}/generate")
+        res = self.session.put(
+            self.build_url(f"/v1/studies/{study_id}/generate?denormalize=true")
         )
+        assert res.status_code == 200
         return GenerationResultInfoDTO.parse_obj(res.json())
 
     def build_url(self, url):
