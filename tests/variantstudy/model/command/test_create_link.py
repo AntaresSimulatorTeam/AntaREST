@@ -1,4 +1,5 @@
 import configparser
+from unittest.mock import Mock
 
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -32,7 +33,8 @@ class TestCreateLink:
         command_context = CommandContext(
             generator_matrix_constants=GeneratorMatrixConstants(
                 matrix_service=matrix_service
-            )
+            ),
+            matrix_service=matrix_service,
         )
         study_path = empty_study.config.study_path
         area1 = "Area1"
@@ -63,7 +65,10 @@ class TestCreateLink:
             }
         ).apply(empty_study)
 
-        command_context = CommandContext(matrix_service=matrix_service)
+        command_context = CommandContext(
+            matrix_service=matrix_service,
+            generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
+        )
 
         create_link_command: ICommand = CreateLink(
             area1=area1,

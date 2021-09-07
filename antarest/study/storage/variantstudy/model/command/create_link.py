@@ -15,9 +15,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
 
 
 class LinkAlreadyExistError(Exception):
@@ -31,20 +28,11 @@ class CreateLink(ICommand):
     series: Union[
         List[List[float]], str
     ]  # TODO: add the possibility to send no series and use a default one
-    command_context: CommandContext
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
             command_name=CommandName.CREATE_LINK, version=1, **data
         )
-
-    @validator("command_context", each_item=True, always=True)
-    def validate_command_context(cls, v: CommandContext) -> CommandContext:
-        if v.matrix_service is None:
-            raise ValueError(
-                "CommandContext needs MatrixService for CreateLink"
-            )
-        return v
 
     @validator("series", each_item=True, always=True)
     def validate_series(

@@ -2,6 +2,10 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.matrixstore.service import MatrixService
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -105,11 +109,19 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.REMOVE_LINK.value,
-            args={"area1": "area1", "area2": "area2"},
+            args={
+                "area1": "area1",
+                "area2": "area2",
+            },
         ),
         CommandDTO(
             action=CommandName.REMOVE_LINK.value,
-            args=[{"area1": "area1", "area2": "area2"}],
+            args=[
+                {
+                    "area1": "area1",
+                    "area2": "area2",
+                }
+            ],
         ),
         CommandDTO(
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,
@@ -256,7 +268,8 @@ from antarest.study.storage.variantstudy.model.command.common import (
 @pytest.mark.unit_test
 def test_command_factory(command_dto: CommandDTO):
     command_factory = CommandFactory(
-        generator_matrix_constants=Mock(), matrix_service=Mock()
+        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
+        matrix_service=Mock(spec=MatrixService),
     )
     command_list = command_factory.to_icommand(command_dto=command_dto)
     if isinstance(args := command_dto.args, dict):
@@ -272,7 +285,8 @@ def test_command_factory(command_dto: CommandDTO):
 def test_unknown_command():
     with pytest.raises(NotImplementedError):
         command_factory = CommandFactory(
-            generator_matrix_constants=Mock(), matrix_service=Mock()
+            generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
+            matrix_service=Mock(spec=MatrixService),
         )
         command_factory.to_icommand(
             command_dto=CommandDTO(action="unknown_command", args={})

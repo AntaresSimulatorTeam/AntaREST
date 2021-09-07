@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 from typing import List
 
-from antarest.study.model import RawStudy
+from antarest.study.model import Study
 from antarest.study.storage.rawstudy.exporter_service import ExporterService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
@@ -17,6 +17,8 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
 )
+
+SNAPSHOT_RELATIVE_PATH = "snapshot"
 
 
 class VariantSnapshotGenerator:
@@ -35,12 +37,12 @@ class VariantSnapshotGenerator:
         self.exporter_service = exporter_service
 
     def generate_snapshot(
-        self, variant_study: VariantStudy, parent_study: RawStudy
+        self, variant_study: VariantStudy, parent_study: Study
     ) -> GenerationResultInfoDTO:
 
         # Copy parent study to dest
         src_path = Path(parent_study.path)
-        dest_path = Path(variant_study.path)  # Workspace or path ?
+        dest_path = Path(variant_study.path) / SNAPSHOT_RELATIVE_PATH
 
         self.exporter_service.export_flat(src_path, dest_path)
 
@@ -62,7 +64,12 @@ class VariantSnapshotGenerator:
             success=True, details=[]
         )
         for command in commands:
-            output = command.apply(file_study)
+            try:
+                output = command.apply(file_study)
+            except:
+                results.success = False
+                break
+
             results.details.append(
                 (command.command_name.value, output.status, output.message)
             )

@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 from checksumdir import dirhash
 
 from antarest.matrixstore.service import MatrixService
@@ -30,7 +32,8 @@ class TestRemoveCluster:
         command_context = CommandContext(
             generator_matrix_constants=GeneratorMatrixConstants(
                 matrix_service=matrix_service
-            )
+            ),
+            matrix_service=matrix_service,
         )
         area_name = "Area_name"
         cluster_name = "Cluster_name"
@@ -45,7 +48,10 @@ class TestRemoveCluster:
 
         hash_before_cluster = dirhash(empty_study.config.study_path, "md5")
 
-        command_context = CommandContext(matrix_service=matrix_service)
+        command_context = CommandContext(
+            matrix_service=matrix_service,
+            generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
+        )
 
         CreateCluster(
             area_name=area_name,
@@ -65,6 +71,7 @@ class TestRemoveCluster:
         output = RemoveCluster(
             area_name=area_name,
             cluster_name=cluster_name,
+            command_context=command_context,
         ).apply(empty_study)
 
         assert output.status
@@ -76,11 +83,13 @@ class TestRemoveCluster:
         output = RemoveCluster(
             area_name="non_existent_area",
             cluster_name=cluster_name,
+            command_context=command_context,
         ).apply(empty_study)
         assert not output.status
 
         output = RemoveCluster(
             area_name=cluster_name,
             cluster_name="non_existent_cluster",
+            command_context=command_context,
         ).apply(empty_study)
         assert not output.status

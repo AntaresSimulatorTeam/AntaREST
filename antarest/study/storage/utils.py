@@ -87,7 +87,7 @@ def get_study_information(
 ) -> StudyMetadataDTO:
     file_settings = {}
     file_metadata = {}
-    study_path = get_study_path(study)
+    study_path = Path(study.path)
 
     config = FileStudyTreeConfig(
         study_path=study_path,
@@ -110,14 +110,18 @@ def get_study_information(
             exc_info=e,
         )
 
+    study_workspace = DEFAULT_WORKSPACE_NAME
+    if hasattr(study, "workspace"):
+        study_workspace = study.workspace
+
     return StudyMetadataDTO(
         id=study.id,
         name=study.name,
         version=study.version,
         created=study.created_at.timestamp(),
         updated=study.updated_at.timestamp(),
-        workspace=study.workspace,
-        managed=study.workspace == DEFAULT_WORKSPACE_NAME,
+        workspace=study_workspace,
+        managed=study_workspace == DEFAULT_WORKSPACE_NAME,
         archived=study.archived if study.archived is not None else False,
         owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
         if study.owner is not None

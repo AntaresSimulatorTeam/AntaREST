@@ -23,6 +23,7 @@ from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.core.roles import RoleType
+from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_storage
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -64,7 +65,7 @@ def test_server() -> None:
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     client.get("/v1/studies/study1/raw?path=settings/general/params")
@@ -87,7 +88,7 @@ def test_404() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     result = client.get("/v1/studies/study1/raw?path=settings/general/params")
@@ -110,7 +111,7 @@ def test_server_with_parameters() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     result = client.get("/v1/studies/study1/raw?depth=4")
@@ -152,7 +153,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
 
@@ -187,7 +188,7 @@ def test_import_study_zipped(tmp_path: Path, project_path) -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
 
@@ -216,7 +217,7 @@ def test_copy_study(tmp_path: Path) -> None:
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
 
@@ -250,7 +251,7 @@ def test_list_studies(tmp_path: str) -> None:
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     result = client.get("/v1/studies")
@@ -271,7 +272,7 @@ def test_study_metadata(tmp_path: str) -> None:
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     result = client.get("/v1/studies/1")
@@ -295,7 +296,7 @@ def test_export_files(tmp_path: Path) -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     result = client.get("/v1/studies/name/export", stream=True)
@@ -321,7 +322,7 @@ def test_export_params(tmp_path: Path) -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     client.get("/v1/studies/name/export?no_output=true")
@@ -346,7 +347,7 @@ def test_delete_study() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     client.delete("/v1/studies/name")
@@ -367,7 +368,7 @@ def test_edit_study() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     client.post(
@@ -391,7 +392,7 @@ def test_edit_study_fail() -> None:
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={})
@@ -414,7 +415,7 @@ def test_validate() -> None:
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.get("/v1/studies/my-uuid/raw/validate")
@@ -454,7 +455,7 @@ def test_output_download() -> None:
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post(
@@ -478,7 +479,7 @@ def test_sim_reference() -> None:
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.put(f"/v1/studies/{study_id}/outputs/{output_id}/reference")
@@ -521,7 +522,7 @@ def test_sim_result() -> None:
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.get(f"/v1/studies/{study_id}/outputs")
@@ -539,7 +540,7 @@ def test_study_permission_management(tmp_path: Path) -> None:
         task_service=Mock(),
         storage_service=storage_service,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
         config=CONFIG,
     )
     client = TestClient(app, raise_server_exceptions=False)

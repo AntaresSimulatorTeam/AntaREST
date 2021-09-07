@@ -55,7 +55,8 @@ class TestRemoveArea:
         command_context = CommandContext(
             generator_matrix_constants=GeneratorMatrixConstants(
                 matrix_service=matrix_service
-            )
+            ),
+            matrix_service=matrix_service,
         )
 
         create_area_command: ICommand = CreateArea.parse_obj(
@@ -68,7 +69,10 @@ class TestRemoveArea:
         create_area_command.apply(study_data=empty_study)
 
         remove_area_commande: ICommand = RemoveArea.parse_obj(
-            {"id": area_name}
+            {
+                "id": area_name,
+                "command_context": command_context,
+            }
         )
         output = remove_area_commande.apply(study_data=empty_study)
         assert output.status

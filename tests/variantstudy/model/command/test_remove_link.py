@@ -1,4 +1,5 @@
 import configparser
+from unittest.mock import Mock
 
 from checksumdir import dirhash
 
@@ -37,7 +38,8 @@ class TestRemoveLink:
         command_context = CommandContext(
             generator_matrix_constants=GeneratorMatrixConstants(
                 matrix_service=matrix_service
-            )
+            ),
+            matrix_service=matrix_service,
         )
         area1 = "Area1"
         area2 = "Area2"
@@ -60,7 +62,10 @@ class TestRemoveLink:
 
         hash_before_link = dirhash(empty_study.config.study_path, "md5")
 
-        command_context = CommandContext(matrix_service=matrix_service)
+        command_context = CommandContext(
+            matrix_service=matrix_service,
+            generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
+        )
 
         CreateLink(
             area1=area1,

@@ -15,6 +15,7 @@ from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.core.roles import RoleType
+from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_storage
 from antarest.study.service import StudyService
 from tests.conftest import assert_study
@@ -41,7 +42,7 @@ def assert_url_content(
         user_service=Mock(),
         task_service=Mock(),
         storage_service=storage_service,
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
         config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
@@ -405,7 +406,7 @@ def test_sta_mini_copy(storage_service) -> None:
         user_service=Mock(),
         task_service=Mock(),
         storage_service=storage_service,
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
         config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
@@ -505,7 +506,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         task_service=Mock(),
         storage_service=storage_service,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
         config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
@@ -540,7 +541,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         task_service=Mock(),
         storage_service=storage_service,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
         config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)

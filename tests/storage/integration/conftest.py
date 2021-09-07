@@ -14,6 +14,7 @@ from antarest.core.config import (
     CacheConfig,
 )
 from antarest.core.tasks.service import ITaskService
+from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_storage
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.service import StudyService
@@ -79,7 +80,7 @@ def storage_service(
         cache=LocalCache(config=config.cache),
         task_service=task_service_mock,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
         config=config,
         metadata_repository=repo,
     )

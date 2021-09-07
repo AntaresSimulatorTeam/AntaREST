@@ -13,9 +13,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
 
 
 class CreateCluster(ICommand):
@@ -24,7 +21,6 @@ class CreateCluster(ICommand):
     parameters: Dict[str, str]
     prepro: Union[List[List[float]], str]
     modulation: Union[List[List[float]], str]
-    command_context: CommandContext
     # TODO: Maybe add the prefix option ?
 
     @validator("parameters")
@@ -40,14 +36,6 @@ class CreateCluster(ICommand):
                 raise ValueError(
                     f"Parameter '{parameter}' missing from parameters"
                 )
-        return v
-
-    @validator("command_context", each_item=True, always=True)
-    def validate_command_context(cls, v: CommandContext) -> CommandContext:
-        if v.matrix_service is None:
-            raise ValueError(
-                "CommandContext needs MatrixService for CreateLink"
-            )
         return v
 
     @validator("prepro", "modulation", each_item=True, always=True)

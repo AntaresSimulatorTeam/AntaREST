@@ -57,6 +57,7 @@ class Study(Base):  # type: ignore
     author = Column(String(255))
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
+    path = Column(String(255))
     parent_id = Column(
         String(36), ForeignKey("study.id", name="fk_study_study_id")
     )
@@ -89,7 +90,6 @@ class RawStudy(Study):
     )
     content_status = Column(Enum(StudyContentStatus))
     workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
-    path = Column(String(255))
 
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",

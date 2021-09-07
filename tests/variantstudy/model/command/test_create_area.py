@@ -25,7 +25,8 @@ class TestCreateArea:
         command_context = CommandContext(
             generator_matrix_constants=GeneratorMatrixConstants(
                 matrix_service=matrix_service
-            )
+            ),
+            matrix_service=matrix_service,
         )
         version = empty_study.config.version
         study_path = empty_study.config.study_path

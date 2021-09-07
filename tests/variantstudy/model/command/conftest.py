@@ -48,7 +48,7 @@ def matrix_service() -> MatrixService:
     #     user_service=Mock(),
     # )
 
-    matrix_service = Mock()
+    matrix_service = Mock(spec=MatrixService)
     matrix_service.create.return_value = "matrix_id"
 
     return matrix_service
