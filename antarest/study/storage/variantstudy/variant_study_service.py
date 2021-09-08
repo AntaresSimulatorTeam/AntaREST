@@ -334,15 +334,6 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             summary,
         )
 
-    def get_study(self, study_id: str) -> FileStudy:
-        """
-        Get study
-        Args:
-            study_id: study id
-        Returns: Study
-        """
-        raise NotImplementedError()
-
     def import_output(self, study: Study, output: Union[bytes, Path]) -> None:
         """
         Import an output
