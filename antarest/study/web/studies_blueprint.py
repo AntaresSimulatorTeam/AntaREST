@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import APIRouter, File, Depends, Request
+from fastapi.params import Param
 from markupsafe import escape
 from starlette.responses import FileResponse
 
