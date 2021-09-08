@@ -171,7 +171,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/areas/list",
-            ["de", "es", "fr", "it"],
+            ["DE", "ES", "FR", "IT"],
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/areas/sets/all areas/output",

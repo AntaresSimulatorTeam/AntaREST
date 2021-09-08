@@ -1,5 +1,7 @@
 from typing import Dict, Any, Optional
 
+from pydantic import validator
+
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -27,6 +29,15 @@ class CreateArea(ICommand):
             version=1,
             **data,
         )
+
+    @validator("area_name")
+    def validate_area_name(cls, val: str) -> str:
+        valid_name = transform_name_to_id(val, lower=False)
+        if valid_name != val:
+            raise ValueError(
+                "Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters"
+            )
+        return val
 
     def _generate_new_thermal_areas_ini(
         self,

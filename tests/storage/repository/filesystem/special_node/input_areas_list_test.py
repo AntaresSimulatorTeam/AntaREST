@@ -26,7 +26,7 @@ IT
         version=-1,
         areas={
             "fr": Area(
-                name="fr",
+                name="FR",
                 links={},
                 thermals=[],
                 renewables=[],
@@ -34,7 +34,7 @@ IT
                 filters_year=[],
             ),
             "de": Area(
-                name="de",
+                name="DE",
                 links={},
                 thermals=[],
                 renewables=[],
@@ -42,7 +42,7 @@ IT
                 filters_year=[],
             ),
             "it": Area(
-                name="it",
+                name="IT",
                 links={},
                 thermals=[],
                 renewables=[],
@@ -53,8 +53,8 @@ IT
     )
     node = InputAreasList(context=Mock(), config=config)
 
-    assert ["fr", "de", "it"] == node.get()
-    assert not node.check_errors(["fr", "de", "it"])
+    assert ["FR", "DE", "IT"] == node.get()
+    assert not node.check_errors(["FR", "DE", "IT"])
 
     node.save(["a", "b", "c"])
     assert ["a", "b", "c"] == node.get()

@@ -33,7 +33,7 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> List[str]:
-        lines = self.config.path.read_text().lower().split("\n")
+        lines = self.config.path.read_text().split("\n")
         return [l.strip() for l in lines if l.strip()]
 
     def save(self, data: List[str], url: Optional[List[str]] = None) -> None:
@@ -51,7 +51,10 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
     ) -> List[str]:
 
         errors = []
-        if any(a not in data for a in self.config.area_names()):
+        if any(
+            a not in data
+            for a in [area.name for area in self.config.areas.values()]
+        ):
             errors.append(
                 f"list.txt should have {self.config.area_names()} nodes but given {data}"
             )
