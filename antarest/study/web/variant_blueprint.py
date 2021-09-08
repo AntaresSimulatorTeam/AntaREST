@@ -94,6 +94,31 @@ def create_study_variant_routes(
         )
 
     @bp.get(
+        "/studies/{uuid}/parents",
+        tags=[APITag.study_variant_management],
+        summary="Get parents of variant",
+        responses={
+            200: {
+                "description": "The list of children study variant",
+                "model": List[StudyMetadataDTO],
+            }
+        },
+    )
+    def get_parents(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> List[StudyMetadataDTO]:
+        logger.info(
+            f"Fetching variant parents of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        sanitized_uuid = sanitize_uuid(uuid)
+        return variant_study_service.get_variants_parents(
+            sanitized_uuid, params
+        )
+
+    @bp.get(
         "/studies/{uuid}/commands",
         tags=[APITag.study_variant_management],
         summary="List variant commands",

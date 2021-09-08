@@ -106,6 +106,7 @@ def build_storage(
         generator_matrix_constants=generator_matrix_constants
     )
     variant_study_service = VariantStudyService(
+        raw_study_service=raw_study_service,
         command_factory=command_factory,
         study_factory=study_factory,
         exporter_service=exporter_service,

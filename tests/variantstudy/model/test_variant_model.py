@@ -41,6 +41,7 @@ def test_service() -> VariantStudyService:
     )
     repository = VariantStudyRepository()
     service = VariantStudyService(
+        raw_study_service=Mock(),
         command_factory=Mock(),
         study_factory=Mock(),
         exporter_service=Mock(),

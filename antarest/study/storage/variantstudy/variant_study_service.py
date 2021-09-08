@@ -41,6 +41,9 @@ from antarest.study.storage.variantstudy.model import (
     CommandDTO,
     GenerationResultInfoDTO,
 )
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
@@ -60,6 +63,7 @@ logger = logging.getLogger(__name__)
 class VariantStudyService(IStudyStorageService[VariantStudy]):
     def __init__(
         self,
+        raw_study_service: RawStudyService,
         command_factory: CommandFactory,
         study_factory: StudyFactory,
         patch_service: PatchService,
@@ -71,6 +75,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         self.generator = VariantSnapshotGenerator(
             command_factory, study_factory, exporter_service
         )
+        self.raw_study_service = raw_study_service
         self.study_factory = study_factory
         self.patch_service = patch_service
         self.repository = repository
@@ -267,6 +272,42 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
                 self.get_study_information(
                     child,
                     summary=True,
+                )
+            )
+
+        return output_list
+
+    def get_variants_parents(
+        self, id: str, params: RequestParameters
+    ) -> List[StudyMetadataDTO]:
+        output_list: List[StudyMetadataDTO] = self._get_variants_parents(
+            id, params
+        )
+        if len(output_list) > 0:
+            output_list = output_list[1:]
+        return output_list
+
+    def _get_variants_parents(
+        self, id: str, params: RequestParameters
+    ) -> List[StudyMetadataDTO]:
+        study = self._get_variant_study(id, params, raw_study_accepted=True)
+        metadata = (
+            self.get_study_information(
+                study,
+                summary=True,
+            )
+            if isinstance(study, VariantStudy)
+            else self.raw_study_service.get_study_information(
+                study,
+                summary=True,
+            )
+        )
+        output_list: List[StudyMetadataDTO] = [metadata]
+        if study.parent_id is not None:
+            output_list.extend(
+                self._get_variants_parents(
+                    study.parent_id,
+                    params,
                 )
             )
 

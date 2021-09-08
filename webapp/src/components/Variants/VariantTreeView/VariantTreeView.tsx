@@ -6,7 +6,7 @@ import Tree from 'react-d3-tree';
 import { CustomNodeElementProps, Point, RawNodeDatum } from 'react-d3-tree/lib/types/common';
 import { StudyMetadata } from '../../../common/types';
 import VariantCard from './VariantCard';
-import { buildNodeFromMetadata, buildTree } from './utils';
+import { getTreeNodes } from './utils';
 
 const logError = debug('antares:varianttree:error');
 
@@ -52,8 +52,7 @@ const VariantTreeView = (props: PropsType) => {
     const init = async () => {
       if (study === undefined) return;
       try {
-        const rootNode = buildNodeFromMetadata(study);
-        await buildTree(rootNode);
+        const rootNode = await getTreeNodes(study);
         setData([{ ...rootNode }]);
       } catch (e) {
         logError('Failed to fetch tree data', e);
@@ -75,7 +74,7 @@ const VariantTreeView = (props: PropsType) => {
             orientation="vertical"
             nodeSize={{ x: 300, y: yClearance }}
             renderCustomNodeElement={(rd3tProps: CustomNodeElementProps) =>
-              VariantCard({ rd3tProps, theme, history })
+              VariantCard({ rd3tProps, theme, history, studyId: study !== undefined ? study.id : '' })
             }
           />
           )

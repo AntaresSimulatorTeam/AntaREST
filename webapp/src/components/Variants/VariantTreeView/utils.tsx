@@ -1,7 +1,7 @@
 import moment from 'moment';
 import { RawNodeDatum } from 'react-d3-tree/lib/types/common';
 import { StudyMetadata } from '../../../common/types';
-import { getVariantChildrens } from '../../../services/api/variant';
+import { getVariantChildrens, getVariantParents } from '../../../services/api/variant';
 
 export const buildNodeFromMetadata = (study: StudyMetadata): RawNodeDatum =>
   ({
@@ -28,6 +28,28 @@ export const buildTree = async (node: RawNodeDatum) => {
       if (node.children !== undefined) node.children.push({ ...elmNode });
     }),
   );
+};
+
+export const getTreeNodes = async (study: StudyMetadata): Promise<RawNodeDatum> => {
+  const parents = (await getVariantParents(study.id)).reverse();
+  const currentNode = buildNodeFromMetadata(study);
+
+  if (parents.length > 0) {
+    const rootNode: RawNodeDatum = buildNodeFromMetadata(parents[0]);
+    let prevNode: RawNodeDatum = rootNode;
+
+    for (let i = 1; i < parents.length; i += 1) {
+      const elmNode = buildNodeFromMetadata(parents[i]);
+      if (prevNode.children !== undefined) prevNode.children.push(elmNode);
+      prevNode = elmNode;
+    }
+    await buildTree(currentNode);
+    if (prevNode.children !== undefined) prevNode.children.push(currentNode);
+    return rootNode;
+  }
+
+  await buildTree(currentNode);
+  return currentNode;
 };
 
 export default buildTree;

@@ -7,12 +7,12 @@ interface PropsType {
     rd3tProps: CustomNodeElementProps;
     theme: Theme;
     history: any;
-
+    studyId: string;
 }
 
 const style = {
-  root: (theme: Theme): CSSProperties => ({
-    border: `1px solid ${theme.palette.primary.main}`,
+  root: (theme: Theme, isCurrentNode: boolean): CSSProperties => ({
+    border: `1px solid ${isCurrentNode ? theme.palette.secondary.main : theme.palette.primary.main}`,
     borderRadius: theme.shape.borderRadius,
     backgroundColor: 'white',
     width: '250px',
@@ -42,7 +42,7 @@ const style = {
   }),
 };
 const VariantCard = (props: PropsType) => {
-  const { rd3tProps, theme, history } = props;
+  const { rd3tProps, theme, history, studyId } = props;
   const { nodeDatum } = rd3tProps;
   if (nodeDatum.attributes === undefined) return <g />;
 
@@ -52,7 +52,7 @@ const VariantCard = (props: PropsType) => {
   return (
     <g>
       <foreignObject width={250} height={150} x={-125} y={-75}>
-        <Card onClick={() => history.push(`/study/${id}/variants`)} style={style.root(theme)}>
+        <Card onClick={() => history.push(`/study/${id}/variants`)} style={style.root(theme, studyId === id)}>
           <div style={style.header()}>
             <h3 style={{ fontSize: '0.8em', color: theme.palette.primary.main, marginBottom: '2px' }}>{name}</h3>
             <h3 style={{ fontSize: '0.7em', color: 'gray', marginTop: '0px' }}>{id}</h3>
