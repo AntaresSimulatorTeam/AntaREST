@@ -60,7 +60,6 @@ const VariantTreeView = (props: PropsType) => {
       }
     };
     init();
-    // setData(debugData);
   }, [study]);
 
   return (

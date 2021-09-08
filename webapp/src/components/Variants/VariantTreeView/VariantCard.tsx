@@ -33,12 +33,12 @@ const style = {
   grid: (theme: Theme): CSSProperties => ({
     width: '90%',
     height: '100%',
-    marginBottom: '1px',
+    marginBottom: '4px',
     color: theme.palette.primary.main,
   }),
   infotxt: (theme: Theme): CSSProperties => ({
     marginLeft: theme.spacing(1),
-    fontSize: '0.55em',
+    fontSize: '0.53em',
   }),
 };
 const VariantCard = (props: PropsType) => {

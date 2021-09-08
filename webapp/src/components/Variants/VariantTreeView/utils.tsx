@@ -17,16 +17,15 @@ export const buildNodeFromMetadata = (study: StudyMetadata): RawNodeDatum =>
   });
 
 export const buildTree = async (node: RawNodeDatum) => {
-  const children = await getVariantChildrens(String(node.attributes?.id));
+  const children: Array<StudyMetadata> = await getVariantChildrens(String(node.attributes?.id));
   if (children.length === 0) return;
-
   // eslint-disable-next-line no-param-reassign
   node.children = [];
-  Promise.all(
+  await Promise.all(
     children.map(async (elm) => {
       const elmNode = buildNodeFromMetadata(elm);
       await buildTree(elmNode);
-      if (node.children) node.children.push(elmNode);
+      if (node.children !== undefined) node.children.push({ ...elmNode });
     }),
   );
 };

@@ -132,15 +132,14 @@ const SingleStudyView = (props: PropTypes) => {
       setInitTab('informations');
       history.replace({ pathname: `/study/${studyId}/informations` });
     }
-  }, [history, studyId, tab]);
+  }, [studyId, history, tab]);
 
   useEffect(() => {
     if (studyId) {
       fetchStudyInfo();
       fetchStudyJob(studyId);
     }
-    window.history.replaceState(null, '', `/study/${studyId}/${initTab}`);
-  }, [studyId, t, enqueueSnackbar, fetchStudyInfo, initTab]);
+  }, [studyId, t, enqueueSnackbar, fetchStudyInfo]);
 
   useEffect(() => {
     addWsListener(handleEvents);
