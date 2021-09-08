@@ -116,6 +116,7 @@ def create_study_routes(
     )
     def create_study(
         name: str,
+        version: Optional[int] = None,
         groups: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -127,7 +128,9 @@ def create_study_routes(
         group_ids = [sanitize_uuid(gid) for gid in group_ids]
 
         params = RequestParameters(user=current_user)
-        uuid = storage_service.create_study(name_sanitized, group_ids, params)
+        uuid = storage_service.create_study(
+            name_sanitized, version, group_ids, params
+        )
 
         return uuid
 

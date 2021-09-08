@@ -239,12 +239,17 @@ class StudyService:
         return self._get_study_storage_service(study).get_study_path(study)
 
     def create_study(
-        self, study_name: str, group_ids: List[str], params: RequestParameters
+        self,
+        study_name: str,
+        version: Optional[int],
+        group_ids: List[str],
+        params: RequestParameters,
     ) -> str:
         """
         Create empty study
         Args:
             study_name: study name to set
+            version: version number of the study to create
             group_ids: group to link to study
             params: request parameters
 
@@ -261,7 +266,7 @@ class StudyService:
             path=study_path,
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            version=RawStudyService.new_default_version,
+            version=version or RawStudyService.new_default_version,
         )
 
         raw = self.raw_study_service.create(raw)
