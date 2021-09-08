@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import Mock
 
 from sqlalchemy import create_engine
@@ -120,4 +121,4 @@ def test_service() -> VariantStudyService:
         results = service.generate(saved_id, False, SADMIN)
         assert results == expected_result
         assert study.snapshot.id == study.id
-        assert study.snapshot.path == study.path + "/snapshot"
+        assert study.snapshot.path == str(Path(study.path) / "snapshot")
