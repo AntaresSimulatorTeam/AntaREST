@@ -161,7 +161,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
     assert result_right.status_code == HTTPStatus.CREATED.value
     assert result_right.json() == "my-uuid"
     storage_service.create_study.assert_called_once_with(
-        "study2", 803, [], PARAMS
+        "study2", None, [], PARAMS
     )
 
 
