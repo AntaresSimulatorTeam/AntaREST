@@ -1,10 +1,10 @@
 [
   {
       "action": "create_area",
-      "args": {"area_name": "testZone1", "metadata": {}}
+      "args": {"area_name": "MyArea", "metadata": {}}
   },
   {
       "action": "create_area",
-      "args": {"area_name": "testZone2", "metadata": {"country": "FR"}}
+      "args": {"area_name": "Area2", "metadata": {"country": "FR"}}
   }
 ]
