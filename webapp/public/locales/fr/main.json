@@ -1,6 +1,7 @@
 {
   "connexion": "Connexion",
   "settings": "Paramètres",
+  "version": "Version",
   "logout": "Déconnexion",
   "password": "Mot de passe",
   "delete": "Supprimer",
