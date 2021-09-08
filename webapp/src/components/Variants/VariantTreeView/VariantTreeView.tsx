@@ -1,4 +1,5 @@
 import { createStyles, makeStyles, useTheme } from '@material-ui/core';
+import debug from 'debug';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import Tree from 'react-d3-tree';
@@ -7,65 +8,7 @@ import { StudyMetadata } from '../../../common/types';
 import VariantCard from './VariantCard';
 import { buildNodeFromMetadata, buildTree } from './utils';
 
-const debugData: Array<RawNodeDatum> = [
-  {
-    name: '',
-    attributes: {
-      title: 'Card title',
-      subtitle: 'Card subtitle',
-      text: 'Some text to build on the card.',
-      date: '10/08/2018',
-    },
-    children: [
-      {
-        name: '',
-        attributes: {
-          title: 'Card title',
-          subtitle: 'Card subtitle',
-          text: 'Some text to build on the card.',
-          date: '10/08/2018',
-        },
-        children: [
-          {
-            name: 'child2',
-            attributes: {
-              title: 'child2',
-              subtitle: 'Card subtitle',
-              text: 'Some text to build on the card.',
-              date: '10/08/2018',
-            },
-          },
-          {
-            name: 'child2',
-            attributes: {
-              title: 'child3',
-              subtitle: 'Card subtitle',
-              text: 'Some text to build on the card.',
-              date: '10/08/2018',
-            },
-          },
-        ],
-      },
-      {
-        name: '',
-        attributes: {
-          title: 'Card title',
-          subtitle: 'Card subtitle',
-          text: 'Some text to build on the card.',
-          date: '10/08/2018',
-        },
-      },
-      {
-        name: '',
-        attributes: {
-          title: 'Card title',
-          subtitle: 'Card subtitle',
-          text: 'Some text to build on the card.',
-        },
-      },
-    ],
-  },
-];
+const logError = debug('antares:varianttree:error');
 
 const useStyles = makeStyles(() => createStyles({
   root: {
@@ -106,7 +49,6 @@ const VariantTreeView = (props: PropsType) => {
   }, []);
 
   useEffect(() => {
-    // Build the graph
     const init = async () => {
       if (study === undefined) return;
       try {
@@ -114,7 +56,7 @@ const VariantTreeView = (props: PropsType) => {
         await buildTree(rootNode);
         setData([{ ...rootNode }]);
       } catch (e) {
-        console.log(e);
+        logError('Failed to fetch tree data', e);
       }
     };
     init();

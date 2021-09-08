@@ -21,10 +21,13 @@ export interface StudyMetadataOwner {
   name: string;
 }
 
+export type StudyType = 'study' | 'variantstudy' | 'rawstudy';
+
 export interface StudyMetadataDTO {
   id: string;
   owner: StudyMetadataOwner;
   name: string;
+  type: StudyType;
   created: number;
   updated: number;
   version: number;
@@ -41,6 +44,7 @@ export interface StudyMetadata {
   creationDate: number;
   modificationDate: number;
   owner: StudyMetadataOwner;
+  type: StudyType;
   version: string;
   workspace: string;
   managed: boolean;

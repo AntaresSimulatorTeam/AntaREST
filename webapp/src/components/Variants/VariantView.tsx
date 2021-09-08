@@ -17,13 +17,11 @@ const useStyles = makeStyles(() => createStyles({
 interface PropTypes {
     // eslint-disable-next-line react/require-default-props
     initEditMode?: boolean;
-    // eslint-disable-next-line react/require-default-props
-    editable?: boolean;
     study: StudyMetadata | undefined;
 }
 
 const VariantView = (props: PropTypes) => {
-  const { editable = false, initEditMode = false, study } = props;
+  const { initEditMode = false, study } = props;
   const items: Components = {
     'singlestudy:variantDependencies': () => <VariantTreeView study={study} />,
     'singlestudy:createVariant': () => <div style={{ width: '100%', height: '100%' }}>Create variant</div>,
@@ -51,7 +49,7 @@ const VariantView = (props: PropTypes) => {
         editionMode={editionMode}
         onItemClick={onItemClick}
         onEditModeChange={onEditModeChange}
-        editable={editable}
+        editable={study !== undefined ? study.type === 'variantstudy' : false}
       />
       { items[navState]() }
     </div>

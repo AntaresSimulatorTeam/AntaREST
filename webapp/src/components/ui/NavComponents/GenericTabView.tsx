@@ -36,6 +36,7 @@ interface PropTypes {
 
 export default function NavTabView(props: PropTypes) {
   const classes = useStyles();
+  const history = useHistory();
   const { items, initialValue, studyId } = props;
   const [navList, setNavList] = useState<Array<string>>([]);
   const [navState, setNavState] = useState<string>(initialValue);
@@ -43,7 +44,7 @@ export default function NavTabView(props: PropTypes) {
 
   const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     setNavState(navList[newValue]);
-    window.history.replaceState(null, '', `/study/${studyId}/${navList[newValue]}`);
+    history.replace({ pathname: `/study/${studyId}/${navList[newValue]}` });
   };
 
   useEffect(() => {

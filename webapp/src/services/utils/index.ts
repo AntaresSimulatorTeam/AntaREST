@@ -8,6 +8,7 @@ export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDT
   modificationDate: metadata.updated,
   owner: metadata.owner,
   groups: metadata.groups,
+  type: metadata.type,
   publicMode: metadata.public_mode,
   version: metadata.version.toString(),
   workspace: metadata.workspace,

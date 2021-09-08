@@ -112,6 +112,7 @@ def get_study_information(
         updated=study.updated_at.timestamp(),
         workspace=study_workspace,
         managed=study_workspace == DEFAULT_WORKSPACE_NAME,
+        type=study.type,
         archived=study.archived if study.archived is not None else False,
         owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
         if study.owner is not None

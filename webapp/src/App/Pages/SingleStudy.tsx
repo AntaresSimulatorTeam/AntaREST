@@ -50,24 +50,19 @@ const mapDispatch = {
   removeWsListener: removeListener,
 };
 
-interface OwnProps {
-  initTab: 'informations' | 'variants' | 'treeView';
-}
-
 const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
-type PropTypes = OwnProps & ReduxProps;
+type PropTypes = ReduxProps;
 
 const SingleStudyView = (props: PropTypes) => {
-  const { studyId } = useParams();
+  const { studyId, tab = 'informations' } = useParams();
   const { addWsListener, removeWsListener } = props;
   const classes = useStyles();
-  const { initTab } = props;
-  // const history = useHistory();
+  const history = useHistory();
   const [t] = useTranslation();
   const [study, setStudy] = useState<StudyMetadata>();
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
-  // const [initTab, setInitTab] = useState<string>('singlestudy:informations');
+  const [initTab, setInitTab] = useState<string>('informations');
   const { enqueueSnackbar } = useSnackbar();
 
   const fetchStudyInfo = useCallback(async () => {
@@ -131,15 +126,13 @@ const SingleStudyView = (props: PropTypes) => {
     },
     [studyId, studyJobs, fetchStudyInfo],
   );
-  /* useEffect(() => {
-    console.log('------------ TAB: ', tab);
+  useEffect(() => {
     if (tab === 'informations' || tab === 'variants' || tab === 'treeView') setInitTab(tab);
     else {
       setInitTab('informations');
       history.replace({ pathname: `/study/${studyId}/informations` });
-      //window.history.replaceState(null, '', `/study/${studyId}/informations`);
     }
-  }, [history, studyId, tab]); */
+  }, [history, studyId, tab]);
 
   useEffect(() => {
     if (studyId) {
@@ -157,7 +150,7 @@ const SingleStudyView = (props: PropTypes) => {
   const navData: { [key: string]: () => JSX.Element } = {
     informations: () =>
       (study ? <Informations study={study} jobs={studyJobs || []} /> : <div />),
-    variants: () => <VariantView study={study} editable />,
+    variants: () => <VariantView study={study} />,
   };
   if (study && !study.archived) {
     navData.treeView = () => <StudyView study={study} />;
