@@ -32,21 +32,6 @@ def matrix_service() -> MatrixService:
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    # repo = Mock()
-    # matrix_mock = Mock()
-    #
-    # matrix_mock.created_at = datetime.now()
-    # repo.get.return_value = matrix_mock
-    # content = Mock()
-    # content.save.return_value = "matrix_id"
-    # dataset_repo = Mock()
-    #
-    # service = MatrixService(
-    #     repo=repo,
-    #     repo_dataset=dataset_repo,
-    #     content=content,
-    #     user_service=Mock(),
-    # )
 
     matrix_service = Mock(spec=MatrixService)
     matrix_service.create.return_value = "matrix_id"
