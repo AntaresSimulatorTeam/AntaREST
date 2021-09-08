@@ -11,6 +11,9 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+)
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
 )
@@ -44,12 +47,14 @@ class PreproAreaSettings(IniFileNode):
 class PreproArea(FolderNode):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         children: TREE = {
-            "conversion": RawFileNode(
+            "conversion": InputSeriesMatrix(
                 self.context, config.next_file("conversion.txt")
             ),
-            "data": RawFileNode(self.context, config.next_file("data.txt")),
-            "k": RawFileNode(self.context, config.next_file("k.txt")),
-            "translation": RawFileNode(
+            "data": InputSeriesMatrix(
+                self.context, config.next_file("data.txt")
+            ),
+            "k": InputSeriesMatrix(self.context, config.next_file("k.txt")),
+            "translation": InputSeriesMatrix(
                 self.context, config.next_file("translation.txt")
             ),
             "settings": PreproAreaSettings(

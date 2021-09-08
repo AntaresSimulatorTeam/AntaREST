@@ -223,6 +223,7 @@ def create_study_variant_routes(
     )
     def generate_variant(
         uuid: str,
+        denormalize: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> GenerationResultInfoDTO:
         logger.info(
@@ -231,7 +232,9 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.generate(sanitized_uuid, params)
+        return variant_study_service.generate(
+            sanitized_uuid, denormalize, params
+        )
 
     @bp.post(
         "/studies/{uuid}/freeze",

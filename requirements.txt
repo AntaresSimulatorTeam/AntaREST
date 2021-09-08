@@ -27,3 +27,4 @@ gunicorn
 alembic
 psycopg2-binary
 python-json-logger
+click

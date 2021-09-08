@@ -72,7 +72,7 @@ class GeneratorMatrixConstants:
         if version > 650:
             return (
                 MATRIX_PROTOCOL_PREFIX
-                + self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
+                + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7]
             )
         return (
             MATRIX_PROTOCOL_PREFIX

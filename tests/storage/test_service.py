@@ -281,6 +281,7 @@ def test_download_output() -> None:
     )
 
     area = Area(
+        name="area",
         links={"west": Link(filters_synthesis=[], filters_year=[])},
         thermals=[],
         renewables=[],

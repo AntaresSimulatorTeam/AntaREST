@@ -358,7 +358,10 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         return str(variant_study.id)
 
     def generate(
-        self, variant_study_id: str, params: RequestParameters
+        self,
+        variant_study_id: str,
+        denormalize: bool,
+        params: RequestParameters,
     ) -> GenerationResultInfoDTO:
 
         # Get variant study
@@ -382,10 +385,18 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         if results.success:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
-                path=variant_study.path,
+                path=str(Path(variant_study.path) / "snapshot"),
                 created_at=datetime.now(),
             )
             self.repository.save(variant_study)
+
+            if denormalize:
+                config, study_tree = self.study_factory.create_from_fs(
+                    Path(variant_study.snapshot.path),
+                    study_id=variant_study.id,
+                )
+                study_tree.denormalize()
+
         return results
 
     def create(self, study: VariantStudy) -> VariantStudy:

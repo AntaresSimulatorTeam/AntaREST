@@ -152,13 +152,13 @@ class MatrixDTO(BaseModel):
     height: int
     index: List[str]
     columns: List[str]
-    data: List[List[int]]
+    data: List[List[Union[float, int]]]
     created_at: int = 0
     id: str = ""
 
 
 class MatrixContent(BaseModel):
-    data: List[List[Union[int, float]]]
+    data: List[List[Union[float, int]]]
     index: Optional[List[Union[str, int]]]
     columns: Optional[List[Union[str, int]]]
 
