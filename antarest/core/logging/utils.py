@@ -3,6 +3,7 @@ import logging.config
 import os
 import re
 import uuid
+from pythonjsonlogger.jsonlogger import JsonFormatter
 from contextvars import ContextVar, Token
 from typing import Optional, Type, Any, Dict
 
@@ -43,7 +44,7 @@ def configure_logger(config: Config) -> None:
                 "format": "%(asctime)s - %(threadName)s - %(name)s - %(ip)s - %(user)s - %(pid)s - %(levelname)s - %(message)s",
             },
             "json": {
-                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                "class": f"{JsonFormatter.__module__}.{JsonFormatter.__name__}",
                 "format": "%(asctime)s - %(threadName)s - %(name)s - %(ip)s - %(user)s - %(pid)s - %(levelname)s - %(message)s",
             },
         },
