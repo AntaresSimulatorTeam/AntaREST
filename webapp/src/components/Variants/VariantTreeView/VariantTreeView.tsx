@@ -69,7 +69,7 @@ const VariantTreeView = (props: PropsType) => {
             data={data}
             collapsible={false}
             translate={translate}
-            scaleExtent={{ min: 1, max: 3 }}
+            scaleExtent={{ min: 0, max: 3 }}
             pathFunc="elbow"
             orientation="vertical"
             nodeSize={{ x: 300, y: yClearance }}
