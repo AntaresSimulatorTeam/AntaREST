@@ -19,6 +19,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
 )
 
 SNAPSHOT_RELATIVE_PATH = "snapshot"
+OUTPUT_RELATIVE_PATH = "output"
 
 
 class VariantSnapshotGenerator:

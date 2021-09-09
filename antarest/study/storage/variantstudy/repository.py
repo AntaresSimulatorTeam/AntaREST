@@ -5,6 +5,7 @@ from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
+    VariantStudySnapshot,
 )
 
 
@@ -20,3 +21,11 @@ class VariantStudyRepository(StudyMetadataRepository):
             .all()
         )
         return studies
+
+    def get_snapshot(self, id: str) -> VariantStudySnapshot:
+        snapshot: VariantStudySnapshot = (
+            db.session.query(VariantStudySnapshot)
+            .filter(VariantStudySnapshot.id == id)
+            .all()
+        )
+        return snapshot

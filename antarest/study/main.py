@@ -110,6 +110,7 @@ def build_storage(
         matrix_service=matrix_service,
     )
     variant_study_service = VariantStudyService(
+        task_service=task_service,
         raw_study_service=raw_study_service,
         command_factory=command_factory,
         study_factory=study_factory,

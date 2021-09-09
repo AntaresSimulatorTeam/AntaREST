@@ -12,9 +12,13 @@ from antarest.core.exceptions import (
     StudyTypeUnsupported,
     NoParentStudyError,
     CommandNotFoundError,
+    VariantGenerationError,
 )
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
+from antarest.core.tasks.model import TaskResult
+from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import (
     Study,
@@ -63,6 +67,7 @@ logger = logging.getLogger(__name__)
 class VariantStudyService(IStudyStorageService[VariantStudy]):
     def __init__(
         self,
+        task_service: ITaskService,
         raw_study_service: RawStudyService,
         command_factory: CommandFactory,
         study_factory: StudyFactory,
@@ -75,6 +80,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         self.generator = VariantSnapshotGenerator(
             command_factory, study_factory, exporter_service
         )
+        self.task_service = task_service
         self.raw_study_service = raw_study_service
         self.study_factory = study_factory
         self.patch_service = patch_service
@@ -410,8 +416,14 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
 
         # Check parent study permission
         assert_permission(params.user, parent_study, StudyPermissionType.READ)
-        if not isinstance(parent_study, RawStudy):
-            raise StudyTypeUnsupported(parent_study.id, parent_study.type)
+
+        if isinstance(parent_study, VariantStudy):
+            if not self.exists(parent_study):
+                results = self.generate(parent_study.id, denormalize, params)
+                if not results.success:
+                    raise VariantGenerationError(
+                        f"{parent_study.id} as parent of {variant_study_id}"
+                    )
 
         results = self.generator.generate_snapshot(variant_study, parent_study)
         if results.success:
@@ -447,7 +459,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             study: study
         Returns: true if study presents in disk, false else.
         """
-        raise NotImplementedError()
+        return study.snapshot is not None
 
     def copy(
         self,
@@ -472,7 +484,31 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             metadata: study
         Returns: the config and study tree object
         """
-        raise NotImplementedError()
+        if metadata.snapshot is None:
+
+            def callback() -> TaskResult:
+                generate_result = self.generate(
+                    metadata.id, False, RequestParameters(DEFAULT_ADMIN_USER)
+                )
+                return TaskResult(
+                    success=generate_result.success,
+                    message=f"{metadata.id} generated successfully"
+                    if generate_result.success
+                    else f"{metadata.id} not generated",
+                )
+
+            task_id = self.task_service.add_task(
+                action=callback,
+                name=f"Generation of {metadata.id} study",
+                request_params=RequestParameters(DEFAULT_ADMIN_USER),
+            )
+            self.task_service.await_task(task_id)
+
+        study_path = self.get_study_path(metadata)
+        study_config, study_tree = self.study_factory.create_from_fs(
+            study_path, metadata.id
+        )
+        return FileStudy(config=study_config, tree=study_tree)
 
     def get_study_sim_result(
         self, metadata: VariantStudy
@@ -480,7 +516,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         """
         Get global result information
         Args:
-            study: study
+            metadata: study
         Returns: study output data
         """
         raise NotImplementedError()
@@ -517,6 +553,10 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             output_id: output simulation
         Returns:
         """
+        study_path = Path(metadata.path)
+        output_path = study_path / "output" / output_id
+        shutil.rmtree(output_path, ignore_errors=True)
+        # self.remove_from_cache(metadata.id)
         raise NotImplementedError()
 
     def get_study_path(self, metadata: Study) -> Path:
