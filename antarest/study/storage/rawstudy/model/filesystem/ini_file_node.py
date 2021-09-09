@@ -1,4 +1,4 @@
-from typing import List, Optional, cast, Dict, Any
+from typing import List, Optional, cast, Dict, Any, Union
 
 from antarest.core.custom_types import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.io.reader import IniReader
@@ -46,13 +46,16 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         pass  # end node has nothing to build
 
-    def get(
+    def _get(
         self,
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        formatted: bool = True,
-    ) -> SUB_JSON:
+        get_node: bool = False,
+    ) -> Union[SUB_JSON, INode[SUB_JSON, SUB_JSON, JSON]]:
+        if get_node:
+            return self
+
         if depth <= -1 and expanded:
             return f"json://{self.config.path.name}"
 
@@ -70,6 +73,25 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         else:
             json = {k: {} for k in json} if depth == 1 else json
         return cast(SUB_JSON, json)
+
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        formatted: bool = True,
+    ) -> SUB_JSON:
+        output = self._get(url, depth, expanded, get_node=False)
+        assert not isinstance(output, INode)
+        return output
+
+    def get_node(
+        self,
+        url: Optional[List[str]] = None,
+    ) -> INode[SUB_JSON, SUB_JSON, JSON]:
+        output = self._get(url, get_node=True)
+        assert isinstance(output, INode)
+        return output
 
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
         url = url or []

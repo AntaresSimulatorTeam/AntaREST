@@ -26,6 +26,15 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
     def build(self, config: FileStudyTreeConfig) -> TREE:
         pass  # End of root. No build
 
+    def get_node(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        formatted: bool = True,
+    ) -> INode[List[str], List[str], List[str]]:
+        return self
+
     def get(
         self,
         url: Optional[List[str]] = None,

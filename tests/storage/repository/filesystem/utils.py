@@ -30,6 +30,12 @@ class TestSubNode(INode[int, int, int]):
     def __init__(self, value: int):
         self.value = value
 
+    def get_node(
+        self,
+        url: Optional[List[str]] = None,
+    ) -> INode[int, int, int]:
+        return self
+
     def get(
         self,
         url: Optional[List[str]] = None,

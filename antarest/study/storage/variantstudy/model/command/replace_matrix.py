@@ -5,6 +5,12 @@ from pydantic import validator
 from antarest.core.custom_types import JSON
 from antarest.matrixstore.model import MatrixContent
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
+    MatrixNode,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -52,12 +58,20 @@ class ReplaceMatrix(ICommand):
         target_matrix[url[-1]] = self.matrix
 
         try:
-            study_data.tree.save(replace_matrix_data)
-        except KeyError:
+            last_node = study_data.tree.get_node(url)
+            assert isinstance(last_node, MatrixNode)
+        except (KeyError, ChildNotFoundError):
             return CommandOutput(
                 status=False,
-                message=f"Path '{self.target_element}' does not exist or does not target a matrix.",
+                message=f"Path '{self.target_element}' does not exist.",
             )
+        except AssertionError:
+            return CommandOutput(
+                status=False,
+                message=f"Path '{self.target_element}' does not target a matrix.",
+            )
+
+        study_data.tree.save(replace_matrix_data)
 
         return CommandOutput(
             status=True,
