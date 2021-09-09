@@ -169,12 +169,14 @@ def test_create_study() -> None:
     with pytest.raises(UserHasNotPermissionError):
         service.create_study(
             "new-study",
+            720,
             ["my-group"],
             RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
         )
 
     service.create_study(
         "new-study",
+        720,
         ["my-group"],
         RequestParameters(
             JWTUser(
@@ -281,6 +283,7 @@ def test_download_output() -> None:
     )
 
     area = Area(
+        name="area",
         links={"west": Link(filters_synthesis=[], filters_year=[])},
         thermals=[],
         renewables=[],

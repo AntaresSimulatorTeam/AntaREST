@@ -1,5 +1,6 @@
 from logging import Logger
 from pathlib import Path
+from typing import Optional, cast
 
 from antarest.core.config import Config
 from antarest.core.exceptions import StudyTypeUnsupported
@@ -11,6 +12,7 @@ from antarest.study.model import (
     PatchStudy,
     OwnerInfo,
     PublicMode,
+    RawStudy,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -22,6 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 
 def get_workspace_path(config: Config, workspace: str) -> Path:
@@ -80,6 +83,7 @@ def get_study_path(metadata: Study) -> Path:
 
 def get_study_information(
     study: Study,
+    study_path: Optional[Path],
     patch_service: PatchService,
     study_factory: StudyFactory,
     logger: Logger,
@@ -87,22 +91,22 @@ def get_study_information(
 ) -> StudyMetadataDTO:
     file_settings = {}
     file_metadata = {}
-    study_path = Path(study.path)
 
-    config = FileStudyTreeConfig(
-        study_path=study_path,
-        path=study_path,
-        study_id="",
-        version=-1,
-    )
     patch_metadata = patch_service.get(study).study or PatchStudy()
 
     try:
-        raw_study = study_factory.create_from_config(config)
-        file_metadata = raw_study.get(url=["study", "antares"])
-        file_settings = raw_study.get(
-            url=["settings", "generaldata", "general"]
-        )
+        if study_path:
+            config = FileStudyTreeConfig(
+                study_path=study_path,
+                path=study_path,
+                study_id="",
+                version=-1,
+            )
+            raw_study = study_factory.create_from_config(config)
+            file_metadata = raw_study.get(url=["study", "antares"])
+            file_settings = raw_study.get(
+                url=["settings", "generaldata", "general"]
+            )
     except Exception as e:
         logger.error(
             "Failed to retrieve general settings for study %s",
@@ -122,6 +126,7 @@ def get_study_information(
         updated=study.updated_at.timestamp(),
         workspace=study_workspace,
         managed=study_workspace == DEFAULT_WORKSPACE_NAME,
+        type=study.type,
         archived=study.archived if study.archived is not None else False,
         owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
         if study.owner is not None

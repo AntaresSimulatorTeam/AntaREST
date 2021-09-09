@@ -171,10 +171,10 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
-            b"write something",
-            None,
+            b"",
+            {},
         ),
-        ("/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k", b"", None),
+        ("/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k", b"", {}),
         (
             "/v1/studies/STA-mini/raw?path=input/load/series/load_fr",
             {

@@ -42,7 +42,7 @@ def matrix_service() -> MatrixService:
 @pytest.fixture
 def empty_study(tmp_path: str, matrix_service: MatrixService) -> FileStudy:
     project_dir: Path = Path(__file__).parent.parent.parent.parent.parent
-    empty_study_path: Path = project_dir / "resources" / "empty-study.zip"
+    empty_study_path: Path = project_dir / "resources" / "empty_study_720.zip"
     empty_study_destination_path = Path(tmp_path) / "empty-study"
     with zipfile.ZipFile(empty_study_path, "r") as zip_empty_study:
         zip_empty_study.extractall(empty_study_destination_path)

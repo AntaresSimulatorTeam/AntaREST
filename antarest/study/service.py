@@ -28,6 +28,7 @@ from antarest.core.roles import RoleType
 from antarest.core.tasks.service import ITaskService
 from antarest.login.model import Group
 from antarest.login.service import LoginService
+from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -63,6 +64,7 @@ from antarest.study.storage.utils import (
     get_default_workspace_path,
     get_study_path,
 )
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -151,9 +153,9 @@ class StudyService:
         """
         logger.info("studies metadata asked by user %s", params.get_user_id())
         return {
-            study.id: self.raw_study_service.get_study_information(
-                study, summary=True
-            )
+            study.id: self._get_study_storage_service(
+                study
+            ).get_study_information(study, summary=True)
             for study in self._get_study_metadatas(params)
         }
 
@@ -171,13 +173,12 @@ class StudyService:
         """
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
-
         logger.info(
             "study %s metadata asked by user %s", uuid, params.get_user_id()
         )
-        return self.raw_study_service.get_study_information(study)
+        return self._get_study_storage_service(study).get_study_information(
+            study
+        )
 
     def update_study_information(
         self,
@@ -233,21 +234,23 @@ class StudyService:
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.RUN)
 
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
-
         logger.info(
             "study %s path asked by user %s", uuid, params.get_user_id()
         )
-        return get_study_path(study)
+        return self._get_study_storage_service(study).get_study_path(study)
 
     def create_study(
-        self, study_name: str, group_ids: List[str], params: RequestParameters
+        self,
+        study_name: str,
+        version: Optional[int],
+        group_ids: List[str],
+        params: RequestParameters,
     ) -> str:
         """
         Create empty study
         Args:
             study_name: study name to set
+            version: version number of the study to create
             group_ids: group to link to study
             params: request parameters
 
@@ -264,7 +267,7 @@ class StudyService:
             path=study_path,
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            version=RawStudyService.new_default_version,
+            version=version or RawStudyService.new_default_version,
         )
 
         raw = self.raw_study_service.create(raw)
@@ -455,11 +458,9 @@ class StudyService:
         """
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.DELETE)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
 
         if self._assert_study_unarchived(study, False):
-            self.raw_study_service.delete(study)
+            self._get_study_storage_service(study).delete(study)
         else:
             os.unlink(self.exporter_service.get_archive_path(study))
         study_info = study.to_json_summary()
@@ -484,10 +485,9 @@ class StudyService:
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
-
-        self.raw_study_service.delete_output(study, output_name)
+        self._get_study_storage_service(study).delete_output(
+            study, output_name
+        )
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
@@ -550,16 +550,15 @@ class StudyService:
         study = self._get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(study_id, study.type)
-
         logger.info(
             "study %s output listing asked by user %s",
             study_id,
             params.get_user_id(),
         )
 
-        return self.raw_study_service.get_study_sim_result(study)
+        return self._get_study_storage_service(study).get_study_sim_result(
+            study
+        )
 
     def set_sim_reference(
         self,
@@ -582,8 +581,6 @@ class StudyService:
         study = self._get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(study_id, study.type)
 
         logger.info(
             "output %s set by user %s as reference (%b) for study %s",
@@ -593,7 +590,9 @@ class StudyService:
             study_id,
         )
 
-        self.raw_study_service.set_reference_output(study, output_id, status)
+        self._get_study_storage_service(study).set_reference_output(
+            study, output_id, status
+        )
 
     def import_study(
         self,
@@ -1005,3 +1004,13 @@ class StudyService:
         except Exception as e:
             logger.error(e)
             return StudyContentStatus.ERROR
+
+    def _get_study_storage_service(
+        self, study: Study
+    ) -> IStudyStorageService[Union[RawStudy, VariantStudy]]:
+        if isinstance(study, RawStudy):
+            return self.raw_study_service
+        elif isinstance(study, VariantStudy):
+            return self.variant_study_service
+        else:
+            raise StudyTypeUnsupported(study.id, study.type)

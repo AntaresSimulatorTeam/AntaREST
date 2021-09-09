@@ -1,6 +1,9 @@
 import configparser
 
 from antarest.matrixstore.service import MatrixService
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -31,6 +34,7 @@ class TestCreateArea:
         version = empty_study.config.version
         study_path = empty_study.config.study_path
         area_name = "Area"
+        area_id = transform_name_to_id(area_name)
 
         create_area_command: ICommand = CreateArea.parse_obj(
             {
@@ -44,39 +48,39 @@ class TestCreateArea:
         )
 
         # Areas
-        assert area_name in empty_study.config.areas
+        assert area_id in empty_study.config.areas
 
         with open(study_path / "input" / "areas" / "list.txt") as f:
             area_list = f.read().splitlines()
-        assert area_name.upper() in area_list
+        assert area_name in area_list
 
-        assert (study_path / "input" / "areas" / area_name).is_dir()
+        assert (study_path / "input" / "areas" / area_id).is_dir()
         assert (
-            study_path / "input" / "areas" / area_name / "optimization.ini"
+            study_path / "input" / "areas" / area_id / "optimization.ini"
         ).exists()
-        assert (study_path / "input" / "areas" / area_name / "ui.ini").exists()
+        assert (study_path / "input" / "areas" / area_id / "ui.ini").exists()
 
         # Hydro
         hydro = configparser.ConfigParser()
         hydro.read(study_path / "input" / "hydro" / "hydro.ini")
-        assert int(hydro["inter-daily-breakdown"][area_name]) == 1
-        assert int(hydro["intra-daily-modulation"][area_name]) == 24
-        assert int(hydro["inter-monthly-breakdown"][area_name]) == 1
+        assert int(hydro["inter-daily-breakdown"][area_id]) == 1
+        assert int(hydro["intra-daily-modulation"][area_id]) == 24
+        assert int(hydro["inter-monthly-breakdown"][area_id]) == 1
         if version > 650:
-            assert int(hydro["initialize reservoir date"][area_name]) == 0
-            assert int(hydro["leeway low"][area_name]) == 1
-            assert int(hydro["leeway up"][area_name]) == 1
-            assert int(hydro["pumping efficiency"][area_name]) == 1
+            assert int(hydro["initialize reservoir date"][area_id]) == 0
+            assert int(hydro["leeway low"][area_id]) == 1
+            assert int(hydro["leeway up"][area_id]) == 1
+            assert int(hydro["pumping efficiency"][area_id]) == 1
 
         # Allocation
         assert (
-            study_path / "input" / "hydro" / "allocation" / f"{area_name}.ini"
+            study_path / "input" / "hydro" / "allocation" / f"{area_id}.ini"
         ).exists()
         allocation = configparser.ConfigParser()
         allocation.read(
-            study_path / "input" / "hydro" / "allocation" / f"{area_name}.ini"
+            study_path / "input" / "hydro" / "allocation" / f"{area_id}.ini"
         )
-        assert int(allocation["[allocation"][area_name]) == 1
+        assert int(allocation["[allocation"][area_id]) == 1
 
         # Capacity
         assert (
@@ -85,7 +89,7 @@ class TestCreateArea:
             / "hydro"
             / "common"
             / "capacity"
-            / f"maxpower_{area_name}.txt.link"
+            / f"maxpower_{area_id}.txt.link"
         ).exists()
         assert (
             study_path
@@ -93,7 +97,7 @@ class TestCreateArea:
             / "hydro"
             / "common"
             / "capacity"
-            / f"reservoir_{area_name}.txt.link"
+            / f"reservoir_{area_id}.txt.link"
         ).exists()
         if version > 650:
             assert (
@@ -102,7 +106,7 @@ class TestCreateArea:
                 / "hydro"
                 / "common"
                 / "capacity"
-                / f"creditmodulations_{area_name}.txt.link"
+                / f"creditmodulations_{area_id}.txt.link"
             ).exists()
             assert (
                 study_path
@@ -110,7 +114,7 @@ class TestCreateArea:
                 / "hydro"
                 / "common"
                 / "capacity"
-                / f"inflowPattern_{area_name}.txt.link"
+                / f"inflowPattern_{area_id}.txt.link"
             ).exists()
             assert (
                 study_path
@@ -118,39 +122,34 @@ class TestCreateArea:
                 / "hydro"
                 / "common"
                 / "capacity"
-                / f"waterValues_{area_name}.txt.link"
+                / f"waterValues_{area_id}.txt.link"
             ).exists()
 
         # Prepro
-        assert (study_path / "input" / "hydro" / "prepro" / area_name).is_dir()
+        assert (study_path / "input" / "hydro" / "prepro" / area_id).is_dir()
         assert (
             study_path
             / "input"
             / "hydro"
             / "prepro"
-            / area_name
+            / area_id
             / "energy.txt.link"
         ).exists()
 
         allocation = configparser.ConfigParser()
         allocation.read(
-            study_path
-            / "input"
-            / "hydro"
-            / "prepro"
-            / area_name
-            / "prepro.ini"
+            study_path / "input" / "hydro" / "prepro" / area_id / "prepro.ini"
         )
         assert float(allocation["prepro"]["intermonthly-correlation"]) == 0.5
 
         # Series
-        assert (study_path / "input" / "hydro" / "series" / area_name).is_dir()
+        assert (study_path / "input" / "hydro" / "series" / area_id).is_dir()
         assert (
             study_path
             / "input"
             / "hydro"
             / "series"
-            / area_name
+            / area_id
             / "mod.txt.link"
         ).exists()
         assert (
@@ -158,25 +157,25 @@ class TestCreateArea:
             / "input"
             / "hydro"
             / "series"
-            / area_name
+            / area_id
             / "ror.txt.link"
         ).exists()
 
         # Links
-        assert (study_path / "input" / "links" / area_name).is_dir()
+        assert (study_path / "input" / "links" / area_id).is_dir()
         assert (
-            study_path / "input" / "links" / area_name / "properties.ini"
+            study_path / "input" / "links" / area_id / "properties.ini"
         ).exists()
 
         # Load
         # Prepro
-        assert (study_path / "input" / "load" / "prepro" / area_name).is_dir()
+        assert (study_path / "input" / "load" / "prepro" / area_id).is_dir()
         assert (
             study_path
             / "input"
             / "load"
             / "prepro"
-            / area_name
+            / area_id
             / "conversion.txt.link"
         ).exists()
         assert (
@@ -184,26 +183,21 @@ class TestCreateArea:
             / "input"
             / "load"
             / "prepro"
-            / area_name
+            / area_id
             / "data.txt.link"
         ).exists()
         assert (
-            study_path / "input" / "load" / "prepro" / area_name / "k.txt.link"
+            study_path / "input" / "load" / "prepro" / area_id / "k.txt.link"
+        ).exists()
+        assert (
+            study_path / "input" / "load" / "prepro" / area_id / "settings.ini"
         ).exists()
         assert (
             study_path
             / "input"
             / "load"
             / "prepro"
-            / area_name
-            / "settings.ini"
-        ).exists()
-        assert (
-            study_path
-            / "input"
-            / "load"
-            / "prepro"
-            / area_name
+            / area_id
             / "translation.txt.link"
         ).exists()
 
@@ -213,28 +207,28 @@ class TestCreateArea:
             / "input"
             / "load"
             / "series"
-            / f"load_{area_name}.txt.link"
+            / f"load_{area_id}.txt.link"
         ).exists()
 
         # Misc-gen
         assert (
-            study_path / "input" / "misc-gen" / f"miscgen-{area_name}.txt.link"
+            study_path / "input" / "misc-gen" / f"miscgen-{area_id}.txt.link"
         ).exists()
 
         # Reserves
         assert (
-            study_path / "input" / "reserves" / f"{area_name}.txt.link"
+            study_path / "input" / "reserves" / f"{area_id}.txt.link"
         ).exists()
 
         # Solar
         # Prepro
-        assert (study_path / "input" / "solar" / "prepro" / area_name).is_dir()
+        assert (study_path / "input" / "solar" / "prepro" / area_id).is_dir()
         assert (
             study_path
             / "input"
             / "solar"
             / "prepro"
-            / area_name
+            / area_id
             / "conversion.txt.link"
         ).exists()
         assert (
@@ -242,23 +236,18 @@ class TestCreateArea:
             / "input"
             / "solar"
             / "prepro"
-            / area_name
+            / area_id
             / "data.txt.link"
         ).exists()
         assert (
-            study_path
-            / "input"
-            / "solar"
-            / "prepro"
-            / area_name
-            / "k.txt.link"
+            study_path / "input" / "solar" / "prepro" / area_id / "k.txt.link"
         ).exists()
         assert (
             study_path
             / "input"
             / "solar"
             / "prepro"
-            / area_name
+            / area_id
             / "settings.ini"
         ).exists()
         assert (
@@ -266,7 +255,7 @@ class TestCreateArea:
             / "input"
             / "solar"
             / "prepro"
-            / area_name
+            / area_id
             / "translation.txt.link"
         ).exists()
 
@@ -276,12 +265,12 @@ class TestCreateArea:
             / "input"
             / "solar"
             / "series"
-            / f"solar_{area_name}.txt.link"
+            / f"solar_{area_id}.txt.link"
         ).exists()
 
         # Thermal
         assert (
-            study_path / "input" / "thermal" / "clusters" / area_name
+            study_path / "input" / "thermal" / "clusters" / area_id
         ).is_dir()
 
         assert (
@@ -289,7 +278,7 @@ class TestCreateArea:
             / "input"
             / "thermal"
             / "clusters"
-            / area_name
+            / area_id
             / "list.ini"
         ).exists()
 
@@ -298,13 +287,13 @@ class TestCreateArea:
 
         # Wind
         # Prepro
-        assert (study_path / "input" / "wind" / "prepro" / area_name).is_dir()
+        assert (study_path / "input" / "wind" / "prepro" / area_id).is_dir()
         assert (
             study_path
             / "input"
             / "wind"
             / "prepro"
-            / area_name
+            / area_id
             / "conversion.txt.link"
         ).exists()
         assert (
@@ -312,26 +301,21 @@ class TestCreateArea:
             / "input"
             / "wind"
             / "prepro"
-            / area_name
+            / area_id
             / "data.txt.link"
         ).exists()
         assert (
-            study_path / "input" / "wind" / "prepro" / area_name / "k.txt.link"
+            study_path / "input" / "wind" / "prepro" / area_id / "k.txt.link"
+        ).exists()
+        assert (
+            study_path / "input" / "wind" / "prepro" / area_id / "settings.ini"
         ).exists()
         assert (
             study_path
             / "input"
             / "wind"
             / "prepro"
-            / area_name
-            / "settings.ini"
-        ).exists()
-        assert (
-            study_path
-            / "input"
-            / "wind"
-            / "prepro"
-            / area_name
+            / area_id
             / "translation.txt.link"
         ).exists()
 
@@ -341,7 +325,7 @@ class TestCreateArea:
             / "input"
             / "wind"
             / "series"
-            / f"wind_{area_name}.txt.link"
+            / f"wind_{area_id}.txt.link"
         ).exists()
 
         assert output.status

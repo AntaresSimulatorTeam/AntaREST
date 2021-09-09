@@ -43,6 +43,7 @@ class Area(BaseModel):
     Object linked to /input/<area>/optimization.ini information
     """
 
+    name: str
     links: Dict[str, Link]
     thermals: List[Cluster]
     renewables: List[Cluster]
@@ -161,7 +162,7 @@ class FileStudyTreeConfig(BaseModel):
         return self.areas[area].filters_year
 
 
-def transform_name_to_id(name: str) -> str:
+def transform_name_to_id(name: str, lower: bool = True) -> str:
     """This transformation was taken from the cpp Antares Simulator.."""
     duppl = False
     study_id = ""
@@ -185,4 +186,7 @@ def transform_name_to_id(name: str) -> str:
                 study_id += " "
                 duppl = True
 
-    return study_id.strip().lower()
+    study_id_stripped = study_id.strip()
+    if lower:
+        return study_id_stripped.lower()
+    return study_id_stripped

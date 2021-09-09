@@ -130,7 +130,9 @@ class RemoveArea(ICommand):
         new_area_data: JSON = {
             "input": {
                 "areas": {
-                    "list": study_data.config.areas.keys(),
+                    "list": [
+                        area.name for area in study_data.config.areas.values()
+                    ],
                 }
             }
         }

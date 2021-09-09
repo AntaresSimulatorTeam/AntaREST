@@ -23,6 +23,7 @@ def test_lifecycle():
         version=-1,
         areas={
             "a1": Area(
+                name="a1",
                 links={},
                 thermals=[],
                 renewables=[],

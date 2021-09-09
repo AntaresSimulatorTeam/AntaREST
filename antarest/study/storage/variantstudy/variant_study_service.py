@@ -1,5 +1,6 @@
 import json
 import logging
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import List, Union, Optional, cast
@@ -40,6 +41,9 @@ from antarest.study.storage.variantstudy.model import (
     CommandDTO,
     GenerationResultInfoDTO,
 )
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
@@ -59,6 +63,7 @@ logger = logging.getLogger(__name__)
 class VariantStudyService(IStudyStorageService[VariantStudy]):
     def __init__(
         self,
+        raw_study_service: RawStudyService,
         command_factory: CommandFactory,
         study_factory: StudyFactory,
         patch_service: PatchService,
@@ -70,6 +75,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         self.generator = VariantSnapshotGenerator(
             command_factory, study_factory, exporter_service
         )
+        self.raw_study_service = raw_study_service
         self.study_factory = study_factory
         self.patch_service = patch_service
         self.repository = repository
@@ -271,6 +277,42 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
 
         return output_list
 
+    def get_variants_parents(
+        self, id: str, params: RequestParameters
+    ) -> List[StudyMetadataDTO]:
+        output_list: List[StudyMetadataDTO] = self._get_variants_parents(
+            id, params
+        )
+        if len(output_list) > 0:
+            output_list = output_list[1:]
+        return output_list
+
+    def _get_variants_parents(
+        self, id: str, params: RequestParameters
+    ) -> List[StudyMetadataDTO]:
+        study = self._get_variant_study(id, params, raw_study_accepted=True)
+        metadata = (
+            self.get_study_information(
+                study,
+                summary=True,
+            )
+            if isinstance(study, VariantStudy)
+            else self.raw_study_service.get_study_information(
+                study,
+                summary=True,
+            )
+        )
+        output_list: List[StudyMetadataDTO] = [metadata]
+        if study.parent_id is not None:
+            output_list.extend(
+                self._get_variants_parents(
+                    study.parent_id,
+                    params,
+                )
+            )
+
+        return output_list
+
     def get_study_information(
         self, study: VariantStudy, summary: bool = False
     ) -> StudyMetadataDTO:
@@ -285,6 +327,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         """
         return get_study_information(
             study,
+            study.snapshot.path if study.snapshot is not None else None,
             self.patch_service,
             self.study_factory,
             logger,
@@ -356,7 +399,10 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         return str(variant_study.id)
 
     def generate(
-        self, variant_study_id: str, params: RequestParameters
+        self,
+        variant_study_id: str,
+        denormalize: bool,
+        params: RequestParameters,
     ) -> GenerationResultInfoDTO:
 
         # Get variant study
@@ -380,10 +426,18 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         if results.success:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
-                path=variant_study.path,
+                path=str(Path(variant_study.path) / "snapshot"),
                 created_at=datetime.now(),
             )
             self.repository.save(variant_study)
+
+            if denormalize:
+                config, study_tree = self.study_factory.create_from_fs(
+                    Path(variant_study.snapshot.path),
+                    study_id=variant_study.id,
+                )
+                study_tree.denormalize()
+
         return results
 
     def create(self, study: VariantStudy) -> VariantStudy:
@@ -460,7 +514,9 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             metadata: study
         Returns:
         """
-        raise NotImplementedError()
+        study_path = self.get_study_path(metadata)
+        if study_path.exists():
+            shutil.rmtree(metadata.path)
 
     def delete_output(self, metadata: VariantStudy, output_id: str) -> None:
         """

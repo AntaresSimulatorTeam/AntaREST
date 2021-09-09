@@ -172,7 +172,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/areas/list",
-            ["de", "es", "fr", "it"],
+            ["DE", "ES", "FR", "IT"],
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/areas/sets/all areas/output",
@@ -213,7 +213,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/prepro/fr/energy",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
@@ -241,7 +241,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/series",
@@ -270,7 +270,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/prepro/fr/k",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/series/solar_fr",
@@ -278,7 +278,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/prepro/fr/k",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/series/wind_fr",
@@ -454,6 +454,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "version": 700,
             "created": 1480683452,
             "updated": 1602678639,
+            "type": "rawstudy",
             "owner": {"id": None, "name": "Andrea SGATTONI"},
             "groups": [],
             "public_mode": "NONE",

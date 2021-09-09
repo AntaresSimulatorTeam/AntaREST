@@ -46,10 +46,13 @@ class StudyFactory:
         self.cache = cache
 
     def create_from_fs(
-        self, path: Path, study_id: str
+        self,
+        path: Path,
+        study_id: str,
+        use_cache: bool = True,
     ) -> Tuple[FileStudyTreeConfig, FileStudyTree]:
         cache_id = f"{study_id}/{CacheConstants.STUDY_FACTORY}"
-        if study_id:
+        if study_id and use_cache:
             from_cache = self.cache.get(cache_id)
             if from_cache is not None:
                 logger.info(f"Study {study_id} read from cache")
@@ -60,7 +63,7 @@ class StudyFactory:
         duration = "{:.3f}".format(time.time() - start_time)
         logger.info(f"Study {study_id} config built in {duration}s")
         result = config, FileStudyTree(self.context, config)
-        if study_id:
+        if study_id and use_cache:
             self.cache.put(cache_id, config.dict())
         logger.info(f"Cache new entry from StudyFactory (studyID: {study_id})")
         return result
