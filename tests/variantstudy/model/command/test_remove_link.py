@@ -4,6 +4,9 @@ from unittest.mock import Mock
 from checksumdir import dirhash
 
 from antarest.matrixstore.service import MatrixService
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.default_values import (
     FilteringOptions,
@@ -42,7 +45,9 @@ class TestRemoveLink:
             matrix_service=matrix_service,
         )
         area1 = "Area1"
+        area1_id = transform_name_to_id(area1)
         area2 = "Area2"
+        area2_id = transform_name_to_id(area2)
 
         CreateArea.parse_obj(
             {
@@ -68,16 +73,16 @@ class TestRemoveLink:
         )
 
         CreateLink(
-            area1=area1,
-            area2=area2,
+            area1=area1_id,
+            area2=area2_id,
             parameters={},
             command_context=command_context,
             series=[[0]],
         ).apply(empty_study)
 
         output = RemoveLink(
-            area1=area1,
-            area2=area2,
+            area1=area1_id,
+            area2=area2_id,
             command_context=command_context,
         ).apply(empty_study)
 

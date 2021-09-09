@@ -2,6 +2,9 @@ import configparser
 from unittest.mock import Mock
 
 from antarest.matrixstore.service import MatrixService
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -34,7 +37,9 @@ class TestCreateCluster:
         )
         study_path = empty_study.config.study_path
         area_name = "Area"
+        area_id = transform_name_to_id(area_name, lower=True)
         cluster_name = "Cluster_name"
+        cluster_id = transform_name_to_id(cluster_name, lower=True)
 
         CreateArea.parse_obj(
             {
@@ -58,7 +63,7 @@ class TestCreateCluster:
 
         command = CreateCluster.parse_obj(
             {
-                "area_name": area_name,
+                "area_name": area_id,
                 "cluster_name": cluster_name,
                 "parameters": parameters,
                 "prepro": [[0]],
@@ -76,7 +81,7 @@ class TestCreateCluster:
             / "input"
             / "thermal"
             / "clusters"
-            / area_name
+            / area_id
             / "list.ini"
         )
         assert str(clusters[cluster_name]["name"]) == cluster_name
@@ -99,8 +104,8 @@ class TestCreateCluster:
             / "input"
             / "thermal"
             / "prepro"
-            / area_name
-            / cluster_name.lower()
+            / area_id
+            / cluster_id
             / "data.txt.link"
         ).exists()
         assert (
@@ -108,14 +113,14 @@ class TestCreateCluster:
             / "input"
             / "thermal"
             / "prepro"
-            / area_name
-            / cluster_name.lower()
+            / area_id
+            / cluster_id
             / "modulation.txt.link"
         ).exists()
 
         output = CreateCluster.parse_obj(
             {
-                "area_name": area_name,
+                "area_name": area_id,
                 "cluster_name": cluster_name,
                 "parameters": parameters,
                 "prepro": [[0]],

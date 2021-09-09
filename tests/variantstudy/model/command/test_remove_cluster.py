@@ -3,6 +3,9 @@ from unittest.mock import Mock
 from checksumdir import dirhash
 
 from antarest.matrixstore.service import MatrixService
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -36,7 +39,9 @@ class TestRemoveCluster:
             matrix_service=matrix_service,
         )
         area_name = "Area_name"
+        area_id = transform_name_to_id(area_name)
         cluster_name = "Cluster_name"
+        cluster_id = transform_name_to_id(cluster_name)
 
         CreateArea.parse_obj(
             {
@@ -54,7 +59,7 @@ class TestRemoveCluster:
         )
 
         CreateCluster(
-            area_name=area_name,
+            area_name=area_id,
             cluster_name=cluster_name,
             parameters={
                 "group": "group",
@@ -69,7 +74,7 @@ class TestRemoveCluster:
         ).apply(empty_study)
 
         output = RemoveCluster(
-            area_name=area_name,
+            area_name=area_id,
             cluster_name=cluster_name,
             command_context=command_context,
         ).apply(empty_study)
@@ -82,13 +87,13 @@ class TestRemoveCluster:
 
         output = RemoveCluster(
             area_name="non_existent_area",
-            cluster_name=cluster_name,
+            cluster_name=cluster_id,
             command_context=command_context,
         ).apply(empty_study)
         assert not output.status
 
         output = RemoveCluster(
-            area_name=cluster_name,
+            area_name=area_name,
             cluster_name="non_existent_cluster",
             command_context=command_context,
         ).apply(empty_study)

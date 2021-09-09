@@ -1,4 +1,7 @@
 from antarest.matrixstore.service import MatrixService
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -30,6 +33,7 @@ class TestReplaceMatrix:
         )
         study_path = empty_study.config.study_path
         area1 = "Area1"
+        area1_id = transform_name_to_id(area1)
 
         CreateArea.parse_obj(
             {
@@ -39,7 +43,7 @@ class TestReplaceMatrix:
             }
         ).apply(empty_study)
 
-        target_element = f"input/hydro/common/capacity/maxpower_{area1}"
+        target_element = f"input/hydro/common/capacity/maxpower_{area1_id}"
         replace_matrix = ReplaceMatrix.parse_obj(
             {
                 "target_element": target_element,
