@@ -44,6 +44,7 @@ def test_import_study(tmp_path: Path) -> None:
 
     study_service = Mock()
     study_service.get.return_value = data
+    study_service.get_study_path.return_value = tmp_path / "other-study"
 
     importer_service = ImporterService(
         study_service=study_service,

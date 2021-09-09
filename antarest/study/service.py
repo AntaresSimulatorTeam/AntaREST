@@ -62,7 +62,6 @@ from antarest.study.storage.rawstudy.raw_study_service import (
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import (
     get_default_workspace_path,
-    get_study_path,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (
