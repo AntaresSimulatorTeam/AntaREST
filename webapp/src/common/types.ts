@@ -21,7 +21,7 @@ export interface StudyMetadataOwner {
   name: string;
 }
 
-export type StudyType = 'study' | 'variantstudy' | 'rawstudy';
+export type StudyType = 'variantstudy' | 'rawstudy';
 
 export interface StudyMetadataDTO {
   id: string;
