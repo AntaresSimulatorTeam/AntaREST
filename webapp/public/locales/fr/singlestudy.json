@@ -1,6 +1,11 @@
 {
   "informations": "Informations",
   "treeView": "Vue détaillée",
+  "variants": "Gestion des variantes",
+  "variantDependencies": "Vue dépendences",
+  "createVariant": "Créer une variante",
+  "editionMode": "Mode édition",
+  "testGeneration": "Tester la géneration",
   "currentTask": "Tâches",
   "failtoloadjobs": "Echec du chargement des jobs",
   "taskId": "Id",

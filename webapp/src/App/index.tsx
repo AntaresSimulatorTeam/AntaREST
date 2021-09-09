@@ -34,7 +34,10 @@ const App: React.FC<{}> = () => (
                   <Route path="/usersettings" exact key="usersettings">
                     <UserSettings />
                   </Route>
-                  <Route path="/study/:studyId" key="module">
+                  <Route path="/study/:studyId/:tab" key="module">
+                    <SingleStudyView />
+                  </Route>
+                  <Route exact path="/study/:studyId/" key="module">
                     <SingleStudyView />
                   </Route>
                   <Route path="/jobs" key="module">

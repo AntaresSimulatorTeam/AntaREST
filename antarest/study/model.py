@@ -204,6 +204,7 @@ class StudyMetadataDTO(BaseModel):
     version: int
     created: int
     updated: int
+    type: str
     owner: OwnerInfo
     groups: List[GroupDTO]
     public_mode: PublicMode

@@ -453,6 +453,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "version": 700,
             "created": 1480683452,
             "updated": 1602678639,
+            "type": "rawstudy",
             "owner": {"id": None, "name": "Andrea SGATTONI"},
             "groups": [],
             "public_mode": "NONE",
