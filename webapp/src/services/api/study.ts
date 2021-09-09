@@ -27,8 +27,8 @@ export const getStudyMetadata = async (sid: string, summary = true): Promise<Stu
   return convertStudyDtoToMetadata(sid, res.data);
 };
 
-export const createStudy = async (name: string): Promise<string> => {
-  const res = await client.post(`/v1/studies?name=${encodeURIComponent(name)}`);
+export const createStudy = async (name: string, version: number): Promise<string> => {
+  const res = await client.post(`/v1/studies?name=${encodeURIComponent(name)}&version=${version}`);
   return res.data;
 };
 

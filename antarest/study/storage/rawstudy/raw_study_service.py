@@ -7,7 +7,10 @@ from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
-from antarest.core.exceptions import StudyNotFoundError
+from antarest.core.exceptions import (
+    StudyNotFoundError,
+    UnsupportedStudyVersion,
+)
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.study.common.studystorage import (
     IStudyStorageService,
@@ -43,7 +46,14 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
     """
 
-    new_default_version = 720
+    study_templates = {
+        613: "empty_study_613.zip",
+        700: "empty_study_700.zip",
+        710: "empty_study_710.zip",
+        720: "empty_study_720.zip",
+        803: "empty_study_803.zip",
+    }
+    new_default_version = 803
 
     def __init__(
         self,
@@ -219,7 +229,13 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         Returns: new study information
 
         """
-        empty_study_zip = self.path_resources / "empty-study.zip"
+        version_template: Optional[str] = RawStudyService.study_templates.get(
+            metadata.version, None
+        )
+        if version_template is None:
+            raise UnsupportedStudyVersion(metadata.version)
+
+        empty_study_zip = self.path_resources / version_template
 
         path_study = self.get_study_path(metadata)
         path_study.mkdir()

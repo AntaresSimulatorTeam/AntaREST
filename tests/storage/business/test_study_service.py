@@ -1,5 +1,6 @@
 import datetime
 import os
+import re
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
@@ -225,7 +226,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(get_default_workspace_path(config) / "study1"),
-        version=0,
+        version=720,
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
     )
@@ -237,6 +238,125 @@ def test_create_study(tmp_path: str, project_path) -> None:
 
     path_study_antares_infos = path_study / "study.antares"
     assert path_study_antares_infos.is_file()
+
+
+@pytest.mark.unit_test
+def test_create_study_versions(tmp_path: str, project_path) -> None:
+    path_studies = Path(tmp_path)
+
+    study = Mock()
+    data = {"antares": {"caption": None}}
+    study.get.return_value = data
+
+    study_factory = Mock()
+    study_factory.create_from_fs.return_value = (None, study)
+    config = build_config(path_studies)
+    study_service = RawStudyService(
+        config=config,
+        cache=Mock(),
+        study_factory=study_factory,
+        path_resources=project_path / "resources",
+        patch_service=Mock(),
+    )
+
+    def create_study(version: int):
+        metadata = RawStudy(
+            id=f"study{version}",
+            workspace=DEFAULT_WORKSPACE_NAME,
+            path=str(get_default_workspace_path(config) / f"study{version}"),
+            version=version,
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+        return study_service.create(metadata)
+
+    md613 = create_study(613)
+    md700 = create_study(700)
+    md710 = create_study(710)
+    md720 = create_study(720)
+    md803 = create_study(803)
+
+    path_study = path_studies / md613.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search("^filtering = false", general_data, flags=re.MULTILINE)
+        is not None
+    )
+
+    path_study = path_studies / md700.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search("^link-type = local", general_data, flags=re.MULTILINE)
+        is not None
+    )
+    assert (
+        re.search(
+            "^initial-reservoir-levels = cold start",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+
+    path_study = path_studies / md710.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search(
+            "^thematic-trimming = false", general_data, flags=re.MULTILINE
+        )
+        is not None
+    )
+    assert (
+        re.search(
+            "^geographic-trimming = false", general_data, flags=re.MULTILINE
+        )
+        is not None
+    )
+
+    path_study = path_studies / md720.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search(
+            "^include-unfeasible-problem-behavior = error-verbose",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+
+    path_study = path_studies / md803.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search(
+            "^custom-ts-numbers = false", general_data, flags=re.MULTILINE
+        )
+        is None
+    )
+    assert (
+        re.search("^custom-scenario = false", general_data, flags=re.MULTILINE)
+        is not None
+    )
+    assert (
+        re.search(
+            "^include-exportstructure = false",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+    assert (
+        re.search(
+            "^hydro-heuristic-policy = accommodate rule curves",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
 
 
 @pytest.mark.unit_test
