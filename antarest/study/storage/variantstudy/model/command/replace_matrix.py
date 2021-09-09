@@ -16,31 +16,18 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.utils import (
+    validate_matrix,
+)
 
 
 class ReplaceMatrix(ICommand):
     target_element: str
     matrix: Union[List[List[float]], str]
 
-    @validator("matrix", each_item=True, always=True)
-    def validate_matrix(
-        cls, v: Union[List[List[float]], str], values: Any
-    ) -> Union[List[List[float]], str]:
-        if isinstance(v, list):
-            v = "matrix://" + values["command_context"].matrix_service.create(
-                data=MatrixContent(data=v)
-            )
-        elif isinstance(v, str):
-            if values["command_context"].matrix_service.get(v):
-                v = "matrix://" + v
-            else:
-                raise ValueError(f"Matrix with id {v} does not exist")
-        else:
-            raise ValueError(
-                f"The data {v} is neither a matrix nor a link to a matrix"
-            )
-
-        return v
+    _validate_matrix = validator(
+        "matrix", each_item=True, always=True, allow_reuse=True
+    )(validate_matrix)
 
     def __init__(self, **data: Any) -> None:
         super().__init__(

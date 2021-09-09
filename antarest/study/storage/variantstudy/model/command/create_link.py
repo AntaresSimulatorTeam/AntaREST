@@ -3,7 +3,6 @@ from typing import Dict, List, Union, Any
 from pydantic import validator
 
 from antarest.core.custom_types import JSON
-from antarest.matrixstore.model import MatrixContent
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.default_values import (
@@ -15,6 +14,9 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.utils import (
+    validate_matrix,
+)
 
 
 class LinkAlreadyExistError(Exception):
@@ -34,25 +36,9 @@ class CreateLink(ICommand):
             command_name=CommandName.CREATE_LINK, version=1, **data
         )
 
-    @validator("series", each_item=True, always=True)
-    def validate_series(
-        cls, v: Union[List[List[float]], str], values: Any
-    ) -> Union[List[List[float]], str]:
-        if isinstance(v, list):
-            v = "matrix://" + values["command_context"].matrix_service.create(
-                data=MatrixContent(data=v)
-            )
-        elif isinstance(v, str):
-            if values["command_context"].matrix_service.get(v):
-                v = "matrix://" + v
-            else:
-                raise ValueError(f"Matrix with id {v} does not exist")
-        else:
-            raise ValueError(
-                f"The data {v} is neither a matrix nor a link to a matrix"
-            )
-
-        return v
+    _validate_series = validator(
+        "series", each_item=True, always=True, allow_reuse=True
+    )(validate_matrix)
 
     def _create_link_in_config(
         self, area_from: str, area_to: str, study_data: FileStudy
