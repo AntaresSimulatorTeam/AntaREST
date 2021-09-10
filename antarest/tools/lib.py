@@ -96,7 +96,9 @@ class CLIVariantManager:
         study_commands += links_commands
         return study_commands
 
-    def extract_commands(self, study_path: Path, commands_output_dir: Path):
+    def extract_commands(
+        self, study_path: Path, commands_output_dir: Path
+    ) -> None:
         if not commands_output_dir.exists():
             commands_output_dir.mkdir(parents=True)
         matrices_dir = commands_output_dir / "matrices"

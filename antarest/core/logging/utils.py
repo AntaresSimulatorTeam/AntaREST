@@ -3,7 +3,7 @@ import logging.config
 import os
 import re
 import uuid
-from pythonjsonlogger.jsonlogger import JsonFormatter
+from pythonjsonlogger.jsonlogger import JsonFormatter  # type: ignore
 from contextvars import ContextVar, Token
 from typing import Optional, Type, Any, Dict
 
