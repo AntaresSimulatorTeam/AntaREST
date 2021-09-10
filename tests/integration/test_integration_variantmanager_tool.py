@@ -40,5 +40,11 @@ def test_variant_manager(app: FastAPI):
 
     commands = vm.parse_commands(test_dir / "assets" / "commands1.json")
 
-    res = vm.apply_commands(variant_id, commands)
+
+    res = vm.apply_commands(variant_id, commands, None)
     assert res is not None and res.success
+
+
+def test_on_examples(app: FastAPI):
+    # could test extracting commands from test studies, applying theses commands and checking origin study and generated study are the same
+    pass
