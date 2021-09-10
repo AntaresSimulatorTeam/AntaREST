@@ -32,7 +32,7 @@ def upgrade():
     session = orm.Session(bind=bind)
     rawstudies = session.execute("SELECT id,path FROM rawstudy")
     for rawstudy in rawstudies:
-        session.execute(f"UPDATE study SET path='{rawstudy[1]}' WHERE id='{rawstudy[0]}'")
+        session.execute(f"UPDATE study SET path= :path WHERE id='{rawstudy[0]}'", path=rawstudy[1])
     session.commit()
     # end of path data migration
 
@@ -52,7 +52,7 @@ def downgrade():
     session = orm.Session(bind=bind)
     studies = session.execute("SELECT id,path FROM study")
     for study in studies:
-        session.execute(f"UPDATE rawstudy SET path='{study[1]}' WHERE id='{study[0]}'")
+        session.execute(f"UPDATE rawstudy SET path=:path WHERE id='{study[0]}'", path=study[1])
     session.commit()
     # end of path data migration
 
