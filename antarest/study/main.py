@@ -78,7 +78,7 @@ def build_storage(
 
     path_resources = config.resources_path
 
-    resolver = UriResolverService(config, matrix_service=matrix_service)
+    resolver = UriResolverService(matrix_service=matrix_service)
     study_factory = StudyFactory(
         matrix=matrix_service, resolver=resolver, cache=cache
     )

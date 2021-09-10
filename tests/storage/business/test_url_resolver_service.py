@@ -21,7 +21,7 @@ MOCK_MATRIX_DTO = MatrixDTO(
 
 
 def test_build_matrix_uri():
-    resolver = UriResolverService(config=Mock(), matrix_service=Mock())
+    resolver = UriResolverService(matrix_service=Mock())
     assert "matrix://my-id" == resolver.build_matrix_uri("my-id")
 
 
@@ -29,7 +29,7 @@ def test_resolve_matrix():
     matrix_service = Mock()
     matrix_service.get.return_value = MOCK_MATRIX_DTO
 
-    resolver = UriResolverService(config=Mock(), matrix_service=matrix_service)
+    resolver = UriResolverService(matrix_service=matrix_service)
 
     assert MOCK_MATRIX_JSON == resolver.resolve("matrix://my-id")
     matrix_service.get.assert_called_once_with("my-id")

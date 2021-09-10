@@ -1,5 +1,6 @@
 import csv
 import time
+from abc import abstractmethod, ABC
 from datetime import datetime
 from io import BytesIO
 from typing import List, Optional, Tuple
@@ -31,7 +32,21 @@ from antarest.matrixstore.repository import (
 )
 
 
-class MatrixService:
+class ISimpleMatrixService(ABC):
+    @abstractmethod
+    def create(self, data: MatrixContent) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get(self, id: str) -> Optional[MatrixDTO]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete(self, id: str) -> None:
+        raise NotImplementedError()
+
+
+class MatrixService(ISimpleMatrixService):
     def __init__(
         self,
         repo: MatrixRepository,
