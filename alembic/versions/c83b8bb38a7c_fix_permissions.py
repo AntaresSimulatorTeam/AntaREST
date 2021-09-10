@@ -21,7 +21,6 @@ def upgrade():
     if op.get_context().dialect.name == 'sqlite':
         return
     op.execute("GRANT USAGE, SELECT ON SEQUENCE tasklog_id_sequence TO public;")
-    op.execute("GRANT USAGE, SELECT ON SEQUENCE tasklogjob_id_seq TO public;")
     #op.execute("GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO public;")
     # ### end Alembic commands ###
 
