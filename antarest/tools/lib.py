@@ -134,26 +134,27 @@ class CLIVariantManager:
         self,
         study_id: str,
         commands: List[CommandDTO],
-        matrices_dir: Path,
+        matrices_dir: Optional[Path],
     ) -> GenerationResultInfoDTO:
         study = self.session.get(
             self.build_url(f"/v1/studies/{study_id}")
         ).json()
         assert study is not None
 
-        matrix_dataset: List[str] = []
-        for matrix in os.listdir(matrices_dir):
-            with open(matrices_dir / matrix, "r") as fh:
-                matrix_data = json.load(fh)
-                res = self.session.post(
-                    self.build_url(f"/v1/matrix"), json=matrix_data
-                )
-                assert res.status_code == 200
-                matrix_id = res.json()
-                assert matrix_id == matrix
-                matrix_dataset.append(matrix_id)
-        # TODO could create a dataset from theses matrices using "variant_<study_id>" as name
-        # also the matrix could be named after the command name where they are used
+        if matrices_dir:
+            matrix_dataset: List[str] = []
+            for matrix in os.listdir(matrices_dir):
+                with open(matrices_dir / matrix, "r") as fh:
+                    matrix_data = json.load(fh)
+                    res = self.session.post(
+                        self.build_url(f"/v1/matrix"), json=matrix_data
+                    )
+                    assert res.status_code == 200
+                    matrix_id = res.json()
+                    assert matrix_id == matrix
+                    matrix_dataset.append(matrix_id)
+            # TODO could create a dataset from theses matrices using "variant_<study_id>" as name
+            # also the matrix could be named after the command name where they are used
 
         res = self.session.post(
             self.build_url(f"/v1/studies/{study_id}/commands"),
