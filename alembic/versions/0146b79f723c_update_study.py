@@ -7,7 +7,8 @@ Create Date: 2021-09-06 18:42:12.670422
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy import orm
+from sqlalchemy import orm, text
+from sqlalchemy.engine import Connection
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -28,12 +29,10 @@ def upgrade():
         batch_op.add_column(sa.Column('path', sa.String(length=255), nullable=True))
 
     # path data migration
-    bind = op.get_bind()
-    session = orm.Session(bind=bind)
-    rawstudies = session.execute("SELECT id,path FROM rawstudy")
+    connexion: Connection = op.get_bind()
+    rawstudies = connexion.execute("SELECT id,path FROM rawstudy")
     for rawstudy in rawstudies:
-        session.execute(f"UPDATE study SET path='{rawstudy[1]}' WHERE id='{rawstudy[0]}'")
-    session.commit()
+        connexion.execute(text(f"UPDATE study SET path= :path WHERE id='{rawstudy[0]}'"), path=rawstudy[1])
     # end of path data migration
 
     with op.batch_alter_table('rawstudy', schema=None) as batch_op:
@@ -48,12 +47,10 @@ def downgrade():
         batch_op.add_column(sa.Column('path', sa.VARCHAR(length=255), nullable=True))
 
     # path data migration
-    bind = op.get_bind()
-    session = orm.Session(bind=bind)
-    studies = session.execute("SELECT id,path FROM study")
+    connexion: Connection = op.get_bind()
+    studies = connexion.execute("SELECT id,path FROM study")
     for study in studies:
-        session.execute(f"UPDATE rawstudy SET path='{study[1]}' WHERE id='{study[0]}'")
-    session.commit()
+        connexion.execute(text(f"UPDATE rawstudy SET path=:path WHERE id='{study[0]}'"), path=study[1])
     # end of path data migration
 
     with op.batch_alter_table('study', schema=None) as batch_op:
