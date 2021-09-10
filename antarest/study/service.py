@@ -5,7 +5,7 @@ from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import List, IO, Optional, cast, Union
+from typing import List, IO, Optional, cast, Union, Dict
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -135,12 +135,18 @@ class StudyService:
 
         """
         logger.info("studies metadata asked by user %s", params.get_user_id())
-        return {
-            study.id: self.raw_study_service.get_study_information(
-                study, summary=True
-            )
-            for study in self._get_study_metadatas(params)
-        }
+        studies: Dict[str, StudyMetadataDTO] = {}
+        for study in self._get_study_metadatas(params):
+            try:
+                study_metadata = self.raw_study_service.get_study_information(
+                    study, summary=True
+                )
+                studies[study_metadata.id] = study_metadata
+            except Exception as e:
+                logger.warning(
+                    f"Failed to extract study {study.id} metadata", exc_info=e
+                )
+        return studies
 
     def get_study_information(
         self, uuid: str, params: RequestParameters
