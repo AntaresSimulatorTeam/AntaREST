@@ -5,10 +5,12 @@ from typing import List, Optional
 
 from requests import Session
 
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
 )
+from antarest.study.storage.variantstudy.model.command.common import CommandName
 
 
 class CLIVariantManager:
@@ -61,3 +63,47 @@ class CLIVariantManager:
         if self.host is not None:
             return f"{self.host}/{url}"
         return url
+
+
+def extract_commands(study: FileStudy) -> List[CommandDTO]:
+    study_tree = study.tree
+    study_config = study.config
+    study_commands: List[CommandDTO] = []
+    links_commands: List[CommandDTO] = []
+    for area_id in study_config.areas:
+        area = study_config.areas[area_id]
+        area_command = CommandDTO(
+            action=CommandName.CREATE_AREA,
+            args={
+                "area_name": area.name
+            }
+        )
+        study_commands.append(area_command)
+        links_data = study_tree.get(["input", "links", area_id, "properties.ini"])
+        for link in area.links:
+            link_command = CommandDTO(
+                action=CommandName.CREATE_LINK,
+                args={
+                    "area1": area_id,
+                    "area2": link,
+                    "parameters": {},
+                    "series": [],
+                }
+            )
+            link_data = links_data.get(link)
+            link_config_command = CommandDTO(
+                action=CommandName.UPDATE_CONFIG,
+                args={
+                    "target": f"input/links/{area_id}/properties/{link}",
+                    "data": link_data
+                }
+            )
+            links_commands.append(link_command)
+            links_commands.append()
+        for thermal in area.thermals:
+            CommandDTO(
+                action=CommandName.
+            )
+
+    study_commands += links_commands
+    return study_commands
