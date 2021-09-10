@@ -41,4 +41,4 @@ def test_variant_manager(app: FastAPI):
     commands = vm.parse_commands(test_dir / "assets" / "commands1.json")
 
     res = vm.apply_commands(variant_id, commands)
-    assert res is not None
+    assert res is not None and res.success

@@ -1,4 +1,4 @@
-from typing import Dict, Union, List, Any
+from typing import Dict, Union, List, Any, Optional
 
 from pydantic import validator
 
@@ -21,8 +21,8 @@ class CreateCluster(ICommand):
     area_name: str
     cluster_name: str
     parameters: Dict[str, str]
-    prepro: Union[List[List[float]], str]
-    modulation: Union[List[List[float]], str]
+    prepro: Optional[Union[List[List[float]], str]] = None
+    modulation: Optional[Union[List[List[float]], str]] = None
     # TODO: Maybe add the prefix option ?
 
     @validator("parameters")
@@ -40,9 +40,31 @@ class CreateCluster(ICommand):
                 )
         return v
 
-    _validate_matrix = validator(
-        "prepro", "modulation", each_item=True, always=True, allow_reuse=True
-    )(validate_matrix)
+    @validator("prepro", always=True)
+    def validate_prepro(
+        cls, v: Optional[Union[List[List[float]], str]], values: Any
+    ) -> Optional[Union[List[List[float]], str]]:
+        if v is None:
+            v = values[
+                "command_context"
+            ].generator_matrix_constants.get_thermal_prepro_data()
+            return v
+
+        else:
+            return validate_matrix(v, values)
+
+    @validator("modulation", always=True)
+    def validate_modulation(
+        cls, v: Optional[Union[List[List[float]], str]], values: Any
+    ) -> Optional[Union[List[List[float]], str]]:
+        if v is None:
+            v = values[
+                "command_context"
+            ].generator_matrix_constants.get_thermal_prepro_modulation()
+            return v
+
+        else:
+            return validate_matrix(v, values)
 
     def __init__(self, **data: Any) -> None:
         super().__init__(

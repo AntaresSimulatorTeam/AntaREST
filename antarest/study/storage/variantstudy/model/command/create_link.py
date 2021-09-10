@@ -1,4 +1,4 @@
-from typing import Dict, List, Union, Any
+from typing import Dict, List, Union, Any, Optional
 
 from pydantic import validator
 
@@ -27,18 +27,22 @@ class CreateLink(ICommand):
     area1: str
     area2: str
     parameters: Dict[str, str]
-    series: Union[
-        List[List[float]], str
-    ]  # TODO: add the possibility to send no series and use a default one
+    series: Optional[Union[List[List[float]], str]] = None
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
             command_name=CommandName.CREATE_LINK, version=1, **data
         )
 
-    _validate_series = validator(
-        "series", each_item=True, always=True, allow_reuse=True
-    )(validate_matrix)
+    @validator("series", always=True)
+    def validate_series(
+        cls, v: Optional[Union[List[List[float]], str]], values: Any
+    ) -> Optional[Union[List[List[float]], str]]:
+        if v is None:
+            v = values["command_context"].generator_matrix_constants.get_link()
+            return v
+        else:
+            return validate_matrix(v, values)
 
     def _create_link_in_config(
         self, area_from: str, area_to: str, study_data: FileStudy

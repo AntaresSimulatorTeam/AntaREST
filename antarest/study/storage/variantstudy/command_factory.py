@@ -133,7 +133,7 @@ class CommandFactory:
                 area1=args["area1"],
                 area2=args["area2"],
                 parameters=args["parameters"],
-                series=args["series"],
+                series=args.get("series", None),
                 command_context=self.command_context,
             )
 
@@ -187,8 +187,8 @@ class CommandFactory:
                 area_name=args["area_name"],
                 cluster_name=args["cluster_name"],
                 parameters=args["parameters"],
-                prepro=args["prepro"],
-                modulation=args["modulation"],
+                prepro=args.get("prepro", None),
+                modulation=args.get("modulation", None),
                 command_context=self.command_context,
             )
 

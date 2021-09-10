@@ -17,6 +17,9 @@ HYDRO_COMMON_CAPACITY_CREDIT_MODULATION = (
 )
 PREPRO_CONVERSION = "prepro/conversion"
 PREPRO_DATA = "prepro/data"
+THERMAL_PREPRO_DATA = "thermals/prepro/data"
+THERMAL_PREPRO_MODULATION = "thermals/prepro/modulation"
+LINK = "link"
 NULL_MATRIX_NAME = "null_matrix"
 MATRIX_PROTOCOL_PREFIX = "matrix://"
 
@@ -53,6 +56,18 @@ class GeneratorMatrixConstants:
             )
             self.hashes[PREPRO_DATA] = self.matrix_service.create(
                 matrix_constants.prepro.data
+            )
+            self.hashes[THERMAL_PREPRO_DATA] = self.matrix_service.create(
+                matrix_constants.thermals.prepro.data
+            )
+
+            self.hashes[
+                THERMAL_PREPRO_MODULATION
+            ] = self.matrix_service.create(
+                matrix_constants.thermals.prepro.modulation
+            )
+            self.hashes[LINK] = self.matrix_service.create(
+                matrix_constants.link.link
             )
 
             self.hashes[NULL_MATRIX_NAME] = self.matrix_service.create(
@@ -96,6 +111,15 @@ class GeneratorMatrixConstants:
 
     def get_prepro_data(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[PREPRO_DATA]
+
+    def get_thermal_prepro_data(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[THERMAL_PREPRO_DATA]
+
+    def get_thermal_prepro_modulation(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[THERMAL_PREPRO_MODULATION]
+
+    def get_link(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK]
 
     def get_null_matrix(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]

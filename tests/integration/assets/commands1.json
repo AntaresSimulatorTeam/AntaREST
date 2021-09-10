@@ -1,10 +1,40 @@
 [
   {
-      "action": "create_area",
-      "args": {"area_name": "MyArea", "metadata": {}}
+    "action": "create_area",
+    "args": {
+      "area_name": "Area",
+      "metadata": {}
+    }
   },
   {
-      "action": "create_area",
-      "args": {"area_name": "Area2", "metadata": {"country": "FR"}}
+    "action": "create_area",
+    "args": {
+      "area_name": "Area 2",
+      "metadata": {
+        "country": "FR"
+      }
+    }
+  },
+  {
+    "action": "create_cluster",
+    "args": {
+      "area_name": "area",
+      "cluster_name": "new cluster",
+      "parameters": {
+        "group": "Gas",
+        "unitcount": "0",
+        "nominalcapacity": "0",
+        "marginal-cost": "0",
+        "market-bid-cost": "0"
+      }
+    }
+  },
+  {
+    "action": "create_link",
+    "args": {
+      "area1": "area",
+      "area2": "area 2",
+      "parameters": {}
+    }
   }
 ]
