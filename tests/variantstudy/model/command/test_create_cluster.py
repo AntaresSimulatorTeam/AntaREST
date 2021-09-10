@@ -38,7 +38,7 @@ class TestCreateCluster:
         study_path = empty_study.config.study_path
         area_name = "Area"
         area_id = transform_name_to_id(area_name, lower=True)
-        cluster_name = "Cluster_name"
+        cluster_name = "cluster_name"
         cluster_id = transform_name_to_id(cluster_name, lower=True)
 
         CreateArea.parse_obj(
@@ -49,10 +49,6 @@ class TestCreateCluster:
             }
         ).apply(empty_study)
 
-        command_context = CommandContext(
-            matrix_service=matrix_service,
-            generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-        )
         parameters = {
             "group": "Other",
             "unitcount": "1",

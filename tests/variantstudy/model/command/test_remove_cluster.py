@@ -40,7 +40,7 @@ class TestRemoveCluster:
         )
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)
-        cluster_name = "Cluster_name"
+        cluster_name = "cluster_name"
         cluster_id = transform_name_to_id(cluster_name)
 
         CreateArea.parse_obj(
@@ -52,11 +52,6 @@ class TestRemoveCluster:
         ).apply(empty_study)
 
         hash_before_cluster = dirhash(empty_study.config.study_path, "md5")
-
-        command_context = CommandContext(
-            matrix_service=matrix_service,
-            generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-        )
 
         CreateCluster(
             area_name=area_id,
@@ -75,7 +70,7 @@ class TestRemoveCluster:
 
         output = RemoveCluster(
             area_name=area_id,
-            cluster_name=cluster_name,
+            cluster_name=cluster_id,
             command_context=command_context,
         ).apply(empty_study)
 

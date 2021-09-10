@@ -115,7 +115,7 @@ class CreateArea(ICommand):
                     },
                 },
                 "hydro": {
-                    "hydro": {
+                    "hydro": {  # TODO: this overrides the previous hydro.ini file. We should read and edit it
                         "inter-daily-breakdown": {area_id: 1},
                         "intra-daily-modulation": {area_id: 24},
                         "inter-monthly-breakdown": {area_id: 1},

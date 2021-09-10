@@ -5,6 +5,7 @@ from pydantic import validator
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Cluster,
+    transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -25,20 +26,14 @@ class CreateCluster(ICommand):
     modulation: Optional[Union[List[List[float]], str]] = None
     # TODO: Maybe add the prefix option ?
 
-    @validator("parameters")
-    def check_parameters(cls, v: Dict[str, str]) -> Dict[str, str]:
-        for parameter in [
-            "group",
-            "unitcount",
-            "nominalcapacity",
-            "marginal-cost",
-            "market-bid-cost",
-        ]:
-            if parameter not in v.keys():
-                raise ValueError(
-                    f"Parameter '{parameter}' missing from parameters"
-                )
-        return v
+    @validator("cluster_name")
+    def validate_area_name(cls, val: str) -> str:
+        valid_name = transform_name_to_id(val)
+        if valid_name != val:
+            raise ValueError(
+                "Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters"
+            )
+        return val
 
     @validator("prepro", always=True)
     def validate_prepro(
@@ -79,14 +74,14 @@ class CreateCluster(ICommand):
             )
 
         for cluster in study_data.config.areas[self.area_name].thermals:
-            if cluster.id == self.cluster_name.lower():
+            if cluster.id == self.cluster_name:
                 return CommandOutput(
                     status=False,
                     message=f"Cluster '{self.cluster_name}' already exist",
                 )
 
         study_data.config.areas[self.area_name].thermals.append(
-            Cluster(id=self.cluster_name.lower(), name=self.cluster_name)
+            Cluster(id=self.cluster_name, name=self.cluster_name)
         )
 
         self.parameters["name"] = self.cluster_name
@@ -100,9 +95,16 @@ class CreateCluster(ICommand):
                     },
                     "prepro": {
                         self.area_name: {
-                            self.cluster_name.lower(): {
+                            self.cluster_name: {
                                 "data": self.prepro,
                                 "modulation": self.modulation,
+                            }
+                        }
+                    },
+                    "series": {
+                        self.area_name: {
+                            self.cluster_name: {
+                                "series": self.command_context.generator_matrix_constants.get_null_matrix()
                             }
                         }
                     },

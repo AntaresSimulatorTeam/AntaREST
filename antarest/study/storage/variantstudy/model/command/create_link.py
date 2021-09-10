@@ -108,7 +108,7 @@ class CreateLink(ICommand):
                     area_from: {
                         "properties": {
                             area_to: {
-                                "hurldes-cost": self.parameters.get(
+                                "hurdles-cost": self.parameters.get(
                                     "hurdles-cost",
                                     LinkProperties.HURDLES_COST.value,
                                 ),

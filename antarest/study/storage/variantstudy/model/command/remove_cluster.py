@@ -31,7 +31,7 @@ class RemoveCluster(ICommand):
                     for cluster in study_data.config.areas[
                         self.area_name
                     ].thermals
-                    if cluster.id == self.cluster_name.lower()
+                    if cluster.id == self.cluster_name
                 ]
             )
             == 0
@@ -56,7 +56,16 @@ class RemoveCluster(ICommand):
                 "thermal",
                 "prepro",
                 self.area_name,
-                self.cluster_name.lower(),
+                self.cluster_name,
+            ]
+        )
+        study_data.tree.delete(
+            [
+                "input",
+                "thermal",
+                "series",
+                self.area_name,
+                self.cluster_name,
             ]
         )
 

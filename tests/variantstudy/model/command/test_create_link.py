@@ -98,7 +98,7 @@ class TestCreateLink:
         link = configparser.ConfigParser()
         link.read(study_path / "input" / "links" / area1_id / "properties.ini")
         assert (
-            str(link[area2_id]["hurldes-cost"])
+            str(link[area2_id]["hurdles-cost"])
             == LinkProperties.HURDLES_COST.value
         )
         assert (
@@ -190,7 +190,7 @@ class TestCreateLink:
         link = configparser.ConfigParser()
         link.read(study_path / "input" / "links" / area1_id / "properties.ini")
         assert (
-            str(link[area3_id]["hurldes-cost"]) == parameters["hurdles-cost"]
+            str(link[area3_id]["hurdles-cost"]) == parameters["hurdles-cost"]
         )
         assert str(link[area3_id]["loop-flow"]) == parameters["loop-flow"]
         assert (

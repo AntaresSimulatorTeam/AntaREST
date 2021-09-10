@@ -20,13 +20,7 @@
     "args": {
       "area_name": "area",
       "cluster_name": "new cluster",
-      "parameters": {
-        "group": "Gas",
-        "unitcount": "0",
-        "nominalcapacity": "0",
-        "marginal-cost": "0",
-        "market-bid-cost": "0"
-      }
+      "parameters": {}
     }
   },
   {
