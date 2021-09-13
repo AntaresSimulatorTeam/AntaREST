@@ -7,6 +7,7 @@ from typing import List, Union, Optional, cast
 from uuid import uuid4
 
 from antarest.core.config import Config
+from antarest.core.custom_types import JSON
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -39,6 +40,8 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 from antarest.study.storage.utils import (
     get_default_workspace_path,
     get_study_information,
+    remove_from_cache,
+    get_using_cache,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.model import (
@@ -340,6 +343,33 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             summary,
         )
 
+    def get(
+        self,
+        metadata: RawStudy,
+        url: str = "",
+        depth: int = 3,
+        formatted: bool = True,
+    ) -> JSON:
+        """
+        Entry point to fetch data inside study.
+        Args:
+            metadata: study
+            url: path data inside study to reach
+            depth: tree depth to reach after reach data path
+            formatted: indicate if raw files must be parsed and formatted
+
+        Returns: study data formatted in json
+
+        """
+        return get_using_cache(
+            study_service=self,
+            metadata=metadata,
+            logger=logger,
+            url=url,
+            depth=depth,
+            formatted=formatted,
+        )
+
     def import_output(self, study: Study, output: Union[bytes, Path]) -> None:
         """
         Import an output
@@ -510,6 +540,9 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         )
         return FileStudy(config=study_config, tree=study_tree)
 
+    def remove_from_cache(self, root_id: str) -> None:
+        remove_from_cache(self.cache, root_id)
+
     def get_study_sim_result(
         self, metadata: VariantStudy
     ) -> List[StudySimResultDTO]:
@@ -544,6 +577,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         study_path = self.get_study_path(metadata)
         if study_path.exists():
             shutil.rmtree(metadata.path)
+            self.remove_from_cache(metadata.id)
 
     def delete_output(self, metadata: VariantStudy, output_id: str) -> None:
         """
@@ -556,8 +590,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         study_path = Path(metadata.path)
         output_path = study_path / "output" / output_id
         shutil.rmtree(output_path, ignore_errors=True)
-        # self.remove_from_cache(metadata.id)
-        raise NotImplementedError()
+        self.remove_from_cache(metadata.id)
 
     def get_study_path(self, metadata: Study) -> Path:
         return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH

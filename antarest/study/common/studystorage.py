@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TypeVar, Generic, List
 
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.study.model import Study, StudySimResultDTO, StudyMetadataDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -127,3 +128,18 @@ class IStudyStorageService(ABC, Generic[T]):
 
         """
         return Path(metadata.path)
+
+    def _check_study_exists(self, metadata: Study) -> None:
+        """
+        Check study on filesystem.
+
+        Args:
+            metadata: study
+
+        Returns: none or raise error if not found
+
+        """
+        if not self.exists(metadata):
+            raise StudyNotFoundError(
+                f"Study with the uuid {metadata.id} does not exist."
+            )

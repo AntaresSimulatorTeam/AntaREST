@@ -34,6 +34,8 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 from antarest.study.storage.utils import (
     update_antares_info,
     get_study_information,
+    remove_from_cache,
+    get_using_cache,
 )
 
 logger = logging.getLogger(__name__)
@@ -69,21 +71,6 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         self.path_resources: Path = path_resources
         self.patch_service = patch_service
         self.cache = cache
-
-    def _check_study_exists(self, metadata: RawStudy) -> None:
-        """
-        Check study on filesystem.
-
-        Args:
-            metadata: study
-
-        Returns: none or raise error if not found
-
-        """
-        if not self.exists(metadata):
-            raise StudyNotFoundError(
-                f"Study with the uuid {metadata.id} does not exist."
-            )
 
     def update_from_raw_meta(
         self, metadata: RawStudy, fallback_on_default: Optional[bool] = False
@@ -149,7 +136,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         Returns: the config and study tree object
 
         """
-        self._check_study_exists(metadata)
+        self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study_config, study_tree = self.study_factory.create_from_fs(
             study_path, metadata.id
@@ -174,29 +161,14 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         Returns: study data formatted in json
 
         """
-        self._check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-
-        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
-        parts = [item for item in url.split("/") if item]
-
-        data: JSON = dict()
-        if url == "" and depth == -1:
-            cache_id = f"{metadata.id}/{CacheConstants.RAW_STUDY}"
-            from_cache = self.cache.get(cache_id)
-            if from_cache is not None:
-                logger.info(f"Raw Study {metadata.id} read from cache")
-                data = from_cache
-            else:
-                data = study.get(parts, depth=depth, formatted=formatted)
-                self.cache.put(cache_id, data)
-                logger.info(
-                    f"Cache new entry from RawStudyService (studyID: {metadata.id})"
-                )
-        else:
-            data = study.get(parts, depth=depth, formatted=formatted)
-        del study
-        return data
+        return get_using_cache(
+            study_service=self,
+            metadata=metadata,
+            logger=logger,
+            url=url,
+            depth=depth,
+            formatted=formatted,
+        )
 
     def get_study_information(
         self,
@@ -266,7 +238,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         Returns: destination study
 
         """
-        self._check_study_exists(src_meta)
+        self.check_study_exists(src_meta)
         src_path = self.get_study_path(src_meta)
         dest_path = self.get_study_path(dest_meta)
 
@@ -285,12 +257,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         return dest_meta
 
     def remove_from_cache(self, root_id: str) -> None:
-        self.cache.invalidate_all(
-            [
-                f"{root_id}/{CacheConstants.RAW_STUDY}",
-                f"{root_id}/{CacheConstants.STUDY_FACTORY}",
-            ]
-        )
+        remove_from_cache(self.cache, root_id)
 
     def delete(self, metadata: RawStudy) -> None:
         """
@@ -301,7 +268,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         Returns:
 
         """
-        self._check_study_exists(metadata)
+        self.check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         shutil.rmtree(study_path)
         self.remove_from_cache(metadata.id)
@@ -335,7 +302,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
         """
         # Get data
-        self._check_study_exists(metadata)
+        self.check_study_exists(metadata)
 
         study_path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)

@@ -122,14 +122,10 @@ class StudyService:
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        if isinstance(study, RawStudy):
-            logger.info(
-                "study %s data asked by user %s", uuid, params.get_user_id()
-            )
-            self._assert_study_unarchived(study)
-            return self.raw_study_service.get(study, url, depth, formatted)
-
-        raise StudyTypeUnsupported(uuid, study.type)
+        self._assert_study_unarchived(study)
+        return self._get_study_storage_service(study).get(
+            study, url, depth, formatted
+        )
 
     def _get_study_metadatas(self, params: RequestParameters) -> List[Study]:
         return list(
