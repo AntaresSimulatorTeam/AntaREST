@@ -1,5 +1,6 @@
 from typing import Union, List, Any
 
+from antarest.core.custom_types import JSON
 from antarest.matrixstore.model import MatrixContent
 
 
@@ -21,3 +22,9 @@ def validate_matrix(
         )
 
     return matrix
+
+
+def get_or_create_section(json_ini: JSON, section: str) -> JSON:
+    if section not in json_ini:
+        json_ini[section] = {}
+    return json_ini[section]
