@@ -29,14 +29,18 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         self.context = context
         self.config = config
 
-    def get(
+    def _get(
         self,
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> Union[str, G]:
+        get_node: bool = False,
+    ) -> Union[Union[str, G], INode[G, S, V]]:
         self._assert_url_end(url)
+
+        if get_node:
+            return self
 
         if self.get_link_path().exists():
             link = self.get_link_path().read_text()
@@ -49,6 +53,25 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             return self.get_lazy_content()
         else:
             return self.load(url, depth, expanded, formatted)
+
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        formatted: bool = True,
+    ) -> Union[str, G]:
+        output = self._get(url, depth, expanded, formatted, get_node=False)
+        assert not isinstance(output, INode)
+        return output
+
+    def get_node(
+        self,
+        url: Optional[List[str]] = None,
+    ) -> INode[G, S, V]:
+        output = self._get(url, get_node=True)
+        assert isinstance(output, INode)
+        return output
 
     def delete(self, url: Optional[List[str]] = None) -> None:
         self._assert_url_end(url)

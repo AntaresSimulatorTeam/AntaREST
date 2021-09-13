@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -68,11 +69,23 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.CREATE_LINK.value,
-            args={"name": "name", "parameters": {}, "series": "series"},
+            args={
+                "area1": "area1",
+                "area2": "area2",
+                "parameters": {},
+                "series": "series",
+            },
         ),
         CommandDTO(
             action=CommandName.CREATE_LINK.value,
-            args=[{"name": "name", "parameters": {}, "series": "series"}],
+            args=[
+                {
+                    "area1": "area1",
+                    "area2": "area2",
+                    "parameters": {},
+                    "series": "series",
+                }
+            ],
         ),
         CommandDTO(
             action=CommandName.UPDATE_LINK.value,
@@ -96,11 +109,19 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.REMOVE_LINK.value,
-            args={"id": "id"},
+            args={
+                "area1": "area1",
+                "area2": "area2",
+            },
         ),
         CommandDTO(
             action=CommandName.REMOVE_LINK.value,
-            args=[{"id": "id"}],
+            args=[
+                {
+                    "area1": "area1",
+                    "area2": "area2",
+                }
+            ],
         ),
         CommandDTO(
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,
@@ -163,9 +184,15 @@ from antarest.study.storage.variantstudy.model.command.common import (
         CommandDTO(
             action=CommandName.CREATE_CLUSTER.value,
             args={
-                "name": "name",
-                "type": "type",
-                "parameters": {},
+                "area_id": "area_name",
+                "cluster_name": "cluster_name",
+                "parameters": {
+                    "group": "group",
+                    "unitcount": "unitcount",
+                    "nominalcapacity": "nominalcapacity",
+                    "marginal-cost": "marginal-cost",
+                    "market-bid-cost": "market-bid-cost",
+                },
                 "prepro": "prepro",
                 "modulation": "modulation",
             },
@@ -174,9 +201,15 @@ from antarest.study.storage.variantstudy.model.command.common import (
             action=CommandName.CREATE_CLUSTER.value,
             args=[
                 {
-                    "name": "name",
-                    "type": "type",
-                    "parameters": {},
+                    "area_id": "area_name",
+                    "cluster_name": "cluster_name",
+                    "parameters": {
+                        "group": "group",
+                        "unitcount": "unitcount",
+                        "nominalcapacity": "nominalcapacity",
+                        "marginal-cost": "marginal-cost",
+                        "market-bid-cost": "market-bid-cost",
+                    },
                     "prepro": "prepro",
                     "modulation": "modulation",
                 }
@@ -208,11 +241,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.REMOVE_CLUSTER.value,
-            args={"id": "id"},
+            args={"area_id": "area_name", "cluster_id": "cluster_name"},
         ),
         CommandDTO(
             action=CommandName.REMOVE_CLUSTER.value,
-            args=[{"id": "id"}],
+            args=[{"area_id": "area_name", "cluster_id": "cluster_name"}],
         ),
         CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
@@ -235,7 +268,8 @@ from antarest.study.storage.variantstudy.model.command.common import (
 @pytest.mark.unit_test
 def test_command_factory(command_dto: CommandDTO):
     command_factory = CommandFactory(
-        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants)
+        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
+        matrix_service=Mock(spec=MatrixService),
     )
     command_list = command_factory.to_icommand(command_dto=command_dto)
     if isinstance(args := command_dto.args, dict):
@@ -251,7 +285,8 @@ def test_command_factory(command_dto: CommandDTO):
 def test_unknown_command():
     with pytest.raises(NotImplementedError):
         command_factory = CommandFactory(
-            generator_matrix_constants=Mock(spec=GeneratorMatrixConstants)
+            generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
+            matrix_service=Mock(spec=MatrixService),
         )
         command_factory.to_icommand(
             command_dto=CommandDTO(action="unknown_command", args={})

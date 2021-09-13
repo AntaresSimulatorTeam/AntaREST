@@ -1,6 +1,7 @@
 from typing import List
 
 from antarest.core.custom_types import JSON
+from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -72,9 +73,14 @@ class CommandFactory:
     Service to convert CommendDTO to Command
     """
 
-    def __init__(self, generator_matrix_constants: GeneratorMatrixConstants):
+    def __init__(
+        self,
+        generator_matrix_constants: GeneratorMatrixConstants,
+        matrix_service: MatrixService,
+    ):
         self.command_context = CommandContext(
-            generator_matrix_constants=generator_matrix_constants
+            generator_matrix_constants=generator_matrix_constants,
+            matrix_service=matrix_service,
         )
 
     def _to_single_icommand(self, action: str, args: JSON) -> ICommand:
@@ -124,9 +130,10 @@ class CommandFactory:
 
         elif action == CommandName.CREATE_LINK.value:
             return CreateLink(
-                name=args["name"],
+                area1=args["area1"],
+                area2=args["area2"],
                 parameters=args["parameters"],
-                series=args["series"],
+                series=args.get("series", None),
                 command_context=self.command_context,
             )
 
@@ -141,7 +148,8 @@ class CommandFactory:
 
         elif action == CommandName.REMOVE_LINK.value:
             return RemoveLink(
-                id=args["id"],
+                area1=args["area1"],
+                area2=args["area2"],
                 command_context=self.command_context,
             )
 
@@ -176,11 +184,11 @@ class CommandFactory:
 
         elif action == CommandName.CREATE_CLUSTER.value:
             return CreateCluster(
-                name=args["name"],
-                type=args["type"],
+                area_id=args["area_id"],
+                cluster_name=args["cluster_name"],
                 parameters=args["parameters"],
-                prepro=args["prepro"],
-                modulation=args["modulation"],
+                prepro=args.get("prepro", None),
+                modulation=args.get("modulation", None),
                 command_context=self.command_context,
             )
 
@@ -197,7 +205,8 @@ class CommandFactory:
 
         elif action == CommandName.REMOVE_CLUSTER.value:
             return RemoveCluster(
-                id=args["id"],
+                area_id=args["area_id"],
+                cluster_id=args["cluster_id"],
                 command_context=self.command_context,
             )
 

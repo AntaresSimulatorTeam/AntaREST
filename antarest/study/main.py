@@ -52,6 +52,7 @@ def build_storage(
     variant_repository: Optional[VariantStudyRepository] = None,
     storage_service: Optional[StudyService] = None,
     patch_service: Optional[PatchService] = None,
+    generator_matrix_constants: Optional[GeneratorMatrixConstants] = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> StudyService:
     """
@@ -68,6 +69,7 @@ def build_storage(
         variant_repository: used by testing to inject mock. Let None to use true instantiation
         storage_service: used by testing to inject mock. Let None to use true instantiation
         patch_service: used by testing to inject mock. Let None to use true instantiation
+        generator_matrix_constants: used by testing to inject mock. Let None to use true instantiation
         event_bus: used by testing to inject mock. Let None to use true instantiation
 
     Returns:
@@ -99,11 +101,13 @@ def build_storage(
         config=config,
     )
 
-    generator_matrix_constants = GeneratorMatrixConstants(
-        matrix_service=matrix_service
+    generator_matrix_constants = (
+        generator_matrix_constants
+        or GeneratorMatrixConstants(matrix_service=matrix_service)
     )
     command_factory = CommandFactory(
-        generator_matrix_constants=generator_matrix_constants
+        generator_matrix_constants=generator_matrix_constants,
+        matrix_service=matrix_service,
     )
     variant_study_service = VariantStudyService(
         raw_study_service=raw_study_service,

@@ -50,6 +50,22 @@ class INode(ABC, Generic[G, S, V]):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_node(
+        self,
+        url: Optional[List[str]] = None,
+    ) -> "INode[G,S,V]":
+        """
+        Ask data inside tree.
+
+        Args:
+            url: data path to retrieve
+
+        Returns: json
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def delete(self, url: Optional[List[str]] = None) -> None:
         """
         Delete a node located at some url

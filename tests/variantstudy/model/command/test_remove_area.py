@@ -58,7 +58,8 @@ class TestRemoveArea:
         command_context = CommandContext(
             generator_matrix_constants=GeneratorMatrixConstants(
                 matrix_service=matrix_service
-            )
+            ),
+            matrix_service=matrix_service,
         )
 
         create_area_command: ICommand = CreateArea.parse_obj(

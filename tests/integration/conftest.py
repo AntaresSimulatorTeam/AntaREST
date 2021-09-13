@@ -22,6 +22,14 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 
 @pytest.fixture
 def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+
     cur_dir: Path = Path(__file__).parent
     templateLoader = jinja2.FileSystemLoader(searchpath=cur_dir)
     templateEnv = jinja2.Environment(loader=templateLoader)
