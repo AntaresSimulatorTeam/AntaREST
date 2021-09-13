@@ -25,6 +25,8 @@ export const setLogoutInterceptor = (logoutCallback: () => void, clearStudies: (
   );
 };
 
+let axiosInterceptor: number;
+
 export const initAxiosClient = (config: Config): void => {
   client.defaults.baseURL = `${config.baseUrl}${config.restEndpoint}`;
 };
@@ -35,11 +37,13 @@ export const setAuth = (token: string | undefined): void => {
     Cookies.set('access_token_cookie', token);
   } else {
     delete client.defaults.headers.common.Authorization;
+    if (axiosInterceptor !== undefined) {
+      client.interceptors.request.eject(axiosInterceptor);
+    }
     Cookies.remove('access_token_cookie');
   }
 };
 
-let axiosInterceptor: number;
 export const updateRefreshInterceptor = (refreshToken: () => Promise<UserInfo|undefined>): void => {
   logInfo('Updating refresh interceptor');
   if (axiosInterceptor !== undefined) {
