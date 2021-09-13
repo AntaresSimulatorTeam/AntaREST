@@ -59,7 +59,7 @@ class TestCreateCluster:
 
         command = CreateCluster.parse_obj(
             {
-                "area_name": area_id,
+                "area_id": area_id,
                 "cluster_name": cluster_name,
                 "parameters": parameters,
                 "prepro": [[0]],
@@ -116,7 +116,7 @@ class TestCreateCluster:
 
         output = CreateCluster.parse_obj(
             {
-                "area_name": area_id,
+                "area_id": area_id,
                 "cluster_name": cluster_name,
                 "parameters": parameters,
                 "prepro": [[0]],
@@ -128,7 +128,7 @@ class TestCreateCluster:
 
         output = CreateCluster.parse_obj(
             {
-                "area_name": "non_existent_area",
+                "area_id": "non_existent_area",
                 "cluster_name": cluster_name,
                 "parameters": parameters,
                 "prepro": [[0]],

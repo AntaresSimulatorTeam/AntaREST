@@ -184,7 +184,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
         CommandDTO(
             action=CommandName.CREATE_CLUSTER.value,
             args={
-                "area_name": "area_name",
+                "area_id": "area_name",
                 "cluster_name": "cluster_name",
                 "parameters": {
                     "group": "group",
@@ -201,7 +201,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
             action=CommandName.CREATE_CLUSTER.value,
             args=[
                 {
-                    "area_name": "area_name",
+                    "area_id": "area_name",
                     "cluster_name": "cluster_name",
                     "parameters": {
                         "group": "group",
@@ -241,11 +241,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.REMOVE_CLUSTER.value,
-            args={"area_name": "area_name", "cluster_name": "cluster_name"},
+            args={"area_id": "area_name", "cluster_id": "cluster_name"},
         ),
         CommandDTO(
             action=CommandName.REMOVE_CLUSTER.value,
-            args=[{"area_name": "area_name", "cluster_name": "cluster_name"}],
+            args=[{"area_id": "area_name", "cluster_id": "cluster_name"}],
         ),
         CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,

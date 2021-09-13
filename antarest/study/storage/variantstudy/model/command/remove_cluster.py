@@ -9,8 +9,8 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
 
 class RemoveCluster(ICommand):
-    area_name: str
-    cluster_name: str
+    area_id: str
+    cluster_id: str
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
@@ -18,10 +18,10 @@ class RemoveCluster(ICommand):
         )
 
     def apply(self, study_data: FileStudy) -> CommandOutput:
-        if self.area_name not in study_data.config.areas:
+        if self.area_id not in study_data.config.areas:
             return CommandOutput(
                 status=False,
-                message=f"Area '{self.area_name}' does not exist",
+                message=f"Area '{self.area_id}' does not exist",
             )
 
         if (
@@ -29,25 +29,25 @@ class RemoveCluster(ICommand):
                 [
                     cluster
                     for cluster in study_data.config.areas[
-                        self.area_name
+                        self.area_id
                     ].thermals
-                    if cluster.id == self.cluster_name
+                    if cluster.id == self.cluster_id
                 ]
             )
             == 0
         ):
             return CommandOutput(
                 status=False,
-                message=f"Cluster '{self.cluster_name}' does not exist",
+                message=f"Cluster '{self.cluster_id}' does not exist",
             )
         study_data.tree.delete(
             [
                 "input",
                 "thermal",
                 "clusters",
-                self.area_name,
+                self.area_id,
                 "list",
-                self.cluster_name,
+                self.cluster_id,
             ]
         )
         study_data.tree.delete(
@@ -55,8 +55,8 @@ class RemoveCluster(ICommand):
                 "input",
                 "thermal",
                 "prepro",
-                self.area_name,
-                self.cluster_name,
+                self.area_id,
+                self.cluster_id,
             ]
         )
         study_data.tree.delete(
@@ -64,19 +64,19 @@ class RemoveCluster(ICommand):
                 "input",
                 "thermal",
                 "series",
-                self.area_name,
-                self.cluster_name,
+                self.area_id,
+                self.cluster_id,
             ]
         )
 
-        study_data.config.areas[self.area_name].thermals = [
+        study_data.config.areas[self.area_id].thermals = [
             cluster
-            for cluster in study_data.config.areas[self.area_name].thermals
-            if cluster.id != self.cluster_name.lower()
+            for cluster in study_data.config.areas[self.area_id].thermals
+            if cluster.id != self.cluster_id.lower()
         ]
         return CommandOutput(
             status=True,
-            message=f"Cluster '{self.cluster_name}' removed from area '{self.area_name}'",
+            message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
         )
 
     def revert(self, study_data: FileStudy) -> CommandOutput:

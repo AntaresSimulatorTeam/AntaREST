@@ -184,7 +184,7 @@ class CommandFactory:
 
         elif action == CommandName.CREATE_CLUSTER.value:
             return CreateCluster(
-                area_name=args["area_name"],
+                area_id=args["area_id"],
                 cluster_name=args["cluster_name"],
                 parameters=args["parameters"],
                 prepro=args.get("prepro", None),
@@ -205,8 +205,8 @@ class CommandFactory:
 
         elif action == CommandName.REMOVE_CLUSTER.value:
             return RemoveCluster(
-                area_name=args["area_name"],
-                cluster_name=args["cluster_name"],
+                area_id=args["area_id"],
+                cluster_id=args["cluster_id"],
                 command_context=self.command_context,
             )
 

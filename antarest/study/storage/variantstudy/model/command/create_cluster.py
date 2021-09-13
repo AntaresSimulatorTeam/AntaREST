@@ -15,11 +15,12 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
+    get_or_create_section,
 )
 
 
 class CreateCluster(ICommand):
-    area_name: str
+    area_id: str
     cluster_name: str
     parameters: Dict[str, str]
     prepro: Optional[Union[List[List[float]], str]] = None
@@ -27,8 +28,8 @@ class CreateCluster(ICommand):
     # TODO: Maybe add the prefix option ?
 
     @validator("cluster_name")
-    def validate_area_name(cls, val: str) -> str:
-        valid_name = transform_name_to_id(val)
+    def validate_cluster_name(cls, val: str) -> str:
+        valid_name = transform_name_to_id(val, lower=False)
         if valid_name != val:
             raise ValueError(
                 "Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters"
@@ -67,43 +68,45 @@ class CreateCluster(ICommand):
         )
 
     def apply(self, study_data: FileStudy) -> CommandOutput:
-        if self.area_name not in study_data.config.areas:
+        if self.area_id not in study_data.config.areas:
             return CommandOutput(
                 status=False,
-                message=f"Area '{self.area_name}' does not exist",
+                message=f"Area '{self.area_id}' does not exist",
             )
 
-        for cluster in study_data.config.areas[self.area_name].thermals:
-            if cluster.id == self.cluster_name:
+        cluster_id = transform_name_to_id(self.cluster_name)
+        for cluster in study_data.config.areas[self.area_id].thermals:
+            if cluster.id == cluster_id:
                 return CommandOutput(
                     status=False,
                     message=f"Cluster '{self.cluster_name}' already exist",
                 )
 
-        study_data.config.areas[self.area_name].thermals.append(
-            Cluster(id=self.cluster_name, name=self.cluster_name)
+        study_data.config.areas[self.area_id].thermals.append(
+            Cluster(id=cluster_id, name=self.cluster_name)
         )
+
+        cluster_list_config = study_data.tree.get(
+            ["input", "thermal", "clusters", self.area_id, "list"]
+        )
+        cluster_list_config[self.cluster_name] = self.parameters
 
         self.parameters["name"] = self.cluster_name
         new_cluster_data: JSON = {
             "input": {
                 "thermal": {
-                    "clusters": {
-                        self.area_name: {
-                            "list": {self.cluster_name: self.parameters}
-                        }
-                    },
+                    "clusters": {self.area_id: {"list": cluster_list_config}},
                     "prepro": {
-                        self.area_name: {
-                            self.cluster_name: {
+                        self.area_id: {
+                            cluster_id: {
                                 "data": self.prepro,
                                 "modulation": self.modulation,
                             }
                         }
                     },
                     "series": {
-                        self.area_name: {
-                            self.cluster_name: {
+                        self.area_id: {
+                            cluster_id: {
                                 "series": self.command_context.generator_matrix_constants.get_null_matrix()
                             }
                         }
@@ -115,7 +118,7 @@ class CreateCluster(ICommand):
 
         return CommandOutput(
             status=True,
-            message=f"Cluster '{self.cluster_name}' added to area '{self.area_name}'",
+            message=f"Cluster '{self.cluster_name}' added to area '{self.area_id}'",
         )
 
     def revert(self, study_data: FileStudy) -> CommandOutput:

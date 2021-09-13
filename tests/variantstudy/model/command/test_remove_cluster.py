@@ -54,7 +54,7 @@ class TestRemoveCluster:
         hash_before_cluster = dirhash(empty_study.config.study_path, "md5")
 
         CreateCluster(
-            area_name=area_id,
+            area_id=area_id,
             cluster_name=cluster_name,
             parameters={
                 "group": "group",
@@ -69,8 +69,8 @@ class TestRemoveCluster:
         ).apply(empty_study)
 
         output = RemoveCluster(
-            area_name=area_id,
-            cluster_name=cluster_id,
+            area_id=area_id,
+            cluster_id=cluster_id,
             command_context=command_context,
         ).apply(empty_study)
 
@@ -81,15 +81,15 @@ class TestRemoveCluster:
         )
 
         output = RemoveCluster(
-            area_name="non_existent_area",
-            cluster_name=cluster_id,
+            area_id="non_existent_area",
+            cluster_id=cluster_id,
             command_context=command_context,
         ).apply(empty_study)
         assert not output.status
 
         output = RemoveCluster(
-            area_name=area_name,
-            cluster_name="non_existent_cluster",
+            area_id=area_name,
+            cluster_id="non_existent_cluster",
             command_context=command_context,
         ).apply(empty_study)
         assert not output.status

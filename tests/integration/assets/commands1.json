@@ -2,14 +2,23 @@
   {
     "action": "create_area",
     "args": {
-      "area_name": "Area",
+      "area_name": "Area 1",
       "metadata": {}
     }
   },
   {
     "action": "create_area",
     "args": {
-      "area_name": "Area 2",
+      "area_name": "Area2",
+      "metadata": {
+        "country": "FR"
+      }
+    }
+  },
+  {
+    "action": "create_area",
+    "args": {
+      "area_name": "WEIRD",
       "metadata": {
         "country": "FR"
       }
@@ -18,16 +27,60 @@
   {
     "action": "create_cluster",
     "args": {
-      "area_name": "area",
-      "cluster_name": "new cluster",
+      "area_id": "area 1",
+      "cluster_name": "gas cluster",
+      "parameters": {
+        "group": "Gas"
+      }
+    }
+  },
+  {
+    "action": "create_cluster",
+    "args": {
+      "area_id": "area 1",
+      "cluster_name": "gas cluster 2",
+      "parameters": {
+        "group": "Gas",
+        "unitcount": 1,
+        "nominalcapacity": 500
+      }
+    }
+  },
+  {
+    "action": "create_cluster",
+    "args": {
+      "area_id": "area 1",
+      "cluster_name": "other",
+      "parameters": {
+        "group": "Other"
+      }
+    }
+  },
+  {
+    "action": "create_cluster",
+    "args": {
+      "area_id": "area2",
+      "cluster_name": "TEST",
+      "parameters": {
+        "group": "Nuclear",
+        "unitcount": 1,
+        "nominalcapacity": 500
+      }
+    }
+  },
+  {
+    "action": "create_link",
+    "args": {
+      "area1": "area 1",
+      "area2": "area2",
       "parameters": {}
     }
   },
   {
     "action": "create_link",
     "args": {
-      "area1": "area",
-      "area2": "area 2",
+      "area1": "area2",
+      "area2": "weird",
       "parameters": {}
     }
   }

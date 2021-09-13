@@ -17,7 +17,7 @@ def test_variant_manager(app: FastAPI):
     admin_credentials = res.json()
 
     base_study_res = client.post(
-        "/v1/studies?name=foo",
+        "/v1/studies?name=foo&version=720",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
