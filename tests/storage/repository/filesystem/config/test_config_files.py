@@ -125,7 +125,7 @@ output = true
     (study_path / "input/areas/sets.ini").write_text(content)
 
     assert ConfigPathBuilder._parse_sets(study_path) == {
-        "hello": Set(areas=["a", "b"])
+        "hello": Set(areas=["a", "b"], output=True, inverted_set=False)
     }
 
 

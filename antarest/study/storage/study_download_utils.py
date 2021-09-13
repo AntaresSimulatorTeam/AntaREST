@@ -256,7 +256,13 @@ class StudyDownloader:
             )
         elif data_type == StudyDownloadType.CLUSTER:
             StudyDownloader.select_filter(
-                matrix, prefix, year, config.sets, study, f"{url}/areas", data
+                matrix,
+                prefix,
+                year,
+                {k: v for k, v in config.sets.items() if v.output},
+                study,
+                f"{url}/areas",
+                data,
             )
         else:
             StudyDownloader.select_filter(

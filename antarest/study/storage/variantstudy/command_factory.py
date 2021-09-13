@@ -22,6 +22,7 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import (
 )
 from antarest.study.storage.variantstudy.model.command.create_district import (
     CreateDistrict,
+    DistrictBaseFilter,
 )
 from antarest.study.storage.variantstudy.model.command.create_link import (
     CreateLink,
@@ -108,8 +109,13 @@ class CommandFactory:
 
         elif action == CommandName.CREATE_DISTRICT.value:
             return CreateDistrict(
-                id=args["id"],
+                name=args["name"],
                 metadata=args["metadata"],
+                base_filter=DistrictBaseFilter(args["base_filter"])
+                if args.get("base_filter")
+                else None,
+                filter_items=args.get("filter_items", []),
+                output=args.get("output", None),
                 command_context=self.command_context,
             )
 
@@ -118,7 +124,11 @@ class CommandFactory:
                 id=args["id"],
                 name=args["name"],
                 metadata=args["metadata"],
-                set=args["set"],
+                base_filter=DistrictBaseFilter(args["base_filter"])
+                if args.get("base_filter")
+                else None,
+                filter_items=args.get("filter_items", []),
+                output=args.get("output", None),
                 command_context=self.command_context,
             )
 

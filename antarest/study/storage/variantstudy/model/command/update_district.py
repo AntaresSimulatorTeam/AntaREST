@@ -1,9 +1,12 @@
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
+)
+from antarest.study.storage.variantstudy.model.command.create_district import (
+    DistrictBaseFilter,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
@@ -12,7 +15,9 @@ class UpdateDistrict(ICommand):
     id: str
     name: str
     metadata: Dict[str, str]
-    set: List[str]
+    base_filter: Optional[DistrictBaseFilter]
+    filter_items: Optional[List[str]]
+    output: Optional[bool]
 
     def __init__(self, **data: Any) -> None:
         super().__init__(

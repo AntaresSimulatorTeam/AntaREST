@@ -63,9 +63,11 @@ class AreaManager:
                 result.append(
                     AreaInfoDTO(
                         id=set_name,
-                        name=set_name,
+                        name=file_study.config.sets[set_name].name or set_name,
                         type=AreaType.CLUSTER,
-                        set=file_study.config.sets[set_name].areas,
+                        set=file_study.config.sets[set_name].get_areas(
+                            list(file_study.config.areas.keys())
+                        ),
                         metadata=areas_metadata.get(set_name, PatchArea()),
                     )
                 )
@@ -95,12 +97,14 @@ class AreaManager:
             self.raw_study_service.patch_service.patch(study, patch.dict())
             return AreaInfoDTO(
                 id=area_id,
-                name=area_id,  #  TODO modify config to get the display name
+                name=area_or_set.name if area_or_set is not None else area_id,
                 type=AreaType.AREA
                 if isinstance(area_or_set, Area)
                 else AreaType.CLUSTER,
                 metadata=patch.areas.get(area_id),
-                set=area_or_set.areas if isinstance(area_or_set, Set) else [],
+                set=area_or_set.get_areas(list(file_study.config.areas.keys()))
+                if isinstance(area_or_set, Set)
+                else [],
             )
         raise NotImplementedError()
 

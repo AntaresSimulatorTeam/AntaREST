@@ -17,7 +17,9 @@ class RemoveDistrict(ICommand):
         )
 
     def apply(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
+        del study_data.config.sets[self.id]
+        study_data.tree.delete(["input", "areas", "sets", self.id])
+        return CommandOutput(status=True, message=self.id)
 
     def revert(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()

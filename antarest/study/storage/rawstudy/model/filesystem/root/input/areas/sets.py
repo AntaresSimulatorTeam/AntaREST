@@ -30,6 +30,6 @@ class InputAreasSets(IniFileNode):
             context,
             config,
             types={},
-            reader=MultipleSameKeysIniReader(),
-            writer=IniWriter(special_keys=["+"]),
+            reader=MultipleSameKeysIniReader(["+", "-"]),
+            writer=IniWriter(special_keys=["+", "-"]),
         )

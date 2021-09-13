@@ -57,9 +57,17 @@ class Set(BaseModel):
     """
 
     ALL = ["hourly", "daily", "weekly", "monthly", "annual"]
+    name: Optional[str] = None
+    inverted_set: bool = False
     areas: Optional[List[str]] = None
+    output: bool = True
     filters_synthesis: List[str] = ALL
     filters_year: List[str] = ALL
+
+    def get_areas(self, all_areas: List[str]) -> List[str]:
+        if self.inverted_set:
+            return list(set(all_areas).difference(set(self.areas or [])))
+        return self.areas or []
 
 
 class Simulation(BaseModel):
@@ -116,8 +124,8 @@ class FileStudyTreeConfig(BaseModel):
     def area_names(self) -> List[str]:
         return list(self.areas.keys())
 
-    def set_names(self) -> List[str]:
-        return list(self.sets.keys())
+    def set_names(self, only_output: bool = True) -> List[str]:
+        return [k for k, v in self.sets.items() if v.output]
 
     def get_thermal_names(
         self, area: str, only_enabled: bool = False
@@ -148,7 +156,7 @@ class FileStudyTreeConfig(BaseModel):
     ) -> List[str]:
         if link:
             return self.areas[area].links[link].filters_synthesis
-        if area in self.sets:
+        if area in self.sets and self.sets[area].output:
             return self.sets[area].filters_synthesis
         return self.areas[area].filters_synthesis
 
@@ -157,7 +165,7 @@ class FileStudyTreeConfig(BaseModel):
     ) -> List[str]:
         if link:
             return self.areas[area].links[link].filters_year
-        if area in self.sets:
+        if area in self.sets and self.sets[area].output:
             return self.sets[area].filters_year
         return self.areas[area].filters_year
 
