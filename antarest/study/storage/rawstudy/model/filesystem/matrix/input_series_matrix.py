@@ -59,7 +59,7 @@ class InputSeriesMatrix(MatrixNode):
         if not df.empty:
             df.to_csv(self.config.path, sep="\t", header=False, index=False)
         else:
-            self.config.path.write_bytes(b'')
+            self.config.path.write_bytes(b"")
 
     def check_errors(
         self,
