@@ -5,7 +5,7 @@ from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import List, IO, Optional, cast, Union
+from typing import List, IO, Optional, cast, Union, Dict
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -151,12 +151,25 @@ class StudyService:
 
         """
         logger.info("studies metadata asked by user %s", params.get_user_id())
-        return {
-            study.id: self._get_study_storage_service(
+        studies: Dict[str, StudyMetadataDTO] = {}
+        for study in self._get_study_metadatas(params):
+            study_metadata = self._try_get_studies_information(study)
+            if study_metadata is not None:
+                studies[study_metadata.id] = study_metadata
+        return studies
+
+    def _try_get_studies_information(
+        self, study: Study
+    ) -> Optional[StudyMetadataDTO]:
+        try:
+            return self._get_study_storage_service(
                 study
-            ).get_study_information(study, summary=True)
-            for study in self._get_study_metadatas(params)
-        }
+            ).get_study_information(study)
+        except Exception as e:
+            logger.warning(
+                "Failed to build study %s metadata", study.id, exc_info=e
+            )
+        return None
 
     def get_study_information(
         self, uuid: str, params: RequestParameters

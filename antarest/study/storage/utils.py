@@ -121,7 +121,7 @@ def get_study_information(
     return StudyMetadataDTO(
         id=study.id,
         name=study.name,
-        version=study.version,
+        version=int(study.version),
         created=study.created_at.timestamp(),
         updated=study.updated_at.timestamp(),
         workspace=study_workspace,
