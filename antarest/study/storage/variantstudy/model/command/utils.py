@@ -27,4 +27,5 @@ def validate_matrix(
 def get_or_create_section(json_ini: JSON, section: str) -> JSON:
     if section not in json_ini:
         json_ini[section] = {}
-    return json_ini[section]
+    sub_json: JSON = json_ini[section]
+    return sub_json
