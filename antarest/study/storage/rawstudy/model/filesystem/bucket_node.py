@@ -19,7 +19,9 @@ class BucketNode(FolderNode):
     """
 
     def save(
-        self, data: Union[str, bytes, JSON], url: Optional[List[str]] = None
+        self,
+        data: Union[str, int, bool, float, bytes, JSON],
+        url: Optional[List[str]] = None,
     ) -> None:
         assert isinstance(data, Dict)
         for key, value in data.items():
