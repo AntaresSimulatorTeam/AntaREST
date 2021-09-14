@@ -59,7 +59,7 @@ class CreateArea(ICommand):
 
         return new_areas
 
-    def apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.command_context.generator_matrix_constants is None:
             raise ValueError()
 

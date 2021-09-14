@@ -95,6 +95,10 @@ class MultipleSameKeysIniReader(IReader):
     multikey is not compatible with standard .ini readers
     """
 
+    def __init__(self, special_keys: Optional[List[str]] = None) -> None:
+        self.special_keys = special_keys or []
+        super().__init__()
+
     @staticmethod
     def fetch_cleaned_lines(path: Path) -> List[str]:
         return [l for l in path.read_text().split("\n") if l.strip() != ""]
@@ -117,7 +121,10 @@ class MultipleSameKeysIniReader(IReader):
                 if len(elements) == 2:
                     value = IniReader.parse_value(elements[1])
                 if key not in data[curr_part]:
-                    data[curr_part][key] = value
+                    if key in self.special_keys:
+                        data[curr_part][key] = [value]
+                    else:
+                        data[curr_part][key] = value
                 else:
                     if not isinstance(data[curr_part][key], list):
                         data[curr_part][key] = [data[curr_part][key]]

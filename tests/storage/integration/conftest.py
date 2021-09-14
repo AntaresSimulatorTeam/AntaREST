@@ -4,6 +4,7 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
+from sqlalchemy import create_engine
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import (
@@ -14,6 +15,8 @@ from antarest.core.config import (
     CacheConfig,
 )
 from antarest.core.tasks.service import ITaskService
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.dbmodel import Base
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_storage
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
@@ -34,7 +37,13 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 def storage_service(
     tmp_path: str, project_path: Path, sta_mini_zip_path: Path
 ) -> StudyService:
-
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
     path_studies = Path(tmp_path) / "studies"
 
     path_resources = project_path / "resources"

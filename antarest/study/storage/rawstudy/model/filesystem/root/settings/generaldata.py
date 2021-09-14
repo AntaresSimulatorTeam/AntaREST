@@ -122,6 +122,6 @@ class GeneralData(IniFileNode):
             context,
             config,
             types=types,
-            reader=MultipleSameKeysIniReader(),
+            reader=MultipleSameKeysIniReader(["playlist_year_weight"]),
             writer=IniWriter(special_keys=["playlist_year_weight"]),
         )

@@ -88,11 +88,22 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_sets(root: Path) -> Dict[str, Set]:
-        json = MultipleSameKeysIniReader().read(root / "input/areas/sets.ini")
+        json = MultipleSameKeysIniReader(["+", "-"]).read(
+            root / "input/areas/sets.ini"
+        )
         return {
-            name.lower(): Set(areas=item.get("+"))
+            name.lower(): Set(
+                areas=item.get(
+                    "-"
+                    if item.get("apply-filter", "remove-all") == "add-all"
+                    else "+"
+                ),
+                name=item.get("caption"),
+                inverted_set=item.get("apply-filter", "remove-all")
+                == "add-all",
+                output=item.get("output", True),
+            )
             for name, item in json.items()
-            if item.get("output", True)
         }
 
     @staticmethod

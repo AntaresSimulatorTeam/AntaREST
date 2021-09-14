@@ -45,19 +45,31 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
-            args={"id": "id", "metadata": {}},
+            args={"name": "id", "metadata": {}, "filter_items": ["a"]},
         ),
         CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
-            args=[{"id": "id", "metadata": {}}],
+            args=[{"name": "id", "metadata": {}, "base_filter": "add-all"}],
         ),
         CommandDTO(
             action=CommandName.UPDATE_DISTRICT.value,
-            args={"id": "id", "name": "name", "metadata": {}, "set": []},
+            args={
+                "id": "id",
+                "name": "name",
+                "metadata": {},
+                "filter_items": [],
+            },
         ),
         CommandDTO(
             action=CommandName.UPDATE_DISTRICT.value,
-            args=[{"id": "id", "name": "name", "metadata": {}, "set": []}],
+            args=[
+                {
+                    "id": "id",
+                    "name": "name",
+                    "metadata": {},
+                    "filter_items": [],
+                }
+            ],
         ),
         CommandDTO(
             action=CommandName.REMOVE_DISTRICT.value,
@@ -127,10 +139,9 @@ from antarest.study.storage.variantstudy.model.command.common import (
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,
             args={
                 "name": "name",
-                "enabled": True,
                 "time_step": "hourly",
                 "operator": "equal",
-                "coeffs": [],
+                "coeffs": {},
                 "values": "values",
             },
         ),
@@ -142,7 +153,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
                     "enabled": True,
                     "time_step": "hourly",
                     "operator": "equal",
-                    "coeffs": [],
+                    "coeffs": {},
                     "values": "values",
                 }
             ],
@@ -155,7 +166,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
                 "enabled": True,
                 "time_step": "hourly",
                 "operator": "equal",
-                "coeffs": [],
+                "coeffs": {},
                 "values": "values",
             },
         ),
@@ -168,7 +179,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
                     "enabled": True,
                     "time_step": "hourly",
                     "operator": "equal",
-                    "coeffs": [],
+                    "coeffs": {},
                     "values": "values",
                 }
             ],

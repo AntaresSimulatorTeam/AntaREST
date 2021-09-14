@@ -367,7 +367,15 @@ def test_area_management(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert res_areas.json() == []
+    assert res_areas.json() == [
+        {
+            "id": "all areas",
+            "metadata": {"country": None},
+            "name": "All areas",
+            "set": [],
+            "type": "CLUSTER",
+        }
+    ]
 
     res_create = client.post(
         f"/v1/studies/{study_id}/areas",

@@ -17,7 +17,7 @@ class RemoveLink(ICommand):
             command_name=CommandName.REMOVE_LINK, version=1, **data
         )
 
-    def apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.area1 not in study_data.config.areas:
             return CommandOutput(
                 status=False,

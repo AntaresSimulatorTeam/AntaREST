@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -12,6 +13,8 @@ from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class ICommand(ABC, BaseModel):
     command_name: CommandName
@@ -19,8 +22,21 @@ class ICommand(ABC, BaseModel):
     command_context: CommandContext
 
     @abstractmethod
-    def apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()
+
+    def apply(self, study_data: FileStudy) -> CommandOutput:
+        try:
+            return self._apply(study_data)
+        except Exception as e:
+            logger.warning(
+                f"Failed to execute variant command {self.command_name}",
+                exc_info=e,
+            )
+            return CommandOutput(
+                status=False,
+                message=f"Unexpected exception occurred when trying to apply command {self.command_name}",
+            )
 
     @abstractmethod
     def revert(self, study_data: FileStudy) -> CommandOutput:
