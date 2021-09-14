@@ -6,6 +6,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -15,6 +16,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
+    strip_matrix_protocol,
 )
 
 
@@ -116,5 +118,16 @@ class CreateBindingConstraint(ICommand):
 
         return CommandOutput(status=True)
 
-    def revert(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
+    def to_dto(self) -> CommandDTO:
+        return CommandDTO(
+            action=CommandName.CREATE_BINDING_CONSTRAINT.value,
+            args={
+                "name": self.name,
+                "enabled": self.enabled,
+                "time_step": self.time_step.value,
+                "operator": self.operator.value,
+                "coeffs": self.coeffs,
+                "values": strip_matrix_protocol(self.values),
+                "comments": self.comments,
+            },
+        )

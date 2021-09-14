@@ -7,7 +7,10 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
     GeneratorMatrixConstants,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model import CommandDTO
+from antarest.study.storage.variantstudy.model.command.utils import (
+    remove_none_args,
+)
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
@@ -102,8 +105,8 @@ from antarest.study.storage.variantstudy.model.command.common import (
         CommandDTO(
             action=CommandName.UPDATE_LINK.value,
             args={
-                "id": "id",
-                "name": "name",
+                "area1": "area1",
+                "area2": "area2",
                 "parameters": {},
                 "series": "series",
             },
@@ -112,8 +115,8 @@ from antarest.study.storage.variantstudy.model.command.common import (
             action=CommandName.UPDATE_LINK.value,
             args=[
                 {
-                    "id": "id",
-                    "name": "name",
+                    "area1": "area1",
+                    "area2": "area2",
                     "parameters": {},
                     "series": "series",
                 }
@@ -139,6 +142,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,
             args={
                 "name": "name",
+                "enabled": True,
                 "time_step": "hourly",
                 "operator": "equal",
                 "coeffs": {},
@@ -231,7 +235,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
             args={
                 "id": "id",
                 "name": "name",
-                "type": "type",
                 "parameters": {},
                 "prepro": "prepro",
                 "modulation": "modulation",
@@ -243,7 +246,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
                 {
                     "id": "id",
                     "name": "name",
-                    "type": "type",
                     "parameters": {},
                     "prepro": "prepro",
                     "modulation": "modulation",
@@ -285,6 +287,7 @@ def test_command_factory(command_dto: CommandDTO):
     command_list = command_factory.to_icommand(command_dto=command_dto)
     if isinstance(args := command_dto.args, dict):
         assert len(command_list) == 1
+        assert remove_none_args(command_list[0].to_dto()) == command_dto
     else:
         assert len(command_list) == len(args)
 

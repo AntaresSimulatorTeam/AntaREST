@@ -8,6 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Set,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -74,5 +75,15 @@ class CreateDistrict(ICommand):
         )
         return CommandOutput(status=True, message=district_id)
 
-    def revert(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
+    def to_dto(self) -> CommandDTO:
+        return CommandDTO(
+            action=CommandName.CREATE_DISTRICT.value,
+            args={
+                "name": self.name,
+                "metadata": self.metadata,
+                "base_filter": self.base_filter,
+                "filter_items": self.filter_items,
+                "output": self.output,
+                "comments": self.comments,
+            },
+        )

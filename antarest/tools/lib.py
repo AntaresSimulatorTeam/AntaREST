@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from requests import Session
 
-from antarest.study.storage.variantstudy.model import (
+from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
 )

@@ -37,7 +37,7 @@ from antarest.study.storage.utils import (
     get_study_information,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model import (
+from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
 )

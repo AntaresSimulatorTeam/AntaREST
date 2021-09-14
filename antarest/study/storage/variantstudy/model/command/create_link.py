@@ -9,6 +9,7 @@ from antarest.study.storage.variantstudy.business.default_values import (
     LinkProperties,
     FilteringOptions,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -16,6 +17,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
+    strip_matrix_protocol,
 )
 
 
@@ -171,5 +173,13 @@ class CreateLink(ICommand):
             message=f"Link between '{self.area1}' and '{self.area2}' created",
         )
 
-    def revert(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
+    def to_dto(self) -> CommandDTO:
+        return CommandDTO(
+            action=CommandName.CREATE_LINK.value,
+            args={
+                "area1": self.area1,
+                "area2": self.area2,
+                "parameters": self.parameters,
+                "series": strip_matrix_protocol(self.series),
+            },
+        )

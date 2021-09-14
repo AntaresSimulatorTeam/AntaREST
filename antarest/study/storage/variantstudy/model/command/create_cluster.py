@@ -8,6 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -16,6 +17,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
     get_or_create_section,
+    strip_matrix_protocol,
 )
 
 
@@ -121,5 +123,14 @@ class CreateCluster(ICommand):
             message=f"Cluster '{self.cluster_name}' added to area '{self.area_id}'",
         )
 
-    def revert(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
+    def to_dto(self) -> CommandDTO:
+        return CommandDTO(
+            action=CommandName.CREATE_CLUSTER.value,
+            args={
+                "area_id": self.area_id,
+                "cluster_name": self.cluster_name,
+                "parameters": self.parameters,
+                "prepro": strip_matrix_protocol(self.prepro),
+                "modulation": strip_matrix_protocol(self.modulation),
+            },
+        )
