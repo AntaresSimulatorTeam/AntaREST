@@ -529,9 +529,6 @@ class StudyService:
         study = self._get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(study_id, study.type)
-
         logger.info(
             "study %s output download ask by %s",
             study_id,
@@ -539,7 +536,9 @@ class StudyService:
         )
 
         matrix = StudyDownloader.build(
-            self.raw_study_service.get_raw(study), output_id, data
+            self._get_study_storage_service(study).get_raw(study),
+            output_id,
+            data,
         )
         return matrix
 

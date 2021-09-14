@@ -42,6 +42,7 @@ from antarest.study.storage.utils import (
     get_study_information,
     remove_from_cache,
     get_using_cache,
+    update_antares_info,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.model import (
@@ -345,7 +346,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
 
     def get(
         self,
-        metadata: RawStudy,
+        metadata: VariantStudy,
         url: str = "",
         depth: int = 3,
         formatted: bool = True,
@@ -361,6 +362,9 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         Returns: study data formatted in json
 
         """
+        if not self.exists(metadata):
+            self.wait_for_generation(metadata)
+
         return get_using_cache(
             study_service=self,
             metadata=metadata,
@@ -494,7 +498,7 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
     def copy(
         self,
         src_meta: VariantStudy,
-        dest_meta: VariantStudy,
+        dest_meta: RawStudy,
         with_outputs: bool = False,
     ) -> VariantStudy:
         """
@@ -505,7 +509,49 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             with_outputs: indicate either to copy the output or not
         Returns: destination study
         """
-        raise NotImplementedError()
+        if not self.exists(src_meta):
+            self.wait_for_generation(src_meta)
+
+        src_path = self.get_study_path(src_meta)
+        dest_path = self.raw_study_service.get_study_path(dest_meta)
+
+        shutil.copytree(src_path, dest_path)
+
+        output_dest = dest_path / "output"
+        if with_outputs:
+            output_src = super().get_study_path(src_meta) / "output"
+            if output_src.is_dir():
+                shutil.copytree(output_src, output_dest)
+        else:
+            if output_dest.exists():
+                shutil.rmtree(output_dest)
+
+        _, study = self.study_factory.create_from_fs(
+            dest_path, study_id=dest_meta.id
+        )
+        update_antares_info(dest_meta, study)
+
+        del study
+        return dest_meta
+
+    def wait_for_generation(self, metadata: VariantStudy):
+        def callback() -> TaskResult:
+            generate_result = self.generate(
+                metadata.id, False, RequestParameters(DEFAULT_ADMIN_USER)
+            )
+            return TaskResult(
+                success=generate_result.success,
+                message=f"{metadata.id} generated successfully"
+                if generate_result.success
+                else f"{metadata.id} not generated",
+            )
+
+        task_id = self.task_service.add_task(
+            action=callback,
+            name=f"Generation of {metadata.id} study",
+            request_params=RequestParameters(DEFAULT_ADMIN_USER),
+        )
+        self.task_service.await_task(task_id)
 
     def get_raw(self, metadata: VariantStudy) -> FileStudy:
         """
@@ -514,26 +560,8 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             metadata: study
         Returns: the config and study tree object
         """
-        if metadata.snapshot is None:
-
-            def callback() -> TaskResult:
-                generate_result = self.generate(
-                    metadata.id, False, RequestParameters(DEFAULT_ADMIN_USER)
-                )
-                return TaskResult(
-                    success=generate_result.success,
-                    message=f"{metadata.id} generated successfully"
-                    if generate_result.success
-                    else f"{metadata.id} not generated",
-                )
-
-            task_id = self.task_service.add_task(
-                action=callback,
-                name=f"Generation of {metadata.id} study",
-                request_params=RequestParameters(DEFAULT_ADMIN_USER),
-            )
-            self.task_service.await_task(task_id)
-
+        if not self.exists(metadata):
+            self.wait_for_generation(metadata)
         study_path = self.get_study_path(metadata)
         study_config, study_tree = self.study_factory.create_from_fs(
             study_path, metadata.id
@@ -565,7 +593,8 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             status: true to set it as reference, false to unset it
         Returns:
         """
-        raise NotImplementedError()
+        self.patch_service.set_reference_output(metadata, output_id, status)
+        self.remove_from_cache(metadata.id)
 
     def delete(self, metadata: VariantStudy) -> None:
         """

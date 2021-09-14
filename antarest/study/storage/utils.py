@@ -179,7 +179,6 @@ def get_using_cache(
     Returns: study data formatted in json
 
     """
-    study_service.check_study_exists(metadata)
     study_path = study_service.get_study_path(metadata)
 
     _, study = study_service.study_factory.create_from_fs(

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TypeVar, Generic, List
 
+from antarest.core.custom_types import JSON
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.study.model import Study, StudySimResultDTO, StudyMetadataDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -18,6 +19,26 @@ class IStudyStorageService(ABC, Generic[T]):
             metadata: study information
 
         Returns: new study information
+
+        """
+        raise NotImplementedError()
+
+    def get(
+        self,
+        metadata: T,
+        url: str = "",
+        depth: int = 3,
+        formatted: bool = True,
+    ) -> JSON:
+        """
+        Entry point to fetch data inside study.
+        Args:
+            metadata: study
+            url: path data inside study to reach
+            depth: tree depth to reach after reach data path
+            formatted: indicate if raw files must be parsed and formatted
+
+        Returns: study data formatted in json
 
         """
         raise NotImplementedError()
@@ -129,7 +150,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
         return Path(metadata.path)
 
-    def _check_study_exists(self, metadata: Study) -> None:
+    def check_study_exists(self, metadata: Study) -> None:
         """
         Check study on filesystem.
 
