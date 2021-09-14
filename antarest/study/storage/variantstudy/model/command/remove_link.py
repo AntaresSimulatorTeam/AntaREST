@@ -1,6 +1,7 @@
 from typing import Any
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -50,5 +51,11 @@ class RemoveLink(ICommand):
             message=f"Link between {self.area1} and {self.area2} removed",
         )
 
-    def revert(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
+    def to_dto(self) -> CommandDTO:
+        return CommandDTO(
+            action=CommandName.REMOVE_LINK.value,
+            args={
+                "area1": self.area1,
+                "area2": self.area2,
+            },
+        )

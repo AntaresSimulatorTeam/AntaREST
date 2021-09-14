@@ -5,6 +5,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -33,5 +34,11 @@ class UpdateConfig(ICommand):
         study_data.tree.save(self.data, url)
         return CommandOutput(status=True, message="ok")
 
-    def revert(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
+    def to_dto(self) -> CommandDTO:
+        return CommandDTO(
+            action=CommandName.UPDATE_CONFIG.value,
+            args={
+                "target": self.target,
+                "data": self.data,
+            },
+        )

@@ -11,6 +11,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -18,6 +19,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
+    strip_matrix_protocol,
 )
 
 
@@ -65,5 +67,11 @@ class ReplaceMatrix(ICommand):
             message=f"Matrix '{self.target_element}' has been successfully replaced.",
         )
 
-    def revert(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
+    def to_dto(self) -> CommandDTO:
+        return CommandDTO(
+            action=CommandName.REPLACE_MATRIX.value,
+            args={
+                "target_element": self.target_element,
+                "matrix": strip_matrix_protocol(self.matrix),
+            },
+        )

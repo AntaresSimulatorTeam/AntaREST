@@ -10,7 +10,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 )
 from antarest.study.storage.utils import update_antares_info
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model import (
+from antarest.study.storage.variantstudy.model.model import (
     GenerationResultInfoDTO,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand

@@ -12,6 +12,7 @@ from antarest.study.storage.variantstudy.business.default_values import (
     NodalOptimization,
     FilteringOptions,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -253,5 +254,8 @@ class CreateArea(ICommand):
             status=True, message=f"Area '{self.area_name}' created"
         )
 
-    def revert(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
+    def to_dto(self) -> CommandDTO:
+        return CommandDTO(
+            action=CommandName.CREATE_AREA.value,
+            args={"area_name": self.area_name, "metadata": self.metadata},
+        )

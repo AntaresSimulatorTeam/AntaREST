@@ -2,6 +2,7 @@ from typing import Any
 
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -44,5 +45,10 @@ class RemoveBindingConstraint(ICommand):
         study_data.config.bindings.remove(self.id)
         return CommandOutput(status=True)
 
-    def revert(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
+    def to_dto(self) -> CommandDTO:
+        return CommandDTO(
+            action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
+            args={
+                "id": self.id,
+            },
+        )

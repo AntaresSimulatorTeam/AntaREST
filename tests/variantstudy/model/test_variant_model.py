@@ -10,7 +10,7 @@ from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.study.storage.variantstudy.model import (
+from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
 )

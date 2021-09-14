@@ -5,7 +5,7 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
-from antarest.study.storage.variantstudy.model import (
+from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
 )
 from antarest.study.storage.variantstudy.model.command.common import (

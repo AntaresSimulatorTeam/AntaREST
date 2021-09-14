@@ -12,7 +12,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
-from antarest.study.storage.variantstudy.model import ICommand
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
@@ -20,6 +19,7 @@ from antarest.study.storage.variantstudy.model.command.create_district import (
     CreateDistrict,
     DistrictBaseFilter,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_district import (
     RemoveDistrict,
 )

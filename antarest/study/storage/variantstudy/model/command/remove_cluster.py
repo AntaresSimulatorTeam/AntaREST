@@ -1,6 +1,7 @@
 from typing import Any
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -79,5 +80,8 @@ class RemoveCluster(ICommand):
             message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
         )
 
-    def revert(self, study_data: FileStudy) -> CommandOutput:
-        raise NotImplementedError()
+    def to_dto(self) -> CommandDTO:
+        return CommandDTO(
+            action=CommandName.REMOVE_CLUSTER.value,
+            args={"area_id": self.area_id, "cluster_id": self.cluster_id},
+        )

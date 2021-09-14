@@ -5,6 +5,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -39,7 +40,7 @@ class ICommand(ABC, BaseModel):
             )
 
     @abstractmethod
-    def revert(self, study_data: FileStudy) -> CommandOutput:
+    def to_dto(self) -> CommandDTO:
         raise NotImplementedError()
 
     class Config:
