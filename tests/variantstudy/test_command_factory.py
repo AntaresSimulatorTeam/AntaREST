@@ -139,10 +139,9 @@ from antarest.study.storage.variantstudy.model.command.common import (
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,
             args={
                 "name": "name",
-                "enabled": True,
                 "time_step": "hourly",
                 "operator": "equal",
-                "coeffs": [],
+                "coeffs": {},
                 "values": "values",
             },
         ),
@@ -154,7 +153,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
                     "enabled": True,
                     "time_step": "hourly",
                     "operator": "equal",
-                    "coeffs": [],
+                    "coeffs": {},
                     "values": "values",
                 }
             ],
@@ -167,7 +166,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
                 "enabled": True,
                 "time_step": "hourly",
                 "operator": "equal",
-                "coeffs": [],
+                "coeffs": {},
                 "values": "values",
             },
         ),
@@ -180,7 +179,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
                     "enabled": True,
                     "time_step": "hourly",
                     "operator": "equal",
-                    "coeffs": [],
+                    "coeffs": {},
                     "values": "values",
                 }
             ],

@@ -21,7 +21,7 @@ class UpdateConfig(ICommand):
             command_name=CommandName.UPDATE_CONFIG, version=1, **data
         )
 
-    def apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
         url = self.target.split("/")
         tree_node = study_data.tree.get_node(url)
         if not isinstance(tree_node, IniFileNode):

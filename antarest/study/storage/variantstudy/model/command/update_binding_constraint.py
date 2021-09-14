@@ -6,6 +6,8 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
+    BindingConstraintOperator,
+    TimeStep,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
@@ -14,9 +16,9 @@ class UpdateBindingConstraint(ICommand):
     id: str
     name: str
     enabled: bool
-    time_step: str
-    operator: str
-    coeffs: List[Dict[str, Union[str, float]]]
+    time_step: TimeStep
+    operator: BindingConstraintOperator
+    coeffs: Dict[str, List[float]]
     values: Union[List[List[float]], str]
 
     def __init__(self, **data: Any) -> None:
@@ -26,39 +28,7 @@ class UpdateBindingConstraint(ICommand):
             **data,
         )
 
-    @validator("time_step")
-    def check_time_step(cls, v: str) -> str:
-        if v not in ["hourly", "daily", "weekly"]:
-            raise ValueError(
-                "Time step must be either hourly, daily or weekly"
-            )
-        return v
-
-    @validator("operator")
-    def check_operator(cls, v: str) -> str:
-        if v not in ["both", "equal", "greater", "less"]:
-            raise ValueError(
-                "Operator must be either both, equal, greater or less"
-            )
-        return v
-
-    @validator("coeffs")
-    def check_coeffs(
-        cls, v: List[Dict[str, Union[str, float]]]
-    ) -> List[Dict[str, Union[str, float]]]:
-        if not isinstance(v, list):
-            raise ValueError("Coeffs must be a list")
-        try:
-            for d in v:
-                if d["type"] not in ["thermal", "link"]:
-                    raise ValueError(
-                        "Coeffs type must be either thermal or link"
-                    )
-            return v
-        except:
-            raise ValueError("Coeffs is wrong")
-
-    def apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()
 
     def revert(self, study_data: FileStudy) -> CommandOutput:

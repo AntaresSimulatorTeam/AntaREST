@@ -64,7 +64,7 @@ class CreateLink(ICommand):
             ],
         )
 
-    def apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.area1 not in study_data.config.areas:
             return CommandOutput(
                 status=False, message=f"The area '{self.area1}' does not exist"

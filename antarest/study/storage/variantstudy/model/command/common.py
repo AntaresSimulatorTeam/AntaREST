@@ -5,7 +5,7 @@ from enum import Enum
 @dataclass
 class CommandOutput:
     status: bool
-    message: str
+    message: str = ""
 
 
 class TimeStep(Enum):
@@ -14,7 +14,7 @@ class TimeStep(Enum):
     WEEKLY = "weekly"
 
 
-class Operator(Enum):
+class BindingConstraintOperator(Enum):
     BOTH = "both"
     EQUAL = "equal"
     GREATER = "greater"

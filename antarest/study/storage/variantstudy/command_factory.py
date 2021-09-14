@@ -88,149 +88,103 @@ class CommandFactory:
         assert isinstance(args, dict)
         if action == CommandName.CREATE_AREA.value:
             return CreateArea(
-                area_name=args["area_name"],
-                metadata=args["metadata"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_AREA.value:
             return UpdateArea(
-                id=args["id"],
-                name=args["name"],
-                metadata=args["metadata"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.REMOVE_AREA.value:
             return RemoveArea(
-                id=args["id"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.CREATE_DISTRICT.value:
             return CreateDistrict(
-                name=args["name"],
-                metadata=args["metadata"],
-                base_filter=DistrictBaseFilter(args["base_filter"])
-                if args.get("base_filter")
-                else None,
-                filter_items=args.get("filter_items", []),
-                output=args.get("output", None),
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_DISTRICT.value:
             return UpdateDistrict(
-                id=args["id"],
-                name=args["name"],
-                metadata=args["metadata"],
-                base_filter=DistrictBaseFilter(args["base_filter"])
-                if args.get("base_filter")
-                else None,
-                filter_items=args.get("filter_items", []),
-                output=args.get("output", None),
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.REMOVE_DISTRICT.value:
             return RemoveDistrict(
-                id=args["id"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.CREATE_LINK.value:
             return CreateLink(
-                area1=args["area1"],
-                area2=args["area2"],
-                parameters=args["parameters"],
-                series=args.get("series", None),
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_LINK.value:
             return UpdateLink(
-                id=args["id"],
-                name=args["name"],
-                parameters=args["parameters"],
-                series=args["series"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.REMOVE_LINK.value:
             return RemoveLink(
-                area1=args["area1"],
-                area2=args["area2"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.CREATE_BINDING_CONSTRAINT.value:
             return CreateBindingConstraint(
-                name=args["name"],
-                enabled=args["enabled"],
-                time_step=args["time_step"],
-                operator=args["operator"],
-                coeffs=args["coeffs"],
-                values=args["values"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_BINDING_CONSTRAINT.value:
             return UpdateBindingConstraint(
-                id=args["id"],
-                name=args["name"],
-                enabled=args["enabled"],
-                time_step=args["time_step"],
-                operator=args["operator"],
-                coeffs=args["coeffs"],
-                values=args["values"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.REMOVE_BINDING_CONSTRAINT.value:
             return RemoveBindingConstraint(
-                id=args["id"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.CREATE_CLUSTER.value:
             return CreateCluster(
-                area_id=args["area_id"],
-                cluster_name=args["cluster_name"],
-                parameters=args["parameters"],
-                prepro=args.get("prepro", None),
-                modulation=args.get("modulation", None),
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_CLUSTER.value:
             return UpdateCluster(
-                id=args["id"],
-                name=args["name"],
-                type=args["type"],
-                parameters=args["parameters"],
-                prepro=args["prepro"],
-                modulation=args["modulation"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.REMOVE_CLUSTER.value:
             return RemoveCluster(
-                area_id=args["area_id"],
-                cluster_id=args["cluster_id"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.REPLACE_MATRIX.value:
             return ReplaceMatrix(
-                target_element=args["target_element"],
-                matrix=args["matrix"],
+                **args,
                 command_context=self.command_context,
             )
 
         elif action == CommandName.UPDATE_CONFIG.value:
             return UpdateConfig(
-                target=args["target"],
-                data=args["data"],
+                **args,
                 command_context=self.command_context,
             )
         raise NotImplementedError()

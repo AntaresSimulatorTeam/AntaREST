@@ -42,7 +42,7 @@ class CreateDistrict(ICommand):
             )
         return val
 
-    def apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
         district_id = transform_name_to_id(self.name)
         if district_id in study_data.config.sets:
             return CommandOutput(
