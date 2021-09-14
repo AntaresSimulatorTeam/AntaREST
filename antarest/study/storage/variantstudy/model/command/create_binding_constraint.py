@@ -23,7 +23,7 @@ class CreateBindingConstraint(ICommand):
     enabled: bool = True
     time_step: TimeStep
     operator: BindingConstraintOperator
-    coeffs: Dict[str, List[float]]
+    coeffs: Dict[str, List[Union[float, int]]]
     values: Optional[Union[List[List[float]], str]] = None
     comments: Optional[str] = None
 
@@ -69,8 +69,9 @@ class CreateBindingConstraint(ICommand):
             "enabled": self.enabled,
             "type": self.time_step.value,
             "operator": self.operator.value,
-            "comments": self.comments,
         }
+        if self.comments is not None:
+            binding_constraints[str(new_key)]["comments"] = self.comments
 
         for link_or_thermal in self.coeffs:
             if "%" in link_or_thermal:
@@ -85,7 +86,7 @@ class CreateBindingConstraint(ICommand):
                     )
             else:
                 area, thermal_id = link_or_thermal.split(".")
-                if area not in study_data.config.areas and thermal_id not in [
+                if area not in study_data.config.areas or thermal_id not in [
                     thermal.id
                     for thermal in study_data.config.areas[area].thermals
                 ]:
@@ -93,6 +94,12 @@ class CreateBindingConstraint(ICommand):
                         status=False,
                         message=f"Thermal cluster {link_or_thermal} does not exist",
                     )
+
+            # this is weird because Antares Simulator only accept int as offset
+            if len(self.coeffs[link_or_thermal]) == 2:
+                self.coeffs[link_or_thermal][1] = int(
+                    self.coeffs[link_or_thermal][1]
+                )
 
             binding_constraints[str(new_key)][link_or_thermal] = "%".join(
                 [str(coeff_val) for coeff_val in self.coeffs[link_or_thermal]]

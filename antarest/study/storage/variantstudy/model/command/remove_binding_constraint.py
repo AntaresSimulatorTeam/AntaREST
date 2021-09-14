@@ -25,14 +25,13 @@ class RemoveBindingConstraint(ICommand):
                 status=False, message="Binding constraint not found"
             )
 
-        study_data.config.bindings.remove(self.id)
         binding_constraints = study_data.tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]
         )
         new_binding_constraints: JSON = {}
         index = 0
         for bd in binding_constraints:
-            if bd == self.id:
+            if binding_constraints[bd]["id"] == self.id:
                 continue
             new_binding_constraints[str(index)] = binding_constraints[bd]
             index += 1
@@ -42,6 +41,7 @@ class RemoveBindingConstraint(ICommand):
             ["input", "bindingconstraints", "bindingconstraints"],
         )
         study_data.tree.delete(["input", "bindingconstraints", self.id])
+        study_data.config.bindings.remove(self.id)
         return CommandOutput(status=True)
 
     def revert(self, study_data: FileStudy) -> CommandOutput:

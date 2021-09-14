@@ -83,5 +83,72 @@
       "area2": "weird",
       "parameters": {}
     }
+  },
+  {
+    "action": "create_binding_constrains",
+    "args": {
+      "name": "BD less hourly disabled",
+      "enabled": false,
+      "time_step": "hourly",
+      "operator": "less",
+      "coeffs": {}
+    }
+  },
+  {
+    "action": "create_binding_constrains",
+    "args": {
+      "name": "BD less hourly no values",
+      "time_step": "hourly",
+      "operator": "less",
+      "coeffs": {
+        "area 1%area2": [500, 30]
+      }
+    }
+  },
+  {
+    "action": "create_binding_constrains",
+    "args": {
+      "name": "BD less hourly",
+      "time_step": "hourly",
+      "operator": "less",
+      "coeffs": {
+        "area2%weird": [400]
+      }
+    }
+  },
+  {
+    "action": "create_binding_constrains",
+    "args": {
+      "name": "BD less weekly",
+      "time_step": "weekly",
+      "operator": "less",
+      "coeffs": {
+        "area 1.gas cluster 2": [80]
+      }
+    }
+  },
+  {
+    "action": "create_binding_constrains",
+    "args": {
+      "name": "BD both daily",
+      "time_step": "daily",
+      "operator": "both",
+      "coeffs": {
+        "area 1.other": [70],
+        "area2.test": [90]
+      }
+    }
+  },
+  {
+    "action": "create_binding_constrains",
+    "args": {
+      "name": "BD equal hourly",
+      "time_step": "hourly",
+      "operator": "equal",
+      "coeffs": {
+        "area 1.other": [60],
+        "area2.test": [100]
+      }
+    }
   }
 ]
