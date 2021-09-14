@@ -115,11 +115,11 @@ class MultipleSameKeysIniReader(IReader):
                 curr_part = regex.group(1)
                 data[curr_part] = dict()
             else:
-                elements = re.split("\s+=\s+", line)
+                elements = re.split("\s+=\s*", line)
                 key = elements[0]
                 value = None
                 if len(elements) == 2:
-                    value = IniReader.parse_value(elements[1])
+                    value = IniReader.parse_value(elements[1].strip())
                 if key not in data[curr_part]:
                     if key in self.special_keys:
                         data[curr_part][key] = [value]
