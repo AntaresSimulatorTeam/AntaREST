@@ -41,7 +41,7 @@ class OutputSimulationModeMcIndScnAreasArea(FolderNode):
             if (
                 self.config.enr_modelling == "clusters"
                 and len(
-                    config.get_thermal_names(self.area, only_enabled=True),
+                    config.get_renewable_names(self.area, only_enabled=True),
                 )
                 > 0
             ):
