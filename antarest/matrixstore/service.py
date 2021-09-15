@@ -13,6 +13,7 @@ from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
@@ -44,6 +45,23 @@ class ISimpleMatrixService(ABC):
     @abstractmethod
     def delete(self, id: str) -> None:
         raise NotImplementedError()
+
+    @staticmethod
+    def _initialize_matrix_content(data: MatrixContent) -> None:
+        if data.index is None:
+            data.index = list(range(0, len(data.data)))
+        else:
+            assert len(data.index) == len(data.data)
+        if data.columns is None:
+            if len(data.data) > 0:
+                data.columns = list(range(0, len(data.data[0])))
+            else:
+                data.columns = []
+        else:
+            if len(data.data) > 0:
+                assert len(data.columns) == len(data.data[0])
+            else:
+                assert len(data.columns) == 0
 
 
 class MatrixService(ISimpleMatrixService):
@@ -89,15 +107,16 @@ class MatrixService(ISimpleMatrixService):
     def create(self, data: MatrixContent) -> str:
         MatrixService._initialize_matrix_content(data)
         matrix_hash = self.repo_content.save(data)
-        if not self.repo.get(matrix_hash):
-            self.repo.save(
-                Matrix(
-                    id=matrix_hash,
-                    width=len(data.columns or []),
-                    height=len(data.index or []),
-                    created_at=datetime.utcnow(),
+        with db():
+            if not self.repo.get(matrix_hash):
+                self.repo.save(
+                    Matrix(
+                        id=matrix_hash,
+                        width=len(data.columns or []),
+                        height=len(data.index or []),
+                        created_at=datetime.utcnow(),
+                    )
                 )
-            )
         return matrix_hash
 
     def create_by_importation(self, file: UploadFile) -> List[MatrixInfoDTO]:
@@ -277,23 +296,6 @@ class MatrixService(ISimpleMatrixService):
     def delete(self, id: str) -> None:
         self.repo_content.delete(id)
         self.repo.delete(id)
-
-    @staticmethod
-    def _initialize_matrix_content(data: MatrixContent) -> None:
-        if data.index is None:
-            data.index = list(range(0, len(data.data)))
-        else:
-            assert len(data.index) == len(data.data)
-        if data.columns is None:
-            if len(data.data) > 0:
-                data.columns = list(range(0, len(data.data[0])))
-            else:
-                data.columns = []
-        else:
-            if len(data.data) > 0:
-                assert len(data.columns) == len(data.data[0])
-            else:
-                assert len(data.columns) == 0
 
     @staticmethod
     def check_access_permission(

@@ -25,15 +25,15 @@ class OutputSimulationModeMcIndScnLinksItem(FolderNode):
         self.area = area
         self.link = link
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             f"values-{timing}": LinkOutputSeriesMatrix(
                 self.context,
-                config.next_file(f"values-{timing}.txt"),
+                self.config.next_file(f"values-{timing}.txt"),
                 timing,
                 self.area,
                 self.link,
             )
-            for timing in config.get_filters_year(self.area, self.link)
+            for timing in self.config.get_filters_year(self.area, self.link)
         }
         return children

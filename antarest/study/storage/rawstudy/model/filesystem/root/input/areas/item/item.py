@@ -14,12 +14,12 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.ui i
 
 
 class InputAreasItem(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            "ui": InputAreasUi(self.context, config.next_file("ui.ini")),
+            "ui": InputAreasUi(self.context, self.config.next_file("ui.ini")),
             "optimization": InputAreasOptimization(
                 self.context,
-                config.next_file("optimization.ini"),
+                self.config.next_file("optimization.ini"),
             ),
         }
         return children

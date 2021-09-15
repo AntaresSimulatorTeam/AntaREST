@@ -20,35 +20,37 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
         FolderNode.__init__(self, context, config)
         self.area = area
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = dict()
 
-        filters = config.get_filters_synthesis(self.area)
+        filters = self.config.get_filters_synthesis(self.area)
 
         for freq in filters:
             children[f"id-{freq}"] = AreaOutputSeriesMatrix(
                 self.context,
-                config.next_file(f"id-{freq}.txt"),
+                self.config.next_file(f"id-{freq}.txt"),
                 freq,
                 self.area,
             )
 
             children[f"values-{freq}"] = AreaOutputSeriesMatrix(
                 self.context,
-                config.next_file(f"values-{freq}.txt"),
+                self.config.next_file(f"values-{freq}.txt"),
                 freq,
                 self.area,
             )
 
             if (
                 len(
-                    config.get_thermal_names(self.area, only_enabled=True),
+                    self.config.get_thermal_names(
+                        self.area, only_enabled=True
+                    ),
                 )
                 > 0
             ):
                 children[f"details-{freq}"] = AreaOutputSeriesMatrix(
                     self.context,
-                    config.next_file(f"details-{freq}.txt"),
+                    self.config.next_file(f"details-{freq}.txt"),
                     freq,
                     self.area,
                 )
@@ -56,13 +58,15 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
             if (
                 self.config.enr_modelling == "clusters"
                 and len(
-                    config.get_renewable_names(self.area, only_enabled=True),
+                    self.config.get_renewable_names(
+                        self.area, only_enabled=True
+                    ),
                 )
                 > 0
             ):
                 children[f"details-res-{freq}"] = AreaOutputSeriesMatrix(
                     self.context,
-                    config.next_file(f"details-res-{freq}.txt"),
+                    self.config.next_file(f"details-res-{freq}.txt"),
                     freq,
                     self.area,
                 )

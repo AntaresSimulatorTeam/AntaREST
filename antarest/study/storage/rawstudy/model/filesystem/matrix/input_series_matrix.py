@@ -33,9 +33,6 @@ class InputSeriesMatrix(MatrixNode):
         super().__init__(context=context, config=config, freq="hourly")
         self.nb_columns = nb_columns
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
-        pass  # end node has nothing to build
-
     def parse(
         self,
     ) -> JSON:

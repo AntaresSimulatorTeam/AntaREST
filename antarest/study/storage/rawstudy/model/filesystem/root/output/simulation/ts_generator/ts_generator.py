@@ -22,9 +22,11 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class OutputSimulationTsGeneratorSimpleMatrixList(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            "mc-0": AreaMatrixList(self.context, config.next_file("mc-0")),
+            "mc-0": AreaMatrixList(
+                self.context, self.config.next_file("mc-0")
+            ),
         }
         return children
 
@@ -49,11 +51,11 @@ class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
         super().__init__(context, config)
         self.klass = klass
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "mc-0": AreaMultipleMatrixList(
                 self.context,
-                config.next_file("mc-0"),
+                self.config.next_file("mc-0"),
                 self.klass,
                 InputSeriesMatrix,
             ),
@@ -62,22 +64,24 @@ class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
 
 
 class OutputSimulationTsGenerator(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "hydro": OutputSimulationTsGeneratorCustomMatrixList(
-                self.context, config.next_file("hydro"), HydroMatrixList
+                self.context, self.config.next_file("hydro"), HydroMatrixList
             ),
             "load": OutputSimulationTsGeneratorSimpleMatrixList(
-                self.context, config.next_file("load")
+                self.context, self.config.next_file("load")
             ),
             "solar": OutputSimulationTsGeneratorSimpleMatrixList(
-                self.context, config.next_file("solar")
+                self.context, self.config.next_file("solar")
             ),
             "wind": OutputSimulationTsGeneratorSimpleMatrixList(
-                self.context, config.next_file("wind")
+                self.context, self.config.next_file("wind")
             ),
             "thermal": OutputSimulationTsGeneratorCustomMatrixList(
-                self.context, config.next_file("thermal"), ThermalMatrixList
+                self.context,
+                self.config.next_file("thermal"),
+                ThermalMatrixList,
             ),
         }
         return children

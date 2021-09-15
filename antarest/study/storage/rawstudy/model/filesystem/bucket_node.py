@@ -34,19 +34,19 @@ class BucketNode(FolderNode):
                     value
                 )
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
-        if not config.path.exists():
+    def build(self) -> TREE:
+        if not self.config.path.exists():
             return dict()
 
         children: TREE = {}
-        for item in sorted(config.path.iterdir()):
+        for item in sorted(self.config.path.iterdir()):
             if item.is_file():
                 children[item.name] = RawFileNode(
-                    self.context, config.next_file(item.name)
+                    self.context, self.config.next_file(item.name)
                 )
             else:
                 children[item.name] = BucketNode(
-                    self.context, config.next_file(item.name)
+                    self.context, self.config.next_file(item.name)
                 )
 
         return children

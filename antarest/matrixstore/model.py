@@ -159,8 +159,8 @@ class MatrixDTO(BaseModel):
 
 class MatrixContent(BaseModel):
     data: List[List[Union[float, int]]]
-    index: Optional[List[Union[str, int]]]
-    columns: Optional[List[Union[str, int]]]
+    index: Optional[List[Union[int, str]]]
+    columns: Optional[List[Union[int, str]]]
 
 
 class MatrixDataSetUpdateDTO(BaseModel):

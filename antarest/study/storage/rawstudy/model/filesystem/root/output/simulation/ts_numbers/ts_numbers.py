@@ -16,31 +16,31 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
 
 
 class OutputSimulationTsNumbers(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "hydro": AreaMatrixList(
                 self.context,
-                config.next_file("hydro"),
+                self.config.next_file("hydro"),
                 matrix_class=RawFileNode,
             ),
             "load": AreaMatrixList(
                 self.context,
-                config.next_file("load"),
+                self.config.next_file("load"),
                 matrix_class=RawFileNode,
             ),
             "solar": AreaMatrixList(
                 self.context,
-                config.next_file("solar"),
+                self.config.next_file("solar"),
                 matrix_class=RawFileNode,
             ),
             "wind": AreaMatrixList(
                 self.context,
-                config.next_file("wind"),
+                self.config.next_file("wind"),
                 matrix_class=RawFileNode,
             ),
             "thermal": AreaMultipleMatrixList(
                 self.context,
-                config.next_file("thermal"),
+                self.config.next_file("thermal"),
                 ThermalMatrixList,
                 RawFileNode,
             ),

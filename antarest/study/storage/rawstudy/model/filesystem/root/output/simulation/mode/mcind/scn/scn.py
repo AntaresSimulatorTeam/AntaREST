@@ -14,13 +14,13 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 
 class OutputSimulationModeMcIndScn(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "areas": OutputSimulationModeMcIndScnAreas(
-                self.context, config.next_file("areas")
+                self.context, self.config.next_file("areas")
             ),
             "links": OutputSimulationModeMcIndScnLinks(
-                self.context, config.next_file("links")
+                self.context, self.config.next_file("links")
             ),
         }
         return children

@@ -17,13 +17,13 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.ar
 
 
 class InputHydroPreproArea(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "energy": InputSeriesMatrix(
-                self.context, config.next_file("energy.txt")
+                self.context, self.config.next_file("energy.txt")
             ),
             "prepro": InputHydroPreproAreaPrepro(
-                self.context, config.next_file("prepro.ini")
+                self.context, self.config.next_file("prepro.ini")
             ),
         }
         return children

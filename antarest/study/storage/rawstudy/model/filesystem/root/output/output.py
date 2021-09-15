@@ -11,11 +11,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.sim
 
 
 class Output(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             str(s.get_file()): OutputSimulation(
-                self.context, config.next_file(s.get_file()), s
+                self.context, self.config.next_file(s.get_file()), s
             )
-            for i, s in config.outputs.items()
+            for i, s in self.config.outputs.items()
         }
         return children

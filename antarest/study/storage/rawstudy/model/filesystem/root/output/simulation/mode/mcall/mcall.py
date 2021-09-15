@@ -17,16 +17,16 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 
 class OutputSimulationModeMcAll(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "areas": OutputSimulationModeMcAllAreas(
-                self.context, config.next_file("areas")
+                self.context, self.config.next_file("areas")
             ),
             "grid": OutputSimulationModeMcAllGrid(
-                self.context, config.next_file("grid")
+                self.context, self.config.next_file("grid")
             ),
             "links": OutputSimulationModeMcAllLinks(
-                self.context, config.next_file("links")
+                self.context, self.config.next_file("links")
             ),
         }
         return children

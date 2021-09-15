@@ -44,9 +44,6 @@ class MockMatrixNode(MatrixNode):
     def _dump_json(self, data: JSON) -> None:
         json.dump(data, self.config.path.open("w"))
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
-        pass  # not used
-
     def check_errors(
         self, data: str, url: Optional[List[str]] = None, raising: bool = False
     ) -> List[str]:

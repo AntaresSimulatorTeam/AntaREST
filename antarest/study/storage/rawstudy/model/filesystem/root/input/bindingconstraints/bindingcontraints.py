@@ -14,16 +14,16 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.bindingconstrai
 
 
 class BindingConstraints(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             bind: InputSeriesMatrix(
-                self.context, config.next_file(f"{bind}.txt")
+                self.context, self.config.next_file(f"{bind}.txt")
             )
-            for bind in config.bindings
+            for bind in self.config.bindings
         }
 
         children["bindingconstraints"] = BindingConstraintsIni(
-            self.context, config.next_file("bindingconstraints.ini")
+            self.context, self.config.next_file("bindingconstraints.ini")
         )
 
         return children

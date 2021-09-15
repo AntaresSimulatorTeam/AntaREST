@@ -20,20 +20,22 @@ class OutputSimulationModeMcIndScnAreasArea(FolderNode):
         FolderNode.__init__(self, context, config)
         self.area = area
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = dict()
 
-        for timing in config.get_filters_year(self.area):
+        for timing in self.config.get_filters_year(self.area):
             # detail files only exists when there is thermal cluster to be detailed
             if (
                 len(
-                    config.get_thermal_names(self.area, only_enabled=True),
+                    self.config.get_thermal_names(
+                        self.area, only_enabled=True
+                    ),
                 )
                 > 0
             ):
                 children[f"details-{timing}"] = AreaOutputSeriesMatrix(
                     self.context,
-                    config.next_file(f"details-{timing}.txt"),
+                    self.config.next_file(f"details-{timing}.txt"),
                     timing,
                     self.area,
                 )
@@ -41,20 +43,20 @@ class OutputSimulationModeMcIndScnAreasArea(FolderNode):
             if (
                 self.config.enr_modelling == "clusters"
                 and len(
-                    config.get_renewable_names(self.area, only_enabled=True),
+                    self.config.get_renewable_names(self.area, only_enabled=True),
                 )
                 > 0
             ):
                 children[f"details-res-{timing}"] = AreaOutputSeriesMatrix(
                     self.context,
-                    config.next_file(f"details-res-{timing}.txt"),
+                    self.config.next_file(f"details-res-{timing}.txt"),
                     timing,
                     self.area,
                 )
 
             children[f"values-{timing}"] = AreaOutputSeriesMatrix(
                 self.context,
-                config.next_file(f"values-{timing}.txt"),
+                self.config.next_file(f"values-{timing}.txt"),
                 timing,
                 self.area,
             )

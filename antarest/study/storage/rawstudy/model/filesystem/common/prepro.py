@@ -45,32 +45,34 @@ class PreproAreaSettings(IniFileNode):
 
 
 class PreproArea(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "conversion": InputSeriesMatrix(
-                self.context, config.next_file("conversion.txt")
+                self.context, self.config.next_file("conversion.txt")
             ),
             "data": InputSeriesMatrix(
-                self.context, config.next_file("data.txt")
+                self.context, self.config.next_file("data.txt")
             ),
-            "k": InputSeriesMatrix(self.context, config.next_file("k.txt")),
+            "k": InputSeriesMatrix(
+                self.context, self.config.next_file("k.txt")
+            ),
             "translation": InputSeriesMatrix(
-                self.context, config.next_file("translation.txt")
+                self.context, self.config.next_file("translation.txt")
             ),
             "settings": PreproAreaSettings(
-                self.context, config.next_file("settings.ini")
+                self.context, self.config.next_file("settings.ini")
             ),
         }
         return children
 
 
 class InputPrepro(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            a: PreproArea(self.context, config.next_file(a))
-            for a in config.area_names()
+            a: PreproArea(self.context, self.config.next_file(a))
+            for a in self.config.area_names()
         }
         children["correlation"] = PreproCorrelation(
-            self.context, config.next_file("correlation.ini")
+            self.context, self.config.next_file("correlation.ini")
         )
         return children

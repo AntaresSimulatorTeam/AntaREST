@@ -36,15 +36,12 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         reader: Optional[IReader] = None,
         writer: Optional[IniWriter] = None,
     ):
+        super().__init__(config)
         self.context = context
-        self.config = config
         self.path = config.path
         self.types = types
         self.reader = reader or IniReader()
         self.writer = writer or IniWriter()
-
-    def build(self, config: FileStudyTreeConfig) -> TREE:
-        pass  # end node has nothing to build
 
     def _get(
         self,

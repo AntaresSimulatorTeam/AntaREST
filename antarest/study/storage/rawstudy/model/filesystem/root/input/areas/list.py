@@ -20,11 +20,8 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         pass  # no external store in this node
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        self.config = config
+        super().__init__(config)
         self.context = context
-
-    def build(self, config: FileStudyTreeConfig) -> TREE:
-        pass  # End of root. No build
 
     def get_node(
         self,

@@ -29,6 +29,11 @@ class CreateCluster(ICommand):
     modulation: Optional[Union[List[List[float]], str]] = None
     # TODO: Maybe add the prefix option ?
 
+    def __init__(self, **data: Any) -> None:
+        super().__init__(
+            command_name=CommandName.CREATE_CLUSTER, version=1, **data
+        )
+
     @validator("cluster_name")
     def validate_cluster_name(cls, val: str) -> str:
         valid_name = transform_name_to_id(val, lower=False)
@@ -63,11 +68,6 @@ class CreateCluster(ICommand):
 
         else:
             return validate_matrix(v, values)
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.CREATE_CLUSTER, version=1, **data
-        )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.area_id not in study_data.config.areas:

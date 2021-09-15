@@ -11,20 +11,20 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class InputHydroCommonCapacity(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = dict()
-        for area in config.area_names():
+        for area in self.config.area_names():
             config_filenames = [
                 "maxpower",
                 "reservoir",
             ]
-            if config.version >= 650:
+            if self.config.version >= 650:
                 config_filenames.append("inflowPattern")
                 config_filenames.append("creditmodulations")
                 config_filenames.append("waterValues")
             for file in config_filenames:
                 name = f"{file}_{area}"
                 children[name] = InputSeriesMatrix(
-                    self.context, config.next_file(f"{name}.txt")
+                    self.context, self.config.next_file(f"{name}.txt")
                 )
         return children

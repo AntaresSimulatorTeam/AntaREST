@@ -23,22 +23,22 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.se
 
 
 class InputHydro(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "allocation": InputHydroAllocation(
-                self.context, config.next_file("allocation")
+                self.context, self.config.next_file("allocation")
             ),
             "common": InputHydroCommon(
-                self.context, config.next_file("common")
+                self.context, self.config.next_file("common")
             ),
             "prepro": InputHydroPrepro(
-                self.context, config.next_file("prepro")
+                self.context, self.config.next_file("prepro")
             ),
             "series": InputHydroSeries(
-                self.context, config.next_file("series")
+                self.context, self.config.next_file("series")
             ),
             "hydro": InputHydroIni(
-                self.context, config.next_file("hydro.ini")
+                self.context, self.config.next_file("hydro.ini")
             ),
         }
         return children

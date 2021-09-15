@@ -11,11 +11,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.allocatio
 
 
 class InputHydroAllocation(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             a: InputHydroAllocationArea(
-                self.context, config.next_file(f"{a}.ini"), area=a
+                self.context, self.config.next_file(f"{a}.ini"), area=a
             )
-            for a in config.area_names()
+            for a in self.config.area_names()
         }
         return children

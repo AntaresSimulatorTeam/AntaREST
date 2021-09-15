@@ -11,14 +11,14 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class InputHydroSeriesArea(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             # TODO mod is monthly on version < 650, then daily afterward
             "mod": InputSeriesMatrix(
-                self.context, config.next_file("mod.txt")
+                self.context, self.config.next_file("mod.txt")
             ),
             "ror": InputSeriesMatrix(
-                self.context, config.next_file("ror.txt")
+                self.context, self.config.next_file("ror.txt")
             ),
         }
         return children

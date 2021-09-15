@@ -20,10 +20,10 @@ class InputThermalClustersArea(FolderNode):
         FolderNode.__init__(self, context, config)
         self.area = area
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "list": InputThermalClustersAreaList(
-                self.context, config.next_file("list.ini"), self.area
+                self.context, self.config.next_file("list.ini"), self.area
             )
         }
         return children
