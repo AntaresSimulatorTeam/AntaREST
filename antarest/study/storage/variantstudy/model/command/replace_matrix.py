@@ -24,7 +24,7 @@ from antarest.study.storage.variantstudy.model.command.utils import (
 
 
 class ReplaceMatrix(ICommand):
-    target_element: str
+    target: str
     matrix: Union[List[List[float]], str]
 
     _validate_matrix = validator(
@@ -39,7 +39,7 @@ class ReplaceMatrix(ICommand):
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         replace_matrix_data: JSON = {}
         target_matrix = replace_matrix_data
-        url = self.target_element.split("/")
+        url = self.target.split("/")
         for element in url[:-1]:
             target_matrix[element] = {}
             target_matrix = target_matrix[element]
@@ -52,26 +52,26 @@ class ReplaceMatrix(ICommand):
         except (KeyError, ChildNotFoundError):
             return CommandOutput(
                 status=False,
-                message=f"Path '{self.target_element}' does not exist.",
+                message=f"Path '{self.target}' does not exist.",
             )
         except AssertionError:
             return CommandOutput(
                 status=False,
-                message=f"Path '{self.target_element}' does not target a matrix.",
+                message=f"Path '{self.target}' does not target a matrix.",
             )
 
         study_data.tree.save(replace_matrix_data)
 
         return CommandOutput(
             status=True,
-            message=f"Matrix '{self.target_element}' has been successfully replaced.",
+            message=f"Matrix '{self.target}' has been successfully replaced.",
         )
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
             args={
-                "target_element": self.target_element,
+                "target": self.target,
                 "matrix": strip_matrix_protocol(self.matrix),
             },
         )

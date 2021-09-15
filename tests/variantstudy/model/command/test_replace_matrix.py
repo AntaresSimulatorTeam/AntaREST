@@ -46,7 +46,7 @@ class TestReplaceMatrix:
         target_element = f"input/hydro/common/capacity/maxpower_{area1_id}"
         replace_matrix = ReplaceMatrix.parse_obj(
             {
-                "target_element": target_element,
+                "target": target_element,
                 "matrix": [[0]],
                 "command_context": command_context,
             }
@@ -62,7 +62,7 @@ class TestReplaceMatrix:
         target_element = "fake/matrix/path"
         replace_matrix = ReplaceMatrix.parse_obj(
             {
-                "target_element": target_element,
+                "target": target_element,
                 "matrix": [[0]],
                 "command_context": command_context,
             }

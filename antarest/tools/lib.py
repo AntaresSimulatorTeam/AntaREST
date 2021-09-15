@@ -28,6 +28,9 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    CreateBindingConstraint,
+)
 from antarest.study.storage.variantstudy.model.command.create_cluster import (
     CreateCluster,
 )
@@ -62,6 +65,8 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 )
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
+    TimeStep,
+    BindingConstraintOperator,
 )
 
 
@@ -123,6 +128,21 @@ class CLIVariantManager:
         ).to_dto()
 
     @staticmethod
+    def _generate_replace_matrix(
+        study_tree: FileStudyTree,
+        url: List[str],
+        command_context: CommandContext,
+        default_value: Optional[str] = None
+    ) -> CommandDTO:
+        data = study_tree.get(url)
+        matrix = CLIVariantManager.get_matrix(data, default_value is None)
+        return ReplaceMatrix(
+            target="/".join(url),
+            matrix=matrix or default_value,
+            command_context=command_context,
+        ).to_dto()
+
+    @staticmethod
     def _extract_commands_from_study(
         study: FileStudy, matrix_reference_dir: Path
     ) -> List[CommandDTO]:
@@ -134,14 +154,13 @@ class CLIVariantManager:
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=local_matrix_service,
         )
+        null_matrix_id = strip_matrix_protocol(
+            generator_matrix_constants.get_null_matrix()
+        )
 
         study_tree = study.tree
         study_config = study.config
         study_commands: List[CommandDTO] = []
-
-        traverse_tree(
-            "", study_tree.get_node(), lambda x, y: print(f"{x} : {y}")
-        )
 
         study_commands.append(
             CLIVariantManager._generate_update_config(
@@ -150,7 +169,7 @@ class CLIVariantManager:
         )
         study_commands.append(
             CLIVariantManager._generate_update_config(
-                study_tree, ["layers", "scenariobuilder"], command_context
+                study_tree, ["settings", "scenariobuilder"], command_context
             )
         )
         study_commands.append(
@@ -201,7 +220,6 @@ class CLIVariantManager:
                     area1=area_id,
                     area2=link,
                     parameters={},
-                    series={},
                     command_context=command_context,
                 ).to_dto()
                 link_data = links_data.get(link)
@@ -212,6 +230,14 @@ class CLIVariantManager:
                 ).to_dto()
                 links_commands.append(link_command)
                 links_commands.append(link_config_command)
+                links_commands.append(
+                    CLIVariantManager._generate_replace_matrix(
+                        study_tree,
+                        ["input", "links", area_id, link],
+                        command_context,
+                        null_matrix_id
+                    )
+                )
 
             thermal_data = study_tree.get(
                 ["input", "thermal", "clusters", area_id, "list"]
@@ -240,7 +266,7 @@ class CLIVariantManager:
                 ).to_dto()
                 study_commands.append(cluster_command)
                 cluster_series_command = ReplaceMatrix(
-                    target_element=f"input/thermal/series/{area_id}/{thermal.id}/series",
+                    target=f"input/thermal/series/{area_id}/{thermal.id}/series",
                     matrix=CLIVariantManager.get_matrix(
                         study_tree.get(
                             [
@@ -251,16 +277,94 @@ class CLIVariantManager:
                                 thermal.id,
                                 "series",
                             ]
-                        ),
-                        strip_matrix_protocol(
+                        )
+                        or strip_matrix_protocol(
                             generator_matrix_constants.get_null_matrix()
-                        ),
+                        )
                     ),
                     command_context=command_context,
                 ).to_dto()
                 study_commands.append(cluster_series_command)
 
+            # load, wind, solar
+            for type in ["load", "wind", "solar"]:
+                for matrix in ["conversion", "data", "k", "translation"]:
+                    study_commands.append(
+                        CLIVariantManager._generate_replace_matrix(
+                            study_tree,
+                            ["input", type, "prepro", area_id, matrix],
+                            command_context,
+                        )
+                    )
+                study_commands.append(
+                    CLIVariantManager._generate_update_config(
+                        study_tree,
+                        ["input", type, "prepro", area_id, "settings"],
+                        command_context,
+                    )
+                )
+                study_commands.append(
+                    CLIVariantManager._generate_replace_matrix(
+                        study_tree,
+                        ["input", type, "series", f"{type}_{area_id}"],
+                        command_context,
+                        null_matrix_id
+                    )
+                )
+
+            # misc gen / reserves
+            study_commands.append(
+                CLIVariantManager._generate_replace_matrix(
+                    study_tree, ["input", "reserves", area_id], command_context
+                )
+            )
+            study_commands.append(
+                CLIVariantManager._generate_replace_matrix(
+                    study_tree,
+                    ["input", "misc-gen", f"miscgen-{area_id}"],
+                    command_context,
+                )
+            )
+
+            # misc config
+            study_commands.append(
+                CLIVariantManager._generate_update_config(
+                    study_tree,
+                    ["input", "thermal", "areas"],
+                    command_context,
+                )
+            )
+
+            # hydro
+            # todo
+
         study_commands += links_commands
+
+        # binding constraints
+        binding_config = study_tree.get(
+            ["input", "bindingconstraints", "bindingconstraints"]
+        )
+        for binding in binding_config.values():
+            binding_constraint_command = CreateBindingConstraint(
+                name=binding["name"],
+                enabled=binding["enabled"],
+                time_step=TimeStep(binding["type"]),
+                operator=BindingConstraintOperator(binding["operator"]),
+                coeffs={
+                    coeff: value.split("%")
+                    for coeff, value in binding.items()
+                    if "%" in coeff or "." in coeff
+                },
+                comments=binding.get("comments", None),
+                command_context=command_context,
+            ).to_dto()
+            study_commands.append(binding_constraint_command)
+            CLIVariantManager._generate_replace_matrix(
+                study_tree,
+                ["input", "bindingconstraints", binding["id"]],
+                command_context,
+            )
+
         return study_commands
 
     @staticmethod
@@ -292,16 +396,19 @@ class CLIVariantManager:
 
     @staticmethod
     def get_matrix(
-        data: Union[JSON, str], default: Optional[str] = None
-    ) -> Union[str, List[List[Union[float, int]]]]:
+        data: Union[JSON, str], raise_on_missing: Optional[bool] = False
+    ) -> Optional[Union[str, List[List[Union[float, int]]]]]:
         if isinstance(data, str):
             return data
-        elif "data" in data:
-            assert isinstance(data["data"], list)
-            return data["data"]
-        elif default is not None:
-            return default
-        raise ValueError("Invalid matrix")
+        elif isinstance(data, dict):
+            if "data" in data:
+                assert isinstance(data["data"], list)
+                return data["data"]
+            else:
+                return [[]]
+        elif raise_on_missing:
+            raise ValueError("Invalid matrix")
+        return None
 
     def parse_commands(self, file: Path) -> List[CommandDTO]:
         with open(file, "r") as fh:

@@ -180,7 +180,7 @@ class ConfigPathBuilder:
             Cluster(
                 id=transform_name_to_id(key),
                 enabled=list_ini.get(key, {}).get("enabled", True),
-                name=transform_name_to_id(key),
+                name=list_ini.get(key, {}).get("name", key),
             )
             for key in list(list_ini.keys())
         ]

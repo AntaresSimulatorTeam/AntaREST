@@ -262,11 +262,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
-            args={"target_element": "target_element", "matrix": "matrix"},
+            args={"target": "target_element", "matrix": "matrix"},
         ),
         CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
-            args=[{"target_element": "target_element", "matrix": "matrix"}],
+            args=[{"target": "target_element", "matrix": "matrix"}],
         ),
         CommandDTO(
             action=CommandName.UPDATE_CONFIG.value,
