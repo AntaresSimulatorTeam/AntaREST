@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Optional, List
 
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -13,6 +14,7 @@ class StudyMetadataRepository:
     """
 
     def save(self, metadata: Study) -> Study:
+        metadata.updated = datetime.now()
         metadata.groups = [db.session.merge(g) for g in metadata.groups]
         if metadata.owner:
             metadata.owner = db.session.merge(metadata.owner)

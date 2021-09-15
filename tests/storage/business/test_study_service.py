@@ -3,7 +3,9 @@ import os
 import re
 from pathlib import Path
 from typing import Callable
-from unittest.mock import Mock
+from unittest import mock
+from unittest.mock import Mock, patch
+from uuid import uuid4
 
 import pytest
 
@@ -402,17 +404,9 @@ def test_copy_study(
     src_md = RawStudy(
         id=source_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
     )
-    dest_md = RawStudy(
-        id="study2",
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(get_default_workspace_path(config) / "study2"),
-        version=0,
-        created_at=datetime.datetime.now(),
-        updated_at=datetime.datetime.now(),
-    )
-    md = study_service.copy(src_md, dest_md)
-
-    assert str(md.path) == f"{tmp_path}{os.sep}study2"
+    md = study_service.copy(src_md, "dest_name")
+    md_id = md.id
+    assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
     study.get.assert_called_once_with(["study"])
 
 

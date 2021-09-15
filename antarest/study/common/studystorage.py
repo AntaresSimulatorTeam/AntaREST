@@ -1,10 +1,15 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TypeVar, Generic, List
+from typing import TypeVar, Generic, List, Union, Optional, IO
 
-from antarest.core.custom_types import JSON
+from antarest.core.custom_types import JSON, SUB_JSON
 from antarest.core.exceptions import StudyNotFoundError
-from antarest.study.model import Study, StudySimResultDTO, StudyMetadataDTO
+from antarest.study.model import (
+    Study,
+    StudySimResultDTO,
+    StudyMetadataDTO,
+    StudyMetadataPatchDTO,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 T = TypeVar("T", bound=Study)
@@ -23,6 +28,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def get(
         self,
         metadata: T,
@@ -56,7 +62,9 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def copy(self, src_meta: T, dest_meta: T, with_outputs: bool = False) -> T:
+    def copy(
+        self, src_meta: T, dest_name: str, with_outputs: bool = False
+    ) -> T:
         """
         Copy study to a new destination
         Args:
@@ -66,6 +74,60 @@ class IStudyStorageService(ABC, Generic[T]):
 
         Returns: destination study
 
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def edit_study(self, metadata: T, url: str, new: SUB_JSON) -> SUB_JSON:
+        """
+        Replace data on disk with new
+        Args:
+            metadata: study
+            url: data path to reach
+            new: new data to replace
+
+        Returns: new data replaced
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def check_errors(self, metadata: T) -> List[str]:
+        """
+        Check study antares data integrity
+        Args:
+            metadata: study
+
+        Returns: list of non integrity inside study
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def patch_update_study_metadata(
+        self, study: T, metadata: StudyMetadataPatchDTO
+    ) -> StudyMetadataDTO:
+        """
+        Update patch study metadata
+        Args:
+            study: study
+            metadata: patch
+
+        Returns: study metadata
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def import_output(
+        self, study: T, output: Union[IO[bytes], Path]
+    ) -> Optional[str]:
+        """
+        Import an output
+        Args:
+            study: the study
+            output: Path of the output or raw data
+        Returns: None
         """
         raise NotImplementedError()
 
@@ -139,6 +201,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def get_study_path(self, metadata: Study) -> Path:
         """
         Get study path
@@ -148,9 +211,9 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: study path
 
         """
-        return Path(metadata.path)
+        raise NotImplementedError()
 
-    def check_study_exists(self, metadata: Study) -> None:
+    def _check_study_exists(self, metadata: Study) -> None:
         """
         Check study on filesystem.
 

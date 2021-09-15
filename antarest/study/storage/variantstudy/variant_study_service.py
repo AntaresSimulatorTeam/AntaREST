@@ -7,7 +7,7 @@ from typing import List, Union, Optional, cast
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON
+from antarest.core.custom_types import JSON, SUB_JSON
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -15,6 +15,7 @@ from antarest.core.exceptions import (
     CommandNotFoundError,
     VariantGenerationError,
 )
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
@@ -25,7 +26,10 @@ from antarest.study.model import (
     Study,
     StudyMetadataDTO,
     StudySimResultDTO,
-    RawStudy,
+    StudyMetadataPatchDTO,
+)
+from antarest.study.storage.generic_storage_service import (
+    GenericStorageService,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.permissions import (
@@ -37,20 +41,17 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
+)
 from antarest.study.storage.utils import (
     get_default_workspace_path,
-    get_study_information,
-    remove_from_cache,
-    get_using_cache,
     update_antares_info,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
-)
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
@@ -68,10 +69,11 @@ from antarest.study.storage.variantstudy.variant_snapshot_generator import (
 logger = logging.getLogger(__name__)
 
 
-class VariantStudyService(IStudyStorageService[VariantStudy]):
+class VariantStudyService(GenericStorageService[VariantStudy]):
     def __init__(
         self,
         task_service: ITaskService,
+        cache: ICache,
         raw_study_service: RawStudyService,
         command_factory: CommandFactory,
         study_factory: StudyFactory,
@@ -81,16 +83,19 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         event_bus: IEventBus,
         config: Config,
     ):
+        super().__init__(
+            config=config,
+            study_factory=study_factory,
+            patch_service=patch_service,
+            cache=cache,
+        )
         self.generator = VariantSnapshotGenerator(
             command_factory, study_factory, exporter_service
         )
         self.task_service = task_service
         self.raw_study_service = raw_study_service
-        self.study_factory = study_factory
-        self.patch_service = patch_service
         self.repository = repository
         self.event_bus = event_bus
-        self.config = config
 
     def get_command(
         self, study_id: str, command_id: str, params: RequestParameters
@@ -335,12 +340,10 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         Returns: study metadata
 
         """
-        return get_study_information(
+        self._safe_generation(study)
+
+        return super().get_study_information(
             study,
-            study.snapshot.path if study.snapshot is not None else None,
-            self.patch_service,
-            self.study_factory,
-            logger,
             summary,
         )
 
@@ -362,27 +365,49 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         Returns: study data formatted in json
 
         """
-        if not self.exists(metadata):
-            self.wait_for_generation(metadata)
+        self._safe_generation(metadata)
 
-        return get_using_cache(
-            study_service=self,
+        return super().get(
             metadata=metadata,
-            logger=logger,
             url=url,
             depth=depth,
             formatted=formatted,
         )
 
-    def import_output(self, study: Study, output: Union[bytes, Path]) -> None:
+    def edit_study(
+        self, metadata: VariantStudy, url: str, new: SUB_JSON
+    ) -> SUB_JSON:
         """
-        Import an output
+        Replace data on disk with new
         Args:
-            study: the study
-            output: Path of the output or raw data
-        Returns: None
+            metadata: study
+            url: data path to reach
+            new: new data to replace
+
+        Returns: new data replaced
+
         """
-        raise NotImplementedError()
+        self._safe_generation(metadata)
+        return super().edit_study(metadata=metadata, url=url, new=new)
+
+    def check_errors(self, metadata: VariantStudy) -> List[str]:
+        """
+        Check study antares data integrity
+        Args:
+            metadata: study
+
+        Returns: list of non integrity inside study
+
+        """
+        self._safe_generation(metadata)
+        return super().check_errors(metadata=metadata)
+
+    def patch_update_study_metadata(
+        self, study: VariantStudy, metadata: StudyMetadataPatchDTO
+    ) -> StudyMetadataDTO:
+        return super().patch_update_study_metadata(
+            study=study, metadata=metadata
+        )
 
     def create_variant_study(
         self, uuid: str, name: str, params: RequestParameters
@@ -451,21 +476,21 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         # Check parent study permission
         assert_permission(params.user, parent_study, StudyPermissionType.READ)
 
-        if isinstance(parent_study, VariantStudy):
-            if not self.exists(parent_study):
-                results = self.generate(parent_study.id, denormalize, params)
-                if not results.success:
-                    raise VariantGenerationError(
-                        f"{parent_study.id} as parent of {variant_study_id}"
-                    )
+        # Remove from cache
+        self.remove_from_cache(variant_study.id)
 
-        results = self.generator.generate_snapshot(variant_study, parent_study)
+        parent_path = parent_study.path
+        if isinstance(parent_study, VariantStudy):
+            self._safe_generation(parent_study)
+            parent_path = self.get_study_path(parent_study)
+
+        results = self.generator.generate_snapshot(variant_study, parent_path)
         if results.success:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
-                path=str(Path(variant_study.path) / "snapshot"),
                 created_at=datetime.now(),
             )
+            variant_study.updated_at = datetime.now()
             self.repository.save(variant_study)
 
             if denormalize:
@@ -486,19 +511,23 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         """
         raise NotImplementedError()
 
-    def exists(self, study: VariantStudy) -> bool:
+    def exists(self, metadata: VariantStudy) -> bool:
         """
         Check study exist.
         Args:
-            study: study
+            metadata: study
         Returns: true if study presents in disk, false else.
         """
-        return study.snapshot is not None
+        return (
+            (metadata.snapshot is not None)
+            and (metadata.snapshot.created_at >= metadata.updated_at)
+            and (self.get_study_path(metadata) / "study.antares").is_file()
+        )
 
     def copy(
         self,
         src_meta: VariantStudy,
-        dest_meta: RawStudy,
+        dest_name: str,
         with_outputs: bool = False,
     ) -> VariantStudy:
         """
@@ -509,22 +538,32 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             with_outputs: indicate either to copy the output or not
         Returns: destination study
         """
-        if not self.exists(src_meta):
-            self.wait_for_generation(src_meta)
+
+        self._safe_generation(src_meta)
+
+        new_id = str(uuid4())
+        study_path = str(get_default_workspace_path(self.config) / new_id)
+        dest_meta = VariantStudy(
+            id=new_id,
+            name=dest_name,
+            parent_id=src_meta.id,
+            path=study_path,
+            public_mode=src_meta.public_mode,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            version=src_meta.version,
+            groups=src_meta.groups,  # Create inherit_group boolean
+            snapshot=None,
+        )
 
         src_path = self.get_study_path(src_meta)
-        dest_path = self.raw_study_service.get_study_path(dest_meta)
+        output_src = Path(src_meta.path) / "output"
+        dest_path = Path(dest_meta.path)
 
         shutil.copytree(src_path, dest_path)
 
-        output_dest = dest_path / "output"
         if with_outputs:
-            output_src = super().get_study_path(src_meta) / "output"
-            if output_src.is_dir():
-                shutil.copytree(output_src, output_dest)
-        else:
-            if output_dest.exists():
-                shutil.rmtree(output_dest)
+            shutil.copytree(output_src, dest_path)
 
         _, study = self.study_factory.create_from_fs(
             dest_path, study_id=dest_meta.id
@@ -534,8 +573,8 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         del study
         return dest_meta
 
-    def wait_for_generation(self, metadata: VariantStudy):
-        def callback() -> TaskResult:
+    def _wait_for_generation(self, metadata: VariantStudy) -> bool:
+        def callback(notifier: TaskUpdateNotifier) -> TaskResult:
             generate_result = self.generate(
                 metadata.id, False, RequestParameters(DEFAULT_ADMIN_USER)
             )
@@ -552,6 +591,20 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             request_params=RequestParameters(DEFAULT_ADMIN_USER),
         )
         self.task_service.await_task(task_id)
+        result = self.task_service.status_task(
+            task_id, RequestParameters(DEFAULT_ADMIN_USER)
+        )
+        return (result.result is not None) and result.result.success
+
+    def _safe_generation(self, metadata: VariantStudy) -> None:
+        try:
+            if not self.exists(metadata):
+                if not self._wait_for_generation(metadata):
+                    raise ValueError()
+        except Exception:
+            raise VariantGenerationError(
+                f"Error while generating {metadata.id}"
+            )
 
     def get_raw(self, metadata: VariantStudy) -> FileStudy:
         """
@@ -560,27 +613,25 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             metadata: study
         Returns: the config and study tree object
         """
-        if not self.exists(metadata):
-            self.wait_for_generation(metadata)
+        self._safe_generation(metadata)
+
         study_path = self.get_study_path(metadata)
         study_config, study_tree = self.study_factory.create_from_fs(
             study_path, metadata.id
         )
         return FileStudy(config=study_config, tree=study_tree)
 
-    def remove_from_cache(self, root_id: str) -> None:
-        remove_from_cache(self.cache, root_id)
-
     def get_study_sim_result(
-        self, metadata: VariantStudy
+        self, study: VariantStudy
     ) -> List[StudySimResultDTO]:
         """
         Get global result information
         Args:
-            metadata: study
+            study: study
         Returns: study output data
         """
-        raise NotImplementedError()
+        self._safe_generation(study)
+        return super().get_study_sim_result(study=study)
 
     def set_reference_output(
         self, metadata: VariantStudy, output_id: str, status: bool
@@ -603,9 +654,9 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
             metadata: study
         Returns:
         """
-        study_path = self.get_study_path(metadata)
+        study_path = metadata.path
         if study_path.exists():
-            shutil.rmtree(metadata.path)
+            shutil.rmtree(study_path)
             self.remove_from_cache(metadata.id)
 
     def delete_output(self, metadata: VariantStudy, output_id: str) -> None:
@@ -622,4 +673,12 @@ class VariantStudyService(IStudyStorageService[VariantStudy]):
         self.remove_from_cache(metadata.id)
 
     def get_study_path(self, metadata: Study) -> Path:
+        """
+        Get study path
+        Args:
+            metadata: study information
+
+        Returns: study path
+
+        """
         return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH

@@ -57,7 +57,7 @@ class Study(Base):  # type: ignore
     author = Column(String(255))
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
-    path = Column(String(255))
+    path = Column(String())
     parent_id = Column(
         String(36), ForeignKey("study.id", name="fk_study_study_id")
     )

@@ -42,6 +42,8 @@ def test_service() -> VariantStudyService:
     repository = VariantStudyRepository()
     service = VariantStudyService(
         raw_study_service=Mock(),
+        cache=Mock(),
+        task_service=Mock(),
         command_factory=Mock(),
         study_factory=Mock(),
         exporter_service=Mock(),
@@ -122,4 +124,3 @@ def test_service() -> VariantStudyService:
         results = service.generate(saved_id, False, SADMIN)
         assert results == expected_result
         assert study.snapshot.id == study.id
-        assert study.snapshot.path == str(Path(study.path) / "snapshot")

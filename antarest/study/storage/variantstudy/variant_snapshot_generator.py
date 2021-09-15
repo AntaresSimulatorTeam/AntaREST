@@ -38,13 +38,11 @@ class VariantSnapshotGenerator:
         self.exporter_service = exporter_service
 
     def generate_snapshot(
-        self, variant_study: VariantStudy, parent_study: Study
+        self, variant_study: VariantStudy, src_path: Path
     ) -> GenerationResultInfoDTO:
 
         # Copy parent study to dest
-        src_path = Path(parent_study.path)
-        dest_path = Path(variant_study.path) / SNAPSHOT_RELATIVE_PATH
-
+        dest_path = Path(variant_study.path)
         self.exporter_service.export_flat(src_path, dest_path)
 
         # Build file study
@@ -67,7 +65,7 @@ class VariantSnapshotGenerator:
         for command in commands:
             try:
                 output = command.apply(file_study)
-            except:
+            except Exception:
                 results.success = False
                 break
 

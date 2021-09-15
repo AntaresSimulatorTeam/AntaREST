@@ -29,3 +29,10 @@ class VariantStudyRepository(StudyMetadataRepository):
             .all()
         )
         return snapshot
+
+    def delete_snapshot(self, id: str) -> None:
+        snapshot: VariantStudySnapshot = db.session.query(
+            VariantStudySnapshot
+        ).get(id)
+        db.session.delete(snapshot)
+        db.session.commit()

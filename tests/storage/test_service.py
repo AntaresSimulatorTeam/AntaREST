@@ -59,7 +59,6 @@ def test_get_studies_uuid() -> None:
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
-        importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
         repository=repository,
@@ -101,7 +100,6 @@ def test_sync_studies_from_disk() -> None:
     service = StudyService(
         raw_study_service=Mock(),
         variant_study_service=Mock(),
-        importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
         repository=repository,
@@ -157,7 +155,6 @@ def test_create_study() -> None:
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
-        importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
         repository=repository,
@@ -242,7 +239,6 @@ def test_save_metadata() -> None:
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
-        importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
         repository=repository,
@@ -321,7 +317,6 @@ def test_download_output() -> None:
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
-        importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
         repository=repository,
@@ -400,7 +395,6 @@ def test_change_owner() -> None:
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
-        importer_service=Mock(),
         exporter_service=Mock(),
         user_service=user_service,
         repository=repository,
@@ -450,7 +444,6 @@ def test_manage_group() -> None:
     service = StudyService(
         raw_study_service=Mock(),
         variant_study_service=Mock(),
-        importer_service=Mock(),
         exporter_service=Mock(),
         user_service=user_service,
         repository=repository,
@@ -536,7 +529,6 @@ def test_set_public_mode() -> None:
     service = StudyService(
         raw_study_service=Mock(),
         variant_study_service=Mock(),
-        importer_service=Mock(),
         exporter_service=Mock(),
         user_service=user_service,
         repository=repository,
@@ -570,7 +562,7 @@ def test_check_errors():
     study_service = Mock()
     study_service.check_errors.return_value = ["Hello", "World"]
 
-    study = Study(id="hello world")
+    study = RawStudy(id="hello world")
     repo = Mock()
     repo.get.return_value = study
     config = Config(
@@ -581,7 +573,6 @@ def test_check_errors():
     service = StudyService(
         raw_study_service=study_service,
         variant_study_service=Mock(),
-        importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
         repository=repo,
@@ -615,7 +606,6 @@ def test_assert_permission() -> None:
     service = StudyService(
         raw_study_service=Mock(),
         variant_study_service=Mock(),
-        importer_service=Mock(),
         exporter_service=Mock(),
         user_service=Mock(),
         repository=repository,
