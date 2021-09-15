@@ -397,11 +397,14 @@ class CLIVariantManager:
                 command_context=command_context,
             ).to_dto()
             study_commands.append(binding_constraint_command)
-            CLIVariantManager._generate_replace_matrix(
-                study_tree,
-                ["input", "bindingconstraints", binding["id"]],
-                command_context,
+            study_commands.append(
+                CLIVariantManager._generate_replace_matrix(
+                    study_tree,
+                    ["input", "bindingconstraints", binding["id"]],
+                    command_context,
+                )
             )
+
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Binding command extraction done in {x}ms")
         )
