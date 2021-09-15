@@ -71,7 +71,7 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
     base_dir = Path("/home/buiquangpau/scratch/test_antares_vm")
     export_path = Path(tmp_path) / "commands"
     for study in os.listdir(base_dir):
-        if "000" not in study:
+        if "038" not in study:
             continue
         study_path = base_dir / study
         output_dir = Path(export_path) / study
