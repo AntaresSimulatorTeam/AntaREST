@@ -351,14 +351,6 @@ class CLIVariantManager:
                 )
             )
 
-            # misc config
-            study_commands.append(
-                CLIVariantManager._generate_update_config(
-                    study_tree,
-                    ["input", "thermal", "areas"],
-                    command_context,
-                )
-            )
             stopwatch.log_elapsed(
                 lambda x: logger.info(f"Misc command extraction done in {x}ms")
             )
@@ -366,6 +358,25 @@ class CLIVariantManager:
             # todo
 
         study_commands += links_commands
+
+        # correlations
+        for type in ["load", "wind", "solar", "hydro"]:
+            study_commands.append(
+                CLIVariantManager._generate_update_config(
+                    study_tree,
+                    ["input", type, "prepro", "correlation"],
+                    command_context,
+                )
+            )
+
+        # all area config (weird it is found in thermal..)
+        study_commands.append(
+            CLIVariantManager._generate_update_config(
+                study_tree,
+                ["input", "thermal", "areas"],
+                command_context,
+            )
+        )
 
         # binding constraints
         binding_config = study_tree.get(
