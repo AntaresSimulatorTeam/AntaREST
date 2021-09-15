@@ -150,6 +150,11 @@ class CLIVariantManager:
         )
         study_commands.append(
             CLIVariantManager._generate_update_config(
+                study_tree, ["layers", "scenariobuilder"], command_context
+            )
+        )
+        study_commands.append(
+            CLIVariantManager._generate_update_config(
                 study_tree, ["layers", "layers"], command_context
             )
         )
