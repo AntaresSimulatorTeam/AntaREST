@@ -71,10 +71,12 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
     base_dir = Path("/home/buiquangpau/scratch/test_antares_vm")
     export_path = Path(tmp_path) / "commands"
     for study in os.listdir(base_dir):
+        if "000" not in study:
+            continue
         study_path = base_dir / study
         output_dir = Path(export_path) / study
-        logger.error(study_path)
-        logger.error(output_dir)
+        logger.info(study_path)
+        logger.info(output_dir)
         try:
             study_info = IniReader().read(study_path / "study.antares")
             version = study_info["antares"]["version"]
@@ -93,7 +95,7 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
             res = generate_study(
                 client, name, version, commands, output_dir / "matrices"
             )
-            logger.error(res.json())
+            logger.info(res.json())
             #        assert res is not None and res.success
         except Exception as e:
             logger.error(f"Failure on {study_path}", exc_info=e)

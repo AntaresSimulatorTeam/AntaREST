@@ -378,7 +378,7 @@ class CLIVariantManager:
                 time_step=TimeStep(binding["type"]),
                 operator=BindingConstraintOperator(binding["operator"]),
                 coeffs={
-                    coeff: value.split("%")
+                    coeff: [float(el) for el in str(value).split("%")]
                     for coeff, value in binding.items()
                     if "%" in coeff or "." in coeff
                 },

@@ -26,7 +26,7 @@ class CreateBindingConstraint(ICommand):
     enabled: bool = True
     time_step: TimeStep
     operator: BindingConstraintOperator
-    coeffs: Dict[str, List[MatrixData]]
+    coeffs: Dict[str, List[float]]
     values: Optional[Union[List[List[MatrixData]], str]] = None
     comments: Optional[str] = None
 
