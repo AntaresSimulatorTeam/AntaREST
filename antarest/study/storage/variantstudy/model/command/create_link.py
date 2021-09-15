@@ -3,6 +3,7 @@ from typing import Dict, List, Union, Any, Optional
 from pydantic import validator
 
 from antarest.core.custom_types import JSON
+from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.default_values import (
@@ -29,7 +30,7 @@ class CreateLink(ICommand):
     area1: str
     area2: str
     parameters: Dict[str, str]
-    series: Optional[Union[List[List[float]], str]] = None
+    series: Optional[Union[List[List[MatrixData]], str]] = None
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
@@ -38,8 +39,8 @@ class CreateLink(ICommand):
 
     @validator("series", always=True)
     def validate_series(
-        cls, v: Optional[Union[List[List[float]], str]], values: Any
-    ) -> Optional[Union[List[List[float]], str]]:
+        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
+    ) -> Optional[Union[List[List[MatrixData]], str]]:
         if v is None:
             v = values["command_context"].generator_matrix_constants.get_link()
             return v

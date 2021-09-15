@@ -1,7 +1,7 @@
 import ast
 from configparser import RawConfigParser
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from antarest.core.custom_types import JSON
 
@@ -13,6 +13,14 @@ class IniConfigParser(RawConfigParser):
 
     def optionxform(self, optionstr: str) -> str:
         return optionstr
+
+    @staticmethod
+    def format_value(value: Any) -> Any:
+        if isinstance(value, float):
+            return "%.6f" % value
+        elif isinstance(value, bool):
+            return str(value).lower()
+        return value
 
     def _write_line(  # type:ignore
         self,
@@ -26,6 +34,7 @@ class IniConfigParser(RawConfigParser):
             self, section_name, key, value
         )
         if value is not None or not self._allow_no_value:  # type:ignore
+            value = IniConfigParser.format_value(value)
             value = delimiter + str(value).replace("\n", "\n\t")
         else:
             value = ""

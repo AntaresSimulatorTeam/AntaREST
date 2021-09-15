@@ -79,8 +79,6 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
             study_info = IniReader().read(study_path / "study.antares")
             version = study_info["antares"]["version"]
             name = study_info["antares"]["caption"]
-            CLIVariantManager.extract_commands(study_path, output_dir)
-
             client = TestClient(app, raise_server_exceptions=False)
             res = client.post(
                 "/v1/login", json={"username": "admin", "password": "admin"}
@@ -89,9 +87,14 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
             vm = CLIVariantManager(
                 session=client, token=admin_credentials["access_token"]
             )
+
+            CLIVariantManager.extract_commands(study_path, output_dir)
             commands = vm.parse_commands(output_dir / "commands.json")
-            res = generate_study(client, name, version, commands, output_dir / "matrices")
+            res = generate_study(
+                client, name, version, commands, output_dir / "matrices"
+            )
             logger.error(res.json())
+            break
             #        assert res is not None and res.success
         except Exception as e:
             logger.error(f"Failure on {study_path}", exc_info=e)

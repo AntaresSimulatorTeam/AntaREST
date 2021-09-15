@@ -3,6 +3,7 @@ from typing import Dict, Union, List, Any, Optional
 from pydantic import validator
 
 from antarest.core.custom_types import JSON
+from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Cluster,
     transform_name_to_id,
@@ -25,8 +26,8 @@ class CreateCluster(ICommand):
     area_id: str
     cluster_name: str
     parameters: Dict[str, str]
-    prepro: Optional[Union[List[List[float]], str]] = None
-    modulation: Optional[Union[List[List[float]], str]] = None
+    prepro: Optional[Union[List[List[MatrixData]], str]] = None
+    modulation: Optional[Union[List[List[MatrixData]], str]] = None
     # TODO: Maybe add the prefix option ?
 
     def __init__(self, **data: Any) -> None:
@@ -45,8 +46,8 @@ class CreateCluster(ICommand):
 
     @validator("prepro", always=True)
     def validate_prepro(
-        cls, v: Optional[Union[List[List[float]], str]], values: Any
-    ) -> Optional[Union[List[List[float]], str]]:
+        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
+    ) -> Optional[Union[List[List[MatrixData]], str]]:
         if v is None:
             v = values[
                 "command_context"
@@ -58,8 +59,8 @@ class CreateCluster(ICommand):
 
     @validator("modulation", always=True)
     def validate_modulation(
-        cls, v: Optional[Union[List[List[float]], str]], values: Any
-    ) -> Optional[Union[List[List[float]], str]]:
+        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
+    ) -> Optional[Union[List[List[MatrixData]], str]]:
         if v is None:
             v = values[
                 "command_context"

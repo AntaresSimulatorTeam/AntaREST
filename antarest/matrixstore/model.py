@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, List, Optional, Union
 
 from dataclasses_json import DataClassJsonMixin  # type: ignore
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from sqlalchemy import Column, String, Enum, DateTime, Table, ForeignKey, Integer, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from sqlalchemy.orm.collections import attribute_mapped_collection  # type: ignore
@@ -147,18 +147,27 @@ class MatrixDataSet(Base):  # type: ignore
         return res
 
 
+# TODO should be Union[float, int] but Any for now because of following issues
+# https://github.com/samuelcolvin/pydantic/issues/1423
+# https://github.com/samuelcolvin/pydantic/issues/1599
+# https://github.com/samuelcolvin/pydantic/issues/1930
+# TODO maybe we should reverting to only float because Any cause problem retrieving data from a node will have pandas forcing all to float anyway...
+# this cause matrix dump on disk (and then hash id) to be different for basically the same matrices
+MatrixData = float
+
+
 class MatrixDTO(BaseModel):
     width: int
     height: int
     index: List[str]
     columns: List[str]
-    data: List[List[Union[float, int]]]
+    data: List[List[MatrixData]]
     created_at: int = 0
     id: str = ""
 
 
 class MatrixContent(BaseModel):
-    data: List[List[Union[float, int]]]
+    data: List[List[MatrixData]]
     index: Optional[List[Union[int, str]]]
     columns: Optional[List[Union[int, str]]]
 

@@ -2,6 +2,7 @@ from typing import Dict, List, Union, Any, Optional
 
 from pydantic import validator
 
+from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
@@ -24,7 +25,7 @@ class UpdateBindingConstraint(ICommand):
     time_step: TimeStep
     operator: BindingConstraintOperator
     coeffs: Dict[str, List[float]]
-    values: Optional[Union[List[List[float]], str]] = None
+    values: Optional[Union[List[List[MatrixData]], str]] = None
     comments: Optional[str] = None
 
     def __init__(self, **data: Any) -> None:
@@ -36,8 +37,8 @@ class UpdateBindingConstraint(ICommand):
 
     @validator("values", always=True)
     def validate_series(
-        cls, v: Optional[Union[List[List[float]], str]], values: Any
-    ) -> Optional[Union[List[List[float]], str]]:
+        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
+    ) -> Optional[Union[List[List[MatrixData]], str]]:
         if v is None:
             v = values[
                 "command_context"

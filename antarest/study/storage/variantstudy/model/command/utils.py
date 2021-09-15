@@ -1,14 +1,16 @@
 from typing import Union, List, Any
 
 from antarest.core.custom_types import JSON
-from antarest.matrixstore.model import MatrixContent
+from antarest.matrixstore.model import MatrixContent, MatrixData
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     MATRIX_PROTOCOL_PREFIX,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-def validate_matrix(matrix: Union[List[List[float]], str], values: Any) -> str:
+def validate_matrix(
+    matrix: Union[List[List[MatrixData]], str], values: Any
+) -> str:
     matrix_id: str
     if isinstance(matrix, list):
         matrix_id = MATRIX_PROTOCOL_PREFIX + values[

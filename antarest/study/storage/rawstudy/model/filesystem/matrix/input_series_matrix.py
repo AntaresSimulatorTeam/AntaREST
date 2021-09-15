@@ -54,7 +54,13 @@ class InputSeriesMatrix(MatrixNode):
     def _dump_json(self, data: JSON) -> None:
         df = pd.DataFrame(**data)
         if not df.empty:
-            df.to_csv(self.config.path, sep="\t", header=False, index=False)
+            df.to_csv(
+                self.config.path,
+                sep="\t",
+                header=False,
+                index=False,
+                float_format="%.6f",
+            )
         else:
             self.config.path.write_bytes(b"")
 

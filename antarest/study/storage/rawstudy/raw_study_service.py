@@ -51,6 +51,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         700: "empty_study_700.zip",
         710: "empty_study_710.zip",
         720: "empty_study_720.zip",
+        800: "empty_study_803.zip",
         803: "empty_study_803.zip",
     }
     new_default_version = 803

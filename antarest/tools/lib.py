@@ -56,7 +56,7 @@ from antarest.study.storage.variantstudy.model.model import (
 )
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig, Config, StorageConfig
-from antarest.matrixstore.model import MatrixDTO, MatrixContent
+from antarest.matrixstore.model import MatrixDTO, MatrixContent, MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.common.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
@@ -132,7 +132,7 @@ class CLIVariantManager:
         study_tree: FileStudyTree,
         url: List[str],
         command_context: CommandContext,
-        default_value: Optional[str] = None
+        default_value: Optional[str] = None,
     ) -> CommandDTO:
         data = study_tree.get(url)
         matrix = CLIVariantManager.get_matrix(data, default_value is None)
@@ -235,7 +235,7 @@ class CLIVariantManager:
                         study_tree,
                         ["input", "links", area_id, link],
                         command_context,
-                        null_matrix_id
+                        null_matrix_id,
                     )
                 )
 
@@ -308,7 +308,7 @@ class CLIVariantManager:
                         study_tree,
                         ["input", type, "series", f"{type}_{area_id}"],
                         command_context,
-                        null_matrix_id
+                        null_matrix_id,
                     )
                 )
 
@@ -397,7 +397,7 @@ class CLIVariantManager:
     @staticmethod
     def get_matrix(
         data: Union[JSON, str], raise_on_missing: Optional[bool] = False
-    ) -> Optional[Union[str, List[List[Union[float, int]]]]]:
+    ) -> Optional[Union[str, List[List[MatrixData]]]]:
         if isinstance(data, str):
             return data
         elif isinstance(data, dict):
