@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import time
 
 import requests
 from pathlib import Path
@@ -8,6 +10,7 @@ from typing import List, Optional, Union, Callable
 from requests import Session
 
 from antarest.core.custom_types import JSON
+from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -68,6 +71,8 @@ from antarest.study.storage.variantstudy.model.command.common import (
     TimeStep,
     BindingConstraintOperator,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SimpleMatrixService(ISimpleMatrixService):
@@ -146,6 +151,7 @@ class CLIVariantManager:
     def _extract_commands_from_study(
         study: FileStudy, matrix_reference_dir: Path
     ) -> List[CommandDTO]:
+        stopwatch = StopWatch()
         local_matrix_service = SimpleMatrixService(matrix_reference_dir)
         generator_matrix_constants = GeneratorMatrixConstants(
             local_matrix_service
@@ -183,6 +189,9 @@ class CLIVariantManager:
         #         study_tree, ["settings", "comments"], command_context
         #     )
         # )
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"General command extraction done in {x}ms")
+        )
 
         links_commands: List[CommandDTO] = []
         for area_id in study_config.areas:
@@ -211,6 +220,9 @@ class CLIVariantManager:
                     command_context=command_context,
                 ).to_dto()
             )
+            stopwatch.log_elapsed(
+                lambda x: logger.info(f"Area command extraction done in {x}ms")
+            )
 
             links_data = study_tree.get(
                 ["input", "links", area_id, "properties"]
@@ -238,6 +250,9 @@ class CLIVariantManager:
                         null_matrix_id,
                     )
                 )
+            stopwatch.log_elapsed(
+                lambda x: logger.info(f"Link command extraction done in {x}ms")
+            )
 
             thermal_data = study_tree.get(
                 ["input", "thermal", "clusters", area_id, "list"]
@@ -285,6 +300,11 @@ class CLIVariantManager:
                     command_context=command_context,
                 ).to_dto()
                 study_commands.append(cluster_series_command)
+            stopwatch.log_elapsed(
+                lambda x: logger.info(
+                    f"Thermal command extraction done in {x}ms"
+                )
+            )
 
             # load, wind, solar
             for type in ["load", "wind", "solar"]:
@@ -311,6 +331,11 @@ class CLIVariantManager:
                         null_matrix_id,
                     )
                 )
+            stopwatch.log_elapsed(
+                lambda x: logger.info(
+                    f"Prepro command extraction done in {x}ms"
+                )
+            )
 
             # misc gen / reserves
             study_commands.append(
@@ -334,7 +359,9 @@ class CLIVariantManager:
                     command_context,
                 )
             )
-
+            stopwatch.log_elapsed(
+                lambda x: logger.info(f"Misc command extraction done in {x}ms")
+            )
             # hydro
             # todo
 
@@ -364,7 +391,13 @@ class CLIVariantManager:
                 ["input", "bindingconstraints", binding["id"]],
                 command_context,
             )
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"Binding command extraction done in {x}ms")
+        )
 
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"Command extraction done in {x}ms"), True
+        )
         return study_commands
 
     @staticmethod
@@ -426,6 +459,7 @@ class CLIVariantManager:
         commands: List[CommandDTO],
         matrices_dir: Optional[Path],
     ) -> GenerationResultInfoDTO:
+        stopwatch = StopWatch()
         study = self.session.get(
             self.build_url(f"/v1/studies/{study_id}")
         ).json()
@@ -445,15 +479,24 @@ class CLIVariantManager:
                     matrix_dataset.append(matrix_id)
             # TODO could create a dataset from theses matrices using "variant_<study_id>" as name
             # also the matrix could be named after the command name where they are used
+            stopwatch.log_elapsed(
+                lambda x: logger.info(f"Matrix upload done in {x}ms")
+            )
 
         res = self.session.post(
             self.build_url(f"/v1/studies/{study_id}/commands"),
             json=[command.dict() for command in commands],
         )
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"Command upload done in {x}ms")
+        )
         assert res.status_code == 200
 
         res = self.session.put(
             self.build_url(f"/v1/studies/{study_id}/generate?denormalize=true")
+        )
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"Generation done in {x}ms")
         )
         assert res.status_code == 200
         return GenerationResultInfoDTO.parse_obj(res.json())
