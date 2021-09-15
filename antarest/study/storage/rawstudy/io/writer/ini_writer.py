@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Optional, Any
 
 from antarest.core.custom_types import JSON
+from antarest.study.storage.rawstudy.io.reader import IniReader
 
 
 class IniConfigParser(RawConfigParser):
@@ -16,10 +17,11 @@ class IniConfigParser(RawConfigParser):
 
     @staticmethod
     def format_value(value: Any) -> Any:
-        if isinstance(value, float):
-            return "%.6f" % value
-        elif isinstance(value, bool):
-            return str(value).lower()
+        parsed_value = IniReader.parse_value(value)
+        if isinstance(parsed_value, bool):
+            return str(parsed_value).lower()
+        elif isinstance(parsed_value, float):
+            return "%.6f" % parsed_value
         return value
 
     def _write_line(  # type:ignore

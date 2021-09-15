@@ -94,7 +94,6 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
                 client, name, version, commands, output_dir / "matrices"
             )
             logger.error(res.json())
-            break
             #        assert res is not None and res.success
         except Exception as e:
             logger.error(f"Failure on {study_path}", exc_info=e)
