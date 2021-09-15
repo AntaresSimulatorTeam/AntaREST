@@ -35,11 +35,12 @@ class LocalCache(ICache):
             time.sleep(self.checker_delay)
             with self.lock:
                 current_time = time.time()
+                to_delete: List[str] = []
                 for id in self.cache.keys():
                     if current_time >= self.cache[id].timeout:
-                        del self.cache[
-                            id
-                        ]  # Python 3 allow us to delete items while iterating a dictionary
+                        to_delete.append(id)
+                for id in to_delete:
+                    del self.cache[id]
 
     def put(
         self, id: str, data: JSON, duration: int = 3600
