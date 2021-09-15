@@ -92,6 +92,7 @@ class StopWatch:
         self, logger: Callable[[float], None], since_start: bool = False
     ) -> None:
         logger(
-            time.time() - self.start_time if since_start else self.current_time
+            time.time()
+            - (self.start_time if since_start else self.current_time)
         )
         self.current_time = time.time()
