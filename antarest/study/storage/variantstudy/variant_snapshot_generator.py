@@ -42,7 +42,11 @@ class VariantSnapshotGenerator:
     ) -> GenerationResultInfoDTO:
 
         # Copy parent study to dest
-        dest_path = Path(variant_study.path)
+        dest_path = Path(variant_study.path) / SNAPSHOT_RELATIVE_PATH
+
+        if dest_path.is_dir():
+            shutil.rmtree(dest_path)
+
         self.exporter_service.export_flat(src_path, dest_path)
 
         # Build file study
@@ -62,6 +66,7 @@ class VariantSnapshotGenerator:
         results: GenerationResultInfoDTO = GenerationResultInfoDTO(
             success=True, details=[]
         )
+
         for command in commands:
             try:
                 output = command.apply(file_study)
@@ -73,10 +78,10 @@ class VariantSnapshotGenerator:
                 (command.command_name.value, output.status, output.message)
             )
             results.success = results.success and output.status
+
             if not output.status:
                 break
 
         if not results.success:
             shutil.rmtree(dest_path)
-
         return results

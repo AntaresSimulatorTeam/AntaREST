@@ -21,18 +21,3 @@ class VariantStudyRepository(StudyMetadataRepository):
             .all()
         )
         return studies
-
-    def get_snapshot(self, id: str) -> VariantStudySnapshot:
-        snapshot: VariantStudySnapshot = (
-            db.session.query(VariantStudySnapshot)
-            .filter(VariantStudySnapshot.id == id)
-            .all()
-        )
-        return snapshot
-
-    def delete_snapshot(self, id: str) -> None:
-        snapshot: VariantStudySnapshot = db.session.query(
-            VariantStudySnapshot
-        ).get(id)
-        db.session.delete(snapshot)
-        db.session.commit()

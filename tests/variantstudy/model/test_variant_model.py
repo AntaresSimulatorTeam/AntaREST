@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest.mock import Mock
 
 from sqlalchemy import create_engine
@@ -31,7 +30,7 @@ SADMIN = RequestParameters(
 )
 
 
-def test_service() -> VariantStudyService:
+def test_commands_service() -> VariantStudyService:
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(

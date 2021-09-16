@@ -3,9 +3,7 @@ import os
 import re
 from pathlib import Path
 from typing import Callable
-from unittest import mock
-from unittest.mock import Mock, patch
-from uuid import uuid4
+from unittest.mock import Mock
 
 import pytest
 

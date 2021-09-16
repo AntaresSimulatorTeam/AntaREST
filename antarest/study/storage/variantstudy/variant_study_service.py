@@ -469,7 +469,6 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
             raise NoParentStudyError(variant_study_id)
 
         parent_study = self.repository.get(variant_study.parent_id)
-
         if parent_study is None:
             raise StudyNotFoundError(variant_study.parent_id)
 
@@ -478,7 +477,6 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
 
         # Remove from cache
         self.remove_from_cache(variant_study.id)
-
         parent_path = parent_study.path
         if isinstance(parent_study, VariantStudy):
             self._safe_generation(parent_study)
@@ -492,14 +490,12 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
             )
             variant_study.updated_at = datetime.now()
             self.repository.save(variant_study)
-
             if denormalize:
                 config, study_tree = self.study_factory.create_from_fs(
-                    Path(variant_study.snapshot.path),
+                    self.get_study_path(variant_study),
                     study_id=variant_study.id,
                 )
                 study_tree.denormalize()
-
         return results
 
     def create(self, study: VariantStudy) -> VariantStudy:
@@ -557,13 +553,14 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
         )
 
         src_path = self.get_study_path(src_meta)
+        dest_path = self.get_study_path(dest_meta)
         output_src = Path(src_meta.path) / "output"
-        dest_path = Path(dest_meta.path)
+        dest_output = Path(dest_meta.path) / "output"
 
         shutil.copytree(src_path, dest_path)
 
         if with_outputs:
-            shutil.copytree(output_src, dest_path)
+            shutil.copytree(output_src, dest_output)
 
         _, study = self.study_factory.create_from_fs(
             dest_path, study_id=dest_meta.id
@@ -654,7 +651,7 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
             metadata: study
         Returns:
         """
-        study_path = metadata.path
+        study_path = Path(metadata.path)
         if study_path.exists():
             shutil.rmtree(study_path)
             self.remove_from_cache(metadata.id)
