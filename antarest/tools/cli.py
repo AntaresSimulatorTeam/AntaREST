@@ -1,9 +1,12 @@
+import logging
 from pathlib import Path
 from typing import Optional
 
 import click
 
 from antarest.tools.lib import CLIVariantManager
+
+logging.basicConfig(level=logging.INFO)
 
 
 @click.group()
@@ -45,11 +48,11 @@ def commands() -> None:
     help="ID of the variant to apply the script onto",
 )
 def apply_script(
-    host: str, input: Path, study_id: str, token: Optional[str] = None
+    host: str, input: str, study_id: str, token: Optional[str] = None
 ) -> None:
     """Apply a variant script onto an AntaresWeb study variant"""
     vm = CLIVariantManager(host, token)
-    res = vm.apply_commands_from_dir(study_id, input)
+    res = vm.apply_commands_from_dir(study_id, Path(input))
     print(res)
 
 
@@ -70,9 +73,9 @@ def apply_script(
     type=click.Path(exists=False),
     help="Script output path",
 )
-def generate_script(input: Path, output: Path) -> None:
+def generate_script(input: str, output: str) -> None:
     """Generate variant script commands from a study or study fragment"""
-    CLIVariantManager.extract_commands(input, output)
+    CLIVariantManager.extract_commands(Path(input), Path(output))
 
 
 if __name__ == "__main__":
