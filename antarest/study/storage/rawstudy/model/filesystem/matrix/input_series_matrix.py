@@ -40,7 +40,7 @@ class InputSeriesMatrix(MatrixNode):
             matrix: pd.DataFrame = pd.read_csv(
                 self.config.path,
                 sep="\t",
-                dtype=object,
+                dtype=float,
                 header=None,
             )
             matrix = matrix.where(pd.notna(matrix), None)  # TODO fillna ?
