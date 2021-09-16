@@ -62,35 +62,35 @@ logger = logging.getLogger(__name__)
 
 
 def test_parse_commands(tmp_path: str, app: FastAPI):
-    # todo add a quite feature-exhaustive test study
-    return
-    base_dir = Path("/home/buiquangpau/scratch/test_antares_vm")
-    export_path = Path(tmp_path) / "commands"
-    # for study in os.listdir(base_dir):
-    #     if "038" not in study:
-    #         continue
-    #     study_path = base_dir / study
-    study = "Zonal_CH_BAU_2025_LF"
-    study_path = Path(
-        "/home/buiquangpau/scratch/antares_workspace_tmp/Zonal_CH_BAU_2025_LF"
-    )
-    output_dir = Path(export_path) / study
-    logger.info(study_path)
-    logger.info(output_dir)
-    try:
-        study_info = IniReader().read(study_path / "study.antares")
-        version = study_info["antares"]["version"]
-        name = study_info["antares"]["caption"]
-        client = TestClient(app, raise_server_exceptions=False)
-
-        CLIVariantManager.extract_commands(study_path, output_dir)
-        commands = CLIVariantManager.parse_commands(
-            output_dir / "commands.json"
-        )
-        res = generate_study(
-            client, name, version, commands, output_dir / "matrices"
-        )
-        logger.info(res.json())
-        #        assert res is not None and res.success
-    except Exception as e:
-        logger.error(f"Failure on {study_path}", exc_info=e)
+    pass
+    # # todo add a quite feature-exhaustive test study
+    # base_dir = Path("/home/buiquangpau/scratch/test_antares_vm")
+    # export_path = Path(tmp_path) / "commands"
+    # # for study in os.listdir(base_dir):
+    # #     if "038" not in study:
+    # #         continue
+    # #     study_path = base_dir / study
+    # study = "Zonal_CH_BAU_2025_LF"
+    # study_path = Path(
+    #     "/home/buiquangpau/scratch/antares_workspace_tmp/Zonal_CH_BAU_2025_LF"
+    # )
+    # output_dir = Path(export_path) / study
+    # logger.info(study_path)
+    # logger.info(output_dir)
+    # try:
+    #     study_info = IniReader().read(study_path / "study.antares")
+    #     version = study_info["antares"]["version"]
+    #     name = study_info["antares"]["caption"]
+    #     client = TestClient(app, raise_server_exceptions=False)
+    #
+    #     CLIVariantManager.extract_commands(study_path, output_dir)
+    #     commands = CLIVariantManager.parse_commands(
+    #         output_dir / "commands.json"
+    #     )
+    #     res = generate_study(
+    #         client, name, version, commands, output_dir / "matrices"
+    #     )
+    #     logger.info(res.json())
+    #     #        assert res is not None and res.success
+    # except Exception as e:
+    #     logger.error(f"Failure on {study_path}", exc_info=e)
