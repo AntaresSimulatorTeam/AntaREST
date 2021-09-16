@@ -351,14 +351,6 @@ class VariantCommandsExtractor:
             ),
             self._generate_update_config(
                 study_tree,
-                ["input", "hydro", "hydro", "inter-daily-breakdown", area_id],
-            ),
-            self._generate_update_config(
-                study_tree,
-                ["input", "hydro", "hydro", "intra-daily-modulation", area_id],
-            ),
-            self._generate_update_config(
-                study_tree,
                 [
                     "input",
                     "hydro",
@@ -371,28 +363,6 @@ class VariantCommandsExtractor:
 
         if study_tree.config.version > 650:
             commands += [
-                self._generate_update_config(
-                    study_tree,
-                    [
-                        "input",
-                        "hydro",
-                        "hydro",
-                        "initialize reservoir date",
-                        area_id,
-                    ],
-                ),
-                self._generate_update_config(
-                    study_tree,
-                    ["input", "hydro", "hydro", "leeway low", area_id],
-                ),
-                self._generate_update_config(
-                    study_tree,
-                    ["input", "hydro", "hydro", "leeway up", area_id],
-                ),
-                self._generate_update_config(
-                    study_tree,
-                    ["input", "hydro", "hydro", "pumping efficiency", area_id],
-                ),
                 self._generate_replace_matrix(
                     study_tree,
                     [
@@ -424,6 +394,16 @@ class VariantCommandsExtractor:
                     ],
                 ),
             ]
+
+        hydro_config = study_tree.get(["input", "hydro", "hydro"])
+        for key in hydro_config:
+            if area_id in hydro_config[key]:
+                commands.append(
+                    self._generate_update_config(
+                        study_tree,
+                        ["input", "hydro", "hydro", key, area_id],
+                    )
+                )
 
         return commands
 

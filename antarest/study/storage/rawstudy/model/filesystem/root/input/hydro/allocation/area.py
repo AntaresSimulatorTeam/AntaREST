@@ -13,5 +13,5 @@ class InputHydroAllocationArea(IniFileNode):
     def __init__(
         self, context: ContextServer, config: FileStudyTreeConfig, area: str
     ):
-        types = {"[allocation": {area: int}}
+        types = {"[allocation]": {area: int}}
         IniFileNode.__init__(self, context, config, types)

@@ -134,6 +134,19 @@ class CLIVariantManager:
 
         return commands
 
+    def apply_commands_from_dir(
+        self, study_id: str, command_dir: Path
+    ) -> GenerationResultInfoDTO:
+        matrix_dir: Optional[Path] = command_dir / "matrices"
+        command_file = command_dir / "commands.json"
+        if matrix_dir and not matrix_dir.exists():
+            matrix_dir = None
+        if not command_file.exists():
+            raise ValueError("Missing commands.json")
+
+        commands = CLIVariantManager.parse_commands(command_file)
+        return self.apply_commands(study_id, commands, matrix_dir)
+
     def apply_commands(
         self,
         study_id: str,

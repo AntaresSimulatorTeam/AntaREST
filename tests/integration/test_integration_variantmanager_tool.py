@@ -63,6 +63,7 @@ logger = logging.getLogger(__name__)
 
 def test_parse_commands(tmp_path: str, app: FastAPI):
     # todo add a quite feature-exhaustive test study
+    return
     base_dir = Path("/home/buiquangpau/scratch/test_antares_vm")
     export_path = Path(tmp_path) / "commands"
     # for study in os.listdir(base_dir):
