@@ -153,6 +153,7 @@ class CreateLink(ICommand):
             link_property, ["input", "links", area_from, "properties", area_to]
         )
         if self.series:
+            assert isinstance(self.series, str)
             study_data.tree.save(
                 self.series, ["input", "links", area_from, area_to]
             )

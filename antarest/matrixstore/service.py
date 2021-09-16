@@ -5,9 +5,11 @@ from datetime import datetime
 from io import BytesIO
 from typing import List, Optional, Tuple
 from zipfile import ZipFile
+from pathlib import Path
 
 from fastapi import UploadFile
 
+from antarest.core.config import StorageConfig, Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
@@ -62,6 +64,38 @@ class ISimpleMatrixService(ABC):
                 assert len(data.columns) == len(data.data[0])
             else:
                 assert len(data.columns) == 0
+
+
+class SimpleMatrixService(ISimpleMatrixService):
+    def __init__(self, matrix_path: Path):
+        self.matrix_path = matrix_path
+        assert matrix_path.exists() and matrix_path.is_dir()
+        config = Config(storage=StorageConfig(matrixstore=matrix_path))
+        self.repo_content = MatrixContentRepository(config)
+
+    def create(self, data: MatrixContent) -> str:
+        SimpleMatrixService._initialize_matrix_content(data)
+        matrix_hash = self.repo_content.save(data)
+        return matrix_hash
+
+    def get(self, id: str) -> Optional[MatrixDTO]:
+        data = self.repo_content.get(id)
+        if data:
+            assert data.columns is not None
+            assert data.index is not None
+            return MatrixDTO(
+                id=id,
+                width=len(data.columns),
+                height=len(data.index),
+                index=data.index,
+                columns=data.columns,
+                data=data.data,
+            )
+        else:
+            return None
+
+    def delete(self, id: str) -> None:
+        self.repo_content.delete(id)
 
 
 class MatrixService(ISimpleMatrixService):
