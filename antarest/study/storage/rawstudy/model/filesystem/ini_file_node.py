@@ -94,6 +94,8 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url = url or []
         json = self.reader.read(self.path) if self.path.exists() else {}
         if len(url) == 2:
+            if url[0] not in json:
+                json[url[0]] = {}
             json[url[0]][url[1]] = data
         elif len(url) == 1:
             json[url[0]] = data
