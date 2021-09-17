@@ -2,7 +2,8 @@ import logging
 import os
 import urllib.parse
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Tuple
+from zipfile import ZipFile
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -23,7 +24,7 @@ def generate_study(
     study_version: int,
     commands: List[CommandDTO],
     matrices_dir: Optional[Path] = None,
-) -> GenerationResultInfoDTO:
+) -> Tuple[GenerationResultInfoDTO, str]:
     res = client.post(
         "/v1/login", json={"username": "admin", "password": "admin"}
     )
@@ -46,7 +47,7 @@ def generate_study(
     vm = CLIVariantManager(
         session=client, token=admin_credentials["access_token"]
     )
-    return vm.apply_commands(variant_id, commands, matrices_dir)
+    return vm.apply_commands(variant_id, commands, matrices_dir), variant_id
 
 
 def test_variant_manager(app: FastAPI):
@@ -54,38 +55,39 @@ def test_variant_manager(app: FastAPI):
     commands = CLIVariantManager.parse_commands(
         test_dir / "assets" / "commands1.json"
     )
-    res = generate_study(client, "test", 720, commands)
+    res, study_id = generate_study(client, "test", 720, commands)
     assert res is not None and res.success
 
 
-logger = logging.getLogger(__name__)
-
-
 def test_parse_commands(tmp_path: str, app: FastAPI):
-    # todo add a quite feature-exhaustive test study
-    base_dir = Path("/home/buiquangpau/scratch/test_antares_vm")
+    base_dir = test_dir / "assets"
     export_path = Path(tmp_path) / "commands"
-    for study in os.listdir(base_dir):
-        if "038" not in study:
-            continue
-        study_path = base_dir / study
-        output_dir = Path(export_path) / study
-        logger.info(study_path)
-        logger.info(output_dir)
-        try:
-            study_info = IniReader().read(study_path / "study.antares")
-            version = study_info["antares"]["version"]
-            name = study_info["antares"]["caption"]
-            client = TestClient(app, raise_server_exceptions=False)
+    study = "test_study"
+    study_path = Path(tmp_path) / study
+    with ZipFile(base_dir / "test_study.zip") as zip_output:
+        zip_output.extractall(path=tmp_path)
+    output_dir = Path(export_path) / study
+    study_info = IniReader().read(study_path / "study.antares")
+    version = study_info["antares"]["version"]
+    name = study_info["antares"]["caption"]
+    client = TestClient(app, raise_server_exceptions=False)
 
-            CLIVariantManager.extract_commands(study_path, output_dir)
-            commands = CLIVariantManager.parse_commands(
-                output_dir / "commands.json"
-            )
-            res = generate_study(
-                client, name, version, commands, output_dir / "matrices"
-            )
-            logger.info(res.json())
-            #        assert res is not None and res.success
-        except Exception as e:
-            logger.error(f"Failure on {study_path}", exc_info=e)
+    CLIVariantManager.extract_commands(study_path, output_dir)
+    commands = CLIVariantManager.parse_commands(output_dir / "commands.json")
+    res, study_id = generate_study(
+        client, name, version, commands, output_dir / "matrices"
+    )
+    assert res is not None and res.success
+    generated_study_path = (
+        Path(tmp_path) / "internal_workspace" / study_id / "snapshot"
+    )
+    assert generated_study_path.exists() and generated_study_path.is_dir()
+    for root, dirs, files in os.walk(study_path):
+        rel_path = root[len(str(study_path)) + 1 :]
+        for item in files:
+            if item in ["comments.txt", "study.antares", "Desktop.ini"]:
+                continue
+            print(generated_study_path / rel_path / item)
+            assert (study_path / rel_path / item).read_bytes() == (
+                generated_study_path / rel_path / item
+            ).read_bytes()
