@@ -9,6 +9,9 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+)
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
@@ -78,8 +81,17 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
 
     CLIVariantManager.extract_commands(study_path, output_dir)
     commands = CLIVariantManager.parse_commands(output_dir / COMMAND_FILE)
+
+    fix_commands: List[CommandDTO] = []
+    for command in commands:
+        if (
+            command.action == CommandName.CREATE_DISTRICT.value
+            and command.args["name"] == "All areas"
+        ):
+            continue
+        fix_commands.append(command)
     res, study_id = generate_study(
-        client, name, version, commands, output_dir / MATRIX_STORE_DIR
+        client, name, version, fix_commands, output_dir / MATRIX_STORE_DIR
     )
     assert res is not None and res.success
     generated_study_path = (

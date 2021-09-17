@@ -84,7 +84,7 @@ class CreateDistrict(ICommand):
             args={
                 "name": self.name,
                 "metadata": self.metadata,
-                "base_filter": self.base_filter,
+                "base_filter": self.base_filter.value,
                 "filter_items": self.filter_items,
                 "output": self.output,
                 "comments": self.comments,
