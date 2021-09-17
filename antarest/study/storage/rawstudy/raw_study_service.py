@@ -1,45 +1,45 @@
+import glob
 import logging
+import os
 import shutil
+import tempfile
+import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
-from zipfile import ZipFile
+from typing import Optional, IO, List
+from uuid import uuid4
+from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.core.custom_types import SUB_JSON
 from antarest.core.exceptions import (
-    StudyNotFoundError,
     UnsupportedStudyVersion,
 )
-from antarest.core.interfaces.cache import ICache, CacheConstants
-from antarest.study.common.studystorage import (
-    IStudyStorageService,
-)
+from antarest.core.interfaces.cache import ICache
+from antarest.core.utils.utils import extract_zip
 from antarest.study.model import (
     RawStudy,
-    StudyMetadataPatchDTO,
-    StudyMetadataDTO,
-    StudySimResultDTO,
-    StudySimSettingsDTO,
-    PatchOutputs,
+    DEFAULT_WORKSPACE_NAME,
+    Study,
+)
+from antarest.study.storage.abstract_storage_service import (
+    AbstractStorageService,
 )
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Simulation,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
     FileStudy,
 )
 from antarest.study.storage.utils import (
     update_antares_info,
-    get_study_information,
+    get_default_workspace_path,
+    fix_study_root,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class RawStudyService(IStudyStorageService[RawStudy]):
+class RawStudyService(AbstractStorageService[RawStudy]):
     """
     Manage set of raw studies stored in the workspaces.
     Instantiate and manage tree struct for each request
@@ -64,26 +64,13 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         patch_service: PatchService,
         cache: ICache,
     ):
-        self.config: Config = config
-        self.study_factory: StudyFactory = study_factory
+        super().__init__(
+            config=config,
+            study_factory=study_factory,
+            patch_service=patch_service,
+            cache=cache,
+        )
         self.path_resources: Path = path_resources
-        self.patch_service = patch_service
-        self.cache = cache
-
-    def _check_study_exists(self, metadata: RawStudy) -> None:
-        """
-        Check study on filesystem.
-
-        Args:
-            metadata: study
-
-        Returns: none or raise error if not found
-
-        """
-        if not self.exists(metadata):
-            raise StudyNotFoundError(
-                f"Study with the uuid {metadata.id} does not exist."
-            )
 
     def update_from_raw_meta(
         self, metadata: RawStudy, fallback_on_default: Optional[bool] = False
@@ -116,19 +103,6 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             else:
                 raise e
 
-    def check_errors(self, metadata: RawStudy) -> List[str]:
-        """
-        Check study antares data integrity
-        Args:
-            metadata: study
-
-        Returns: list of non integrity inside study
-
-        """
-        path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(path, metadata.id)
-        return study.check_errors(study.get())
-
     def exists(self, metadata: RawStudy) -> bool:
         """
         Check study exist.
@@ -155,71 +129,6 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             study_path, metadata.id
         )
         return FileStudy(config=study_config, tree=study_tree)
-
-    def get(
-        self,
-        metadata: RawStudy,
-        url: str = "",
-        depth: int = 3,
-        formatted: bool = True,
-    ) -> JSON:
-        """
-        Entry point to fetch data inside study.
-        Args:
-            metadata: study
-            url: path data inside study to reach
-            depth: tree depth to reach after reach data path
-            formatted: indicate if raw files must be parsed and formatted
-
-        Returns: study data formatted in json
-
-        """
-        self._check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-
-        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
-        parts = [item for item in url.split("/") if item]
-
-        data: JSON = dict()
-        if url == "" and depth == -1:
-            cache_id = f"{metadata.id}/{CacheConstants.RAW_STUDY}"
-            from_cache = self.cache.get(cache_id)
-            if from_cache is not None:
-                logger.info(f"Raw Study {metadata.id} read from cache")
-                data = from_cache
-            else:
-                data = study.get(parts, depth=depth, formatted=formatted)
-                self.cache.put(cache_id, data)
-                logger.info(
-                    f"Cache new entry from RawStudyService (studyID: {metadata.id})"
-                )
-        else:
-            data = study.get(parts, depth=depth, formatted=formatted)
-        del study
-        return data
-
-    def get_study_information(
-        self,
-        study: RawStudy,
-        summary: bool = False,  # TODO: summary is never used, maybe remove it ?
-    ) -> StudyMetadataDTO:
-        """
-        Get information present in study.antares file
-        Args:
-            study: study
-            summary: if true, only retrieve basic info from database
-
-        Returns: study metadata
-
-        """
-        return get_study_information(
-            study,
-            study.path,
-            self.patch_service,
-            self.study_factory,
-            logger,
-            summary,
-        )
 
     def create(self, metadata: RawStudy) -> RawStudy:
         """
@@ -253,7 +162,7 @@ class RawStudyService(IStudyStorageService[RawStudy]):
     def copy(
         self,
         src_meta: RawStudy,
-        dest_meta: RawStudy,
+        dest_name: str,
         with_outputs: bool = False,
     ) -> RawStudy:
         """
@@ -267,8 +176,19 @@ class RawStudyService(IStudyStorageService[RawStudy]):
 
         """
         self._check_study_exists(src_meta)
+        dest_id = str(uuid4())
+        dest_study = RawStudy(
+            id=dest_id,
+            name=dest_name,
+            workspace=DEFAULT_WORKSPACE_NAME,
+            path=str(get_default_workspace_path(self.config) / dest_id),
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            version=src_meta.version,
+        )
+
         src_path = self.get_study_path(src_meta)
-        dest_path = self.get_study_path(dest_meta)
+        dest_path = self.get_study_path(dest_study)
 
         shutil.copytree(src_path, dest_path)
 
@@ -277,20 +197,12 @@ class RawStudyService(IStudyStorageService[RawStudy]):
             shutil.rmtree(output)
 
         _, study = self.study_factory.create_from_fs(
-            dest_path, study_id=dest_meta.id
+            dest_path, study_id=dest_study.id
         )
-        update_antares_info(dest_meta, study)
+        update_antares_info(dest_study, study)
 
         del study
-        return dest_meta
-
-    def remove_from_cache(self, root_id: str) -> None:
-        self.cache.invalidate_all(
-            [
-                f"{root_id}/{CacheConstants.RAW_STUDY}",
-                f"{root_id}/{CacheConstants.STUDY_FACTORY}",
-            ]
-        )
+        return dest_study
 
     def delete(self, metadata: RawStudy) -> None:
         """
@@ -321,8 +233,36 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         shutil.rmtree(output_path, ignore_errors=True)
         self.remove_from_cache(metadata.id)
 
+    def import_study(self, metadata: RawStudy, stream: IO[bytes]) -> Study:
+        """
+        Import study
+        Args:
+            metadata: study information
+            stream: study content compressed in zip file
+
+        Returns: new study information.
+
+        """
+        path_study = self.get_study_path(metadata)
+        path_study.mkdir()
+
+        try:
+            extract_zip(stream, path_study)
+            fix_study_root(path_study)
+            self.update_from_raw_meta(metadata)
+
+        except Exception as e:
+            shutil.rmtree(path_study)
+            raise e
+
+        metadata.path = str(path_study)
+        return metadata
+
     def edit_study(
-        self, metadata: RawStudy, url: str, new: SUB_JSON
+        self,
+        metadata: RawStudy,
+        url: str,
+        new: SUB_JSON,
     ) -> SUB_JSON:
         """
         Replace data on disk with new
@@ -336,7 +276,6 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         """
         # Get data
         self._check_study_exists(metadata)
-
         study_path = self.get_study_path(metadata)
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         study.save(new, url.split("/"))  # type: ignore
@@ -344,21 +283,44 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         self.remove_from_cache(metadata.id)
         return new
 
-    def patch_update_study_metadata(
-        self, study: RawStudy, metadata: StudyMetadataPatchDTO
-    ) -> StudyMetadataDTO:
-        self.patch_service.patch(
-            study,
-            {
-                "study": {
-                    "scenario": metadata.scenario,
-                    "doc": metadata.doc,
-                    "status": metadata.status,
-                }
-            },
+    def export_study_flat(
+        self, metadata: RawStudy, dest: Path, outputs: bool = True
+    ) -> None:
+        path_study = Path(metadata.path)
+        start_time = time.time()
+        ignore_patterns = (
+            (
+                lambda directory, contents: ["output"]
+                if str(directory) == str(path_study)
+                else []
+            )
+            if not outputs
+            else None
         )
-        self.remove_from_cache(study.id)
-        return self.get_study_information(study)
+        shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
+        stop_time = time.time()
+        duration = "{:.3f}".format(stop_time - start_time)
+        logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
+        _, study = self.study_factory.create_from_fs(dest, "", use_cache=False)
+        study.denormalize()
+        duration = "{:.3f}".format(time.time() - stop_time)
+        logger.info(f"Study {path_study} denormalized in {duration}s")
+
+    def check_errors(
+        self,
+        metadata: RawStudy,
+    ) -> List[str]:
+        """
+        Check study antares data integrity
+        Args:
+            metadata: study
+
+        Returns: list of non integrity inside study
+
+        """
+        path = self.get_study_path(metadata)
+        _, study = self.study_factory.create_from_fs(path, metadata.id)
+        return study.check_errors(study.get())
 
     def set_reference_output(
         self, study: RawStudy, output_id: str, status: bool
@@ -366,47 +328,21 @@ class RawStudyService(IStudyStorageService[RawStudy]):
         self.patch_service.set_reference_output(study, output_id, status)
         self.remove_from_cache(study.id)
 
-    def get_study_sim_result(self, study: RawStudy) -> List[StudySimResultDTO]:
+    def archive(self, study: RawStudy) -> None:
+        archive_path = self.get_archive_path(study)
+        self.export_study(study, archive_path)
+        shutil.rmtree(study.path)
+
+    def get_archive_path(self, study: RawStudy) -> Path:
+        return Path(self.config.storage.archive_dir / f"{study.id}.zip")
+
+    def get_study_path(self, metadata: Study) -> Path:
         """
-        Get global result information
+        Get study path
         Args:
-            study: study
-        Returns: study output data
+            metadata: study information
+
+        Returns: study path
 
         """
-        study_path = self.get_study_path(study)
-        config, raw_study = self.study_factory.create_from_fs(
-            study_path, study.id
-        )
-        patch_metadata = self.patch_service.get(study)
-        results: List[StudySimResultDTO] = []
-        if config.outputs is not None:
-            reference = (patch_metadata.outputs or PatchOutputs()).reference
-            for output in config.outputs:
-                file_metadata = raw_study.get(
-                    url=["output", output, "about-the-study", "parameters"]
-                )
-                settings = StudySimSettingsDTO(
-                    general=file_metadata["general"],
-                    input=file_metadata["input"],
-                    output=file_metadata["output"],
-                    optimization=file_metadata["optimization"],
-                    otherPreferences=file_metadata["other preferences"],
-                    advancedParameters=file_metadata["advanced parameters"],
-                    seedsMersenneTwister=file_metadata[
-                        "seeds - Mersenne Twister"
-                    ],
-                )
-                output_data: Simulation = config.outputs[output]
-                results.append(
-                    StudySimResultDTO(
-                        name=output_data.get_file(),
-                        type=output_data.mode,
-                        settings=settings,
-                        completionDate="",
-                        referenceStatus=(reference == output),
-                        synchronized=False,
-                        status="",
-                    )
-                )
-        return results
+        return Path(metadata.path)

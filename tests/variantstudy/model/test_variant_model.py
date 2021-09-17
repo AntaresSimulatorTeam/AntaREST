@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest.mock import Mock
 
 from sqlalchemy import create_engine
@@ -31,7 +30,7 @@ SADMIN = RequestParameters(
 )
 
 
-def test_service() -> VariantStudyService:
+def test_commands_service() -> VariantStudyService:
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
@@ -42,9 +41,10 @@ def test_service() -> VariantStudyService:
     repository = VariantStudyRepository()
     service = VariantStudyService(
         raw_study_service=Mock(),
+        cache=Mock(),
+        task_service=Mock(),
         command_factory=Mock(),
         study_factory=Mock(),
-        exporter_service=Mock(),
         config=Config(
             storage=StorageConfig(
                 workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
@@ -116,10 +116,9 @@ def test_service() -> VariantStudyService:
         assert commands[0].action == "My-action-5"
 
         # Generate
-        service.generator.generate_snapshot = Mock()
+        service._generate_snapshot = Mock()
         expected_result = GenerationResultInfoDTO(success=True, details=[])
-        service.generator.generate_snapshot.return_value = expected_result
+        service._generate_snapshot.return_value = expected_result
         results = service.generate(saved_id, False, SADMIN)
         assert results == expected_result
         assert study.snapshot.id == study.id
-        assert study.snapshot.path == str(Path(study.path) / "snapshot")

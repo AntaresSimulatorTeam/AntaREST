@@ -1,30 +1,20 @@
-from logging import Logger
+import logging
+import os
+import shutil
 from pathlib import Path
-from typing import Optional, cast
+from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyTypeUnsupported
-from antarest.login.model import GroupDTO
+from antarest.core.exceptions import StudyValidationError
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Study,
-    StudyMetadataDTO,
-    PatchStudy,
-    OwnerInfo,
-    PublicMode,
-    RawStudy,
-)
-from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+
+logger = logging.getLogger(__name__)
 
 
 def get_workspace_path(config: Config, workspace: str) -> Path:
@@ -67,76 +57,32 @@ def update_antares_info(metadata: Study, studytree: FileStudyTree) -> None:
     studytree.save(study_data_info, ["study"])
 
 
-# def get_study_path(metadata: Study) -> Path:
-#     """
-#     Get study path
-#     Args:
-#         metadata: study information
-#
-#     Returns: study path
-#
-#     """
-#     if hasattr(metadata, "path"):
-#         return Path(metadata.path)
-#     raise StudyTypeUnsupported(metadata.id, metadata.type)
+def fix_study_root(study_path: Path) -> None:
+    """
+    Fix possibly the wrong study root on zipped archive (when the study root is nested)
 
+    @param study_path the study initial root path
+    """
+    if not study_path.is_dir():
+        raise StudyValidationError("Not a directory")
 
-def get_study_information(
-    study: Study,
-    study_path: Optional[Path],
-    patch_service: PatchService,
-    study_factory: StudyFactory,
-    logger: Logger,
-    summary: bool,
-) -> StudyMetadataDTO:
-    file_settings = {}
-    file_metadata = {}
+    root_path = study_path
+    contents = os.listdir(root_path)
+    sub_root_path = None
+    while len(contents) == 1 and (root_path / contents[0]).is_dir():
+        new_root = root_path / contents[0]
+        if sub_root_path is None:
+            sub_root_path = root_path / str(uuid4())
+            shutil.move(str(new_root), str(sub_root_path))
+            new_root = sub_root_path
 
-    patch_metadata = patch_service.get(study).study or PatchStudy()
+        logger.debug(f"Searching study root in {new_root}")
+        root_path = new_root
+        if not new_root.is_dir():
+            raise StudyValidationError("Not a directory")
+        contents = os.listdir(new_root)
 
-    try:
-        if study_path:
-            config = FileStudyTreeConfig(
-                study_path=study_path,
-                path=study_path,
-                study_id="",
-                version=-1,
-            )
-            raw_study = study_factory.create_from_config(config)
-            file_metadata = raw_study.get(url=["study", "antares"])
-            file_settings = raw_study.get(
-                url=["settings", "generaldata", "general"]
-            )
-    except Exception as e:
-        logger.error(
-            "Failed to retrieve general settings for study %s",
-            study.id,
-            exc_info=e,
-        )
-
-    study_workspace = DEFAULT_WORKSPACE_NAME
-    if hasattr(study, "workspace"):
-        study_workspace = study.workspace
-
-    return StudyMetadataDTO(
-        id=study.id,
-        name=study.name,
-        version=int(study.version),
-        created=study.created_at.timestamp(),
-        updated=study.updated_at.timestamp(),
-        workspace=study_workspace,
-        managed=study_workspace == DEFAULT_WORKSPACE_NAME,
-        type=study.type,
-        archived=study.archived if study.archived is not None else False,
-        owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
-        if study.owner is not None
-        else OwnerInfo(name=file_metadata.get("author", "Unknown")),
-        groups=[
-            GroupDTO(id=group.id, name=group.name) for group in study.groups
-        ],
-        public_mode=study.public_mode or PublicMode.NONE,
-        horizon=file_settings.get("horizon", None),
-        scenario=patch_metadata.scenario,
-        status=patch_metadata.status,
-        doc=patch_metadata.doc,
-    )
+    if sub_root_path is not None:
+        for item in os.listdir(root_path):
+            shutil.move(str(root_path / item), str(study_path))
+        shutil.rmtree(sub_root_path)

@@ -2,7 +2,7 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
@@ -49,6 +49,7 @@ class StudyFactory:
         self,
         path: Path,
         study_id: str,
+        output_path: Optional[Path] = None,
         use_cache: bool = True,
     ) -> Tuple[FileStudyTreeConfig, FileStudyTree]:
         cache_id = f"{study_id}/{CacheConstants.STUDY_FACTORY}"
@@ -59,7 +60,7 @@ class StudyFactory:
                 config = FileStudyTreeConfig.parse_obj(from_cache)
                 return config, FileStudyTree(self.context, config)
         start_time = time.time()
-        config = ConfigPathBuilder.build(path, study_id)
+        config = ConfigPathBuilder.build(path, study_id, output_path)
         duration = "{:.3f}".format(time.time() - start_time)
         logger.info(f"Study {study_id} config built in {duration}s")
         result = config, FileStudyTree(self.context, config)

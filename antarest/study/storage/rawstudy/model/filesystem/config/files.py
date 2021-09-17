@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.io.reader import (
@@ -24,12 +24,15 @@ class ConfigPathBuilder:
     """
 
     @staticmethod
-    def build(study_path: Path, study_id: str) -> "FileStudyTreeConfig":
+    def build(
+        study_path: Path, study_id: str, output_path: Optional[Path] = None
+    ) -> "FileStudyTreeConfig":
         """
         Extract data from filesystem to build config study.
         Args:
             study_path: study_path with files inside.
             study_id: uuid of the study
+            output_path: output_path if not in study_path/output
 
         Returns: study config fill with data
 
@@ -40,12 +43,15 @@ class ConfigPathBuilder:
 
         return FileStudyTreeConfig(
             study_path=study_path,
+            output_path=output_path or study_path / "output",
             path=study_path,
             study_id=study_id,
             version=ConfigPathBuilder._parse_version(study_path),
             areas=ConfigPathBuilder._parse_areas(study_path),
             sets=ConfigPathBuilder._parse_sets(study_path),
-            outputs=ConfigPathBuilder._parse_outputs(study_path),
+            outputs=ConfigPathBuilder._parse_outputs(
+                output_path or study_path / "output"
+            ),
             bindings=ConfigPathBuilder._parse_bindings(study_path),
             store_new_set=sns,
             archive_input_series=asi,
@@ -116,11 +122,11 @@ class ConfigPathBuilder:
         }
 
     @staticmethod
-    def _parse_outputs(root: Path) -> Dict[str, Simulation]:
-        if not (root / "output").exists():
+    def _parse_outputs(output_path: Path) -> Dict[str, Simulation]:
+        if not output_path.exists():
             return {}
 
-        files = sorted((root / "output").iterdir())
+        files = sorted(output_path.iterdir())
         return {
             f.name: ConfigPathBuilder.parse_simulation(f)
             for i, f in enumerate(files)

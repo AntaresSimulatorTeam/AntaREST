@@ -1,10 +1,9 @@
-from typing import Optional, List
+from typing import List
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
-    CommandBlock,
 )
 
 

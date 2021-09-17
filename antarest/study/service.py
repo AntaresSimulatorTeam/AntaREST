@@ -54,8 +54,6 @@ from antarest.study.storage.permissions import (
     StudyPermissionType,
     assert_permission,
 )
-from antarest.study.storage.rawstudy.exporter_service import ExporterService
-from antarest.study.storage.rawstudy.importer_service import ImporterService
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -80,8 +78,6 @@ class StudyService:
         self,
         raw_study_service: RawStudyService,
         variant_study_service: VariantStudyService,
-        importer_service: ImporterService,
-        exporter_service: ExporterService,
         user_service: LoginService,
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
@@ -90,8 +86,6 @@ class StudyService:
     ):
         self.raw_study_service = raw_study_service
         self.variant_study_service = variant_study_service
-        self.importer_service = importer_service
-        self.exporter_service = exporter_service
         self.user_service = user_service
         self.repository = repository
         self.event_bus = event_bus
@@ -122,14 +116,10 @@ class StudyService:
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        if isinstance(study, RawStudy):
-            logger.info(
-                "study %s data asked by user %s", uuid, params.get_user_id()
-            )
-            self._assert_study_unarchived(study)
-            return self.raw_study_service.get(study, url, depth, formatted)
-
-        raise StudyTypeUnsupported(uuid, study.type)
+        self._assert_study_unarchived(study)
+        return self._get_study_storage_service(study).get(
+            study, url, depth, formatted
+        )
 
     def _get_study_metadatas(self, params: RequestParameters) -> List[Study]:
         return list(
@@ -212,8 +202,6 @@ class StudyService:
         )
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
 
         if metadata_patch.name:
             study.name = metadata_patch.name
@@ -221,17 +209,17 @@ class StudyService:
         if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
             self._assert_study_unarchived(study)
-            study_settings = self.raw_study_service.get(
+            study_settings = self._get_study_storage_service(study).get(
                 study, study_settings_url
             )
             study_settings["horizon"] = metadata_patch.horizon
-            self.raw_study_service.edit_study(
+            self._get_study_storage_service(study).edit_study(
                 study, study_settings_url, study_settings
             )
 
-        return self.raw_study_service.patch_update_study_metadata(
-            study, metadata_patch
-        )
+        return self._get_study_storage_service(
+            study
+        ).patch_update_study_metadata(study, metadata_patch)
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
         """
@@ -387,23 +375,12 @@ class StudyService:
         """
         src_study = self._get_study(src_uuid)
         assert_permission(params.user, src_study, StudyPermissionType.READ)
-        if not isinstance(src_study, RawStudy):
-            raise StudyTypeUnsupported(src_uuid, src_study.type)
         self._assert_study_unarchived(src_study)
 
-        dest_id = str(uuid4())
-        dest_study = RawStudy(
-            id=dest_id,
-            name=dest_study_name,
-            workspace=DEFAULT_WORKSPACE_NAME,
-            path=str(get_default_workspace_path(self.config) / dest_id),
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-            version=src_study.version,
-        )
-
-        study = self.raw_study_service.copy(
-            src_study, dest_study, with_outputs
+        study = self._get_study_storage_service(src_study).copy(
+            src_study,
+            dest_study_name,
+            with_outputs,
         )
         self._save_study(study, params.user, group_ids)
         self.event_bus.push(
@@ -437,11 +414,11 @@ class StudyService:
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
 
         logger.info("study %s exported by user %s", uuid, params.get_user_id())
-        return self.exporter_service.export_study(study, target, outputs)
+        return self._get_study_storage_service(study).export_study(
+            study, target, outputs
+        )
 
     def export_study_flat(
         self,
@@ -453,10 +430,10 @@ class StudyService:
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
 
-        return self.exporter_service.export_study_flat(study, dest, outputs)
+        return self._get_study_storage_service(study).export_study_flat(
+            study, dest, outputs
+        )
 
     def delete_study(self, uuid: str, params: RequestParameters) -> None:
         """
@@ -474,7 +451,8 @@ class StudyService:
         if self._assert_study_unarchived(study, False):
             self._get_study_storage_service(study).delete(study)
         else:
-            os.unlink(self.exporter_service.get_archive_path(study))
+            if isinstance(study, RawStudy):
+                os.unlink(self.raw_study_service.get_archive_path(study))
         study_info = study.to_json_summary()
         self.repository.delete(study.id)
         self.event_bus.push(Event(EventType.STUDY_DELETED, study_info))
@@ -533,9 +511,6 @@ class StudyService:
         study = self._get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(study_id, study.type)
-
         logger.info(
             "study %s output download ask by %s",
             study_id,
@@ -543,7 +518,9 @@ class StudyService:
         )
 
         matrix = StudyDownloader.build(
-            self.raw_study_service.get_raw(study), output_id, data
+            self._get_study_storage_service(study).get_raw(study),
+            output_id,
+            data,
         )
         return matrix
 
@@ -630,7 +607,7 @@ class StudyService:
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
         )
-        study = self.importer_service.import_study(study, stream)
+        study = self.raw_study_service.import_study(study, stream)
         status = self._analyse_study(study)
         self._save_study(
             study,
@@ -666,10 +643,10 @@ class StudyService:
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.RUN)
         self._assert_study_unarchived(study)
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
 
-        res = self.importer_service.import_output(study, output)
+        res = self._get_study_storage_service(study).import_output(
+            study, output
+        )
         logger.info(
             "output added to study %s by user %s", uuid, params.get_user_id()
         )
@@ -697,8 +674,9 @@ class StudyService:
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+
         if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
+            raise StudyTypeUnsupported(study.id, study.type)
 
         updated = self.raw_study_service.edit_study(study, url, new)
 
@@ -742,10 +720,11 @@ class StudyService:
             Event(EventType.STUDY_DELETED, study.to_json_summary())
         )
 
-        if isinstance(study, RawStudy) and new_owner:
-            self.raw_study_service.edit_study(
-                study, url="study/antares/author", new=new_owner.name
-            )
+        self._get_study_storage_service(study).edit_study(
+            study,
+            url="study/antares/author",
+            new=new_owner.name if new_owner is not None else None,
+        )
 
         logger.info(
             "user %s change study %s owner to %d",
@@ -851,7 +830,7 @@ class StudyService:
     def check_errors(self, uuid: str) -> List[str]:
         study = self._get_study(uuid)
         self._assert_study_unarchived(study)
-        return self.raw_study_service.check_errors(cast(RawStudy, study))
+        return self.raw_study_service.check_errors(study)
 
     def get_all_areas(
         self,
@@ -899,13 +878,15 @@ class StudyService:
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.DELETE)
 
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
         self._assert_study_unarchived(study)
 
-        self.exporter_service.archive(study)
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(study.id, study.type)
+
+        self.raw_study_service.archive(study)
         study.archived = True
         self.repository.save(study)
+        a = 7
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
@@ -920,12 +901,12 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.DELETE)
 
         if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(uuid, study.type)
+            raise StudyTypeUnsupported(study.id, study.type)
 
-        with open(self.exporter_service.get_archive_path(study), "rb") as fh:
-            self.importer_service.import_study(study, io.BytesIO(fh.read()))
+        with open(self.raw_study_service.get_archive_path(study), "rb") as fh:
+            self.raw_study_service.import_study(study, io.BytesIO(fh.read()))
         study.archived = False
-        os.unlink(self.exporter_service.get_archive_path(study))
+        os.unlink(self.raw_study_service.get_archive_path(study))
         self.repository.save(study)
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, study.to_json_summary())
@@ -933,7 +914,7 @@ class StudyService:
 
     def _save_study(
         self,
-        study: RawStudy,
+        study: Study,
         owner: Optional[JWTUser] = None,
         group_ids: List[str] = list(),
         content_status: StudyContentStatus = StudyContentStatus.VALID,
@@ -952,7 +933,8 @@ class StudyService:
         if not owner:
             raise UserHasNotPermissionError
 
-        study.content_status = content_status
+        if isinstance(study, RawStudy):
+            study.content_status = content_status
 
         if owner:
             study.owner = self.user_service.get_user(
@@ -997,7 +979,7 @@ class StudyService:
             raise UnsupportedOperationOnArchivedStudy(study.id)
         return not study.archived
 
-    def _analyse_study(self, metadata: RawStudy) -> StudyContentStatus:
+    def _analyse_study(self, metadata: Study) -> StudyContentStatus:
         """
         Analyze study integrity
         Args:
@@ -1009,6 +991,9 @@ class StudyService:
 
         """
         try:
+            if not isinstance(metadata, RawStudy):
+                raise StudyTypeUnsupported(metadata.id, metadata.type)
+
             if self.raw_study_service.check_errors(metadata):
                 return StudyContentStatus.WARNING
             else:
