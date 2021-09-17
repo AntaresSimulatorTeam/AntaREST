@@ -13,7 +13,11 @@ from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
 )
-from antarest.tools.lib import CLIVariantManager
+from antarest.tools.lib import (
+    CLIVariantManager,
+    COMMAND_FILE,
+    MATRIX_STORE_DIR,
+)
 
 test_dir: Path = Path(__file__).parent
 
@@ -73,9 +77,9 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
     client = TestClient(app, raise_server_exceptions=False)
 
     CLIVariantManager.extract_commands(study_path, output_dir)
-    commands = CLIVariantManager.parse_commands(output_dir / "commands.json")
+    commands = CLIVariantManager.parse_commands(output_dir / COMMAND_FILE)
     res, study_id = generate_study(
-        client, name, version, commands, output_dir / "matrices"
+        client, name, version, commands, output_dir / MATRIX_STORE_DIR
     )
     assert res is not None and res.success
     generated_study_path = (

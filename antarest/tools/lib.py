@@ -9,60 +9,14 @@ from typing import List, Optional, Union, Callable
 
 from requests import Session
 
-from antarest.core.custom_types import JSON
 from antarest.core.utils.utils import StopWatch
-from antarest.matrixstore.repository import MatrixContentRepository
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.inode import INode
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
-from antarest.study.storage.rawstudy.model.filesystem.utils import (
-    traverse_tree,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    CreateBindingConstraint,
-)
-from antarest.study.storage.variantstudy.model.command.create_cluster import (
-    CreateCluster,
-)
-from antarest.study.storage.variantstudy.model.command.create_link import (
-    CreateLink,
-)
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.replace_matrix import (
-    ReplaceMatrix,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
-from antarest.study.storage.variantstudy.model.command.utils import (
-    strip_matrix_protocol,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
 )
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig, Config, StorageConfig
-from antarest.matrixstore.model import MatrixDTO, MatrixContent, MatrixData
 from antarest.matrixstore.service import (
-    ISimpleMatrixService,
-    MatrixService,
     SimpleMatrixService,
 )
 from antarest.study.common.uri_resolver_service import UriResolverService
@@ -70,16 +24,13 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-    TimeStep,
-    BindingConstraintOperator,
-)
 from antarest.study.storage.variantstudy.variant_command_extractor import (
     VariantCommandsExtractor,
 )
 
 logger = logging.getLogger(__name__)
+COMMAND_FILE = "commands.json"
+MATRIX_STORE_DIR = "matrices"
 
 
 class CLIVariantManager:
@@ -100,7 +51,7 @@ class CLIVariantManager:
     def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
         if not commands_output_dir.exists():
             commands_output_dir.mkdir(parents=True)
-        matrices_dir = commands_output_dir / "matrices"
+        matrices_dir = commands_output_dir / MATRIX_STORE_DIR
         matrices_dir.mkdir()
 
         matrix_service = SimpleMatrixService(matrices_dir)
@@ -118,10 +69,37 @@ class CLIVariantManager:
         extractor = VariantCommandsExtractor(local_matrix_service)
         command_list = extractor.extract(FileStudy(study_config, study_tree))
 
-        with open(commands_output_dir / "commands.json", "w") as fh:
+        with open(commands_output_dir / COMMAND_FILE, "w") as fh:
             json.dump(
                 [command.dict(exclude={"id"}) for command in command_list], fh
             )
+
+    @staticmethod
+    def generate_diff(base: Path, variant: Path, output_dir: Path) -> None:
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True)
+        matrices_dir = output_dir / MATRIX_STORE_DIR
+        matrices_dir.mkdir()
+
+        base_command_file = base / COMMAND_FILE
+        if not base_command_file.exists():
+            raise ValueError(f"Missing {COMMAND_FILE}")
+        variant_command_file = variant / COMMAND_FILE
+        if not variant_command_file.exists():
+            raise ValueError(f"Missing {COMMAND_FILE}")
+
+        local_matrix_service = SimpleMatrixService(matrices_dir)
+        extractor = VariantCommandsExtractor(local_matrix_service)
+        diff_commands = extractor.diff(
+            CLIVariantManager.parse_commands(base),
+            CLIVariantManager.parse_commands(variant),
+        )
+
+        with open(output_dir / COMMAND_FILE, "w") as fh:
+            json.dump(
+                [command.dict(exclude={"id"}) for command in diff_commands], fh
+            )
+        # TODO find matrices used in commands and copy them to new matrix dir
 
     @staticmethod
     def parse_commands(file: Path) -> List[CommandDTO]:
@@ -137,12 +115,12 @@ class CLIVariantManager:
     def apply_commands_from_dir(
         self, study_id: str, command_dir: Path
     ) -> GenerationResultInfoDTO:
-        matrix_dir: Optional[Path] = command_dir / "matrices"
-        command_file = command_dir / "commands.json"
+        matrix_dir: Optional[Path] = command_dir / MATRIX_STORE_DIR
+        command_file = command_dir / COMMAND_FILE
         if matrix_dir and not matrix_dir.exists():
             matrix_dir = None
         if not command_file.exists():
-            raise ValueError("Missing commands.json")
+            raise ValueError(f"Missing {COMMAND_FILE}")
 
         commands = CLIVariantManager.parse_commands(command_file)
         return self.apply_commands(study_id, commands, matrix_dir)

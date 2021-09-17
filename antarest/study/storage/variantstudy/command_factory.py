@@ -1,7 +1,7 @@
 from typing import List
 
 from antarest.core.custom_types import JSON
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -22,7 +22,6 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import (
 )
 from antarest.study.storage.variantstudy.model.command.create_district import (
     CreateDistrict,
-    DistrictBaseFilter,
 )
 from antarest.study.storage.variantstudy.model.command.create_link import (
     CreateLink,
@@ -46,23 +45,8 @@ from antarest.study.storage.variantstudy.model.command.remove_link import (
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
 )
-from antarest.study.storage.variantstudy.model.command.update_area import (
-    UpdateArea,
-)
-from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
-    UpdateBindingConstraint,
-)
-from antarest.study.storage.variantstudy.model.command.update_cluster import (
-    UpdateCluster,
-)
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
-)
-from antarest.study.storage.variantstudy.model.command.update_district import (
-    UpdateDistrict,
-)
-from antarest.study.storage.variantstudy.model.command.update_link import (
-    UpdateLink,
 )
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
@@ -77,7 +61,7 @@ class CommandFactory:
     def __init__(
         self,
         generator_matrix_constants: GeneratorMatrixConstants,
-        matrix_service: MatrixService,
+        matrix_service: ISimpleMatrixService,
     ):
         self.command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
@@ -88,12 +72,6 @@ class CommandFactory:
         assert isinstance(args, dict)
         if action == CommandName.CREATE_AREA.value:
             return CreateArea(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.UPDATE_AREA.value:
-            return UpdateArea(
                 **args,
                 command_context=self.command_context,
             )
@@ -110,12 +88,6 @@ class CommandFactory:
                 command_context=self.command_context,
             )
 
-        elif action == CommandName.UPDATE_DISTRICT.value:
-            return UpdateDistrict(
-                **args,
-                command_context=self.command_context,
-            )
-
         elif action == CommandName.REMOVE_DISTRICT.value:
             return RemoveDistrict(
                 **args,
@@ -124,12 +96,6 @@ class CommandFactory:
 
         elif action == CommandName.CREATE_LINK.value:
             return CreateLink(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.UPDATE_LINK.value:
-            return UpdateLink(
                 **args,
                 command_context=self.command_context,
             )
@@ -146,12 +112,6 @@ class CommandFactory:
                 command_context=self.command_context,
             )
 
-        elif action == CommandName.UPDATE_BINDING_CONSTRAINT.value:
-            return UpdateBindingConstraint(
-                **args,
-                command_context=self.command_context,
-            )
-
         elif action == CommandName.REMOVE_BINDING_CONSTRAINT.value:
             return RemoveBindingConstraint(
                 **args,
@@ -160,12 +120,6 @@ class CommandFactory:
 
         elif action == CommandName.CREATE_CLUSTER.value:
             return CreateCluster(
-                **args,
-                command_context=self.command_context,
-            )
-
-        elif action == CommandName.UPDATE_CLUSTER.value:
-            return UpdateCluster(
                 **args,
                 command_context=self.command_context,
             )

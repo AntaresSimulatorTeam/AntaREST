@@ -12,6 +12,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import (
     TimeStep,
     BindingConstraintOperator,
@@ -432,6 +433,15 @@ class VariantCommandsExtractor:
                 )
 
         return commands
+
+    def diff(
+        self, base: List[CommandDTO], variant: List[CommandDTO]
+    ) -> List[CommandDTO]:
+        command_factory = CommandFactory(
+            generator_matrix_constants=self.generator_matrix_constants,
+            matrix_service=self.matrix_service,
+        )
+        raise NotImplementedError()
 
     def _generate_update_config(
         self,

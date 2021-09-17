@@ -78,5 +78,32 @@ def generate_script(input: str, output: str) -> None:
     CLIVariantManager.extract_commands(Path(input), Path(output))
 
 
+@commands.command()
+@click.option(
+    "--base",
+    nargs=1,
+    required=True,
+    type=click.Path(exists=True),
+    help="Study fragment path",
+)
+@click.option(
+    "--variant",
+    nargs=1,
+    required=True,
+    type=click.Path(exists=True),
+    help="Study fragment path",
+)
+@click.option(
+    "--output",
+    "-o",
+    nargs=1,
+    required=True,
+    type=click.Path(exists=False),
+    help="Script output path",
+)
+def generate_script_diff(base: str, variant: str, output: str) -> None:
+    CLIVariantManager.generate_diff(Path(base), Path(variant), Path(output))
+
+
 if __name__ == "__main__":
     commands()
