@@ -37,15 +37,6 @@ class CreateBindingConstraint(ICommand):
             **data,
         )
 
-    @validator("name")
-    def validate_name(cls, value: str) -> str:
-        valid_name = transform_name_to_id(value, lower=False)
-        if valid_name != value:
-            raise ValueError(
-                "Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters"
-            )
-        return value
-
     @validator("values", always=True)
     def validate_series(
         cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
