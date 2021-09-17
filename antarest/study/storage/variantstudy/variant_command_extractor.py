@@ -317,7 +317,7 @@ class VariantCommandsExtractor:
                     "thermal",
                     "prepro",
                     area_id,
-                    thermal_name,
+                    thermal_id,
                     "data",
                 ],
                 strip_matrix_protocol(
@@ -333,7 +333,7 @@ class VariantCommandsExtractor:
                     "thermal",
                     "prepro",
                     area_id,
-                    thermal_name,
+                    thermal_id,
                     "modulation",
                 ],
                 strip_matrix_protocol(
@@ -349,7 +349,7 @@ class VariantCommandsExtractor:
                     "thermal",
                     "series",
                     area_id,
-                    thermal_name,
+                    thermal_id,
                     "series",
                 ],
                 strip_matrix_protocol(
