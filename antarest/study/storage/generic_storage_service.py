@@ -1,11 +1,15 @@
+import glob
 import logging
 import os
 import shutil
+import tempfile
+import time
 from abc import abstractmethod
 from datetime import datetime
 from pathlib import Path
 from typing import List, Union, Optional, IO
 from uuid import uuid4
+from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
@@ -329,6 +333,71 @@ class GenericStorageService(IStudyStorageService[T]):
             shutil.rmtree(path_output)
 
         return output_name
+
+    def export_study(
+        self, metadata: T, target: Path, outputs: bool = True
+    ) -> Path:
+        """
+        Export and compresse study inside zip
+        Args:
+            metadata: study
+            target: path of the file to export to
+            outputs: ask to integrated output folder inside exportation
+
+        Returns: zip file with study files compressed inside
+
+        """
+        path_study = Path(metadata.path)
+        return self.export_file(path_study, target, outputs)
+
+    def export_study_flat(
+        self, metadata: T, dest: Path, outputs: bool = True
+    ) -> None:
+        path_study = Path(metadata.path)
+        self.export_flat(path_study, dest, outputs)
+
+    def export_file(
+        self, path_study: Path, export_path: Path, outputs: bool = True
+    ) -> Path:
+        with tempfile.TemporaryDirectory(
+            dir=self.config.storage.tmp_dir
+        ) as tmpdir:
+            tmp_study_path = Path(tmpdir) / "tmp_copy"
+            self.export_flat(path_study, tmp_study_path, outputs)
+            start_time = time.time()
+            with ZipFile(export_path, "w", ZIP_DEFLATED) as zipf:
+                current_dir = os.getcwd()
+                os.chdir(tmp_study_path)
+
+                for path in glob.glob("**", recursive=True):
+                    if outputs or path.split(os.sep)[0] != "output":
+                        zipf.write(path, path)
+
+                zipf.close()
+
+                os.chdir(current_dir)
+            duration = "{:.3f}".format(time.time() - start_time)
+            logger.info(
+                f"Study {path_study} exported (zipped mode) in {duration}s"
+            )
+        return export_path
+
+    def export_flat(
+        self,
+        path_study: Path,
+        dest: Path,
+        outputs: bool = False,
+    ) -> None:
+
+        raise NotImplementedError()
+
+    def archive(self, study: T) -> None:
+        archive_path = self.get_archive_path(study)
+        self.export_file(study.path, archive_path)
+        shutil.rmtree(study.path)
+
+    def get_archive_path(self, study: T) -> Path:
+        return Path(self.config.storage.archive_dir / f"{study.id}.zip")
 
     @abstractmethod
     def create(self, metadata: T) -> T:

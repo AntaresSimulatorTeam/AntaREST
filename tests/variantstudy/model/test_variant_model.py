@@ -45,7 +45,6 @@ def test_commands_service() -> VariantStudyService:
         task_service=Mock(),
         command_factory=Mock(),
         study_factory=Mock(),
-        exporter_service=Mock(),
         config=Config(
             storage=StorageConfig(
                 workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}

@@ -1,5 +1,6 @@
 import logging
 import shutil
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, IO
@@ -252,6 +253,31 @@ class RawStudyService(GenericStorageService[RawStudy]):
 
         metadata.path = str(path_study)
         return metadata
+
+    def export_flat(
+        self,
+        path_study: Path,
+        dest: Path,
+        outputs: bool = False,
+    ) -> None:
+        start_time = time.time()
+        ignore_patterns = (
+            (
+                lambda directory, contents: ["output"]
+                if str(directory) == str(path_study)
+                else []
+            )
+            if not outputs
+            else None
+        )
+        shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
+        stop_time = time.time()
+        duration = "{:.3f}".format(stop_time - start_time)
+        logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
+        _, study = self.study_factory.create_from_fs(dest, "")
+        study.denormalize()
+        duration = "{:.3f}".format(time.time() - stop_time)
+        logger.info(f"Study {path_study} denormalized in {duration}s")
 
     def set_reference_output(
         self, study: RawStudy, output_id: str, status: bool

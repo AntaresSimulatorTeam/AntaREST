@@ -227,3 +227,59 @@ class IStudyStorageService(ABC, Generic[T]):
             raise StudyNotFoundError(
                 f"Study with the uuid {metadata.id} does not exist."
             )
+
+    @abstractmethod
+    def export_study(
+        self, metadata: T, target: Path, outputs: bool = True
+    ) -> Path:
+        """
+        Export and compresse study inside zip
+        Args:
+            metadata: study
+            target: path of the file to export to
+            outputs: ask to integrated output folder inside exportation
+
+        Returns: zip file with study files compressed inside
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def export_study_flat(
+        self, metadata: T, dest: Path, outputs: bool = True
+    ) -> None:
+        """
+        Export study to destination
+
+        Args:
+            metadata: study
+            dest: destination path
+            outputs: keep outputs or not
+        Returns: None
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def archive(self, study: T) -> None:
+        """
+        Archive study
+
+        Args:
+            study: study
+        Returns: None
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_archive_path(self, study: T) -> Path:
+        """
+        Get archive path
+
+        Args:
+            study: study
+        Returns: Path
+
+        """
+        raise NotImplementedError()

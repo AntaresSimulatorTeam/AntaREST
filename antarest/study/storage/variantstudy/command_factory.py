@@ -5,9 +5,6 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
-from antarest.study.storage.variantstudy.model.model import (
-    CommandDTO,
-)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
@@ -50,6 +47,9 @@ from antarest.study.storage.variantstudy.model.command.update_config import (
 )
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
+)
+from antarest.study.storage.variantstudy.model.model import (
+    CommandDTO,
 )
 
 

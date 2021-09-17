@@ -2,20 +2,18 @@ import shutil
 from pathlib import Path
 from typing import List
 
-from antarest.study.model import Study
-from antarest.study.storage.rawstudy.exporter_service import ExporterService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
 from antarest.study.storage.utils import update_antares_info
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.model import (
-    GenerationResultInfoDTO,
-)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
+)
+from antarest.study.storage.variantstudy.model.model import (
+    GenerationResultInfoDTO,
 )
 
 SNAPSHOT_RELATIVE_PATH = "snapshot"
@@ -31,23 +29,16 @@ class VariantSnapshotGenerator:
         self,
         command_factory: CommandFactory,
         study_factory: StudyFactory,
-        exporter_service: ExporterService,
     ):
         self.command_factory = command_factory
         self.study_factory = study_factory
-        self.exporter_service = exporter_service
 
     def generate_snapshot(
-        self, variant_study: VariantStudy, src_path: Path
+        self, variant_study: VariantStudy
     ) -> GenerationResultInfoDTO:
 
         # Copy parent study to dest
         dest_path = Path(variant_study.path) / SNAPSHOT_RELATIVE_PATH
-
-        if dest_path.is_dir():
-            shutil.rmtree(dest_path)
-
-        self.exporter_service.export_flat(src_path, dest_path)
 
         # Build file study
         study_config, study_tree = self.study_factory.create_from_fs(

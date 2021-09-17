@@ -1,9 +1,10 @@
 import json
 import logging
 import shutil
+import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Union, Optional, cast
+from typing import List, Optional, cast
 from uuid import uuid4
 
 from antarest.core.config import Config
@@ -21,7 +22,6 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskResult
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
-from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import (
     Study,
     StudyMetadataDTO,
@@ -36,7 +36,6 @@ from antarest.study.storage.permissions import (
     assert_permission,
     StudyPermissionType,
 )
-from antarest.study.storage.rawstudy.exporter_service import ExporterService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
@@ -49,14 +48,14 @@ from antarest.study.storage.utils import (
     update_antares_info,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.model import (
-    CommandDTO,
-    GenerationResultInfoDTO,
-)
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
     VariantStudySnapshot,
+)
+from antarest.study.storage.variantstudy.model.model import (
+    CommandDTO,
+    GenerationResultInfoDTO,
 )
 from antarest.study.storage.variantstudy.repository import (
     VariantStudyRepository,
@@ -78,7 +77,6 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
         command_factory: CommandFactory,
         study_factory: StudyFactory,
         patch_service: PatchService,
-        exporter_service: ExporterService,
         repository: VariantStudyRepository,
         event_bus: IEventBus,
         config: Config,
@@ -90,7 +88,7 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
             cache=cache,
         )
         self.generator = VariantSnapshotGenerator(
-            command_factory, study_factory, exporter_service
+            command_factory, study_factory
         )
         self.task_service = task_service
         self.raw_study_service = raw_study_service
@@ -477,12 +475,25 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
 
         # Remove from cache
         self.remove_from_cache(variant_study.id)
-        parent_path = parent_study.path
+
+        # Remove snapshot directory if it exist
+        dest_path = self.get_study_path(variant_study)
+
+        if dest_path.is_dir():
+            shutil.rmtree(dest_path)
+
         if isinstance(parent_study, VariantStudy):
             self._safe_generation(parent_study)
-            parent_path = self.get_study_path(parent_study)
+            self.export_study_flat(
+                metadata=parent_study, dest=dest_path, outputs=False
+            )
+        else:
+            self.raw_study_service.export_study_flat(
+                metadata=parent_study, dest=dest_path, outputs=False
+            )
 
-        results = self.generator.generate_snapshot(variant_study, parent_path)
+        results = self.generator.generate_snapshot(variant_study)
+
         if results.success:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
@@ -679,3 +690,29 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
 
         """
         return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
+
+    def export_flat(
+        self,
+        path_study: Path,
+        dest: Path,
+        outputs: bool = False,
+    ) -> None:
+        start_time = time.time()
+
+        snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
+        output_src_path = path_study / "output"
+        output_dest_path = dest / "output"
+        shutil.copytree(src=snapshot_path, dst=dest)
+
+        if outputs and output_src_path.is_dir():
+            if output_dest_path.is_dir():
+                shutil.rmtree(output_dest_path)
+            shutil.copytree(src=output_src_path, dst=output_dest_path)
+
+        stop_time = time.time()
+        duration = "{:.3f}".format(stop_time - start_time)
+        logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
+        _, study = self.study_factory.create_from_fs(dest, "")
+        study.denormalize()
+        duration = "{:.3f}".format(time.time() - stop_time)
+        logger.info(f"Study {path_study} denormalized in {duration}s")

@@ -8,7 +8,6 @@ from sqlalchemy.orm import relationship  # type: ignore
 from antarest.core.persistence import Base
 from antarest.study.model import (
     Study,
-    DEFAULT_WORKSPACE_NAME,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
