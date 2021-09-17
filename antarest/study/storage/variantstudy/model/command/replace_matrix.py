@@ -84,5 +84,15 @@ class ReplaceMatrix(ICommand):
             return simple_match
         return simple_match and self.matrix == other.matrix
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
-        return None
+    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+        for command in reversed(history):
+            if (
+                isinstance(command, ReplaceMatrix)
+                and command.target == self.target
+            ):
+                return command
+        return ReplaceMatrix(
+            target=self.target,
+            matrix=base.tree.get(self.target.split("/")),
+            command_context=self.command_context,
+        )

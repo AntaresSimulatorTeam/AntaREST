@@ -44,3 +44,4 @@ class CommandName(Enum):
     REMOVE_CLUSTER = "remove_cluster"
     REPLACE_MATRIX = "replace_matrix"
     UPDATE_CONFIG = "update_config"
+    COMMAND_GROUP = "command_group"

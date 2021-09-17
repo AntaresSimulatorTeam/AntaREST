@@ -1,15 +1,25 @@
 from typing import Any, List, Optional
 
 from antarest.core.custom_types import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.command_group import (
+    CommandGroup,
+)
+from antarest.study.storage.variantstudy.model.command.create_area import (
+    CreateArea,
+)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.variant_command_extractor import (
+    VariantCommandsExtractor,
+)
 
 
 class RemoveArea(ICommand):
@@ -156,8 +166,17 @@ class RemoveArea(ICommand):
             return False
         return self.id == other.id
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
-        for command in history:
-            if isinstance(command, CreateArea) and transform_name_to_id(command.area_name) == self.id:
+    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+        for command in reversed(history):
+            if (
+                isinstance(command, CreateArea)
+                and transform_name_to_id(command.area_name) == self.id
+            ):
                 return command
-        return None
+        area_commands, links_commands = VariantCommandsExtractor(
+            self.command_context.matrix_service
+        ).extract_area(base, self.id)
+        return CommandGroup(
+            command_list=area_commands + links_commands,
+            command_context=self.command_context,
+        )

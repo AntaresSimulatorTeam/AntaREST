@@ -7,6 +7,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import (
+    RemoveBindingConstraint,
+)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -140,5 +143,8 @@ class CreateBindingConstraint(ICommand):
             and self.comments == other.comments
         )
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
-        return None
+    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+        bind_id = transform_name_to_id(self.name)
+        return RemoveBindingConstraint(
+            id=bind_id, command_context=self.command_context
+        )

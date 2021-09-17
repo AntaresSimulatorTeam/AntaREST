@@ -57,7 +57,7 @@ class ICommand(ABC, BaseModel):
         raise NotImplementedError()
 
     @abstractmethod
-    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
         """
         Returns the reverse command using history
 

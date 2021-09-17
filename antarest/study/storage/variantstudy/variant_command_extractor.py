@@ -33,6 +33,7 @@ from antarest.study.storage.variantstudy.model.command.create_district import (
 from antarest.study.storage.variantstudy.model.command.create_link import (
     CreateLink,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
 )
@@ -68,7 +69,7 @@ class VariantCommandsExtractor:
         stopwatch = StopWatch()
         study_tree = study.tree
         study_config = study.config
-        study_commands: List[CommandDTO] = []
+        study_commands: List[ICommand] = []
 
         study_commands.append(
             self._generate_update_config(
@@ -94,9 +95,9 @@ class VariantCommandsExtractor:
             lambda x: logger.info(f"General command extraction done in {x}ms")
         )
 
-        all_links_commands: List[CommandDTO] = []
+        all_links_commands: List[ICommand] = []
         for area_id in study_config.areas:
-            area_commands, links_commands = self._extract_area(study, area_id)
+            area_commands, links_commands = self.extract_area(study, area_id)
             study_commands += area_commands
             all_links_commands += links_commands
         study_commands += all_links_commands
@@ -118,14 +119,14 @@ class VariantCommandsExtractor:
             )
         )
         for set_id in study_config.sets:
-            study_commands += self._extract_district(study, set_id)
+            study_commands += self.extract_district(study, set_id)
 
         # binding constraints
         binding_config = study_tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]
         )
         for binding_id, binding_data in binding_config.items():
-            study_commands += self._extract_binding_constraint(
+            study_commands += self.extract_binding_constraint(
                 study, binding_id, binding_data
             )
 
@@ -136,14 +137,14 @@ class VariantCommandsExtractor:
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Command extraction done in {x}ms"), True
         )
-        return study_commands
+        return [command.to_dto() for command in study_commands]
 
-    def _extract_area(
+    def extract_area(
         self, study: FileStudy, area_id: str
-    ) -> Tuple[List[CommandDTO], List[CommandDTO]]:
+    ) -> Tuple[List[ICommand], List[ICommand]]:
         stopwatch = StopWatch()
-        study_commands: List[CommandDTO] = []
-        links_commands: List[CommandDTO] = []
+        study_commands: List[ICommand] = []
+        links_commands: List[ICommand] = []
         study_tree = study.tree
         study_config = study.config
         area = study_config.areas[area_id]
@@ -155,21 +156,21 @@ class VariantCommandsExtractor:
             area_name=area.name,
             metadata={},
             command_context=self.command_context,
-        ).to_dto()
+        )
         study_commands.append(area_command)
         study_commands.append(
             UpdateConfig(
                 target=f"input/areas/{area_id}/optimization",
                 data=optimization_data,
                 command_context=self.command_context,
-            ).to_dto()
+            )
         )
         study_commands.append(
             UpdateConfig(
                 target=f"input/areas/{area_id}/ui",
                 data=ui_data,
                 command_context=self.command_context,
-            ).to_dto()
+            )
         )
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Area command extraction done in {x}ms")
@@ -177,7 +178,7 @@ class VariantCommandsExtractor:
 
         links_data = study_tree.get(["input", "links", area_id, "properties"])
         for link in area.links:
-            links_commands += self._extract_link(
+            links_commands += self.extract_link(
                 study, area_id, link, links_data
             )
 
@@ -185,9 +186,7 @@ class VariantCommandsExtractor:
             lambda x: logger.info(f"Link command extraction done in {x}ms")
         )
         for thermal in area.thermals:
-            study_commands += self._extract_cluster(
-                study, area_id, thermal.name
-            )
+            study_commands += self.extract_cluster(study, area_id, thermal.id)
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Thermal command extraction done in {x}ms")
         )
@@ -235,27 +234,27 @@ class VariantCommandsExtractor:
             lambda x: logger.info(f"Misc command extraction done in {x}ms")
         )
         # hydro
-        study_commands += self._extract_hydro(study, area_id)
+        study_commands += self.extract_hydro(study, area_id)
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Hydro command extraction done in {x}ms")
         )
         return study_commands, links_commands
 
-    def _extract_link(
+    def extract_link(
         self,
         study: FileStudy,
         area1: str,
         area2: str,
         links_data: Optional[JSON] = None,
-    ) -> List[CommandDTO]:
-        commands: List[CommandDTO] = []
+    ) -> List[ICommand]:
+        commands: List[ICommand] = []
         study_tree = study.tree
         link_command = CreateLink(
             area1=area1,
             area2=area2,
             parameters={},
             command_context=self.command_context,
-        ).to_dto()
+        )
         link_data = (
             links_data.get(area2)
             if links_data is not None
@@ -265,7 +264,7 @@ class VariantCommandsExtractor:
             target=f"input/links/{area1}/properties/{area2}",
             data=link_data,
             command_context=self.command_context,
-        ).to_dto()
+        )
         commands.append(link_command)
         commands.append(link_config_command)
         commands.append(
@@ -277,18 +276,24 @@ class VariantCommandsExtractor:
         )
         return commands
 
-    def _extract_cluster(
-        self, study: FileStudy, area_id: str, thermal_name: str
-    ) -> List[CommandDTO]:
-        study_commands: List[CommandDTO] = []
+    def extract_cluster(
+        self, study: FileStudy, area_id: str, thermal_id: str
+    ) -> List[ICommand]:
+        study_commands: List[ICommand] = []
         study_tree = study.tree
+        thermal_name = thermal_id
+        for thermal in study.config.areas[area_id].thermals:
+            if thermal.id == thermal_id:
+                thermal_name = thermal.name
+                break
+        assert thermal_name is not None
         study_commands.append(
             CreateCluster(
                 area_id=area_id,
                 cluster_name=thermal_name,
                 parameters={},
                 command_context=self.command_context,
-            ).to_dto()
+            )
         )
         study_commands.append(
             self._generate_update_config(
@@ -353,9 +358,7 @@ class VariantCommandsExtractor:
         )
         return study_commands
 
-    def _extract_hydro(
-        self, study: FileStudy, area_id: str
-    ) -> List[CommandDTO]:
+    def extract_hydro(self, study: FileStudy, area_id: str) -> List[ICommand]:
         study_tree = study.tree
         commands = [
             self._generate_replace_matrix(
@@ -451,10 +454,10 @@ class VariantCommandsExtractor:
 
         return commands
 
-    def _extract_district(
+    def extract_district(
         self, study: FileStudy, district_id: str
-    ) -> List[CommandDTO]:
-        study_commands: List[CommandDTO] = []
+    ) -> List[ICommand]:
+        study_commands: List[ICommand] = []
         study_config = study.config
         study_tree = study.tree
         district_config = study_config.sets[district_id]
@@ -471,17 +474,18 @@ class VariantCommandsExtractor:
                 filter_items=district_config.areas or [],
                 output=district_config.output,
                 comments=district_fetched_config.get("comments", None),
-            ).to_dto()
+                command_context=self.command_context,
+            )
         )
         return study_commands
 
-    def _extract_binding_constraint(
+    def extract_binding_constraint(
         self,
         study: FileStudy,
         binding_id: str,
         bindings_data: Optional[JSON] = None,
-    ) -> List[CommandDTO]:
-        study_commands: List[CommandDTO] = []
+    ) -> List[ICommand]:
+        study_commands: List[ICommand] = []
         study_tree = study.tree
         binding = bindings_data
         if not bindings_data:
@@ -503,7 +507,7 @@ class VariantCommandsExtractor:
             },
             comments=binding.get("comments", None),
             command_context=self.command_context,
-        ).to_dto()
+        )
         study_commands.append(binding_constraint_command)
         study_commands.append(
             self._generate_replace_matrix(
@@ -526,20 +530,20 @@ class VariantCommandsExtractor:
         self,
         study_tree: FileStudyTree,
         url: List[str],
-    ) -> CommandDTO:
+    ) -> ICommand:
         data = study_tree.get(url)
         return UpdateConfig(
             target="/".join(url),
             data=data,
             command_context=self.command_context,
-        ).to_dto()
+        )
 
     def _generate_replace_matrix(
         self,
         study_tree: FileStudyTree,
         url: List[str],
         default_value: Optional[str] = None,
-    ) -> CommandDTO:
+    ) -> ICommand:
         data = study_tree.get(url)
         matrix = VariantCommandsExtractor.get_matrix(
             data, default_value is None
@@ -548,7 +552,7 @@ class VariantCommandsExtractor:
             target="/".join(url),
             matrix=matrix or default_value,
             command_context=self.command_context,
-        ).to_dto()
+        )
 
     @staticmethod
     def get_matrix(

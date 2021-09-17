@@ -51,5 +51,15 @@ class UpdateConfig(ICommand):
             return simple_match
         return simple_match and self.data == other.data
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
-        return None
+    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+        for command in reversed(history):
+            if (
+                isinstance(command, UpdateConfig)
+                and command.target == self.target
+            ):
+                return command
+        return UpdateConfig(
+            target=self.target,
+            data=base.tree.get(self.target.split("/")),
+            command_context=self.command_context,
+        )

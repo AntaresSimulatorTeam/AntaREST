@@ -8,6 +8,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Set,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.remove_district import (
+    RemoveDistrict,
+)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -103,5 +106,8 @@ class CreateDistrict(ICommand):
             and self.comments == other.comments
         )
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
-        return None
+    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+        district_id = transform_name_to_id(self.name)
+        return RemoveDistrict(
+            id=district_id, command_context=self.command_context
+        )

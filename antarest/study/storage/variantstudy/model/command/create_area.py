@@ -12,7 +12,9 @@ from antarest.study.storage.variantstudy.business.default_values import (
     NodalOptimization,
     FilteringOptions,
 )
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
+from antarest.study.storage.variantstudy.model.command.remove_area import (
+    RemoveArea,
+)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -260,8 +262,6 @@ class CreateArea(ICommand):
             return simple_match
         return simple_match and self.metadata == other.metadata
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
         area_id = transform_name_to_id(self.area_name)
-        return RemoveArea(
-            id=area_id
-        )
+        return RemoveArea(id=area_id, command_context=self.command_context)

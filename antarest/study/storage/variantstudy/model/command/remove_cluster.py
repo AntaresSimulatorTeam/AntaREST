@@ -1,12 +1,24 @@
 from typing import Any, List, Optional
 
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.command_group import (
+    CommandGroup,
+)
+from antarest.study.storage.variantstudy.model.command.create_cluster import (
+    CreateCluster,
+)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.variant_command_extractor import (
+    VariantCommandsExtractor,
+)
 
 
 class RemoveCluster(ICommand):
@@ -89,7 +101,23 @@ class RemoveCluster(ICommand):
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveCluster):
             return False
-        return self.cluster_id == other.cluster_id
+        return (
+            self.cluster_id == other.cluster_id
+            and self.area_id == other.area_id
+        )
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
-        return None
+    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+        for command in reversed(history):
+            if (
+                isinstance(command, CreateCluster)
+                and transform_name_to_id(command.cluster_name)
+                == self.cluster_id
+                and command.area_id == self.area_id
+            ):
+                return command
+        return CommandGroup(
+            command_list=VariantCommandsExtractor(
+                self.command_context.matrix_service
+            ).extract_cluster(base, self.area_id, self.cluster_id),
+            command_context=self.command_context,
+        )

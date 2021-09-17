@@ -10,6 +10,9 @@ from antarest.study.storage.variantstudy.business.default_values import (
     LinkProperties,
     FilteringOptions,
 )
+from antarest.study.storage.variantstudy.model.command.remove_link import (
+    RemoveLink,
+)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -186,5 +189,9 @@ class CreateLink(ICommand):
             and self.series == other.series
         )
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
-        return None
+    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+        return RemoveLink(
+            area1=self.area1,
+            area2=self.area2,
+            command_context=self.command_context,
+        )
