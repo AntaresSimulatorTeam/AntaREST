@@ -85,9 +85,14 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
     for root, dirs, files in os.walk(study_path):
         rel_path = root[len(str(study_path)) + 1 :]
         for item in files:
-            if item in ["comments.txt", "study.antares", "Desktop.ini"]:
+            if item in [
+                "comments.txt",
+                "study.antares",
+                "Desktop.ini",
+                "study.ico",
+            ]:
                 continue
             print(generated_study_path / rel_path / item)
-            assert (study_path / rel_path / item).read_bytes() == (
+            assert (study_path / rel_path / item).read_text() == (
                 generated_study_path / rel_path / item
-            ).read_bytes()
+            ).read_text()
