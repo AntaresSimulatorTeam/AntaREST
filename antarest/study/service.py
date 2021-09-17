@@ -451,9 +451,8 @@ class StudyService:
         if self._assert_study_unarchived(study, False):
             self._get_study_storage_service(study).delete(study)
         else:
-            os.unlink(
-                self._get_study_storage_service(study).get_archive_path(study)
-            )
+            if isinstance(study, RawStudy):
+                os.unlink(self.raw_study_service.get_archive_path(study))
         study_info = study.to_json_summary()
         self.repository.delete(study.id)
         self.event_bus.push(Event(EventType.STUDY_DELETED, study_info))
@@ -676,11 +675,12 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        updated = self._get_study_storage_service(study).edit_study(
-            study, url, new
-        )
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(study.id, study.type)
 
-        self._get_study_storage_service(study).edit_study(
+        updated = self.raw_study_service.edit_study(study, url, new)
+
+        self.raw_study_service.edit_study(
             study, url="study/antares/lastsave", new=int(time())
         )
 
@@ -830,7 +830,7 @@ class StudyService:
     def check_errors(self, uuid: str) -> List[str]:
         study = self._get_study(uuid)
         self._assert_study_unarchived(study)
-        return self._get_study_storage_service(study).check_errors(study)
+        return self.raw_study_service.check_errors(study)
 
     def get_all_areas(
         self,
@@ -880,9 +880,13 @@ class StudyService:
 
         self._assert_study_unarchived(study)
 
-        self._get_study_storage_service(study).archive(study)
+        if not isinstance(study, RawStudy):
+            raise StudyTypeUnsupported(study.id, study.type)
+
+        self.raw_study_service.archive(study)
         study.archived = True
         self.repository.save(study)
+        a = 7
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
@@ -902,9 +906,7 @@ class StudyService:
         with open(self.raw_study_service.get_archive_path(study), "rb") as fh:
             self.raw_study_service.import_study(study, io.BytesIO(fh.read()))
         study.archived = False
-        os.unlink(
-            self._get_study_storage_service(study).get_archive_path(study)
-        )
+        os.unlink(self.raw_study_service.get_archive_path(study))
         self.repository.save(study)
         self.event_bus.push(
             Event(EventType.STUDY_EDITED, study.to_json_summary())
@@ -989,9 +991,10 @@ class StudyService:
 
         """
         try:
-            if self._get_study_storage_service(metadata).check_errors(
-                metadata
-            ):
+            if not isinstance(metadata, RawStudy):
+                raise StudyTypeUnsupported(metadata.id, metadata.type)
+
+            if self.raw_study_service.check_errors(metadata):
                 return StudyContentStatus.WARNING
             else:
                 return StudyContentStatus.VALID

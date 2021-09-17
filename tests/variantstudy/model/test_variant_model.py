@@ -116,9 +116,9 @@ def test_commands_service() -> VariantStudyService:
         assert commands[0].action == "My-action-5"
 
         # Generate
-        service.generator.generate_snapshot = Mock()
+        service._generate_snapshot = Mock()
         expected_result = GenerationResultInfoDTO(success=True, details=[])
-        service.generator.generate_snapshot.return_value = expected_result
+        service._generate_snapshot.return_value = expected_result
         results = service.generate(saved_id, False, SADMIN)
         assert results == expected_result
         assert study.snapshot.id == study.id

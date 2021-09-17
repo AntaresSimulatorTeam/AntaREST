@@ -44,7 +44,7 @@ from antarest.study.storage.utils import fix_study_root
 logger = logging.getLogger(__name__)
 
 
-class GenericStorageService(IStudyStorageService[T]):
+class AbstractStorageService(IStudyStorageService[T]):
     def __init__(
         self,
         config: Config,
@@ -81,30 +81,7 @@ class GenericStorageService(IStudyStorageService[T]):
         Returns: new data replaced
 
         """
-        # Get data
-        self._check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
-        study.save(new, url.split("/"))  # type: ignore
-        del study
-        self.remove_from_cache(metadata.id)
-        return new
-
-    def check_errors(
-        self,
-        metadata: T,
-    ) -> List[str]:
-        """
-        Check study antares data integrity
-        Args:
-            metadata: study
-
-        Returns: list of non integrity inside study
-
-        """
-        path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(path, metadata.id)
-        return study.check_errors(study.get())
+        raise NotImplementedError()
 
     def patch_update_study_metadata(
         self,
@@ -343,24 +320,13 @@ class GenericStorageService(IStudyStorageService[T]):
 
         """
         path_study = Path(metadata.path)
-        return self.export_file(path_study, target, outputs)
-
-    def export_study_flat(
-        self, metadata: T, dest: Path, outputs: bool = True
-    ) -> None:
-        path_study = Path(metadata.path)
-        self.export_flat(path_study, dest, outputs)
-
-    def export_file(
-        self, path_study: Path, export_path: Path, outputs: bool = True
-    ) -> Path:
         with tempfile.TemporaryDirectory(
             dir=self.config.storage.tmp_dir
         ) as tmpdir:
             tmp_study_path = Path(tmpdir) / "tmp_copy"
-            self.export_flat(path_study, tmp_study_path, outputs)
+            self.export_study_flat(metadata, tmp_study_path, outputs)
             start_time = time.time()
-            with ZipFile(export_path, "w", ZIP_DEFLATED) as zipf:
+            with ZipFile(target, "w", ZIP_DEFLATED) as zipf:
                 current_dir = os.getcwd()
                 os.chdir(tmp_study_path)
 
@@ -375,24 +341,13 @@ class GenericStorageService(IStudyStorageService[T]):
             logger.info(
                 f"Study {path_study} exported (zipped mode) in {duration}s"
             )
-        return export_path
+        return target
 
-    def export_flat(
-        self,
-        path_study: Path,
-        dest: Path,
-        outputs: bool = False,
+    @abstractmethod
+    def export_study_flat(
+        self, metadata: T, dest: Path, outputs: bool = True
     ) -> None:
-
         raise NotImplementedError()
-
-    def archive(self, study: T) -> None:
-        archive_path = self.get_archive_path(study)
-        self.export_file(study.path, archive_path)
-        shutil.rmtree(study.path)
-
-    def get_archive_path(self, study: T) -> Path:
-        return Path(self.config.storage.archive_dir / f"{study.id}.zip")
 
     @abstractmethod
     def create(self, metadata: T) -> T:

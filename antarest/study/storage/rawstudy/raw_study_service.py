@@ -1,13 +1,17 @@
+import glob
 import logging
+import os
 import shutil
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, IO
+from typing import Optional, IO, List
 from uuid import uuid4
-from zipfile import ZipFile
+from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.core.config import Config
+from antarest.core.custom_types import SUB_JSON
 from antarest.core.exceptions import (
     UnsupportedStudyVersion,
 )
@@ -18,8 +22,8 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Study,
 )
-from antarest.study.storage.generic_storage_service import (
-    GenericStorageService,
+from antarest.study.storage.abstract_storage_service import (
+    AbstractStorageService,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
@@ -35,7 +39,7 @@ from antarest.study.storage.utils import (
 logger = logging.getLogger(__name__)
 
 
-class RawStudyService(GenericStorageService[RawStudy]):
+class RawStudyService(AbstractStorageService[RawStudy]):
     """
     Manage set of raw studies stored in the workspaces.
     Instantiate and manage tree struct for each request
@@ -254,12 +258,35 @@ class RawStudyService(GenericStorageService[RawStudy]):
         metadata.path = str(path_study)
         return metadata
 
-    def export_flat(
+    def edit_study(
         self,
-        path_study: Path,
-        dest: Path,
-        outputs: bool = False,
+        metadata: RawStudy,
+        url: str,
+        new: SUB_JSON,
+    ) -> SUB_JSON:
+        """
+        Replace data on disk with new
+        Args:
+            metadata: study
+            url: data path to reach
+            new: new data to replace
+
+        Returns: new data replaced
+
+        """
+        # Get data
+        self._check_study_exists(metadata)
+        study_path = self.get_study_path(metadata)
+        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
+        study.save(new, url.split("/"))  # type: ignore
+        del study
+        self.remove_from_cache(metadata.id)
+        return new
+
+    def export_study_flat(
+        self, metadata: RawStudy, dest: Path, outputs: bool = True
     ) -> None:
+        path_study = Path(metadata.path)
         start_time = time.time()
         ignore_patterns = (
             (
@@ -279,11 +306,35 @@ class RawStudyService(GenericStorageService[RawStudy]):
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study {path_study} denormalized in {duration}s")
 
+    def check_errors(
+        self,
+        metadata: RawStudy,
+    ) -> List[str]:
+        """
+        Check study antares data integrity
+        Args:
+            metadata: study
+
+        Returns: list of non integrity inside study
+
+        """
+        path = self.get_study_path(metadata)
+        _, study = self.study_factory.create_from_fs(path, metadata.id)
+        return study.check_errors(study.get())
+
     def set_reference_output(
         self, study: RawStudy, output_id: str, status: bool
     ) -> None:
         self.patch_service.set_reference_output(study, output_id, status)
         self.remove_from_cache(study.id)
+
+    def archive(self, study: RawStudy) -> None:
+        archive_path = self.get_archive_path(study)
+        self.export_study(study, archive_path)
+        shutil.rmtree(study.path)
+
+    def get_archive_path(self, study: RawStudy) -> Path:
+        return Path(self.config.storage.archive_dir / f"{study.id}.zip")
 
     def get_study_path(self, metadata: Study) -> Path:
         """

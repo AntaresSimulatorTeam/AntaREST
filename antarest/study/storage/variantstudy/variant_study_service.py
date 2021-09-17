@@ -8,7 +8,7 @@ from typing import List, Optional, cast
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.core.custom_types import JSON
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -26,10 +26,9 @@ from antarest.study.model import (
     Study,
     StudyMetadataDTO,
     StudySimResultDTO,
-    StudyMetadataPatchDTO,
 )
-from antarest.study.storage.generic_storage_service import (
-    GenericStorageService,
+from antarest.study.storage.abstract_storage_service import (
+    AbstractStorageService,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.permissions import (
@@ -48,6 +47,7 @@ from antarest.study.storage.utils import (
     update_antares_info,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
@@ -60,15 +60,14 @@ from antarest.study.storage.variantstudy.model.model import (
 from antarest.study.storage.variantstudy.repository import (
     VariantStudyRepository,
 )
-from antarest.study.storage.variantstudy.variant_snapshot_generator import (
-    VariantSnapshotGenerator,
-    SNAPSHOT_RELATIVE_PATH,
-)
 
 logger = logging.getLogger(__name__)
 
+SNAPSHOT_RELATIVE_PATH = "snapshot"
+OUTPUT_RELATIVE_PATH = "output"
 
-class VariantStudyService(GenericStorageService[VariantStudy]):
+
+class VariantStudyService(AbstractStorageService[VariantStudy]):
     def __init__(
         self,
         task_service: ITaskService,
@@ -87,13 +86,11 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
             patch_service=patch_service,
             cache=cache,
         )
-        self.generator = VariantSnapshotGenerator(
-            command_factory, study_factory
-        )
         self.task_service = task_service
         self.raw_study_service = raw_study_service
         self.repository = repository
         self.event_bus = event_bus
+        self.command_factory = command_factory
 
     def get_command(
         self, study_id: str, command_id: str, params: RequestParameters
@@ -151,7 +148,7 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
                 index=index,
             )
         )
-        self.repository.save(study)
+        self.repository.save(metadata=study, update_modification_date=True)
 
     def append_commands(
         self,
@@ -179,7 +176,7 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
                 for i, command in enumerate(commands)
             ]
         )
-        self.repository.save(study)
+        self.repository.save(metadata=study, update_modification_date=True)
         return str(study.id)
 
     def move_command(
@@ -206,7 +203,7 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
             study.commands.insert(new_index, command)
             for idx in range(len(study.commands)):
                 study.commands[idx].index = idx
-            self.repository.save(study)
+            self.repository.save(metadata=study, update_modification_date=True)
 
     def remove_command(
         self, study_id: str, command_id: str, params: RequestParameters
@@ -223,7 +220,7 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:
             study.commands.pop(index)
-            self.repository.save(study)
+            self.repository.save(metadata=study, update_modification_date=True)
 
     def update_command(
         self,
@@ -246,7 +243,7 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
         if index >= 0:
             study.commands[index].command = command.action
             study.commands[index].args = json.dumps(command.args)
-            self.repository.save(study)
+            self.repository.save(metadata=study, update_modification_date=True)
 
     def _get_variant_study(
         self,
@@ -372,41 +369,6 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
             formatted=formatted,
         )
 
-    def edit_study(
-        self, metadata: VariantStudy, url: str, new: SUB_JSON
-    ) -> SUB_JSON:
-        """
-        Replace data on disk with new
-        Args:
-            metadata: study
-            url: data path to reach
-            new: new data to replace
-
-        Returns: new data replaced
-
-        """
-        self._safe_generation(metadata)
-        return super().edit_study(metadata=metadata, url=url, new=new)
-
-    def check_errors(self, metadata: VariantStudy) -> List[str]:
-        """
-        Check study antares data integrity
-        Args:
-            metadata: study
-
-        Returns: list of non integrity inside study
-
-        """
-        self._safe_generation(metadata)
-        return super().check_errors(metadata=metadata)
-
-    def patch_update_study_metadata(
-        self, study: VariantStudy, metadata: StudyMetadataPatchDTO
-    ) -> StudyMetadataDTO:
-        return super().patch_update_study_metadata(
-            study=study, metadata=metadata
-        )
-
     def create_variant_study(
         self, uuid: str, name: str, params: RequestParameters
     ) -> Optional[str]:
@@ -492,14 +454,13 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
                 metadata=parent_study, dest=dest_path, outputs=False
             )
 
-        results = self.generator.generate_snapshot(variant_study)
+        results = self._generate_snapshot(variant_study)
 
         if results.success:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
                 created_at=datetime.now(),
             )
-            variant_study.updated_at = datetime.now()
             self.repository.save(variant_study)
             if denormalize:
                 config, study_tree = self.study_factory.create_from_fs(
@@ -507,6 +468,55 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
                     study_id=variant_study.id,
                 )
                 study_tree.denormalize()
+        return results
+
+    def _generate_snapshot(
+        self, variant_study: VariantStudy
+    ) -> GenerationResultInfoDTO:
+
+        # Copy parent study to dest
+        dest_path = Path(variant_study.path) / SNAPSHOT_RELATIVE_PATH
+
+        # Build file study
+        study_config, study_tree = self.study_factory.create_from_fs(
+            dest_path, study_id=variant_study.id, use_cache=False
+        )
+        update_antares_info(variant_study, study_tree)
+        file_study = FileStudy(config=study_config, tree=study_tree)
+
+        # Apply commands
+        commands: List[ICommand] = []
+        for command_block in variant_study.commands:
+            commands.extend(
+                self.command_factory.to_icommand(command_block.to_dto())
+            )
+
+        results: GenerationResultInfoDTO = GenerationResultInfoDTO(
+            success=True, details=[]
+        )
+
+        for command in commands:
+            try:
+                output = command.apply(file_study)
+            except Exception as e:
+                results.success = False
+                message = f"Error while applying command {command.command_name.value}"
+                logger.error(message, exc_info=e)
+                results.details.append(
+                    (command.command_name.value, False, message)
+                )
+                break
+
+            results.details.append(
+                (command.command_name.value, output.status, output.message)
+            )
+            results.success = results.success and output.status
+
+            if not output.status:
+                break
+
+        if not results.success:
+            shutil.rmtree(dest_path)
         return results
 
     def create(self, study: VariantStudy) -> VariantStudy:
@@ -545,9 +555,6 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
             with_outputs: indicate either to copy the output or not
         Returns: destination study
         """
-
-        self._safe_generation(src_meta)
-
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
         dest_meta = VariantStudy(
@@ -563,22 +570,17 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
             snapshot=None,
         )
 
-        src_path = self.get_study_path(src_meta)
-        dest_path = self.get_study_path(dest_meta)
-        output_src = Path(src_meta.path) / "output"
-        dest_output = Path(dest_meta.path) / "output"
+        dest_meta.commands = [
+            CommandBlock(
+                study_id=new_id,
+                command=command.command,
+                args=command.args,
+                index=command.index,
+                version=command.version,
+            )
+            for command in src_meta.commands
+        ]
 
-        shutil.copytree(src_path, dest_path)
-
-        if with_outputs:
-            shutil.copytree(output_src, dest_output)
-
-        _, study = self.study_factory.create_from_fs(
-            dest_path, study_id=dest_meta.id
-        )
-        update_antares_info(dest_meta, study)
-
-        del study
         return dest_meta
 
     def _wait_for_generation(self, metadata: VariantStudy) -> bool:
@@ -691,12 +693,12 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
         """
         return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
 
-    def export_flat(
-        self,
-        path_study: Path,
-        dest: Path,
-        outputs: bool = False,
+    def export_study_flat(
+        self, metadata: VariantStudy, dest: Path, outputs: bool = True
     ) -> None:
+
+        self._safe_generation(metadata)
+        path_study = Path(metadata.path)
         start_time = time.time()
 
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH

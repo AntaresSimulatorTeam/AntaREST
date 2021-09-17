@@ -92,18 +92,6 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def check_errors(self, metadata: T) -> List[str]:
-        """
-        Check study antares data integrity
-        Args:
-            metadata: study
-
-        Returns: list of non integrity inside study
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
     def patch_update_study_metadata(
         self, study: T, metadata: StudyMetadataPatchDTO
     ) -> StudyMetadataDTO:
@@ -256,30 +244,6 @@ class IStudyStorageService(ABC, Generic[T]):
             dest: destination path
             outputs: keep outputs or not
         Returns: None
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def archive(self, study: T) -> None:
-        """
-        Archive study
-
-        Args:
-            study: study
-        Returns: None
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_archive_path(self, study: T) -> Path:
-        """
-        Get archive path
-
-        Args:
-            study: study
-        Returns: Path
 
         """
         raise NotImplementedError()

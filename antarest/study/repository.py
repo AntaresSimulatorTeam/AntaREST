@@ -13,8 +13,13 @@ class StudyMetadataRepository:
     Database connector to manage Study entity
     """
 
-    def save(self, metadata: Study) -> Study:
-        metadata.updated = datetime.now()
+    def save(
+        self, metadata: Study, update_modification_date: bool = False
+    ) -> Study:
+
+        if update_modification_date:
+            metadata.updated_at = datetime.now()
+
         metadata.groups = [db.session.merge(g) for g in metadata.groups]
         if metadata.owner:
             metadata.owner = db.session.merge(metadata.owner)
