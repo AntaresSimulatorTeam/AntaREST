@@ -1,20 +1,14 @@
 from typing import Any, List, Optional
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.command_group import (
-    CommandGroup,
-)
-from antarest.study.storage.variantstudy.model.command.create_link import (
-    CreateLink,
-)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.variant_command_extractor import (
-    VariantCommandsExtractor,
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
 )
 
 
@@ -65,22 +59,45 @@ class RemoveLink(ICommand):
             },
         )
 
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value
+            + MATCH_SIGNATURE_SEPARATOR
+            + self.area1
+            + MATCH_SIGNATURE_SEPARATOR
+            + self.area2
+        )
+
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveLink):
             return False
         return self.area1 == other.area1 and self.area2 == other.area2
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
+        from antarest.study.storage.variantstudy.model.command.create_link import (
+            CreateLink,
+        )
+        from antarest.study.storage.variantstudy.variant_command_extractor import (
+            VariantCommandsExtractor,
+        )
+
         for command in reversed(history):
             if (
                 isinstance(command, CreateLink)
                 and command.area1 == self.area1
                 and command.area2 == self.area2
             ):
-                return command
-        return CommandGroup(
-            command_list=VariantCommandsExtractor(
+                return [command]
+        if base is not None:
+            return VariantCommandsExtractor(
                 self.command_context.matrix_service
-            ).extract_link(base, self.area1, self.area2),
-            command_context=self.command_context,
-        )
+            ).extract_link(base, self.area1, self.area2)
+        return []
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        return []
+
+    def get_inner_matrices(self) -> List[str]:
+        return []

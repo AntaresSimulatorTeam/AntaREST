@@ -16,6 +16,7 @@ from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import (
     TimeStep,
     BindingConstraintOperator,
+    CommandName,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
@@ -396,16 +397,6 @@ class VariantCommandsExtractor:
             self._generate_update_config(
                 study_tree, ["input", "hydro", "allocation", area_id]
             ),
-            self._generate_update_config(
-                study_tree,
-                [
-                    "input",
-                    "hydro",
-                    "hydro",
-                    "inter-monthly-breakdown",
-                    area_id,
-                ],
-            ),
         ]
 
         if study_tree.config.version > 650:
@@ -519,12 +510,76 @@ class VariantCommandsExtractor:
 
     def diff(
         self, base: List[CommandDTO], variant: List[CommandDTO]
-    ) -> List[CommandDTO]:
+    ) -> List[ICommand]:
         command_factory = CommandFactory(
             generator_matrix_constants=self.generator_matrix_constants,
             matrix_service=self.matrix_service,
         )
-        raise NotImplementedError()
+        base_commands: List[ICommand] = []
+        for command in base:
+            base_commands += command_factory.to_icommand(command)
+        variant_commands: List[ICommand] = []
+        for command in variant:
+            variant_commands += command_factory.to_icommand(command)
+
+        added_commands: List[Tuple[int, ICommand]] = []
+        missing_commands: List[Tuple[int, ICommand]] = []
+        modified_commands: List[Tuple[int, ICommand, ICommand]] = []
+        order = 0
+        for variant_command in variant_commands:
+            order += 1
+            found = False
+            for base_command in base_commands:
+                if variant_command.match(base_command):
+                    if not variant_command.match(base_command, True):
+                        modified_commands.append(
+                            (order, variant_command, base_command)
+                        )
+                    found = True
+                    break
+            if not found:
+                added_commands.append((order, variant_command))
+        order = 0
+        for base_command in base_commands:
+            found = False
+            for variant_command in variant_commands:
+                if base_command.match(variant_command):
+                    found = True
+                    break
+            if not found:
+                missing_commands.append((order, base_command))
+
+        first_priority_commands: List[ICommand] = []
+        second_priority_commands: List[ICommand] = []
+        other_commands: List[Tuple[int, ICommand]] = []
+        for order, command_obj in missing_commands:
+            if command_obj.command_name == CommandName.REMOVE_AREA:
+                first_priority_commands += command_obj.revert(base_commands)
+            elif (
+                command_obj.command_name == CommandName.REMOVE_LINK
+                or command_obj.command_name == CommandName.REMOVE_CLUSTER
+            ):
+                second_priority_commands += command_obj.revert(base_commands)
+
+            else:
+                other_commands += [
+                    (0, command)
+                    for command in command_obj.revert(base_commands)
+                ]
+        for order, variant_command, base_command in modified_commands:
+            other_commands += [
+                (order, command)
+                for command in variant_command.create_diff(base_command)
+            ]
+        for ordered_command in added_commands:
+            other_commands.append(ordered_command)
+
+        diff_commands = (
+            first_priority_commands
+            + second_priority_commands
+            + [ordered_command[1] for ordered_command in other_commands]
+        )
+        return diff_commands
 
     def _generate_update_config(
         self,

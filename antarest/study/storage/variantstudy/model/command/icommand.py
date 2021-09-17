@@ -14,6 +14,7 @@ from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
 
+MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
 
 
@@ -44,6 +45,10 @@ class ICommand(ABC, BaseModel):
         raise NotImplementedError()
 
     @abstractmethod
+    def match_signature(self) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         """
         Indicate if the other command is the same type and targets the same element.
@@ -57,7 +62,9 @@ class ICommand(ABC, BaseModel):
         raise NotImplementedError()
 
     @abstractmethod
-    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
         """
         Returns the reverse command using history
 
@@ -67,6 +74,18 @@ class ICommand(ABC, BaseModel):
 
         Returns: a new command that reverts this one
         """
+        raise NotImplementedError()
+
+    def create_diff(self, other: "ICommand") -> List["ICommand"]:
+        assert self.match(other)
+        return self._create_diff(other)
+
+    @abstractmethod
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_inner_matrices(self) -> List[str]:
         raise NotImplementedError()
 
     class Config:

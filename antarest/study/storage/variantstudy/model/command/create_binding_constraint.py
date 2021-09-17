@@ -1,4 +1,4 @@
-from typing import Dict, List, Union, Any, Optional
+from typing import Dict, List, Union, Any, Optional, cast
 
 from pydantic import validator
 
@@ -7,9 +7,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import (
-    RemoveBindingConstraint,
-)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -17,7 +14,10 @@ from antarest.study.storage.variantstudy.model.command.common import (
     BindingConstraintOperator,
     TimeStep,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
+)
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
     strip_matrix_protocol,
@@ -127,6 +127,11 @@ class CreateBindingConstraint(ICommand):
             },
         )
 
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name
+        )
+
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateBindingConstraint):
             return False
@@ -143,8 +148,26 @@ class CreateBindingConstraint(ICommand):
             and self.comments == other.comments
         )
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
-        bind_id = transform_name_to_id(self.name)
-        return RemoveBindingConstraint(
-            id=bind_id, command_context=self.command_context
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
+        from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import (
+            RemoveBindingConstraint,
         )
+
+        bind_id = transform_name_to_id(self.name)
+        return [
+            RemoveBindingConstraint(
+                id=bind_id, command_context=self.command_context
+            )
+        ]
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        other = cast(CreateBindingConstraint, other)
+        raise NotImplementedError()
+
+    def get_inner_matrices(self) -> List[str]:
+        if self.values is not None:
+            assert isinstance(self.values, str)
+            return [self.values]
+        return []

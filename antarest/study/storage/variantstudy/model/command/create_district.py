@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, cast
 
 from pydantic import validator
 
@@ -8,15 +8,15 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Set,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.remove_district import (
-    RemoveDistrict,
-)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
+)
 
 
 class DistrictBaseFilter(Enum):
@@ -91,6 +91,11 @@ class CreateDistrict(ICommand):
             },
         )
 
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name
+        )
+
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateDistrict):
             return False
@@ -106,8 +111,23 @@ class CreateDistrict(ICommand):
             and self.comments == other.comments
         )
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
-        district_id = transform_name_to_id(self.name)
-        return RemoveDistrict(
-            id=district_id, command_context=self.command_context
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
+        from antarest.study.storage.variantstudy.model.command.remove_district import (
+            RemoveDistrict,
         )
+
+        district_id = transform_name_to_id(self.name)
+        return [
+            RemoveDistrict(
+                id=district_id, command_context=self.command_context
+            )
+        ]
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        other = cast(CreateDistrict, other)
+        raise NotImplementedError()
+
+    def get_inner_matrices(self) -> List[str]:
+        return []

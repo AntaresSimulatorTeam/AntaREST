@@ -1,8 +1,7 @@
-from typing import Dict, List, Union, Any, Optional
+from typing import Dict, List, Union, Any, Optional, cast
 
 from pydantic import validator
 
-from antarest.core.custom_types import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -10,15 +9,15 @@ from antarest.study.storage.variantstudy.business.default_values import (
     LinkProperties,
     FilteringOptions,
 )
-from antarest.study.storage.variantstudy.model.command.remove_link import (
-    RemoveLink,
-)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
+)
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
     strip_matrix_protocol,
@@ -177,6 +176,15 @@ class CreateLink(ICommand):
             },
         )
 
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value
+            + MATCH_SIGNATURE_SEPARATOR
+            + self.area1
+            + MATCH_SIGNATURE_SEPARATOR
+            + self.area2
+        )
+
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateLink):
             return False
@@ -189,9 +197,27 @@ class CreateLink(ICommand):
             and self.series == other.series
         )
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
-        return RemoveLink(
-            area1=self.area1,
-            area2=self.area2,
-            command_context=self.command_context,
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
+        from antarest.study.storage.variantstudy.model.command.remove_link import (
+            RemoveLink,
         )
+
+        return [
+            RemoveLink(
+                area1=self.area1,
+                area2=self.area2,
+                command_context=self.command_context,
+            )
+        ]
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        other = cast(CreateLink, other)
+        raise NotImplementedError()
+
+    def get_inner_matrices(self) -> List[str]:
+        if self.series:
+            assert isinstance(self.series, str)
+            return [self.series]
+        return []

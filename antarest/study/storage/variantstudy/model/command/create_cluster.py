@@ -1,4 +1,4 @@
-from typing import Dict, Union, List, Any, Optional
+from typing import Dict, Union, List, Any, Optional, cast
 
 from pydantic import validator
 
@@ -9,15 +9,15 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.remove_cluster import (
-    RemoveCluster,
-)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
+)
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
     get_or_create_section,
@@ -139,6 +139,15 @@ class CreateCluster(ICommand):
             },
         )
 
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value
+            + MATCH_SIGNATURE_SEPARATOR
+            + self.area_id
+            + MATCH_SIGNATURE_SEPARATOR
+            + self.cluster_name
+        )
+
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateCluster):
             return False
@@ -155,10 +164,32 @@ class CreateCluster(ICommand):
             and self.modulation == other.modulation
         )
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
-        cluster_id = transform_name_to_id(self.cluster_name)
-        return RemoveCluster(
-            area_id=self.area_id,
-            cluster_id=cluster_id,
-            command_context=self.command_context,
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
+        from antarest.study.storage.variantstudy.model.command.remove_cluster import (
+            RemoveCluster,
         )
+
+        cluster_id = transform_name_to_id(self.cluster_name)
+        return [
+            RemoveCluster(
+                area_id=self.area_id,
+                cluster_id=cluster_id,
+                command_context=self.command_context,
+            )
+        ]
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        other = cast(CreateCluster, other)
+        raise NotImplementedError()
+
+    def get_inner_matrices(self) -> List[str]:
+        matrices: List[str] = []
+        if self.prepro:
+            assert isinstance(self.prepro, str)
+            matrices.append(self.prepro)
+        if self.modulation:
+            assert isinstance(self.modulation, str)
+            matrices.append(self.modulation)
+        return matrices

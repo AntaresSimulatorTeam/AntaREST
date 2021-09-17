@@ -1,15 +1,19 @@
 import json
 import logging
 import os
+import shutil
 import time
 
 import requests
 from pathlib import Path
-from typing import List, Optional, Union, Callable
+from typing import List, Optional, Union, Callable, Set
 
 from requests import Session
 
 from antarest.core.utils.utils import StopWatch
+from antarest.study.storage.variantstudy.model.command.utils import (
+    strip_matrix_protocol,
+)
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
@@ -79,7 +83,7 @@ class CLIVariantManager:
         if not output_dir.exists():
             output_dir.mkdir(parents=True)
         matrices_dir = output_dir / MATRIX_STORE_DIR
-        matrices_dir.mkdir()
+        matrices_dir.mkdir(exist_ok=True)
 
         base_command_file = base / COMMAND_FILE
         if not base_command_file.exists():
@@ -88,18 +92,41 @@ class CLIVariantManager:
         if not variant_command_file.exists():
             raise ValueError(f"Missing {COMMAND_FILE}")
 
+        if (base / MATRIX_STORE_DIR).exists():
+            for matrix_file in os.listdir(base / MATRIX_STORE_DIR):
+                shutil.copyfile(
+                    base / MATRIX_STORE_DIR / matrix_file,
+                    matrices_dir / matrix_file,
+                )
+        if (variant / MATRIX_STORE_DIR).exists():
+            for matrix_file in os.listdir(variant / MATRIX_STORE_DIR):
+                shutil.copyfile(
+                    variant / MATRIX_STORE_DIR / matrix_file,
+                    matrices_dir / matrix_file,
+                )
+
         local_matrix_service = SimpleMatrixService(matrices_dir)
         extractor = VariantCommandsExtractor(local_matrix_service)
         diff_commands = extractor.diff(
-            CLIVariantManager.parse_commands(base),
-            CLIVariantManager.parse_commands(variant),
+            CLIVariantManager.parse_commands(base_command_file),
+            CLIVariantManager.parse_commands(variant_command_file),
         )
 
         with open(output_dir / COMMAND_FILE, "w") as fh:
             json.dump(
-                [command.dict(exclude={"id"}) for command in diff_commands], fh
+                [
+                    command.to_dto().dict(exclude={"id"})
+                    for command in diff_commands
+                ],
+                fh,
             )
-        # TODO find matrices used in commands and copy them to new matrix dir
+        needed_matrices: Set[str] = set()
+        for command in diff_commands:
+            for matrix in command.get_inner_matrices():
+                needed_matrices.add(strip_matrix_protocol(matrix))
+        for matrix_file in os.listdir(matrices_dir):
+            if matrix_file not in needed_matrices:
+                os.unlink(matrices_dir / matrix_file)
 
     @staticmethod
     def parse_commands(file: Path) -> List[CommandDTO]:

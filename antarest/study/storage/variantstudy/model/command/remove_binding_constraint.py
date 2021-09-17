@@ -5,20 +5,14 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.command_group import (
-    CommandGroup,
-)
-from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    CreateBindingConstraint,
-)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.variant_command_extractor import (
-    VariantCommandsExtractor,
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
 )
 
 
@@ -65,21 +59,40 @@ class RemoveBindingConstraint(ICommand):
             },
         )
 
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id
+        )
+
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveBindingConstraint):
             return False
         return self.id == other.id
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
+        from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+            CreateBindingConstraint,
+        )
+        from antarest.study.storage.variantstudy.variant_command_extractor import (
+            VariantCommandsExtractor,
+        )
+
         for command in reversed(history):
             if (
                 isinstance(command, CreateBindingConstraint)
                 and transform_name_to_id(command.name) == self.id
             ):
-                return command
-        return CommandGroup(
-            command_list=VariantCommandsExtractor(
+                return [command]
+        if base is not None:
+            return VariantCommandsExtractor(
                 self.command_context.matrix_service
-            ).extract_binding_constraint(base, self.id),
-            command_context=self.command_context,
-        )
+            ).extract_binding_constraint(base, self.id)
+        return []
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        return []
+
+    def get_inner_matrices(self) -> List[str]:
+        return []

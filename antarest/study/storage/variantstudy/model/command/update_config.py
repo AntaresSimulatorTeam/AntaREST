@@ -10,7 +10,10 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
+)
 
 
 class UpdateConfig(ICommand):
@@ -43,6 +46,11 @@ class UpdateConfig(ICommand):
             },
         )
 
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target
+        )
+
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, UpdateConfig):
             return False
@@ -51,15 +59,27 @@ class UpdateConfig(ICommand):
             return simple_match
         return simple_match and self.data == other.data
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
         for command in reversed(history):
             if (
                 isinstance(command, UpdateConfig)
                 and command.target == self.target
             ):
-                return command
-        return UpdateConfig(
-            target=self.target,
-            data=base.tree.get(self.target.split("/")),
-            command_context=self.command_context,
-        )
+                return [command]
+        if base is not None:
+            return [
+                UpdateConfig(
+                    target=self.target,
+                    data=base.tree.get(self.target.split("/")),
+                    command_context=self.command_context,
+                )
+            ]
+        return []
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        return [other]
+
+    def get_inner_matrices(self) -> List[str]:
+        return []

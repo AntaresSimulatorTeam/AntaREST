@@ -16,7 +16,10 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
+)
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
     strip_matrix_protocol,
@@ -76,6 +79,11 @@ class ReplaceMatrix(ICommand):
             },
         )
 
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target
+        )
+
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, ReplaceMatrix):
             return False
@@ -84,15 +92,28 @@ class ReplaceMatrix(ICommand):
             return simple_match
         return simple_match and self.matrix == other.matrix
 
-    def revert(self, history: List["ICommand"], base: FileStudy) -> "ICommand":
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
         for command in reversed(history):
             if (
                 isinstance(command, ReplaceMatrix)
                 and command.target == self.target
             ):
-                return command
-        return ReplaceMatrix(
-            target=self.target,
-            matrix=base.tree.get(self.target.split("/")),
-            command_context=self.command_context,
-        )
+                return [command]
+        if base is not None:
+            return [
+                ReplaceMatrix(
+                    target=self.target,
+                    matrix=base.tree.get(self.target.split("/")),
+                    command_context=self.command_context,
+                )
+            ]
+        return []
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        return [other]
+
+    def get_inner_matrices(self) -> List[str]:
+        assert isinstance(self.matrix, str)
+        return [self.matrix]
