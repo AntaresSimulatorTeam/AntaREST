@@ -135,3 +135,22 @@ class CreateCluster(ICommand):
                 "modulation": strip_matrix_protocol(self.modulation),
             },
         )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, CreateCluster):
+            return False
+        simple_match = (
+            self.area_id == other.area_id
+            and self.cluster_name == other.cluster_name
+        )
+        if not equal:
+            return simple_match
+        return (
+            simple_match
+            and self.parameters == other.parameters
+            and self.prepro == other.prepro
+            and self.modulation == other.modulation
+        )
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        return None

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List, Optional
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -85,3 +85,11 @@ class RemoveCluster(ICommand):
             action=CommandName.REMOVE_CLUSTER.value,
             args={"area_id": self.area_id, "cluster_id": self.cluster_id},
         )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, RemoveCluster):
+            return False
+        return self.cluster_id == other.cluster_id
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        return None

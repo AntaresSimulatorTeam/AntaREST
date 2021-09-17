@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel
 
@@ -41,6 +41,32 @@ class ICommand(ABC, BaseModel):
 
     @abstractmethod
     def to_dto(self) -> CommandDTO:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def match(self, other: "ICommand", equal: bool = False) -> bool:
+        """
+        Indicate if the other command is the same type and targets the same element.
+
+        Args:
+            other: other command to match against
+            equal: indicate if the match must check for param equality
+
+        Returns: True if the command match with the other else False
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        """
+        Returns the reverse command using history
+
+        Args:
+            history: list of previous commands
+            base: base tree study
+
+        Returns: a new command that reverts this one
+        """
         raise NotImplementedError()
 
     class Config:

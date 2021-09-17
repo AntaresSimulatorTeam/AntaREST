@@ -87,3 +87,21 @@ class CreateDistrict(ICommand):
                 "comments": self.comments,
             },
         )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, CreateDistrict):
+            return False
+        simple_match = self.name == other.name
+        if not equal:
+            return simple_match
+        return (
+            simple_match
+            and self.metadata == other.metadata
+            and self.base_filter == other.base_filter
+            and self.filter_items == other.filter_items
+            and self.output == other.output
+            and self.comments == other.comments
+        )
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        return None

@@ -1,4 +1,4 @@
-from typing import Union, List, Any
+from typing import Union, List, Any, Optional
 
 from pydantic import validator
 
@@ -75,3 +75,14 @@ class ReplaceMatrix(ICommand):
                 "matrix": strip_matrix_protocol(self.matrix),
             },
         )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, ReplaceMatrix):
+            return False
+        simple_match = self.target == other.target
+        if not equal:
+            return simple_match
+        return simple_match and self.matrix == other.matrix
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        return None

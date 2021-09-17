@@ -173,3 +173,18 @@ class CreateLink(ICommand):
                 "series": strip_matrix_protocol(self.series),
             },
         )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, CreateLink):
+            return False
+        simple_match = self.area1 == other.area1 and self.area2 == other.area2
+        if not equal:
+            return simple_match
+        return (
+            simple_match
+            and self.parameters == other.parameters
+            and self.series == other.series
+        )
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        return None

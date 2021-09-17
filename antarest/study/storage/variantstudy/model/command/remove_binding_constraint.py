@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List, Optional
 
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -52,3 +52,11 @@ class RemoveBindingConstraint(ICommand):
                 "id": self.id,
             },
         )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, RemoveBindingConstraint):
+            return False
+        return self.id == other.id
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        return None

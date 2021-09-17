@@ -1,7 +1,9 @@
-from typing import Any
+from typing import Any, List, Optional
 
 from antarest.core.custom_types import JSON
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -148,3 +150,14 @@ class RemoveArea(ICommand):
                 "id": self.id,
             },
         )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, RemoveArea):
+            return False
+        return self.id == other.id
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        for command in history:
+            if isinstance(command, CreateArea) and transform_name_to_id(command.area_name) == self.id:
+                return command
+        return None

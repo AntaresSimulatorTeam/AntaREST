@@ -26,6 +26,10 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import (
     CreateCluster,
 )
+from antarest.study.storage.variantstudy.model.command.create_district import (
+    CreateDistrict,
+    DistrictBaseFilter,
+)
 from antarest.study.storage.variantstudy.model.command.create_link import (
     CreateLink,
 )
@@ -294,12 +298,23 @@ class VariantCommandsExtractor:
                 ["input", "thermal", "areas"],
             )
         )
-        study_commands.append(
-            self._generate_update_config(
-                study_tree,
-                ["input", "areas", "sets"],
+        for set_id in study_config.sets:
+            district_config = study_config.sets[set_id]
+            district_fetched_config = study_tree.get(
+                ["input", "areas", "sets", set_id]
             )
-        )
+            study_commands.append(
+                CreateDistrict(
+                    name=district_config.name,
+                    metadata={},
+                    base_filter=DistrictBaseFilter.add_all
+                    if district_config.inverted_set
+                    else DistrictBaseFilter.remove_all,
+                    filter_items=district_config.areas or [],
+                    output=district_config.output,
+                    comments=district_fetched_config.get("comments", None),
+                ).to_dto()
+            )
 
         # binding constraints
         binding_config = study_tree.get(

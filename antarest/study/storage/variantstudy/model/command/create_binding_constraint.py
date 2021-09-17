@@ -123,3 +123,22 @@ class CreateBindingConstraint(ICommand):
                 "comments": self.comments,
             },
         )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, CreateBindingConstraint):
+            return False
+        simple_match = self.name == other.name
+        if not equal:
+            return simple_match
+        return (
+            simple_match
+            and self.enabled == other.enabled
+            and self.time_step == other.time_step
+            and self.operator == other.operator
+            and self.coeffs == other.coeffs
+            and self.values == other.values
+            and self.comments == other.comments
+        )
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        return None

@@ -1,4 +1,4 @@
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, List, Optional
 
 from antarest.core.custom_types import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -42,3 +42,14 @@ class UpdateConfig(ICommand):
                 "data": self.data,
             },
         )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, UpdateConfig):
+            return False
+        simple_match = self.target == other.target
+        if not equal:
+            return simple_match
+        return simple_match and self.data == other.data
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        return None

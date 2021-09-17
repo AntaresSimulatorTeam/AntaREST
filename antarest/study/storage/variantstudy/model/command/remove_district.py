@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List, Optional
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -29,3 +29,11 @@ class RemoveDistrict(ICommand):
                 "id": self.id,
             },
         )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, RemoveDistrict):
+            return False
+        return self.id == other.id
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        return None

@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from pydantic import validator
 
@@ -12,6 +12,7 @@ from antarest.study.storage.variantstudy.business.default_values import (
     NodalOptimization,
     FilteringOptions,
 )
+from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -249,4 +250,18 @@ class CreateArea(ICommand):
         return CommandDTO(
             action=CommandName.CREATE_AREA.value,
             args={"area_name": self.area_name, "metadata": self.metadata},
+        )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, CreateArea):
+            return False
+        simple_match = self.area_name == other.area_name
+        if not equal:
+            return simple_match
+        return simple_match and self.metadata == other.metadata
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        area_id = transform_name_to_id(self.area_name)
+        return RemoveArea(
+            id=area_id
         )

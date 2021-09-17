@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List, Optional
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -55,3 +55,11 @@ class RemoveLink(ICommand):
                 "area2": self.area2,
             },
         )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, RemoveLink):
+            return False
+        return self.area1 == other.area1 and self.area2 == other.area2
+
+    def revert(self, history: List["ICommand"], base: FileStudy) -> Optional["ICommand"]:
+        return None
