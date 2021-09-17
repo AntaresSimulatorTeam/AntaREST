@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - 'master'
-      - 'issue-452-Service_transform_study/partial_study_into_variant_mangager_commands'
 
 
 jobs:
