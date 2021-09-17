@@ -39,6 +39,12 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
+    IniFileNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+)
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -48,6 +54,12 @@ from antarest.study.storage.utils import (
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.replace_matrix import (
+    ReplaceMatrix,
+)
+from antarest.study.storage.variantstudy.model.command.update_config import (
+    UpdateConfig,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
@@ -375,7 +387,23 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         url: str,
         new: SUB_JSON,
     ) -> SUB_JSON:
-        raise NotImplementedError()
+        study = self.get_raw(metadata)
+        tree_node = study.tree.get_node(url.split("/"))
+        if isinstance(tree_node, IniFileNode):
+            self.append_command(
+                metadata.id,
+                UpdateConfig(target=url, data=new).to_dto(),
+                RequestParameters(user=DEFAULT_ADMIN_USER),
+            )
+        elif isinstance(tree_node, InputSeriesMatrix):
+            self.append_command(
+                metadata.id,
+                ReplaceMatrix(target=url, matrix=SUB_JSON).to_dto(),
+                RequestParameters(user=DEFAULT_ADMIN_USER),
+            )
+        else:
+            raise NotImplementedError()
+        return new
 
     def create_variant_study(
         self, uuid: str, name: str, params: RequestParameters
