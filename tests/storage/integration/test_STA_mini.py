@@ -184,7 +184,7 @@ def test_sta_mini_study_antares(
         ),
         ("/v1/studies/STA-mini/raw?path=input/areas/de/ui/layerX/0", 1),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/allocation/de/[allocation/de",
+            "/v1/studies/STA-mini/raw?path=input/hydro/allocation/de/[allocation]/de",
             1,
         ),
         (

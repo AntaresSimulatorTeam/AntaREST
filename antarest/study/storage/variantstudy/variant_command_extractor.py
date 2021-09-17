@@ -148,33 +148,59 @@ class VariantCommandsExtractor:
             stopwatch.log_elapsed(
                 lambda x: logger.info(f"Link command extraction done in {x}ms")
             )
-
-            thermal_data = study_tree.get(
-                ["input", "thermal", "clusters", area_id, "list"]
-            )
             for thermal in area.thermals:
-                prepro = study_tree.get(
-                    ["input", "thermal", "prepro", area_id, thermal.id, "data"]
-                )
-                modulation = study_tree.get(
-                    [
-                        "input",
-                        "thermal",
-                        "prepro",
-                        area_id,
-                        thermal.id,
-                        "modulation",
-                    ]
-                )
                 cluster_command = CreateCluster(
                     area_id=area_id,
                     cluster_name=thermal.name,
-                    parameters=thermal_data[thermal.name],
-                    prepro=VariantCommandsExtractor.get_matrix(prepro),
-                    modulation=VariantCommandsExtractor.get_matrix(modulation),
+                    parameters={},
                     command_context=self.command_context,
                 ).to_dto()
                 study_commands.append(cluster_command)
+                study_commands.append(
+                    self._generate_update_config(
+                        study_tree,
+                        [
+                            "input",
+                            "thermal",
+                            "clusters",
+                            area_id,
+                            "list",
+                            thermal.name,
+                        ],
+                    )
+                )
+                study_commands.append(
+                    self._generate_replace_matrix(
+                        study_tree,
+                        [
+                            "input",
+                            "thermal",
+                            "prepro",
+                            area_id,
+                            thermal.id,
+                            "data",
+                        ],
+                        strip_matrix_protocol(
+                            self.generator_matrix_constants.get_null_matrix()
+                        ),
+                    )
+                )
+                study_commands.append(
+                    self._generate_replace_matrix(
+                        study_tree,
+                        [
+                            "input",
+                            "thermal",
+                            "prepro",
+                            area_id,
+                            thermal.id,
+                            "modulation",
+                        ],
+                        strip_matrix_protocol(
+                            self.generator_matrix_constants.get_null_matrix()
+                        ),
+                    )
+                )
                 study_commands.append(
                     self._generate_replace_matrix(
                         study_tree,

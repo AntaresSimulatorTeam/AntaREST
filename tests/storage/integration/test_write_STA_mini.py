@@ -165,7 +165,7 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
         ),
         ("/v1/studies/STA-mini/raw?path=input/areas/de/ui/layerX/0", 42, None),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/allocation/de/[allocation/de",
+            "/v1/studies/STA-mini/raw?path=input/hydro/allocation/de/[allocation]/de",
             42,
             None,
         ),
