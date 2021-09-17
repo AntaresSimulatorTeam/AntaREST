@@ -8,7 +8,7 @@ from typing import List, Optional, cast
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON
+from antarest.core.custom_types import JSON, SUB_JSON
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -368,6 +368,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             depth=depth,
             formatted=formatted,
         )
+
+    def edit_study(
+        self,
+        metadata: VariantStudy,
+        url: str,
+        new: SUB_JSON,
+    ) -> SUB_JSON:
+        raise NotImplementedError()
 
     def create_variant_study(
         self, uuid: str, name: str, params: RequestParameters

@@ -65,24 +65,6 @@ class AbstractStorageService(IStudyStorageService[T]):
             ]
         )
 
-    def edit_study(
-        self,
-        metadata: T,
-        url: str,
-        new: SUB_JSON,
-    ) -> SUB_JSON:
-        """
-        Replace data on disk with new
-        Args:
-            metadata: study
-            url: data path to reach
-            new: new data to replace
-
-        Returns: new data replaced
-
-        """
-        raise NotImplementedError()
-
     def patch_update_study_metadata(
         self,
         study: T,
