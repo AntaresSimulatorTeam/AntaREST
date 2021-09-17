@@ -50,8 +50,8 @@ class FileStudyTree(FolderNode):
         }
 
         if self.config.outputs:
-            children["output"] = Output(
-                self.context, self.config.next_file("output")
-            )
+            output_config = self.config.next_file("output")
+            output_config.path = self.config.output_path or output_config.path
+            children["output"] = Output(self.context, output_config)
 
         return children

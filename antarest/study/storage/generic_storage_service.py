@@ -202,9 +202,7 @@ class GenericStorageService(IStudyStorageService[T]):
 
         """
         self._check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-
-        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
+        study = self.get_raw(metadata)
         parts = [item for item in url.split("/") if item]
 
         data: JSON = dict()
@@ -215,13 +213,13 @@ class GenericStorageService(IStudyStorageService[T]):
                 logger.info(f"Raw Study {metadata.id} read from cache")
                 data = from_cache
             else:
-                data = study.get(parts, depth=depth, formatted=formatted)
+                data = study.tree.get(parts, depth=depth, formatted=formatted)
                 self.cache.put(cache_id, data)
                 logger.info(
                     f"Cache new entry from RawStudyService (studyID: {metadata.id})"
                 )
         else:
-            data = study.get(parts, depth=depth, formatted=formatted)
+            data = study.tree.get(parts, depth=depth, formatted=formatted)
         del study
         return data
 
@@ -235,16 +233,13 @@ class GenericStorageService(IStudyStorageService[T]):
             study: study
         Returns: study output data
         """
-        study_path = self.get_study_path(study)
-        config, raw_study = self.study_factory.create_from_fs(
-            study_path, study.id
-        )
+        study_data = self.get_raw(study)
         patch_metadata = self.patch_service.get(study)
         results: List[StudySimResultDTO] = []
-        if config.outputs is not None:
+        if study_data.config.outputs is not None:
             reference = (patch_metadata.outputs or PatchOutputs()).reference
-            for output in config.outputs:
-                file_metadata = raw_study.get(
+            for output in study_data.config.outputs:
+                file_metadata = study_data.tree.get(
                     url=["output", output, "about-the-study", "parameters"]
                 )
                 settings = StudySimSettingsDTO(
@@ -258,7 +253,7 @@ class GenericStorageService(IStudyStorageService[T]):
                         "seeds - Mersenne Twister"
                     ],
                 )
-                output_data: Simulation = config.outputs[output]
+                output_data: Simulation = study_data.config.outputs[output]
                 results.append(
                     StudySimResultDTO(
                         name=output_data.get_file(),

@@ -98,6 +98,7 @@ class FileStudyTreeConfig(BaseModel):
     path: Path
     study_id: str
     version: int
+    output_path: Optional[Path] = None
     areas: Dict[str, Area] = dict()
     sets: Dict[str, Set] = dict()
     outputs: Dict[str, Simulation] = dict()
@@ -109,6 +110,7 @@ class FileStudyTreeConfig(BaseModel):
     def next_file(self, name: str) -> "FileStudyTreeConfig":
         return FileStudyTreeConfig(
             study_path=self.study_path,
+            output_path=self.output_path,
             path=self.path / name,
             study_id=self.study_id,
             version=self.version,

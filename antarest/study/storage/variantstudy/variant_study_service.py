@@ -625,7 +625,7 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
 
         study_path = self.get_study_path(metadata)
         study_config, study_tree = self.study_factory.create_from_fs(
-            study_path, metadata.id
+            study_path, metadata.id, Path(metadata.path) / "output"
         )
         return FileStudy(config=study_config, tree=study_tree)
 
@@ -712,7 +712,7 @@ class VariantStudyService(GenericStorageService[VariantStudy]):
         stop_time = time.time()
         duration = "{:.3f}".format(stop_time - start_time)
         logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
-        _, study = self.study_factory.create_from_fs(dest, "")
+        _, study = self.study_factory.create_from_fs(dest, "", use_cache=False)
         study.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study {path_study} denormalized in {duration}s")

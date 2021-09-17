@@ -63,7 +63,7 @@ class CLIVariantManager:
         )
 
         study_config, study_tree = study_factory.create_from_fs(
-            study_path, str(study_path), False
+            study_path, str(study_path), use_cache=False
         )
         local_matrix_service = SimpleMatrixService(matrices_dir)
         extractor = VariantCommandsExtractor(local_matrix_service)

@@ -274,7 +274,7 @@ class RawStudyService(GenericStorageService[RawStudy]):
         stop_time = time.time()
         duration = "{:.3f}".format(stop_time - start_time)
         logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
-        _, study = self.study_factory.create_from_fs(dest, "")
+        _, study = self.study_factory.create_from_fs(dest, "", use_cache=False)
         study.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study {path_study} denormalized in {duration}s")
