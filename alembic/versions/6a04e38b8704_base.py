@@ -126,7 +126,7 @@ def upgrade():
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('content_status', sa.Enum('VALID', 'WARNING', 'ERROR', name='studycontentstatus'), nullable=True),
     sa.Column('workspace', sa.String(length=255), nullable=True),
-    sa.Column('path', sa.String(length=255), nullable=True),
+    sa.Column('path', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['id'], ['study.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
