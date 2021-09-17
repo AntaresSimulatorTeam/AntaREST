@@ -1,6 +1,7 @@
+import time
 from glob import escape
 from pathlib import Path
-from typing import IO, Any, Optional
+from typing import IO, Any, Optional, Callable
 from zipfile import ZipFile, BadZipFile
 
 import redis
@@ -77,3 +78,21 @@ def get_local_path() -> Path:
 
 def new_redis_instance(config: RedisConfig) -> redis.Redis:
     return redis.Redis(host=config.host, port=config.port, db=0)
+
+
+class StopWatch:
+    def __init__(self) -> None:
+        self.current_time: float = time.time()
+        self.start_time = self.current_time
+
+    def reset_current(self) -> None:
+        self.current_time = time.time()
+
+    def log_elapsed(
+        self, logger: Callable[[float], None], since_start: bool = False
+    ) -> None:
+        logger(
+            time.time()
+            - (self.start_time if since_start else self.current_time)
+        )
+        self.current_time = time.time()

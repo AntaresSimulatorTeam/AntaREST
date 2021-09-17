@@ -15,17 +15,8 @@ class INode(ABC, Generic[G, S, V]):
     Abstract tree element, have to be implemented to create hub or left.
     """
 
-    @abstractmethod
-    def build(self, config: FileStudyTreeConfig) -> "TREE":
-        """
-        build children (next tree level) according to study config
-        Args:
-            config: current study configuration used to build tree
-
-        Returns: children of current node
-
-        """
-        raise NotImplementedError()
+    def __init__(self, config: FileStudyTreeConfig):
+        self.config = config
 
     @abstractmethod
     def get(

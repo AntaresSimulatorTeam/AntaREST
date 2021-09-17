@@ -11,10 +11,10 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class InputThermalSeriesAreaThermal(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "series": InputSeriesMatrix(
-                self.context, config.next_file("series.txt")
+                self.context, self.config.next_file("series.txt")
             ),
         }
         return children

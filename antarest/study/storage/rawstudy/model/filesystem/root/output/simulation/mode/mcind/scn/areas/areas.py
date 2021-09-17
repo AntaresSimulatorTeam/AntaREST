@@ -14,14 +14,14 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 
 class OutputSimulationModeMcIndScnAreas(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            a: Area(self.context, config.next_file(a), area=a)
-            for a in config.area_names()
+            a: Area(self.context, self.config.next_file(a), area=a)
+            for a in self.config.area_names()
         }
 
-        for s in config.set_names():
+        for s in self.config.set_names():
             children[f"@ {s}"] = Set(
-                self.context, config.next_file(f"@ {s}"), set=s
+                self.context, self.config.next_file(f"@ {s}"), set=s
             )
         return children

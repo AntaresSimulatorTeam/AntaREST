@@ -60,9 +60,7 @@ def empty_study(tmp_path: str, matrix_service: MatrixService) -> FileStudy:
         tree=FileStudyTree(
             context=ContextServer(
                 matrix=matrix_service,
-                resolver=UriResolverService(
-                    config=Config(), matrix_service=matrix_service
-                ),
+                resolver=UriResolverService(matrix_service=matrix_service),
             ),
             config=config,
         ),

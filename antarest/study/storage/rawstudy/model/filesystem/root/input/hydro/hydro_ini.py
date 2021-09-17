@@ -15,6 +15,11 @@ class InputHydroIni(IniFileNode):
             "inter-daily-breakdown",
             "intra-daily-modulation",
             "inter-monthly-breakdown",
+            "reservoir",  # bool
+            "use water",  # bool
+            "hard bounds",  # bool
+            "use leeway",  # bool
+            "power to level",  # bool
         ]
         if config.version >= 650:
             sections += [

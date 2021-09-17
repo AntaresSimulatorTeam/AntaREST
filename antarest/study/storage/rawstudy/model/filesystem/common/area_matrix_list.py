@@ -29,12 +29,12 @@ class AreaMatrixList(FolderNode):
         self.prefix = prefix
         self.matrix_class = matrix_class
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             f"{self.prefix}{area}": self.matrix_class(
-                self.context, config.next_file(f"{self.prefix}{area}.txt")
+                self.context, self.config.next_file(f"{self.prefix}{area}.txt")
             )
-            for area in config.area_names()
+            for area in self.config.area_names()
         }
         return children
 
@@ -53,13 +53,13 @@ class HydroMatrixList(FolderNode):
         self.area = area
         self.matrix_class = matrix_class
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "ror": self.matrix_class(
-                self.context, config.next_file("ror.txt")
+                self.context, self.config.next_file("ror.txt")
             ),
             "storage": self.matrix_class(
-                self.context, config.next_file("storage.txt")
+                self.context, self.config.next_file("storage.txt")
             ),
         }
         return children
@@ -79,12 +79,12 @@ class ThermalMatrixList(FolderNode):
         self.area = area
         self.matrix_class = matrix_class
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             thermal_cluster: self.matrix_class(
-                self.context, config.next_file(f"{thermal_cluster}.txt")
+                self.context, self.config.next_file(f"{thermal_cluster}.txt")
             )
-            for thermal_cluster in config.get_thermal_names(self.area)
+            for thermal_cluster in self.config.get_thermal_names(self.area)
         }
         return children
 
@@ -113,11 +113,14 @@ class AreaMultipleMatrixList(FolderNode):
         self.klass = klass
         self.matrix_class = matrix_class
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             area: self.klass(
-                self.context, config.next_file(area), area, self.matrix_class
+                self.context,
+                self.config.next_file(area),
+                area,
+                self.matrix_class,
             )
-            for area in config.area_names()
+            for area in self.config.area_names()
         }
         return children

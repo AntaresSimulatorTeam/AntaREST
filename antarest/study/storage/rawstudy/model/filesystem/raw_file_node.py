@@ -23,9 +23,6 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         LazyNode.__init__(self, config=config, context=context)
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
-        pass  # end node has nothing to build
-
     def get_lazy_content(
         self,
         url: Optional[List[str]] = None,

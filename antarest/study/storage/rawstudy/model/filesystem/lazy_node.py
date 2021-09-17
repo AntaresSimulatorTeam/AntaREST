@@ -27,7 +27,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         config: FileStudyTreeConfig,
     ) -> None:
         self.context = context
-        self.config = config
+        super().__init__(config)
 
     def _get(
         self,

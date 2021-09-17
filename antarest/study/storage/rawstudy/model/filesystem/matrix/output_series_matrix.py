@@ -43,9 +43,6 @@ class OutputSeriesMatrix(MatrixNode):
         self.date_serializer = date_serializer
         self.head_writer = head_writer
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
-        pass  # End of tree
-
     def parse(
         self,
     ) -> JSON:

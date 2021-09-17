@@ -39,47 +39,51 @@ class OutputSimulation(FolderNode):
         FolderNode.__init__(self, context, config)
         self.simulation = simulation
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "about-the-study": OutputSimulationAbout(
-                self.context, config.next_file("about-the-study")
+                self.context, self.config.next_file("about-the-study")
             ),
             "simulation": RawFileNode(
-                self.context, config.next_file("simulation.log")
+                self.context, self.config.next_file("simulation.log")
             ),
             "info": OutputSimulationInfoAntaresOutput(
-                self.context, config.next_file("info.antares-output")
+                self.context, self.config.next_file("info.antares-output")
             ),
         }
         if not self.simulation.error:
             children["annualSystemCost"] = RawFileNode(
-                self.context, config.next_file("annualSystemCost.txt")
+                self.context, self.config.next_file("annualSystemCost.txt")
             )
             children["checkIntegrity"] = RawFileNode(
-                self.context, config.next_file("checkIntegrity.txt")
+                self.context, self.config.next_file("checkIntegrity.txt")
             )
             children["simulation-comments"] = RawFileNode(
-                self.context, config.next_file("simulation-comments.txt")
+                self.context, self.config.next_file("simulation-comments.txt")
             )
 
-            if config.store_new_set:
+            if self.config.store_new_set:
                 children["ts-numbers"] = OutputSimulationTsNumbers(
-                    self.context, config.next_file("ts-numbers")
+                    self.context, self.config.next_file("ts-numbers")
                 )
 
-            if config.archive_input_series:
+            if self.config.archive_input_series:
                 children["ts-generator"] = OutputSimulationTsGenerator(
-                    self.context, config.next_file("ts-generator")
+                    self.context, self.config.next_file("ts-generator")
                 )
 
             if self.simulation.mode == "economy":
                 children["economy"] = OutputSimulationMode(
-                    self.context, config.next_file("economy"), self.simulation
+                    self.context,
+                    self.config.next_file("economy"),
+                    self.simulation,
                 )
 
             elif self.simulation.mode == "adequacy":
                 children["adequacy"] = OutputSimulationMode(
-                    self.context, config.next_file("adequacy"), self.simulation
+                    self.context,
+                    self.config.next_file("adequacy"),
+                    self.simulation,
                 )
 
         return children

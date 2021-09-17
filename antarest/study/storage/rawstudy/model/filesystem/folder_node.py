@@ -35,11 +35,11 @@ class FolderNode(
     def __init__(
         self, context: ContextServer, config: FileStudyTreeConfig
     ) -> None:
-        self.config = config
+        super().__init__(config)
         self.context = context
 
     @abstractmethod
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         pass
 
     def _forward_get(
@@ -51,7 +51,7 @@ class FolderNode(
     ) -> Union[
         JSON, INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON]
     ]:
-        children = self.build(self.config)
+        children = self.build()
         names, sub_url = self.extract_child(children, url)
 
         # item is unique in url
@@ -88,7 +88,7 @@ class FolderNode(
         if get_node:
             return self
 
-        children = self.build(self.config)
+        children = self.build()
 
         if depth == 0:
             return {}
@@ -139,7 +139,7 @@ class FolderNode(
         data: Union[str, int, bool, float, bytes, JSON],
         url: Optional[List[str]] = None,
     ) -> None:
-        children = self.build(self.config)
+        children = self.build()
         url = url or []
 
         if url:
@@ -154,7 +154,7 @@ class FolderNode(
 
     def delete(self, url: Optional[List[str]] = None) -> None:
         if url and url != [""]:
-            children = self.build(self.config)
+            children = self.build()
             names, sub_url = self.extract_child(children, url)
             for key in names:
                 children[key].delete(sub_url)
@@ -167,7 +167,7 @@ class FolderNode(
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
-        children = self.build(self.config)
+        children = self.build()
 
         if url and url != [""]:
             (name,), sub_url = self.extract_child(children, url)
@@ -187,11 +187,11 @@ class FolderNode(
             return errors
 
     def normalize(self) -> None:
-        for child in self.build(self.config).values():
+        for child in self.build().values():
             child.normalize()
 
     def denormalize(self) -> None:
-        for child in self.build(self.config).values():
+        for child in self.build().values():
             child.denormalize()
 
     def extract_child(

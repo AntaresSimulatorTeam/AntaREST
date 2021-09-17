@@ -14,13 +14,13 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.renewable.serie
 
 
 class ClusteredRenewable(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "clusters": ClusteredRenewableAreaCluster(
-                self.context, config.next_file("clusters")
+                self.context, self.config.next_file("clusters")
             ),
             "series": ClusteredRenewableAreaSeries(
-                self.context, config.next_file("series")
+                self.context, self.config.next_file("series")
             ),
         }
 

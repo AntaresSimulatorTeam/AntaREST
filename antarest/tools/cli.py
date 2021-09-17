@@ -1,6 +1,12 @@
+import logging
 from pathlib import Path
+from typing import Optional
 
 import click
+
+from antarest.tools.lib import CLIVariantManager
+
+logging.basicConfig(level=logging.INFO)
 
 
 @click.group()
@@ -14,7 +20,16 @@ def commands() -> None:
     "-h",
     nargs=1,
     required=True,
+    type=str,
     help="Host URL of the antares web instance",
+)
+@click.option(
+    "--auth_token",
+    nargs=1,
+    required=False,
+    default=None,
+    type=str,
+    help="Authentication token if server needs one",
 )
 @click.option(
     "--input",
@@ -29,11 +44,16 @@ def commands() -> None:
     "-s",
     nargs=1,
     required=True,
+    type=str,
     help="ID of the variant to apply the script onto",
 )
-def apply_script(host: str, input: Path, study_id: str) -> None:
+def apply_script(
+    host: str, input: str, study_id: str, token: Optional[str] = None
+) -> None:
     """Apply a variant script onto an AntaresWeb study variant"""
-    print(f"{host}, {input}, {study_id}")
+    vm = CLIVariantManager(host, token)
+    res = vm.apply_commands_from_dir(study_id, Path(input))
+    print(res)
 
 
 @commands.command()
@@ -53,9 +73,36 @@ def apply_script(host: str, input: Path, study_id: str) -> None:
     type=click.Path(exists=False),
     help="Script output path",
 )
-def generate_script(input: Path, output: Path) -> None:
+def generate_script(input: str, output: str) -> None:
     """Generate variant script commands from a study or study fragment"""
-    print(f"{input}, {output}")
+    CLIVariantManager.extract_commands(Path(input), Path(output))
+
+
+@commands.command()
+@click.option(
+    "--base",
+    nargs=1,
+    required=True,
+    type=click.Path(exists=True),
+    help="Study fragment path",
+)
+@click.option(
+    "--variant",
+    nargs=1,
+    required=True,
+    type=click.Path(exists=True),
+    help="Study fragment path",
+)
+@click.option(
+    "--output",
+    "-o",
+    nargs=1,
+    required=True,
+    type=click.Path(exists=False),
+    help="Script output path",
+)
+def generate_script_diff(base: str, variant: str, output: str) -> None:
+    CLIVariantManager.generate_diff(Path(base), Path(variant), Path(output))
 
 
 if __name__ == "__main__":

@@ -27,16 +27,16 @@ class OutputSimulationMode(FolderNode):
         FolderNode.__init__(self, context, config)
         self.simulation = simulation
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {}
 
         if self.simulation.by_year:
             children["mc-ind"] = OutputSimulationModeMcInd(
-                self.context, config.next_file("mc-ind"), self.simulation
+                self.context, self.config.next_file("mc-ind"), self.simulation
             )
         if self.simulation.synthesis:
             children["mc-all"] = OutputSimulationModeMcAll(
-                self.context, config.next_file("mc-all")
+                self.context, self.config.next_file("mc-all")
             )
 
         return children

@@ -20,13 +20,13 @@ class OutputSimulationModeMcIndScnAreasSet(FolderNode):
         FolderNode.__init__(self, context, config)
         self.set = set
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = dict()
 
-        for timing in config.get_filters_year(self.set):
+        for timing in self.config.get_filters_year(self.set):
             children[f"values-{timing}"] = AreaOutputSeriesMatrix(
                 self.context,
-                config.next_file(f"values-{timing}.txt"),
+                self.config.next_file(f"values-{timing}.txt"),
                 timing,
                 self.set,
             )

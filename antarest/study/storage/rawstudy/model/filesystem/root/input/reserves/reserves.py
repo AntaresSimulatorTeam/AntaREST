@@ -11,9 +11,11 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class InputReserves(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            a: InputSeriesMatrix(self.context, config.next_file(f"{a}.txt"))
-            for a in config.area_names()
+            a: InputSeriesMatrix(
+                self.context, self.config.next_file(f"{a}.txt")
+            )
+            for a in self.config.area_names()
         }
         return children

@@ -17,19 +17,23 @@ from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata 
 
 
 class OutputSimulationAbout(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            "areas": RawFileNode(self.context, config.next_file("areas.txt")),
-            "comments": RawFileNode(
-                self.context, config.next_file("comments.txt")
+            "areas": RawFileNode(
+                self.context, self.config.next_file("areas.txt")
             ),
-            "links": RawFileNode(self.context, config.next_file("links.txt")),
-            # TODO "map": OutputSimulationAboutMap(self.context, config.next_file("map")),
+            "comments": RawFileNode(
+                self.context, self.config.next_file("comments.txt")
+            ),
+            "links": RawFileNode(
+                self.context, self.config.next_file("links.txt")
+            ),
+            # TODO "map": OutputSimulationAboutMap(self.context, self.config.next_file("map")),
             "study": OutputSimulationAboutStudy(
-                self.context, config.next_file("study.ini")
+                self.context, self.config.next_file("study.ini")
             ),
             "parameters": GeneralData(
-                self.context, config.next_file("parameters.ini")
+                self.context, self.config.next_file("parameters.ini")
             ),
         }
         return children

@@ -41,29 +41,31 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.wind.wind impor
 
 
 class Input(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            "areas": InputAreas(self.context, config.next_file("areas")),
+            "areas": InputAreas(self.context, self.config.next_file("areas")),
             "bindingconstraints": BindingConstraints(
-                self.context, config.next_file("bindingconstraints")
+                self.context, self.config.next_file("bindingconstraints")
             ),
-            "hydro": InputHydro(self.context, config.next_file("hydro")),
-            "links": InputLink(self.context, config.next_file("links")),
-            "load": InputLoad(self.context, config.next_file("load")),
+            "hydro": InputHydro(self.context, self.config.next_file("hydro")),
+            "links": InputLink(self.context, self.config.next_file("links")),
+            "load": InputLoad(self.context, self.config.next_file("load")),
             "misc-gen": InputMiscGen(
-                self.context, config.next_file("misc-gen")
+                self.context, self.config.next_file("misc-gen")
             ),
             "reserves": InputReserves(
-                self.context, config.next_file("reserves")
+                self.context, self.config.next_file("reserves")
             ),
-            "solar": InputSolar(self.context, config.next_file("solar")),
-            "thermal": InputThermal(self.context, config.next_file("thermal")),
-            "wind": InputWind(self.context, config.next_file("wind")),
+            "solar": InputSolar(self.context, self.config.next_file("solar")),
+            "thermal": InputThermal(
+                self.context, self.config.next_file("thermal")
+            ),
+            "wind": InputWind(self.context, self.config.next_file("wind")),
         }
 
         if self.config.enr_modelling == "clusters":
             children["renewables"] = ClusteredRenewable(
-                self.context, config.next_file("renewables")
+                self.context, self.config.next_file("renewables")
             )
 
         return children

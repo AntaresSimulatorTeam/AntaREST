@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Tuple
 
 from antarest.core.interfaces.cache import ICache, CacheConstants
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
 from antarest.study.common.uri_resolver_service import (
     UriResolverService,
 )
@@ -38,7 +38,7 @@ class StudyFactory:
 
     def __init__(
         self,
-        matrix: MatrixService,
+        matrix: ISimpleMatrixService,
         resolver: UriResolverService,
         cache: ICache,
     ) -> None:

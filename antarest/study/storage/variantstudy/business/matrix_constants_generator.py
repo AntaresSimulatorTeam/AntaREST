@@ -1,7 +1,7 @@
 from typing import Dict
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
     NULL_MATRIX,
@@ -25,54 +25,49 @@ MATRIX_PROTOCOL_PREFIX = "matrix://"
 
 
 class GeneratorMatrixConstants:
-    def __init__(self, matrix_service: MatrixService) -> None:
+    def __init__(self, matrix_service: ISimpleMatrixService) -> None:
         self.hashes: Dict[str, str] = {}
-        self.matrix_service: MatrixService = matrix_service
+        self.matrix_service: ISimpleMatrixService = matrix_service
         self._init()
 
     def _init(self) -> None:
-        with db():
-            self.hashes[
-                HYDRO_COMMON_CAPACITY_MAX_POWER_V7
-            ] = self.matrix_service.create(matrix_constants.hydro.v7.max_power)
-            self.hashes[
-                HYDRO_COMMON_CAPACITY_RESERVOIR_V7
-            ] = self.matrix_service.create(matrix_constants.hydro.v7.reservoir)
-            self.hashes[
-                HYDRO_COMMON_CAPACITY_RESERVOIR_V6
-            ] = self.matrix_service.create(matrix_constants.hydro.v6.reservoir)
-            self.hashes[
-                HYDRO_COMMON_CAPACITY_INFLOW_PATTERN
-            ] = self.matrix_service.create(
-                matrix_constants.hydro.v7.inflow_pattern
-            )
-            self.hashes[
-                HYDRO_COMMON_CAPACITY_CREDIT_MODULATION
-            ] = self.matrix_service.create(
-                matrix_constants.hydro.v7.credit_modulations
-            )
-            self.hashes[PREPRO_CONVERSION] = self.matrix_service.create(
-                matrix_constants.prepro.conversion
-            )
-            self.hashes[PREPRO_DATA] = self.matrix_service.create(
-                matrix_constants.prepro.data
-            )
-            self.hashes[THERMAL_PREPRO_DATA] = self.matrix_service.create(
-                matrix_constants.thermals.prepro.data
-            )
+        self.hashes[
+            HYDRO_COMMON_CAPACITY_MAX_POWER_V7
+        ] = self.matrix_service.create(matrix_constants.hydro.v7.max_power)
+        self.hashes[
+            HYDRO_COMMON_CAPACITY_RESERVOIR_V7
+        ] = self.matrix_service.create(matrix_constants.hydro.v7.reservoir)
+        self.hashes[
+            HYDRO_COMMON_CAPACITY_RESERVOIR_V6
+        ] = self.matrix_service.create(matrix_constants.hydro.v6.reservoir)
+        self.hashes[
+            HYDRO_COMMON_CAPACITY_INFLOW_PATTERN
+        ] = self.matrix_service.create(
+            matrix_constants.hydro.v7.inflow_pattern
+        )
+        self.hashes[
+            HYDRO_COMMON_CAPACITY_CREDIT_MODULATION
+        ] = self.matrix_service.create(
+            matrix_constants.hydro.v7.credit_modulations
+        )
+        self.hashes[PREPRO_CONVERSION] = self.matrix_service.create(
+            matrix_constants.prepro.conversion
+        )
+        self.hashes[PREPRO_DATA] = self.matrix_service.create(
+            matrix_constants.prepro.data
+        )
+        self.hashes[THERMAL_PREPRO_DATA] = self.matrix_service.create(
+            matrix_constants.thermals.prepro.data
+        )
 
-            self.hashes[
-                THERMAL_PREPRO_MODULATION
-            ] = self.matrix_service.create(
-                matrix_constants.thermals.prepro.modulation
-            )
-            self.hashes[LINK] = self.matrix_service.create(
-                matrix_constants.link.link
-            )
+        self.hashes[THERMAL_PREPRO_MODULATION] = self.matrix_service.create(
+            matrix_constants.thermals.prepro.modulation
+        )
+        self.hashes[LINK] = self.matrix_service.create(
+            matrix_constants.link.link
+        )
 
-            self.hashes[NULL_MATRIX_NAME] = self.matrix_service.create(
-                NULL_MATRIX
-            )
+        self.hashes[NULL_MATRIX_NAME] = self.matrix_service.create(NULL_MATRIX)
 
     def get_hydro_max_power(self, version: int) -> str:
         if version > 650:

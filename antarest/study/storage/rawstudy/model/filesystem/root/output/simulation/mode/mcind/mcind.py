@@ -24,10 +24,10 @@ class OutputSimulationModeMcInd(FolderNode):
         FolderNode.__init__(self, context, config)
         self.simulation = simulation
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             str("{:05d}".format(scn)): OutputSimulationModeMcIndScn(
-                self.context, config.next_file("{:05d}".format(scn))
+                self.context, self.config.next_file("{:05d}".format(scn))
             )
             for scn in range(1, self.simulation.nbyears + 1)
         }

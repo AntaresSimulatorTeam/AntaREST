@@ -31,14 +31,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
             ],
         ),
         CommandDTO(
-            action=CommandName.UPDATE_AREA.value,
-            args={"id": "id", "name": "name", "metadata": {}},
-        ),
-        CommandDTO(
-            action=CommandName.UPDATE_AREA.value,
-            args=[{"id": "id", "name": "name", "metadata": {}}],
-        ),
-        CommandDTO(
             action=CommandName.REMOVE_AREA.value,
             args={"id": "id"},
         ),
@@ -55,26 +47,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
             args=[{"name": "id", "metadata": {}, "base_filter": "add-all"}],
         ),
         CommandDTO(
-            action=CommandName.UPDATE_DISTRICT.value,
-            args={
-                "id": "id",
-                "name": "name",
-                "metadata": {},
-                "filter_items": [],
-            },
-        ),
-        CommandDTO(
-            action=CommandName.UPDATE_DISTRICT.value,
-            args=[
-                {
-                    "id": "id",
-                    "name": "name",
-                    "metadata": {},
-                    "filter_items": [],
-                }
-            ],
-        ),
-        CommandDTO(
             action=CommandName.REMOVE_DISTRICT.value,
             args={"id": "id"},
         ),
@@ -103,26 +75,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
             ],
         ),
         CommandDTO(
-            action=CommandName.UPDATE_LINK.value,
-            args={
-                "area1": "area1",
-                "area2": "area2",
-                "parameters": {},
-                "series": "series",
-            },
-        ),
-        CommandDTO(
-            action=CommandName.UPDATE_LINK.value,
-            args=[
-                {
-                    "area1": "area1",
-                    "area2": "area2",
-                    "parameters": {},
-                    "series": "series",
-                }
-            ],
-        ),
-        CommandDTO(
             action=CommandName.REMOVE_LINK.value,
             args={
                 "area1": "area1",
@@ -153,32 +105,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,
             args=[
                 {
-                    "name": "name",
-                    "enabled": True,
-                    "time_step": "hourly",
-                    "operator": "equal",
-                    "coeffs": {},
-                    "values": "values",
-                }
-            ],
-        ),
-        CommandDTO(
-            action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
-            args={
-                "id": "id",
-                "name": "name",
-                "enabled": True,
-                "time_step": "hourly",
-                "operator": "equal",
-                "coeffs": {},
-                "values": "values",
-            },
-        ),
-        CommandDTO(
-            action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
-            args=[
-                {
-                    "id": "id",
                     "name": "name",
                     "enabled": True,
                     "time_step": "hourly",
@@ -231,28 +157,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
             ],
         ),
         CommandDTO(
-            action=CommandName.UPDATE_CLUSTER.value,
-            args={
-                "id": "id",
-                "name": "name",
-                "parameters": {},
-                "prepro": "prepro",
-                "modulation": "modulation",
-            },
-        ),
-        CommandDTO(
-            action=CommandName.UPDATE_CLUSTER.value,
-            args=[
-                {
-                    "id": "id",
-                    "name": "name",
-                    "parameters": {},
-                    "prepro": "prepro",
-                    "modulation": "modulation",
-                }
-            ],
-        ),
-        CommandDTO(
             action=CommandName.REMOVE_CLUSTER.value,
             args={"area_id": "area_name", "cluster_id": "cluster_name"},
         ),
@@ -262,11 +166,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
-            args={"target_element": "target_element", "matrix": "matrix"},
+            args={"target": "target_element", "matrix": "matrix"},
         ),
         CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
-            args=[{"target_element": "target_element", "matrix": "matrix"}],
+            args=[{"target": "target_element", "matrix": "matrix"}],
         ),
         CommandDTO(
             action=CommandName.UPDATE_CONFIG.value,

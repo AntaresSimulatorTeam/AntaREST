@@ -51,15 +51,23 @@ jobs:
         run: |
           git log -1 HEAD --format=%H > ./resources/commit_id
           pyinstaller -F antarest/main.py -n server --additional-hooks-dir extra-hooks --add-data resources:resources --add-data alembic:alembic --add-data alembic.ini:.
+          pyinstaller -F antarest/tools/cli.py -n antarestool --hidden-import='sqlalchemy.sql.default_comparator' --hidden-import='sqlalchemy.ext.baked' --additional-hooks-dir extra-hooks --add-data resources:resources
           dist/server -v
+          dist/antarestool --help
       - name: Generate binary Windows
         if: matrix.os == 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
           pyinstaller -F antarest\main.py -n server --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources" --add-data ".\alembic;.\alembic" --add-data ".\alembic.ini;.\"
-          dist\server.exe -v
+          pyinstaller -F antarest\tools\cli.py -n antarestool --hidden-import='sqlalchemy.sql.default_comparator' --hidden-import='sqlalchemy.ext.baked' --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources"
+          dist\antarestool.exe --help
       - name: Archive server binary
         uses: actions/upload-artifact@v2
         with:
           name: server-${{ matrix.os }}
           path: dist/server*
+      - name: Archive tool binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: antarestool-${{ matrix.os }}
+          path: dist/antarestool*

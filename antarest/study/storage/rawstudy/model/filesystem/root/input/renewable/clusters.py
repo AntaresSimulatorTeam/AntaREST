@@ -39,19 +39,19 @@ class ClusteredRenewableCluster(FolderNode):
         FolderNode.__init__(self, context, config)
         self.area = area
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         return {
             "list": ClusteredRenewableClusterConfig(
-                self.context, config.next_file("list.ini"), self.area
+                self.context, self.config.next_file("list.ini"), self.area
             )
         }
 
 
 class ClusteredRenewableAreaCluster(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         return {
             area: ClusteredRenewableCluster(
-                self.context, config.next_file(area), area
+                self.context, self.config.next_file(area), area
             )
-            for area in config.area_names()
+            for area in self.config.area_names()
         }

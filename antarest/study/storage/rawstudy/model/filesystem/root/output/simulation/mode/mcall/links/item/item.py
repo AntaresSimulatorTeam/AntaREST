@@ -25,19 +25,19 @@ class OutputSimulationModeMcAllLinksItem(FolderNode):
         self.area = area
         self.link = link
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {}
-        for timing in config.get_filters_synthesis(self.area, self.link):
+        for timing in self.config.get_filters_synthesis(self.area, self.link):
             children[f"values-{timing}"] = LinkOutputSeriesMatrix(
                 self.context,
-                config.next_file(f"values-{timing}.txt"),
+                self.config.next_file(f"values-{timing}.txt"),
                 timing,
                 self.area,
                 self.link,
             )
             children[f"id-{timing}"] = LinkOutputSeriesMatrix(
                 self.context,
-                config.next_file(f"id-{timing}.txt"),
+                self.config.next_file(f"id-{timing}.txt"),
                 timing,
                 self.area,
                 self.link,
