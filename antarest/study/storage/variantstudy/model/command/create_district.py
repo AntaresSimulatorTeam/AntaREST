@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional, List, cast
 
 from pydantic import validator
 
+from antarest.study.model import PatchLeafDict
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
     Set,
@@ -26,7 +27,6 @@ class DistrictBaseFilter(Enum):
 
 class CreateDistrict(ICommand):
     name: str
-    metadata: Dict[str, str]
     base_filter: Optional[DistrictBaseFilter]
     filter_items: Optional[List[str]]
     output: Optional[bool]
@@ -76,6 +76,7 @@ class CreateDistrict(ICommand):
             },
             ["input", "areas", "sets", district_id],
         )
+
         return CommandOutput(status=True, message=district_id)
 
     def to_dto(self) -> CommandDTO:
@@ -83,7 +84,6 @@ class CreateDistrict(ICommand):
             action=CommandName.CREATE_DISTRICT.value,
             args={
                 "name": self.name,
-                "metadata": self.metadata,
                 "base_filter": self.base_filter.value
                 if self.base_filter
                 else None,
@@ -106,7 +106,6 @@ class CreateDistrict(ICommand):
             return simple_match
         return (
             simple_match
-            and self.metadata == other.metadata
             and self.base_filter == other.base_filter
             and self.filter_items == other.filter_items
             and self.output == other.output

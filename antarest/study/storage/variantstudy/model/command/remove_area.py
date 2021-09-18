@@ -1,6 +1,7 @@
 from typing import Any, List, Optional
 
 from antarest.core.custom_types import JSON
+from antarest.study.model import PatchLeafDict
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
@@ -144,7 +145,6 @@ class RemoveArea(ICommand):
             }
         }
         study_data.tree.save(new_area_data)
-
         return CommandOutput(status=True, message=f"Area '{self.id}' deleted")
 
     def to_dto(self) -> CommandDTO:

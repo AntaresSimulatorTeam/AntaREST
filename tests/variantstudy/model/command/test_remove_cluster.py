@@ -16,6 +16,9 @@ from antarest.study.storage.variantstudy.model.command.create_area import (
 from antarest.study.storage.variantstudy.model.command.create_cluster import (
     CreateCluster,
 )
+from antarest.study.storage.variantstudy.model.command.remove_area import (
+    RemoveArea,
+)
 from antarest.study.storage.variantstudy.model.command.remove_cluster import (
     RemoveCluster,
 )
@@ -29,15 +32,8 @@ class TestRemoveCluster:
         pass
 
     def test_apply(
-        self, empty_study: FileStudy, matrix_service: MatrixService
+        self, empty_study: FileStudy, command_context: CommandContext
     ):
-
-        command_context = CommandContext(
-            generator_matrix_constants=GeneratorMatrixConstants(
-                matrix_service=matrix_service
-            ),
-            matrix_service=matrix_service,
-        )
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)
         cluster_name = "cluster_name"
@@ -46,7 +42,6 @@ class TestRemoveCluster:
         CreateArea.parse_obj(
             {
                 "area_name": area_name,
-                "metadata": {},
                 "command_context": command_context,
             }
         ).apply(empty_study)
@@ -93,3 +88,21 @@ class TestRemoveCluster:
             command_context=command_context,
         ).apply(empty_study)
         assert not output.status
+
+
+def test_match(command_context: CommandContext):
+    base = RemoveCluster(
+        area_id="foo", cluster_id="bar", command_context=command_context
+    )
+    other_match = RemoveCluster(
+        area_id="foo", cluster_id="bar", command_context=command_context
+    )
+    other_not_match = RemoveCluster(
+        area_id="foo", cluster_id="baz", command_context=command_context
+    )
+    other_other = RemoveArea(id="id", command_context=command_context)
+    assert base.match(other_match)
+    assert not base.match(other_not_match)
+    assert not base.match(other_other)
+    assert base.match_signature() == "remove_cluster%bar%foo"
+    assert base.get_inner_matrices() == []

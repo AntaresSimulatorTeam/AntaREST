@@ -20,6 +20,9 @@ from antarest.study.storage.variantstudy.model.command.create_district import (
     DistrictBaseFilter,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.remove_area import (
+    RemoveArea,
+)
 from antarest.study.storage.variantstudy.model.command.remove_district import (
     RemoveDistrict,
 )
@@ -29,14 +32,8 @@ from antarest.study.storage.variantstudy.model.command_context import (
 
 
 def test_manage_district(
-    empty_study: FileStudy, matrix_service: MatrixService
+    empty_study: FileStudy, command_context: CommandContext
 ):
-    command_context = CommandContext(
-        generator_matrix_constants=GeneratorMatrixConstants(
-            matrix_service=matrix_service
-        ),
-        matrix_service=matrix_service,
-    )
     study_path = empty_study.config.study_path
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
@@ -50,7 +47,6 @@ def test_manage_district(
     CreateArea.parse_obj(
         {
             "area_name": area1,
-            "metadata": {},
             "command_context": command_context,
         }
     ).apply(empty_study)
@@ -58,7 +54,6 @@ def test_manage_district(
     CreateArea.parse_obj(
         {
             "area_name": area2,
-            "metadata": {},
             "command_context": command_context,
         }
     ).apply(empty_study)
@@ -66,19 +61,12 @@ def test_manage_district(
     CreateArea.parse_obj(
         {
             "area_name": area3,
-            "metadata": {},
             "command_context": command_context,
         }
     ).apply(empty_study)
 
-    command_context = CommandContext(
-        matrix_service=matrix_service,
-        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-    )
-
     create_district1_command: ICommand = CreateDistrict(
         name="Two added zone",
-        metadata={},
         filter_items=[area1_id, area2_id],
         comments="First district",
         command_context=command_context,
@@ -153,3 +141,37 @@ def test_manage_district(
         empty_study.config.study_path / "input/areas/sets.ini"
     )
     assert len(sets_config.keys()) == 3
+
+
+def test_match(command_context: CommandContext):
+    base = CreateDistrict(
+        name="foo",
+        base_filter=DistrictBaseFilter.add_all,
+        filter_items=["a", "b"],
+        command_context=command_context,
+    )
+    other_match = CreateDistrict(
+        name="foo",
+        base_filter=DistrictBaseFilter.add_all,
+        filter_items=["a", "b"],
+        command_context=command_context,
+    )
+    other_not_match = CreateDistrict(
+        name="foo2", command_context=command_context
+    )
+    other_other = RemoveArea(id="id", command_context=command_context)
+    assert base.match(other_match, True)
+    assert not base.match(other_not_match)
+    assert not base.match(other_other)
+    assert base.match_signature() == "create_district%foo"
+    assert base.get_inner_matrices() == []
+
+    base = RemoveDistrict(id="id", command_context=command_context)
+    other_match = RemoveDistrict(id="id", command_context=command_context)
+    other_not_match = RemoveDistrict(id="id2", command_context=command_context)
+    other_other = RemoveArea(id="id", command_context=command_context)
+    assert base.match(other_match, True)
+    assert not base.match(other_not_match)
+    assert not base.match(other_other)
+    assert base.match_signature() == "remove_district%id"
+    assert base.get_inner_matrices() == []

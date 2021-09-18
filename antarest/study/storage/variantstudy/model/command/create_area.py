@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional, List, cast
 from pydantic import validator
 
 from antarest.core.custom_types import JSON
+from antarest.study.model import PatchLeafDict
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     transform_name_to_id,
@@ -28,7 +29,6 @@ from antarest.study.storage.variantstudy.model.command.utils import (
 
 class CreateArea(ICommand):
     area_name: str
-    metadata: Dict[str, str]  # TODO: use metadata
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
@@ -251,7 +251,7 @@ class CreateArea(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.CREATE_AREA.value,
-            args={"area_name": self.area_name, "metadata": self.metadata},
+            args={"area_name": self.area_name},
         )
 
     def match_signature(self) -> str:
@@ -264,10 +264,7 @@ class CreateArea(ICommand):
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateArea):
             return False
-        simple_match = self.area_name == other.area_name
-        if not equal:
-            return simple_match
-        return simple_match and self.metadata == other.metadata
+        return self.area_name == other.area_name
 
     def revert(
         self, history: List["ICommand"], base: Optional[FileStudy] = None

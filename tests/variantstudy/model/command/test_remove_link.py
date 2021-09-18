@@ -22,6 +22,9 @@ from antarest.study.storage.variantstudy.model.command.create_link import (
     CreateLink,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.remove_area import (
+    RemoveArea,
+)
 from antarest.study.storage.variantstudy.model.command.remove_link import (
     RemoveLink,
 )
@@ -35,15 +38,8 @@ class TestRemoveLink:
         pass
 
     def test_apply(
-        self, empty_study: FileStudy, matrix_service: MatrixService
+        self, empty_study: FileStudy, command_context: CommandContext
     ):
-
-        command_context = CommandContext(
-            generator_matrix_constants=GeneratorMatrixConstants(
-                matrix_service=matrix_service
-            ),
-            matrix_service=matrix_service,
-        )
         area1 = "Area1"
         area1_id = transform_name_to_id(area1)
         area2 = "Area2"
@@ -52,7 +48,6 @@ class TestRemoveLink:
         CreateArea.parse_obj(
             {
                 "area_name": area1,
-                "metadata": {},
                 "command_context": command_context,
             }
         ).apply(empty_study)
@@ -60,17 +55,11 @@ class TestRemoveLink:
         CreateArea.parse_obj(
             {
                 "area_name": area2,
-                "metadata": {},
                 "command_context": command_context,
             }
         ).apply(empty_study)
 
         hash_before_link = dirhash(empty_study.config.study_path, "md5")
-
-        command_context = CommandContext(
-            matrix_service=matrix_service,
-            generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-        )
 
         CreateLink(
             area1=area1_id,
@@ -90,3 +79,21 @@ class TestRemoveLink:
         assert (
             dirhash(empty_study.config.study_path, "md5") == hash_before_link
         )
+
+
+def test_match(command_context: CommandContext):
+    base = RemoveLink(
+        area1="foo", area2="bar", command_context=command_context
+    )
+    other_match = RemoveLink(
+        area1="foo", area2="bar", command_context=command_context
+    )
+    other_not_match = RemoveLink(
+        area1="foo", area2="baz", command_context=command_context
+    )
+    other_other = RemoveArea(id="id", command_context=command_context)
+    assert base.match(other_match)
+    assert not base.match(other_not_match)
+    assert not base.match(other_other)
+    assert base.match_signature() == "remove_link%foo%bar"
+    assert base.get_inner_matrices() == []

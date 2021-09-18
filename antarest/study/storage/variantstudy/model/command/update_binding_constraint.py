@@ -165,5 +165,5 @@ class UpdateBindingConstraint(ICommand):
     def get_inner_matrices(self) -> List[str]:
         if self.values is not None:
             assert isinstance(self.values, str)
-            return [self.values]
+            return [strip_matrix_protocol(self.values)]
         return []

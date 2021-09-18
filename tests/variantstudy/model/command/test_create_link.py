@@ -20,6 +20,9 @@ from antarest.study.storage.variantstudy.model.command.create_link import (
     CreateLink,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.remove_area import (
+    RemoveArea,
+)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -30,15 +33,8 @@ class TestCreateLink:
         pass
 
     def test_apply(
-        self, empty_study: FileStudy, matrix_service: MatrixService
+        self, empty_study: FileStudy, command_context: CommandContext
     ):
-
-        command_context = CommandContext(
-            generator_matrix_constants=GeneratorMatrixConstants(
-                matrix_service=matrix_service
-            ),
-            matrix_service=matrix_service,
-        )
         study_path = empty_study.config.study_path
         area1 = "Area1"
         area1_id = transform_name_to_id(area1)
@@ -52,7 +48,6 @@ class TestCreateLink:
         CreateArea.parse_obj(
             {
                 "area_name": area1,
-                "metadata": {},
                 "command_context": command_context,
             }
         ).apply(empty_study)
@@ -60,7 +55,6 @@ class TestCreateLink:
         CreateArea.parse_obj(
             {
                 "area_name": area2,
-                "metadata": {},
                 "command_context": command_context,
             }
         ).apply(empty_study)
@@ -68,15 +62,9 @@ class TestCreateLink:
         CreateArea.parse_obj(
             {
                 "area_name": area3,
-                "metadata": {},
                 "command_context": command_context,
             }
         ).apply(empty_study)
-
-        command_context = CommandContext(
-            matrix_service=matrix_service,
-            generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-        )
 
         create_link_command: ICommand = CreateLink(
             area1=area1_id,
@@ -233,3 +221,21 @@ class TestCreateLink:
             command_context=command_context,
         ).apply(empty_study)
         assert not output.status
+
+
+def test_match(command_context: CommandContext):
+    base = CreateLink(
+        area1="foo", area2="bar", series=[[0]], command_context=command_context
+    )
+    other_match = CreateLink(
+        area1="foo", area2="bar", series=[[0]], command_context=command_context
+    )
+    other_not_match = CreateLink(
+        area1="foo", area2="baz", command_context=command_context
+    )
+    other_other = RemoveArea(id="id", command_context=command_context)
+    assert base.match(other_match)
+    assert not base.match(other_not_match)
+    assert not base.match(other_other)
+    assert base.match_signature() == "create_link%foo%bar"
+    assert base.get_inner_matrices() == ["matrix_id"]

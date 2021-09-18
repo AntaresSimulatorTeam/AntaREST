@@ -9,6 +9,9 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
+from antarest.study.storage.variantstudy.model.command.remove_area import (
+    RemoveArea,
+)
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
 )
@@ -22,15 +25,8 @@ class TestReplaceMatrix:
         pass
 
     def test_apply(
-        self, empty_study: FileStudy, matrix_service: MatrixService
+        self, empty_study: FileStudy, command_context: CommandContext
     ):
-
-        command_context = CommandContext(
-            generator_matrix_constants=GeneratorMatrixConstants(
-                matrix_service=matrix_service
-            ),
-            matrix_service=matrix_service,
-        )
         study_path = empty_study.config.study_path
         area1 = "Area1"
         area1_id = transform_name_to_id(area1)
@@ -38,7 +34,6 @@ class TestReplaceMatrix:
         CreateArea.parse_obj(
             {
                 "area_name": area1,
-                "metadata": {},
                 "command_context": command_context,
             }
         ).apply(empty_study)
@@ -69,3 +64,21 @@ class TestReplaceMatrix:
         )
         output = replace_matrix.apply(empty_study)
         assert not output.status
+
+
+def test_match(command_context: CommandContext):
+    base = ReplaceMatrix(
+        target="foo", matrix=[[0]], command_context=command_context
+    )
+    other_match = ReplaceMatrix(
+        target="foo", matrix=[[1]], command_context=command_context
+    )
+    other_not_match = ReplaceMatrix(
+        target="bar", matrix=[[0]], command_context=command_context
+    )
+    other_other = RemoveArea(id="id", command_context=command_context)
+    assert base.match(other_match)
+    assert not base.match(other_not_match)
+    assert not base.match(other_other)
+    assert base.match_signature() == "replace_matrix%foo"
+    assert base.get_inner_matrices() == ["matrix_id"]

@@ -32,7 +32,7 @@ class LinkAlreadyExistError(Exception):
 class CreateLink(ICommand):
     area1: str
     area2: str
-    parameters: Dict[str, str]
+    parameters: Optional[Dict[str, str]] = None
     series: Optional[Union[List[List[MatrixData]], str]] = None
 
     def __init__(self, **data: Any) -> None:
@@ -53,6 +53,7 @@ class CreateLink(ICommand):
     def _create_link_in_config(
         self, area_from: str, area_to: str, study_data: FileStudy
     ) -> None:
+        self.parameters = self.parameters or {}
         study_data.config.areas[area_from].links[area_to] = Link(
             filters_synthesis=[
                 step.strip()
@@ -71,6 +72,7 @@ class CreateLink(ICommand):
         )
 
     def _generate_link_properties(self) -> JSON:
+        self.parameters = self.parameters or {}
         return {
             "hurdles-cost": self.parameters.get(
                 "hurdles-cost",
@@ -249,5 +251,5 @@ class CreateLink(ICommand):
     def get_inner_matrices(self) -> List[str]:
         if self.series:
             assert isinstance(self.series, str)
-            return [self.series]
+            return [strip_matrix_protocol(self.series)]
         return []

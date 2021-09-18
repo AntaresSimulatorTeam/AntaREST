@@ -221,8 +221,8 @@ class CreateCluster(ICommand):
         matrices: List[str] = []
         if self.prepro:
             assert isinstance(self.prepro, str)
-            matrices.append(self.prepro)
+            matrices.append(strip_matrix_protocol(self.prepro))
         if self.modulation:
             assert isinstance(self.modulation, str)
-            matrices.append(self.modulation)
+            matrices.append(strip_matrix_protocol(self.modulation))
         return matrices

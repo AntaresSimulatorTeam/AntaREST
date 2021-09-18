@@ -2,6 +2,7 @@ from typing import List
 
 from antarest.core.custom_types import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -69,6 +70,7 @@ class CommandFactory:
         self.command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=matrix_service,
+            patch_service=PatchService(),
         )
 
     def _to_single_icommand(self, action: str, args: JSON) -> ICommand:

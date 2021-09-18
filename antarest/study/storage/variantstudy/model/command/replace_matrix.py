@@ -116,4 +116,4 @@ class ReplaceMatrix(ICommand):
 
     def get_inner_matrices(self) -> List[str]:
         assert isinstance(self.matrix, str)
-        return [self.matrix]
+        return [strip_matrix_protocol(self.matrix)]

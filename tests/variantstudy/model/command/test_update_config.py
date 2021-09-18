@@ -13,6 +13,9 @@ from antarest.study.storage.variantstudy.model.command.create_area import (
 from antarest.study.storage.variantstudy.model.command.create_cluster import (
     CreateCluster,
 )
+from antarest.study.storage.variantstudy.model.command.remove_area import (
+    RemoveArea,
+)
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
@@ -21,13 +24,9 @@ from antarest.study.storage.variantstudy.model.command_context import (
 )
 
 
-def test_update_config(empty_study: FileStudy, matrix_service: MatrixService):
-    command_context = CommandContext(
-        generator_matrix_constants=GeneratorMatrixConstants(
-            matrix_service=matrix_service
-        ),
-        matrix_service=matrix_service,
-    )
+def test_update_config(
+    empty_study: FileStudy, command_context: CommandContext
+):
     study_path = empty_study.config.study_path
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
@@ -35,7 +34,6 @@ def test_update_config(empty_study: FileStudy, matrix_service: MatrixService):
     CreateArea.parse_obj(
         {
             "area_name": area1,
-            "metadata": {},
             "command_context": command_context,
         }
     ).apply(empty_study)
@@ -64,3 +62,20 @@ def test_update_config(empty_study: FileStudy, matrix_service: MatrixService):
         study_path / f"input/areas/{area1_id}/optimization.ini"
     )
     assert not area_config["nodal optimization"]["other-dispatchable-power"]
+
+
+def test_match(command_context: CommandContext):
+    base = UpdateConfig(
+        target="foo", data="bar", command_context=command_context
+    )
+    other_match = UpdateConfig(
+        target="foo", data="bar", command_context=command_context
+    )
+    other_not_match = UpdateConfig(
+        target="hello", data="bar", command_context=command_context
+    )
+    other_other = RemoveArea(id="id", command_context=command_context)
+    assert base.match(other_match)
+    assert not base.match(other_not_match)
+    assert not base.match(other_other)
+    assert base.match_signature() == "update_config%foo"

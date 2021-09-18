@@ -5,6 +5,7 @@ from antarest.core.custom_types import JSON
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -61,6 +62,7 @@ class VariantCommandsExtractor:
         self.command_context = CommandContext(
             generator_matrix_constants=self.generator_matrix_constants,
             matrix_service=self.matrix_service,
+            patch_service=PatchService(),
         )
         self.null_matrix_id = strip_matrix_protocol(
             self.generator_matrix_constants.get_null_matrix()
@@ -155,7 +157,6 @@ class VariantCommandsExtractor:
         ui_data = study_tree.get(["input", "areas", area_id, "ui"])
         area_command = CreateArea(
             area_name=area.name,
-            metadata={},
             command_context=self.command_context,
         )
         study_commands.append(area_command)
