@@ -53,7 +53,6 @@ class UpdateBindingConstraint(ICommand):
         return None
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        assert isinstance(self.values, str)
         binding_constraints = study_data.tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]
         )
