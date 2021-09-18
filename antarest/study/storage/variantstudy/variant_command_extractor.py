@@ -88,8 +88,8 @@ class VariantCommandsExtractor:
         )
         # todo create something out of variant manager commands to replace single rawnode files ?
         # study_commands.append(
-        #     CLIVariantManager._generate_update_config(
-        #         study_tree, ["settings", "comments"], command_context
+        #     self._generate_update_config(
+        #         study_tree, ["settings", "comments"]
         #     )
         # )
         stopwatch.log_elapsed(

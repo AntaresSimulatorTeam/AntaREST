@@ -72,6 +72,9 @@ from antarest.study.storage.variantstudy.model.model import (
 from antarest.study.storage.variantstudy.repository import (
     VariantStudyRepository,
 )
+from antarest.study.storage.variantstudy.variant_command_generator import (
+    VariantCommandGenerator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +106,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self.repository = repository
         self.event_bus = event_bus
         self.command_factory = command_factory
+        self.generator = VariantCommandGenerator(self.study_factory)
 
     def get_command(
         self, study_id: str, command_id: str, params: RequestParameters
@@ -513,47 +517,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         # Copy parent study to dest
         dest_path = Path(variant_study.path) / SNAPSHOT_RELATIVE_PATH
 
-        # Build file study
-        study_config, study_tree = self.study_factory.create_from_fs(
-            dest_path, study_id=variant_study.id, use_cache=False
-        )
-        update_antares_info(variant_study, study_tree)
-        file_study = FileStudy(config=study_config, tree=study_tree)
-
-        # Apply commands
+        # Generate
         commands: List[ICommand] = []
         for command_block in variant_study.commands:
             commands.extend(
                 self.command_factory.to_icommand(command_block.to_dto())
             )
 
-        results: GenerationResultInfoDTO = GenerationResultInfoDTO(
-            success=True, details=[]
-        )
-
-        for command in commands:
-            try:
-                output = command.apply(file_study)
-            except Exception as e:
-                results.success = False
-                message = f"Error while applying command {command.command_name.value}"
-                logger.error(message, exc_info=e)
-                results.details.append(
-                    (command.command_name.value, False, message)
-                )
-                break
-
-            results.details.append(
-                (command.command_name.value, output.status, output.message)
-            )
-            results.success = results.success and output.status
-
-            if not output.status:
-                break
-
-        if not results.success:
-            shutil.rmtree(dest_path)
-        return results
+        return self.generator.generate(commands, dest_path, variant_study)
 
     def create(self, study: VariantStudy) -> VariantStudy:
         """
