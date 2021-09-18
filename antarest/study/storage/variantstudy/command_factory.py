@@ -42,6 +42,9 @@ from antarest.study.storage.variantstudy.model.command.remove_link import (
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
 )
+from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
+    UpdateBindingConstraint,
+)
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
@@ -108,6 +111,12 @@ class CommandFactory:
 
         elif action == CommandName.CREATE_BINDING_CONSTRAINT.value:
             return CreateBindingConstraint(
+                **args,
+                command_context=self.command_context,
+            )
+
+        elif action == CommandName.UPDATE_BINDING_CONSTRAINT.value:
+            return UpdateBindingConstraint(
                 **args,
                 command_context=self.command_context,
             )

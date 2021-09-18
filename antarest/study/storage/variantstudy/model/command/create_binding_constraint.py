@@ -7,6 +7,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.utils_binding_constraint import (
+    apply_binding_constraint,
+)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -60,58 +63,19 @@ class CreateBindingConstraint(ICommand):
 
         new_key = len(binding_constraints.keys())
         bd_id = transform_name_to_id(self.name)
-        binding_constraints[str(new_key)] = {
-            "id": bd_id,
-            "name": self.name,
-            "enabled": self.enabled,
-            "type": self.time_step.value,
-            "operator": self.operator.value,
-        }
-        if self.comments is not None:
-            binding_constraints[str(new_key)]["comments"] = self.comments
-
-        for link_or_thermal in self.coeffs:
-            if "%" in link_or_thermal:
-                area_1, area_2 = link_or_thermal.split("%")
-                if (
-                    area_1 not in study_data.config.areas
-                    or area_2 not in study_data.config.areas[area_1].links
-                ):
-                    return CommandOutput(
-                        status=False,
-                        message=f"Link {link_or_thermal} does not exist",
-                    )
-            else:
-                area, thermal_id = link_or_thermal.split(".")
-                if area not in study_data.config.areas or thermal_id not in [
-                    thermal.id
-                    for thermal in study_data.config.areas[area].thermals
-                ]:
-                    return CommandOutput(
-                        status=False,
-                        message=f"Thermal cluster {link_or_thermal} does not exist",
-                    )
-
-            # this is weird because Antares Simulator only accept int as offset
-            if len(self.coeffs[link_or_thermal]) == 2:
-                self.coeffs[link_or_thermal][1] = int(
-                    self.coeffs[link_or_thermal][1]
-                )
-
-            binding_constraints[str(new_key)][link_or_thermal] = "%".join(
-                [str(coeff_val) for coeff_val in self.coeffs[link_or_thermal]]
-            )
-
-        study_data.config.bindings.append(bd_id)
-        study_data.tree.save(
+        return apply_binding_constraint(
+            study_data,
             binding_constraints,
-            ["input", "bindingconstraints", "bindingconstraints"],
+            str(new_key),
+            bd_id,
+            self.name,
+            self.comments,
+            self.enabled,
+            self.time_step,
+            self.operator,
+            self.coeffs,
+            self.values,
         )
-        study_data.tree.save(
-            self.values, ["input", "bindingconstraints", bd_id]
-        )
-
-        return CommandOutput(status=True)
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
@@ -164,7 +128,25 @@ class CreateBindingConstraint(ICommand):
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateBindingConstraint, other)
-        raise NotImplementedError()
+        from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
+            UpdateBindingConstraint,
+        )
+
+        bd_id = transform_name_to_id(self.name)
+        return [
+            UpdateBindingConstraint(
+                id=bd_id,
+                enabled=other.enabled,
+                time_step=other.time_step,
+                operator=other.operator,
+                coeffs=other.coeffs,
+                values=strip_matrix_protocol(other.values)
+                if self.values != other.values
+                else None,
+                comments=other.comments,
+                command_context=other.command_context,
+            )
+        ]
 
     def get_inner_matrices(self) -> List[str]:
         if self.values is not None:

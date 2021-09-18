@@ -17,7 +17,7 @@ def validate_matrix(
             "command_context"
         ].matrix_service.create(data=MatrixContent(data=matrix))
     elif isinstance(matrix, str):
-        if values["command_context"].matrix_service.get(matrix):
+        if values["command_context"].matrix_service.exists(matrix):
             matrix_id = MATRIX_PROTOCOL_PREFIX + matrix
         else:
             raise ValueError(f"Matrix with id {matrix} does not exist")

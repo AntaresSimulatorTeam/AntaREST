@@ -100,7 +100,7 @@ class RemoteVariantGenerator(IVariantGenerator):
         # TODO could create a dataset from theses matrices using "variant_<study_id>" as name
         # also the matrix could be named after the command name where they are used
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Matrix upload done in {x}ms")
+            lambda x: logger.info(f"Matrix upload done in {x}s")
         )
 
         res = self.session.post(
@@ -108,7 +108,7 @@ class RemoteVariantGenerator(IVariantGenerator):
             json=[command.dict() for command in commands],
         )
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Command upload done in {x}ms")
+            lambda x: logger.info(f"Command upload done in {x}s")
         )
         assert res.status_code == 200
 
@@ -118,7 +118,7 @@ class RemoteVariantGenerator(IVariantGenerator):
             )
         )
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Generation done in {x}ms")
+            lambda x: logger.info(f"Generation done in {x}s")
         )
         assert res.status_code == 200
         return GenerationResultInfoDTO.parse_obj(res.json())
@@ -137,6 +137,7 @@ class LocalVariantGenerator(IVariantGenerator):
     def apply_commands(
         self, commands: List[CommandDTO], matrices_dir: Path
     ) -> GenerationResultInfoDTO:
+        stopwatch = StopWatch()
         matrix_service = SimpleMatrixService(matrices_dir)
         matrix_resolver = UriResolverService(matrix_service)
         study_factory = StudyFactory(
@@ -153,6 +154,7 @@ class LocalVariantGenerator(IVariantGenerator):
         )
 
         command_objs: List[ICommand] = []
+        logger.info("Parsing command objects")
         for command_block in commands:
             if (
                 command_block.action == CommandName.CREATE_DISTRICT.value
@@ -161,15 +163,23 @@ class LocalVariantGenerator(IVariantGenerator):
             ):
                 continue
             command_objs.extend(command_factory.to_icommand(command_block))
-
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"Command objects parsed in {x}s")
+        )
         result = generator.generate(
             command_objs, self.output_path, delete_on_failure=False
         )
         if result.success:
+            logger.info("Building new study tree")
             config, study_tree = study_factory.create_from_fs(
                 self.output_path, study_id="", use_cache=False
             )
+            logger.info("Denormalizing study")
+            stopwatch.reset_current()
             study_tree.denormalize()
+            stopwatch.log_elapsed(
+                lambda x: logger.info(f"Denormalized done in {x}s")
+            )
         return result
 
     def init_dest_path(self) -> None:
@@ -222,18 +232,26 @@ def generate_diff(base: Path, variant: Path, output_dir: Path) -> None:
     if not variant_command_file.exists():
         raise ValueError(f"Missing {COMMAND_FILE}")
 
+    stopwatch = StopWatch()
+    logger.info("Copying input matrices")
     if (base / MATRIX_STORE_DIR).exists():
         for matrix_file in os.listdir(base / MATRIX_STORE_DIR):
             shutil.copyfile(
                 base / MATRIX_STORE_DIR / matrix_file,
                 matrices_dir / matrix_file,
             )
+    stopwatch.log_elapsed(
+        lambda x: logger.info(f"Base input matrix copied in {x}s")
+    )
     if (variant / MATRIX_STORE_DIR).exists():
         for matrix_file in os.listdir(variant / MATRIX_STORE_DIR):
             shutil.copyfile(
                 variant / MATRIX_STORE_DIR / matrix_file,
                 matrices_dir / matrix_file,
             )
+    stopwatch.log_elapsed(
+        lambda x: logger.info(f"Variant input matrix copied in {x}s")
+    )
 
     local_matrix_service = SimpleMatrixService(matrices_dir)
     extractor = VariantCommandsExtractor(local_matrix_service)
@@ -260,12 +278,18 @@ def generate_diff(base: Path, variant: Path, output_dir: Path) -> None:
 
 
 def parse_commands(file: Path) -> List[CommandDTO]:
+    stopwatch = StopWatch()
+    logger.info("Parsing commands script")
     with open(file, "r") as fh:
         json_commands = json.load(fh)
+    stopwatch.log_elapsed(lambda x: logger.info(f"Script file read in {x}s"))
 
     commands: List[CommandDTO] = []
     for command in json_commands:
         commands.append(CommandDTO.parse_obj(command))
+    stopwatch.log_elapsed(
+        lambda x: logger.info(f"Script commands parsed in {x}s")
+    )
 
     return commands
 

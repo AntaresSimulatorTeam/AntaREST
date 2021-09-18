@@ -182,7 +182,40 @@ class CreateCluster(ICommand):
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateCluster, other)
-        raise NotImplementedError()
+        from antarest.study.storage.variantstudy.model.command.replace_matrix import (
+            ReplaceMatrix,
+        )
+        from antarest.study.storage.variantstudy.model.command.update_config import (
+            UpdateConfig,
+        )
+
+        cluster_id = transform_name_to_id(self.cluster_name)
+        commands: List[ICommand] = []
+        if self.prepro != other.prepro:
+            commands.append(
+                ReplaceMatrix(
+                    target=f"input/thermal/prepro/{self.area_id}/{cluster_id}/data",
+                    matrix=strip_matrix_protocol(other.prepro),
+                    command_context=self.command_context,
+                )
+            )
+        if self.modulation != other.modulation:
+            commands.append(
+                ReplaceMatrix(
+                    target=f"input/thermal/prepro/{self.area_id}/{cluster_id}/modulation",
+                    matrix=strip_matrix_protocol(other.modulation),
+                    command_context=self.command_context,
+                )
+            )
+        if self.parameters != other.parameters:
+            commands.append(
+                UpdateConfig(
+                    target=f"input/thermal/clusters/{self.area_id}/list/{self.cluster_name}",
+                    data=other.parameters,
+                    command_context=self.command_context,
+                )
+            )
+        return commands
 
     def get_inner_matrices(self) -> List[str]:
         matrices: List[str] = []

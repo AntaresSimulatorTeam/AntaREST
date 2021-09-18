@@ -93,7 +93,7 @@ class VariantCommandsExtractor:
         #     )
         # )
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"General command extraction done in {x}ms")
+            lambda x: logger.info(f"General command extraction done in {x}s")
         )
 
         all_links_commands: List[ICommand] = []
@@ -132,11 +132,11 @@ class VariantCommandsExtractor:
             )
 
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Binding command extraction done in {x}ms")
+            lambda x: logger.info(f"Binding command extraction done in {x}s")
         )
 
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Command extraction done in {x}ms"), True
+            lambda x: logger.info(f"Command extraction done in {x}s"), True
         )
         return [command.to_dto() for command in study_commands]
 
@@ -174,7 +174,7 @@ class VariantCommandsExtractor:
             )
         )
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Area command extraction done in {x}ms")
+            lambda x: logger.info(f"Area command extraction done in {x}s")
         )
 
         links_data = study_tree.get(["input", "links", area_id, "properties"])
@@ -184,12 +184,12 @@ class VariantCommandsExtractor:
             )
 
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Link command extraction done in {x}ms")
+            lambda x: logger.info(f"Link command extraction done in {x}s")
         )
         for thermal in area.thermals:
             study_commands += self.extract_cluster(study, area_id, thermal.id)
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Thermal command extraction done in {x}ms")
+            lambda x: logger.info(f"Thermal command extraction done in {x}s")
         )
 
         # load, wind, solar
@@ -215,7 +215,7 @@ class VariantCommandsExtractor:
                 )
             )
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Prepro command extraction done in {x}ms")
+            lambda x: logger.info(f"Prepro command extraction done in {x}s")
         )
 
         # misc gen / reserves
@@ -232,12 +232,12 @@ class VariantCommandsExtractor:
         )
 
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Misc command extraction done in {x}ms")
+            lambda x: logger.info(f"Misc command extraction done in {x}s")
         )
         # hydro
         study_commands += self.extract_hydro(study, area_id)
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Hydro command extraction done in {x}ms")
+            lambda x: logger.info(f"Hydro command extraction done in {x}s")
         )
         return study_commands, links_commands
 
@@ -485,6 +485,7 @@ class VariantCommandsExtractor:
             ).values():
                 if binding_config["id"] == binding_id:
                     binding = binding_config
+                    break
         assert binding is not None
         binding_constraint_command = CreateBindingConstraint(
             name=binding["name"],
@@ -511,17 +512,26 @@ class VariantCommandsExtractor:
     def diff(
         self, base: List[CommandDTO], variant: List[CommandDTO]
     ) -> List[ICommand]:
+        stopwatch = StopWatch()
         command_factory = CommandFactory(
             generator_matrix_constants=self.generator_matrix_constants,
             matrix_service=self.matrix_service,
         )
+        logger.info("Parsing commands")
         base_commands: List[ICommand] = []
         for command in base:
             base_commands += command_factory.to_icommand(command)
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"Base commands parsed in {x}s")
+        )
         variant_commands: List[ICommand] = []
         for command in variant:
             variant_commands += command_factory.to_icommand(command)
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"Variant commands parsed in {x}s")
+        )
 
+        logger.info("Computing commands diff")
         added_commands: List[Tuple[int, ICommand]] = []
         missing_commands: List[Tuple[int, ICommand]] = []
         modified_commands: List[Tuple[int, ICommand, ICommand]] = []
@@ -539,6 +549,11 @@ class VariantCommandsExtractor:
                     break
             if not found:
                 added_commands.append((order, variant_command))
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"First diff pass done in {x}s")
+        )
+        logger.info(f"Found {len(added_commands)} added commands")
+        logger.info(f"Found {len(modified_commands)} modified commands")
         order = 0
         for base_command in base_commands:
             found = False
@@ -548,11 +563,18 @@ class VariantCommandsExtractor:
                     break
             if not found:
                 missing_commands.append((order, base_command))
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"Second diff pass done in {x}s")
+        )
+        logger.info(f"Found {len(missing_commands)} missing commands")
 
         first_priority_commands: List[ICommand] = []
         second_priority_commands: List[ICommand] = []
+        third_priority_commands: List[ICommand] = []
         other_commands: List[Tuple[int, ICommand]] = []
+        logger.info(f"Computing new diff commands")
         for order, command_obj in missing_commands:
+            logger.info(f"Reverting {command_obj.match_signature()}")
             if command_obj.command_name == CommandName.REMOVE_AREA:
                 first_priority_commands += command_obj.revert(base_commands)
             elif (
@@ -560,16 +582,23 @@ class VariantCommandsExtractor:
                 or command_obj.command_name == CommandName.REMOVE_CLUSTER
             ):
                 second_priority_commands += command_obj.revert(base_commands)
-
+            elif (
+                command_obj.command_name == CommandName.UPDATE_CONFIG
+                or command_obj.command_name == CommandName.REPLACE_MATRIX
+            ):
+                third_priority_commands += command_obj.revert(base_commands)
             else:
                 other_commands += [
                     (0, command)
                     for command in command_obj.revert(base_commands)
                 ]
         for order, variant_command, base_command in modified_commands:
+            logger.info(
+                f"Generating diff command for {variant_command.match_signature()}"
+            )
             other_commands += [
                 (order, command)
-                for command in variant_command.create_diff(base_command)
+                for command in base_command.create_diff(variant_command)
             ]
         for ordered_command in added_commands:
             other_commands.append(ordered_command)
@@ -577,8 +606,14 @@ class VariantCommandsExtractor:
         diff_commands = (
             first_priority_commands
             + second_priority_commands
+            + third_priority_commands
             + [ordered_command[1] for ordered_command in other_commands]
         )
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"Diff commands generation done in {x}s"),
+            since_start=True,
+        )
+        logger.info(f"Diff commands total : {len(diff_commands)}")
         return diff_commands
 
     def _generate_update_config(

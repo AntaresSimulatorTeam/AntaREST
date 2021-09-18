@@ -2,6 +2,7 @@ from typing import Dict, List, Union, Any, Optional, cast
 
 from pydantic import validator
 
+from antarest.core.custom_types import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -69,38 +70,8 @@ class CreateLink(ICommand):
             ],
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
-        if self.area1 not in study_data.config.areas:
-            return CommandOutput(
-                status=False, message=f"The area '{self.area1}' does not exist"
-            )
-        if self.area2 not in study_data.config.areas:
-            return CommandOutput(
-                status=False, message=f"The area '{self.area2}' does not exist"
-            )
-
-        area_from, area_to = sorted([self.area1, self.area2])
-        if area_to in study_data.config.areas[area_from].links:
-            return CommandOutput(
-                status=False,
-                message=f"The link between {self.area1} and {self.area2} already exist.",
-            )
-
-        self._create_link_in_config(area_from, area_to, study_data)
-
-        if (
-            study_data.config.path
-            / "input"
-            / "links"
-            / area_from
-            / f"{area_to}.txt"
-        ).exists():
-            return CommandOutput(
-                status=False,
-                message=f"The link between {self.area1} and {self.area2} already exist",
-            )
-
-        link_property = {
+    def _generate_link_properties(self) -> JSON:
+        return {
             "hurdles-cost": self.parameters.get(
                 "hurdles-cost",
                 LinkProperties.HURDLES_COST.value,
@@ -150,6 +121,39 @@ class CreateLink(ICommand):
                 FilteringOptions.FILTER_YEAR_BY_YEAR.value,
             ),
         }
+
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
+        if self.area1 not in study_data.config.areas:
+            return CommandOutput(
+                status=False, message=f"The area '{self.area1}' does not exist"
+            )
+        if self.area2 not in study_data.config.areas:
+            return CommandOutput(
+                status=False, message=f"The area '{self.area2}' does not exist"
+            )
+
+        area_from, area_to = sorted([self.area1, self.area2])
+        if area_to in study_data.config.areas[area_from].links:
+            return CommandOutput(
+                status=False,
+                message=f"The link between {self.area1} and {self.area2} already exist.",
+            )
+
+        self._create_link_in_config(area_from, area_to, study_data)
+
+        if (
+            study_data.config.path
+            / "input"
+            / "links"
+            / area_from
+            / f"{area_to}.txt"
+        ).exists():
+            return CommandOutput(
+                status=False,
+                message=f"The link between {self.area1} and {self.area2} already exist",
+            )
+
+        link_property = self._generate_link_properties()
 
         study_data.tree.save(
             link_property, ["input", "links", area_from, "properties", area_to]
@@ -214,7 +218,33 @@ class CreateLink(ICommand):
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateLink, other)
-        raise NotImplementedError()
+        from antarest.study.storage.variantstudy.model.command.update_config import (
+            UpdateConfig,
+        )
+        from antarest.study.storage.variantstudy.model.command.replace_matrix import (
+            ReplaceMatrix,
+        )
+
+        commands: List[ICommand] = []
+        area_from, area_to = sorted([self.area1, self.area2])
+        if self.parameters != other.parameters:
+            link_property = other._generate_link_properties()
+            commands.append(
+                UpdateConfig(
+                    target=f"input/links/{area_from}/properties/{area_to}",
+                    data=link_property,
+                    command_context=self.command_context,
+                )
+            )
+        if self.series != other.series:
+            commands.append(
+                ReplaceMatrix(
+                    target=f"input/links/{area_from}/{area_to}",
+                    matrix=strip_matrix_protocol(other.series),
+                    command_context=self.command_context,
+                )
+            )
+        return commands
 
     def get_inner_matrices(self) -> List[str]:
         if self.series:

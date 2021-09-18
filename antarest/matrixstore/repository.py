@@ -118,6 +118,10 @@ class MatrixContentRepository:
         data = json.load(open(file))
         return MatrixContent.parse_obj(data)
 
+    def exists(self, id: str) -> bool:
+        file = self.bucket / id
+        return file.exists()
+
     def save(self, content: MatrixContent) -> str:
         stringify = content.json()
         h = MatrixContentRepository._compute_hash(stringify)

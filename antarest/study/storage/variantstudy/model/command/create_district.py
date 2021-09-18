@@ -129,7 +129,29 @@ class CreateDistrict(ICommand):
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateDistrict, other)
-        raise NotImplementedError()
+        district_id = transform_name_to_id(self.name)
+        from antarest.study.storage.variantstudy.model.command.update_config import (
+            UpdateConfig,
+        )
+
+        base_filter = other.base_filter or DistrictBaseFilter.remove_all
+        inverted_set = base_filter == DistrictBaseFilter.add_all
+        item_key = "-" if inverted_set else "+"
+        return [
+            UpdateConfig(
+                target=f"input/areas/sets/{district_id}",
+                data={
+                    "caption": other.name,
+                    "apply-filter": (
+                        other.base_filter or DistrictBaseFilter.remove_all
+                    ).value,
+                    item_key: other.filter_items or [],
+                    "output": other.output,
+                    "comments": other.comments,
+                },
+                command_context=self.command_context,
+            )
+        ]
 
     def get_inner_matrices(self) -> List[str]:
         return []
