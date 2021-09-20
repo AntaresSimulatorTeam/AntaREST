@@ -1,0 +1,12 @@
+{
+    "variants": "Variant management",
+    "variantDependencies": "Variant dependencies",
+    "createVariant": "Create variant",
+    "editionMode": "Edition mode",
+    "testGeneration": "Test generation",
+    "newVariant": "New variant",
+    "variantNameLabel": "Name",
+    "variantMode": "Variant mode",
+    "onVariantCreationError": "Variant not created"
+}
+  

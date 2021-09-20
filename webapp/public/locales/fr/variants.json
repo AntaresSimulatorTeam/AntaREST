@@ -1,0 +1,10 @@
+{
+    "variantDependencies": "Vue dépendences",
+    "createVariant": "Créer une variante",
+    "editionMode": "Mode édition",
+    "testGeneration": "Tester la géneration",
+    "newVariant": "Nouveau variant",
+    "variantNameLabel": "Nom",
+    "variantMode": "Mode observation",
+    "onVariantCreationError": "Erreur lors de la création du variant"
+  }

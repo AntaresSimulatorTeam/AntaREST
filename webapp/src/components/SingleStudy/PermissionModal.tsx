@@ -4,7 +4,7 @@ import { createStyles, makeStyles, Theme, TextField, Typography, Chip, Select, M
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import GenericModal from '../Settings/GenericModal';
+import GenericModal from '../ui/GenericModal';
 import { getGroups, getUsers } from '../../services/api/user';
 import { GroupDTO, StudyMetadataOwner, StudyPublicMode, UserDTO } from '../../common/types';
 import { updatePermission } from './utils';
