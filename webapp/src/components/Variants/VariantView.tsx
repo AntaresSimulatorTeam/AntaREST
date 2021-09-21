@@ -4,6 +4,7 @@ import { useHistory } from 'react-router-dom';
 import { Components, StudyMetadata } from '../../common/types';
 import VariantNav from './VariantNavSwitch';
 import VariantTreeView from './VariantTreeView/VariantTreeView';
+import EditionView from './Edition';
 
 const useStyles = makeStyles(() => createStyles({
   root: {
@@ -26,7 +27,7 @@ const VariantView = (props: PropTypes) => {
   const history = useHistory();
   const items: Components = {
     'variants:variantDependencies': () => <VariantTreeView study={study} />,
-    'variants:editionMode': () => <div style={{ width: '100%', height: '100%' }}>Edition variant</div>,
+    'variants:editionMode': () => <EditionView />,
     'variants:testGeneration': () => <div style={{ width: '100%', height: '100%' }}>Test generation</div>,
   };
   const classes = useStyles();

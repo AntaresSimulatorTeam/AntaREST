@@ -42,6 +42,7 @@ const VariantModal = (props: PropTypes) => {
   const onSave = async () => {
     try {
       const newId = await createVariant(parentId, name);
+      setName('');
       onClose();
       history.push(`/study/${newId}/variants/edition`);
     } catch (e) {

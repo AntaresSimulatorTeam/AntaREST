@@ -7,6 +7,8 @@
     "newVariant": "New variant",
     "variantNameLabel": "Name",
     "variantMode": "Variant mode",
-    "onVariantCreationError": "Variant not created"
+    "onVariantCreationError": "Variant not created",
+    "add": "Add",
+    "save": "Save"
 }
   

@@ -6,5 +6,7 @@
     "newVariant": "Nouveau variant",
     "variantNameLabel": "Nom",
     "variantMode": "Mode observation",
-    "onVariantCreationError": "Erreur lors de la création du variant"
+    "onVariantCreationError": "Erreur lors de la création du variant",
+    "add": "Ajouter",
+    "save": "Sauvegarder"
   }

@@ -213,6 +213,12 @@ export interface MatrixType {
   data: Array<Array<number>>;
 }
 
+export interface CommandDTO {
+name: string;
+args: string;
+action: string;
+}
+
 export enum WSEvent {
   STUDY_CREATED='STUDY_CREATED',
   STUDY_DELETED='STUDY_DELETED',
