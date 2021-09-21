@@ -145,6 +145,9 @@ class RemoveArea(ICommand):
             }
         }
         study_data.tree.save(new_area_data)
+
+        # todo remove bindinconstraint using this area ?
+        # todo remove area from districts
         return CommandOutput(status=True, message=f"Area '{self.id}' deleted")
 
     def to_dto(self) -> CommandDTO:
@@ -171,8 +174,8 @@ class RemoveArea(ICommand):
         from antarest.study.storage.variantstudy.model.command.create_area import (
             CreateArea,
         )
-        from antarest.study.storage.variantstudy.variant_command_extractor import (
-            VariantCommandsExtractor,
+        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+            CommandExtraction,
         )
 
         for command in reversed(history):
@@ -180,12 +183,15 @@ class RemoveArea(ICommand):
                 isinstance(command, CreateArea)
                 and transform_name_to_id(command.area_name) == self.id
             ):
+                # todo revert binding constraints that has the area in constraint and also search in base for one
                 return [command]
         if base is not None:
-            area_commands, links_commands = VariantCommandsExtractor(
+
+            area_commands, links_commands = CommandExtraction(
                 self.command_context.matrix_service
             ).extract_area(base, self.id)
             return area_commands + links_commands
+        # todo revert binding constraints that has the area in constraint
         return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:

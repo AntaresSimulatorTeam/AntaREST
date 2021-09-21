@@ -81,6 +81,8 @@ class RemoveCluster(ICommand):
             for cluster in study_data.config.areas[self.area_id].thermals
             if cluster.id != self.cluster_id.lower()
         ]
+        # todo remove binding constraint using this cluster ?
+
         return CommandOutput(
             status=True,
             message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
@@ -115,8 +117,8 @@ class RemoveCluster(ICommand):
         from antarest.study.storage.variantstudy.model.command.create_cluster import (
             CreateCluster,
         )
-        from antarest.study.storage.variantstudy.variant_command_extractor import (
-            VariantCommandsExtractor,
+        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+            CommandExtraction,
         )
 
         for command in reversed(history):
@@ -126,11 +128,14 @@ class RemoveCluster(ICommand):
                 == self.cluster_id
                 and command.area_id == self.area_id
             ):
+                # todo revert binding constraints that has the cluster in constraint and also search in base for one
                 return [command]
         if base is not None:
-            return VariantCommandsExtractor(
+
+            return CommandExtraction(
                 self.command_context.matrix_service
             ).extract_cluster(base, self.area_id, self.cluster_id)
+            # todo revert binding constraints that has the cluster in constraint
         return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:

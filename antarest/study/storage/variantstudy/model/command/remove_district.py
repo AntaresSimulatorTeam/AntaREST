@@ -52,8 +52,8 @@ class RemoveDistrict(ICommand):
         from antarest.study.storage.variantstudy.model.command.create_district import (
             CreateDistrict,
         )
-        from antarest.study.storage.variantstudy.variant_command_extractor import (
-            VariantCommandsExtractor,
+        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+            CommandExtraction,
         )
 
         for command in reversed(history):
@@ -63,7 +63,7 @@ class RemoveDistrict(ICommand):
             ):
                 return [command]
         if base is not None:
-            return VariantCommandsExtractor(
+            return CommandExtraction(
                 self.command_context.matrix_service
             ).extract_district(base, self.id)
         return []

@@ -79,8 +79,8 @@ class RemoveLink(ICommand):
         from antarest.study.storage.variantstudy.model.command.create_link import (
             CreateLink,
         )
-        from antarest.study.storage.variantstudy.variant_command_extractor import (
-            VariantCommandsExtractor,
+        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+            CommandExtraction,
         )
 
         for command in reversed(history):
@@ -91,7 +91,7 @@ class RemoveLink(ICommand):
             ):
                 return [command]
         if base is not None:
-            return VariantCommandsExtractor(
+            return CommandExtraction(
                 self.command_context.matrix_service
             ).extract_link(base, self.area1, self.area2)
         return []

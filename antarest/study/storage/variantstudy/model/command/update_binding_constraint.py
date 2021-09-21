@@ -150,11 +150,11 @@ class UpdateBindingConstraint(ICommand):
                     )
                 ]
         if base is not None:
-            from antarest.study.storage.variantstudy.variant_command_extractor import (
-                VariantCommandsExtractor,
+            from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+                CommandExtraction,
             )
 
-            return VariantCommandsExtractor(
+            return CommandExtraction(
                 self.command_context.matrix_service
             ).extract_binding_constraint(base, self.id)
         return []
