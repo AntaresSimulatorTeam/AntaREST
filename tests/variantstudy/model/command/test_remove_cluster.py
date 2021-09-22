@@ -106,3 +106,46 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "remove_cluster%bar%foo"
     assert base.get_inner_matrices() == []
+
+
+def test_revert(command_context: CommandContext):
+    base = RemoveCluster(
+        area_id="foo", cluster_id="bar", command_context=command_context
+    )
+    assert base.revert(
+        [
+            CreateCluster(
+                area_id="foo",
+                cluster_name="bar",
+                parameters={},
+                prepro=[[0]],
+                modulation=[[0]],
+                command_context=command_context,
+            )
+        ],
+        None,
+    ) == [
+        CreateCluster(
+            area_id="foo",
+            cluster_name="bar",
+            parameters={},
+            prepro=[[0]],
+            modulation=[[0]],
+            command_context=command_context,
+        )
+    ]
+    study = FileStudy(config=Mock(), tree=Mock())
+    base.revert([], study)
+    base.command_context.command_extractor.extract_cluster.assert_called_with(
+        study, "foo", "bar"
+    )
+
+
+def test_create_diff(command_context: CommandContext):
+    base = RemoveCluster(
+        area_id="foo", cluster_id="bar", command_context=command_context
+    )
+    other_match = RemoveCluster(
+        area_id="foo", cluster_id="bar", command_context=command_context
+    )
+    assert base.create_diff(other_match) == []

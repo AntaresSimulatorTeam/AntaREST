@@ -71,54 +71,48 @@ class CreateLink(ICommand):
             ],
         )
 
-    def _generate_link_properties(self) -> JSON:
-        self.parameters = self.parameters or {}
+    @staticmethod
+    def generate_link_properties(parameters: JSON) -> JSON:
         return {
-            "hurdles-cost": self.parameters.get(
+            "hurdles-cost": parameters.get(
                 "hurdles-cost",
                 LinkProperties.HURDLES_COST.value,
             ),
-            "loop-flow": self.parameters.get(
+            "loop-flow": parameters.get(
                 "loop-flow", LinkProperties.LOOP_FLOW.value
             ),
-            "use-phase-shifter": self.parameters.get(
+            "use-phase-shifter": parameters.get(
                 "use-phase-shifter",
                 LinkProperties.USE_PHASE_SHIFTER.value,
             ),
-            "transmission-capacities": self.parameters.get(
+            "transmission-capacities": parameters.get(
                 "transmission-capacities",
                 LinkProperties.TRANSMISSION_CAPACITIES.value,
             ),
-            "asset-type": self.parameters.get(
+            "asset-type": parameters.get(
                 "asset-type",
                 LinkProperties.ASSET_TYPE.value,
             ),
-            "link-style": self.parameters.get(
+            "link-style": parameters.get(
                 "link-style",
                 LinkProperties.LINK_STYLE.value,
             ),
-            "link-width": self.parameters.get(
+            "link-width": parameters.get(
                 "link-width",
                 LinkProperties.LINK_WIDTH.value,
             ),
-            "colorr": self.parameters.get(
-                "colorr", LinkProperties.COLORR.value
-            ),
-            "colorg": self.parameters.get(
-                "colorg", LinkProperties.COLORG.value
-            ),
-            "colorb": self.parameters.get(
-                "colorb", LinkProperties.COLORB.value
-            ),
-            "display-comments": self.parameters.get(
+            "colorr": parameters.get("colorr", LinkProperties.COLORR.value),
+            "colorg": parameters.get("colorg", LinkProperties.COLORG.value),
+            "colorb": parameters.get("colorb", LinkProperties.COLORB.value),
+            "display-comments": parameters.get(
                 "display-comments",
                 LinkProperties.DISPLAY_COMMENTS.value,
             ),
-            "filter-synthesis": self.parameters.get(
+            "filter-synthesis": parameters.get(
                 "filter-synthesis",
                 FilteringOptions.FILTER_SYNTHESIS.value,
             ),
-            "filter-year-by-year": self.parameters.get(
+            "filter-year-by-year": parameters.get(
                 "filter-year-by-year",
                 FilteringOptions.FILTER_YEAR_BY_YEAR.value,
             ),
@@ -155,7 +149,8 @@ class CreateLink(ICommand):
                 message=f"The link between {self.area1} and {self.area2} already exist",
             )
 
-        link_property = self._generate_link_properties()
+        self.parameters = self.parameters or {}
+        link_property = CreateLink.generate_link_properties(self.parameters)
 
         study_data.tree.save(
             link_property, ["input", "links", area_from, "properties", area_to]
@@ -230,7 +225,9 @@ class CreateLink(ICommand):
         commands: List[ICommand] = []
         area_from, area_to = sorted([self.area1, self.area2])
         if self.parameters != other.parameters:
-            link_property = other._generate_link_properties()
+            link_property = CreateLink.generate_link_properties(
+                other.parameters or {}
+            )
             commands.append(
                 UpdateConfig(
                     target=f"input/links/{area_from}/properties/{area_to}",

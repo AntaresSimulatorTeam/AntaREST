@@ -343,7 +343,6 @@ class TestCreateArea:
 def test_match(command_context: CommandContext):
     base = CreateArea(area_name="foo", command_context=command_context)
     other_match = CreateArea(area_name="foo", command_context=command_context)
-    other_diff = CreateArea(area_name="foo", command_context=command_context)
     other_not_match = CreateArea(
         area_name="bar", command_context=command_context
     )
@@ -353,4 +352,16 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "create_area%foo"
     assert base.get_inner_matrices() == []
-    assert base.create_diff(other_diff) == []
+
+
+def test_revert(command_context: CommandContext):
+    base = CreateArea(area_name="foo", command_context=command_context)
+    assert base.revert([], None) == [
+        RemoveArea(id="foo", command_context=command_context)
+    ]
+
+
+def test_create_diff(command_context: CommandContext):
+    base = CreateArea(area_name="foo", command_context=command_context)
+    other_match = CreateArea(area_name="foo", command_context=command_context)
+    assert base.create_diff(other_match) == []

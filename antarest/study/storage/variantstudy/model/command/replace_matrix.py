@@ -102,12 +102,15 @@ class ReplaceMatrix(ICommand):
             ):
                 return [command]
         if base is not None:
+            from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+                CommandExtraction,
+            )
+
             return [
-                ReplaceMatrix(
-                    target=self.target,
-                    matrix=base.tree.get(self.target.split("/")),
-                    command_context=self.command_context,
-                )
+                (
+                    self.command_context.command_extractor
+                    or CommandExtraction(self.command_context.matrix_service)
+                ).generate_replace_matrix(base.tree, self.target.split("/"))
             ]
         return []
 

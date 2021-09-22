@@ -28,6 +28,9 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
+from antarest.study.storage.variantstudy.model.interfaces import (
+    ICommandExtractor,
+)
 
 
 @pytest.fixture
@@ -41,7 +44,9 @@ def matrix_service() -> MatrixService:
     )
 
     matrix_service = Mock(spec=MatrixService)
-    matrix_service.create.return_value = "matrix_id"
+    matrix_service.create.side_effect = (
+        lambda data: data if isinstance(data, str) else "matrix_id"
+    )
 
     return matrix_service
 
@@ -54,6 +59,7 @@ def command_context(matrix_service: MatrixService) -> CommandContext:
         ),
         matrix_service=matrix_service,
         patch_service=PatchService(),
+        command_extractor=Mock(spec=ICommandExtractor),
     )
 
 

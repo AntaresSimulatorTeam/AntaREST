@@ -187,8 +187,9 @@ class RemoveArea(ICommand):
                 return [command]
         if base is not None:
 
-            area_commands, links_commands = CommandExtraction(
-                self.command_context.matrix_service
+            area_commands, links_commands = (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
             ).extract_area(base, self.id)
             return area_commands + links_commands
         # todo revert binding constraints that has the area in constraint

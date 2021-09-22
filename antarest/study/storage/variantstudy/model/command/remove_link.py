@@ -91,9 +91,11 @@ class RemoveLink(ICommand):
             ):
                 return [command]
         if base is not None:
-            return CommandExtraction(
-                self.command_context.matrix_service
-            ).extract_link(base, self.area1, self.area2)
+            area_from, area_to = sorted([self.area1, self.area2])
+            return (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
+            ).extract_link(base, area_from, area_to)
         return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:

@@ -145,6 +145,7 @@ class UpdateBindingConstraint(ICommand):
                         time_step=command.time_step,
                         operator=command.operator,
                         coeffs=command.coeffs,
+                        values=strip_matrix_protocol(command.values),
                         comments=command.comments,
                         command_context=command.command_context,
                     )
@@ -154,8 +155,9 @@ class UpdateBindingConstraint(ICommand):
                 CommandExtraction,
             )
 
-            return CommandExtraction(
-                self.command_context.matrix_service
+            return (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
             ).extract_binding_constraint(base, self.id)
         return []
 

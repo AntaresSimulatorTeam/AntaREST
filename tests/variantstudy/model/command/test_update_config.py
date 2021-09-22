@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -79,3 +81,34 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_not_match)
     assert not base.match(other_other)
     assert base.match_signature() == "update_config%foo"
+
+
+def test_revert(command_context: CommandContext):
+    base = UpdateConfig(
+        target="foo", data="bar", command_context=command_context
+    )
+    study = FileStudy(config=Mock(), tree=Mock())
+    base.revert([], study)
+    base.command_context.command_extractor.generate_update_config.assert_called_with(
+        study.tree, ["foo"]
+    )
+    assert base.revert(
+        [
+            UpdateConfig(
+                target="foo", data="baz", command_context=command_context
+            )
+        ],
+        study,
+    ) == [
+        UpdateConfig(target="foo", data="baz", command_context=command_context)
+    ]
+
+
+def test_create_diff(command_context: CommandContext):
+    base = UpdateConfig(
+        target="foo", data="bar", command_context=command_context
+    )
+    other_match = UpdateConfig(
+        target="foo", data="baz", command_context=command_context
+    )
+    assert base.create_diff(other_match) == [other_match]

@@ -19,6 +19,12 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_cluster import (
     RemoveCluster,
 )
+from antarest.study.storage.variantstudy.model.command.replace_matrix import (
+    ReplaceMatrix,
+)
+from antarest.study.storage.variantstudy.model.command.update_config import (
+    UpdateConfig,
+)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -167,3 +173,57 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "create_cluster%foo%foo"
     assert base.get_inner_matrices() == ["matrix_id", "matrix_id"]
+
+
+def test_revert(command_context: CommandContext):
+    base = CreateCluster(
+        area_id="foo",
+        cluster_name="foo",
+        parameters={},
+        prepro=[[0]],
+        modulation=[[0]],
+        command_context=command_context,
+    )
+    assert base.revert([], None) == [
+        RemoveCluster(
+            area_id="foo",
+            cluster_id="foo",
+            command_context=command_context,
+        )
+    ]
+
+
+def test_create_diff(command_context: CommandContext):
+    base = CreateCluster(
+        area_id="foo",
+        cluster_name="foo",
+        parameters={},
+        prepro="a",
+        modulation="b",
+        command_context=command_context,
+    )
+    other_match = CreateCluster(
+        area_id="foo",
+        cluster_name="foo",
+        parameters={"a": "b"},
+        prepro="c",
+        modulation="d",
+        command_context=command_context,
+    )
+    assert base.create_diff(other_match) == [
+        ReplaceMatrix(
+            target=f"input/thermal/prepro/foo/foo/data",
+            matrix="c",
+            command_context=command_context,
+        ),
+        ReplaceMatrix(
+            target=f"input/thermal/prepro/foo/foo/modulation",
+            matrix="d",
+            command_context=command_context,
+        ),
+        UpdateConfig(
+            target=f"input/thermal/clusters/foo/list/foo",
+            data={"a": "b"},
+            command_context=command_context,
+        ),
+    ]

@@ -97,3 +97,42 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "remove_link%foo%bar"
     assert base.get_inner_matrices() == []
+
+
+def test_revert(command_context: CommandContext):
+    base = RemoveLink(
+        area1="foo", area2="bar", command_context=command_context
+    )
+    study = FileStudy(config=Mock(), tree=Mock())
+    base.revert([], study)
+    base.command_context.command_extractor.extract_link.assert_called_with(
+        study, "bar", "foo"
+    )
+    assert base.revert(
+        [
+            CreateLink(
+                area1="foo",
+                area2="bar",
+                series=[[0]],
+                command_context=command_context,
+            )
+        ],
+        None,
+    ) == [
+        CreateLink(
+            area1="foo",
+            area2="bar",
+            series=[[0]],
+            command_context=command_context,
+        )
+    ]
+
+
+def test_create_diff(command_context: CommandContext):
+    base = RemoveLink(
+        area1="foo", area2="bar", command_context=command_context
+    )
+    other_match = RemoveLink(
+        area1="foo", area2="bar", command_context=command_context
+    )
+    assert base.create_diff(other_match) == []

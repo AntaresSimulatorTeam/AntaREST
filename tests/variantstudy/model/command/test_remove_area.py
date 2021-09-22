@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 from checksumdir import dirhash
 
 from antarest.matrixstore.service import MatrixService
@@ -93,3 +95,25 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "remove_area%foo"
     assert base.get_inner_matrices() == []
+
+
+def test_revert(command_context: CommandContext):
+    base = RemoveArea(id="foo", command_context=command_context)
+    assert base.revert(
+        [CreateArea(area_name="foo", command_context=command_context)], None
+    ) == [CreateArea(area_name="foo", command_context=command_context)]
+    study = FileStudy(config=Mock(), tree=Mock())
+    base.command_context.command_extractor.extract_area.return_value = (
+        [Mock()],
+        [Mock()],
+    )
+    base.revert([], study)
+    base.command_context.command_extractor.extract_area.assert_called_with(
+        study, "foo"
+    )
+
+
+def test_create_diff(command_context: CommandContext):
+    base = RemoveArea(id="foo", command_context=command_context)
+    other_match = RemoveArea(id="foo", command_context=command_context)
+    assert base.create_diff(other_match) == []

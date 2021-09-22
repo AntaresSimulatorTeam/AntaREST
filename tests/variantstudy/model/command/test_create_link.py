@@ -23,6 +23,15 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import (
     RemoveArea,
 )
+from antarest.study.storage.variantstudy.model.command.remove_link import (
+    RemoveLink,
+)
+from antarest.study.storage.variantstudy.model.command.replace_matrix import (
+    ReplaceMatrix,
+)
+from antarest.study.storage.variantstudy.model.command.update_config import (
+    UpdateConfig,
+)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -239,3 +248,41 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "create_link%foo%bar"
     assert base.get_inner_matrices() == ["matrix_id"]
+
+
+def test_revert(command_context: CommandContext):
+    base = CreateLink(
+        area1="foo", area2="bar", series=[[0]], command_context=command_context
+    )
+    assert base.revert([], None) == [
+        RemoveLink(
+            area1="foo",
+            area2="bar",
+            command_context=command_context,
+        )
+    ]
+
+
+def test_create_diff(command_context: CommandContext):
+    base = CreateLink(
+        area1="foo", area2="bar", series="a", command_context=command_context
+    )
+    other_match = CreateLink(
+        area1="foo",
+        area2="bar",
+        parameters={"hurdles-cost": "true"},
+        series="b",
+        command_context=command_context,
+    )
+    assert base.create_diff(other_match) == [
+        UpdateConfig(
+            target=f"input/links/bar/properties/foo",
+            data=CreateLink.generate_link_properties({"hurdles-cost": "true"}),
+            command_context=command_context,
+        ),
+        ReplaceMatrix(
+            target=f"input/links/bar/foo",
+            matrix="b",
+            command_context=command_context,
+        ),
+    ]

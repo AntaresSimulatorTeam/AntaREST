@@ -1,4 +1,6 @@
+import abc
 import logging
+from abc import abstractmethod
 from typing import Optional, List, Tuple, Union
 
 from antarest.core.custom_types import JSON
@@ -46,12 +48,14 @@ from antarest.study.storage.variantstudy.model.command.utils import (
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
-
+from antarest.study.storage.variantstudy.model.interfaces import (
+    ICommandExtractor,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class CommandExtraction:
+class CommandExtraction(ICommandExtractor):
     def __init__(self, matrix_service: ISimpleMatrixService):
         self.matrix_service = matrix_service
         self.generator_matrix_constants = GeneratorMatrixConstants(

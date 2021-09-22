@@ -87,8 +87,9 @@ class RemoveBindingConstraint(ICommand):
                 return [command]
         if base is not None:
 
-            return CommandExtraction(
-                self.command_context.matrix_service
+            return (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
             ).extract_binding_constraint(base, self.id)
         return []
 

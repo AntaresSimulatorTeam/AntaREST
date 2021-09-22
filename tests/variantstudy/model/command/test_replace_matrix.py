@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
@@ -82,3 +84,36 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "replace_matrix%foo"
     assert base.get_inner_matrices() == ["matrix_id"]
+
+
+def test_revert(command_context: CommandContext):
+    base = ReplaceMatrix(
+        target="foo", matrix=[[0]], command_context=command_context
+    )
+    study = FileStudy(config=Mock(), tree=Mock())
+    base.revert([], study)
+    base.command_context.command_extractor.generate_replace_matrix.assert_called_with(
+        study.tree, ["foo"]
+    )
+    assert base.revert(
+        [
+            ReplaceMatrix(
+                target="foo", matrix="b", command_context=command_context
+            )
+        ],
+        study,
+    ) == [
+        ReplaceMatrix(
+            target="foo", matrix="b", command_context=command_context
+        )
+    ]
+
+
+def test_create_diff(command_context: CommandContext):
+    base = ReplaceMatrix(
+        target="foo", matrix="c", command_context=command_context
+    )
+    other_match = ReplaceMatrix(
+        target="foo", matrix="b", command_context=command_context
+    )
+    assert base.create_diff(other_match) == [other_match]

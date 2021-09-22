@@ -26,6 +26,9 @@ from antarest.study.storage.variantstudy.model.command.remove_area import (
 from antarest.study.storage.variantstudy.model.command.remove_district import (
     RemoveDistrict,
 )
+from antarest.study.storage.variantstudy.model.command.update_config import (
+    UpdateConfig,
+)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -175,3 +178,72 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "remove_district%id"
     assert base.get_inner_matrices() == []
+
+
+def test_revert(command_context: CommandContext):
+    base = CreateDistrict(
+        name="foo",
+        base_filter=DistrictBaseFilter.add_all,
+        filter_items=["a", "b"],
+        command_context=command_context,
+    )
+    assert base.revert([], None) == [
+        RemoveDistrict(id="foo", command_context=command_context)
+    ]
+
+    base = RemoveDistrict(id="id", command_context=command_context)
+    study = FileStudy(config=Mock(), tree=Mock())
+    base.revert([], study)
+    base.command_context.command_extractor.extract_district.assert_called_with(
+        study, "id"
+    )
+    assert base.revert(
+        [
+            CreateDistrict(
+                name="id",
+                base_filter=DistrictBaseFilter.add_all,
+                filter_items=["a", "b"],
+                command_context=command_context,
+            )
+        ],
+        None,
+    ) == [
+        CreateDistrict(
+            name="id",
+            base_filter=DistrictBaseFilter.add_all,
+            filter_items=["a", "b"],
+            command_context=command_context,
+        )
+    ]
+
+
+def test_create_diff(command_context: CommandContext):
+    base = CreateDistrict(
+        name="foo",
+        base_filter=DistrictBaseFilter.add_all,
+        filter_items=["a", "b"],
+        command_context=command_context,
+    )
+    other_match = CreateDistrict(
+        name="foo",
+        base_filter=DistrictBaseFilter.remove_all,
+        filter_items=["c"],
+        command_context=command_context,
+    )
+    assert base.create_diff(other_match) == [
+        UpdateConfig(
+            target=f"input/areas/sets/foo",
+            data={
+                "caption": "foo",
+                "apply-filter": DistrictBaseFilter.remove_all.value,
+                "+": ["c"],
+                "output": None,
+                "comments": None,
+            },
+            command_context=command_context,
+        )
+    ]
+
+    base = RemoveDistrict(id="id", command_context=command_context)
+    other_match = RemoveDistrict(id="id", command_context=command_context)
+    assert base.create_diff(other_match) == []

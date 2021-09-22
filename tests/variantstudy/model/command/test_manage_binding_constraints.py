@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -249,3 +251,196 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "remove_binding_constraint%foo"
     assert base.get_inner_matrices() == []
+
+
+def test_revert(command_context: CommandContext):
+    base = CreateBindingConstraint(
+        name="foo",
+        enabled=False,
+        time_step=TimeStep.DAILY,
+        operator=BindingConstraintOperator.BOTH,
+        coeffs={"a": [0.3]},
+        values=[[0]],
+        command_context=command_context,
+    )
+    assert base.revert([], None) == [
+        RemoveBindingConstraint(id="foo", command_context=command_context)
+    ]
+
+    base = UpdateBindingConstraint(
+        id="foo",
+        enabled=False,
+        time_step=TimeStep.DAILY,
+        operator=BindingConstraintOperator.BOTH,
+        coeffs={"a": [0.3]},
+        values=[[0]],
+        command_context=command_context,
+    )
+    assert base.revert(
+        [
+            UpdateBindingConstraint(
+                id="foo",
+                enabled=True,
+                time_step=TimeStep.WEEKLY,
+                operator=BindingConstraintOperator.BOTH,
+                coeffs={"a": [0.3]},
+                values=[[0]],
+                command_context=command_context,
+            ),
+            UpdateBindingConstraint(
+                id="foo",
+                enabled=True,
+                time_step=TimeStep.HOURLY,
+                operator=BindingConstraintOperator.BOTH,
+                coeffs={"a": [0.3]},
+                values=[[0]],
+                command_context=command_context,
+            ),
+        ],
+        None,
+    ) == [
+        UpdateBindingConstraint(
+            id="foo",
+            enabled=True,
+            time_step=TimeStep.HOURLY,
+            operator=BindingConstraintOperator.BOTH,
+            coeffs={"a": [0.3]},
+            values=[[0]],
+            command_context=command_context,
+        )
+    ]
+    assert base.revert(
+        [
+            UpdateBindingConstraint(
+                id="foo",
+                enabled=True,
+                time_step=TimeStep.WEEKLY,
+                operator=BindingConstraintOperator.BOTH,
+                coeffs={"a": [0.3]},
+                values=[[0]],
+                command_context=command_context,
+            ),
+            CreateBindingConstraint(
+                name="foo",
+                enabled=True,
+                time_step=TimeStep.HOURLY,
+                operator=BindingConstraintOperator.EQUAL,
+                coeffs={"a": [0.3]},
+                values=[[0]],
+                command_context=command_context,
+            ),
+        ],
+        None,
+    ) == [
+        UpdateBindingConstraint(
+            id="foo",
+            enabled=True,
+            time_step=TimeStep.HOURLY,
+            operator=BindingConstraintOperator.EQUAL,
+            coeffs={"a": [0.3]},
+            values="matrix_id",
+            comments=None,
+            command_context=command_context,
+        )
+    ]
+    study = FileStudy(config=Mock(), tree=Mock())
+    base.revert([], study)
+    base.command_context.command_extractor.extract_binding_constraint.assert_called_with(
+        study, "foo"
+    )
+
+    base = RemoveBindingConstraint(id="foo", command_context=command_context)
+    assert base.revert(
+        [
+            UpdateBindingConstraint(
+                id="foo",
+                enabled=True,
+                time_step=TimeStep.WEEKLY,
+                operator=BindingConstraintOperator.BOTH,
+                coeffs={"a": [0.3]},
+                values=[[0]],
+                command_context=command_context,
+            ),
+            CreateBindingConstraint(
+                name="foo",
+                enabled=True,
+                time_step=TimeStep.HOURLY,
+                operator=BindingConstraintOperator.EQUAL,
+                coeffs={"a": [0.3]},
+                values=[[0]],
+                command_context=command_context,
+            ),
+        ],
+        None,
+    ) == [
+        CreateBindingConstraint(
+            name="foo",
+            enabled=True,
+            time_step=TimeStep.HOURLY,
+            operator=BindingConstraintOperator.EQUAL,
+            coeffs={"a": [0.3]},
+            command_context=command_context,
+        )
+    ]
+    base.revert([], study)
+    base.command_context.command_extractor.extract_binding_constraint.assert_called_with(
+        study, "foo"
+    )
+
+
+def test_create_diff(command_context: CommandContext):
+    base = CreateBindingConstraint(
+        name="foo",
+        enabled=False,
+        time_step=TimeStep.DAILY,
+        operator=BindingConstraintOperator.BOTH,
+        coeffs={"a": [0.3]},
+        values="a",
+        command_context=command_context,
+    )
+    other_match = CreateBindingConstraint(
+        name="foo",
+        enabled=True,
+        time_step=TimeStep.HOURLY,
+        operator=BindingConstraintOperator.EQUAL,
+        coeffs={"b": [0.3]},
+        values="b",
+        command_context=command_context,
+    )
+    assert base.create_diff(other_match) == [
+        UpdateBindingConstraint(
+            id="foo",
+            enabled=True,
+            time_step=TimeStep.HOURLY,
+            operator=BindingConstraintOperator.EQUAL,
+            coeffs={"b": [0.3]},
+            values="b",
+            command_context=command_context,
+        )
+    ]
+
+    base = UpdateBindingConstraint(
+        id="foo",
+        enabled=False,
+        time_step=TimeStep.DAILY,
+        operator=BindingConstraintOperator.BOTH,
+        coeffs={"a": [0.3]},
+        values=[[0]],
+        command_context=command_context,
+    )
+    other_match = UpdateBindingConstraint(
+        id="foo",
+        enabled=False,
+        time_step=TimeStep.DAILY,
+        operator=BindingConstraintOperator.BOTH,
+        coeffs={"a": [0.3]},
+        values=[[0]],
+        command_context=command_context,
+    )
+    assert base.create_diff(other_match) == [other_match]
+
+    base = RemoveBindingConstraint(id="foo", command_context=command_context)
+    other_match = RemoveBindingConstraint(
+        id="foo", command_context=command_context
+    )
+    assert base.create_diff(other_match) == []
