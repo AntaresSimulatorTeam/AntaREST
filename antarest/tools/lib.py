@@ -156,12 +156,6 @@ class LocalVariantGenerator(IVariantGenerator):
         command_objs: List[ICommand] = []
         logger.info("Parsing command objects")
         for command_block in commands:
-            if (
-                command_block.action == CommandName.CREATE_DISTRICT.value
-                and isinstance(command_block.args, dict)
-                and command_block.args["name"] == "All areas"
-            ):
-                continue
             command_objs.extend(command_factory.to_icommand(command_block))
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Command objects parsed in {x}s")
@@ -190,6 +184,10 @@ class LocalVariantGenerator(IVariantGenerator):
             empty_study_zip = get_local_path() / "resources" / version_template
             with ZipFile(empty_study_zip) as zip_output:
                 zip_output.extractall(path=self.output_path)
+                # remove preexisting sets
+                (
+                    self.output_path / "input" / "areas" / "sets.ini"
+                ).write_bytes(b"")
 
 
 def extract_commands(study_path: Path, commands_output_dir: Path) -> None:

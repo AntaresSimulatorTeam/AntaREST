@@ -54,6 +54,9 @@ class VariantCommandGenerator:
             try:
                 command_index += 1
                 output = command.apply(file_study)
+                results.details.append(
+                    (command.command_name.value, output.status, output.message)
+                )
             except Exception as e:
                 results.success = False
                 message = f"Error while applying command {command.command_name.value}"
@@ -68,12 +71,8 @@ class VariantCommandGenerator:
                         f"Command {command_index}/{total_commands} [{study_id}] {command.match_signature()} applied in {x}s"
                     )
                 )
-            results.details.append(
-                (command.command_name.value, output.status, output.message)
-            )
-            results.success = results.success and output.status
 
-            if not output.status:
+            if not results.success:
                 break
 
         if not results.success and delete_on_failure:

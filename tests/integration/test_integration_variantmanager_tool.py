@@ -12,6 +12,9 @@ from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
+from antarest.study.storage.variantstudy.model.command.remove_district import (
+    RemoveDistrict,
+)
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
@@ -75,9 +78,9 @@ def test_variant_manager(app: FastAPI, tmp_path: str):
 def test_parse_commands(tmp_path: str, app: FastAPI):
     base_dir = test_dir / "assets"
     export_path = Path(tmp_path) / "commands"
-    study = "test_study"
+    study = "base_study"
     study_path = Path(tmp_path) / study
-    with ZipFile(base_dir / "test_study.zip") as zip_output:
+    with ZipFile(base_dir / "base_study.zip") as zip_output:
         zip_output.extractall(path=tmp_path)
     output_dir = Path(export_path) / study
     study_info = IniReader().read(study_path / "study.antares")
@@ -86,18 +89,13 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
     client = TestClient(app, raise_server_exceptions=False)
 
     extract_commands(study_path, output_dir)
-    commands = parse_commands(output_dir / COMMAND_FILE)
-
-    fix_commands: List[CommandDTO] = []
-    for command in commands:
-        if (
-            command.action == CommandName.CREATE_DISTRICT.value
-            and command.args["name"] == "All areas"
-        ):
-            continue
-        fix_commands.append(command)
+    commands = [
+        CommandDTO(
+            action=CommandName.REMOVE_DISTRICT.value, args={"id": "all areas"}
+        )
+    ] + parse_commands(output_dir / COMMAND_FILE)
     res, study_id = generate_study_with_server(
-        client, name, version, fix_commands, output_dir / MATRIX_STORE_DIR
+        client, name, version, commands, output_dir / MATRIX_STORE_DIR
     )
     assert res is not None and res.success
     generated_study_path = (
@@ -135,6 +133,14 @@ def test_diff_local(tmp_path: Path):
             zip_output.extractall(path=tmp_path)
         extract_commands(Path(tmp_path) / study, Path(export_path) / study)
 
+    res = generate_study(
+        base_study_commands, None, str(Path(export_path) / "base_generated")
+    )
+    res = generate_study(
+        variant_study_commands,
+        None,
+        str(Path(export_path) / "variant_generated"),
+    )
     generate_diff(
         base_study_commands, variant_study_commands, output_study_commands
     )
