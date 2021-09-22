@@ -24,8 +24,8 @@ def apply_binding_constraint(
     values: Optional[Union[List[List[MatrixData]], str]],
 ) -> CommandOutput:
     binding_constraints[str(new_key)] = {
-        "id": bd_id,
         "name": name,
+        "id": bd_id,
         "enabled": enabled,
         "type": time_step.value,
         "operator": operator.value,

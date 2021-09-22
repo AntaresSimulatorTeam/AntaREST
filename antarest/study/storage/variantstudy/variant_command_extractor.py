@@ -135,7 +135,7 @@ class VariantCommandsExtractor:
 
         logger.info("Computing commands diff")
         added_commands: List[Tuple[int, ICommand]] = []
-        missing_commands: List[Tuple[int, ICommand]] = []
+        missing_commands: List[Tuple[int, ICommand, int]] = []
         modified_commands: List[Tuple[int, ICommand, ICommand]] = []
         order = 0
         for variant_command in variant_commands:
@@ -157,6 +157,7 @@ class VariantCommandsExtractor:
         logger.info(f"Found {len(added_commands)} added commands")
         logger.info(f"Found {len(modified_commands)} modified commands")
         order = 0
+        index = 0
         for base_command in base_commands:
             found = False
             for variant_command in variant_commands:
@@ -164,7 +165,8 @@ class VariantCommandsExtractor:
                     found = True
                     break
             if not found:
-                missing_commands.append((order, base_command))
+                missing_commands.append((order, base_command, index))
+            index += 1
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Second diff pass done in {x}s")
         )
@@ -175,24 +177,30 @@ class VariantCommandsExtractor:
         third_priority_commands: List[ICommand] = []
         other_commands: List[Tuple[int, ICommand]] = []
         logger.info(f"Computing new diff commands")
-        for order, command_obj in missing_commands:
+        for order, command_obj, index in missing_commands:
             logger.info(f"Reverting {command_obj.match_signature()}")
             if command_obj.command_name == CommandName.REMOVE_AREA:
-                first_priority_commands += command_obj.revert(base_commands)
+                first_priority_commands += command_obj.revert(
+                    base_commands[:index]
+                )
             elif (
                 command_obj.command_name == CommandName.REMOVE_LINK
                 or command_obj.command_name == CommandName.REMOVE_CLUSTER
             ):
-                second_priority_commands += command_obj.revert(base_commands)
+                second_priority_commands += command_obj.revert(
+                    base_commands[:index]
+                )
             elif (
                 command_obj.command_name == CommandName.UPDATE_CONFIG
                 or command_obj.command_name == CommandName.REPLACE_MATRIX
             ):
-                third_priority_commands += command_obj.revert(base_commands)
+                third_priority_commands += command_obj.revert(
+                    base_commands[:index]
+                )
             else:
                 other_commands += [
                     (0, command)
-                    for command in command_obj.revert(base_commands)
+                    for command in command_obj.revert(base_commands[:index])
                 ]
         for order, variant_command, base_command in modified_commands:
             logger.info(

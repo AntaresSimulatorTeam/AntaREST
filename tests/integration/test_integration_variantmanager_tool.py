@@ -22,12 +22,14 @@ from antarest.tools.lib import (
     parse_commands,
     extract_commands,
     RemoteVariantGenerator,
+    generate_diff,
+    generate_study,
 )
 
 test_dir: Path = Path(__file__).parent
 
 
-def generate_study(
+def generate_study_with_server(
     client: TestClient,
     name: str,
     study_version: int,
@@ -64,7 +66,9 @@ def test_variant_manager(app: FastAPI, tmp_path: str):
     commands = parse_commands(test_dir / "assets" / "commands1.json")
     matrix_dir = Path(tmp_path) / "empty_matrix_store"
     matrix_dir.mkdir(parents=True, exist_ok=True)
-    res, study_id = generate_study(client, "test", 720, commands, matrix_dir)
+    res, study_id = generate_study_with_server(
+        client, "test", 720, commands, matrix_dir
+    )
     assert res is not None and res.success
 
 
@@ -92,7 +96,7 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
         ):
             continue
         fix_commands.append(command)
-    res, study_id = generate_study(
+    res, study_id = generate_study_with_server(
         client, name, version, fix_commands, output_dir / MATRIX_STORE_DIR
     )
     assert res is not None and res.success
@@ -110,7 +114,46 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
                 "study.ico",
             ]:
                 continue
-            print(generated_study_path / rel_path / item)
             assert (study_path / rel_path / item).read_text() == (
                 generated_study_path / rel_path / item
+            ).read_text()
+
+
+def test_diff_local(tmp_path: Path):
+    base_dir = test_dir / "assets"
+    export_path = Path(tmp_path) / "generation_result"
+    base_study = "base_study"
+    variant_study = "variant_study"
+    output_study_commands = Path(export_path) / "output_study_commands"
+    output_study_path = Path(tmp_path) / base_study
+    base_study_commands = Path(export_path) / base_study
+    variant_study_commands = Path(export_path) / variant_study
+    variant_study_path = Path(tmp_path) / variant_study
+
+    for study in [base_study, variant_study]:
+        with ZipFile(base_dir / f"{study}.zip") as zip_output:
+            zip_output.extractall(path=tmp_path)
+        extract_commands(Path(tmp_path) / study, Path(export_path) / study)
+
+    generate_diff(
+        base_study_commands, variant_study_commands, output_study_commands
+    )
+    res = generate_study(
+        output_study_commands, None, output=str(output_study_path)
+    )
+    assert res.success
+
+    assert output_study_path.exists() and output_study_path.is_dir()
+    for root, dirs, files in os.walk(variant_study_path):
+        rel_path = root[len(str(variant_study_path)) + 1 :]
+        for item in files:
+            if item in [
+                "comments.txt",
+                "study.antares",
+                "Desktop.ini",
+                "study.ico",
+            ]:
+                continue
+            assert (variant_study_path / rel_path / item).read_text() == (
+                output_study_path / rel_path / item
             ).read_text()
