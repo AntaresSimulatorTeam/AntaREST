@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { DropResult } from 'react-beautiful-dnd';
 import { CommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
-import { reorder, fromCommandDTOToCommandItem, fromCommandItemToCommandDTO } from './utils';
+import { reorder, fromCommandDTOToCommandItem, fromCommandItemToCommandDTO, onCommandsSave } from './utils';
 import { CommandDTO } from '../../../common/types';
 import { appendCommands, getCommands } from '../../../services/api/variant';
+import ConfirmationModal from '../../ui/ConfirmationModal';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -52,17 +53,25 @@ interface PropTypes {
     studyId: string;
 }
 
+interface CommandEvent {
+    id?: string;
+    action: 'updated' | 'deleted' | 'added' | 'moved';
+    data?: any;
+}
+
 const EditionView = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { studyId } = props;
+  const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
-  const fakeItems: Array<CommandItem> = [{ name: 'Command 1', args: 'args 1', action: 'ACTION_1' },
-    { name: 'Command 2', args: 'args 2', action: 'ACTION_2' },
-    { name: 'Command 3', args: 'args 3', action: 'ACTION_3' },
-    { name: 'Command 4', args: 'args 4', action: 'ACTION_4' },
-    { name: 'Command 5', args: 'args 5', action: 'ACTION_5' }];
+  const fakeItems: Array<CommandItem> = [{ id: 'command_id_1', name: 'Command 1', args: 'args 1', action: 'ACTION_1' },
+    { id: 'command_id_2', name: 'Command 2', args: 'args 2', action: 'ACTION_2' },
+    { id: 'command_id_3', name: 'Command 3', args: 'args 3', action: 'ACTION_3' },
+    { id: 'command_id_4', name: 'Command 4', args: 'args 4', action: 'ACTION_4' },
+    { id: 'command_id_5', name: 'Command 5', args: 'args 5', action: 'ACTION_5' }];
   const [commands, setCommands] = useState<Array<CommandItem>>(fakeItems);
+  const [initCommands, setInitCommands] = useState<Array<CommandItem>>(fakeItems);
 
   const onDragEnd = ({ destination, source }: DropResult) => {
     // dropped outside the list
@@ -73,28 +82,33 @@ const EditionView = (props: PropTypes) => {
 
   const onSave = async () => {
     try {
-    // Convert CommandItem to CommandDTO
-      const dtoItems: Array<CommandDTO> = fromCommandItemToCommandDTO(commands);
-      // Call await appendComands
-      await appendCommands(studyId, dtoItems);
+      setCommands(await onCommandsSave(studyId, initCommands, commands));
     } catch (e) {
       // Snackbar
       console.log(e);
     }
+    setOpenConfirmationModal(false);
+  };
+
+  const onDelete = (index: number) => {
+    setCommands((commandList) => commandList.filter((elm, idx) => idx !== index));
+    console.log(index);
   };
 
   useEffect(() => {
     const init = async () => {
       try {
-        const dtoItems = await getCommands(studyId);
-        setCommands(fromCommandDTOToCommandItem(dtoItems));
+        let dtoItems = await getCommands(studyId);
+        dtoItems = dtoItems.filter((elm) => elm.id !== undefined);
+        const commandItems = fromCommandDTOToCommandItem(dtoItems);
+        setCommands(commandItems);
+        setInitCommands(commandItems);
       } catch (e) {
         // Snackbar
         console.log(e);
       }
     };
-
-    init();
+    // init();
   }, [studyId]);
 
   return (
@@ -103,13 +117,22 @@ const EditionView = (props: PropTypes) => {
         <Button color="primary" variant="contained" style={{ marginRight: '10px' }}>
           {t('variants:add')}
         </Button>
-        <Button color="primary" variant="contained" onClick={() => onSave()}>
+        <Button color="primary" variant="contained" onClick={() => setOpenConfirmationModal(true)}>
           {t('variants:save')}
         </Button>
       </div>
       <div className={classes.body}>
-        <CommandListView items={commands} onDragEnd={onDragEnd} />
+        <CommandListView items={commands} onDragEnd={onDragEnd} onDelete={onDelete} />
       </div>
+      {openConfirmationModal && (
+        <ConfirmationModal
+          open={openConfirmationModal}
+          title={t('main:confirmationModalTitle')}
+          message={t('variants:confirmsave')}
+          handleYes={onSave}
+          handleNo={() => setOpenConfirmationModal(false)}
+        />
+      )}
     </div>
   );
 };

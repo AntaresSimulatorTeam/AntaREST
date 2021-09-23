@@ -8,5 +8,10 @@
     "variantMode": "Mode observation",
     "onVariantCreationError": "Erreur lors de la création du variant",
     "add": "Ajouter",
-    "save": "Sauvegarder"
+    "save": "Sauvegarder",
+    "confirmsave": "Êtes-vous sûr de vouloir sauvegarder ces commandes ?",
+    "newCommand": "",
+    "commandNameLabel": "",
+    "onNewCommandAdded": "",
+    "commandActionLabel": ""
   }

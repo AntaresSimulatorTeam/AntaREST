@@ -22,9 +22,30 @@ export const appendCommands = async (studyId: string, commands: Array<CommandDTO
   return res.data;
 };
 
+export const appendCommand = async (studyId: string, command: CommandDTO): Promise<string> => {
+  const res = await client.post(`/v1/studies/${studyId}/commands`, command);
+  return res.data;
+};
+
+export const moveCommand = async (studyId: string, commandId: string, index: number): Promise<any> => {
+  const res = await client.put(`/v1/studies/${studyId}/commands/${commandId}/move?index=${encodeURIComponent(index)}`);
+  return res.data;
+};
+
+export const updateCommand = async (studyId: string, commandId: string, command: CommandDTO): Promise<any> => {
+  const res = await client.put(`/v1/studies/${studyId}/commands/${commandId}`, command);
+  return res.data;
+};
+
+export const deleteCommand = async (studyId: string, commandId: string): Promise<any> => {
+  const res = await client.delete(`/v1/studies/${studyId}/commands/${commandId}`);
+  return res.data;
+};
+
 export const getCommands = async (studyId: string): Promise<Array<CommandDTO>> => {
   const res = await client.get(`/v1/studies/${studyId}/commands`);
   return res.data;
 };
+
 
 export default {};

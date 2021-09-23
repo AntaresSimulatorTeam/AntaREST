@@ -6,13 +6,29 @@ import makeStyles from '@material-ui/core/styles/makeStyles';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
 import CloudUploadOutlinedIcon from '@material-ui/icons/CloudUploadOutlined';
+import DeleteIcon from '@material-ui/icons/HighlightOff';
 import { CommandItem } from '../CommandTypes';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
+  container: {
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'blue',
+  },
   normalItem: {
     border: `1px solid ${theme.palette.primary.main}`,
     margin: theme.spacing(0.2, 0.2),
     boxSizing: 'border-box',
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'blue',
   },
   draggingListItem: {
     background: 'rgb(235,235,235)',
@@ -50,14 +66,23 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
+  deleteIcon: {
+    color: theme.palette.error.light,
+    marginLeft: theme.spacing(1),
+    marginRight: theme.spacing(1),
+    '&:hover': {
+      color: theme.palette.error.main,
+    },
+  },
 }));
 
 export type DraggableListItemProps = {
   item: CommandItem;
   index: number;
+  onDelete: (index: number) => void;
 };
 
-const CommandListItem = ({ item, index }: DraggableListItemProps) => {
+const CommandListItem = ({ item, index, onDelete }: DraggableListItemProps) => {
   const classes = useStyles();
   /*  NOTE:
       Example Json will be the command model corresponding to CommandItem
@@ -77,33 +102,38 @@ const CommandListItem = ({ item, index }: DraggableListItemProps) => {
   return (
     <Draggable draggableId={item.name} index={index}>
       {(provided, snapshot) => (
-        <Accordion
+        <div
+          className={classes.container}
           ref={provided.innerRef}
         // eslint-disable-next-line react/jsx-props-no-spreading
           {...provided.draggableProps}
         // eslint-disable-next-line react/jsx-props-no-spreading
           {...provided.dragHandleProps}
-          className={snapshot.isDragging ? classes.draggingListItem : classes.normalItem}
         >
-          <AccordionSummary
-            expandIcon={<ExpandMore />}
-            aria-controls="panel1a-content"
-            id="panel1a-header"
+          <Accordion
+            className={snapshot.isDragging ? classes.draggingListItem : classes.normalItem}
           >
-            <Typography>{item.name}</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <div className={classes.details}>
-              <div className={classes.header}>
-                <CloudDownloadOutlinedIcon className={classes.headerIcon} />
-                <CloudUploadOutlinedIcon className={classes.headerIcon} />
+            <AccordionSummary
+              expandIcon={<ExpandMore />}
+              aria-controls="panel1a-content"
+              id="panel1a-header"
+            >
+              <Typography>{item.name}</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div className={classes.details}>
+                <div className={classes.header}>
+                  <CloudDownloadOutlinedIcon className={classes.headerIcon} />
+                  <CloudUploadOutlinedIcon className={classes.headerIcon} />
+                </div>
+                <div className={classes.json}>
+                  <ReactJson src={exampleJson} />
+                </div>
               </div>
-              <div className={classes.json}>
-                <ReactJson src={exampleJson} />
-              </div>
-            </div>
-          </AccordionDetails>
-        </Accordion>
+            </AccordionDetails>
+          </Accordion>
+          <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />
+        </div>
       )}
     </Draggable>
   );

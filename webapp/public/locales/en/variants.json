@@ -9,6 +9,11 @@
     "variantMode": "Variant mode",
     "onVariantCreationError": "Variant not created",
     "add": "Add",
-    "save": "Save"
+    "save": "Save",
+    "confirmsave": "Are you sure you want to save these commands ?",
+    "newCommand": "",
+    "commandNameLabel": "",
+    "onNewCommandAdded": "",
+    "commandActionLabel": ""
 }
   

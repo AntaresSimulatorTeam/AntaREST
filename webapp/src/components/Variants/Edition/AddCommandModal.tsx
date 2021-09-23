@@ -4,8 +4,7 @@ import { createStyles, makeStyles, Theme, TextField } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
-import GenericModal from '../ui/GenericModal';
-import { createVariant } from '../../services/api/variant';
+import GenericModal from '../../ui/GenericModal';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   infos: {
@@ -27,27 +26,22 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
     open: boolean;
-    parentId: string;
+    onNewCommand: (name: string, action: string) => void;
     onClose: () => void;
 }
 
-const CreateVariantModal = (props: PropTypes) => {
+const AddCommandModal = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const history = useHistory();
   const { enqueueSnackbar } = useSnackbar();
-  const { open, parentId, onClose } = props;
+  const { open, onNewCommand, onClose } = props;
   const [name, setName] = useState<string>('');
+  const [action, setAction] = useState<string>('create_area');
 
   const onSave = async () => {
-    try {
-      const newId = await createVariant(parentId, name);
-      setName('');
-      onClose();
-      history.push(`/study/${newId}/variants/edition`);
-    } catch (e) {
-      enqueueSnackbar(t('variants:onVariantCreationError'), { variant: 'error' });
-    }
+    onNewCommand(name, action);
+    onClose();
+    enqueueSnackbar(t('variants:onNewCommandAdded'), { variant: 'error' });
   };
 
   return (
@@ -55,14 +49,21 @@ const CreateVariantModal = (props: PropTypes) => {
       open={open}
       handleClose={onClose}
       handleSave={onSave}
-      title={t('variants:newVariant')}
+      title={t('variants:newCommand')}
     >
       <div className={classes.infos}>
         <TextField
           className={classes.idFields}
           value={name}
           onChange={(event) => setName(event.target.value as string)}
-          label={t('variants:variantNameLabel')}
+          label={t('variants:commandNameLabel')}
+          variant="outlined"
+        />
+        <TextField
+          className={classes.idFields}
+          value={name}
+          onChange={(event) => setName(event.target.value as string)}
+          label={t('variants:commandActionLabel')}
           variant="outlined"
         />
       </div>
@@ -70,4 +71,4 @@ const CreateVariantModal = (props: PropTypes) => {
   );
 };
 
-export default CreateVariantModal;
+export default AddCommandModal;

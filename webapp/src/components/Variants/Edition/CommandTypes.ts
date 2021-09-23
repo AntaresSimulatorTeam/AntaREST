@@ -1,4 +1,5 @@
 export interface CommandItem {
+    id?: string;
     name: string;
     action: string;
     args: any;
