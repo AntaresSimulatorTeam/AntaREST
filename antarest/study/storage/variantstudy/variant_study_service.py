@@ -146,7 +146,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
     def append_command(
         self, study_id: str, command: CommandDTO, params: RequestParameters
-    ) -> None:
+    ) -> str:
         """
         Add command to list of commands (at the end)
         Args:
@@ -165,6 +165,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
         )
         self.repository.save(metadata=study, update_modification_date=True)
+        return study.commands[index].id
 
     def append_commands(
         self,

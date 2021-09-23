@@ -217,7 +217,7 @@ export interface MatrixType {
 export interface CommandDTO {
   id?: string;
   action: string;
-  args: any;
+  args: object;
 }
 
 export enum WSEvent {

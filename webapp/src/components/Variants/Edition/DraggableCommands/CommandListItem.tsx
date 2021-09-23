@@ -1,6 +1,6 @@
-import * as React from 'react';
+import React, { useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
-import ReactJson from 'react-json-view';
+import ReactJson, { InteractionProps } from 'react-json-view';
 import { Accordion, AccordionDetails, AccordionSummary, createStyles, Theme, Typography } from '@material-ui/core';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 import ExpandMore from '@material-ui/icons/ExpandMore';
@@ -13,24 +13,20 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   container: {
     boxSizing: 'border-box',
     display: 'flex',
-    flexFlow: 'column nowrap',
+    flexFlow: 'row nowrap',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    backgroundColor: 'blue',
+    height: 'auto',
   },
   normalItem: {
+    flex: 1,
     border: `1px solid ${theme.palette.primary.main}`,
-    margin: theme.spacing(0.2, 0.2),
+    margin: theme.spacing(0, 0.2),
     boxSizing: 'border-box',
-    display: 'flex',
-    flexFlow: 'column nowrap',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    backgroundColor: 'blue',
   },
   draggingListItem: {
+    flex: 1,
     background: 'rgb(235,235,235)',
   },
   details: {
@@ -40,6 +36,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
+    boxSizing: 'border-box',
   },
   header: {
     width: '100%',
@@ -67,6 +64,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'flex-start',
   },
   deleteIcon: {
+    flex: '0 0 24px',
     color: theme.palette.error.light,
     marginLeft: theme.spacing(1),
     marginRight: theme.spacing(1),
@@ -74,29 +72,28 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
       color: theme.palette.error.main,
     },
   },
+  infos: {
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+  },
 }));
 
 export type DraggableListItemProps = {
   item: CommandItem;
   index: number;
   onDelete: (index: number) => void;
+  onArgsUpdate: (index: number, json: object) => void;
 };
 
-const CommandListItem = ({ item, index, onDelete }: DraggableListItemProps) => {
+const CommandListItem = ({ item, index, onDelete, onArgsUpdate }: DraggableListItemProps) => {
   const classes = useStyles();
-  /*  NOTE:
-      Example Json will be the command model corresponding to CommandItem
-      This model will exist in redux store
-      Model for all commands will be fetched at the begining and stored in a redux store
-  */
-  const exampleJson = {
-    Test1: 'Hey 1',
-    Test2: 'Hey 2',
-    'Test 3': {
-      'Test 4': 'Hey 3',
-      'Test 5': 'Hey 4',
-    },
-    'Test 6': 'Hey 5',
+  const [jsonData, setJsonData] = useState<object>(item.args);
+
+  const updateJson = (e: InteractionProps) => {
+    setJsonData(e.updated_src);
+    onArgsUpdate(index, e.updated_src);
   };
 
   return (
@@ -117,17 +114,21 @@ const CommandListItem = ({ item, index, onDelete }: DraggableListItemProps) => {
               expandIcon={<ExpandMore />}
               aria-controls="panel1a-content"
               id="panel1a-header"
+              style={{ width: '90%' }}
             >
-              <Typography>{item.name}</Typography>
+              <div className={classes.infos}>
+                <Typography color="primary" style={{ fontSize: '0.9em' }}>{item.action}</Typography>
+                <Typography style={{ fontSize: '0.8em', color: 'gray' }}>{item.name}</Typography>
+              </div>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails className={classes.details}>
               <div className={classes.details}>
                 <div className={classes.header}>
                   <CloudDownloadOutlinedIcon className={classes.headerIcon} />
                   <CloudUploadOutlinedIcon className={classes.headerIcon} />
                 </div>
                 <div className={classes.json}>
-                  <ReactJson src={exampleJson} />
+                  <ReactJson src={jsonData} onEdit={updateJson} onDelete={updateJson} onAdd={updateJson} />
                 </div>
               </div>
             </AccordionDetails>

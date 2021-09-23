@@ -18,12 +18,13 @@ export const createVariant = async (id: string, name: string): Promise<string> =
 };
 
 export const appendCommands = async (studyId: string, commands: Array<CommandDTO>): Promise<string> => {
-  const res = await client.post(`/v1/studies/${studyId}/commands`, commands);
+  const data = { commands };
+  const res = await client.post(`/v1/studies/${studyId}/commands`, data);
   return res.data;
 };
 
 export const appendCommand = async (studyId: string, command: CommandDTO): Promise<string> => {
-  const res = await client.post(`/v1/studies/${studyId}/commands`, command);
+  const res = await client.post(`/v1/studies/${studyId}/command`, command);
   return res.data;
 };
 
@@ -46,6 +47,5 @@ export const getCommands = async (studyId: string): Promise<Array<CommandDTO>> =
   const res = await client.get(`/v1/studies/${studyId}/commands`);
   return res.data;
 };
-
 
 export default {};

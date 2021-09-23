@@ -11,9 +11,9 @@
     "add": "Add",
     "save": "Save",
     "confirmsave": "Are you sure you want to save these commands ?",
-    "newCommand": "",
-    "commandNameLabel": "",
-    "onNewCommandAdded": "",
-    "commandActionLabel": ""
+    "newCommand": "Add new command",
+    "commandNameLabel": "Name (optional)",
+    "onNewCommandAdded": "New command added",
+    "commandActionLabel": "Select action"
 }
   

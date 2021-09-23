@@ -540,7 +540,7 @@ def test_variant_manager(app: FastAPI):
     command_id = res.json()[1]["id"]
 
     res = client.put(
-        f"/v1/studies/{variant_id}/commands/{command_id}?index=0",
+        f"/v1/studies/{variant_id}/commands/{command_id}/move?index=0",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },

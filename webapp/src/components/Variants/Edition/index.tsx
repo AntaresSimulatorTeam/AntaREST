@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { makeStyles, createStyles, Theme, Button } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import { DropResult } from 'react-beautiful-dnd';
+import { callbackify } from 'util';
 import { CommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
-import { reorder, fromCommandDTOToCommandItem, fromCommandItemToCommandDTO, onCommandsSave } from './utils';
-import { CommandDTO } from '../../../common/types';
-import { appendCommands, getCommands } from '../../../services/api/variant';
+import { reorder, fromCommandDTOToCommandItem, onCommandsSave } from './utils';
+import { getCommands } from '../../../services/api/variant';
 import ConfirmationModal from '../../ui/ConfirmationModal';
+import AddCommandModal from './AddCommandModal';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -18,12 +19,12 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'flex-start',
     alignItems: 'center',
     boxSizing: 'border-box',
-    padding: theme.spacing(2, 1),
-    // backgroundColor: 'red',
+    padding: theme.spacing(1, 1),
+    overflowY: 'hidden',
   },
   header: {
     width: '100%',
-    flex: '0 0 10%',
+    height: '80px',
     // backgroundColor: 'blue',
     display: 'flex',
     flexFlow: 'row nowrap',
@@ -36,10 +37,10 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flex: 1,
     borderRadius: theme.shape.borderRadius,
     border: `1px solid ${theme.palette.primary.main}`,
-    // backgroundColor: 'green',
     boxSizing: 'border-box',
     overflowX: 'hidden',
     overflowY: 'auto',
+    padding: theme.spacing(0),
   },
   addButton: {
     color: theme.palette.primary.main,
@@ -64,12 +65,14 @@ const EditionView = (props: PropTypes) => {
   const [t] = useTranslation();
   const { studyId } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
+  const [openAddCommandModal, setOpenAddCommandModal] = useState<boolean>(false);
 
-  const fakeItems: Array<CommandItem> = [{ id: 'command_id_1', name: 'Command 1', args: 'args 1', action: 'ACTION_1' },
-    { id: 'command_id_2', name: 'Command 2', args: 'args 2', action: 'ACTION_2' },
-    { id: 'command_id_3', name: 'Command 3', args: 'args 3', action: 'ACTION_3' },
-    { id: 'command_id_4', name: 'Command 4', args: 'args 4', action: 'ACTION_4' },
-    { id: 'command_id_5', name: 'Command 5', args: 'args 5', action: 'ACTION_5' }];
+  const fakeItemsYes: Array<CommandItem> = [{ id: 'command_id_1', name: 'Command 1', args: {}, action: 'ACTION_1' },
+    { id: 'command_id_2', name: 'Command 2', args: {}, action: 'ACTION_2' },
+    { id: 'command_id_3', name: 'Command 3', args: {}, action: 'ACTION_3' },
+    { id: 'command_id_4', name: 'Command 4', args: {}, action: 'ACTION_4' },
+    { id: 'command_id_5', name: 'Command 5', args: {}, action: 'ACTION_5' }];
+  const fakeItems: Array<CommandItem> = [];
   const [commands, setCommands] = useState<Array<CommandItem>>(fakeItems);
   const [initCommands, setInitCommands] = useState<Array<CommandItem>>(fakeItems);
 
@@ -82,7 +85,9 @@ const EditionView = (props: PropTypes) => {
 
   const onSave = async () => {
     try {
-      setCommands(await onCommandsSave(studyId, initCommands, commands));
+      const newCommandList: Array<CommandItem> = await onCommandsSave(studyId, initCommands, commands);
+      setCommands(newCommandList);
+      setInitCommands(newCommandList);
     } catch (e) {
       // Snackbar
       console.log(e);
@@ -95,12 +100,25 @@ const EditionView = (props: PropTypes) => {
     console.log(index);
   };
 
+  const onNewCommand = (name: string, action: string) => {
+    setCommands(commands.concat([{ name, action, args: {} }]));
+  };
+
+  const onArgsUpdate = (index: number, args: object) => {
+    let tmpCommand: Array<CommandItem> = [];
+    tmpCommand = tmpCommand.concat(commands);
+    tmpCommand[index].args = { ...args };
+    setCommands(tmpCommand);
+  };
+
   useEffect(() => {
     const init = async () => {
       try {
         let dtoItems = await getCommands(studyId);
         dtoItems = dtoItems.filter((elm) => elm.id !== undefined);
+        console.log("COMMAND DTO: ", dtoItems);
         const commandItems = fromCommandDTOToCommandItem(dtoItems);
+        console.log("COMMAND ITEMS: ", commandItems);
         setCommands(commandItems);
         setInitCommands(commandItems);
       } catch (e) {
@@ -108,13 +126,13 @@ const EditionView = (props: PropTypes) => {
         console.log(e);
       }
     };
-    // init();
+    init();
   }, [studyId]);
 
   return (
     <div className={classes.root}>
       <div className={classes.header}>
-        <Button color="primary" variant="contained" style={{ marginRight: '10px' }}>
+        <Button color="primary" variant="contained" style={{ marginRight: '10px' }} onClick={() => setOpenAddCommandModal(true)}>
           {t('variants:add')}
         </Button>
         <Button color="primary" variant="contained" onClick={() => setOpenConfirmationModal(true)}>
@@ -122,7 +140,7 @@ const EditionView = (props: PropTypes) => {
         </Button>
       </div>
       <div className={classes.body}>
-        <CommandListView items={commands} onDragEnd={onDragEnd} onDelete={onDelete} />
+        <CommandListView items={commands} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} />
       </div>
       {openConfirmationModal && (
         <ConfirmationModal
@@ -131,6 +149,13 @@ const EditionView = (props: PropTypes) => {
           message={t('variants:confirmsave')}
           handleYes={onSave}
           handleNo={() => setOpenConfirmationModal(false)}
+        />
+      )}
+      {openAddCommandModal && (
+        <AddCommandModal
+          open={openAddCommandModal}
+          onClose={() => setOpenAddCommandModal(false)}
+          onNewCommand={onNewCommand}
         />
       )}
     </div>

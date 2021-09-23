@@ -10,8 +10,8 @@
     "add": "Ajouter",
     "save": "Sauvegarder",
     "confirmsave": "Êtes-vous sûr de vouloir sauvegarder ces commandes ?",
-    "newCommand": "",
-    "commandNameLabel": "",
-    "onNewCommandAdded": "",
-    "commandActionLabel": ""
+    "newCommand": "Ajouter une nouvelle commande",
+    "commandNameLabel": "Nom (optionel)",
+    "onNewCommandAdded": "Nouvelle commande ajoutée",
+    "commandActionLabel": "Sélectionnez le type"
   }

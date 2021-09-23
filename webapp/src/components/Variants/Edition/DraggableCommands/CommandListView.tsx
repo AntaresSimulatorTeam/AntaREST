@@ -11,16 +11,17 @@ export type DraggableListProps = {
   items: CommandItem[];
   onDragEnd: OnDragEndResponder;
   onDelete: (index: number) => void;
+  onArgsUpdate: (index: number, json: object) => void;
 };
 
-const CommandListView = React.memo(({ items, onDragEnd, onDelete }: DraggableListProps) => (
+const CommandListView = React.memo(({ items, onDragEnd, onDelete, onArgsUpdate }: DraggableListProps) => (
   <DragDropContext onDragEnd={onDragEnd}>
     <Droppable droppableId="droppable-list">
       {(provided) => (
         // eslint-disable-next-line react/jsx-props-no-spreading
-        <div ref={provided.innerRef} {...provided.droppableProps}>
+        <div ref={provided.innerRef} {...provided.droppableProps} style={{ paddingTop: '10px', paddingBottom: '10px' }}>
           {items.map((item, index) => (
-            <CommandListItem item={item} index={index} key={item.name} onDelete={onDelete} />
+            <CommandListItem item={item} index={index} key={item.name} onDelete={onDelete} onArgsUpdate={onArgsUpdate} />
           ))}
           {provided.placeholder}
         </div>

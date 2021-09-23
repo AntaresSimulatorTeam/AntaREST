@@ -1,6 +1,22 @@
 import { CommandDTO } from '../../../common/types';
 import { appendCommand, moveCommand, updateCommand, deleteCommand } from '../../../services/api/variant';
-import { CommandItem } from './CommandTypes';
+import { CommandEnum, CommandItem } from './CommandTypes';
+
+export const CommandList = [
+  CommandEnum.CREATE_AREA,
+  CommandEnum.REMOVE_AREA,
+  CommandEnum.CREATE_DISTRICT,
+  CommandEnum.REMOVE_DISTRICT,
+  CommandEnum.CREATE_LINK,
+  CommandEnum.REMOVE_LINK,
+  CommandEnum.CREATE_BINDING_CONSTRAINT,
+  CommandEnum.UPDATE_BINDING_CONSTRAINT,
+  CommandEnum.REMOVE_BINDING_CONSTRAINT,
+  CommandEnum.CREATE_CLUSTER,
+  CommandEnum.REMOVE_CLUSTER,
+  CommandEnum.REPLACE_MATRIX,
+  CommandEnum.UPDATE_CONFIG,
+];
 
 // a little function to help us with reordering the result
 export const reorder = <T>(
@@ -40,11 +56,14 @@ export const onCommandsSave = async (studyId: string, initCommand: Array<Command
     const index = commandList.findIndex((item) => item.id === elm.id);
     if (index < 0) {
       await deleteCommand(studyId, (elm.id as string));
+      console.log("REMOVE ELEMENT FROM INDEX: ", index);
     }
     return elm;
   }));
 
   dbCommandRepr = dbCommandRepr.filter((elm) => commandList.findIndex((item) => item.id === elm.id) >= 0);
+
+  console.log("AFTER DELETE: ", dbCommandRepr);
 
   // 2) Append all new commands
   commandList = await Promise.all(commandList.map(async (elm) => {
@@ -52,10 +71,13 @@ export const onCommandsSave = async (studyId: string, initCommand: Array<Command
       const newId = await appendCommand(studyId, elm);
       const newElmt: CommandDTO = { ...elm, id: newId };
       dbCommandRepr.push(newElmt);
+      console.log("ADD ELEMENT: ", elm);
       return newElmt;
     }
     return elm;
   }));
+
+  console.log("AFTER ADD: ", dbCommandRepr);
 
   // 3) Move commands
   await Promise.all(commandList.map(async (elm, index) => {
@@ -63,15 +85,19 @@ export const onCommandsSave = async (studyId: string, initCommand: Array<Command
     const item = dbCommandRepr[initIndex];
     // Update if needed
     if (item.args !== elm.args) {
+      console.log("UPDATE ELEMENT IN INDEX", index, " WIDTH ", elm.args);
       await updateCommand(studyId, (elm.id as string), elm);
     }
     // Move to index
     if (initIndex !== index) {
+      console.log("MOVE ELEMENT FROM ", initIndex, " TO ", index);
       await moveCommand(studyId, (item.id as string), index);
     }
   }));
 
-  return fromCommandDTOToCommandItem(commandList);
+  const elm = fromCommandDTOToCommandItem(commandList);
+  console.log("NEW LIST: ", elm);
+  return elm;
 };
 
 export default {};

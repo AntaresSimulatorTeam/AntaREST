@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useState } from 'react';
 import { createStyles, makeStyles, Theme, TextField } from '@material-ui/core';
+import Autocomplete from '@material-ui/lab/Autocomplete';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { useHistory } from 'react-router-dom';
 import GenericModal from '../../ui/GenericModal';
+import { CommandList } from './utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   infos: {
@@ -16,11 +17,16 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'flex-start',
     padding: theme.spacing(2),
   },
+  autocomplete: {
+    width: '100%',
+    height: '30px',
+    boxSizing: 'border-box',
+  },
   idFields: {
     width: '70%',
     height: '30px',
     boxSizing: 'border-box',
-    margin: theme.spacing(2),
+    margin: theme.spacing(2.5, 1),
   },
 }));
 
@@ -36,12 +42,12 @@ const AddCommandModal = (props: PropTypes) => {
   const { enqueueSnackbar } = useSnackbar();
   const { open, onNewCommand, onClose } = props;
   const [name, setName] = useState<string>('');
-  const [action, setAction] = useState<string>('create_area');
+  const [action, setAction] = useState<string>(CommandList[0]);
 
   const onSave = async () => {
     onNewCommand(name, action);
     onClose();
-    enqueueSnackbar(t('variants:onNewCommandAdded'), { variant: 'error' });
+    enqueueSnackbar(t('variants:onNewCommandAdded'), { variant: 'success' });
   };
 
   return (
@@ -59,12 +65,22 @@ const AddCommandModal = (props: PropTypes) => {
           label={t('variants:commandNameLabel')}
           variant="outlined"
         />
-        <TextField
+        <Autocomplete
+          options={CommandList}
+          getOptionLabel={(option) => option}
+          value={action || null}
           className={classes.idFields}
-          value={name}
-          onChange={(event) => setName(event.target.value as string)}
-          label={t('variants:commandActionLabel')}
-          variant="outlined"
+          onChange={(event: any, newValue: string | null) => setAction(newValue !== null ? newValue : CommandList[0])}
+          renderInput={(params) => (
+            <TextField
+          // eslint-disable-next-line react/jsx-props-no-spreading
+              {...params}
+              className={classes.autocomplete}
+              size="small"
+              label={t('variants:commandActionLabel')}
+              variant="outlined"
+            />
+          )}
         />
       </div>
     </GenericModal>

@@ -1,7 +1,7 @@
 import logging
 from typing import List, Dict
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON
@@ -173,9 +173,9 @@ def create_study_variant_routes(
             }
         },
     )
-    def append_command(
+    def append_commands(
         uuid: str,
-        command: List[CommandDTO],
+        commands: List[CommandDTO] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         logger.info(
@@ -185,6 +185,31 @@ def create_study_variant_routes(
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.append_commands(
+            sanitized_uuid, commands, params
+        )
+
+    @bp.post(
+        "/studies/{uuid}/command",
+        tags=[APITag.study_variant_management],
+        summary="Append a command to variant",
+        responses={
+            200: {
+                "description": "The id a the appended command",
+            }
+        },
+    )
+    def append_command(
+        uuid: str,
+        command: CommandDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> str:
+        logger.info(
+            f"Appending new command to variant study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        sanitized_uuid = sanitize_uuid(uuid)
+        return variant_study_service.append_command(
             sanitized_uuid, command, params
         )
 
@@ -215,7 +240,7 @@ def create_study_variant_routes(
         )
 
     @bp.put(
-        "/studies/{uuid}/commands/{cid}",
+        "/studies/{uuid}/commands/{cid}/move",
         tags=[APITag.study_variant_management],
         summary="Move a command to an other index",
     )
@@ -234,6 +259,28 @@ def create_study_variant_routes(
         sanitized_cid = sanitize_uuid(cid)
         variant_study_service.move_command(
             sanitized_uuid, sanitized_cid, index, params
+        )
+
+    @bp.put(
+        "/studies/{uuid}/commands/{cid}",
+        tags=[APITag.study_variant_management],
+        summary="Move a command to an other index",
+    )
+    def update_command(
+        uuid: str,
+        cid: str,
+        command: CommandDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Update command {cid} for variant study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        sanitized_uuid = sanitize_uuid(uuid)
+        sanitized_cid = sanitize_uuid(cid)
+        variant_study_service.update_command(
+            sanitized_uuid, sanitized_cid, command, params
         )
 
     @bp.delete(
