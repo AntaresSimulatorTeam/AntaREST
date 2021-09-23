@@ -5,10 +5,10 @@ import {
   OnDragEndResponder,
 } from 'react-beautiful-dnd';
 import CommandListItem from './CommandListItem';
-import { CommandDTO } from '../../../../common/types';
+import { CommandItem } from '../CommandTypes';
 
 export type DraggableListProps = {
-  items: CommandDTO[];
+  items: CommandItem[];
   onDragEnd: OnDragEndResponder;
 };
 

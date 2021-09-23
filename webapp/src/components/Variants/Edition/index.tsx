@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { makeStyles, createStyles, Theme, Button } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import { DropResult } from 'react-beautiful-dnd';
-import { CommandDTO } from '../../../common/types';
+import { CommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
-import { reorder } from './DraggableCommands/utils';
+import { reorder, fromCommandDTOToCommandItem, fromCommandItemToCommandDTO } from './utils';
+import { CommandDTO } from '../../../common/types';
+import { appendCommands, getCommands } from '../../../services/api/variant';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -46,23 +48,54 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
 }));
 
-const EditionView = () => {
+interface PropTypes {
+    studyId: string;
+}
+
+const EditionView = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
+  const { studyId } = props;
 
-  const fakeItems: Array<CommandDTO> = [{ name: 'Command 1', args: 'args 1', action: 'ACTION_1' },
+  const fakeItems: Array<CommandItem> = [{ name: 'Command 1', args: 'args 1', action: 'ACTION_1' },
     { name: 'Command 2', args: 'args 2', action: 'ACTION_2' },
     { name: 'Command 3', args: 'args 3', action: 'ACTION_3' },
     { name: 'Command 4', args: 'args 4', action: 'ACTION_4' },
     { name: 'Command 5', args: 'args 5', action: 'ACTION_5' }];
-  const [items, setItems] = useState<Array<CommandDTO>>(fakeItems);
+  const [commands, setCommands] = useState<Array<CommandItem>>(fakeItems);
 
   const onDragEnd = ({ destination, source }: DropResult) => {
     // dropped outside the list
     if (!destination) return;
-    const newItems = reorder(items, source.index, destination.index);
-    setItems(newItems);
+    const newItems = reorder(commands, source.index, destination.index);
+    setCommands(newItems);
   };
+
+  const onSave = async () => {
+    try {
+    // Convert CommandItem to CommandDTO
+      const dtoItems: Array<CommandDTO> = fromCommandItemToCommandDTO(commands);
+      // Call await appendComands
+      await appendCommands(studyId, dtoItems);
+    } catch (e) {
+      // Snackbar
+      console.log(e);
+    }
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const dtoItems = await getCommands(studyId);
+        setCommands(fromCommandDTOToCommandItem(dtoItems));
+      } catch (e) {
+        // Snackbar
+        console.log(e);
+      }
+    };
+
+    init();
+  }, [studyId]);
 
   return (
     <div className={classes.root}>
@@ -70,12 +103,12 @@ const EditionView = () => {
         <Button color="primary" variant="contained" style={{ marginRight: '10px' }}>
           {t('variants:add')}
         </Button>
-        <Button color="primary" variant="contained">
+        <Button color="primary" variant="contained" onClick={() => onSave()}>
           {t('variants:save')}
         </Button>
       </div>
       <div className={classes.body}>
-        <CommandListView items={items} onDragEnd={onDragEnd} />
+        <CommandListView items={commands} onDragEnd={onDragEnd} />
       </div>
     </div>
   );
