@@ -11,6 +11,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.matrixstore.service import MatrixService
 from antarest.study.common.uri_resolver_service import UriResolverService
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -20,6 +21,15 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
+from antarest.study.storage.variantstudy.model.command_context import (
+    CommandContext,
+)
+from antarest.study.storage.variantstudy.model.interfaces import (
+    ICommandExtractor,
 )
 
 
@@ -34,9 +44,23 @@ def matrix_service() -> MatrixService:
     )
 
     matrix_service = Mock(spec=MatrixService)
-    matrix_service.create.return_value = "matrix_id"
+    matrix_service.create.side_effect = (
+        lambda data: data if isinstance(data, str) else "matrix_id"
+    )
 
     return matrix_service
+
+
+@pytest.fixture
+def command_context(matrix_service: MatrixService) -> CommandContext:
+    return CommandContext(
+        generator_matrix_constants=GeneratorMatrixConstants(
+            matrix_service=matrix_service
+        ),
+        matrix_service=matrix_service,
+        patch_service=PatchService(),
+        command_extractor=Mock(spec=ICommandExtractor),
+    )
 
 
 @pytest.fixture

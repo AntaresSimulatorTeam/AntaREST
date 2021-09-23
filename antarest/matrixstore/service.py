@@ -45,6 +45,10 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def exists(self, id: str) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
     def delete(self, id: str) -> None:
         raise NotImplementedError()
 
@@ -93,6 +97,9 @@ class SimpleMatrixService(ISimpleMatrixService):
             )
         else:
             return None
+
+    def exists(self, id: str) -> bool:
+        return self.repo_content.exists(id)
 
     def delete(self, id: str) -> None:
         self.repo_content.delete(id)
@@ -326,6 +333,9 @@ class MatrixService(ISimpleMatrixService):
             return MatrixService._to_dto(matrix, data)
         else:
             return None
+
+    def exists(self, id: str) -> bool:
+        return self.repo_content.exists(id) and self.repo.exists(id)
 
     def delete(self, id: str) -> None:
         self.repo_content.delete(id)

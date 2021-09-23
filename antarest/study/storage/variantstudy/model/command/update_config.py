@@ -1,4 +1,4 @@
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, List, Optional
 
 from antarest.core.custom_types import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -10,7 +10,10 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
+)
 
 
 class UpdateConfig(ICommand):
@@ -42,3 +45,44 @@ class UpdateConfig(ICommand):
                 "data": self.data,
             },
         )
+
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target
+        )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, UpdateConfig):
+            return False
+        simple_match = self.target == other.target
+        if not equal:
+            return simple_match
+        return simple_match and self.data == other.data
+
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
+        for command in reversed(history):
+            if (
+                isinstance(command, UpdateConfig)
+                and command.target == self.target
+            ):
+                return [command]
+        if base is not None:
+            from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+                CommandExtraction,
+            )
+
+            return [
+                (
+                    self.command_context.command_extractor
+                    or CommandExtraction(self.command_context.matrix_service)
+                ).generate_update_config(base.tree, self.target.split("/"))
+            ]
+        return []
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        return [other]
+
+    def get_inner_matrices(self) -> List[str]:
+        return []

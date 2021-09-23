@@ -2,26 +2,19 @@
   {
     "action": "create_area",
     "args": {
-      "area_name": "Area 1",
-      "metadata": {}
+      "area_name": "Area 1"
     }
   },
   {
     "action": "create_area",
     "args": {
-      "area_name": "Area2",
-      "metadata": {
-        "country": "FR"
-      }
+      "area_name": "Area2"
     }
   },
   {
     "action": "create_area",
     "args": {
-      "area_name": "WEIRD",
-      "metadata": {
-        "country": "FR"
-      }
+      "area_name": "WEIRD"
     }
   },
   {
@@ -85,7 +78,7 @@
     }
   },
   {
-    "action": "create_binding_constrains",
+    "action": "create_binding_constraint",
     "args": {
       "name": "BD less hourly disabled",
       "enabled": false,
@@ -95,7 +88,7 @@
     }
   },
   {
-    "action": "create_binding_constrains",
+    "action": "create_binding_constraint",
     "args": {
       "name": "BD less hourly no values",
       "time_step": "hourly",
@@ -106,7 +99,7 @@
     }
   },
   {
-    "action": "create_binding_constrains",
+    "action": "create_binding_constraint",
     "args": {
       "name": "BD less hourly",
       "time_step": "hourly",
@@ -117,7 +110,7 @@
     }
   },
   {
-    "action": "create_binding_constrains",
+    "action": "create_binding_constraint",
     "args": {
       "name": "BD less weekly",
       "time_step": "weekly",
@@ -128,7 +121,7 @@
     }
   },
   {
-    "action": "create_binding_constrains",
+    "action": "create_binding_constraint",
     "args": {
       "name": "BD both daily",
       "time_step": "daily",
@@ -140,7 +133,7 @@
     }
   },
   {
-    "action": "create_binding_constrains",
+    "action": "create_binding_constraint",
     "args": {
       "name": "BD equal hourly",
       "time_step": "hourly",

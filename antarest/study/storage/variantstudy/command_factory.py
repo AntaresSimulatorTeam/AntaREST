@@ -2,6 +2,7 @@ from typing import List
 
 from antarest.core.custom_types import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -42,6 +43,9 @@ from antarest.study.storage.variantstudy.model.command.remove_link import (
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
 )
+from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
+    UpdateBindingConstraint,
+)
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
@@ -66,6 +70,7 @@ class CommandFactory:
         self.command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=matrix_service,
+            patch_service=PatchService(),
         )
 
     def _to_single_icommand(self, action: str, args: JSON) -> ICommand:
@@ -108,6 +113,12 @@ class CommandFactory:
 
         elif action == CommandName.CREATE_BINDING_CONSTRAINT.value:
             return CreateBindingConstraint(
+                **args,
+                command_context=self.command_context,
+            )
+
+        elif action == CommandName.UPDATE_BINDING_CONSTRAINT.value:
+            return UpdateBindingConstraint(
                 **args,
                 command_context=self.command_context,
             )

@@ -1,8 +1,9 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, cast
 
 from pydantic import validator
 
 from antarest.core.custom_types import JSON
+from antarest.study.model import PatchLeafDict
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     transform_name_to_id,
@@ -17,7 +18,10 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
+)
 from antarest.study.storage.variantstudy.model.command.utils import (
     get_or_create_section,
 )
@@ -25,7 +29,6 @@ from antarest.study.storage.variantstudy.model.command.utils import (
 
 class CreateArea(ICommand):
     area_name: str
-    metadata: Dict[str, str]  # TODO: use metadata
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
@@ -248,5 +251,33 @@ class CreateArea(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.CREATE_AREA.value,
-            args={"area_name": self.area_name, "metadata": self.metadata},
+            args={"area_name": self.area_name},
         )
+
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value
+            + MATCH_SIGNATURE_SEPARATOR
+            + self.area_name
+        )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, CreateArea):
+            return False
+        return self.area_name == other.area_name
+
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
+        from antarest.study.storage.variantstudy.model.command.remove_area import (
+            RemoveArea,
+        )
+
+        area_id = transform_name_to_id(self.area_name)
+        return [RemoveArea(id=area_id, command_context=self.command_context)]
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        return []
+
+    def get_inner_matrices(self) -> List[str]:
+        return []

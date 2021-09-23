@@ -1,4 +1,4 @@
-from typing import Dict, Union, List, Any, Optional
+from typing import Dict, Union, List, Any, Optional, cast
 
 from pydantic import validator
 
@@ -14,7 +14,10 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
+)
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
     get_or_create_section,
@@ -135,3 +138,91 @@ class CreateCluster(ICommand):
                 "modulation": strip_matrix_protocol(self.modulation),
             },
         )
+
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value
+            + MATCH_SIGNATURE_SEPARATOR
+            + self.area_id
+            + MATCH_SIGNATURE_SEPARATOR
+            + self.cluster_name
+        )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, CreateCluster):
+            return False
+        simple_match = (
+            self.area_id == other.area_id
+            and self.cluster_name == other.cluster_name
+        )
+        if not equal:
+            return simple_match
+        return (
+            simple_match
+            and self.parameters == other.parameters
+            and self.prepro == other.prepro
+            and self.modulation == other.modulation
+        )
+
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
+        from antarest.study.storage.variantstudy.model.command.remove_cluster import (
+            RemoveCluster,
+        )
+
+        cluster_id = transform_name_to_id(self.cluster_name)
+        return [
+            RemoveCluster(
+                area_id=self.area_id,
+                cluster_id=cluster_id,
+                command_context=self.command_context,
+            )
+        ]
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        other = cast(CreateCluster, other)
+        from antarest.study.storage.variantstudy.model.command.replace_matrix import (
+            ReplaceMatrix,
+        )
+        from antarest.study.storage.variantstudy.model.command.update_config import (
+            UpdateConfig,
+        )
+
+        cluster_id = transform_name_to_id(self.cluster_name)
+        commands: List[ICommand] = []
+        if self.prepro != other.prepro:
+            commands.append(
+                ReplaceMatrix(
+                    target=f"input/thermal/prepro/{self.area_id}/{cluster_id}/data",
+                    matrix=strip_matrix_protocol(other.prepro),
+                    command_context=self.command_context,
+                )
+            )
+        if self.modulation != other.modulation:
+            commands.append(
+                ReplaceMatrix(
+                    target=f"input/thermal/prepro/{self.area_id}/{cluster_id}/modulation",
+                    matrix=strip_matrix_protocol(other.modulation),
+                    command_context=self.command_context,
+                )
+            )
+        if self.parameters != other.parameters:
+            commands.append(
+                UpdateConfig(
+                    target=f"input/thermal/clusters/{self.area_id}/list/{self.cluster_name}",
+                    data=other.parameters,
+                    command_context=self.command_context,
+                )
+            )
+        return commands
+
+    def get_inner_matrices(self) -> List[str]:
+        matrices: List[str] = []
+        if self.prepro:
+            assert isinstance(self.prepro, str)
+            matrices.append(strip_matrix_protocol(self.prepro))
+        if self.modulation:
+            assert isinstance(self.modulation, str)
+            matrices.append(strip_matrix_protocol(self.modulation))
+        return matrices

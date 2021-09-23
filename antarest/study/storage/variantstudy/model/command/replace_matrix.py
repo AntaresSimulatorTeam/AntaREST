@@ -1,4 +1,4 @@
-from typing import Union, List, Any
+from typing import Union, List, Any, Optional
 
 from pydantic import validator
 
@@ -16,7 +16,10 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
+)
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
     strip_matrix_protocol,
@@ -75,3 +78,45 @@ class ReplaceMatrix(ICommand):
                 "matrix": strip_matrix_protocol(self.matrix),
             },
         )
+
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target
+        )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, ReplaceMatrix):
+            return False
+        simple_match = self.target == other.target
+        if not equal:
+            return simple_match
+        return simple_match and self.matrix == other.matrix
+
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
+        for command in reversed(history):
+            if (
+                isinstance(command, ReplaceMatrix)
+                and command.target == self.target
+            ):
+                return [command]
+        if base is not None:
+            from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+                CommandExtraction,
+            )
+
+            return [
+                (
+                    self.command_context.command_extractor
+                    or CommandExtraction(self.command_context.matrix_service)
+                ).generate_replace_matrix(base.tree, self.target.split("/"))
+            ]
+        return []
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        return [other]
+
+    def get_inner_matrices(self) -> List[str]:
+        assert isinstance(self.matrix, str)
+        return [strip_matrix_protocol(self.matrix)]

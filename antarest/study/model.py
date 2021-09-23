@@ -142,9 +142,12 @@ class PatchLeafDict(Dict[str, PatchLeaf]):
             if new_dict_key not in self.keys():
                 merged_dict[new_dict_key] = new_dict_value
             else:
-                merged_dict[new_dict_key] = self[new_dict_key].patch(
-                    new_dict_value
-                )
+                if new_dict_value is None:
+                    del merged_dict[new_dict_key]
+                else:
+                    merged_dict[new_dict_key] = self[new_dict_key].patch(
+                        new_dict_value
+                    )
 
         return merged_dict
 

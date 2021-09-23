@@ -21,13 +21,13 @@ from antarest.study.storage.variantstudy.model.command.common import (
     [
         CommandDTO(
             action=CommandName.CREATE_AREA.value,
-            args={"area_name": "area_name", "metadata": {}},
+            args={"area_name": "area_name"},
         ),
         CommandDTO(
             action=CommandName.CREATE_AREA.value,
             args=[
-                {"area_name": "area_name", "metadata": {}},
-                {"area_name": "area2", "metadata": {}},
+                {"area_name": "area_name"},
+                {"area_name": "area2"},
             ],
         ),
         CommandDTO(
@@ -40,11 +40,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
         ),
         CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
-            args={"name": "id", "metadata": {}, "filter_items": ["a"]},
+            args={"name": "id", "filter_items": ["a"]},
         ),
         CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
-            args=[{"name": "id", "metadata": {}, "base_filter": "add-all"}],
+            args=[{"name": "id", "base_filter": "add-all"}],
         ),
         CommandDTO(
             action=CommandName.REMOVE_DISTRICT.value,
@@ -111,6 +111,29 @@ from antarest.study.storage.variantstudy.model.command.common import (
                     "operator": "equal",
                     "coeffs": {},
                     "values": "values",
+                }
+            ],
+        ),
+        CommandDTO(
+            action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
+            args={
+                "id": "id",
+                "enabled": True,
+                "time_step": "hourly",
+                "operator": "equal",
+                "coeffs": {},
+                "values": "values",
+            },
+        ),
+        CommandDTO(
+            action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
+            args=[
+                {
+                    "id": "id",
+                    "enabled": True,
+                    "time_step": "hourly",
+                    "operator": "equal",
+                    "coeffs": {},
                 }
             ],
         ),

@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 from checksumdir import dirhash
 
 from antarest.matrixstore.service import MatrixService
@@ -15,6 +17,9 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import (
     RemoveArea,
 )
+from antarest.study.storage.variantstudy.model.command.remove_link import (
+    RemoveLink,
+)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -27,7 +32,7 @@ class TestRemoveArea:
     def test_apply(
         self,
         empty_study: FileStudy,
-        matrix_service: MatrixService,
+        command_context: CommandContext,
     ):
         area_name = "Area"
         empty_study.tree.save(
@@ -55,17 +60,10 @@ class TestRemoveArea:
         )
 
         empty_study_hash = dirhash(empty_study.config.study_path, "md5")
-        command_context = CommandContext(
-            generator_matrix_constants=GeneratorMatrixConstants(
-                matrix_service=matrix_service
-            ),
-            matrix_service=matrix_service,
-        )
 
         create_area_command: ICommand = CreateArea.parse_obj(
             {
                 "area_name": area_name,
-                "metadata": {},
                 "command_context": command_context,
             }
         )
@@ -83,3 +81,39 @@ class TestRemoveArea:
         assert (
             dirhash(empty_study.config.study_path, "md5") == empty_study_hash
         )
+
+
+def test_match(command_context: CommandContext):
+    base = RemoveArea(id="foo", command_context=command_context)
+    other_match = RemoveArea(id="foo", command_context=command_context)
+    other_not_match = RemoveArea(id="bar", command_context=command_context)
+    other_other = RemoveLink(
+        area1="id", area2="id2", command_context=command_context
+    )
+    assert base.match(other_match)
+    assert not base.match(other_not_match)
+    assert not base.match(other_other)
+    assert base.match_signature() == "remove_area%foo"
+    assert base.get_inner_matrices() == []
+
+
+def test_revert(command_context: CommandContext):
+    base = RemoveArea(id="foo", command_context=command_context)
+    assert base.revert(
+        [CreateArea(area_name="foo", command_context=command_context)], None
+    ) == [CreateArea(area_name="foo", command_context=command_context)]
+    study = FileStudy(config=Mock(), tree=Mock())
+    base.command_context.command_extractor.extract_area.return_value = (
+        [Mock()],
+        [Mock()],
+    )
+    base.revert([], study)
+    base.command_context.command_extractor.extract_area.assert_called_with(
+        study, "foo"
+    )
+
+
+def test_create_diff(command_context: CommandContext):
+    base = RemoveArea(id="foo", command_context=command_context)
+    other_match = RemoveArea(id="foo", command_context=command_context)
+    assert base.create_diff(other_match) == []

@@ -1,6 +1,7 @@
 import configparser
 
 from antarest.matrixstore.service import MatrixService
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
@@ -11,7 +12,13 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    CreateBindingConstraint,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.remove_area import (
+    RemoveArea,
+)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -22,15 +29,8 @@ class TestCreateArea:
         pass
 
     def test_apply(
-        self, empty_study: FileStudy, matrix_service: MatrixService
+        self, empty_study: FileStudy, command_context: CommandContext
     ):
-
-        command_context = CommandContext(
-            generator_matrix_constants=GeneratorMatrixConstants(
-                matrix_service=matrix_service
-            ),
-            matrix_service=matrix_service,
-        )
         version = empty_study.config.version
         study_path = empty_study.config.study_path
         area_name = "Area"
@@ -39,7 +39,6 @@ class TestCreateArea:
         create_area_command: ICommand = CreateArea.parse_obj(
             {
                 "area_name": area_name,
-                "metadata": {},
                 "command_context": command_context,
             }
         )
@@ -339,3 +338,30 @@ class TestCreateArea:
         )
         output = create_area_command.apply(study_data=empty_study)
         assert not output.status
+
+
+def test_match(command_context: CommandContext):
+    base = CreateArea(area_name="foo", command_context=command_context)
+    other_match = CreateArea(area_name="foo", command_context=command_context)
+    other_not_match = CreateArea(
+        area_name="bar", command_context=command_context
+    )
+    other_other = RemoveArea(id="id", command_context=command_context)
+    assert base.match(other_match)
+    assert not base.match(other_not_match)
+    assert not base.match(other_other)
+    assert base.match_signature() == "create_area%foo"
+    assert base.get_inner_matrices() == []
+
+
+def test_revert(command_context: CommandContext):
+    base = CreateArea(area_name="foo", command_context=command_context)
+    assert base.revert([], None) == [
+        RemoveArea(id="foo", command_context=command_context)
+    ]
+
+
+def test_create_diff(command_context: CommandContext):
+    base = CreateArea(area_name="foo", command_context=command_context)
+    other_match = CreateArea(area_name="foo", command_context=command_context)
+    assert base.create_diff(other_match) == []

@@ -16,6 +16,15 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import (
     CreateCluster,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.remove_cluster import (
+    RemoveCluster,
+)
+from antarest.study.storage.variantstudy.model.command.replace_matrix import (
+    ReplaceMatrix,
+)
+from antarest.study.storage.variantstudy.model.command.update_config import (
+    UpdateConfig,
+)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -26,15 +35,8 @@ class TestCreateCluster:
         pass
 
     def test_apply(
-        self, empty_study: FileStudy, matrix_service: MatrixService
+        self, empty_study: FileStudy, command_context: CommandContext
     ):
-
-        command_context = CommandContext(
-            generator_matrix_constants=GeneratorMatrixConstants(
-                matrix_service=matrix_service
-            ),
-            matrix_service=matrix_service,
-        )
         study_path = empty_study.config.study_path
         area_name = "Area"
         area_id = transform_name_to_id(area_name, lower=True)
@@ -44,7 +46,6 @@ class TestCreateCluster:
         CreateArea.parse_obj(
             {
                 "area_name": area_name,
-                "metadata": {},
                 "command_context": command_context,
             }
         ).apply(empty_study)
@@ -137,3 +138,92 @@ class TestCreateCluster:
             }
         ).apply(empty_study)
         assert not output.status
+
+
+def test_match(command_context: CommandContext):
+    base = CreateCluster(
+        area_id="foo",
+        cluster_name="foo",
+        parameters={},
+        prepro=[[0]],
+        modulation=[[0]],
+        command_context=command_context,
+    )
+    other_match = CreateCluster(
+        area_id="foo",
+        cluster_name="foo",
+        parameters={},
+        prepro=[[0]],
+        modulation=[[0]],
+        command_context=command_context,
+    )
+    other_not_match = CreateCluster(
+        area_id="foo",
+        cluster_name="bar",
+        parameters={},
+        prepro=[[0]],
+        modulation=[[0]],
+        command_context=command_context,
+    )
+    other_other = RemoveCluster(
+        area_id="id", cluster_id="id", command_context=command_context
+    )
+    assert base.match(other_match)
+    assert not base.match(other_not_match)
+    assert not base.match(other_other)
+    assert base.match_signature() == "create_cluster%foo%foo"
+    assert base.get_inner_matrices() == ["matrix_id", "matrix_id"]
+
+
+def test_revert(command_context: CommandContext):
+    base = CreateCluster(
+        area_id="foo",
+        cluster_name="foo",
+        parameters={},
+        prepro=[[0]],
+        modulation=[[0]],
+        command_context=command_context,
+    )
+    assert base.revert([], None) == [
+        RemoveCluster(
+            area_id="foo",
+            cluster_id="foo",
+            command_context=command_context,
+        )
+    ]
+
+
+def test_create_diff(command_context: CommandContext):
+    base = CreateCluster(
+        area_id="foo",
+        cluster_name="foo",
+        parameters={},
+        prepro="a",
+        modulation="b",
+        command_context=command_context,
+    )
+    other_match = CreateCluster(
+        area_id="foo",
+        cluster_name="foo",
+        parameters={"a": "b"},
+        prepro="c",
+        modulation="d",
+        command_context=command_context,
+    )
+    assert base.create_diff(other_match) == [
+        ReplaceMatrix(
+            target=f"input/thermal/prepro/foo/foo/data",
+            matrix="c",
+            command_context=command_context,
+        ),
+        ReplaceMatrix(
+            target=f"input/thermal/prepro/foo/foo/modulation",
+            matrix="d",
+            command_context=command_context,
+        ),
+        UpdateConfig(
+            target=f"input/thermal/clusters/foo/list/foo",
+            data={"a": "b"},
+            command_context=command_context,
+        ),
+    ]

@@ -1,13 +1,20 @@
-from typing import Any
+from typing import Any, List, Optional
 
 from antarest.core.custom_types import JSON
+from antarest.study.model import PatchLeafDict
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    ICommand,
+    MATCH_SIGNATURE_SEPARATOR,
+)
 
 
 class RemoveArea(ICommand):
@@ -139,6 +146,8 @@ class RemoveArea(ICommand):
         }
         study_data.tree.save(new_area_data)
 
+        # todo remove bindinconstraint using this area ?
+        # todo remove area from districts
         return CommandOutput(status=True, message=f"Area '{self.id}' deleted")
 
     def to_dto(self) -> CommandDTO:
@@ -148,3 +157,46 @@ class RemoveArea(ICommand):
                 "id": self.id,
             },
         )
+
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id
+        )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, RemoveArea):
+            return False
+        return self.id == other.id
+
+    def revert(
+        self, history: List["ICommand"], base: Optional[FileStudy] = None
+    ) -> List["ICommand"]:
+        from antarest.study.storage.variantstudy.model.command.create_area import (
+            CreateArea,
+        )
+        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+            CommandExtraction,
+        )
+
+        for command in reversed(history):
+            if (
+                isinstance(command, CreateArea)
+                and transform_name_to_id(command.area_name) == self.id
+            ):
+                # todo revert binding constraints that has the area in constraint and also search in base for one
+                return [command]
+        if base is not None:
+
+            area_commands, links_commands = (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
+            ).extract_area(base, self.id)
+            return area_commands + links_commands
+        # todo revert binding constraints that has the area in constraint
+        return []
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        return []
+
+    def get_inner_matrices(self) -> List[str]:
+        return []
