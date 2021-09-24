@@ -166,9 +166,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             index=index,
         )
         study.commands.append(command_block)
-        self.repository.save(
-            study, command_block, update_modification_date=True
-        )
+        self.repository.save(study, update_modification_date=True)
         return new_id
 
     def append_commands(
