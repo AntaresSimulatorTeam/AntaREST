@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { createStyles, makeStyles, Theme, TextField } from '@material-ui/core';
 import Autocomplete from '@material-ui/lab/Autocomplete';
-import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import GenericModal from '../../ui/GenericModal';
 import { CommandList } from './utils';
@@ -32,22 +31,19 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
     open: boolean;
-    onNewCommand: (name: string, action: string) => void;
+    onNewCommand: (action: string) => void;
     onClose: () => void;
 }
 
 const AddCommandModal = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
   const { open, onNewCommand, onClose } = props;
-  const [name, setName] = useState<string>('');
   const [action, setAction] = useState<string>(CommandList[0]);
 
   const onSave = async () => {
-    onNewCommand(name, action);
+    onNewCommand(action);
     onClose();
-    enqueueSnackbar(t('variants:onNewCommandAdded'), { variant: 'success' });
   };
 
   return (
@@ -58,13 +54,6 @@ const AddCommandModal = (props: PropTypes) => {
       title={t('variants:newCommand')}
     >
       <div className={classes.infos}>
-        <TextField
-          className={classes.idFields}
-          value={name}
-          onChange={(event) => setName(event.target.value as string)}
-          label={t('variants:commandNameLabel')}
-          variant="outlined"
-        />
         <Autocomplete
           options={CommandList}
           getOptionLabel={(option) => option}

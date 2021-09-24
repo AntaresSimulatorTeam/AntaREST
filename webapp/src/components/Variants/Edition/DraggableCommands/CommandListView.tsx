@@ -4,6 +4,7 @@ import {
   Droppable,
   OnDragEndResponder,
 } from 'react-beautiful-dnd';
+import { Container } from '@material-ui/core';
 import CommandListItem from './CommandListItem';
 import { CommandItem } from '../CommandTypes';
 
@@ -12,20 +13,21 @@ export type DraggableListProps = {
   onDragEnd: OnDragEndResponder;
   onDelete: (index: number) => void;
   onArgsUpdate: (index: number, json: object) => void;
+  onSave: (index: number) => void;
 };
 
-const CommandListView = React.memo(({ items, onDragEnd, onDelete, onArgsUpdate }: DraggableListProps) => (
+const CommandListView = React.memo(({ items, onDragEnd, onDelete, onArgsUpdate, onSave }: DraggableListProps) => (
   <DragDropContext onDragEnd={onDragEnd}>
     <Droppable droppableId="droppable-list">
       {(provided) => (
         // eslint-disable-next-line react/jsx-props-no-spreading
-        <div ref={provided.innerRef} {...provided.droppableProps} style={{ paddingTop: '10px', paddingBottom: '10px' }}>
+        <Container ref={provided.innerRef} {...provided.droppableProps}>
           {items.map((item, index) => (
             // eslint-disable-next-line react/no-array-index-key
-            <CommandListItem item={item} index={index} key={`${item.name}${index}`} onDelete={onDelete} onArgsUpdate={onArgsUpdate} />
+            <CommandListItem item={item} index={index} key={`${item.id}${index}`} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} />
           ))}
           {provided.placeholder}
-        </div>
+        </Container>
       )}
     </Droppable>
   </DragDropContext>

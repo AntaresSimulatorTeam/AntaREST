@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
 import ReactJson, { InteractionProps } from 'react-json-view';
-import { Accordion, AccordionDetails, AccordionSummary, Box, Container, createStyles, Theme, Typography } from '@material-ui/core';
+import { Accordion, AccordionDetails, AccordionSummary, Container, createStyles, Theme, Typography } from '@material-ui/core';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
 import CloudUploadOutlinedIcon from '@material-ui/icons/CloudUploadOutlined';
+import SaveOutlinedIcon from '@material-ui/icons/SaveOutlined';
 import DeleteIcon from '@material-ui/icons/HighlightOff';
 import { CommandItem } from '../CommandTypes';
 
@@ -45,6 +46,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'row nowrap',
     justifyContent: 'flex-end',
     alignItems: 'center',
+    boxSizing: 'border-box',
     padding: theme.spacing(0, 1),
   },
   headerIcon: {
@@ -77,6 +79,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
+    boxSizing: 'border-box',
   },
 }));
 
@@ -85,9 +88,10 @@ export type DraggableListItemProps = {
   index: number;
   onDelete: (index: number) => void;
   onArgsUpdate: (index: number, json: object) => void;
+  onSave: (index: number) => void;
 };
 
-const CommandListItem = ({ item, index, onDelete, onArgsUpdate }: DraggableListItemProps) => {
+const CommandListItem = ({ item, index, onDelete, onArgsUpdate, onSave }: DraggableListItemProps) => {
   const classes = useStyles();
   const [jsonData, setJsonData] = useState<object>(item.args);
 
@@ -96,12 +100,8 @@ const CommandListItem = ({ item, index, onDelete, onArgsUpdate }: DraggableListI
     onArgsUpdate(index, e.updated_src);
   };
 
-  useEffect(() => {
-    console.log('Hey je suis index ', index);
-  }, [item, index]);
-
   return (
-    <Draggable draggableId={`${item.name}${index}`} index={index}>
+    <Draggable draggableId={`${item.id}${index}`} index={index}>
       {(provided, snapshot) => (
         <Container
           className={classes.container}
@@ -122,12 +122,13 @@ const CommandListItem = ({ item, index, onDelete, onArgsUpdate }: DraggableListI
             >
               <div className={classes.infos}>
                 <Typography color="primary" style={{ fontSize: '0.9em' }}>{item.action}</Typography>
-                <Typography style={{ fontSize: '0.8em', color: 'gray' }}>{item.name}</Typography>
+                <Typography style={{ fontSize: '0.8em', color: 'gray' }}>{item.id}</Typography>
               </div>
             </AccordionSummary>
             <AccordionDetails className={classes.details}>
               <div className={classes.details}>
                 <div className={classes.header}>
+                  <SaveOutlinedIcon className={classes.headerIcon} onClick={() => onSave(index)} />
                   <CloudDownloadOutlinedIcon className={classes.headerIcon} />
                   <CloudUploadOutlinedIcon className={classes.headerIcon} />
                 </div>

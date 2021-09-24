@@ -13,7 +13,15 @@
     "confirmsave": "Are you sure you want to save these commands ?",
     "newCommand": "Add new command",
     "commandNameLabel": "Name (optional)",
-    "onNewCommandAdded": "New command added",
-    "commandActionLabel": "Select action"
+    "commandActionLabel": "Select action",
+    "saveSuccess": "Command updated successfully",
+    "deleteSuccess": "Command deleted successfully",
+    "addSuccess": "Command added successfully",
+    "moveSuccess": "Command moved successfully",
+    "saveError": "Command not updated",
+    "deleteError": "Command not deleted",
+    "adderror": "Command not added",
+    "moveError": "Command not moved",
+    "fetchCommandError": "Error while retrieving commands"
 }
   

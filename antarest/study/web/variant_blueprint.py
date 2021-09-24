@@ -142,27 +142,6 @@ def create_study_variant_routes(
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.get_commands(sanitized_uuid, params)
 
-    @bp.get(
-        "/studies/commands",
-        tags=[APITag.study_variant_management],
-        summary="List all commands informations",
-        responses={
-            200: {
-                "description": "Name and arguments models of all commands",
-                "model": Dict[str, JSON],
-            }
-        },
-    )
-    def get_all_commands(
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Dict[str, JSON]:
-        logger.info(
-            f"Get command list informations for each command",
-            extra={"user": current_user.id},
-        )
-        params = RequestParameters(user=current_user)
-        return ""
-
     @bp.post(
         "/studies/{uuid}/commands",
         tags=[APITag.study_variant_management],

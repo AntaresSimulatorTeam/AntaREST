@@ -37,11 +37,6 @@ class CreateArea(ICommand):
             **data,
         )
 
-    @staticmethod
-    def get_command_model() -> JSON:
-        res: dict = {CommandName.CREATE_AREA.value: ["area_name"]}
-        return res
-
     def _generate_new_thermal_areas_ini(
         self,
         file_study: FileStudy,

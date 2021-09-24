@@ -1,5 +1,4 @@
 /* eslint-disable camelcase */
-import { AnyARecord } from 'dns';
 import { Moment } from 'moment';
 
 export type StudyDataType = 'json' | 'file' | 'matrixfile' | 'matrix';

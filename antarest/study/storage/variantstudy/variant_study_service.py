@@ -84,16 +84,16 @@ OUTPUT_RELATIVE_PATH = "output"
 
 class VariantStudyService(AbstractStorageService[VariantStudy]):
     def __init__(
-            self,
-            task_service: ITaskService,
-            cache: ICache,
-            raw_study_service: RawStudyService,
-            command_factory: CommandFactory,
-            study_factory: StudyFactory,
-            patch_service: PatchService,
-            repository: VariantStudyRepository,
-            event_bus: IEventBus,
-            config: Config,
+        self,
+        task_service: ITaskService,
+        cache: ICache,
+        raw_study_service: RawStudyService,
+        command_factory: CommandFactory,
+        study_factory: StudyFactory,
+        patch_service: PatchService,
+        repository: VariantStudyRepository,
+        event_bus: IEventBus,
+        config: Config,
     ):
         super().__init__(
             config=config,
@@ -109,7 +109,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self.generator = VariantCommandGenerator(self.study_factory)
 
     def get_command(
-            self, study_id: str, command_id: str, params: RequestParameters
+        self, study_id: str, command_id: str, params: RequestParameters
     ) -> CommandDTO:
         """
         Get command lists
@@ -132,7 +132,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
 
     def get_commands(
-            self, study_id: str, params: RequestParameters
+        self, study_id: str, params: RequestParameters
     ) -> List[CommandDTO]:
         """
         Get command lists
@@ -145,7 +145,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return [command.to_dto() for command in study.commands]
 
     def append_command(
-            self, study_id: str, command: CommandDTO, params: RequestParameters
+        self, study_id: str, command: CommandDTO, params: RequestParameters
     ) -> str:
         """
         Add command to list of commands (at the end)
@@ -157,26 +157,25 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         study = self._get_variant_study(study_id, params)
         index = len(study.commands)
-        #index = len(self.repository.get_commands(study.id))
-        print('LEN COMMANDS: ', index)
         new_id = str(uuid4())
         command_block = CommandBlock(
-                id=new_id,
-                command=command.action,
-                study_id=study.id,
-                args=json.dumps(command.args),
-                index=index)
+            id=new_id,
+            command=command.action,
+            study_id=study.id,
+            args=json.dumps(command.args),
+            index=index,
+        )
         study.commands.append(command_block)
-        #self.repository.save(metadata=study, update_modification_date=True)
-        self.repository.save_command(study, command_block)
-        print('----------- NEW COMMANDS: ', command_block.id, ' with index: ', command_block.index)
+        self.repository.save(
+            study, command_block, update_modification_date=True
+        )
         return new_id
 
     def append_commands(
-            self,
-            study_id: str,
-            commands: List[CommandDTO],
-            params: RequestParameters,
+        self,
+        study_id: str,
+        commands: List[CommandDTO],
+        params: RequestParameters,
     ) -> str:
         """
         Add command to list of commands (at the end)
@@ -202,11 +201,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return str(study.id)
 
     def move_command(
-            self,
-            study_id: str,
-            command_id: str,
-            new_index: int,
-            params: RequestParameters,
+        self,
+        study_id: str,
+        command_id: str,
+        new_index: int,
+        params: RequestParameters,
     ) -> None:
         """
         Move command place in the list of command
@@ -228,7 +227,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             self.repository.save(metadata=study, update_modification_date=True)
 
     def remove_command(
-            self, study_id: str, command_id: str, params: RequestParameters
+        self, study_id: str, command_id: str, params: RequestParameters
     ) -> None:
         """
         Remove command
@@ -245,14 +244,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             for idx, command in enumerate(study.commands):
                 command.index = idx
             self.repository.save(metadata=study, update_modification_date=True)
-        print('-------- COMMANDS AFTER REMOVE: ', [command.id for command in study.commands])
 
     def update_command(
-            self,
-            study_id: str,
-            command_id: str,
-            command: CommandDTO,
-            params: RequestParameters,
+        self,
+        study_id: str,
+        command_id: str,
+        command: CommandDTO,
+        params: RequestParameters,
     ) -> None:
         """
         Update a command
@@ -271,10 +269,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             self.repository.save(metadata=study, update_modification_date=True)
 
     def _get_variant_study(
-            self,
-            study_id: str,
-            params: RequestParameters,
-            raw_study_accepted: bool = False,
+        self,
+        study_id: str,
+        params: RequestParameters,
+        raw_study_accepted: bool = False,
     ) -> VariantStudy:
         """
         Get variant study and check permissions
@@ -295,7 +293,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return study
 
     def get_variants_children(
-            self, parent_id: str, params: RequestParameters
+        self, parent_id: str, params: RequestParameters
     ) -> List[StudyMetadataDTO]:
         self._get_variant_study(
             parent_id, params, raw_study_accepted=True
@@ -313,7 +311,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return output_list
 
     def get_variants_parents(
-            self, id: str, params: RequestParameters
+        self, id: str, params: RequestParameters
     ) -> List[StudyMetadataDTO]:
         output_list: List[StudyMetadataDTO] = self._get_variants_parents(
             id, params
@@ -323,7 +321,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return output_list
 
     def _get_variants_parents(
-            self, id: str, params: RequestParameters
+        self, id: str, params: RequestParameters
     ) -> List[StudyMetadataDTO]:
         study = self._get_variant_study(id, params, raw_study_accepted=True)
         metadata = (
@@ -349,7 +347,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return output_list
 
     def get_study_information(
-            self, study: VariantStudy, summary: bool = False
+        self, study: VariantStudy, summary: bool = False
     ) -> StudyMetadataDTO:
         """
         Get information present in study.antares file
@@ -368,11 +366,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
 
     def get(
-            self,
-            metadata: VariantStudy,
-            url: str = "",
-            depth: int = 3,
-            formatted: bool = True,
+        self,
+        metadata: VariantStudy,
+        url: str = "",
+        depth: int = 3,
+        formatted: bool = True,
     ) -> JSON:
         """
         Entry point to fetch data inside study.
@@ -395,10 +393,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
 
     def edit_study(
-            self,
-            metadata: VariantStudy,
-            url: str,
-            new: SUB_JSON,
+        self,
+        metadata: VariantStudy,
+        url: str,
+        new: SUB_JSON,
     ) -> SUB_JSON:
         study = self.get_raw(metadata)
         tree_node = study.tree.get_node(url.split("/"))
@@ -419,7 +417,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return new
 
     def create_variant_study(
-            self, uuid: str, name: str, params: RequestParameters
+        self, uuid: str, name: str, params: RequestParameters
     ) -> Optional[str]:
         """
         Create empty study
@@ -464,10 +462,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return str(variant_study.id)
 
     def generate(
-            self,
-            variant_study_id: str,
-            denormalize: bool,
-            params: RequestParameters,
+        self,
+        variant_study_id: str,
+        denormalize: bool,
+        params: RequestParameters,
     ) -> GenerationResultInfoDTO:
 
         # Get variant study
@@ -520,7 +518,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return results
 
     def _generate_snapshot(
-            self, variant_study: VariantStudy
+        self, variant_study: VariantStudy
     ) -> GenerationResultInfoDTO:
 
         # Copy parent study to dest
@@ -552,16 +550,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: true if study presents in disk, false else.
         """
         return (
-                (metadata.snapshot is not None)
-                and (metadata.snapshot.created_at >= metadata.updated_at)
-                and (self.get_study_path(metadata) / "study.antares").is_file()
+            (metadata.snapshot is not None)
+            and (metadata.snapshot.created_at >= metadata.updated_at)
+            and (self.get_study_path(metadata) / "study.antares").is_file()
         )
 
     def copy(
-            self,
-            src_meta: VariantStudy,
-            dest_name: str,
-            with_outputs: bool = False,
+        self,
+        src_meta: VariantStudy,
+        dest_name: str,
+        with_outputs: bool = False,
     ) -> VariantStudy:
         """
         Copy study to a new destination
@@ -648,7 +646,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return FileStudy(config=study_config, tree=study_tree)
 
     def get_study_sim_result(
-            self, study: VariantStudy
+        self, study: VariantStudy
     ) -> List[StudySimResultDTO]:
         """
         Get global result information
@@ -660,7 +658,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return super().get_study_sim_result(study=study)
 
     def set_reference_output(
-            self, metadata: VariantStudy, output_id: str, status: bool
+        self, metadata: VariantStudy, output_id: str, status: bool
     ) -> None:
         """
         Set an output to the reference output of a study
@@ -710,7 +708,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
 
     def export_study_flat(
-            self, metadata: VariantStudy, dest: Path, outputs: bool = True
+        self, metadata: VariantStudy, dest: Path, outputs: bool = True
     ) -> None:
 
         self._safe_generation(metadata)
