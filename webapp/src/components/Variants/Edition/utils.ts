@@ -51,6 +51,8 @@ export const onCommandsSave = async (studyId: string, initCommand: Array<Command
   let commandList = fromCommandItemToCommandDTO(newCommandList);
   let dbCommandRepr = fromCommandItemToCommandDTO(initCommand);
 
+  console.log("COMMAND LIST BEFORE: ", commandList);
+
   // 1) Remove deleted commands
   dbCommandRepr = await Promise.all(dbCommandRepr.map(async (elm) => {
     const index = commandList.findIndex((item) => item.id === elm.id);
@@ -69,15 +71,17 @@ export const onCommandsSave = async (studyId: string, initCommand: Array<Command
   commandList = await Promise.all(commandList.map(async (elm) => {
     if (elm.id === undefined) {
       const newId = await appendCommand(studyId, elm);
+      console.log("NEW ID: ", newId);
       const newElmt: CommandDTO = { ...elm, id: newId };
       dbCommandRepr.push(newElmt);
-      console.log("ADD ELEMENT: ", elm);
+      console.log("ADD ELEMENT: ", newElmt);
       return newElmt;
     }
     return elm;
   }));
 
-  console.log("AFTER ADD: ", dbCommandRepr);
+  console.log("DB COMMAND AFTER ADD: ", dbCommandRepr);
+  console.log("COMMAND LIST AFTER ADD: ", commandList);
 
   // 3) Move commands
   await Promise.all(commandList.map(async (elm, index) => {
@@ -85,13 +89,15 @@ export const onCommandsSave = async (studyId: string, initCommand: Array<Command
     const item = dbCommandRepr[initIndex];
     // Update if needed
     if (item.args !== elm.args) {
-      console.log("UPDATE ELEMENT IN INDEX", index, " WIDTH ", elm.args);
+      console.log("UPDATE ELEMENT IN INDEX", index, " WIDTH ", elm.args," !== ", item.args);
       await updateCommand(studyId, (elm.id as string), elm);
     }
     // Move to index
     if (initIndex !== index) {
       console.log("MOVE ELEMENT FROM ", initIndex, " TO ", index);
       await moveCommand(studyId, (item.id as string), index);
+      dbCommandRepr = reorder(dbCommandRepr, initIndex, index);
+      console.log("DB COMMAND AFTER MOVE", dbCommandRepr);
     }
   }));
 

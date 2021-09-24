@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
 import ReactJson, { InteractionProps } from 'react-json-view';
-import { Accordion, AccordionDetails, AccordionSummary, createStyles, Theme, Typography } from '@material-ui/core';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Container, createStyles, Theme, Typography } from '@material-ui/core';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
@@ -96,10 +96,14 @@ const CommandListItem = ({ item, index, onDelete, onArgsUpdate }: DraggableListI
     onArgsUpdate(index, e.updated_src);
   };
 
+  useEffect(() => {
+    console.log('Hey je suis index ', index);
+  }, [item, index]);
+
   return (
-    <Draggable draggableId={item.name} index={index}>
+    <Draggable draggableId={`${item.name}${index}`} index={index}>
       {(provided, snapshot) => (
-        <div
+        <Container
           className={classes.container}
           ref={provided.innerRef}
         // eslint-disable-next-line react/jsx-props-no-spreading
@@ -134,7 +138,7 @@ const CommandListItem = ({ item, index, onDelete, onArgsUpdate }: DraggableListI
             </AccordionDetails>
           </Accordion>
           <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />
-        </div>
+        </Container>
       )}
     </Draggable>
   );

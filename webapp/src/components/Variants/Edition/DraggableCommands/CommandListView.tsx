@@ -21,7 +21,8 @@ const CommandListView = React.memo(({ items, onDragEnd, onDelete, onArgsUpdate }
         // eslint-disable-next-line react/jsx-props-no-spreading
         <div ref={provided.innerRef} {...provided.droppableProps} style={{ paddingTop: '10px', paddingBottom: '10px' }}>
           {items.map((item, index) => (
-            <CommandListItem item={item} index={index} key={item.name} onDelete={onDelete} onArgsUpdate={onArgsUpdate} />
+            // eslint-disable-next-line react/no-array-index-key
+            <CommandListItem item={item} index={index} key={`${item.name}${index}`} onDelete={onDelete} onArgsUpdate={onArgsUpdate} />
           ))}
           {provided.placeholder}
         </div>
