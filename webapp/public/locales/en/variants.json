@@ -6,7 +6,7 @@
     "testGeneration": "Test generation",
     "newVariant": "New variant",
     "variantNameLabel": "Name",
-    "variantMode": "Variant mode",
+    "variantMode": "Dependency view",
     "onVariantCreationError": "Variant not created",
     "add": "Add",
     "save": "Save",

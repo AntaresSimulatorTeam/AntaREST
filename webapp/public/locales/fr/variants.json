@@ -5,7 +5,7 @@
     "testGeneration": "Tester la géneration",
     "newVariant": "Nouveau variant",
     "variantNameLabel": "Nom",
-    "variantMode": "Mode observation",
+    "variantMode": "Vue dépendances",
     "onVariantCreationError": "Erreur lors de la création du variant",
     "add": "Ajouter",
     "save": "Sauvegarder",
