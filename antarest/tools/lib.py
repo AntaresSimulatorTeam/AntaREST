@@ -12,6 +12,7 @@ from typing import List, Optional, Union, Callable, Set
 
 from requests import Session
 
+from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import StopWatch, get_local_path
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
@@ -118,11 +119,20 @@ class RemoteVariantGenerator(IVariantGenerator):
                 f"/v1/studies/{self.study_id}/generate?denormalize=true"
             )
         )
+        assert res.status_code == 200
+        task_id = res.json()
+        res = self.session.get(
+            self.build_url(f"/v1/tasks/{task_id}?wait_for_completion=true")
+        )
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Generation done in {x}s")
         )
         assert res.status_code == 200
-        return GenerationResultInfoDTO.parse_obj(res.json())
+        task_result = TaskDTO.parse_obj(res.json())
+        assert task_result.result is not None
+        return GenerationResultInfoDTO.parse_raw(
+            task_result.result.return_value or ""
+        )
 
     def build_url(self, url: str) -> str:
         if self.host is not None:

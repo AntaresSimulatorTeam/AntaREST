@@ -119,6 +119,6 @@ def test_commands_service() -> VariantStudyService:
         service._generate_snapshot = Mock()
         expected_result = GenerationResultInfoDTO(success=True, details=[])
         service._generate_snapshot.return_value = expected_result
-        results = service.generate(saved_id, False, SADMIN)
+        results = service._generate(saved_id, False, SADMIN)
         assert results == expected_result
         assert study.snapshot.id == study.id

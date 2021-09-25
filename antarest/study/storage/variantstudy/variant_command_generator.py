@@ -1,7 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Callable
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
@@ -28,6 +28,7 @@ class VariantCommandGenerator:
         dest_path: Path,
         metadata: Optional[VariantStudy] = None,
         delete_on_failure: bool = True,
+        notifier: Optional[Callable[[int, bool, str], None]] = None,
     ) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
 
@@ -51,21 +52,32 @@ class VariantCommandGenerator:
         total_commands = len(commands)
         study_id = metadata.id if metadata is not None else "-"
         for command in commands:
+            command_output_status = False
+            command_output_message = ""
             try:
                 command_index += 1
                 output = command.apply(file_study)
-                results.details.append(
-                    (command.command_name.value, output.status, output.message)
-                )
+                command_output_status = output.status
+                command_output_message = output.message
             except Exception as e:
-                results.success = False
-                message = f"Error while applying command {command.command_name.value}"
-                logger.error(message, exc_info=e)
-                results.details.append(
-                    (command.command_name.value, False, message)
-                )
+                command_output_message = f"Error while applying command {command.command_name.value}"
+                logger.error(command_output_message, exc_info=e)
                 break
             finally:
+                results.details.append(
+                    (
+                        command.command_name.value,
+                        command_output_status,
+                        command_output_message,
+                    )
+                )
+                results.success = command_output_status
+                if notifier:
+                    notifier(
+                        command_index - 1,
+                        command_output_status,
+                        command_output_message,
+                    )
                 stopwatch.log_elapsed(
                     lambda x: logger.info(
                         f"Command {command_index}/{total_commands} [{study_id}] {command.match_signature()} applied in {x}s"

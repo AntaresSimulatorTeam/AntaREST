@@ -61,6 +61,10 @@ class ITaskService(ABC):
         raise NotImplementedError()
 
 
+def noop_notifier(message: str) -> None:
+    pass
+
+
 class TaskJobService(ITaskService):
     def __init__(
         self,
@@ -162,6 +166,7 @@ class TaskJobService(ITaskService):
                 TaskStatus.COMPLETED if result.success else TaskStatus.FAILED,
                 result.success,
                 result.message,
+                result.return_value,
             )
         except Exception as e:
             logger.error(
@@ -196,12 +201,18 @@ class TaskJobService(ITaskService):
                 )
 
     def _update_task_status(
-        self, task: TaskJob, status: TaskStatus, result: bool, message: str
+        self,
+        task: TaskJob,
+        status: TaskStatus,
+        result: bool,
+        message: str,
+        command_result: Optional[str] = None,
     ) -> None:
         with db():
             task.status = status.value
             task.result_msg = message
             task.result_status = result
+            task.result = command_result
             if status.is_final():
                 task.completion_date = datetime.datetime.utcnow()
             self.repo.save(task)

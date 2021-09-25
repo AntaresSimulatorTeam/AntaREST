@@ -7,6 +7,9 @@ from pathlib import Path
 from typing import List, Optional, cast
 from uuid import uuid4
 
+import dataclasses
+from fastapi import HTTPException
+
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
 from antarest.core.exceptions import (
@@ -22,7 +25,11 @@ from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskResult
-from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
+from antarest.core.tasks.service import (
+    ITaskService,
+    TaskUpdateNotifier,
+    noop_notifier,
+)
 from antarest.study.model import (
     Study,
     StudyMetadataDTO,
@@ -71,6 +78,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
+    CommandResultDTO,
 )
 from antarest.study.storage.variantstudy.repository import (
     VariantStudyRepository,
@@ -465,12 +473,73 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
         return str(variant_study.id)
 
+    def generate_task(
+        self, metadata: VariantStudy, denormalize: bool = False
+    ) -> str:
+        logger.info(f"Starting variant study {metadata.id} generation")
+        if metadata.generation_task:
+            try:
+                previous_task = self.task_service.status_task(
+                    metadata.generation_task,
+                    RequestParameters(DEFAULT_ADMIN_USER),
+                )
+                if not previous_task.status.is_final():
+                    logger.info(
+                        f"Returing already existing variant study {metadata.id} generation"
+                    )
+                    return str(metadata.generation_task)
+            except HTTPException as e:
+                logger.warning(
+                    f"Failed to retrieve generation task for study {metadata.id}",
+                    exc_info=e,
+                )
+
+        def callback(notifier: TaskUpdateNotifier) -> TaskResult:
+            generate_result = self._generate(
+                metadata.id,
+                denormalize,
+                RequestParameters(DEFAULT_ADMIN_USER),
+                notifier,
+            )
+            return TaskResult(
+                success=generate_result.success,
+                message=f"{metadata.id} generated successfully"
+                if generate_result.success
+                else f"{metadata.id} not generated",
+                return_value=generate_result.json(),
+            )
+
+        metadata.generation_task = self.task_service.add_task(
+            action=callback,
+            name=f"Generation of {metadata.id} study",
+            request_params=RequestParameters(DEFAULT_ADMIN_USER),
+        )
+        self.repository.save(metadata)
+        return str(metadata.generation_task)
+
     def generate(
         self,
         variant_study_id: str,
         denormalize: bool,
         params: RequestParameters,
+    ) -> str:
+        # Get variant study
+        variant_study = self._get_variant_study(variant_study_id, params)
+
+        # Get parent study
+        if variant_study.parent_id is None:
+            raise NoParentStudyError(variant_study_id)
+
+        return self.generate_task(variant_study, denormalize)
+
+    def _generate(
+        self,
+        variant_study_id: str,
+        denormalize: bool,
+        params: RequestParameters,
+        notifier: TaskUpdateNotifier = noop_notifier,
     ) -> GenerationResultInfoDTO:
+        logger.info(f"Generating variant study {variant_study_id}")
 
         # Get variant study
         variant_study = self._get_variant_study(variant_study_id, params)
@@ -478,6 +547,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         # Get parent study
         if variant_study.parent_id is None:
             raise NoParentStudyError(variant_study_id)
+
+        variant_study.snapshot = None
+        self.repository.save(variant_study)
 
         parent_study = self.repository.get(variant_study.parent_id)
         if parent_study is None:
@@ -505,7 +577,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 metadata=parent_study, dest=dest_path, outputs=False
             )
 
-        results = self._generate_snapshot(variant_study)
+        results = self._generate_snapshot(variant_study, notifier)
 
         if results.success:
             variant_study.snapshot = VariantStudySnapshot(
@@ -518,11 +590,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     self.get_study_path(variant_study),
                     study_id=variant_study.id,
                 )
+                logger.info(f"Denormalizing variant study {variant_study.id}")
                 study_tree.denormalize()
         return results
 
     def _generate_snapshot(
-        self, variant_study: VariantStudy
+        self,
+        variant_study: VariantStudy,
+        notifier: TaskUpdateNotifier = noop_notifier,
     ) -> GenerationResultInfoDTO:
 
         # Copy parent study to dest
@@ -535,7 +610,26 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 self.command_factory.to_icommand(command_block.to_dto())
             )
 
-        return self.generator.generate(commands, dest_path, variant_study)
+        def notify(
+            command_index: int, command_result: bool, command_message: str
+        ) -> None:
+            command_result_obj = CommandResultDTO(
+                study_id=variant_study.id,
+                id=variant_study.commands[command_index].id,
+                success=command_result,
+                message=command_message,
+            )
+            notifier(json.dumps(dataclasses.asdict(command_result_obj)))
+            self.event_bus.push(
+                Event(
+                    EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
+                    command_result_obj,
+                )
+            )
+
+        return self.generator.generate(
+            commands, dest_path, variant_study, notifier=notify
+        )
 
     def create(self, study: VariantStudy) -> VariantStudy:
         """
@@ -602,22 +696,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return dest_meta
 
     def _wait_for_generation(self, metadata: VariantStudy) -> bool:
-        def callback(notifier: TaskUpdateNotifier) -> TaskResult:
-            generate_result = self.generate(
-                metadata.id, False, RequestParameters(DEFAULT_ADMIN_USER)
-            )
-            return TaskResult(
-                success=generate_result.success,
-                message=f"{metadata.id} generated successfully"
-                if generate_result.success
-                else f"{metadata.id} not generated",
-            )
-
-        task_id = self.task_service.add_task(
-            action=callback,
-            name=f"Generation of {metadata.id} study",
-            request_params=RequestParameters(DEFAULT_ADMIN_USER),
-        )
+        task_id = self.generate_task(metadata)
         self.task_service.await_task(task_id)
         result = self.task_service.status_task(
             task_id, RequestParameters(DEFAULT_ADMIN_USER)
@@ -629,7 +708,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             if not self.exists(metadata):
                 if not self._wait_for_generation(metadata):
                     raise ValueError()
-        except Exception:
+        except Exception as e:
+            logger.error(
+                f"Fail to generate variant study {metadata.id}", exc_info=e
+            )
             raise VariantGenerationError(
                 f"Error while generating {metadata.id}"
             )
