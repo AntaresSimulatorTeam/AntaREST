@@ -73,6 +73,8 @@ class VariantStudy(Study):
         ForeignKey("study.id"),
         primary_key=True,
     )
+    generation_task = Column(String(), nullable=True)
+
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
     }

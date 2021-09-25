@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List, Tuple, Optional, Union
 
 from pydantic import BaseModel
@@ -15,3 +16,11 @@ class CommandDTO(BaseModel):
     action: str
     # if args is a list, this mean the command will be mapped to the list of args
     args: Union[List[JSON], JSON]
+
+
+@dataclass
+class CommandResultDTO:
+    study_id: str
+    id: str
+    success: bool
+    message: str

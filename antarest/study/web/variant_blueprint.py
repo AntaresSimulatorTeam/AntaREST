@@ -298,7 +298,7 @@ def create_study_variant_routes(
         uuid: str,
         denormalize: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> GenerationResultInfoDTO:
+    ) -> str:
         logger.info(
             f"Generating snapshot for variant study {uuid}",
             extra={"user": current_user.id},

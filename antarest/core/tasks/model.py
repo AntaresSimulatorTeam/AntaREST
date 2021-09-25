@@ -85,6 +85,7 @@ class TaskJob(Base):  # type: ignore
     creation_date = Column(DateTime, default=datetime.utcnow)
     completion_date = Column(DateTime, nullable=True)
     result_msg = Column(String(), nullable=True)
+    result = Column(String(), nullable=True)
     result_status = Column(Boolean(), nullable=True)
     logs = relationship(
         TaskJobLog, uselist=True, cascade="all, delete, delete-orphan"
@@ -103,7 +104,9 @@ class TaskJob(Base):  # type: ignore
             name=self.name,
             status=TaskStatus(self.status),
             result=TaskResult(
-                success=self.result_status, message=self.result_msg
+                success=self.result_status,
+                message=self.result_msg,
+                return_value=self.result,
             )
             if self.completion_date
             else None,
