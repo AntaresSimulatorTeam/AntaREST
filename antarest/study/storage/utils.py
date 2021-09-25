@@ -86,3 +86,10 @@ def fix_study_root(study_path: Path) -> None:
         for item in os.listdir(root_path):
             shutil.move(str(root_path / item), str(study_path))
         shutil.rmtree(sub_root_path)
+
+
+def is_managed(study: Study) -> bool:
+    return (
+        not hasattr(study, "workspace")
+        or study.workspace == DEFAULT_WORKSPACE_NAME
+    )

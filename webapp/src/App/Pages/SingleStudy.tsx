@@ -149,8 +149,10 @@ const SingleStudyView = (props: PropTypes) => {
   const navData: { [key: string]: () => JSX.Element } = {
     informations: () =>
       (study ? <Informations study={study} jobs={studyJobs || []} /> : <div />),
-    variants: () => <VariantView study={study} option={option} />,
   };
+  if (study && study.managed) {
+    navData.variants = () => <VariantView study={study} option={option} />;
+  }
   if (study && !study.archived) {
     navData.treeView = () => <StudyView study={study} />;
   }

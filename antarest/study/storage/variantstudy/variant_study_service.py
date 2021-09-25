@@ -15,6 +15,7 @@ from antarest.core.exceptions import (
     NoParentStudyError,
     CommandNotFoundError,
     VariantGenerationError,
+    VariantStudyParentNotValid,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
@@ -26,6 +27,7 @@ from antarest.study.model import (
     Study,
     StudyMetadataDTO,
     StudySimResultDTO,
+    RawStudy,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
@@ -51,6 +53,7 @@ from antarest.study.storage.rawstudy.raw_study_service import (
 from antarest.study.storage.utils import (
     get_default_workspace_path,
     update_antares_info,
+    is_managed,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -429,6 +432,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         if study is None:
             raise StudyNotFoundError(uuid)
+
+        if not is_managed(study):
+            raise VariantStudyParentNotValid(
+                f"The study {study.name} is not managed. Cannot create a variant from it. It must be imported first."
+            )
 
         assert_permission(params.user, study, StudyPermissionType.READ)
         new_id = str(uuid4())
