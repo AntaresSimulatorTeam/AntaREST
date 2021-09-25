@@ -3,7 +3,7 @@ import { createStyles, makeStyles } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
 import { Components, StudyMetadata } from '../../common/types';
 import VariantNav from './VariantNavSwitch';
-import VariantTreeView from './VariantTreeView/VariantTreeView';
+import VariantTreeView from './VariantTreeView';
 import EditionView from './Edition';
 
 const useStyles = makeStyles(() => createStyles({
@@ -39,9 +39,11 @@ const VariantView = (props: PropTypes) => {
   };
 
   useEffect(() => {
-    setEditionMode(option === 'edition');
-    setNavState(option === 'edition' ? 'variants:editionMode' : 'variants:variantDependencies');
-  }, [option]);
+    // we add a check on study type because when creating a new variant the option is set to edition
+    // but the parent component has not already fetched/set the study object, so there is a first render with the parent study object and edit option on
+    setEditionMode(option === 'edition' && study?.type === 'variantstudy');
+    setNavState(option === 'edition' && study?.type === 'variantstudy' ? 'variants:editionMode' : 'variants:variantDependencies');
+  }, [option, study]);
 
   const onEditModeChange = () => {
     if (editionMode) {
