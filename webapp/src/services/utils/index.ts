@@ -49,4 +49,29 @@ export const roleToString = (role: RoleType): string => {
   return '';
 };
 
+export const hasAuthorization = (user: UserInfo | undefined, study: StudyMetadata, role: RoleType): boolean => {
+  if (user) {
+    // User is super admin
+    if (isUserAdmin(user)) {
+      return true;
+    }
+
+    if (study) {
+      // User is owner of this study
+      if (study.owner.id && study.owner.id === user.id) {
+        return true;
+      }
+      // User is admin of 1 of study groups
+      return (
+        study.groups.findIndex((studyGroupElm) =>
+          user.groups.find(
+            (userGroupElm) =>
+              studyGroupElm.id === userGroupElm.id && userGroupElm.role >= role,
+          )) >= 0
+      );
+    }
+  }
+  return false;
+};
+
 export default {};

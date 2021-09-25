@@ -20,25 +20,24 @@ import { useHistory } from 'react-router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { AppState } from '../../App/reducers';
 import {
-  GroupDTO,
   RoleType,
   StudyMetadata,
-  StudyMetadataOwner,
-  StudyPublicMode,
 } from '../../common/types';
 import {
   deleteStudy as callDeleteStudy,
   launchStudy as callLaunchStudy,
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
+  renameStudy as callRenameStudy,
   getExportUrl,
 } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
-import { isUserAdmin } from '../../services/utils';
+import { hasAuthorization } from '../../services/utils';
 import DownloadLink from '../ui/DownloadLink';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import PermissionModal from './PermissionModal';
 import ButtonLoader from '../ui/ButtonLoader';
+import RenameModal from './RenameModal';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -128,6 +127,7 @@ const useStyles = makeStyles((theme: Theme) =>
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
+      marginRight: theme.spacing(1),
     },
     infoTitleContainer: {
       marginBottom: theme.spacing(1),
@@ -235,6 +235,7 @@ const InformationView = (props: PropTypes) => {
   const history = useHistory();
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [openPermissionModal, setOpenPermissionModal] = useState<boolean>(false);
+  const [openRenameModal, setOpenRenameModal] = useState<boolean>(false);
 
   const launchStudy = async () => {
     if (study) {
@@ -283,42 +284,14 @@ const InformationView = (props: PropTypes) => {
     }
   };
 
-  const permissionAuthorization = (): boolean => {
-    if (user) {
-      // User is super admin
-      if (isUserAdmin(user)) {
-        return true;
-      }
-
-      if (study) {
-        // User is owner of this study
-        if (study.owner.id && study.owner.id === user.id) {
-          return true;
-        }
-        // User is admin of 1 of study groups
-        return (
-          study.groups.findIndex((studyGroupElm) =>
-            user.groups.find(
-              (userGroupElm) =>
-                studyGroupElm.id === userGroupElm.id && userGroupElm.role === RoleType.ADMIN,
-            )) >= 0
-        );
-      }
-    }
-    return false;
-  };
-
-  const updateInfos = (
-    newOwner: StudyMetadataOwner,
-    newGroups: Array<GroupDTO>,
-    newPublicMode: StudyPublicMode,
-  ) => {
+  const renameStudy = async (name: string) => {
     if (study) {
-      const newStudy: StudyMetadata = study;
-      newStudy.owner.id = newOwner.id;
-      newStudy.owner.name = newOwner.name;
-      newStudy.groups = newGroups;
-      newStudy.publicMode = newPublicMode;
+      try {
+        await callRenameStudy(study.id, name);
+      } catch (e) {
+        enqueueSnackbar(t('studymanager:failtodeletestudy'), { variant: 'error' });
+        logError('Failed to delete study', study, e);
+      }
     }
   };
 
@@ -336,6 +309,13 @@ const InformationView = (props: PropTypes) => {
             <Tooltip title={study.name}>
               <Typography className={classes.studyName}>{study.name}</Typography>
             </Tooltip>
+            {hasAuthorization(user, study, RoleType.WRITER) && (
+              <FontAwesomeIcon
+                icon="edit"
+                className={classes.editIcon}
+                onClick={() => setOpenRenameModal(true)}
+              />
+            )}
             <div className={classes.workspace}>
               <div className={clsx(classes.workspaceBadge, study.managed ? classes.managed : {})}>
                 {study.workspace}
@@ -376,7 +356,7 @@ const InformationView = (props: PropTypes) => {
           <div className={classes.container} style={{ flex: 'none' }}>
             <div className={clsx(classes.info, classes.infoTitleContainer)}>
               <Typography className={classes.infoTitle}>{t('singlestudy:permission')}</Typography>
-              {permissionAuthorization() && (
+              {hasAuthorization(user, study, RoleType.ADMIN) && (
                 <FontAwesomeIcon
                   icon="edit"
                   className={classes.editIcon}
@@ -460,8 +440,15 @@ const InformationView = (props: PropTypes) => {
           publicMode={study.publicMode}
           name={study.name}
           open={openPermissionModal}
-          updateInfos={updateInfos}
           onClose={() => setOpenPermissionModal(false)}
+        />
+      )}
+      {openRenameModal && (
+        <RenameModal
+          defaultName={study.name}
+          onNewName={(newName) => renameStudy(newName)}
+          open={openRenameModal}
+          onClose={() => setOpenRenameModal(false)}
         />
       )}
     </Paper>

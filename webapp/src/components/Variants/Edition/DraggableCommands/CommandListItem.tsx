@@ -4,8 +4,6 @@ import ReactJson, { InteractionProps } from 'react-json-view';
 import { Accordion, AccordionDetails, AccordionSummary, Container, createStyles, Theme, Typography } from '@material-ui/core';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 import ExpandMore from '@material-ui/icons/ExpandMore';
-import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
-import CloudUploadOutlinedIcon from '@material-ui/icons/CloudUploadOutlined';
 import SaveOutlinedIcon from '@material-ui/icons/SaveOutlined';
 import DeleteIcon from '@material-ui/icons/HighlightOff';
 import { CommandItem } from '../CommandTypes';

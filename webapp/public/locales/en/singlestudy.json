@@ -32,5 +32,6 @@
   "executePublicModeText": "Public permission execution",
   "editPublicModeText": "Public permission write",
   "fullPublicModeText": "Total public permission",
-  "generalInfo": "General informations"
+  "generalInfo": "General informations",
+  "renamestudy": "Rename study"
 }

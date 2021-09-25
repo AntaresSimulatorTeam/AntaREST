@@ -125,7 +125,7 @@ class RemoteVariantGenerator(IVariantGenerator):
 
     def build_url(self, url: str) -> str:
         if self.host is not None:
-            return f"{self.host}/{url}"
+            return f"{self.host.strip('/')}/{url.strip('/')}"
         return url
 
 

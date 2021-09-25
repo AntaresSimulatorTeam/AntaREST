@@ -31,7 +31,7 @@ const VariantView = (props: PropTypes) => {
     'variants:testGeneration': () => <div style={{ width: '100%', height: '100%' }}>Test generation</div>,
   };
   const classes = useStyles();
-  const [navState, setNavState] = useState<string>(option === 'edition' ? 'variants:editionMode' : 'variants:variantDependencies');
+  const [navState, setNavState] = useState<string>(option === 'edition' && study?.type === 'variantstudy' ? 'variants:editionMode' : 'variants:variantDependencies');
   const [editionMode, setEditionMode] = useState<boolean>(option === 'edition');
 
   const onItemClick = (item: string) => {
