@@ -105,9 +105,13 @@ const Nav = (props: PropTypes) => {
             <ListItem button onClick={() => onItemClick('variants:editionMode')} className={currentItem === 'variants:editionMode' ? classes.itemSelected : classes.item}>
               <ListItemText primary={t('variants:editionMode')} />
             </ListItem>
-            <ListItem button onClick={() => onItemClick('variants:testGeneration')} className={currentItem === 'variants:testGeneration' ? classes.itemSelected : classes.item}>
-              <ListItemText primary={t('variants:testGeneration')} />
-            </ListItem>
+            {
+              /*
+              <ListItem button onClick={() => onItemClick('variants:testGeneration')} className={currentItem === 'variants:testGeneration' ? classes.itemSelected : classes.item}>
+                <ListItemText primary={t('variants:testGeneration')} />
+              </ListItem>
+              */
+            }
           </List>
         )}
       <CreateVariantModal open={openModal} onClose={() => setOpenModal(false)} parentId={studyId} />

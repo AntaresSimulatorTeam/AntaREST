@@ -28,7 +28,7 @@ const VariantView = (props: PropTypes) => {
   const items: Components = {
     'variants:variantDependencies': () => <VariantTreeView study={study} />,
     'variants:editionMode': () => <EditionView studyId={study !== undefined ? study.id : ''} />,
-    'variants:testGeneration': () => <div style={{ width: '100%', height: '100%' }}>Test generation</div>,
+    //    'variants:testGeneration': () => <div style={{ width: '100%', height: '100%' }}>Test generation</div>,
   };
   const classes = useStyles();
   const [navState, setNavState] = useState<string>(option === 'edition' && study?.type === 'variantstudy' ? 'variants:editionMode' : 'variants:variantDependencies');
