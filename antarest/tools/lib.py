@@ -86,6 +86,7 @@ class RemoteVariantGenerator(IVariantGenerator):
         ).json()
         assert study is not None
 
+        logger.info("Uploading matrices")
         matrix_dataset: List[str] = []
         for matrix in os.listdir(matrices_dir):
             with open(matrices_dir / matrix, "r") as fh:
