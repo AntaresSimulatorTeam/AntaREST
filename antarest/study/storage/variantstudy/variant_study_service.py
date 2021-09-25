@@ -356,8 +356,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: study metadata
 
         """
-        self._safe_generation(study)
-
         return super().get_study_information(
             study,
             summary,
