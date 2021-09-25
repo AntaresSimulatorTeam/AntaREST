@@ -4,7 +4,7 @@ import { createStyles, makeStyles, Theme, TextField, Typography } from '@materia
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import Checkbox from '@material-ui/core/Checkbox';
-import GenericModal from '../../GenericModal';
+import GenericModal from '../../../ui/GenericModal';
 import GroupsAssignmentView from '../../GroupsAssignmentView';
 import { getGroups } from '../../../../services/api/user';
 import { GroupDTO, RoleType, RoleDTO, BotDTO, JWTGroup } from '../../../../common/types';

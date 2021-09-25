@@ -86,6 +86,7 @@ class RemoteVariantGenerator(IVariantGenerator):
         ).json()
         assert study is not None
 
+        logger.info("Uploading matrices")
         matrix_dataset: List[str] = []
         for matrix in os.listdir(matrices_dir):
             with open(matrices_dir / matrix, "r") as fh:
@@ -125,7 +126,7 @@ class RemoteVariantGenerator(IVariantGenerator):
 
     def build_url(self, url: str) -> str:
         if self.host is not None:
-            return f"{self.host}/{url}"
+            return f"{self.host.strip('/')}/{url.strip('/')}"
         return url
 
 

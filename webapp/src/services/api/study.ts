@@ -148,4 +148,11 @@ export const changePublicMode = async (studyId: string, publicMode: StudyPublicM
   return res.data;
 };
 
+export const renameStudy = async (studyId: string, name: string): Promise<any> => {
+  const res = await client.put(`/v1/studies/${studyId}`, {
+    name,
+  });
+  return res.data;
+};
+
 export default {};

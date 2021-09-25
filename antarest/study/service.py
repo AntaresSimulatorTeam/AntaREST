@@ -217,9 +217,13 @@ class StudyService:
                 study, study_settings_url, study_settings
             )
 
-        return self._get_study_storage_service(
+        new_metadata = self._get_study_storage_service(
             study
         ).patch_update_study_metadata(study, metadata_patch)
+        self.event_bus.push(
+            Event(EventType.STUDY_EDITED, study.to_json_summary())
+        )
+        return new_metadata
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
         """
@@ -717,7 +721,7 @@ class StudyService:
         study.owner = new_owner
         self.repository.save(study)
         self.event_bus.push(
-            Event(EventType.STUDY_DELETED, study.to_json_summary())
+            Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
 
         self._get_study_storage_service(study).edit_study(
@@ -757,7 +761,7 @@ class StudyService:
         ]
         self.repository.save(study)
         self.event_bus.push(
-            Event(EventType.STUDY_DELETED, study.to_json_summary())
+            Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
 
         logger.info(
@@ -789,7 +793,7 @@ class StudyService:
         ]
         self.repository.save(study)
         self.event_bus.push(
-            Event(EventType.STUDY_DELETED, study.to_json_summary())
+            Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
 
         logger.info(
@@ -819,7 +823,7 @@ class StudyService:
         study.public_mode = mode
         self.repository.save(study)
         self.event_bus.push(
-            Event(EventType.STUDY_DELETED, study.to_json_summary())
+            Event(EventType.STUDY_EDITED, study.to_json_summary())
         )
         logger.info(
             "updated public mode of study %s by user %s",

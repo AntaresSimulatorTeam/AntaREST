@@ -55,7 +55,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const SingleStudyView = (props: PropTypes) => {
-  const { studyId, tab = 'informations' } = useParams();
+  const { studyId, tab = 'informations', option } = useParams();
   const { addWsListener, removeWsListener } = props;
   const classes = useStyles();
   const history = useHistory();
@@ -132,7 +132,7 @@ const SingleStudyView = (props: PropTypes) => {
       setInitTab('informations');
       history.replace({ pathname: `/study/${studyId}/informations` });
     }
-  }, [studyId, history, tab]);
+  }, [studyId, history, tab, option]);
 
   useEffect(() => {
     if (studyId) {
@@ -149,8 +149,10 @@ const SingleStudyView = (props: PropTypes) => {
   const navData: { [key: string]: () => JSX.Element } = {
     informations: () =>
       (study ? <Informations study={study} jobs={studyJobs || []} /> : <div />),
-    variants: () => <VariantView study={study} />,
   };
+  if (study && study.managed) {
+    navData.variants = () => <VariantView study={study} option={option} />;
+  }
   if (study && !study.archived) {
     navData.treeView = () => <StudyView study={study} />;
   }

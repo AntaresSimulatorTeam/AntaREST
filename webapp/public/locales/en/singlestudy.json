@@ -2,10 +2,6 @@
   "informations": "Information",
   "treeView": "Tree view",
   "variants": "Variant management",
-  "variantDependencies": "Variant dependencies",
-  "createVariant": "Create variant",
-  "editionMode": "Edition mode",
-  "testGeneration": "Test generation",
   "currentTask": "Current tasks",
   "failtoloadjobs": "Failed to load jobs",
   "taskId": "Id",
@@ -36,5 +32,6 @@
   "executePublicModeText": "Public permission execution",
   "editPublicModeText": "Public permission write",
   "fullPublicModeText": "Total public permission",
-  "generalInfo": "General informations"
+  "generalInfo": "General informations",
+  "renamestudy": "Rename study"
 }
