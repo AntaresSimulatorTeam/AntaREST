@@ -52,6 +52,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   headerIcon: {
     width: '24px',
     height: 'auto',
+    cursor: 'pointer',
     color: theme.palette.primary.main,
     margin: theme.spacing(0, 0.5),
     '&:hover': {
@@ -64,6 +65,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
+    zIndex: 999, // for json edition modal to be up everything else
   },
   deleteIcon: {
     flex: '0 0 24px',
@@ -128,9 +130,11 @@ const CommandListItem = ({ item, index, onDelete, onArgsUpdate, onSave }: Dragga
             <AccordionDetails className={classes.details}>
               <div className={classes.details}>
                 <div className={classes.header}>
-                  <SaveOutlinedIcon className={classes.headerIcon} onClick={() => onSave(index)} />
-                  <CloudDownloadOutlinedIcon className={classes.headerIcon} />
-                  <CloudUploadOutlinedIcon className={classes.headerIcon} />
+                  {item.updated && <SaveOutlinedIcon className={classes.headerIcon} onClick={() => onSave(index)} />}
+                  {
+                   // <CloudDownloadOutlinedIcon className={classes.headerIcon} />
+                   // <CloudUploadOutlinedIcon className={classes.headerIcon} />
+                  }
                 </div>
                 <div className={classes.json}>
                   <ReactJson src={jsonData} onEdit={updateJson} onDelete={updateJson} onAdd={updateJson} />
