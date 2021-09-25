@@ -4,6 +4,8 @@ from pathlib import Path
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.core.tasks.model import TaskDTO, TaskStatus
+
 
 def init_test(app: FastAPI):
     client = TestClient(app, raise_server_exceptions=False)
@@ -597,6 +599,17 @@ def test_variant_manager(app: FastAPI):
         },
     )
     assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/tasks/{res.json()}?wait_for_completion=true",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    task_result = TaskDTO.parse_obj(res.json())
+    assert task_result.status == TaskStatus.COMPLETED
+    assert task_result.result.success
 
     res = client.get(
         f"/v1/studies/{variant_id}",
