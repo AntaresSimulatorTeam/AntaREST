@@ -2,7 +2,7 @@ import base64
 import json
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Dict, Union
 from unittest.mock import Mock
 
 import pytest

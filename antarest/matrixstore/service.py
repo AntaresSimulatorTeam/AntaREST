@@ -1,18 +1,21 @@
-import time
 import csv
+import time
+from abc import abstractmethod, ABC
 from datetime import datetime
 from io import BytesIO
+from typing import List, Optional, Tuple
 from zipfile import ZipFile
+from pathlib import Path
 
 from fastapi import UploadFile
-from typing import List, Optional, Tuple
 
-
+from antarest.core.config import StorageConfig, Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
@@ -32,12 +35,82 @@ from antarest.matrixstore.repository import (
 )
 
 
-class MatrixService:
+class ISimpleMatrixService(ABC):
+    @abstractmethod
+    def create(self, data: MatrixContent) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get(self, id: str) -> Optional[MatrixDTO]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def exists(self, id: str) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete(self, id: str) -> None:
+        raise NotImplementedError()
+
+    @staticmethod
+    def _initialize_matrix_content(data: MatrixContent) -> None:
+        if data.index is None:
+            data.index = list(range(0, len(data.data)))
+        else:
+            assert len(data.index) == len(data.data)
+        if data.columns is None:
+            if len(data.data) > 0:
+                data.columns = list(range(0, len(data.data[0])))
+            else:
+                data.columns = []
+        else:
+            if len(data.data) > 0:
+                assert len(data.columns) == len(data.data[0])
+            else:
+                assert len(data.columns) == 0
+
+
+class SimpleMatrixService(ISimpleMatrixService):
+    def __init__(self, matrix_path: Path):
+        self.matrix_path = matrix_path
+        assert matrix_path.exists() and matrix_path.is_dir()
+        config = Config(storage=StorageConfig(matrixstore=matrix_path))
+        self.repo_content = MatrixContentRepository(config)
+
+    def create(self, data: MatrixContent) -> str:
+        SimpleMatrixService._initialize_matrix_content(data)
+        matrix_hash = self.repo_content.save(data)
+        return matrix_hash
+
+    def get(self, id: str) -> Optional[MatrixDTO]:
+        data = self.repo_content.get(id)
+        if data:
+            assert data.columns is not None
+            assert data.index is not None
+            return MatrixDTO(
+                id=id,
+                width=len(data.columns),
+                height=len(data.index),
+                index=data.index,
+                columns=data.columns,
+                data=data.data,
+            )
+        else:
+            return None
+
+    def exists(self, id: str) -> bool:
+        return self.repo_content.exists(id)
+
+    def delete(self, id: str) -> None:
+        self.repo_content.delete(id)
+
+
+class MatrixService(ISimpleMatrixService):
     def __init__(
         self,
         repo: MatrixRepository,
         repo_dataset: MatrixDataSetRepository,
-        content: MatrixContentRepository,
+        content: MatrixContentRepository,  # TODO: refactor variable name
         user_service: LoginService,
     ):
         self.repo = repo
@@ -72,13 +145,20 @@ class MatrixService:
 
         return matrix, content
 
-    def create(self, data: MatrixDTO) -> str:
-        matrix, content = MatrixService._from_dto(data)
-        matrix.created_at = datetime.now()
-        matrix.id = self.repo_content.save(content)
-        self.repo.save(matrix)
-
-        return matrix.id
+    def create(self, data: MatrixContent) -> str:
+        MatrixService._initialize_matrix_content(data)
+        matrix_hash = self.repo_content.save(data)
+        with db():
+            if not self.repo.get(matrix_hash):
+                self.repo.save(
+                    Matrix(
+                        id=matrix_hash,
+                        width=len(data.columns or []),
+                        height=len(data.index or []),
+                        created_at=datetime.utcnow(),
+                    )
+                )
+        return matrix_hash
 
     def create_by_importation(self, file: UploadFile) -> List[MatrixInfoDTO]:
         with file.file as f:
@@ -115,11 +195,7 @@ class MatrixService:
             if len(columns) == 0:
                 columns = list(range(0, len(row)))
 
-        matrix = MatrixDTO(
-            width=len(columns),
-            height=len(data),
-            index=[],
-            columns=columns,
+        matrix = MatrixContent(
             data=data,
         )
         return self.create(matrix)
@@ -257,6 +333,9 @@ class MatrixService:
             return MatrixService._to_dto(matrix, data)
         else:
             return None
+
+    def exists(self, id: str) -> bool:
+        return self.repo_content.exists(id) and self.repo.exists(id)
 
     def delete(self, id: str) -> None:
         self.repo_content.delete(id)

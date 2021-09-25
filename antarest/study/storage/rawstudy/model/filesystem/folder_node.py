@@ -1,3 +1,4 @@
+import shutil
 from abc import abstractmethod, ABC
 from typing import List, Optional, Tuple, Union, Dict
 
@@ -5,12 +6,12 @@ from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
 from antarest.study.storage.rawstudy.model.filesystem.inode import (
     INode,
     TREE,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
 )
 
 
@@ -22,7 +23,9 @@ class ChildNotFoundError(Exception):
     pass
 
 
-class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
+class FolderNode(
+    INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON], ABC
+):
     """
     Hub node which forward request deeper in tree according to url. Or expand request according to depth.
     Its children is set node by node following antares tree structure.
@@ -32,11 +35,11 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
     def __init__(
         self, context: ContextServer, config: FileStudyTreeConfig
     ) -> None:
-        self.config = config
+        super().__init__(config)
         self.context = context
 
     @abstractmethod
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         pass
 
     def _forward_get(
@@ -44,30 +47,48 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
         url: List[str],
         depth: int = -1,
         formatted: bool = True,
-    ) -> JSON:
-        children = self.build(self.config)
+        get_node: bool = False,
+    ) -> Union[
+        JSON, INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON]
+    ]:
+        children = self.build()
         names, sub_url = self.extract_child(children, url)
 
         # item is unique in url
         if len(names) == 1:
-            return children[names[0]].get(  # type: ignore
-                sub_url, depth=depth, expanded=False, formatted=formatted
-            )
-        # many items asked or * asked
-        else:
-            return {
-                key: children[key].get(
+            child = children[names[0]]
+            if not get_node:
+                return child.get(  # type: ignore
                     sub_url, depth=depth, expanded=False, formatted=formatted
                 )
-                for key in names
-            }
+            else:
+                return child.get_node(
+                    sub_url,
+                )
+        # many items asked or * asked
+        else:
+            if not get_node:
+                return {
+                    key: children[key].get(
+                        sub_url,
+                        depth=depth,
+                        expanded=False,
+                        formatted=formatted,
+                    )
+                    for key in names
+                }
+            else:
+                raise ValueError("Multiple nodes requested")
 
     def _expand_get(
-        self,
-        depth: int = -1,
-        formatted: bool = True,
-    ) -> JSON:
-        children = self.build(self.config)
+        self, depth: int = -1, formatted: bool = True, get_node: bool = False
+    ) -> Union[
+        JSON, INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON]
+    ]:
+        if get_node:
+            return self
+
+        children = self.build()
 
         if depth == 0:
             return {}
@@ -78,6 +99,20 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
             for name, node in children.items()
         }
 
+    def _get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        formatted: bool = True,
+        get_node: bool = False,
+    ) -> Union[
+        JSON, INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON]
+    ]:
+        if url and url != [""]:
+            return self._forward_get(url, depth, formatted, get_node)
+        else:
+            return self._expand_get(depth, formatted, get_node)
+
     def get(
         self,
         url: Optional[List[str]] = None,
@@ -85,15 +120,26 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
         expanded: bool = False,
         formatted: bool = True,
     ) -> JSON:
-        if url and url != [""]:
-            return self._forward_get(url, depth, formatted)
-        else:
-            return self._expand_get(depth, formatted)
+        output = self._get(
+            url=url, depth=depth, formatted=formatted, get_node=False
+        )
+        assert not isinstance(output, INode)
+        return output
+
+    def get_node(
+        self,
+        url: Optional[List[str]] = None,
+    ) -> INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON]:
+        output = self._get(url=url, get_node=True)
+        assert isinstance(output, INode)
+        return output
 
     def save(
-        self, data: Union[str, bytes, JSON], url: Optional[List[str]] = None
+        self,
+        data: Union[str, int, bool, float, bytes, JSON],
+        url: Optional[List[str]] = None,
     ) -> None:
-        children = self.build(self.config)
+        children = self.build()
         url = url or []
 
         if url:
@@ -106,13 +152,22 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
             for key in data:
                 children[key].save(data[key])
 
+    def delete(self, url: Optional[List[str]] = None) -> None:
+        if url and url != [""]:
+            children = self.build()
+            names, sub_url = self.extract_child(children, url)
+            for key in names:
+                children[key].delete(sub_url)
+        elif self.config.path.exists():
+            shutil.rmtree(self.config.path)
+
     def check_errors(
         self,
         data: JSON,
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
-        children = self.build(self.config)
+        children = self.build()
 
         if url and url != [""]:
             (name,), sub_url = self.extract_child(children, url)
@@ -132,11 +187,11 @@ class FolderNode(INode[JSON, Union[str, bytes, JSON], JSON], ABC):
             return errors
 
     def normalize(self) -> None:
-        for child in self.build(self.config).values():
+        for child in self.build().values():
             child.normalize()
 
     def denormalize(self) -> None:
-        for child in self.build(self.config).values():
+        for child in self.build().values():
             child.denormalize()
 
     def extract_child(

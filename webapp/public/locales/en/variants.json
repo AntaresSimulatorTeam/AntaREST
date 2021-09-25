@@ -1,0 +1,27 @@
+{
+    "variants": "Variant management",
+    "variantDependencies": "Variant dependencies",
+    "createVariant": "Create variant",
+    "editionMode": "Edition mode",
+    "testGeneration": "Test generation",
+    "newVariant": "New variant",
+    "variantNameLabel": "Name",
+    "variantMode": "Dependency view",
+    "onVariantCreationError": "Variant not created",
+    "add": "Add",
+    "save": "Save",
+    "confirmsave": "Are you sure you want to save these commands ?",
+    "newCommand": "Add new command",
+    "commandNameLabel": "Name (optional)",
+    "commandActionLabel": "Select action",
+    "saveSuccess": "Command updated successfully",
+    "deleteSuccess": "Command deleted successfully",
+    "addSuccess": "Command added successfully",
+    "moveSuccess": "Command moved successfully",
+    "saveError": "Command not updated",
+    "deleteError": "Command not deleted",
+    "adderror": "Command not added",
+    "moveError": "Command not moved",
+    "fetchCommandError": "Error while retrieving commands"
+}
+  

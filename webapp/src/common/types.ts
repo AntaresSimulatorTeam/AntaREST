@@ -21,9 +21,13 @@ export interface StudyMetadataOwner {
   name: string;
 }
 
+export type StudyType = 'variantstudy' | 'rawstudy';
+
 export interface StudyMetadataDTO {
+  id: string;
   owner: StudyMetadataOwner;
   name: string;
+  type: StudyType;
   created: number;
   updated: number;
   version: number;
@@ -40,6 +44,7 @@ export interface StudyMetadata {
   creationDate: number;
   modificationDate: number;
   owner: StudyMetadataOwner;
+  type: StudyType;
   version: string;
   workspace: string;
   managed: boolean;
@@ -208,6 +213,12 @@ export interface MatrixType {
   data: Array<Array<number>>;
 }
 
+export interface CommandDTO {
+  id?: string;
+  action: string;
+  args: object;
+}
+
 export enum WSEvent {
   STUDY_CREATED='STUDY_CREATED',
   STUDY_DELETED='STUDY_DELETED',
@@ -221,6 +232,10 @@ export enum WSEvent {
 export interface WSMessage {
   type: string;
   payload: unknown;
+}
+
+export type Components = {
+  [item: string]: () => JSX.Element;
 }
 
 export default {};

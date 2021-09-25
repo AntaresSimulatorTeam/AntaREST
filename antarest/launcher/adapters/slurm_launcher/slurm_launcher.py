@@ -15,7 +15,6 @@ from antareslauncher.main_option_parser import (
     MainOptionsParameters,
 )
 from antareslauncher.study_dto import StudyDTO
-
 from antarest.core.config import Config, SlurmConfig
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER

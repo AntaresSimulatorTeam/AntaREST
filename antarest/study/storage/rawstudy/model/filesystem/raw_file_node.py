@@ -4,12 +4,12 @@ from typing import List, Optional
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import (
     LazyNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
 )
 
 logger = logging.getLogger(__name__)
@@ -22,9 +22,6 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         LazyNode.__init__(self, config=config, context=context)
-
-    def build(self, config: FileStudyTreeConfig) -> TREE:
-        pass  # end node has nothing to build
 
     def get_lazy_content(
         self,

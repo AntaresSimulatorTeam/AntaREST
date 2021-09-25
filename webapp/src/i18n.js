@@ -33,6 +33,7 @@ i18n
       'jobs',
       'settings',
       'data',
+      'variants',
     ],
     defaultNS: 'main',
   });

@@ -1,4 +1,4 @@
-from typing import List, Optional, cast, Dict, Any
+from typing import List, Optional, cast, Dict, Any, Union
 
 from antarest.core.custom_types import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.io.reader import IniReader
@@ -9,12 +9,12 @@ from antarest.study.storage.rawstudy.io.writer.ini_writer import (
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
 from antarest.study.storage.rawstudy.model.filesystem.inode import (
     INode,
     TREE,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
 )
 
 
@@ -36,23 +36,23 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         reader: Optional[IReader] = None,
         writer: Optional[IniWriter] = None,
     ):
+        super().__init__(config)
         self.context = context
-        self.config = config
         self.path = config.path
         self.types = types
         self.reader = reader or IniReader()
         self.writer = writer or IniWriter()
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
-        pass  # end node has nothing to build
-
-    def get(
+    def _get(
         self,
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        formatted: bool = True,
-    ) -> SUB_JSON:
+        get_node: bool = False,
+    ) -> Union[SUB_JSON, INode[SUB_JSON, SUB_JSON, JSON]]:
+        if get_node:
+            return self
+
         if depth <= -1 and expanded:
             return f"json://{self.config.path.name}"
 
@@ -71,16 +71,63 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             json = {k: {} for k in json} if depth == 1 else json
         return cast(SUB_JSON, json)
 
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        formatted: bool = True,
+    ) -> SUB_JSON:
+        output = self._get(url, depth, expanded, get_node=False)
+        assert not isinstance(output, INode)
+        return output
+
+    def get_node(
+        self,
+        url: Optional[List[str]] = None,
+    ) -> INode[SUB_JSON, SUB_JSON, JSON]:
+        output = self._get(url, get_node=True)
+        assert isinstance(output, INode)
+        return output
+
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
         url = url or []
         json = self.reader.read(self.path) if self.path.exists() else {}
         if len(url) == 2:
+            if url[0] not in json:
+                json[url[0]] = {}
             json[url[0]][url[1]] = data
         elif len(url) == 1:
             json[url[0]] = data
         else:
             json = cast(JSON, data)
         self.writer.write(json, self.path)
+
+    def delete(self, url: Optional[List[str]] = None) -> None:
+        url = url or []
+        if len(url) == 0:
+            if self.config.path.exists():
+                self.config.path.unlink()
+        elif len(url) > 0:
+            json = self.reader.read(self.path) if self.path.exists() else {}
+            section_name = url[0]
+            if len(url) == 1:
+                try:
+                    del json[section_name]
+                except KeyError:
+                    pass
+            elif len(url) == 2:
+                # remove dict key
+                key_name = url[1]
+                try:
+                    del json[section_name][key_name]
+                except KeyError:
+                    pass
+            else:
+                raise ValueError(
+                    f"url should be fully resolved when arrives on {self.__class__.__name__}"
+                )
+            self.writer.write(json, self.path)
 
     def check_errors(
         self,

@@ -1,19 +1,12 @@
 from unittest.mock import Mock
 
 import pytest
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
 
 from antarest.core.config import Config, SecurityConfig
-from antarest.login.repository import (
-    UserRepository,
-    GroupRepository,
-    RoleRepository,
-    BotRepository,
-    UserLdapRepository,
-)
 from antarest.core.persistence import Base
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.login.model import (
     User,
     RoleType,
@@ -22,6 +15,13 @@ from antarest.login.model import (
     Role,
     Bot,
     UserLdap,
+)
+from antarest.login.repository import (
+    UserRepository,
+    GroupRepository,
+    RoleRepository,
+    BotRepository,
+    UserLdapRepository,
 )
 
 

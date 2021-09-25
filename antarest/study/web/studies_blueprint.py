@@ -5,9 +5,11 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import APIRouter, File, Depends, Request
+from fastapi.params import Param
 from markupsafe import escape
-from starlette.responses import FileResponse, Response
+from starlette.responses import FileResponse
 
+from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
@@ -21,9 +23,8 @@ from antarest.study.model import (
     StudyDownloadDTO,
     StudyMetadataPatchDTO,
 )
-from antarest.core.config import Config
-from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.service import StudyService
+from antarest.study.storage.study_download_utils import StudyDownloader
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +117,7 @@ def create_study_routes(
     )
     def create_study(
         name: str,
+        version: Optional[int] = None,
         groups: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -127,7 +129,9 @@ def create_study_routes(
         group_ids = [sanitize_uuid(gid) for gid in group_ids]
 
         params = RequestParameters(user=current_user)
-        uuid = storage_service.create_study(name_sanitized, group_ids, params)
+        uuid = storage_service.create_study(
+            name_sanitized, version, group_ids, params
+        )
 
         return uuid
 

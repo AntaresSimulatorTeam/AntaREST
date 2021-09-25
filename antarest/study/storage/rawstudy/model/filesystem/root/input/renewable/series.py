@@ -14,9 +14,9 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class ClusteredRenewableSeries(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {}
-        series_config = config.next_file("series.txt")
+        series_config = self.config.next_file("series.txt")
         if series_config.path.exists():
             children = {
                 "series": InputSeriesMatrix(self.context, series_config)
@@ -31,21 +31,21 @@ class ClusteredRenewableClusterSeries(FolderNode):
         super().__init__(context, config)
         self.area = area
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             renewable: ClusteredRenewableSeries(
-                self.context, config.next_file(renewable)
+                self.context, self.config.next_file(renewable)
             )
-            for renewable in config.get_renewable_names(self.area)
+            for renewable in self.config.get_renewable_names(self.area)
         }
         return children
 
 
 class ClusteredRenewableAreaSeries(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         return {
             area: ClusteredRenewableClusterSeries(
-                self.context, config.next_file(area), area
+                self.context, self.config.next_file(area), area
             )
-            for area in config.area_names()
+            for area in self.config.area_names()
         }

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createStyles, makeStyles, Theme, TextField } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import GenericModal from '../GenericModal';
+import GenericModal from '../../ui/GenericModal';
 import GroupsAssignmentView from '../GroupsAssignmentView';
 import { getGroups, getUserInfos } from '../../../services/api/user';
 import { GroupDTO, RoleType, RoleDTO, UserDTO } from '../../../common/types';

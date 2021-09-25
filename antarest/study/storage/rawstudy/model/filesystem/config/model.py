@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
 
 from pydantic.main import BaseModel
 
@@ -43,6 +43,7 @@ class Area(BaseModel):
     Object linked to /input/<area>/optimization.ini information
     """
 
+    name: str
     links: Dict[str, Link]
     thermals: List[Cluster]
     renewables: List[Cluster]
@@ -56,9 +57,17 @@ class Set(BaseModel):
     """
 
     ALL = ["hourly", "daily", "weekly", "monthly", "annual"]
+    name: Optional[str] = None
+    inverted_set: bool = False
     areas: Optional[List[str]] = None
+    output: bool = True
     filters_synthesis: List[str] = ALL
     filters_year: List[str] = ALL
+
+    def get_areas(self, all_areas: List[str]) -> List[str]:
+        if self.inverted_set:
+            return list(set(all_areas).difference(set(self.areas or [])))
+        return self.areas or []
 
 
 class Simulation(BaseModel):
@@ -89,6 +98,7 @@ class FileStudyTreeConfig(BaseModel):
     path: Path
     study_id: str
     version: int
+    output_path: Optional[Path] = None
     areas: Dict[str, Area] = dict()
     sets: Dict[str, Set] = dict()
     outputs: Dict[str, Simulation] = dict()
@@ -100,6 +110,7 @@ class FileStudyTreeConfig(BaseModel):
     def next_file(self, name: str) -> "FileStudyTreeConfig":
         return FileStudyTreeConfig(
             study_path=self.study_path,
+            output_path=self.output_path,
             path=self.path / name,
             study_id=self.study_id,
             version=self.version,
@@ -115,8 +126,8 @@ class FileStudyTreeConfig(BaseModel):
     def area_names(self) -> List[str]:
         return list(self.areas.keys())
 
-    def set_names(self) -> List[str]:
-        return list(self.sets.keys())
+    def set_names(self, only_output: bool = True) -> List[str]:
+        return [k for k, v in self.sets.items() if v.output]
 
     def get_thermal_names(
         self, area: str, only_enabled: bool = False
@@ -147,7 +158,7 @@ class FileStudyTreeConfig(BaseModel):
     ) -> List[str]:
         if link:
             return self.areas[area].links[link].filters_synthesis
-        if area in self.sets:
+        if area in self.sets and self.sets[area].output:
             return self.sets[area].filters_synthesis
         return self.areas[area].filters_synthesis
 
@@ -156,12 +167,12 @@ class FileStudyTreeConfig(BaseModel):
     ) -> List[str]:
         if link:
             return self.areas[area].links[link].filters_year
-        if area in self.sets:
+        if area in self.sets and self.sets[area].output:
             return self.sets[area].filters_year
         return self.areas[area].filters_year
 
 
-def transform_name_to_id(name: str) -> str:
+def transform_name_to_id(name: str, lower: bool = True) -> str:
     """This transformation was taken from the cpp Antares Simulator.."""
     duppl = False
     study_id = ""
@@ -185,4 +196,7 @@ def transform_name_to_id(name: str) -> str:
                 study_id += " "
                 duppl = True
 
-    return study_id.strip().lower()
+    study_id_stripped = study_id.strip()
+    if lower:
+        return study_id_stripped.lower()
+    return study_id_stripped

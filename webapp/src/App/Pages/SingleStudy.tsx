@@ -1,6 +1,6 @@
 import debug from 'debug';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useHistory } from 'react-router-dom';
 import { Breadcrumbs, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
@@ -10,6 +10,7 @@ import { getStudyJobs, getStudyMetadata, mapLaunchJobDTO } from '../../services/
 import PulsingDot from '../../components/ui/PulsingDot';
 import GenericTabView from '../../components/ui/NavComponents/GenericTabView';
 import Informations from '../../components/SingleStudy/Informations';
+import VariantView from '../../components/Variants/VariantView';
 import { LaunchJob, StudyMetadata, WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 
@@ -54,12 +55,14 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const SingleStudyView = (props: PropTypes) => {
-  const { studyId } = useParams();
+  const { studyId, tab = 'informations', option } = useParams();
   const { addWsListener, removeWsListener } = props;
   const classes = useStyles();
+  const history = useHistory();
   const [t] = useTranslation();
   const [study, setStudy] = useState<StudyMetadata>();
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
+  const [initTab, setInitTab] = useState<string>('informations');
   const { enqueueSnackbar } = useSnackbar();
 
   const fetchStudyInfo = useCallback(async () => {
@@ -123,6 +126,13 @@ const SingleStudyView = (props: PropTypes) => {
     },
     [studyId, studyJobs, fetchStudyInfo],
   );
+  useEffect(() => {
+    if (tab === 'informations' || tab === 'variants' || tab === 'treeView') setInitTab(tab);
+    else {
+      setInitTab('informations');
+      history.replace({ pathname: `/study/${studyId}/informations` });
+    }
+  }, [studyId, history, tab, option]);
 
   useEffect(() => {
     if (studyId) {
@@ -137,13 +147,15 @@ const SingleStudyView = (props: PropTypes) => {
   }, [addWsListener, removeWsListener, handleEvents]);
 
   const navData: { [key: string]: () => JSX.Element } = {
-    'singlestudy:informations': () =>
+    informations: () =>
       (study ? <Informations study={study} jobs={studyJobs || []} /> : <div />),
   };
-  if (study && !study.archived) {
-    navData['singlestudy:treeView'] = () => <StudyView study={study} />;
+  if (study && study.managed) {
+    navData.variants = () => <VariantView study={study} option={option} />;
   }
-
+  if (study && !study.archived) {
+    navData.treeView = () => <StudyView study={study} />;
+  }
   return (
     <div className={classes.root}>
       {study && (
@@ -157,7 +169,7 @@ const SingleStudyView = (props: PropTypes) => {
               {study.name}
             </div>
           </Breadcrumbs>
-          <GenericTabView items={navData} initialValue="singlestudy:informations" />
+          <GenericTabView items={navData} studyId={studyId} initialValue={initTab} />
         </>
       )}
     </div>

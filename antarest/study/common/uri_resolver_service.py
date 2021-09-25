@@ -3,12 +3,11 @@ from typing import Union
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
 
 
 class UriResolverService:
-    def __init__(self, config: Config, matrix_service: MatrixService):
-        self.config = config
+    def __init__(self, matrix_service: ISimpleMatrixService):
         self.matrix_service = matrix_service
 
     def resolve(self, uri: str) -> Union[bytes, SUB_JSON]:

@@ -1,11 +1,11 @@
 import logging
 import time
-from pathlib import Path
-from typing import Tuple
-
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Tuple, Optional
+
 from antarest.core.interfaces.cache import ICache, CacheConstants
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
 from antarest.study.common.uri_resolver_service import (
     UriResolverService,
 )
@@ -38,7 +38,7 @@ class StudyFactory:
 
     def __init__(
         self,
-        matrix: MatrixService,
+        matrix: ISimpleMatrixService,
         resolver: UriResolverService,
         cache: ICache,
     ) -> None:
@@ -46,21 +46,25 @@ class StudyFactory:
         self.cache = cache
 
     def create_from_fs(
-        self, path: Path, study_id: str
+        self,
+        path: Path,
+        study_id: str,
+        output_path: Optional[Path] = None,
+        use_cache: bool = True,
     ) -> Tuple[FileStudyTreeConfig, FileStudyTree]:
         cache_id = f"{study_id}/{CacheConstants.STUDY_FACTORY}"
-        if study_id:
+        if study_id and use_cache:
             from_cache = self.cache.get(cache_id)
             if from_cache is not None:
                 logger.info(f"Study {study_id} read from cache")
                 config = FileStudyTreeConfig.parse_obj(from_cache)
                 return config, FileStudyTree(self.context, config)
         start_time = time.time()
-        config = ConfigPathBuilder.build(path, study_id)
+        config = ConfigPathBuilder.build(path, study_id, output_path)
         duration = "{:.3f}".format(time.time() - start_time)
         logger.info(f"Study {study_id} config built in {duration}s")
         result = config, FileStudyTree(self.context, config)
-        if study_id:
+        if study_id and use_cache:
             self.cache.put(cache_id, config.dict())
         logger.info(f"Cache new entry from StudyFactory (studyID: {study_id})")
         return result

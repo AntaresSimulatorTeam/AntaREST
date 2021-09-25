@@ -1,9 +1,9 @@
 import enum
 import uuid
 from copy import deepcopy
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TypeVar
-from dataclasses import dataclass
 
 from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic import BaseModel
@@ -11,7 +11,7 @@ from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enu
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.login.model import Group, Identity, UserInfo, GroupDTO
+from antarest.login.model import Group, Identity, GroupDTO
 
 DEFAULT_WORKSPACE_NAME = "default"
 
@@ -57,12 +57,15 @@ class Study(Base):  # type: ignore
     author = Column(String(255))
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
+    path = Column(String())
+    parent_id = Column(
+        String(36), ForeignKey("study.id", name="fk_study_study_id")
+    )
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True)
     archived = Column(Boolean(), default=False)
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
-
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
     def __str__(self) -> str:
@@ -87,7 +90,6 @@ class RawStudy(Study):
     )
     content_status = Column(Enum(StudyContentStatus))
     workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
-    path = Column(String(255))
 
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",
@@ -140,9 +142,12 @@ class PatchLeafDict(Dict[str, PatchLeaf]):
             if new_dict_key not in self.keys():
                 merged_dict[new_dict_key] = new_dict_value
             else:
-                merged_dict[new_dict_key] = self[new_dict_key].patch(
-                    new_dict_value
-                )
+                if new_dict_value is None:
+                    del merged_dict[new_dict_key]
+                else:
+                    merged_dict[new_dict_key] = self[new_dict_key].patch(
+                        new_dict_value
+                    )
 
         return merged_dict
 
@@ -202,6 +207,7 @@ class StudyMetadataDTO(BaseModel):
     version: int
     created: int
     updated: int
+    type: str
     owner: OwnerInfo
     groups: List[GroupDTO]
     public_mode: PublicMode

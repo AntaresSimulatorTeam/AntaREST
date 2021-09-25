@@ -1,25 +1,20 @@
+import io
 import os
 import shutil
 from pathlib import Path
-import io
 from unittest.mock import Mock
 
 import pytest
 
-from antarest.core.config import Config
-from antarest.study.storage.rawstudy.importer_service import (
-    ImporterService,
-    fix_study_root,
-)
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.core.exceptions import (
-    IncorrectPathError,
     BadZipBinary,
     StudyValidationError,
 )
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
+)
+from antarest.study.storage.utils import fix_study_root
 
 
 def build_storage_service(workspace: Path, uuid: str) -> RawStudyService:
@@ -30,7 +25,7 @@ def build_storage_service(workspace: Path, uuid: str) -> RawStudyService:
 
 
 @pytest.mark.unit_test
-def test_import_study(tmp_path: Path, storage_service_builder) -> None:
+def test_import_study(tmp_path: Path) -> None:
 
     name = "my-study"
     study_path = tmp_path / name
@@ -44,14 +39,17 @@ def test_import_study(tmp_path: Path, storage_service_builder) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = None, study
 
-    study_service = Mock()
+    study_service = RawStudyService(
+        config=Mock(),
+        study_factory=study_factory,
+        path_resources=Mock(),
+        patch_service=Mock(),
+        cache=Mock(),
+    )
+    study_service.get = Mock()
+    study_service.get_study_path = Mock()
     study_service.get.return_value = data
     study_service.get_study_path.return_value = tmp_path / "other-study"
-
-    importer_service = ImporterService(
-        study_service=study_service,
-        study_factory=study_factory,
-    )
 
     filepath_zip = shutil.make_archive(
         str(study_path.absolute()), "zip", study_path
@@ -60,14 +58,18 @@ def test_import_study(tmp_path: Path, storage_service_builder) -> None:
 
     path_zip = Path(filepath_zip)
 
-    md = RawStudy(id="other-study", workspace=DEFAULT_WORKSPACE_NAME)
+    md = RawStudy(
+        id="other-study",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=tmp_path / "other-study",
+    )
     with path_zip.open("rb") as input_file:
-        md = importer_service.import_study(md, input_file)
+        md = study_service.import_study(md, input_file)
         assert md.path == f"{tmp_path}{os.sep}other-study"
 
     shutil.rmtree(tmp_path / "other-study")
     with pytest.raises(BadZipBinary):
-        importer_service.import_study(md, io.BytesIO(b""))
+        study_service.import_study(md, io.BytesIO(b""))
 
 
 @pytest.mark.unit_test

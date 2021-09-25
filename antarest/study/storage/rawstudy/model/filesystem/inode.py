@@ -15,17 +15,8 @@ class INode(ABC, Generic[G, S, V]):
     Abstract tree element, have to be implemented to create hub or left.
     """
 
-    @abstractmethod
-    def build(self, config: FileStudyTreeConfig) -> "TREE":
-        """
-        build children (next tree level) according to study config
-        Args:
-            config: current study configuration used to build tree
-
-        Returns: children of current node
-
-        """
-        raise NotImplementedError()
+    def __init__(self, config: FileStudyTreeConfig):
+        self.config = config
 
     @abstractmethod
     def get(
@@ -48,6 +39,31 @@ class INode(ABC, Generic[G, S, V]):
 
         """
         raise NotImplementedError()
+
+    @abstractmethod
+    def get_node(
+        self,
+        url: Optional[List[str]] = None,
+    ) -> "INode[G,S,V]":
+        """
+        Ask data inside tree.
+
+        Args:
+            url: data path to retrieve
+
+        Returns: json
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete(self, url: Optional[List[str]] = None) -> None:
+        """
+        Delete a node located at some url
+
+        Args:
+            url: data path to delete
+        """
 
     @abstractmethod
     def save(self, data: S, url: Optional[List[str]] = None) -> None:

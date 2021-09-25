@@ -1,8 +1,6 @@
 import io
-import json
 import shutil
 from http import HTTPStatus
-from io import BytesIO
 from pathlib import Path
 from unittest.mock import Mock, call, ANY
 
@@ -17,8 +15,15 @@ from antarest.core.config import (
     StorageConfig,
     WorkspaceConfig,
 )
+from antarest.core.exceptions import (
+    UrlNotMatchJsonDataError,
+)
 from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.requests import (
+    RequestParameters,
+)
 from antarest.core.roles import RoleType
+from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_storage
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -28,13 +33,6 @@ from antarest.study.model import (
     MatrixIndex,
     StudySimResultDTO,
     StudySimSettingsDTO,
-)
-from antarest.core.exceptions import (
-    IncorrectPathError,
-    UrlNotMatchJsonDataError,
-)
-from antarest.core.requests import (
-    RequestParameters,
 )
 
 ADMIN = JWTUser(
@@ -63,10 +61,11 @@ def test_server() -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     client.get("/v1/studies/study1/raw?path=settings/general/params")
@@ -85,10 +84,11 @@ def test_404() -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     result = client.get("/v1/studies/study1/raw?path=settings/general/params")
@@ -107,10 +107,11 @@ def test_server_with_parameters() -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     result = client.get("/v1/studies/study1/raw?depth=4")
@@ -135,9 +136,7 @@ def test_server_with_parameters() -> None:
 
 
 @pytest.mark.unit_test
-def test_create_study(
-    tmp_path: str, storage_service_builder, project_path
-) -> None:
+def test_create_study(tmp_path: str, project_path) -> None:
     path_studies = Path(tmp_path)
     path_study = path_studies / "study1"
     path_study.mkdir()
@@ -150,10 +149,11 @@ def test_create_study(
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
 
@@ -161,13 +161,13 @@ def test_create_study(
 
     assert result_right.status_code == HTTPStatus.CREATED.value
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", [], PARAMS)
+    storage_service.create_study.assert_called_once_with(
+        "study2", None, [], PARAMS
+    )
 
 
 @pytest.mark.unit_test
-def test_import_study_zipped(
-    tmp_path: Path, storage_service_builder, project_path
-) -> None:
+def test_import_study_zipped(tmp_path: Path, project_path) -> None:
     tmp_path /= "tmp"
     tmp_path.mkdir()
     study_name = "study1"
@@ -186,10 +186,11 @@ def test_import_study_zipped(
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
 
@@ -206,7 +207,7 @@ def test_import_study_zipped(
 
 
 @pytest.mark.unit_test
-def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
+def test_copy_study(tmp_path: Path) -> None:
     storage_service = Mock()
     storage_service.copy_study.return_value = "/studies/study-copied"
 
@@ -214,10 +215,11 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
 
@@ -234,7 +236,7 @@ def test_copy_study(tmp_path: Path, storage_service_builder) -> None:
 
 
 @pytest.mark.unit_test
-def test_list_studies(tmp_path: str, storage_service_builder) -> None:
+def test_list_studies(tmp_path: str) -> None:
     studies = {
         "study1": {"antares": {"caption": ""}},
         "study2": {"antares": {"caption": ""}},
@@ -247,10 +249,11 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     result = client.get("/v1/studies")
@@ -258,7 +261,7 @@ def test_list_studies(tmp_path: str, storage_service_builder) -> None:
     assert result.json() == studies
 
 
-def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
+def test_study_metadata(tmp_path: str) -> None:
     study = {"antares": {"caption": ""}}
     storage_service = Mock()
     storage_service.get_study_information.return_value = study
@@ -267,10 +270,11 @@ def test_study_metadata(tmp_path: str, storage_service_builder) -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     result = client.get("/v1/studies/1")
@@ -290,10 +294,11 @@ def test_export_files(tmp_path: Path) -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     result = client.get("/v1/studies/name/export", stream=True)
@@ -315,10 +320,11 @@ def test_export_params(tmp_path: Path) -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     client.get("/v1/studies/name/export?no_output=true")
@@ -339,10 +345,11 @@ def test_delete_study() -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     client.delete("/v1/studies/name")
@@ -359,10 +366,11 @@ def test_edit_study() -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
     client.post(
@@ -382,10 +390,11 @@ def test_edit_study_fail() -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_storage_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={})
@@ -404,10 +413,11 @@ def test_validate() -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.get("/v1/studies/my-uuid/raw/validate")
@@ -443,10 +453,11 @@ def test_output_download() -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post(
@@ -466,10 +477,11 @@ def test_sim_reference() -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.put(f"/v1/studies/{study_id}/outputs/{output_id}/reference")
@@ -508,10 +520,11 @@ def test_sim_result() -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.get(f"/v1/studies/{study_id}/outputs")
@@ -519,18 +532,17 @@ def test_sim_result() -> None:
 
 
 @pytest.mark.unit_test
-def test_study_permission_management(
-    tmp_path: Path, storage_service_builder
-) -> None:
+def test_study_permission_management(tmp_path: Path) -> None:
     storage_service = Mock()
 
     app = FastAPI(title=__name__)
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
         config=CONFIG,
     )
     client = TestClient(app, raise_server_exceptions=False)

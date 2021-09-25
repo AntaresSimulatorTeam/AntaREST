@@ -1,7 +1,7 @@
 import logging
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, Depends, Body, Query, File, UploadFile
+from fastapi import APIRouter, Depends, Body, File, UploadFile
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -12,9 +12,9 @@ from antarest.core.requests import (
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.model import (
-    MatrixDTO,
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
+    MatrixContent,
 )
 from antarest.matrixstore.service import MatrixService
 
@@ -38,7 +38,7 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
 
     @bp.post("/matrix", tags=[APITag.matrix])
     def create(
-        matrix: MatrixDTO = Body(description="matrix dto", default={}),
+        matrix: MatrixContent = Body(description="matrix dto", default={}),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Creating new matrix", extra={"user": current_user.id})

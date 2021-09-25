@@ -47,6 +47,7 @@ def test_parse_output_parmeters(tmp_path) -> None:
         version=-1,
         store_new_set=True,
         study_id="id",
+        output_path=study / "output",
     )
     assert ConfigPathBuilder.build(study, "id") == config
 
@@ -71,6 +72,7 @@ def test_parse_bindings(tmp_path: Path) -> None:
         version=-1,
         bindings=["bindA", "bindB"],
         study_id="id",
+        output_path=study_path / "output",
     )
     assert ConfigPathBuilder.build(study_path, "id") == config
 
@@ -99,6 +101,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
         path=study_path,
         study_id="id",
         version=-1,
+        output_path=study_path / "output",
         outputs={
             "20201220-1456eco-hello": Simulation(
                 name="hello",
@@ -125,7 +128,7 @@ output = true
     (study_path / "input/areas/sets.ini").write_text(content)
 
     assert ConfigPathBuilder._parse_sets(study_path) == {
-        "hello": Set(areas=["a", "b"])
+        "hello": Set(areas=["a", "b"], output=True, inverted_set=False)
     }
 
 
@@ -145,8 +148,10 @@ def test_parse_area(tmp_path: Path) -> None:
         path=study_path,
         study_id="id",
         version=-1,
+        output_path=study_path / "output",
         areas={
             "fr": Area(
+                name="FR",
                 thermals=[],
                 renewables=[],
                 links={},

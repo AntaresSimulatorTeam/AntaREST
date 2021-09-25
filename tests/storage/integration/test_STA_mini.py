@@ -1,10 +1,9 @@
 import io
-import json
 import shutil
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Union
-from unittest.mock import Mock, call
+from typing import Union
+from unittest.mock import Mock
 
 import pytest
 from fastapi import FastAPI
@@ -12,19 +11,18 @@ from starlette.testclient import TestClient
 
 from antarest.core.custom_types import JSON
 from antarest.core.jwt import JWTUser, JWTGroup
-from antarest.core.roles import RoleType
-from antarest.study.main import build_storage
-
-from antarest.study.service import StudyService
 from antarest.core.requests import (
     RequestParameters,
 )
+from antarest.core.roles import RoleType
+from antarest.matrixstore.service import MatrixService
+from antarest.study.main import build_storage
+from antarest.study.service import StudyService
 from tests.conftest import assert_study
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import (
     de_fr_values_hourly,
 )
-from tests.storage.integration.data.simulation_log import simulation_log
 
 ADMIN = JWTUser(
     id=1,
@@ -42,8 +40,9 @@ def assert_url_content(
         app,
         cache=Mock(),
         user_service=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
         config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
@@ -173,7 +172,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/areas/list",
-            ["de", "es", "fr", "it"],
+            ["DE", "ES", "FR", "IT"],
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/areas/sets/all areas/output",
@@ -185,7 +184,7 @@ def test_sta_mini_study_antares(
         ),
         ("/v1/studies/STA-mini/raw?path=input/areas/de/ui/layerX/0", 1),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/allocation/de/[allocation/de",
+            "/v1/studies/STA-mini/raw?path=input/hydro/allocation/de/[allocation]/de",
             1,
         ),
         (
@@ -214,7 +213,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/prepro/fr/energy",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
@@ -242,7 +241,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/series",
@@ -271,7 +270,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/prepro/fr/k",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/solar/series/solar_fr",
@@ -279,7 +278,7 @@ def test_sta_mini_study_antares(
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/prepro/fr/k",
-            b"",
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/wind/series/wind_fr",
@@ -405,8 +404,9 @@ def test_sta_mini_copy(storage_service) -> None:
         app,
         cache=Mock(),
         user_service=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
         config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
@@ -454,6 +454,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "version": 700,
             "created": 1480683452,
             "updated": 1602678639,
+            "type": "rawstudy",
             "owner": {"id": None, "name": "Andrea SGATTONI"},
             "groups": [],
             "public_mode": "NONE",
@@ -503,9 +504,10 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
         config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
@@ -537,9 +539,10 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     build_storage(
         app,
         cache=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
         config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)

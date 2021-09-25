@@ -2,22 +2,8 @@
 import sys
 from pathlib import Path
 from typing import Callable
-from unittest.mock import Mock
 
 import pytest
-
-from antarest.core.config import (
-    Config,
-    SecurityConfig,
-    StorageConfig,
-    WorkspaceConfig,
-)
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.study.main import build_storage
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME
-from antarest.study.service import StudyService
 
 project_dir: Path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_dir))
@@ -45,37 +31,6 @@ def clean_ini_writer(
         path.write_text(clean_ini)
 
     return write_clean_ini
-
-
-@pytest.fixture
-def storage_service_builder() -> Callable:
-    def build_storage_service(
-        study_factory=Mock(),
-        exporter=Mock(),
-        path_studies=Path(),
-        path_resources=Path(),
-        user_service=Mock(),
-    ) -> StudyService:
-
-        config = Config(
-            resources_path=path_resources,
-            security=SecurityConfig(disabled=True),
-            storage=StorageConfig(
-                workspaces={
-                    DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
-                }
-            ),
-        )
-
-        return build_storage(
-            application=Mock(),
-            config=config,
-            user_service=user_service,
-            study_factory=study_factory,
-            exporter=exporter,
-        )
-
-    return build_storage_service
 
 
 @pytest.fixture

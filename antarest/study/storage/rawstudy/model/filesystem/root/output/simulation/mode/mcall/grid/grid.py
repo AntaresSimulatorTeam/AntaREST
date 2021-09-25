@@ -11,15 +11,19 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
 
 
 class OutputSimulationModeMcAllGrid(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            "areas": RawFileNode(self.context, config.next_file("areas.txt")),
-            "digest": RawFileNode(
-                self.context, config.next_file("digest.txt")
+            "areas": RawFileNode(
+                self.context, self.config.next_file("areas.txt")
             ),
-            "links": RawFileNode(self.context, config.next_file("links.txt")),
+            "digest": RawFileNode(
+                self.context, self.config.next_file("digest.txt")
+            ),
+            "links": RawFileNode(
+                self.context, self.config.next_file("links.txt")
+            ),
             "thermal": RawFileNode(
-                self.context, config.next_file("thermal.txt")
+                self.context, self.config.next_file("thermal.txt")
             ),
         }
         return children

@@ -1,4 +1,3 @@
-import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 from uuid import uuid4
@@ -25,6 +24,7 @@ def test_service_run_study(get_current_user_mock):
         name="name",
         created=1,
         updated=1,
+        type="rawstudy",
         owner=OwnerInfo(name="author"),
         groups=[],
         public_mode=PublicMode.NONE,

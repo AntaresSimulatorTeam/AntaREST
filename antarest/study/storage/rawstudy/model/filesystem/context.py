@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
 from antarest.study.common.uri_resolver_service import (
     UriResolverService,
 )
@@ -8,5 +8,5 @@ from antarest.study.common.uri_resolver_service import (
 
 @dataclass
 class ContextServer:
-    matrix: MatrixService
+    matrix: ISimpleMatrixService
     resolver: UriResolverService

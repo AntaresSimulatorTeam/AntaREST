@@ -2,8 +2,8 @@ from hashlib import md5
 from pathlib import Path
 from zipfile import ZipFile
 
-from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.model import MatrixAggregationResult, MatrixIndex
+from antarest.study.storage.study_download_utils import StudyDownloader
 
 
 def test_output_downloads_export(tmp_path: Path):

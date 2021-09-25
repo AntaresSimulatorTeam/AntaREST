@@ -20,23 +20,23 @@ class _OutputSimulationModeMcAllLinksBis(FolderNode):
         FolderNode.__init__(self, context, config)
         self.area = area
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {}
-        for link in config.get_links(self.area):
+        for link in self.config.get_links(self.area):
             name = f"{self.area} - {link}"
             children[link] = Item(
-                self.context, config.next_file(name), self.area, link
+                self.context, self.config.next_file(name), self.area, link
             )
         return children
 
 
 class OutputSimulationModeMcAllLinks(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {}
 
-        for area in config.area_names():
+        for area in self.config.area_names():
             children[area] = _OutputSimulationModeMcAllLinksBis(
-                self.context, config, area
+                self.context, self.config, area
             )
 
         return children

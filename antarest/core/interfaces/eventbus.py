@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, List, Awaitable
-
 from dataclasses import dataclass
+from typing import Any, Callable, Optional, List, Awaitable
 
 
 class EventType:
@@ -12,6 +11,9 @@ class EventType:
     STUDY_JOB_LOG_UPDATE = "STUDY_JOB_LOG_UPDATE"
     STUDY_JOB_COMPLETED = "STUDY_JOB_COMPLETED"
     STUDY_JOB_STATUS_UPDATE = "STUDY_JOB_STATUS_UPDATE"
+    STUDY_VARIANT_GENERATION_COMMAND_RESULT = (
+        "STUDY_VARIANT_GENERATION_COMMAND_RESULT"
+    )
 
 
 @dataclass

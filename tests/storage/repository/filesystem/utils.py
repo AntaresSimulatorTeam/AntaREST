@@ -30,6 +30,12 @@ class TestSubNode(INode[int, int, int]):
     def __init__(self, value: int):
         self.value = value
 
+    def get_node(
+        self,
+        url: Optional[List[str]] = None,
+    ) -> INode[int, int, int]:
+        return self
+
     def get(
         self,
         url: Optional[List[str]] = None,
@@ -41,6 +47,9 @@ class TestSubNode(INode[int, int, int]):
 
     def save(self, data: int, url: Optional[List[str]] = None) -> None:
         self.value = data
+
+    def delete(self, url: Optional[List[str]] = None) -> None:
+        pass
 
     def check_errors(
         self, data: int, url: Optional[List[str]] = None, raising: bool = False
@@ -58,7 +67,7 @@ class TestMiddleNode(FolderNode):
         FolderNode.__init__(self, context, config)
         self.children = children
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         return self.children
 
 

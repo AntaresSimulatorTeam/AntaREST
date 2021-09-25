@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from unittest.mock import Mock
+
 from antarest.core.cache.business.redis_cache import (
     RedisCache,
     RedisCacheElement,
@@ -21,6 +22,7 @@ def test_lifecycle():
         version=-1,
         areas={
             "a1": Area(
+                name="a1",
                 links={},
                 thermals=[],
                 renewables=[],

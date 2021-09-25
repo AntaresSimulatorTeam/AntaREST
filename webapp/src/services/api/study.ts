@@ -27,8 +27,8 @@ export const getStudyMetadata = async (sid: string, summary = true): Promise<Stu
   return convertStudyDtoToMetadata(sid, res.data);
 };
 
-export const createStudy = async (name: string): Promise<string> => {
-  const res = await client.post(`/v1/studies?name=${encodeURIComponent(name)}`);
+export const createStudy = async (name: string, version: number): Promise<string> => {
+  const res = await client.post(`/v1/studies?name=${encodeURIComponent(name)}&version=${version}`);
   return res.data;
 };
 
@@ -145,6 +145,13 @@ export const addStudyGroup = async (studyId: string, groupId: string): Promise<a
 
 export const changePublicMode = async (studyId: string, publicMode: StudyPublicMode): Promise<string|undefined> => {
   const res = await client.put(`/v1/studies/${studyId}/public_mode/${publicMode}`);
+  return res.data;
+};
+
+export const renameStudy = async (studyId: string, name: string): Promise<any> => {
+  const res = await client.put(`/v1/studies/${studyId}`, {
+    name,
+  });
   return res.data;
 };
 

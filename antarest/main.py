@@ -1,27 +1,27 @@
 import argparse
 import logging
 import sys
-from datetime import timedelta
 from pathlib import Path
-from typing import Tuple, Any, Optional, Union, List, Dict
+from typing import Tuple, Any, Optional, Dict
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
-from pydantic.main import BaseModel
+from sqlalchemy import create_engine
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
+from antarest import __version__
 from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.persistence import upgrade_db
-from antarest.dbmodel import Base
+from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import (
     get_default_config_path,
@@ -29,16 +29,12 @@ from antarest.core.utils.utils import (
     new_redis_instance,
 )
 from antarest.core.utils.web import tags_metadata
-from sqlalchemy import create_engine
-
-from antarest import __version__
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.main import build_login
 from antarest.matrixstore.main import build_matrixstore
 from antarest.study.main import build_storage
-
 
 logger = logging.getLogger(__name__)
 
@@ -225,6 +221,7 @@ def fastapi_app(
     )
     event_bus = build_eventbus(application, config, True, redis_client)
     cache = build_cache(config=config, redis_client=redis_client)
+    task_service = build_taskjob_manager(application, config, event_bus)
 
     user_service = build_login(application, config, event_bus=event_bus)
 
@@ -235,6 +232,7 @@ def fastapi_app(
         config,
         matrix_service=matrix_service,
         cache=cache,
+        task_service=task_service,
         user_service=user_service,
         event_bus=event_bus,
     )

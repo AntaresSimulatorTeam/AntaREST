@@ -14,11 +14,13 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 
 
 class InputWind(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            "prepro": InputPrepro(self.context, config.next_file("prepro")),
+            "prepro": InputPrepro(
+                self.context, self.config.next_file("prepro")
+            ),
             "series": AreaMatrixList(
-                self.context, config.next_file("series"), prefix="wind_"
+                self.context, self.config.next_file("series"), prefix="wind_"
             ),
         }
         return children

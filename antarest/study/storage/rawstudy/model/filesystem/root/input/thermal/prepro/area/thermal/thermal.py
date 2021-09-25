@@ -11,13 +11,13 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class InputThermalPreproAreaThermal(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
             "data": InputSeriesMatrix(
-                self.context, config.next_file("data.txt")
+                self.context, self.config.next_file("data.txt")
             ),
             "modulation": InputSeriesMatrix(
-                self.context, config.next_file("modulation.txt")
+                self.context, self.config.next_file("modulation.txt")
             ),
         }
         return children

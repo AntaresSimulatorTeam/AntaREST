@@ -1,6 +1,7 @@
 {
   "informations": "Informations",
   "treeView": "Vue détaillée",
+  "variants": "Gestion des variantes",
   "currentTask": "Tâches",
   "failtoloadjobs": "Echec du chargement des jobs",
   "taskId": "Id",
@@ -31,5 +32,6 @@
   "executePublicModeText": "Permission publique de lancement",
   "editPublicModeText": "Permission publique en écriture",
   "fullPublicModeText": "Permission publique totale",
-  "generalInfo": "Informations générales"
+  "generalInfo": "Informations générales",
+  "renamestudy": "Renommer l'étude"
 }

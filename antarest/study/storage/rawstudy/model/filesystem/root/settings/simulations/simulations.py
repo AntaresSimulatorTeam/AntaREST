@@ -8,6 +8,6 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 
 
 class SettingsSimulations(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {}
         return children

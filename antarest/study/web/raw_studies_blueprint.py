@@ -7,17 +7,16 @@ from fastapi import APIRouter, HTTPException, File, Depends, Body
 from fastapi.params import Param
 from starlette.responses import Response
 
+from antarest.core.config import Config
 from antarest.core.custom_types import JSON
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.core.swagger import get_path_examples
-from antarest.core.utils.file_transfer import FileTransferManager
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.core.config import Config
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)

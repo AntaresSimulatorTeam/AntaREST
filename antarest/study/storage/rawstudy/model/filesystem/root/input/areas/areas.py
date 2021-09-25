@@ -17,15 +17,15 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.sets impo
 
 
 class InputAreas(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            a: InputAreasItem(self.context, config.next_file(a))
-            for a in config.area_names()
+            a: InputAreasItem(self.context, self.config.next_file(a))
+            for a in self.config.area_names()
         }
         children["list"] = InputAreasList(
-            self.context, config.next_file("list.txt")
+            self.context, self.config.next_file("list.txt")
         )
         children["sets"] = InputAreasSets(
-            self.context, config.next_file("sets.ini")
+            self.context, self.config.next_file("sets.ini")
         )
         return children

@@ -4,11 +4,11 @@ import pytest
 
 from antarest.core.custom_types import SUB_JSON
 from antarest.core.jwt import JWTUser, JWTGroup
-from antarest.core.roles import RoleType
-from antarest.study.service import StudyService
 from antarest.core.requests import (
     RequestParameters,
 )
+from antarest.core.roles import RoleType
+from antarest.study.service import StudyService
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 
 ADMIN = JWTUser(
@@ -165,16 +165,16 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
         ),
         ("/v1/studies/STA-mini/raw?path=input/areas/de/ui/layerX/0", 42, None),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/allocation/de/[allocation/de",
+            "/v1/studies/STA-mini/raw?path=input/hydro/allocation/de/[allocation]/de",
             42,
             None,
         ),
         (
             "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
-            b"write something",
-            None,
+            b"",
+            {},
         ),
-        ("/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k", b"", None),
+        ("/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k", b"", {}),
         (
             "/v1/studies/STA-mini/raw?path=input/load/series/load_fr",
             {

@@ -85,6 +85,7 @@ def test_get(tmp_path: Path):
 
     areas = {
         n: Area(
+            name=n,
             links=dict(),
             thermals=thermals,
             renewables=[],

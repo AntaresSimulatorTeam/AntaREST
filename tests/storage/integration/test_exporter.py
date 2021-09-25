@@ -11,9 +11,13 @@ from antarest.core.config import (
     StorageConfig,
     WorkspaceConfig,
 )
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_storage
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.service import StudyService
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
 
 
 def assert_url_content(storage_service: StudyService, url: str) -> bytes:
@@ -22,8 +26,10 @@ def assert_url_content(storage_service: StudyService, url: str) -> bytes:
         app,
         cache=Mock(),
         user_service=Mock(),
+        task_service=Mock(),
         storage_service=storage_service,
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
+        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         config=storage_service.raw_study_service.config,
     )
     client = TestClient(app)
@@ -64,8 +70,10 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
         application=Mock(),
         config=config,
         cache=Mock(),
+        task_service=Mock(),
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
+        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         metadata_repository=repo,
     )
 
@@ -102,8 +110,10 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
         application=Mock(),
         config=config,
         cache=Mock(),
+        task_service=Mock(),
         user_service=Mock(),
-        matrix_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
+        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         metadata_repository=repo,
     )
 

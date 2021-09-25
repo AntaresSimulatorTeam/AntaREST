@@ -32,22 +32,26 @@ class FileStudyTree(FolderNode):
     Top level node of antares tree structure
     """
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            "Desktop": Desktop(self.context, config.next_file("Desktop.ini")),
-            "study": StudyAntares(
-                self.context, config.next_file("study.antares")
+            "Desktop": Desktop(
+                self.context, self.config.next_file("Desktop.ini")
             ),
-            "settings": Settings(self.context, config.next_file("settings")),
-            "layers": Layers(self.context, config.next_file("layers")),
-            "logs": Logs(self.context, config.next_file("logs")),
-            "input": Input(self.context, config.next_file("input")),
-            "user": User(self.context, config.next_file("user")),
+            "study": StudyAntares(
+                self.context, self.config.next_file("study.antares")
+            ),
+            "settings": Settings(
+                self.context, self.config.next_file("settings")
+            ),
+            "layers": Layers(self.context, self.config.next_file("layers")),
+            "logs": Logs(self.context, self.config.next_file("logs")),
+            "input": Input(self.context, self.config.next_file("input")),
+            "user": User(self.context, self.config.next_file("user")),
         }
 
-        if config.outputs:
-            children["output"] = Output(
-                self.context, config.next_file("output")
-            )
+        if self.config.outputs:
+            output_config = self.config.next_file("output")
+            output_config.path = self.config.output_path or output_config.path
+            children["output"] = Output(self.context, output_config)
 
         return children

@@ -11,9 +11,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.ar
 
 
 class InputHydroSeries(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            a: InputHydroSeriesArea(self.context, config.next_file(a))
-            for a in config.area_names()
+            a: InputHydroSeriesArea(self.context, self.config.next_file(a))
+            for a in self.config.area_names()
         }
         return children

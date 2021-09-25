@@ -4,7 +4,7 @@ import { createStyles, makeStyles, Theme, TextField, Typography, Chip, Select, M
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import GenericModal from '../Settings/GenericModal';
+import GenericModal from '../ui/GenericModal';
 import { getGroups, getUsers } from '../../services/api/user';
 import { GroupDTO, StudyMetadataOwner, StudyPublicMode, UserDTO } from '../../common/types';
 import { updatePermission } from './utils';
@@ -84,7 +84,6 @@ interface PropTypes {
     groups: Array<GroupDTO>;
     publicMode: StudyPublicMode;
     name: string;
-    updateInfos: (newOwner: StudyMetadataOwner, newGroups: Array<GroupDTO>, newPublicMode: StudyPublicMode,) => void;
     onClose: () => void;
 }
 
@@ -92,7 +91,7 @@ const PermissionModal = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { open, studyId, groups, publicMode, name, owner, updateInfos, onClose } = props;
+  const { open, studyId, groups, publicMode, name, owner, onClose } = props;
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
   const [selectedOwner, setOwner] = useState<UserDTO>();
   const [userList, setUserList] = useState<Array<UserDTO>>([]);
@@ -101,7 +100,7 @@ const PermissionModal = (props: PropTypes) => {
 
   const onSave = async () => {
     try {
-      await updatePermission(studyId, groups, publicMode, owner, selectedOwner, selectedGroupList, currentPublicMode, updateInfos);
+      await updatePermission(studyId, groups, publicMode, owner, selectedOwner, selectedGroupList, currentPublicMode);
       enqueueSnackbar(t('singlestudy:onPermissionUpdate'), { variant: 'success' });
     } catch (e) {
       enqueueSnackbar(t('singlestudy:onPermissionError'), { variant: 'error' });

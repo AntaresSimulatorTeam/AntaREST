@@ -11,8 +11,10 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
 
 
 class Resources(FolderNode):
-    def build(self, config: FileStudyTreeConfig) -> TREE:
+    def build(self) -> TREE:
         children: TREE = {
-            "study": RawFileNode(self.context, config.next_file("study.ico"))
+            "study": RawFileNode(
+                self.context, self.config.next_file("study.ico")
+            )
         }
         return children

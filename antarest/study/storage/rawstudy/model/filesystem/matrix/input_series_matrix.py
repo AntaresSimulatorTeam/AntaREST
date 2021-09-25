@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
@@ -8,10 +8,10 @@ from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
@@ -33,9 +33,6 @@ class InputSeriesMatrix(MatrixNode):
         super().__init__(context=context, config=config, freq="hourly")
         self.nb_columns = nb_columns
 
-    def build(self, config: FileStudyTreeConfig) -> TREE:
-        pass  # end node has nothing to build
-
     def parse(
         self,
     ) -> JSON:
@@ -56,7 +53,16 @@ class InputSeriesMatrix(MatrixNode):
 
     def _dump_json(self, data: JSON) -> None:
         df = pd.DataFrame(**data)
-        df.to_csv(self.config.path, sep="\t", header=False, index=False)
+        if not df.empty:
+            df.to_csv(
+                self.config.path,
+                sep="\t",
+                header=False,
+                index=False,
+                float_format="%.6f",
+            )
+        else:
+            self.config.path.write_bytes(b"")
 
     def check_errors(
         self,

@@ -1,5 +1,6 @@
 import datetime
 import os
+import re
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
@@ -7,17 +8,15 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.interfaces.cache import CacheConstants
-from antarest.core.requests import (
-    RequestParameters,
-)
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.study.model import Study, DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.core.exceptions import (
     StudyNotFoundError,
 )
+from antarest.core.interfaces.cache import CacheConstants
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.storage.rawstudy.raw_study_service import (
+    RawStudyService,
+)
+from antarest.study.storage.utils import get_default_workspace_path
 
 
 def build_config(study_path: Path):
@@ -129,9 +128,9 @@ def test_check_errors():
 
     factory = Mock()
     factory.create_from_fs.return_value = None, study
-
+    config = build_config(Path())
     study_service = RawStudyService(
-        config=build_config(Path()),
+        config=config,
         cache=Mock(),
         study_factory=factory,
         path_resources=Path(),
@@ -141,7 +140,7 @@ def test_check_errors():
     metadata = RawStudy(
         id="study",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(study_service.get_default_workspace_path() / "study"),
+        path=str(get_default_workspace_path(config) / "study"),
     )
     assert study_service.check_errors(metadata) == ["Hello"]
 
@@ -205,9 +204,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_create_study(
-    tmp_path: str, storage_service_builder, project_path
-) -> None:
+def test_create_study(tmp_path: str, project_path) -> None:
     path_studies = Path(tmp_path)
 
     study = Mock()
@@ -216,9 +213,9 @@ def test_create_study(
 
     study_factory = Mock()
     study_factory.create_from_fs.return_value = (None, study)
-
+    config = build_config(path_studies)
     study_service = RawStudyService(
-        config=build_config(path_studies),
+        config=config,
         cache=Mock(),
         study_factory=study_factory,
         path_resources=project_path / "resources",
@@ -228,8 +225,8 @@ def test_create_study(
     metadata = RawStudy(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(study_service.get_default_workspace_path() / "study1"),
-        version=0,
+        path=str(get_default_workspace_path(config) / "study1"),
+        version=720,
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
     )
@@ -244,10 +241,128 @@ def test_create_study(
 
 
 @pytest.mark.unit_test
+def test_create_study_versions(tmp_path: str, project_path) -> None:
+    path_studies = Path(tmp_path)
+
+    study = Mock()
+    data = {"antares": {"caption": None}}
+    study.get.return_value = data
+
+    study_factory = Mock()
+    study_factory.create_from_fs.return_value = (None, study)
+    config = build_config(path_studies)
+    study_service = RawStudyService(
+        config=config,
+        cache=Mock(),
+        study_factory=study_factory,
+        path_resources=project_path / "resources",
+        patch_service=Mock(),
+    )
+
+    def create_study(version: int):
+        metadata = RawStudy(
+            id=f"study{version}",
+            workspace=DEFAULT_WORKSPACE_NAME,
+            path=str(get_default_workspace_path(config) / f"study{version}"),
+            version=version,
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+        return study_service.create(metadata)
+
+    md613 = create_study(613)
+    md700 = create_study(700)
+    md710 = create_study(710)
+    md720 = create_study(720)
+    md803 = create_study(803)
+
+    path_study = path_studies / md613.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search("^filtering = false", general_data, flags=re.MULTILINE)
+        is not None
+    )
+
+    path_study = path_studies / md700.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search("^link-type = local", general_data, flags=re.MULTILINE)
+        is not None
+    )
+    assert (
+        re.search(
+            "^initial-reservoir-levels = cold start",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+
+    path_study = path_studies / md710.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search(
+            "^thematic-trimming = false", general_data, flags=re.MULTILINE
+        )
+        is not None
+    )
+    assert (
+        re.search(
+            "^geographic-trimming = false", general_data, flags=re.MULTILINE
+        )
+        is not None
+    )
+
+    path_study = path_studies / md720.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search(
+            "^include-unfeasible-problem-behavior = error-verbose",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+
+    path_study = path_studies / md803.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search(
+            "^custom-ts-numbers = false", general_data, flags=re.MULTILINE
+        )
+        is None
+    )
+    assert (
+        re.search("^custom-scenario = false", general_data, flags=re.MULTILINE)
+        is not None
+    )
+    assert (
+        re.search(
+            "^include-exportstructure = false",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+    assert (
+        re.search(
+            "^hydro-heuristic-policy = accommodate rule curves",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is not None
+    )
+
+
+@pytest.mark.unit_test
 def test_copy_study(
     tmp_path: str,
     clean_ini_writer: Callable,
-    storage_service_builder,
 ) -> None:
     path_studies = Path(tmp_path)
     source_name = "study1"
@@ -275,9 +390,9 @@ def test_copy_study(
 
     url_engine = Mock()
     url_engine.resolve.return_value = None, None, None
-
+    config = build_config(path_studies)
     study_service = RawStudyService(
-        config=build_config(path_studies),
+        config=config,
         cache=Mock(),
         study_factory=study_factory,
         path_resources=Path(),
@@ -287,22 +402,14 @@ def test_copy_study(
     src_md = RawStudy(
         id=source_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
     )
-    dest_md = RawStudy(
-        id="study2",
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(study_service.get_default_workspace_path() / "study2"),
-        version=0,
-        created_at=datetime.datetime.now(),
-        updated_at=datetime.datetime.now(),
-    )
-    md = study_service.copy(src_md, dest_md)
-
-    assert str(md.path) == f"{tmp_path}{os.sep}study2"
+    md = study_service.copy(src_md, "dest_name")
+    md_id = md.id
+    assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
     study.get.assert_called_once_with(["study"])
 
 
 @pytest.mark.unit_test
-def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
+def test_delete_study(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -331,7 +438,7 @@ def test_delete_study(tmp_path: Path, storage_service_builder) -> None:
 
 
 @pytest.mark.unit_test
-def test_edit_study(tmp_path: Path, storage_service_builder) -> None:
+def test_edit_study(tmp_path: Path) -> None:
     # Mock
     (tmp_path / "my-uuid").mkdir()
     (tmp_path / "my-uuid/study.antares").touch()

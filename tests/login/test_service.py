@@ -25,7 +25,6 @@ from antarest.login.model import (
 )
 from antarest.login.service import (
     LoginService,
-    GroupNotFoundError,
     UserNotFoundError,
 )
 

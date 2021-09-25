@@ -1,10 +1,10 @@
 import logging
 import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
 import yaml
-from dataclasses import dataclass, field
 
 from antarest.core.custom_types import JSON
 from antarest.core.roles import RoleType
@@ -246,6 +246,23 @@ class CacheConfig:
 
 
 @dataclass(frozen=True)
+class TaskConfig:
+    """
+    Sub config object dedicated to the task module
+    """
+
+    max_workers: int = 5
+
+    @staticmethod
+    def from_dict(data: JSON) -> "TaskConfig":
+        return TaskConfig(
+            max_workers=int(data["max_workers"])
+            if "max_workers" in data
+            else 5
+        )
+
+
+@dataclass(frozen=True)
 class Config:
     """
     Root server config
@@ -262,6 +279,7 @@ class Config:
     redis: Optional[RedisConfig] = None
     eventbus: EventBusConfig = EventBusConfig()
     cache: CacheConfig = CacheConfig()
+    tasks: TaskConfig = TaskConfig()
     root_path: str = ""
 
     @staticmethod
@@ -295,6 +313,9 @@ class Config:
             cache=CacheConfig.from_dict(data["cache"])
             if "cache" in data
             else CacheConfig(),
+            tasks=TaskConfig.from_dict(data["tasks"])
+            if "tasks" in data
+            else TaskConfig(),
         )
 
     @staticmethod
