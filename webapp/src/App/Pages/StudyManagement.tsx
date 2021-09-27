@@ -23,8 +23,11 @@ import AutoCompleteView from '../../components/StudySearchTool/AutoCompleteView'
 import { addListener, removeListener } from '../../ducks/websockets';
 import theme from '../theme';
 import { getGroups, getUsers } from '../../services/api/user';
+import { loadState, saveState } from '../../services/utils/localStorage';
 
 const logError = debug('antares:studymanagement:error');
+
+const DEFAULT_LIST_MODE_KEY = 'studylisting.listmode';
 
 const useStyles = makeStyles(() => createStyles({
   root: {
@@ -76,7 +79,7 @@ const StudyManagement = (props: PropTypes) => {
   const [t] = useTranslation();
   const [filteredStudies, setFilteredStudies] = useState<Array<StudyMetadata>>(studies);
   const [loaded, setLoaded] = useState(true);
-  const [isList, setViewState] = useState(true);
+  const [isList, setViewState] = useState(loadState(DEFAULT_LIST_MODE_KEY, true));
   const [managedFilter, setManageFilter] = useState<boolean>(false);
   const [currentSortItem, setCurrentSortItem] = useState<SortItem>();
 
@@ -176,14 +179,17 @@ const StudyManagement = (props: PropTypes) => {
           </Tooltip>
           <Button
             color="primary"
-            onClick={() => setViewState(!isList)}
+            onClick={() => {
+              setViewState(!isList);
+              saveState(DEFAULT_LIST_MODE_KEY, !isList);
+            }}
           >
             {isList ? <ViewCompactIcon /> : <ListIcon />}
           </Button>
         </div>
       </div>
       {!loaded && <MainContentLoader />}
-      {loaded && studies && <StudyListing studies={filteredStudies} isList={isList} />}
+      {loaded && studies && <StudyListing studies={filteredStudies} isList={!!isList} />}
     </div>
   );
 };
