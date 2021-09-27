@@ -14,6 +14,7 @@ export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDT
   workspace: metadata.workspace,
   managed: metadata.managed,
   archived: metadata.archived,
+  folder: metadata.folder,
 });
 
 export const useNotif = (): (message: React.ReactNode, options?: OptionsObject | undefined) => React.ReactText => {
@@ -72,6 +73,13 @@ export const hasAuthorization = (user: UserInfo | undefined, study: StudyMetadat
     }
   }
   return false;
+};
+
+export const getStudyExtendedName = (study: StudyMetadata): string => {
+  if (study.folder) {
+    return `${study.name} (${study.folder})`;
+  }
+  return study.name;
 };
 
 export default {};

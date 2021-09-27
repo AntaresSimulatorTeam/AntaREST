@@ -36,6 +36,7 @@ export interface StudyMetadataDTO {
   archived: boolean;
   groups: Array<{ id: string; name: string }>;
   public_mode: StudyPublicMode;
+  folder?: string;
 }
 
 export interface StudyMetadata {
@@ -51,6 +52,7 @@ export interface StudyMetadata {
   archived: boolean;
   groups: Array<{ id: string; name: string }>;
   publicMode: StudyPublicMode;
+  folder?: string;
 }
 
 export type JobStatus =

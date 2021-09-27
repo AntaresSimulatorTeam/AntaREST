@@ -1,11 +1,12 @@
 import React from 'react';
 import clsx from 'clsx';
-import { makeStyles, Button, createStyles, Theme, Paper, Typography } from '@material-ui/core';
+import { makeStyles, Button, createStyles, Theme, Paper, Typography, Tooltip } from '@material-ui/core';
 import FiberManualRecordIcon from '@material-ui/icons/FiberManualRecord';
 import { useTheme } from '@material-ui/core/styles';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { getExportUrl } from '../../../services/api/study';
+import { getStudyExtendedName } from '../../../services/utils';
 import DownloadLink from '../../ui/DownloadLink';
 import { jobStatusColors } from '../../../App/theme';
 import { StudyListingItemPropTypes } from './types';
@@ -99,9 +100,11 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
       <div className={classes.info}>
         <div className={classes.titleContainer}>
           <Link className={classes.title} to={`/study/${encodeURI(study.id)}`}>
-            <Typography className={classes.title} component="h3">
-              {study.name}
-            </Typography>
+            <Tooltip title={getStudyExtendedName(study)}>
+              <Typography className={classes.title} component="h3">
+                {study.name}
+              </Typography>
+            </Tooltip>
           </Link>
           {!!lastJobStatus && (
             <div className={classes.jobStatus}>
