@@ -18,6 +18,7 @@ const useStyles = makeStyles<Theme, OwnProps>((theme: Theme) =>
     wrapper: {
       margin: theme.spacing(1),
       position: 'relative',
+      display: 'inline',
     },
     buttonProgress: {
       color: (props) => props.progressColor,
