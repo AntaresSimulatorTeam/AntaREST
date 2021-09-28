@@ -27,7 +27,7 @@ def upgrade():
     # data migration
     connexion: Connection = op.get_bind()
     ldap_users = connexion.execute(
-        "SELECT users_ldap.id,name,firstname,lastname FROM users_ldap JOIN identities ON identities.id == users_ldap.id")
+        "SELECT users_ldap.id,name,firstname,lastname FROM users_ldap JOIN identities ON identities.id = users_ldap.id")
     for ldap_user in ldap_users:
         connexion.execute(text(f"UPDATE users_ldap SET external_id= :external_id WHERE id='{ldap_user[0]}'"),
                           external_id=ldap_user[1])
