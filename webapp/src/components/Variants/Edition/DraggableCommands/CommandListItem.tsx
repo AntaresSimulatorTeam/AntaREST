@@ -15,13 +15,22 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     display: 'flex',
     flexFlow: 'row nowrap',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: '100%',
     height: 'auto',
     userSelect: 'none',
+    maxWidth: '800px',
+  },
+  itemContainer: {
+    display: 'flex',
+    justifyContent: 'center',
   },
   onTopVisible: {
     zIndex: 10000,
+  },
+  onTopInvisible: {
+    zIndex: 9999,
+    transition: '1s',
   },
   normalItem: {
     flex: 1,
@@ -87,6 +96,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
     zIndex: 999, // for json edition modal to be up everything else
+    maxHeight: '400px',
+    overflow: 'scroll',
   },
 }));
 
@@ -142,39 +153,42 @@ function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate
       {...provided.dragHandleProps}
       ref={provided.innerRef}
       style={getStyle({ provided, style, isDragging })}
-      className={isExpanded ? clsx(classes.item, classes.onTopVisible) : classes.item}
+      className={isExpanded ? clsx(classes.itemContainer, classes.onTopVisible) : clsx(classes.itemContainer, classes.onTopInvisible)}
     >
-      <Accordion
-        className={isDragging ? classes.draggingListItem : classes.normalItem}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMore />}
-          aria-controls="panel1a-content"
-          id="panel1a-header"
-          style={{ width: '90%' }}
-          onClick={() => setExpanded(!isExpanded)}
+      <div className={classes.item}>
+        <Accordion
+          className={isDragging ? classes.draggingListItem : classes.normalItem}
         >
-          <div className={classes.infos}>
-            <Typography color="primary" style={{ fontSize: '0.9em' }}>{item.action}</Typography>
-            <Typography style={{ fontSize: '0.8em', color: 'gray' }}>{item.id}</Typography>
-          </div>
-        </AccordionSummary>
-        <AccordionDetails className={classes.details}>
-          <div className={classes.details}>
-            <div className={classes.header}>
-              {item.updated && <SaveOutlinedIcon className={classes.headerIcon} onClick={() => onSave(index)} />}
-              {
-                   // <CloudDownloadOutlinedIcon className={classes.headerIcon} />
-                   // <CloudUploadOutlinedIcon className={classes.headerIcon} />
-                  }
+          <AccordionSummary
+            expandIcon={<ExpandMore />}
+            aria-controls="panel1a-content"
+            id="panel1a-header"
+            onClick={() => setExpanded(!isExpanded)}
+          >
+            <div className={classes.infos}>
+              <Typography color="primary" style={{ fontSize: '0.9em' }}>{item.action}</Typography>
+              <Typography style={{ fontSize: '0.8em', color: 'gray' }}>{item.id}</Typography>
             </div>
-            <div className={classes.json}>
-              <ReactJson src={jsonData} onEdit={updateJson} onDelete={updateJson} onAdd={updateJson} />
+          </AccordionSummary>
+          <AccordionDetails className={classes.details}>
+            <div className={classes.details}>
+              <div className={classes.header}>
+                {item.updated && <SaveOutlinedIcon className={classes.headerIcon} onClick={() => onSave(index)} />}
+                {
+                    // <CloudDownloadOutlinedIcon className={classes.headerIcon} />
+                    // <CloudUploadOutlinedIcon className={classes.headerIcon} />
+                    }
+              </div>
+              <div className={classes.json}>
+                <ReactJson src={jsonData} onEdit={updateJson} onDelete={updateJson} onAdd={updateJson} />
+              </div>
             </div>
-          </div>
-        </AccordionDetails>
-      </Accordion>
-      <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />
+          </AccordionDetails>
+        </Accordion>
+        <div style={{height: '100%', display: 'flex', alignItems: 'center'}}>
+          <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />
+        </div>
+      </div>
     </div>
   );
 }
