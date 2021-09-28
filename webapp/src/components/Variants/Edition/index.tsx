@@ -62,13 +62,15 @@ const EditionView = (props: PropTypes) => {
   const onDragEnd = async ({ destination, source }: DropResult) => {
     // dropped outside the list
     if (!destination) return;
+    const oldCommands = commands.concat([]);
     try {
       const elm = commands[source.index];
-      await moveCommand(studyId, (elm.id as string), destination.index);
       const newItems = reorder(commands, source.index, destination.index);
       setCommands(newItems);
+      await moveCommand(studyId, (elm.id as string), destination.index);
       enqueueSnackbar(t('variants:moveSuccess'), { variant: 'success' });
     } catch (e) {
+      setCommands(oldCommands);
       enqueueSnackbar(t('variants:moveError'), { variant: 'error' });
     }
   };
