@@ -28,6 +28,11 @@ import { loadState, saveState } from '../../services/utils/localStorage';
 const logError = debug('antares:studymanagement:error');
 
 const DEFAULT_LIST_MODE_KEY = 'studylisting.listmode';
+const DEFAULT_FILTER_USER = 'studylisting.filter.user';
+const DEFAULT_FILTER_GROUP = 'studylisting.filter.group';
+const DEFAULT_FILTER_VERSION = 'studylisting.filter.version';
+const DEFAULT_FILTER_MANAGED = 'studylisting.filter.managed';
+const DEFAULT_FILTER_SORTING = 'studylisting.filter.sorting';
 
 const useStyles = makeStyles(() => createStyles({
   root: {
@@ -79,9 +84,9 @@ const StudyManagement = (props: PropTypes) => {
   const [t] = useTranslation();
   const [filteredStudies, setFilteredStudies] = useState<Array<StudyMetadata>>(studies);
   const [loaded, setLoaded] = useState(true);
-  const [isList, setViewState] = useState(loadState(DEFAULT_LIST_MODE_KEY, true));
-  const [managedFilter, setManageFilter] = useState<boolean>(false);
-  const [currentSortItem, setCurrentSortItem] = useState<SortItem>();
+  const [isList, setViewState] = useState(loadState<boolean>(DEFAULT_LIST_MODE_KEY, true));
+  const [managedFilter, setManageFilter] = useState(loadState<boolean>(DEFAULT_FILTER_MANAGED, false));
+  const [currentSortItem, setCurrentSortItem] = useState<SortItem|undefined>(loadState<SortItem>(DEFAULT_FILTER_SORTING));
 
   const sortList = [{ id: t('studymanager:sortByName'), elm: () => <SortByAlphaIcon /> },
     { id: t('studymanager:sortByDate'), elm: () => <DateRangeIcon /> }];
@@ -102,9 +107,9 @@ const StudyManagement = (props: PropTypes) => {
 
   const [userList, setUserList] = useState<Array<UserDTO>>([]);
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
-  const [currentUser, setCurrentUser] = useState<UserDTO>();
-  const [currentGroup, setCurrentGroup] = useState<GroupDTO>();
-  const [currentVersion, setCurrentVersion] = useState<GenericInfo>();
+  const [currentUser, setCurrentUser] = useState<UserDTO|undefined>(loadState<UserDTO>(DEFAULT_FILTER_USER));
+  const [currentGroup, setCurrentGroup] = useState<GroupDTO|undefined>(loadState<GroupDTO>(DEFAULT_FILTER_GROUP));
+  const [currentVersion, setCurrentVersion] = useState<GenericInfo|undefined>(loadState<GenericInfo>(DEFAULT_FILTER_VERSION));
 
   const versionList = [{ id: '640', name: '6.4.0' },
     { id: '700', name: '7.0.0' },
@@ -149,11 +154,20 @@ const StudyManagement = (props: PropTypes) => {
     return () => removeWsListener(listen);
   }, []);
 
+  useEffect(() => {
+    saveState(DEFAULT_LIST_MODE_KEY, isList);
+    saveState(DEFAULT_FILTER_USER, currentUser);
+    saveState(DEFAULT_FILTER_GROUP, currentGroup);
+    saveState(DEFAULT_FILTER_MANAGED, managedFilter);
+    saveState(DEFAULT_FILTER_VERSION, currentVersion);
+    saveState(DEFAULT_FILTER_SORTING, currentSortItem);
+  }, [isList, currentVersion, currentUser, currentGroup, currentSortItem, managedFilter]);
+
   return (
     <div className={classes.root}>
       <div className={classes.header}>
         <StudyCreationTools />
-        <StudySearchTool filterManaged={managedFilter} versionFilter={currentVersion} userFilter={currentUser} groupFilter={currentGroup} sortList={sortList} sortItem={currentSortItem} setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
+        <StudySearchTool filterManaged={!!managedFilter} versionFilter={currentVersion} userFilter={currentUser} groupFilter={currentGroup} sortList={sortList} sortItem={currentSortItem} setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
         <div className={classes.view}>
           <div className={classes.view} style={{ marginBottom: 0 }}>
             <Checkbox
@@ -168,7 +182,7 @@ const StudyManagement = (props: PropTypes) => {
           <AutoCompleteView label={t('studymanager:versionFilter')} value={currentVersion} list={versionList} setValue={(elm) => setCurrentVersion(elm as (GenericInfo | undefined))} />
           <AutoCompleteView label={t('studymanager:userFilter')} value={currentUser} list={userList} setValue={(elm) => setCurrentUser(elm as (UserDTO | undefined))} />
           <AutoCompleteView label={t('studymanager:groupFilter')} value={currentGroup} list={groupList} setValue={(elm) => setCurrentGroup(elm as (GroupDTO | undefined))} />
-          <SortView itemNames={sortList} onClick={(item: SortItem) => setCurrentSortItem({ ...item })} />
+          <SortView itemNames={sortList} defaultValue={currentSortItem} onClick={(item: SortItem) => setCurrentSortItem({ ...item })} />
           <Tooltip title={t('studymanager:refresh') as string} style={{ marginRight: theme.spacing(0.5) }}>
             <Button
               color="primary"
@@ -181,7 +195,6 @@ const StudyManagement = (props: PropTypes) => {
             color="primary"
             onClick={() => {
               setViewState(!isList);
-              saveState(DEFAULT_LIST_MODE_KEY, !isList);
             }}
           >
             {isList ? <ViewCompactIcon /> : <ListIcon />}
