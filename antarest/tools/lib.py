@@ -70,6 +70,8 @@ class RemoteVariantGenerator(IVariantGenerator):
     ):
         self.study_id = study_id
         self.session = session or requests.session()
+        # TODO fix this
+        self.session.verify = False
         self.host = host
         if session is None and host is None:
             raise ValueError("Missing either session or host")
