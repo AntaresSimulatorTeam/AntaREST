@@ -39,6 +39,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     color: theme.palette.error.light,
     marginLeft: theme.spacing(1),
     marginRight: theme.spacing(1),
+    cursor: 'pointer',
     '&:hover': {
       color: theme.palette.error.main,
     },
