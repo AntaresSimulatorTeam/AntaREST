@@ -185,7 +185,7 @@ function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate
             </div>
           </AccordionDetails>
         </Accordion>
-        <div style={{height: '100%', display: 'flex', alignItems: 'center'}}>
+        <div style={{ height: '100%', display: 'flex', alignItems: 'center' }}>
           <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />
         </div>
       </div>
