@@ -30,7 +30,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   body: {
     width: '100%',
-    maxHeight: '80%',
+    maxHeight: '90%',
+    minHeight: '90%',
     display: 'flex',
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
@@ -121,8 +122,14 @@ const EditionView = (props: PropTypes) => {
   useEffect(() => {
     const init = async () => {
       try {
-        const dtoItems = await getCommands(studyId);
-        setCommands(fromCommandDTOToCommandItem(dtoItems));
+        //const dtoItems = await getCommands(studyId);
+        //setCommands(fromCommandDTOToCommandItem(dtoItems));
+        const tmpItem: Array<CommandItem> = [];
+        for (let i = 0; i < 1000; i += 1) {
+          tmpItem.push({ id: i.toString(), args: { area_name: `area_${i}` }, action: 'create_area', updated: false });
+        }
+        setCommands(tmpItem);
+        console.log('CREATION OF 2000 ELEMENTS')
       } catch (e) {
         enqueueSnackbar(t('variants:fetchCommandError'), { variant: 'error' });
       }
