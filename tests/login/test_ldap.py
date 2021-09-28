@@ -41,7 +41,7 @@ def test_ldap():
         )
     )
     repo = Mock()
-    repo.get_by_name.return_value = None
+    repo.get_by_external_id.return_value = None
     repo.save.side_effect = lambda x: x
     group_repo = Mock()
     role_repo = Mock()
@@ -61,9 +61,15 @@ def test_ldap():
     res = ldap.login(name="extid", password="pwd")
 
     assert res
-    assert "extid" == res.name
+    assert "John Smith" == res.name
+    assert "extid" == res.external_id
     repo.save.assert_called_once_with(
-        UserLdap(name="extid", firstname="John", lastname="Smith")
+        UserLdap(
+            name="John Smith",
+            external_id="extid",
+            firstname="John",
+            lastname="Smith",
+        )
     )
     group_repo.save.assert_called_once_with(
         Group(id="groupB", name="some other group name")
@@ -71,7 +77,10 @@ def test_ldap():
     role_repo.save.assert_called_once_with(
         Role(
             identity=UserLdap(
-                name="extid", firstname="John", lastname="Smith"
+                name="John Smith",
+                external_id="extid",
+                firstname="John",
+                lastname="Smith",
             ),
             group=Group(id="groupB", name="some other group name"),
             type=RoleType.WRITER,

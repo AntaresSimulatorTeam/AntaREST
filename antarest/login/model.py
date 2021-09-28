@@ -131,6 +131,7 @@ class UserLdap(Identity):
         ForeignKey("identities.id"),
         primary_key=True,
     )
+    external_id = Column(String)
     firstname = Column(String)
     lastname = Column(String)
     __mapper_args__ = {

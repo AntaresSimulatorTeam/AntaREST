@@ -17,12 +17,13 @@ const useStyles = makeStyles((theme: Theme) =>
   interface PropsType {
     itemNames: Array<SortElement>;
     onClick: (item: SortItem) => void;
+    defaultValue: SortItem | undefined;
   }
 
 const SortView = (props: PropsType) => {
   const classes = useStyles(props);
-  const { itemNames, onClick } = props;
-  const [items, setItems] = useState<Array<SortItem>>(itemNames.map((elm) => ({ element: elm, status: 'NONE' } as SortItem)));
+  const { itemNames, onClick, defaultValue } = props;
+  const [items, setItems] = useState<Array<SortItem>>(itemNames.map((elm) => ({ element: elm, status: defaultValue?.element.id === elm.id ? defaultValue.status : 'NONE' } as SortItem)));
 
   const onItemClick = (index: number, status: SortStatus) => {
     const tmpItems = items.map((elm, idx) => (idx === index ? elm : ({ element: elm.element, status: 'NONE' } as SortItem)));

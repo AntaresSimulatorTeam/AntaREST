@@ -69,12 +69,12 @@ def test_users_ldap():
 
     with db():
         repo = UserLdapRepository()
-        a = UserLdap(
-            name="a",
-        )
+        a = UserLdap(name="a", external_id="b")
 
         a = repo.save(a)
         assert a.id
+
+        assert repo.get_by_external_id("b") == a
 
         repo.delete(a.id)
         assert repo.get(a.id) is None

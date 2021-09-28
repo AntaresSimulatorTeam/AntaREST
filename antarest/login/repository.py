@@ -138,6 +138,14 @@ class UserLdapRepository:
         )
         return user
 
+    def get_by_external_id(self, external_id: str) -> Optional[UserLdap]:
+        user: UserLdap = (
+            db.session.query(UserLdap)
+            .filter_by(external_id=external_id)
+            .first()
+        )
+        return user
+
     def get_all(self) -> List[UserLdap]:
         users_ldap: List[UserLdap] = db.session.query(UserLdap).all()
         return users_ldap

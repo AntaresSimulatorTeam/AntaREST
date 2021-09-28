@@ -21,7 +21,11 @@ def build_config(root: Path) -> Config:
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(
                     path=root / DEFAULT_WORKSPACE_NAME, groups=["toto"]
                 ),
-                "diese": WorkspaceConfig(path=root / "diese", groups=["tata"]),
+                "diese": WorkspaceConfig(
+                    path=root / "diese",
+                    groups=["tata"],
+                    filter_out=["to_skip.*"],
+                ),
             }
         )
     )
@@ -63,6 +67,15 @@ def test_scan(tmp_path: Path):
     d = diese / "folder/trash"
     d.mkdir(parents=True)
     (d / "trash").touch()
+
+    e = diese / "folder/to_skip_folder"
+    e.mkdir(parents=True)
+    (e / "study.antares").touch()
+
+    f = diese / "folder/another_folder"
+    f.mkdir(parents=True)
+    (f / "AW_NO_SCAN").touch()
+    (f / "study.antares").touch()
 
     service = Mock()
     watcher = Watcher(build_config(tmp_path), service)

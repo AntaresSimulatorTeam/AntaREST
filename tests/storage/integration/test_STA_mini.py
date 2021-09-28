@@ -465,6 +465,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "scenario": None,
             "status": None,
             "doc": None,
+            "folder": None,
         }
     }
     url = "/v1/studies"

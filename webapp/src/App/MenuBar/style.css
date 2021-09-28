@@ -1,0 +1,17 @@
+.pulsing-opacity {
+  animation: pulsing-opacity-animation 2s infinite
+}
+
+@keyframes pulsing-opacity-animation {
+  0% {
+    opacity: 1
+  }
+  50% {
+    opacity: 0
+  }
+  100% {
+    opacity: 1
+  }
+}
+    
+

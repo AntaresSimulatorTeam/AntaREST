@@ -117,6 +117,9 @@ class AbstractStorageService(IStudyStorageService[T]):
         study_workspace = DEFAULT_WORKSPACE_NAME
         if hasattr(study, "workspace"):
             study_workspace = study.workspace
+        folder: Optional[str] = None
+        if hasattr(study, "folder"):
+            folder = study.folder
 
         return StudyMetadataDTO(
             id=study.id,
@@ -140,6 +143,7 @@ class AbstractStorageService(IStudyStorageService[T]):
             scenario=patch_metadata.scenario,
             status=patch_metadata.status,
             doc=patch_metadata.doc,
+            folder=folder,
         )
 
     def get(

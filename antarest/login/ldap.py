@@ -118,11 +118,12 @@ class LdapService:
         Returns:
 
         """
-        existing_user = self.users.get_by_name(user.external_id)
+        existing_user = self.users.get_by_external_id(user.external_id)
         if not existing_user:
             existing_user = self.users.save(
                 UserLdap(
-                    name=user.external_id,
+                    name=f"{user.first_name} {user.last_name}",
+                    external_id=user.external_id,
                     firstname=user.first_name,
                     lastname=user.last_name,
                 )

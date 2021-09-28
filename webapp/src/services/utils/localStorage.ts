@@ -10,10 +10,14 @@ export const loadState = <T>(path: string, defaultValue?: T): T | undefined => {
   }
 };
 
-export const saveState = <T>(path: string, data: T): void => {
+export const saveState = <T>(path: string, data: T|undefined): void => {
   try {
-    const serializedState = JSON.stringify(data);
-    localStorage.setItem(path, serializedState);
+    if (data === undefined) {
+      localStorage.removeItem(path);
+    } else {
+      const serializedState = JSON.stringify(data);
+      localStorage.setItem(path, serializedState);
+    }
   } catch {
     // ignore write errors
   }
