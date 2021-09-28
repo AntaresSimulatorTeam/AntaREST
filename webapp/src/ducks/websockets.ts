@@ -17,10 +17,12 @@ const logError = debug('antares:websocket:error');
 export interface WebsocketState {
   socket?: WebSocket;
   listeners: Array<(msg: WSMessage) => void>;
+  connected: boolean;
 }
 
 const initialState: WebsocketState = {
   listeners: [],
+  connected: false,
 };
 
 /** ******************************************* */
@@ -41,6 +43,16 @@ export const disconnectWebsocket = (): ThunkAction<void, AppState, unknown, Disc
   });
 };
 
+export interface NotifyConnectedAction extends Action {
+  type: 'WS/UPDATE_CONNECTION_STATUS';
+  payload: boolean;
+}
+
+export const notifyConnected = (status: boolean): NotifyConnectedAction => ({
+  type: 'WS/UPDATE_CONNECTION_STATUS',
+  payload: status,
+});
+
 export interface ConnectAction extends Action {
   type: 'WS/CONNECT';
   payload: WebSocket;
@@ -49,17 +61,18 @@ export interface ConnectAction extends Action {
 const RECONNECTION_DEFAULT_DELAY = 3000;
 let reconnectionTimer: NodeJS.Timeout | null = null;
 
-export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, unknown, ConnectAction> => (dispatch, getState): void => {
+export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, unknown, Action> => (dispatch, getState): void => {
   const config = getConfig();
   const { websockets } = getState();
 
   const reconnectLoop = (): void => {
     if (!reconnectionTimer) {
       logInfo(`Reconnecting websocket in ${RECONNECTION_DEFAULT_DELAY}ms`);
+      const current_user = getState().auth.user;
       reconnectionTimer = setTimeout(
         () => {
           dispatch(disconnectWebsocket());
-          dispatch(connectWebsocket(user));
+          dispatch(connectWebsocket(current_user));
           reconnectionTimer = null;
         }, RECONNECTION_DEFAULT_DELAY,
       );
@@ -78,6 +91,7 @@ export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, u
 
     if (socket) {
       socket.onopen = (): void => {
+        dispatch(notifyConnected(true));
         if (reconnectionTimer) {
           clearTimeout(reconnectionTimer);
           reconnectionTimer = null;
@@ -85,6 +99,7 @@ export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, u
       };
       socket.onclose = (): void => {
         logInfo('Websocket connexion is closed');
+        dispatch(notifyConnected(false));
         reconnectLoop();
       };
       socket.onerror = (ev): void => {
@@ -159,7 +174,7 @@ export const removeListener = (callback: (ev: WSMessage) => void): ThunkAction<v
   });
 };
 
-type WebsocketAction = ConnectAction | DisconnectAction | AddListenerAction | RemoveListenerAction | RefreshHandlersAction;
+type WebsocketAction = ConnectAction | DisconnectAction | AddListenerAction | RemoveListenerAction | RefreshHandlersAction | NotifyConnectedAction;
 
 /** ******************************************* */
 /* Selectors                                    */
@@ -182,6 +197,12 @@ export default (state = initialState, action: WebsocketAction): WebsocketState =
       };
       delete newState.socket;
       return newState;
+    }
+    case 'WS/UPDATE_CONNECTION_STATUS': {
+      return {
+        ...state,
+        connected: action.payload,
+      };
     }
     case 'WS/REMOVE_LISTENER':
       return {

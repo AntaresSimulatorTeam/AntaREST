@@ -23,5 +23,6 @@
   "save": "Save",
   "edit": "Edit",
   "copy": "Copy",
-  "data": "Data"
+  "data": "Data",
+  "websocketstatusmessage": "Websocket connection unavailable. Check your internet connection or try to refresh the page."
 }
