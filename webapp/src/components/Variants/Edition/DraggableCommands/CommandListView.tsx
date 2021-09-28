@@ -1,17 +1,22 @@
-import * as React from 'react';
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DraggableProvided,
-  DraggableStateSnapshot,
-  OnDragEndResponder,
-} from 'react-beautiful-dnd';
-import { areEqual, FixedSizeList, VariableSizeList, ListChildComponentProps } from 'react-window';
-import { Container } from '@material-ui/core';
-import { useEffect, useRef } from 'react';
-import CommandListItem from './CommandItem';
+// @flow
+import React from 'react';
+import { FixedSizeList, areEqual, ListChildComponentProps } from 'react-window';
+import { DragDropContext, Droppable, Draggable, OnDragEndResponder } from 'react-beautiful-dnd';
 import { CommandItem } from '../CommandTypes';
+import CommandListItem from './CommandListItem';
+
+// Recommended react-window performance optimisation: memoize the row render function
+// Things are still pretty fast without this, but I am a sucker for making things faster
+const Row = React.memo((props: ListChildComponentProps) => {
+  const { data, index, style } = props;
+  const { items, onDelete, onArgsUpdate, onSave } = data;
+  const item = items[index];
+  return (
+    <Draggable draggableId={item.id} index={index} key={item.id}>
+      {(provided, snapshot) => <CommandListItem provided={provided} isDragging={snapshot.isDragging} item={item} style={style} index={index} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} />}
+    </Draggable>
+  );
+}, areEqual);
 
 export type DraggableListProps = {
   items: CommandItem[];
@@ -21,65 +26,41 @@ export type DraggableListProps = {
   onSave: (index: number) => void;
 };
 
-type RowProps = {
-  items: Array<CommandItem>;
-  onDelete: (index: number) => void;
-  onArgsUpdate: (index: number, json: object) => void;
-  onSave: (index: number) => void;
-};
-
-const Row = React.memo((props: ListChildComponentProps) => {
-  const { data, index, style } = props;
-  const { items, onDelete, onArgsUpdate, onSave } = data;
-  const item = items[index];
+function NewComponent({ items, onDragEnd, onDelete, onArgsUpdate, onSave }: DraggableListProps) {
   return (
-    <Draggable draggableId={item.id as string} index={index} key={(item.id as string)}>
-      {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => <CommandListItem style={style} provided={provided} snapshot={snapshot} item={item} index={index} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} />}
-    </Draggable>
-  );
-});
-
-const CommandListView = React.memo(({ items, onDragEnd, onDelete, onArgsUpdate, onSave }: DraggableListProps) => (
-  <DragDropContext onDragEnd={onDragEnd}>
-    <Droppable
-      droppableId="droppable-list"
-      mode="virtual"
-      renderClone={(provided, snapshot, rubric) => (
-        <CommandListItem
-          provided={provided}
-          snapshot={snapshot}
-          item={items[rubric.source.index]}
-          index={rubric.source.index}
-          onDelete={onDelete}
-          onArgsUpdate={onArgsUpdate}
-          onSave={onSave}
-        />
-      )}
-    >
-      {(provided, snapshot) => {
-        // eslint-disable-next-line react/jsx-props-no-spreading
-        const itemCount = snapshot.isUsingPlaceholder
-          ? items.length + 1
-          : items.length;
-
-        return (
+    <DragDropContext onDragEnd={onDragEnd}>
+      <Droppable
+        droppableId="droppable"
+        mode="virtual"
+        renderClone={(provided, snapshot, rubric) => (
+          <CommandListItem
+            provided={provided}
+            isDragging={snapshot.isDragging}
+            item={items[rubric.source.index]}
+            index={rubric.source.index}
+            onDelete={onDelete}
+            onArgsUpdate={onArgsUpdate}
+            onSave={onSave}
+            style={{}}
+          />
+        )}
+      >
+        {(provided) => (
           <FixedSizeList
             height={500}
-            itemCount={itemCount}
-            itemSize={30}
-            width="100%"
+            itemCount={items.length}
+            itemSize={80}
+            width={300}
             outerRef={provided.innerRef}
-          // eslint-disable-next-line react/jsx-props-no-spreading
-            {...provided.droppableProps}
             itemData={{ items, onDelete, onArgsUpdate, onSave }}
-            style={{ width: '100%', height: '100%', backgroundColor: 'black', overflowY: 'auto' }}
+            style={{ width: '100%', height: '90%'}}
           >
             {Row}
           </FixedSizeList>
-        );
-      }}
-    </Droppable>
-  </DragDropContext>
-));
+        )}
+      </Droppable>
+    </DragDropContext>
+  );
+}
 
-export default CommandListView;
+export default NewComponent;
