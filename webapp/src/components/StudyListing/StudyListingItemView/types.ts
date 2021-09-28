@@ -7,5 +7,4 @@ export interface StudyListingItemPropTypes {
   archiveStudy: (study: StudyMetadata) => void;
   unarchiveStudy: (study: StudyMetadata) => void;
   openDeletionModal: () => void;
-  lastJobStatus?: 'JobStatus.RUNNING' | 'JobStatus.PENDING' | 'JobStatus.SUCCESS' | 'JobStatus.FAILED';
 }

@@ -13,14 +13,12 @@ import {
   CardActions,
   Tooltip,
 } from '@material-ui/core';
-import FiberManualRecordIcon from '@material-ui/icons/FiberManualRecord';
 import { useTheme } from '@material-ui/core/styles';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { getExportUrl } from '../../../services/api/study';
 import DownloadLink from '../../ui/DownloadLink';
-import { jobStatusColors } from '../../../App/theme';
 import { StudyListingItemPropTypes } from './types';
 import ButtonLoader from '../../ui/ButtonLoader';
 import { getStudyExtendedName } from '../../../services/utils';
@@ -89,7 +87,7 @@ const StudyBlockSummaryView = (props: StudyListingItemPropTypes) => {
   const classes = useStyles();
   const theme = useTheme();
   const [t] = useTranslation();
-  const { study, launchStudy, openDeletionModal, lastJobStatus, archiveStudy, unarchiveStudy } =
+  const { study, launchStudy, openDeletionModal, archiveStudy, unarchiveStudy } =
     props;
 
   return (
@@ -100,13 +98,6 @@ const StudyBlockSummaryView = (props: StudyListingItemPropTypes) => {
             <Tooltip title={getStudyExtendedName(study)}>
               <Typography className={classes.title} component="h3">
                 {study.name}
-                {!!lastJobStatus && (
-                  <span className={classes.jobStatus}>
-                    <FiberManualRecordIcon
-                      style={{ width: '15px', height: '15px', color: jobStatusColors[lastJobStatus] }}
-                    />
-                  </span>
-                )}
               </Typography>
             </Tooltip>
           </Link>
