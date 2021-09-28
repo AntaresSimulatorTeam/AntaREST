@@ -87,6 +87,11 @@ class Watcher:
             filter_out: List[str],
         ) -> List[StudyFolder]:
             try:
+                if (path / "AW_NO_SCAN").exists():
+                    logger.info(
+                        f"No scan directive file found. Will skip further scan of folder {path}"
+                    )
+                    return []
                 if (path / "study.antares").exists():
                     logger.debug(f"Study {path.name} found in {workspace}")
                     return [StudyFolder(path, workspace, groups)]
