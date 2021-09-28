@@ -32,7 +32,7 @@ import {
   getExportUrl,
 } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
-import { hasAuthorization } from '../../services/utils';
+import { hasAuthorization, getStudyExtendedName } from '../../services/utils';
 import DownloadLink from '../ui/DownloadLink';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import PermissionModal from './PermissionModal';
@@ -306,7 +306,7 @@ const InformationView = (props: PropTypes) => {
           style={{ marginTop: theme.spacing(2), marginBottom: theme.spacing(3) }}
         >
           <div className={classes.mainInfo}>
-            <Tooltip title={study.name}>
+            <Tooltip title={getStudyExtendedName(study)}>
               <Typography className={classes.studyName}>{study.name}</Typography>
             </Tooltip>
             {hasAuthorization(user, study, RoleType.WRITER) && (

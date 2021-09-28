@@ -459,7 +459,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             updated_at=datetime.now(),
             version=study.version,
             groups=study.groups,  # Create inherit_group boolean
-            owner_id=params.user.id if params.user else None,
+            owner_id=params.user.impersonator if params.user else None,
             snapshot=None,
         )
         self.repository.save(variant_study)

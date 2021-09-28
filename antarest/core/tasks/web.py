@@ -27,7 +27,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
 
-    @bp.get("/tasks")
+    @bp.post("/tasks")
     def list_tasks(
         filter: TaskListFilter,
         current_user: JWTUser = Depends(auth.get_current_user),

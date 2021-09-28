@@ -1,11 +1,16 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, createStyles, makeStyles, Theme } from '@material-ui/core';
+import { ConnectedProps, connect } from 'react-redux';
+import { AppBar, Toolbar, Typography, createStyles, makeStyles, Theme, Tooltip } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import PortableWifiOffIcon from '@material-ui/icons/PortableWifiOff';
 import { useTranslation } from 'react-i18next';
+import clsx from 'clsx';
 import logo from './logo.png';
 import UserBadge from '../../components/UserBadge';
 import { getConfig } from '../../services/config';
+import { AppState } from '../reducers';
+import './style.css';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -40,9 +45,20 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   }));
 
-const MenuBar = () => {
+const mapState = (state: AppState) => ({
+  websocketConnected: state.websockets.connected,
+});
+
+const mapDispatch = ({});
+
+const connector = connect(mapState, mapDispatch);
+type PropsFromRedux = ConnectedProps<typeof connector>;
+type PropTypes = PropsFromRedux;
+
+const MenuBar = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
+  const { websocketConnected } = props;
 
   return (
     <AppBar position="static">
@@ -65,6 +81,12 @@ const MenuBar = () => {
             <Link to="/data">{t('main:data')}</Link>
           </Typography>
         </div>
+        {!websocketConnected &&
+          (
+            <Tooltip title={t('main:websocketstatusmessage') as string}>
+              <PortableWifiOffIcon className={clsx(classes.altmenuitem, 'pulsing-opacity')} />
+            </Tooltip>
+          )}
         <Typography className={classes.altmenuitem}>
           <Link to="/swagger">API</Link>
         </Typography>
@@ -94,4 +116,4 @@ const MenuBar = () => {
   );
 };
 
-export default MenuBar;
+export default connector(MenuBar);

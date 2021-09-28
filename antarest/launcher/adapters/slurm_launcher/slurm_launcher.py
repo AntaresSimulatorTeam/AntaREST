@@ -138,7 +138,8 @@ class SlurmLauncher(AbstractLauncher):
             self.slurm_config.local_workspace.absolute()
             in study_path.absolute().parents
         ):
-            shutil.rmtree(study_path)
+            if study_path.exists():
+                shutil.rmtree(study_path)
 
     def _import_study_output(self, job_id: str) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
@@ -185,13 +186,7 @@ class SlurmLauncher(AbstractLauncher):
                         )
 
                 finally:
-                    self.data_repo_tinydb.remove_study(study.name)
-                    self._delete_study(
-                        self.slurm_config.local_workspace
-                        / "OUTPUT"
-                        / study.name
-                    )
-                    del self.job_id_to_study_id[study.name]
+                    self._clean_up_study(study.name)
             else:
                 self.log_tail_manager.track(
                     SlurmLauncher._get_log_path(study),
@@ -274,6 +269,8 @@ class SlurmLauncher(AbstractLauncher):
                 self.callbacks.update_status(
                     str(launch_uuid), JobStatus.FAILED, None, None
                 )
+                self._delete_study(study_path)
+                self._clean_up_study(str(launch_uuid))
 
             if not self.thread:
                 self.start()
@@ -291,6 +288,13 @@ class SlurmLauncher(AbstractLauncher):
         thread.start()
 
         return launch_uuid
+
+    def _clean_up_study(self, launch_id: str) -> None:
+        self.data_repo_tinydb.remove_study(launch_id)
+        self._delete_study(
+            self.slurm_config.local_workspace / "OUTPUT" / launch_id
+        )
+        del self.job_id_to_study_id[launch_id]
 
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         for study in self.data_repo_tinydb.get_list_of_studies():

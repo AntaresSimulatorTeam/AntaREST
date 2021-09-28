@@ -4,5 +4,5 @@ CURDIR=$(cd `dirname $0` && pwd)
 BASEDIR=`dirname $CURDIR`
 
 cd $BASEDIR
-alembic downgrade 55138d877c6a
+alembic downgrade ab143a39c4db
 cd -

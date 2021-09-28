@@ -1,8 +1,5 @@
-import datetime
-import os
-import re
+import time
 from pathlib import Path
-from typing import Callable
 from unittest.mock import Mock
 
 import pytest
@@ -10,21 +7,17 @@ import pytest
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import (
     StudyNotFoundError,
+    VariantGenerationError,
 )
 from antarest.core.interfaces.cache import CacheConstants
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.study.storage.utils import get_default_workspace_path
+from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskResult
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
-    VariantStudySnapshot,
     CommandBlock,
 )
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
-    SNAPSHOT_RELATIVE_PATH,
 )
 
 
@@ -80,8 +73,42 @@ def test_get(tmp_path: str, project_path) -> None:
         patch_service=Mock(),
     )
 
-    metadata = VariantStudy(id="study2.py", path=str(path_study))
+    metadata = VariantStudy(
+        id="study2.py", path=str(path_study), generation_task="1"
+    )
     study_service.exists = Mock()
+    study_service.exists.return_value = False
+
+    def task_status(*args):
+        for t in [
+            TaskDTO(
+                id="1",
+                name="generation task",
+                owner=None,
+                status=TaskStatus.RUNNING,
+                creation_date_utc=time.time(),
+                completion_date_utc=None,
+                result=None,
+            ),
+            TaskDTO(
+                id="1",
+                name="generation task",
+                owner=None,
+                status=TaskStatus.COMPLETED,
+                creation_date_utc=time.time(),
+                completion_date_utc=None,
+                result=TaskResult(success=False, message=""),
+            ),
+        ]:
+            yield t
+
+    study_service.task_service.status_task.side_effect = task_status()
+    with pytest.raises(
+        VariantGenerationError, match=f"Error while generating study2.py"
+    ):
+        study_service.get(metadata=metadata, url=sub_route, depth=2)
+    study_service.task_service.await_task.assert_called()
+
     study_service.exists.return_value = True
     output = study_service.get(metadata=metadata, url=sub_route, depth=2)
 
@@ -92,7 +119,6 @@ def test_get(tmp_path: str, project_path) -> None:
 
 @pytest.mark.unit_test
 def test_get_cache(tmp_path: str) -> None:
-
     # Create folders
     path_to_studies = Path(tmp_path)
     (path_to_studies / "study1").mkdir()
@@ -211,7 +237,6 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
 @pytest.mark.unit_test
 def test_copy_study() -> None:
-
     study_service = VariantStudyService(
         raw_study_service=Mock(),
         cache=Mock(),

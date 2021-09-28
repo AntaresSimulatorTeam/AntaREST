@@ -94,7 +94,7 @@ class TaskJobService(ITaskService):
         task = self.repo.save(
             TaskJob(
                 name=name or "Unnamed",
-                owner_id=request_params.user.id,
+                owner_id=request_params.user.impersonator,
             )
         )
         future = self.threadpool.submit(self._run_task, action, task)
@@ -130,7 +130,7 @@ class TaskJobService(ITaskService):
             raise MustBeAuthenticatedError()
         return self.repo.list(
             task_filter,
-            request_params.user.id
+            request_params.user.impersonator
             if not request_params.user.is_site_admin()
             else None,
         )

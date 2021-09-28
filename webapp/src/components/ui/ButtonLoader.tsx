@@ -18,6 +18,7 @@ const useStyles = makeStyles<Theme, OwnProps>((theme: Theme) =>
     wrapper: {
       margin: theme.spacing(1),
       position: 'relative',
+      display: 'inline',
     },
     buttonProgress: {
       color: (props) => props.progressColor,
@@ -45,11 +46,15 @@ const ButtonLoader = (props: ButtonProps & OwnProps) => {
     }
   };
 
+  const forwardedProps = { ...props };
+  // eslint-disable-next-line react/destructuring-assignment
+  delete forwardedProps.progressColor;
+
   return (
     <div className={classes.wrapper}>
       <Button
         // eslint-disable-next-line react/jsx-props-no-spreading
-        {...props}
+        {...forwardedProps}
         disabled={loading}
         onClick={handleButtonClick}
       >

@@ -324,10 +324,15 @@ class StudyService:
         for folder in folders:
             if str(folder.path) not in paths:
                 try:
+                    base_path = self.config.storage.workspaces[
+                        folder.workspace
+                    ].path
+                    dir_name = folder.path.relative_to(base_path)
                     study = RawStudy(
                         id=str(uuid4()),
                         name=folder.path.name,
                         path=str(folder.path),
+                        folder=str(dir_name),
                         workspace=folder.workspace,
                         owner=None,
                         groups=folder.groups,
