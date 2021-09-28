@@ -63,8 +63,8 @@ const EditionView = (props: PropTypes) => {
     // dropped outside the list
     if (!destination) return;
     try {
-      //const elm = commands[source.index];
-      //await moveCommand(studyId, (elm.id as string), destination.index);
+      const elm = commands[source.index];
+      await moveCommand(studyId, (elm.id as string), destination.index);
       const newItems = reorder(commands, source.index, destination.index);
       setCommands(newItems);
       enqueueSnackbar(t('variants:moveSuccess'), { variant: 'success' });
@@ -91,8 +91,8 @@ const EditionView = (props: PropTypes) => {
 
   const onDelete = async (index: number) => {
     try {
-      //const elm = commands[index];
-      //await deleteCommand(studyId, (elm.id as string));
+      const elm = commands[index];
+      await deleteCommand(studyId, (elm.id as string));
       setCommands((commandList) => commandList.filter((item, idx) => idx !== index));
       enqueueSnackbar(t('variants:deleteSuccess'), { variant: 'success' });
     } catch (e) {
@@ -122,14 +122,8 @@ const EditionView = (props: PropTypes) => {
   useEffect(() => {
     const init = async () => {
       try {
-        /*const dtoItems = await getCommands(studyId);
-        setCommands(fromCommandDTOToCommandItem(dtoItems));*/
-        const tmpItem: Array<CommandItem> = [];
-        for (let i = 0; i < 2000; i += 1) {
-          tmpItem.push({ id: i.toString(), args: { area_name: `area_${i}` }, action: 'create_area', updated: true });
-        }
-        setCommands(tmpItem);
-        console.log('CREATION OF 2000 ELEMENTS');
+        const dtoItems = await getCommands(studyId);
+        setCommands(fromCommandDTOToCommandItem(dtoItems));
       } catch (e) {
         enqueueSnackbar(t('variants:fetchCommandError'), { variant: 'error' });
       }

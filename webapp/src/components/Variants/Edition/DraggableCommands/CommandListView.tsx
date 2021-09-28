@@ -1,12 +1,9 @@
-// @flow
 import React from 'react';
 import { FixedSizeList, areEqual, ListChildComponentProps } from 'react-window';
 import { DragDropContext, Droppable, Draggable, OnDragEndResponder } from 'react-beautiful-dnd';
 import { CommandItem } from '../CommandTypes';
 import CommandListItem from './CommandListItem';
 
-// Recommended react-window performance optimisation: memoize the row render function
-// Things are still pretty fast without this, but I am a sucker for making things faster
 const Row = React.memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
   const { items, onDelete, onArgsUpdate, onSave } = data;
@@ -26,7 +23,7 @@ export type DraggableListProps = {
   onSave: (index: number) => void;
 };
 
-function NewComponent({ items, onDragEnd, onDelete, onArgsUpdate, onSave }: DraggableListProps) {
+function CommandListView({ items, onDragEnd, onDelete, onArgsUpdate, onSave }: DraggableListProps) {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <Droppable
@@ -53,7 +50,7 @@ function NewComponent({ items, onDragEnd, onDelete, onArgsUpdate, onSave }: Drag
             width={300}
             outerRef={provided.innerRef}
             itemData={{ items, onDelete, onArgsUpdate, onSave }}
-            style={{ width: '100%', height: '90%'}}
+            style={{ width: '100%', height: '90%' }}
           >
             {Row}
           </FixedSizeList>
@@ -63,4 +60,4 @@ function NewComponent({ items, onDragEnd, onDelete, onArgsUpdate, onSave }: Drag
   );
 }
 
-export default NewComponent;
+export default CommandListView;

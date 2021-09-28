@@ -127,7 +127,7 @@ interface PropsType {
 function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate, onSave }: PropsType) {
   const classes = useStyles();
   const [jsonData, setJsonData] = useState<object>(item.args);
-  const [isExpanded, setExpanded] = useState<boolean>(false); 
+  const [isExpanded, setExpanded] = useState<boolean>(false);
 
   const updateJson = (e: InteractionProps) => {
     setJsonData(e.updated_src);
