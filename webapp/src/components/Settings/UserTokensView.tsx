@@ -75,6 +75,7 @@ const useStyles = makeStyles((theme: Theme) =>
       alignItems: 'center',
     },
     deleteIcon: {
+      cursor: 'pointer',
       color: theme.palette.error.light,
       marginLeft: theme.spacing(2),
       marginRight: theme.spacing(2),
@@ -83,6 +84,7 @@ const useStyles = makeStyles((theme: Theme) =>
       },
     },
     seeIcon: {
+      cursor: 'pointer',
       color: theme.palette.primary.main,
       '&:hover': {
         color: theme.palette.primary.light,
