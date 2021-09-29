@@ -150,5 +150,6 @@ resources/commit_id
 
 watcher.lock
 watcher
+matrix_constant_init.lock
 
 **/bucket
