@@ -121,6 +121,13 @@ const EditionView = (props: PropTypes) => {
     setCommands(tmpCommand);
   };
 
+  const onCommandImport = (index: number, command: CommandItem) => {
+    let tmpCommand: Array<CommandItem> = [];
+    tmpCommand = tmpCommand.concat(commands);
+    tmpCommand[index] = command;
+    setCommands(tmpCommand);
+  };
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -141,7 +148,7 @@ const EditionView = (props: PropTypes) => {
         </Button>
       </div>
       <div className={classes.body}>
-        <CommandListView items={commands} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} />
+        <CommandListView items={commands} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} />
       </div>
       {openAddCommandModal && (
         <AddCommandModal

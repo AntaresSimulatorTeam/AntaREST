@@ -8,6 +8,8 @@ import { Accordion, AccordionDetails, AccordionSummary, createStyles, makeStyles
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import SaveOutlinedIcon from '@material-ui/icons/SaveOutlined';
 import { CommandItem } from '../CommandTypes';
+import CommandImportButton from './CommandImportButton';
+import { CommandValidityResult, checkCommandValidity } from '../CommandValidator';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   item: {
@@ -134,9 +136,10 @@ interface PropsType {
     onDelete: (index: number) => void;
     onArgsUpdate: (index: number, json: object) => void;
     onSave: (index: number) => void;
+    onCommandImport: (index: number, command: CommandItem) => void;
 }
 
-function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate, onSave }: PropsType) {
+function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate, onSave, onCommandImport }: PropsType) {
   const classes = useStyles();
   const [jsonData, setJsonData] = useState<object>(item.args);
   const [isExpanded, setExpanded] = useState<boolean>(false);
@@ -145,6 +148,26 @@ function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate
     setJsonData(e.updated_src);
     onArgsUpdate(index, e.updated_src);
   };
+
+  const onImport = (json: object) => {
+    const result: CommandValidityResult = checkCommandValidity(json);
+    if (result.result) {
+      const command: CommandItem = {
+        id: item.id,
+        // eslint-disable-next-line dot-notation
+        action: (json as any)['action'],
+        // eslint-disable-next-line dot-notation
+        args: { ...((json as any)['args'] as object) },
+        updated: true,
+      };
+      // eslint-disable-next-line dot-notation
+      setJsonData((json as any)['args']);
+      onCommandImport(index, command);
+    } else {
+      console.log(result.message);
+    }
+  };
+
   return (
     <div
       // eslint-disable-next-line react/jsx-props-no-spreading
@@ -177,6 +200,7 @@ function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate
                 {
                     // <CloudDownloadOutlinedIcon className={classes.headerIcon} />
                     // <CloudUploadOutlinedIcon className={classes.headerIcon} />
+                  <CommandImportButton onImport={onImport} />
                     }
               </div>
               <div className={classes.json}>
