@@ -129,6 +129,7 @@ class RemoteVariantGenerator(IVariantGenerator):
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Generation done in {x}s")
         )
+        print(res.status_code)
         assert res.status_code == 200
         task_result = TaskDTO.parse_obj(res.json())
         assert task_result.result is not None

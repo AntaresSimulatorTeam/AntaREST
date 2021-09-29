@@ -1,7 +1,8 @@
 from typing import Dict
 
-from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
+from filelock import FileLock  # type: ignore
+
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
     NULL_MATRIX,
@@ -28,7 +29,8 @@ class GeneratorMatrixConstants:
     def __init__(self, matrix_service: ISimpleMatrixService) -> None:
         self.hashes: Dict[str, str] = {}
         self.matrix_service: ISimpleMatrixService = matrix_service
-        self._init()
+        with FileLock("matrix_constant_init.lock"):
+            self._init()
 
     def _init(self) -> None:
         self.hashes[

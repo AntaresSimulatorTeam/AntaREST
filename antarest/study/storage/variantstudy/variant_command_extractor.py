@@ -135,9 +135,9 @@ class VariantCommandsExtractor:
 
         logger.info("Computing commands diff")
         added_commands: List[Tuple[int, ICommand]] = []
-        missing_commands: List[Tuple[int, ICommand, int]] = []
+        missing_commands: List[Tuple[ICommand, int]] = []
         modified_commands: List[Tuple[int, ICommand, ICommand]] = []
-        order = 0
+        order = 10
         for variant_command in variant_commands:
             order += 1
             found = False
@@ -156,7 +156,6 @@ class VariantCommandsExtractor:
         )
         logger.info(f"Found {len(added_commands)} added commands")
         logger.info(f"Found {len(modified_commands)} modified commands")
-        order = 0
         index = 0
         for base_command in base_commands:
             found = False
@@ -165,60 +164,77 @@ class VariantCommandsExtractor:
                     found = True
                     break
             if not found:
-                missing_commands.append((order, base_command, index))
+                missing_commands.append((base_command, index))
             index += 1
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Second diff pass done in {x}s")
         )
         logger.info(f"Found {len(missing_commands)} missing commands")
 
-        first_priority_commands: List[ICommand] = []
-        second_priority_commands: List[ICommand] = []
-        third_priority_commands: List[ICommand] = []
-        other_commands: List[Tuple[int, ICommand]] = []
+        first_commands: List[Tuple[int, ICommand]] = []
+        last_commands: List[Tuple[int, ICommand]] = []
         logger.info(f"Computing new diff commands")
-        for order, command_obj, index in missing_commands:
+        for command_obj, index in missing_commands:
             logger.info(f"Reverting {command_obj.match_signature()}")
             if command_obj.command_name == CommandName.REMOVE_AREA:
-                first_priority_commands += command_obj.revert(
-                    base_commands[:index]
-                )
+                command_list = first_commands
+                priority = 0
             elif (
                 command_obj.command_name == CommandName.REMOVE_LINK
                 or command_obj.command_name == CommandName.REMOVE_CLUSTER
             ):
-                second_priority_commands += command_obj.revert(
-                    base_commands[:index]
-                )
+                command_list = first_commands
+                priority = 1
             elif (
                 command_obj.command_name == CommandName.UPDATE_CONFIG
                 or command_obj.command_name == CommandName.REPLACE_MATRIX
             ):
-                third_priority_commands += command_obj.revert(
-                    base_commands[:index]
-                )
+                command_list = first_commands
+                priority = 2
+            elif command_obj.command_name == CommandName.CREATE_AREA:
+                command_list = last_commands
+                priority = 3
+            elif (
+                command_obj.command_name == CommandName.CREATE_CLUSTER
+                or command_obj.command_name == CommandName.CREATE_LINK
+            ):
+                command_list = last_commands
+                priority = 2
+            elif (
+                command_obj.command_name == CommandName.CREATE_LINK
+                or command_obj.command_name
+                == CommandName.CREATE_BINDING_CONSTRAINT
+                or command_obj.command_name == CommandName.CREATE_DISTRICT
+            ):
+                command_list = last_commands
+                priority = 1
             else:
-                other_commands += [
-                    (0, command)
+                command_list = first_commands
+                priority = 3
+
+            command_list.extend(
+                [
+                    (priority, command)
                     for command in command_obj.revert(base_commands[:index])
                 ]
+            )
         for order, variant_command, base_command in modified_commands:
             logger.info(
                 f"Generating diff command for {variant_command.match_signature()}"
             )
-            other_commands += [
+            first_commands += [
                 (order, command)
                 for command in base_command.create_diff(variant_command)
             ]
         for ordered_command in added_commands:
-            other_commands.append(ordered_command)
+            first_commands.append(ordered_command)
 
-        diff_commands = (
-            first_priority_commands
-            + second_priority_commands
-            + third_priority_commands
-            + [ordered_command[1] for ordered_command in other_commands]
-        )
+        first_commands.sort(key=lambda x: x[0])
+        last_commands.sort(key=lambda x: x[0])
+
+        diff_commands = [
+            ordered_command[1] for ordered_command in first_commands
+        ] + [ordered_command[1] for ordered_command in last_commands]
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Diff commands generation done in {x}s"),
             since_start=True,
