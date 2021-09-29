@@ -207,7 +207,7 @@ class VariantCommandsExtractor:
                 or command_obj.command_name == CommandName.CREATE_DISTRICT
             ):
                 command_list = last_commands
-                priority = 3
+                priority = 1
             else:
                 command_list = first_commands
                 priority = 3
