@@ -639,6 +639,14 @@ def test_variant_manager(app: FastAPI):
     assert res.status_code == 404
 
     res = client.delete(
+        f"/v1/studies/{variant_id}/all/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.delete(
         f"/v1/studies/{variant_id}",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'

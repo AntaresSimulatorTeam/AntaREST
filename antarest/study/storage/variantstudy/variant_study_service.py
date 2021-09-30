@@ -254,6 +254,21 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 command.index = idx
             self.repository.save(metadata=study, update_modification_date=True)
 
+    def remove_all_commands(
+        self, study_id: str, params: RequestParameters
+    ) -> None:
+        """
+        Remove command
+        Args:
+            study_id: study id
+            command_id: command_id
+            params: request parameters
+        Returns: None
+        """
+        study = self._get_variant_study(study_id, params)
+        study.commands = []
+        self.repository.save(metadata=study, update_modification_date=True)
+
     def update_command(
         self,
         study_id: str,

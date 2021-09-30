@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { makeStyles, createStyles, Theme, Button } from '@material-ui/core';
+import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { DropResult } from 'react-beautiful-dnd';
-import { CommandItem } from './CommandTypes';
+import QueueIcon from '@material-ui/icons/Queue';
+import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
+import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
-import { reorder, fromCommandDTOToCommandItem } from './utils';
-import { appendCommand, deleteCommand, getCommands, moveCommand, updateCommand } from '../../../services/api/variant';
+import { reorder, fromCommandDTOToCommandItem, fromCommandItemToJsonCommand, exportJson } from './utils';
+import { appendCommands, appendCommand, deleteAllCommands, deleteCommand, getCommands, moveCommand, updateCommand } from '../../../services/api/variant';
 import AddCommandModal from './AddCommandModal';
 import { CommandDTO } from '../../../common/types';
+import CommandImportButton from './DraggableCommands/CommandImportButton';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -41,6 +44,16 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   addButton: {
     color: theme.palette.primary.main,
+    '&:hover': {
+      color: theme.palette.secondary.main,
+    },
+  },
+  headerIcon: {
+    width: '24px',
+    height: 'auto',
+    cursor: 'pointer',
+    color: theme.palette.primary.main,
+    margin: theme.spacing(0, 3),
     '&:hover': {
       color: theme.palette.secondary.main,
     },
@@ -121,11 +134,41 @@ const EditionView = (props: PropTypes) => {
     setCommands(tmpCommand);
   };
 
-  const onCommandImport = (index: number, command: CommandItem) => {
+  const onCommandImport = (index: number, json: object) => {
     let tmpCommand: Array<CommandItem> = [];
     tmpCommand = tmpCommand.concat(commands);
-    tmpCommand[index] = command;
+    // eslint-disable-next-line dot-notation
+    tmpCommand[index].action = (json as any)['action'];
+    // eslint-disable-next-line dot-notation
+    tmpCommand[index].args = { ...((json as any)['args'] as object) };
+    tmpCommand[index].updated = true;
     setCommands(tmpCommand);
+    enqueueSnackbar(t('variants:importSuccess'), { variant: 'success' });
+  };
+
+  const onCommandExport = (index: number) => {
+    const elm = commands[index];
+    exportJson({ action: elm.action, args: elm.args }, `${elm.id}_command.json`);
+  };
+
+  const onGlobalExport = () => {
+    exportJson(fromCommandItemToJsonCommand(commands), `${studyId}_commands.json`);
+  };
+
+  const onGlobalImport = async (json: object) => {
+    try {
+      const globalJson: Array<JsonCommandItem> = (json as Array<JsonCommandItem>);
+
+      await deleteAllCommands(studyId);
+
+      await appendCommands(studyId, globalJson);
+
+      const dtoItems = await getCommands(studyId);
+      setCommands(fromCommandDTOToCommandItem(dtoItems));
+      enqueueSnackbar(t('variants:importSuccess'), { variant: 'success' });
+    } catch (e) {
+      enqueueSnackbar(t('variants:importError'), { variant: 'error' });
+    }
   };
 
   useEffect(() => {
@@ -143,12 +186,12 @@ const EditionView = (props: PropTypes) => {
   return (
     <div className={classes.root}>
       <div className={classes.header}>
-        <Button color="primary" variant="contained" style={{ marginRight: '10px' }} onClick={() => setOpenAddCommandModal(true)}>
-          {t('variants:add')}
-        </Button>
+        <CommandImportButton onImport={onGlobalImport} />
+        <CloudDownloadOutlinedIcon className={classes.headerIcon} onClick={onGlobalExport} />
+        <QueueIcon className={classes.headerIcon} onClick={() => setOpenAddCommandModal(true)} />
       </div>
       <div className={classes.body}>
-        <CommandListView items={commands} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} />
+        <CommandListView items={commands} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} />
       </div>
       {openAddCommandModal && (
         <AddCommandModal

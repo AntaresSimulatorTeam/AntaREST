@@ -22,6 +22,8 @@
     "deleteError": "Command not deleted",
     "adderror": "Command not added",
     "moveError": "Command not moved",
-    "fetchCommandError": "Error while retrieving commands"
+    "fetchCommandError": "Error while retrieving commands",
+    "importSuccess": "File imported successfully",
+    "importError": "Error during file importation"
 }
   

@@ -6,11 +6,11 @@ import CommandListItem from './CommandListItem';
 
 const Row = React.memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
-  const { items, onDelete, onArgsUpdate, onSave, onCommandImport } = data;
+  const { items, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport } = data;
   const item = items[index];
   return (
     <Draggable draggableId={item.id} index={index} key={item.id}>
-      {(provided, snapshot) => <CommandListItem provided={provided} isDragging={snapshot.isDragging} item={item} style={style} index={index} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} />}
+      {(provided, snapshot) => <CommandListItem provided={provided} isDragging={snapshot.isDragging} item={item} style={style} index={index} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} />}
     </Draggable>
   );
 }, areEqual);
@@ -21,10 +21,11 @@ export type DraggableListProps = {
   onDelete: (index: number) => void;
   onArgsUpdate: (index: number, json: object) => void;
   onSave: (index: number) => void;
-  onCommandImport: (index: number, command: CommandItem) => void;
+  onCommandImport: (index: number, json: object) => void;
+  onCommandExport: (index: number) => void;
 };
 
-function CommandListView({ items, onDragEnd, onDelete, onArgsUpdate, onSave, onCommandImport }: DraggableListProps) {
+function CommandListView({ items, onDragEnd, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport }: DraggableListProps) {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <Droppable
@@ -40,6 +41,7 @@ function CommandListView({ items, onDragEnd, onDelete, onArgsUpdate, onSave, onC
             onArgsUpdate={onArgsUpdate}
             onSave={onSave}
             onCommandImport={onCommandImport}
+            onCommandExport={onCommandExport}
             style={{}}
           />
         )}
@@ -51,7 +53,7 @@ function CommandListView({ items, onDragEnd, onDelete, onArgsUpdate, onSave, onC
             itemSize={80}
             width={300}
             outerRef={provided.innerRef}
-            itemData={{ items, onDelete, onArgsUpdate, onSave, onCommandImport }}
+            itemData={{ items, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport }}
             style={{ width: '100%', height: '90%' }}
           >
             {Row}

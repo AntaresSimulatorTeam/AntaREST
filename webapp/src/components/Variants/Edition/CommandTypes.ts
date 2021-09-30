@@ -7,6 +7,11 @@ export interface CommandItem {
     args: object;
 }
 
+export interface JsonCommandItem {
+    action: string;
+    args: object;
+}
+
 export enum CommandEnum {
     CREATE_AREA = 'create_area',
     REMOVE_AREA = 'remove_area',

@@ -283,6 +283,23 @@ def create_study_variant_routes(
             sanitized_uuid, sanitized_cid, params
         )
 
+    @bp.delete(
+        "/studies/{uuid}/all/commands",
+        tags=[APITag.study_variant_management],
+        summary="Remove a command",
+    )
+    def remove_all_commands(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Removing all commands from variant study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        sanitized_uuid = sanitize_uuid(uuid)
+        variant_study_service.remove_all_commands(sanitized_uuid, params)
+
     @bp.put(
         "/studies/{uuid}/generate",
         tags=[APITag.study_variant_management],
