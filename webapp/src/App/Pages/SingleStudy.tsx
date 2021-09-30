@@ -119,7 +119,7 @@ const SingleStudyView = (props: PropTypes) => {
           }
         }
       } else if (msg.type === WSEvent.STUDY_JOB_LOG_UPDATE) {
-        console.log(msg.payload);
+        // TODO
       } else if (msg.type === WSEvent.STUDY_EDITED) {
         fetchStudyInfo();
       }

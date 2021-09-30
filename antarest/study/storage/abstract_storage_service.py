@@ -152,6 +152,7 @@ class AbstractStorageService(IStudyStorageService[T]):
         url: str = "",
         depth: int = 3,
         formatted: bool = True,
+        use_cache: bool = True,
     ) -> JSON:
         """
         Entry point to fetch data inside study.
@@ -160,6 +161,7 @@ class AbstractStorageService(IStudyStorageService[T]):
             url: path data inside study to reach
             depth: tree depth to reach after reach data path
             formatted: indicate if raw files must be parsed and formatted
+            use_cache: indicate if the cache must be used
 
         Returns: study data formatted in json
 
@@ -168,10 +170,11 @@ class AbstractStorageService(IStudyStorageService[T]):
         study = self.get_raw(metadata)
         parts = [item for item in url.split("/") if item]
 
-        data: JSON = dict()
         if url == "" and depth == -1:
             cache_id = f"{metadata.id}/{CacheConstants.RAW_STUDY}"
-            from_cache = self.cache.get(cache_id)
+            from_cache: Optional[JSON] = None
+            if use_cache:
+                from_cache = self.cache.get(cache_id)
             if from_cache is not None:
                 logger.info(f"Raw Study {metadata.id} read from cache")
                 data = from_cache
@@ -274,12 +277,12 @@ class AbstractStorageService(IStudyStorageService[T]):
             )
 
             output_name = f"{date}{mode}{name}"
-            path_output.rename(Path(path_output.parent, output_name))
+            path_output = path_output.rename(
+                Path(path_output.parent, output_name)
+            )
 
             data = self.get(
-                metadata,
-                f"output/{output_name}",
-                -1,
+                metadata, f"output/{output_name}", -1, use_cache=False
             )
 
             if data is None:
@@ -288,7 +291,7 @@ class AbstractStorageService(IStudyStorageService[T]):
 
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)
-            shutil.rmtree(path_output)
+            shutil.rmtree(path_output, ignore_errors=True)
 
         return output_name
 

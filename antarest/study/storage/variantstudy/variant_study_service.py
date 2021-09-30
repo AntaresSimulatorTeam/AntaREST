@@ -378,6 +378,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         url: str = "",
         depth: int = 3,
         formatted: bool = True,
+        use_cache: bool = True,
     ) -> JSON:
         """
         Entry point to fetch data inside study.
@@ -386,6 +387,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             url: path data inside study to reach
             depth: tree depth to reach after reach data path
             formatted: indicate if raw files must be parsed and formatted
+            use_cache: indicate if cache should be used
 
         Returns: study data formatted in json
 

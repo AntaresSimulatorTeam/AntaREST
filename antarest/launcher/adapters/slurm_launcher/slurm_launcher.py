@@ -169,13 +169,15 @@ class SlurmLauncher(AbstractLauncher):
                 continue
 
             all_done = all_done and (study.finished or study.with_error)
-            if study.finished or study.with_error:
+            if study.done:
                 try:
                     self.log_tail_manager.stop_tracking(
                         SlurmLauncher._get_log_path(study)
                     )
                     with db():
-                        output_id = self._import_study_output(study.name)
+                        output_id: Optional[str] = None
+                        if not study.with_error:
+                            output_id = self._import_study_output(study.name)
                         self.callbacks.update_status(
                             study.name,
                             JobStatus.FAILED
@@ -184,7 +186,11 @@ class SlurmLauncher(AbstractLauncher):
                             None,
                             output_id,
                         )
-
+                except Exception as e:
+                    logger.error(
+                        f"Failed to finalize study {study.name} launch",
+                        exc_info=e,
+                    )
                 finally:
                     self._clean_up_study(study.name)
             else:

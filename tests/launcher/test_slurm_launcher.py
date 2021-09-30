@@ -224,14 +224,16 @@ def test_check_state(tmp_path: Path):
     slurm_launcher.stop = Mock()
 
     study1 = Mock()
-    study1.finished = True
+    study1.done = True
     study1.name = "study1"
+    study1.with_error = False
     study1.job_log_dir = tmp_path / "study1"
     slurm_launcher.job_id_to_study_id["study1"] = "job_id1"
 
     study2 = Mock()
-    study2.finished = True
+    study2.done = True
     study2.name = "study2"
+    study2.with_error = True
     study2.job_log_dir = tmp_path / "study2"
     slurm_launcher.job_id_to_study_id["study2"] = "job_id2"
 
@@ -246,7 +248,7 @@ def test_check_state(tmp_path: Path):
     slurm_launcher._check_studies_state()
 
     assert slurm_launcher.callbacks.update_status.call_count == 2
-    assert slurm_launcher._import_study_output.call_count == 2
+    assert slurm_launcher._import_study_output.call_count == 1
     assert slurm_launcher._delete_study.call_count == 2
     assert data_repo_tinydb.remove_study.call_count == 2
     slurm_launcher.stop.assert_called_once()
