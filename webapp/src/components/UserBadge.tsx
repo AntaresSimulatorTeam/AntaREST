@@ -11,8 +11,6 @@ import { getUser } from '../services/api/user';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      width: '160px',
-      height: '210px',
       display: 'flex',
       flexDirection: 'column',
     },
