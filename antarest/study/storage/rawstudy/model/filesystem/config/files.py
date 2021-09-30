@@ -156,7 +156,9 @@ class ConfigPathBuilder:
 
     @staticmethod
     def _parse_outputs_parameters(path: Path) -> Tuple[int, bool, bool]:
-        par: JSON = IniReader().read(path / "about-the-study/parameters.ini")
+        par: JSON = MultipleSameKeysIniReader(["+", "-"]).read(
+            path / "about-the-study/parameters.ini"
+        )
         return (
             par["general"]["nbyears"],
             par["general"]["year-by-year"],
