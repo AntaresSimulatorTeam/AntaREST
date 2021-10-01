@@ -1,4 +1,6 @@
 import React, { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
 import { ButtonBase, createStyles, makeStyles, Theme } from '@material-ui/core';
 import CloudUploadOutlinedIcon from '@material-ui/icons/CloudUploadOutlined';
 
@@ -36,8 +38,8 @@ interface PropTypes {
 const CommandImportButton = (props: PropTypes) => {
   const { onImport } = props;
   const classes = useStyles();
-  // const formRef = useRef(null);
-  // const { register, handleSubmit, getValues } = useForm<Inputs>();
+  const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const onButtonClick = () => {
@@ -57,9 +59,14 @@ const CommandImportButton = (props: PropTypes) => {
     e.preventDefault();
     const reader = new FileReader();
     reader.onload = async (ev: ProgressEvent<FileReader>) => {
-      if (ev.target) {
-        const text = (ev.target.result);
-        onImport(JSON.parse(text as string));
+      try {
+        if (ev.target) {
+          const text = (ev.target.result);
+          const json = JSON.parse(text as string);
+          onImport(json);
+        }
+      } catch (error) {
+        enqueueSnackbar(t('variants:jsonParsingError'), { variant: 'error' });
       }
     };
     if (e.target && e.target.files) reader.readAsText(e.target.files[0]);

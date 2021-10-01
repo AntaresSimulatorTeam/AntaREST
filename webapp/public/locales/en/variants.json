@@ -24,6 +24,8 @@
     "moveError": "Command not moved",
     "fetchCommandError": "Error while retrieving commands",
     "importSuccess": "File imported successfully",
-    "importError": "Error during file importation"
+    "importError": "Error during file importation",
+    "jsonParsingError": "Error while parsing json command file",
+    "exportError": "Error during file exportation"
 }
   

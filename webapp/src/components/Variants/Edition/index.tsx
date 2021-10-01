@@ -7,8 +7,8 @@ import QueueIcon from '@material-ui/icons/Queue';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
-import { reorder, fromCommandDTOToCommandItem, fromCommandItemToJsonCommand, exportJson } from './utils';
-import { appendCommands, appendCommand, deleteAllCommands, deleteCommand, getCommands, moveCommand, updateCommand } from '../../../services/api/variant';
+import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson } from './utils';
+import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands } from '../../../services/api/variant';
 import AddCommandModal from './AddCommandModal';
 import { CommandDTO } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
@@ -134,34 +134,46 @@ const EditionView = (props: PropTypes) => {
     setCommands(tmpCommand);
   };
 
-  const onCommandImport = (index: number, json: object) => {
-    let tmpCommand: Array<CommandItem> = [];
-    tmpCommand = tmpCommand.concat(commands);
-    // eslint-disable-next-line dot-notation
-    tmpCommand[index].action = (json as any)['action'];
-    // eslint-disable-next-line dot-notation
-    tmpCommand[index].args = { ...((json as any)['args'] as object) };
-    tmpCommand[index].updated = true;
-    setCommands(tmpCommand);
-    enqueueSnackbar(t('variants:importSuccess'), { variant: 'success' });
+  const onCommandImport = async (index: number, json: object) => {
+    try {
+      let tmpCommand: Array<CommandItem> = [];
+      tmpCommand = tmpCommand.concat(commands);
+      const elm = tmpCommand[index];
+      // eslint-disable-next-line dot-notation
+      elm.action = (json as any)['action'];
+      // eslint-disable-next-line dot-notation
+      elm.args = { ...((json as any)['args'] as object) };
+      elm.updated = false;
+      await updateCommand(studyId, (elm.id as string), elm);
+      setCommands(tmpCommand);
+      enqueueSnackbar(t('variants:importSuccess'), { variant: 'success' });
+    } catch (e) {
+      enqueueSnackbar(t('variants:importError'), { variant: 'error' });
+    }
   };
 
-  const onCommandExport = (index: number) => {
-    const elm = commands[index];
-    exportJson({ action: elm.action, args: elm.args }, `${elm.id}_command.json`);
+  const onCommandExport = async (index: number) => {
+    try {
+      const elm = await getCommand(studyId, commands[index].id as string);
+      exportJson({ action: elm.action, args: elm.args }, `${elm.id}_command.json`);
+    } catch (e) {
+      enqueueSnackbar(t('variants:exportError'), { variant: 'error' });
+    }
   };
 
-  const onGlobalExport = () => {
-    exportJson(fromCommandItemToJsonCommand(commands), `${studyId}_commands.json`);
+  const onGlobalExport = async () => {
+    try {
+      const items = await getCommands(studyId);
+      exportJson(fromCommandDTOToJsonCommand(items), `${studyId}_commands.json`);
+    } catch (e) {
+      enqueueSnackbar(t('variants:exportError'), { variant: 'error' });
+    }
   };
 
   const onGlobalImport = async (json: object) => {
     try {
       const globalJson: Array<JsonCommandItem> = (json as Array<JsonCommandItem>);
-
-      await deleteAllCommands(studyId);
-
-      await appendCommands(studyId, globalJson);
+      await replaceCommands(studyId, globalJson);
 
       const dtoItems = await getCommands(studyId);
       setCommands(fromCommandDTOToCommandItem(dtoItems));

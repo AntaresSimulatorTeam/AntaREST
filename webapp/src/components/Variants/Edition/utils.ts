@@ -35,7 +35,7 @@ export const fromCommandDTOToCommandItem = (commands: Array<CommandDTO>): Array<
   return dtoItems;
 };
 
-export const fromCommandItemToJsonCommand = (commands: Array<CommandItem>): Array<JsonCommandItem> => {
+export const fromCommandDTOToJsonCommand = (commands: Array<CommandDTO>): Array<JsonCommandItem> => {
   const dtoItems: Array<JsonCommandItem> = commands.map((elm) => ({ action: elm.action, args: elm.args }));
   return dtoItems;
 };

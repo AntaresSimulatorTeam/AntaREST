@@ -24,6 +24,11 @@ class CommandNotFoundError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class CommandNotValid(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(EXPECTATION_FAILED, message)
+
+
 class StudyAlreadyExistError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)

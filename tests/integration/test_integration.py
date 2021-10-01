@@ -564,6 +564,33 @@ def test_variant_manager(app: FastAPI):
     assert len(res.json()) == 3
     assert res.status_code == 200
 
+    res = client.put(
+        f"/v1/studies/{variant_id}/commands",
+        json=[
+            {
+                "action": "create_area",
+                "args": {"area_name": "testZoneReplace1", "metadata": {}},
+            },
+            {
+                "action": "create_area",
+                "args": {"area_name": "testZoneReplace1", "metadata": {}},
+            },
+        ],
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{variant_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert len(res.json()) == 2
+    assert res.status_code == 200
+
     command_id = res.json()[1]["id"]
 
     res = client.put(
@@ -627,7 +654,6 @@ def test_variant_manager(app: FastAPI):
     )
     assert res.status_code == 500
 
-    # new_study_id = res.json()
     new_study_id = "newid"
 
     res = client.get(
@@ -639,12 +665,21 @@ def test_variant_manager(app: FastAPI):
     assert res.status_code == 404
 
     res = client.delete(
-        f"/v1/studies/{variant_id}/all/commands",
+        f"/v1/studies/{variant_id}/commands",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
     assert res.status_code == 200
+
+    res = client.get(
+        f"/v1/studies/{variant_id}/commands",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    assert len(res.json()) == 0
 
     res = client.delete(
         f"/v1/studies/{variant_id}",

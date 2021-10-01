@@ -148,7 +148,7 @@ def create_study_variant_routes(
         summary="Append a command to variant",
         responses={
             200: {
-                "description": "The id a the appended command",
+                "description": "The id of the study",
             }
         },
     )
@@ -164,6 +164,31 @@ def create_study_variant_routes(
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.append_commands(
+            sanitized_uuid, commands, params
+        )
+
+    @bp.put(
+        "/studies/{uuid}/commands",
+        tags=[APITag.study_variant_management],
+        summary="Replace all commands from variant",
+        responses={
+            200: {
+                "description": "The id of the study",
+            }
+        },
+    )
+    def replace_commands(
+        uuid: str,
+        commands: List[CommandDTO] = Body(...),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> str:
+        logger.info(
+            f"Replacing all commands of variant study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        sanitized_uuid = sanitize_uuid(uuid)
+        return variant_study_service.replace_commands(
             sanitized_uuid, commands, params
         )
 
@@ -284,9 +309,9 @@ def create_study_variant_routes(
         )
 
     @bp.delete(
-        "/studies/{uuid}/all/commands",
+        "/studies/{uuid}/commands",
         tags=[APITag.study_variant_management],
-        summary="Remove a command",
+        summary="Clear variant's commands",
     )
     def remove_all_commands(
         uuid: str,
