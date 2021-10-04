@@ -178,11 +178,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             params: request parameters
         Returns: None
         """
-        try:
-            self.command_factory.to_icommand(command)
-        except Exception:
-            raise CommandNotValid(study_id)
-
         study = self._get_variant_study(study_id, params)
         index = len(study.commands)
         new_id = str(uuid4())
