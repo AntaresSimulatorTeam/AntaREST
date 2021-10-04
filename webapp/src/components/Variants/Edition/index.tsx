@@ -140,9 +140,7 @@ const EditionView = (props: PropTypes) => {
       tmpCommand = tmpCommand.concat(commands);
       const elm = tmpCommand[index];
       // eslint-disable-next-line dot-notation
-      elm.action = (json as any)['action'];
-      // eslint-disable-next-line dot-notation
-      elm.args = { ...((json as any)['args'] as object) };
+      elm.args = { ...json };
       elm.updated = false;
       await updateCommand(studyId, (elm.id as string), elm);
       setCommands(tmpCommand);

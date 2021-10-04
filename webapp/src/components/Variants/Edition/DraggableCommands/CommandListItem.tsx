@@ -8,11 +8,8 @@ import { Accordion, AccordionDetails, AccordionSummary, createStyles, makeStyles
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import SaveOutlinedIcon from '@material-ui/icons/SaveOutlined';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
-import { useSnackbar } from 'notistack';
-import { useTranslation } from 'react-i18next';
 import { CommandItem } from '../CommandTypes';
 import CommandImportButton from './CommandImportButton';
-import { checkCommandValidity } from '../utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   item: {
@@ -145,8 +142,6 @@ interface PropsType {
 
 function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport }: PropsType) {
   const classes = useStyles();
-  const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
   const [jsonData, setJsonData] = useState<object>(item.args);
   const [isExpanded, setExpanded] = useState<boolean>(false);
 
@@ -156,18 +151,14 @@ function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate
   };
 
   const onImport = async (json: object) => {
-    if (checkCommandValidity(json)) {
-      // eslint-disable-next-line dot-notation
-      // setJsonData((json as any)['args']);
-      const oldJson = { ...jsonData };
-      try {
-        await onCommandImport(index, json);
-        setJsonData((json as any).args);
-      } catch (e) {
-        setJsonData(oldJson);
-      }
-    } else {
-      enqueueSnackbar(t('variants:jsonParsingError'), { variant: 'error' });
+    // eslint-disable-next-line dot-notation
+    // setJsonData((json as any)['args']);
+    const oldJson = { ...jsonData };
+    try {
+      setJsonData(json as any);
+      await onCommandImport(index, json);
+    } catch (e) {
+      setJsonData(oldJson);
     }
   };
 
