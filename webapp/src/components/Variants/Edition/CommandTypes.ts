@@ -1,10 +1,14 @@
 /* eslint-disable @typescript-eslint/camelcase */
+
+import { CommandResultDTO } from '../../../common/types';
+
 /* eslint-disable camelcase */
 export interface CommandItem {
     id?: string;
     action: string;
     updated: boolean;
     args: object;
+    results?: CommandResultDTO;
 }
 
 export interface JsonCommandItem {

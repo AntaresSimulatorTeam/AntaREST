@@ -1,17 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { makeStyles, createStyles, Theme } from '@material-ui/core';
+import React, { useCallback, useEffect, useState } from 'react';
+import { makeStyles, createStyles, Theme, Typography } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { DropResult } from 'react-beautiful-dnd';
 import QueueIcon from '@material-ui/icons/Queue';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
+import PowerIcon from '@material-ui/icons/Power';
+import { connect, ConnectedProps } from 'react-redux';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
 import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson } from './utils';
-import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands } from '../../../services/api/variant';
+import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands } from '../../../services/api/variant';
 import AddCommandModal from './AddCommandModal';
-import { CommandDTO } from '../../../common/types';
+import { CommandDTO, WSEvent, WSMessage, CommandResultDTO } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
+import { addListener, removeListener } from '../../../ducks/websockets';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -58,18 +61,40 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
       color: theme.palette.secondary.main,
     },
   },
+  loadingText: {
+    backgroundColor: theme.palette.action.selected,
+    paddingLeft: theme.spacing(1),
+    paddingRight: theme.spacing(1),
+    borderRadius: theme.shape.borderRadius,
+    margin: theme.spacing(0, 3),
+  },
 }));
 
-interface PropTypes {
+interface OwnTypes {
     studyId: string;
 }
+
+const mapState = () => ({
+});
+
+const mapDispatch = ({
+  addWsListener: addListener,
+  removeWsListener: removeListener,
+});
+
+const connector = connect(mapState, mapDispatch);
+type ReduxProps = ConnectedProps<typeof connector>;
+type PropTypes = ReduxProps & OwnTypes;
 
 const EditionView = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { studyId } = props;
+  const { studyId, addWsListener, removeWsListener } = props;
   const [openAddCommandModal, setOpenAddCommandModal] = useState<boolean>(false);
+  const [generationStatus, setGenerationStatus] = useState<boolean>(false);
+  const [generationTaskId, setGenerationTaskId] = useState<string>('');
+  const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(0);
   const [commands, setCommands] = useState<Array<CommandItem>>([]);
 
   const onDragEnd = async ({ destination, source }: DropResult) => {
@@ -181,6 +206,47 @@ const EditionView = (props: PropTypes) => {
     }
   };
 
+  const onGeneration = async () => {
+    try {
+      // Get commands
+      const dtoItems = await getCommands(studyId);
+      setCommands(fromCommandDTOToCommandItem(dtoItems));
+      setCurrentCommandGenerationIndex(0);
+      // Launch generation task
+      const generationTask = await applyCommands(studyId);
+      setGenerationTaskId(generationTask);
+      setGenerationStatus(true);
+      enqueueSnackbar(t('variants:launchGenerationSuccess'), { variant: 'success' });
+    } catch (e) {
+      enqueueSnackbar(t('variants:launchGenerationError'), { variant: 'error' });
+    }
+  };
+
+  const listen = useCallback(async (ev: WSMessage) => {
+    const commandResult = ev.payload as CommandResultDTO;
+    console.log('RESULTS: ', commandResult);
+    if (studyId === commandResult.study_id) {
+      let tmpCommand: Array<CommandItem> = [];
+      tmpCommand = tmpCommand.concat(commands);
+      console.log('ELEMENT AT: ', tmpCommand[currentCommandGenerationIndex]);
+      const index = tmpCommand.findIndex((item) => item.id === commandResult.id);
+      console.log('INDEX:', index);
+      switch (ev.type) {
+        case WSEvent.STUDY_VARIANT_GENERATION_COMMAND_RESULT:
+          tmpCommand[index].results = commandResult;
+          if (currentCommandGenerationIndex === commands.length - 1) {
+            setGenerationStatus(false);
+            setGenerationTaskId('');
+          }
+          setCurrentCommandGenerationIndex((currentCommandGenerationIndex + 1) % commands.length);
+          setCommands(tmpCommand);
+          break;
+        default:
+          break;
+      }
+    }
+  }, [commands, currentCommandGenerationIndex, studyId]);
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -190,18 +256,29 @@ const EditionView = (props: PropTypes) => {
         enqueueSnackbar(t('variants:fetchCommandError'), { variant: 'error' });
       }
     };
+
+    addWsListener(listen);
     init();
-  }, [enqueueSnackbar, studyId, t]);
+    return () => removeWsListener(listen);
+  }, [addWsListener, enqueueSnackbar, listen, removeWsListener, studyId, t]);
 
   return (
     <div className={classes.root}>
-      <div className={classes.header}>
-        <CommandImportButton onImport={onGlobalImport} />
-        <CloudDownloadOutlinedIcon className={classes.headerIcon} onClick={onGlobalExport} />
-        <QueueIcon className={classes.headerIcon} onClick={() => setOpenAddCommandModal(true)} />
-      </div>
+      {
+        !generationStatus ? (
+          <div className={classes.header}>
+            <CommandImportButton onImport={onGlobalImport} />
+            <CloudDownloadOutlinedIcon className={classes.headerIcon} onClick={onGlobalExport} />
+            <QueueIcon className={classes.headerIcon} onClick={() => setOpenAddCommandModal(true)} />
+            <PowerIcon className={classes.headerIcon} onClick={onGeneration} />
+          </div>
+        ) : (
+          <div className={classes.header}>
+            <Typography color="primary" className={classes.loadingText}> Etude en cours de génération...</Typography>
+          </div>
+        )}
       <div className={classes.body}>
-        <CommandListView items={commands} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} />
+        <CommandListView items={commands} generationStatus={generationStatus} generationIndex={currentCommandGenerationIndex} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} />
       </div>
       {openAddCommandModal && (
         <AddCommandModal
@@ -214,4 +291,4 @@ const EditionView = (props: PropTypes) => {
   );
 };
 
-export default EditionView;
+export default connector(EditionView);

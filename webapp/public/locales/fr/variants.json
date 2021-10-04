@@ -19,11 +19,13 @@
     "moveSuccess": "Votre commande a changé de position",
     "saveError": "Erreur lors de la modification de votre commande",
     "deleteError": "Erreur lors de la suppression de votre commande",
-    "adderror": "Erreur lors de l'ajout de votre commande",
+    "addError": "Erreur lors de l'ajout de votre commande",
     "moveError": "Erreur lors du changement de position",
     "fetchCommandError": "Erreur lors de la récupération des commandes",
     "importSuccess": "Fichier importé avec succès",
     "importError": "Erreur lors de l'importation du fichier",
     "jsonParsingError": "Erreur lors de la lecture du fichier de commande",
-    "exportError": "Erreur lors de l'exportation du fichier"
+    "exportError": "Erreur lors de l'exportation du fichier",
+    "launchGenerationSuccess": "Génération de variante lancée avec succès",
+    "launchGenerationError": "Erreur lors du lancement de la génération"
   }

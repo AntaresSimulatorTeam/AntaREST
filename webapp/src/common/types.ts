@@ -228,7 +228,8 @@ export enum WSEvent {
   STUDY_JOB_STARTED='STUDY_JOB_STARTED',
   STUDY_JOB_LOG_UPDATE='STUDY_JOB_LOG_UPDATE',
   STUDY_JOB_COMPLETED='STUDY_JOB_COMPLETED',
-  STUDY_JOB_STATUS_UPDATE='STUDY_JOB_STATUS_UPDATE'
+  STUDY_JOB_STATUS_UPDATE='STUDY_JOB_STATUS_UPDATE',
+  STUDY_VARIANT_GENERATION_COMMAND_RESULT='STUDY_VARIANT_GENERATION_COMMAND_RESULT'
 }
 
 export interface WSMessage {
@@ -238,6 +239,13 @@ export interface WSMessage {
 
 export type Components = {
   [item: string]: () => JSX.Element;
+}
+
+export interface CommandResultDTO {
+  study_id: string;
+  id: string;
+  success: boolean;
+  message: string;
 }
 
 export default {};

@@ -4,10 +4,11 @@ import clsx from 'clsx';
 import { DraggableProvided } from 'react-beautiful-dnd';
 import ReactJson, { InteractionProps } from 'react-json-view';
 import DeleteIcon from '@material-ui/icons/HighlightOff';
-import { Accordion, AccordionDetails, AccordionSummary, createStyles, makeStyles, Theme, Typography } from '@material-ui/core';
+import { Accordion, AccordionDetails, AccordionSummary, CircularProgress, createStyles, makeStyles, Theme, Typography } from '@material-ui/core';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import SaveOutlinedIcon from '@material-ui/icons/SaveOutlined';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
+import InfoIcon from '@material-ui/icons/Info';
 import { CommandItem } from '../CommandTypes';
 import CommandImportButton from './CommandImportButton';
 
@@ -91,6 +92,24 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
       color: theme.palette.secondary.main,
     },
   },
+  loadingIcon: {
+    width: '24px',
+    height: '24px',
+    color: theme.palette.primary.main,
+    margin: theme.spacing(0, 0.5),
+  },
+  successIconColor: {
+    color: theme.palette.success.main,
+    '&:hover': {
+      color: theme.palette.success.dark,
+    },
+  },
+  errorIconColor: {
+    color: theme.palette.error.main,
+    '&:hover': {
+      color: theme.palette.error.dark,
+    },
+  },
   json: {
     width: '100%',
     display: 'flex',
@@ -133,6 +152,8 @@ interface PropsType {
     style: CSSProperties;
     isDragging: boolean;
     index: number;
+    generationStatus: boolean;
+    generationIndex: number;
     onDelete: (index: number) => void;
     onArgsUpdate: (index: number, json: object) => void;
     onSave: (index: number) => void;
@@ -140,7 +161,7 @@ interface PropsType {
     onCommandExport: (index: number) => void;
 }
 
-function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport }: PropsType) {
+function Item({ provided, item, style, isDragging, index, generationStatus, generationIndex, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport }: PropsType) {
   const classes = useStyles();
   const [jsonData, setJsonData] = useState<object>(item.args);
   const [isExpanded, setExpanded] = useState<boolean>(false);
@@ -160,6 +181,21 @@ function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate
     } catch (e) {
       setJsonData(oldJson);
     }
+  };
+
+  const itemElements = () => {
+    if (generationStatus) {
+      if (generationIndex === index) {
+        return <CircularProgress color="primary" style={{ width: '24px', height: '24px', margin: '0px 16px' }} />;
+      }
+
+      if (item.results !== undefined) {
+        const { success } = item.results;
+        return <InfoIcon className={clsx(classes.headerIcon, success ? classes.successIconColor : classes.errorIconColor)} />;
+      }
+      return <></>;
+    }
+    return <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />;
   };
 
   return (
@@ -201,7 +237,7 @@ function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate
           </AccordionDetails>
         </Accordion>
         <div style={{ height: '100%', display: 'flex', alignItems: 'center' }}>
-          <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />
+          {itemElements()}
         </div>
       </div>
     </div>

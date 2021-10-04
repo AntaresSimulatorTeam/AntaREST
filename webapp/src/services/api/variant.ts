@@ -62,4 +62,9 @@ export const getCommands = async (studyId: string): Promise<Array<CommandDTO>> =
   return res.data;
 };
 
+export const applyCommands = async (studyId: string, denormalize = false): Promise<string> => {
+  const res = await client.put(`/v1/studies/${studyId}/generate?denormalize=${denormalize}`);
+  return res.data;
+};
+
 export default {};

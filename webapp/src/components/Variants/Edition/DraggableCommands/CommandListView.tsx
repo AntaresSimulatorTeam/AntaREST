@@ -6,17 +6,19 @@ import CommandListItem from './CommandListItem';
 
 const Row = React.memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
-  const { items, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport } = data;
+  const { items, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport, generationStatus, generationIndex } = data;
   const item = items[index];
   return (
     <Draggable draggableId={item.id} index={index} key={item.id}>
-      {(provided, snapshot) => <CommandListItem provided={provided} isDragging={snapshot.isDragging} item={item} style={style} index={index} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} />}
+      {(provided, snapshot) => <CommandListItem provided={provided} isDragging={snapshot.isDragging} item={item} style={style} index={index} generationStatus={generationStatus} generationIndex={generationIndex} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} />}
     </Draggable>
   );
 }, areEqual);
 
 export type DraggableListProps = {
   items: CommandItem[];
+  generationStatus: boolean;
+  generationIndex: number;
   onDragEnd: OnDragEndResponder;
   onDelete: (index: number) => void;
   onArgsUpdate: (index: number, json: object) => void;
@@ -25,7 +27,7 @@ export type DraggableListProps = {
   onCommandExport: (index: number) => void;
 };
 
-function CommandListView({ items, onDragEnd, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport }: DraggableListProps) {
+function CommandListView({ items, generationStatus, generationIndex, onDragEnd, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport }: DraggableListProps) {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <Droppable
@@ -42,6 +44,8 @@ function CommandListView({ items, onDragEnd, onDelete, onArgsUpdate, onSave, onC
             onSave={onSave}
             onCommandImport={onCommandImport}
             onCommandExport={onCommandExport}
+            generationStatus={generationStatus}
+            generationIndex={generationIndex}
             style={{}}
           />
         )}
@@ -53,7 +57,7 @@ function CommandListView({ items, onDragEnd, onDelete, onArgsUpdate, onSave, onC
             itemSize={80}
             width={300}
             outerRef={provided.innerRef}
-            itemData={{ items, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport }}
+            itemData={{ items, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport, generationStatus, generationIndex }}
             style={{ width: '100%', height: '90%' }}
           >
             {Row}
