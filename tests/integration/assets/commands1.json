@@ -1,15 +1,14 @@
 [
   {
     "action": "create_area",
-    "args": {
-      "area_name": "Area 1"
-    }
-  },
-  {
-    "action": "create_area",
-    "args": {
-      "area_name": "Area2"
-    }
+    "args": [
+      {
+        "area_name": "Area 1"
+      },
+      {
+        "area_name": "Area2"
+      }
+    ]
   },
   {
     "action": "create_area",

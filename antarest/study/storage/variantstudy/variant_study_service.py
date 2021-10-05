@@ -668,28 +668,34 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         dest_path = Path(variant_study.path) / SNAPSHOT_RELATIVE_PATH
 
         # Generate
-        commands: List[ICommand] = []
+        commands: List[List[ICommand]] = []
         for command_block in variant_study.commands:
-            commands.extend(
+            commands.append(
                 self.command_factory.to_icommand(command_block.to_dto())
             )
 
         def notify(
             command_index: int, command_result: bool, command_message: str
         ) -> None:
-            command_result_obj = CommandResultDTO(
-                study_id=variant_study.id,
-                id=variant_study.commands[command_index].id,
-                success=command_result,
-                message=command_message,
-            )
-            notifier(json.dumps(dataclasses.asdict(command_result_obj)))
-            self.event_bus.push(
-                Event(
-                    EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
-                    command_result_obj,
+            try:
+                command_result_obj = CommandResultDTO(
+                    study_id=variant_study.id,
+                    id=variant_study.commands[command_index].id,
+                    success=command_result,
+                    message=command_message,
                 )
-            )
+                notifier(json.dumps(dataclasses.asdict(command_result_obj)))
+                self.event_bus.push(
+                    Event(
+                        EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
+                        command_result_obj,
+                    )
+                )
+            except Exception as e:
+                logger.error(
+                    f"Fail to notify command result n°{command_index} for study {variant_study.id}",
+                    exc_info=e,
+                )
 
         return self.generator.generate(
             commands, dest_path, variant_study, notifier=notify

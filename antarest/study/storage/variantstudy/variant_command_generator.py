@@ -24,7 +24,7 @@ class VariantCommandGenerator:
 
     def generate(
         self,
-        commands: List[ICommand],
+        commands: List[List[ICommand]],
         dest_path: Path,
         metadata: Optional[VariantStudy] = None,
         delete_on_failure: bool = True,
@@ -51,22 +51,37 @@ class VariantCommandGenerator:
         command_index = 0
         total_commands = len(commands)
         study_id = metadata.id if metadata is not None else "-"
-        for command in commands:
-            command_output_status = False
+        for command_batch in commands:
+            command_output_status = True
             command_output_message = ""
+            command_name = (
+                command_batch[0].command_name.value
+                if len(command_batch) > 0
+                else ""
+            )
             try:
                 command_index += 1
-                output = command.apply(file_study)
-                command_output_status = output.status
-                command_output_message = output.message
+                command_output_messages: List[str] = []
+                for command in command_batch:
+                    output = command.apply(file_study)
+                    command_output_messages.append(output.message)
+                    command_output_status = (
+                        command_output_status and output.status
+                    )
+                    if not command_output_status:
+                        break
+                command_output_message = "\n".join(command_output_messages)
             except Exception as e:
-                command_output_message = f"Error while applying command {command.command_name.value}"
+                command_output_status = False
+                command_output_message = (
+                    f"Error while applying command {command_name}"
+                )
                 logger.error(command_output_message, exc_info=e)
                 break
             finally:
                 results.details.append(
                     (
-                        command.command_name.value,
+                        command_name,
                         command_output_status,
                         command_output_message,
                     )
