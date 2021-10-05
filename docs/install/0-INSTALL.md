@@ -7,7 +7,7 @@ The front end is a [React](https://reactjs.org/) web application. A local build 
 
 First clone the projet:
 
-```shell script
+```
 git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
 cd AntaREST
 git submodule init
@@ -16,7 +16,7 @@ git submodule update
 
 Install back dependencies
 
-```shell script
+```
 python -m pip install --upgrade pip
 pip install pydantic --no-binary pydantic
 pip install -r requirements.txt  # use requirements-dev.txt if building a single binary with pyinstaller 
@@ -24,7 +24,7 @@ pip install -r requirements.txt  # use requirements-dev.txt if building a single
 
 Build front
 
-```shell script
+```
 cd webapp
 npm install
 cd ..
