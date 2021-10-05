@@ -32,7 +32,7 @@ nav:
   - 'User guide':
       - 'Introduction': 'user-guide/0-introduction.md'
   - 'Build':
-    - 'Introduction': 'build/0-INSTALL.md'
+    - 'Introduction': 'install/0-INSTALL.md'
   - 'Develop':
     - 'Introduction': 'architecture/0-introduction.md'
   - 'Changelog': 'CHANGELOG.md'

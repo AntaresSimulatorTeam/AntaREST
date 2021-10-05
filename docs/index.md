@@ -30,7 +30,7 @@ This brings:
 
 ## Documentation
 
-- [Building the application](./build/0-INSTALL.md)
+- [Building the application](./install/0-INSTALL.md)
 - [Using the application](./user-guide/0-introduction.md)
 - [Contributing to the application code](./architecture/0-introduction.md)
 
