@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { makeStyles, createStyles, Theme, Typography } from '@material-ui/core';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { makeStyles, createStyles, Theme, Typography, Switch } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { DropResult } from 'react-beautiful-dnd';
@@ -68,7 +68,29 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     borderRadius: theme.shape.borderRadius,
     margin: theme.spacing(0, 3),
   },
+  switchContainer: {
+    width: 'auto',
+    height: '70px',
+    padding: `${theme.spacing(1)} 0px`,
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: '0px',
+    margin: theme.spacing(0, 3),
+  },
+  editModeTitle: {
+    fontWeight: 'bold',
+    color: theme.palette.primary.main,
+    borderBottom: `4px solid ${theme.palette.primary.main}`,
+  },
 }));
+
+enum GenerationState {
+  DEFAULT='DEFAULT',
+  INPROGRESS='IN_PROGRESS',
+  FINISH='FINISHE',
+}
 
 interface OwnTypes {
     studyId: string;
@@ -92,7 +114,7 @@ const EditionView = (props: PropTypes) => {
   const { enqueueSnackbar } = useSnackbar();
   const { studyId, addWsListener, removeWsListener } = props;
   const [openAddCommandModal, setOpenAddCommandModal] = useState<boolean>(false);
-  const [generationStatus, setGenerationStatus] = useState<boolean>(false);
+  const [generationStatus, setGenerationStatus] = useState<GenerationState>(GenerationState.DEFAULT);
   const [generationTaskId, setGenerationTaskId] = useState<string>('');
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(0);
   const [commands, setCommands] = useState<Array<CommandItem>>([]);
@@ -215,14 +237,14 @@ const EditionView = (props: PropTypes) => {
       // Launch generation task
       const generationTask = await applyCommands(studyId);
       setGenerationTaskId(generationTask);
-      setGenerationStatus(true);
+      setGenerationStatus(GenerationState.INPROGRESS);
       enqueueSnackbar(t('variants:launchGenerationSuccess'), { variant: 'success' });
     } catch (e) {
       enqueueSnackbar(t('variants:launchGenerationError'), { variant: 'error' });
     }
   };
 
-  const listen = useCallback(async (ev: WSMessage) => {
+  const listen = useCallback((ev: WSMessage) => {
     const commandResult = ev.payload as CommandResultDTO;
     console.log('RESULTS: ', commandResult);
     if (studyId === commandResult.study_id) {
@@ -235,10 +257,12 @@ const EditionView = (props: PropTypes) => {
         case WSEvent.STUDY_VARIANT_GENERATION_COMMAND_RESULT:
           tmpCommand[index].results = commandResult;
           if (currentCommandGenerationIndex === commands.length - 1) {
-            setGenerationStatus(false);
+            setGenerationStatus(GenerationState.FINISH);
             setGenerationTaskId('');
+            setCurrentCommandGenerationIndex(-1);
+          } else {
+            setCurrentCommandGenerationIndex(currentCommandGenerationIndex + 1);
           }
-          setCurrentCommandGenerationIndex((currentCommandGenerationIndex + 1) % commands.length);
           setCommands(tmpCommand);
           break;
         default:
@@ -256,29 +280,54 @@ const EditionView = (props: PropTypes) => {
         enqueueSnackbar(t('variants:fetchCommandError'), { variant: 'error' });
       }
     };
-
-    addWsListener(listen);
     init();
+  }, [enqueueSnackbar, studyId, t]);
+
+  useEffect(() => {
+    addWsListener(listen);
     return () => removeWsListener(listen);
-  }, [addWsListener, enqueueSnackbar, listen, removeWsListener, studyId, t]);
+  }, [addWsListener, listen, removeWsListener]);
 
   return (
     <div className={classes.root}>
       {
-        !generationStatus ? (
+        generationStatus === GenerationState.DEFAULT ? (
           <div className={classes.header}>
             <CommandImportButton onImport={onGlobalImport} />
             <CloudDownloadOutlinedIcon className={classes.headerIcon} onClick={onGlobalExport} />
             <QueueIcon className={classes.headerIcon} onClick={() => setOpenAddCommandModal(true)} />
             <PowerIcon className={classes.headerIcon} onClick={onGeneration} />
+            <div className={classes.switchContainer}>
+              <Switch
+                checked={generationStatus !== GenerationState.DEFAULT}
+                onChange={onGeneration}
+                name="Edition mode"
+                color="primary"
+                inputProps={{ 'aria-label': 'secondary checkbox' }}
+              />
+              <Typography className={classes.editModeTitle}>{t(generationStatus !== GenerationState.DEFAULT ? 'variants:editionMode' : 'variants:variantMode')}</Typography>
+            </div>
           </div>
         ) : (
           <div className={classes.header}>
-            <Typography color="primary" className={classes.loadingText}> Etude en cours de génération...</Typography>
+            {
+              generationStatus === GenerationState.INPROGRESS ?
+                <Typography color="primary" className={classes.loadingText}> Etude en cours de génération...</Typography> : (
+                  <div className={classes.switchContainer}>
+                    <Switch
+                      checked={generationStatus === GenerationState.FINISH}
+                      onChange={() => setGenerationStatus(GenerationState.DEFAULT)}
+                      name="Edition mode"
+                      color="primary"
+                      inputProps={{ 'aria-label': 'secondary checkbox' }}
+                    />
+                    <Typography className={classes.editModeTitle}>{t(generationStatus === GenerationState.FINISH ? 'variants:editionMode' : 'variants:variantMode')}</Typography>
+                  </div>
+                )}
           </div>
         )}
       <div className={classes.body}>
-        <CommandListView items={commands} generationStatus={generationStatus} generationIndex={currentCommandGenerationIndex} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} />
+        <CommandListView items={commands} generationStatus={generationStatus !== GenerationState.DEFAULT} generationIndex={currentCommandGenerationIndex} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} />
       </div>
       {openAddCommandModal && (
         <AddCommandModal
