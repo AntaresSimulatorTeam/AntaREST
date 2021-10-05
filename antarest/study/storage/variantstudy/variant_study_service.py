@@ -19,6 +19,7 @@ from antarest.core.exceptions import (
     CommandNotFoundError,
     VariantGenerationError,
     VariantStudyParentNotValid,
+    CommandNotValid,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
@@ -155,6 +156,20 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study = self._get_variant_study(study_id, params)
         return [command.to_dto() for command in study.commands]
 
+    def _check_commands_validity(
+        self, study_id: str, commands: List[CommandDTO]
+    ) -> None:
+        for i, command in enumerate(commands):
+            try:
+                self.command_factory.to_icommand(command)
+            except Exception as e:
+                logger.error(
+                    f"Command at index {i} for study {study_id}", exc_info=e
+                )
+                raise CommandNotValid(
+                    f"Command at index {i} for study {study_id}"
+                )
+
     def append_command(
         self, study_id: str, command: CommandDTO, params: RequestParameters
     ) -> str:
@@ -195,6 +210,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: None
         """
         study = self._get_variant_study(study_id, params)
+        self._check_commands_validity(study_id, commands)
         first_index = len(study.commands)
         study.commands.extend(
             [
@@ -202,6 +218,37 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     command=command.action,
                     args=json.dumps(command.args),
                     index=(first_index + i),
+                )
+                for i, command in enumerate(commands)
+            ]
+        )
+        self.repository.save(metadata=study, update_modification_date=True)
+        return str(study.id)
+
+    def replace_commands(
+        self,
+        study_id: str,
+        commands: List[CommandDTO],
+        params: RequestParameters,
+    ) -> str:
+        """
+        Add command to list of commands (at the end)
+        Args:
+            study_id: study id
+            commands: list of new command
+            params: request parameters
+        Returns: None
+        """
+        study = self._get_variant_study(study_id, params)
+        self._check_commands_validity(study_id, commands)
+
+        study.commands = []
+        study.commands.extend(
+            [
+                CommandBlock(
+                    command=command.action,
+                    args=json.dumps(command.args),
+                    index=i,
                 )
                 for i, command in enumerate(commands)
             ]
@@ -254,6 +301,20 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 command.index = idx
             self.repository.save(metadata=study, update_modification_date=True)
 
+    def remove_all_commands(
+        self, study_id: str, params: RequestParameters
+    ) -> None:
+        """
+        Remove all commands
+        Args:
+            study_id: study id
+            params: request parameters
+        Returns: None
+        """
+        study = self._get_variant_study(study_id, params)
+        study.commands = []
+        self.repository.save(metadata=study, update_modification_date=True)
+
     def update_command(
         self,
         study_id: str,
@@ -270,6 +331,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             params: request parameters
         Returns: None
         """
+        self._check_commands_validity(study_id, [command])
         study = self._get_variant_study(study_id, params)
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:

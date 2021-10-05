@@ -7,7 +7,9 @@ import DeleteIcon from '@material-ui/icons/HighlightOff';
 import { Accordion, AccordionDetails, AccordionSummary, createStyles, makeStyles, Theme, Typography } from '@material-ui/core';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import SaveOutlinedIcon from '@material-ui/icons/SaveOutlined';
+import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
 import { CommandItem } from '../CommandTypes';
+import CommandImportButton from './CommandImportButton';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   item: {
@@ -134,9 +136,11 @@ interface PropsType {
     onDelete: (index: number) => void;
     onArgsUpdate: (index: number, json: object) => void;
     onSave: (index: number) => void;
+    onCommandImport: (index: number, json: object) => void;
+    onCommandExport: (index: number) => void;
 }
 
-function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate, onSave }: PropsType) {
+function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport }: PropsType) {
   const classes = useStyles();
   const [jsonData, setJsonData] = useState<object>(item.args);
   const [isExpanded, setExpanded] = useState<boolean>(false);
@@ -145,6 +149,19 @@ function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate
     setJsonData(e.updated_src);
     onArgsUpdate(index, e.updated_src);
   };
+
+  const onImport = async (json: object) => {
+    // eslint-disable-next-line dot-notation
+    // setJsonData((json as any)['args']);
+    const oldJson = { ...jsonData };
+    try {
+      setJsonData(json as any);
+      await onCommandImport(index, json);
+    } catch (e) {
+      setJsonData(oldJson);
+    }
+  };
+
   return (
     <div
       // eslint-disable-next-line react/jsx-props-no-spreading
@@ -174,10 +191,8 @@ function Item({ provided, item, style, isDragging, index, onDelete, onArgsUpdate
             <div className={classes.details}>
               <div className={classes.header}>
                 {item.updated && <SaveOutlinedIcon className={classes.headerIcon} onClick={() => onSave(index)} />}
-                {
-                    // <CloudDownloadOutlinedIcon className={classes.headerIcon} />
-                    // <CloudUploadOutlinedIcon className={classes.headerIcon} />
-                    }
+                <CommandImportButton onImport={onImport} />
+                <CloudDownloadOutlinedIcon className={classes.headerIcon} onClick={() => onCommandExport(index)} />
               </div>
               <div className={classes.json}>
                 <ReactJson src={jsonData} onEdit={updateJson} onDelete={updateJson} onAdd={updateJson} />
