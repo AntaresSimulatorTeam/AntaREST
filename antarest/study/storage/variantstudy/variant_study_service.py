@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import dataclasses
 from fastapi import HTTPException
+from filelock import FileLock  # type: ignore
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON, SUB_JSON
@@ -31,6 +32,7 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import (
     Study,
     StudyMetadataDTO,
@@ -455,7 +457,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         """
         self._safe_generation(metadata)
-
+        self.repository.refresh(metadata)
         return super().get(
             metadata=metadata,
             url=url,
@@ -540,46 +542,52 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def generate_task(
         self, metadata: VariantStudy, denormalize: bool = False
     ) -> str:
-        logger.info(f"Starting variant study {metadata.id} generation")
-        if metadata.generation_task:
-            try:
-                previous_task = self.task_service.status_task(
-                    metadata.generation_task,
-                    RequestParameters(DEFAULT_ADMIN_USER),
-                )
-                if not previous_task.status.is_final():
-                    logger.info(
-                        f"Returing already existing variant study {metadata.id} generation"
+        with FileLock(
+            str(
+                self.config.storage.tmp_dir
+                / f"study-generation-{metadata.id}.lock"
+            )
+        ):
+            logger.info(f"Starting variant study {metadata.id} generation")
+            if metadata.generation_task:
+                try:
+                    previous_task = self.task_service.status_task(
+                        metadata.generation_task,
+                        RequestParameters(DEFAULT_ADMIN_USER),
                     )
-                    return str(metadata.generation_task)
-            except HTTPException as e:
-                logger.warning(
-                    f"Failed to retrieve generation task for study {metadata.id}",
-                    exc_info=e,
+                    if not previous_task.status.is_final():
+                        logger.info(
+                            f"Returing already existing variant study {metadata.id} generation"
+                        )
+                        return str(metadata.generation_task)
+                except HTTPException as e:
+                    logger.warning(
+                        f"Failed to retrieve generation task for study {metadata.id}",
+                        exc_info=e,
+                    )
+
+            def callback(notifier: TaskUpdateNotifier) -> TaskResult:
+                generate_result = self._generate(
+                    metadata.id,
+                    denormalize,
+                    RequestParameters(DEFAULT_ADMIN_USER),
+                    notifier,
+                )
+                return TaskResult(
+                    success=generate_result.success,
+                    message=f"{metadata.id} generated successfully"
+                    if generate_result.success
+                    else f"{metadata.id} not generated",
+                    return_value=generate_result.json(),
                 )
 
-        def callback(notifier: TaskUpdateNotifier) -> TaskResult:
-            generate_result = self._generate(
-                metadata.id,
-                denormalize,
-                RequestParameters(DEFAULT_ADMIN_USER),
-                notifier,
+            metadata.generation_task = self.task_service.add_task(
+                action=callback,
+                name=f"Generation of {metadata.id} study",
+                request_params=RequestParameters(DEFAULT_ADMIN_USER),
             )
-            return TaskResult(
-                success=generate_result.success,
-                message=f"{metadata.id} generated successfully"
-                if generate_result.success
-                else f"{metadata.id} not generated",
-                return_value=generate_result.json(),
-            )
-
-        metadata.generation_task = self.task_service.add_task(
-            action=callback,
-            name=f"Generation of {metadata.id} study",
-            request_params=RequestParameters(DEFAULT_ADMIN_USER),
-        )
-        self.repository.save(metadata)
-        return str(metadata.generation_task)
+            self.repository.save(metadata)
+            return str(metadata.generation_task)
 
     def generate(
         self,
@@ -612,9 +620,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if variant_study.parent_id is None:
             raise NoParentStudyError(variant_study_id)
 
-        variant_study.snapshot = None
-        self.repository.save(variant_study)
-
         parent_study = self.repository.get(variant_study.parent_id)
         if parent_study is None:
             raise StudyNotFoundError(variant_study.parent_id)
@@ -627,6 +632,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         # Remove snapshot directory if it exist
         dest_path = self.get_study_path(variant_study)
+
+        variant_study.snapshot = None
+        self.repository.save(variant_study, update_modification_date=False)
 
         if dest_path.is_dir():
             shutil.rmtree(dest_path)
@@ -649,6 +657,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 created_at=datetime.now(),
             )
             self.repository.save(variant_study)
+            logger.info(f"Saving new snapshot for study {variant_study.id}")
             if denormalize:
                 config, study_tree = self.study_factory.create_from_fs(
                     self.get_study_path(variant_study),
