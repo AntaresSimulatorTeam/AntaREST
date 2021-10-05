@@ -92,7 +92,7 @@ const MenuBar = (props: PropTypes) => {
         </Typography>
         <Typography className={classes.altmenuitem}>
           <a
-            href="https://api-antares.readthedocs.io/en/dev/inside.html"
+            href="https://antares-web.readthedocs.io/en/latest"
             target="_blank"
             rel="noopener noreferrer"
           >
