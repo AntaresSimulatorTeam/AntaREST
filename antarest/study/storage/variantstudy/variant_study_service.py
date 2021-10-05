@@ -162,7 +162,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         for i, command in enumerate(commands):
             try:
                 self.command_factory.to_icommand(command)
-            except Exception:
+            except Exception as e:
+                logger.error(
+                    f"Command at index {i} for study {study_id}", exc_info=e
+                )
                 raise CommandNotValid(
                     f"Command at index {i} for study {study_id}"
                 )
@@ -328,11 +331,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             params: request parameters
         Returns: None
         """
-        try:
-            self.command_factory.to_icommand(command)
-        except Exception:
-            raise CommandNotValid(study_id)
-
+        self._check_commands_validity(study_id, [command])
         study = self._get_variant_study(study_id, params)
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:
