@@ -64,8 +64,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 interface PropTypes {
     open: boolean;
     title: string;
-    handleClose: () => void;
-    handleSave: () => void;
+    handleClose?: () => void;
+    handleSave?: () => void;
 }
 
 const GenericModal = (props: PropsWithChildren<PropTypes>) => {
@@ -96,6 +96,7 @@ const GenericModal = (props: PropsWithChildren<PropTypes>) => {
             {children}
           </div>
           <div className={classes.footer}>
+            {handleClose && (
             <Button
               variant="contained"
               className={classes.button}
@@ -103,6 +104,8 @@ const GenericModal = (props: PropsWithChildren<PropTypes>) => {
             >
               {t('settings:cancelButton')}
             </Button>
+            )}
+            {handleSave && (
             <Button
               variant="contained"
               className={classes.button}
@@ -111,11 +114,17 @@ const GenericModal = (props: PropsWithChildren<PropTypes>) => {
             >
               {t('settings:saveButton')}
             </Button>
+            )}
           </div>
         </Paper>
       </Fade>
     </Modal>
   );
+};
+
+GenericModal.defaultProps = {
+  handleClose: undefined,
+  handleSave: undefined,
 };
 
 export default GenericModal;
