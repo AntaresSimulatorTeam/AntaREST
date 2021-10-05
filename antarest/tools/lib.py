@@ -167,10 +167,10 @@ class LocalVariantGenerator(IVariantGenerator):
             matrix_service=matrix_service,
         )
 
-        command_objs: List[ICommand] = []
+        command_objs: List[List[ICommand]] = []
         logger.info("Parsing command objects")
         for command_block in commands:
-            command_objs.extend(command_factory.to_icommand(command_block))
+            command_objs.append(command_factory.to_icommand(command_block))
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Command objects parsed in {x}s")
         )
