@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { makeStyles, createStyles, Theme, Typography, Switch } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, Typography, Switch, ButtonBase, Button } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { DropResult } from 'react-beautiful-dnd';
@@ -61,6 +61,16 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
       color: theme.palette.secondary.main,
     },
   },
+  backButton: {
+    width: 'auto',
+    height: 'auto',
+    color: theme.palette.primary.main,
+    margin: theme.spacing(0, 3),
+    '&:hover': {
+      color: theme.palette.secondary.main,
+      borderColor: theme.palette.secondary.main,
+    },
+  },
   loadingText: {
     backgroundColor: theme.palette.action.selected,
     paddingLeft: theme.spacing(1),
@@ -116,7 +126,7 @@ const EditionView = (props: PropTypes) => {
   const [openAddCommandModal, setOpenAddCommandModal] = useState<boolean>(false);
   const [generationStatus, setGenerationStatus] = useState<GenerationState>(GenerationState.DEFAULT);
   const [generationTaskId, setGenerationTaskId] = useState<string>('');
-  const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(0);
+  const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(-1);
   const [commands, setCommands] = useState<Array<CommandItem>>([]);
 
   const onDragEnd = async ({ destination, source }: DropResult) => {
@@ -297,32 +307,15 @@ const EditionView = (props: PropTypes) => {
             <CloudDownloadOutlinedIcon className={classes.headerIcon} onClick={onGlobalExport} />
             <QueueIcon className={classes.headerIcon} onClick={() => setOpenAddCommandModal(true)} />
             <PowerIcon className={classes.headerIcon} onClick={onGeneration} />
-            <div className={classes.switchContainer}>
-              <Switch
-                checked={generationStatus !== GenerationState.DEFAULT}
-                onChange={onGeneration}
-                name="Edition mode"
-                color="primary"
-                inputProps={{ 'aria-label': 'secondary checkbox' }}
-              />
-              <Typography className={classes.editModeTitle}>{t(generationStatus !== GenerationState.DEFAULT ? 'variants:editionMode' : 'variants:variantMode')}</Typography>
-            </div>
           </div>
         ) : (
           <div className={classes.header}>
             {
               generationStatus === GenerationState.INPROGRESS ?
-                <Typography color="primary" className={classes.loadingText}> Etude en cours de génération...</Typography> : (
-                  <div className={classes.switchContainer}>
-                    <Switch
-                      checked={generationStatus === GenerationState.FINISH}
-                      onChange={() => setGenerationStatus(GenerationState.DEFAULT)}
-                      name="Edition mode"
-                      color="primary"
-                      inputProps={{ 'aria-label': 'secondary checkbox' }}
-                    />
-                    <Typography className={classes.editModeTitle}>{t(generationStatus === GenerationState.FINISH ? 'variants:editionMode' : 'variants:variantMode')}</Typography>
-                  </div>
+                <Typography color="primary" className={classes.loadingText}>{t('variants:generationInProgress')}</Typography> : (
+                  <Button color="primary" variant="outlined" className={classes.backButton} onClick={() => setGenerationStatus(GenerationState.DEFAULT)}>
+                    {`< ${t('variants:backButtonLabel')}`}
+                  </Button>
                 )}
           </div>
         )}

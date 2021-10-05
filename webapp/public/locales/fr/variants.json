@@ -27,5 +27,7 @@
     "jsonParsingError": "Erreur lors de la lecture du fichier de commande",
     "exportError": "Erreur lors de l'exportation du fichier",
     "launchGenerationSuccess": "Génération de variante lancée avec succès",
-    "launchGenerationError": "Erreur lors du lancement de la génération"
+    "launchGenerationError": "Erreur lors du lancement de la génération",
+    "generationInProgress": "Generation de l'étude en cours...",
+    "backButtonLabel": "retour"
   }

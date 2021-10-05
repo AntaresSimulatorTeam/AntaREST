@@ -28,6 +28,8 @@
     "jsonParsingError": "Error while parsing json command file",
     "exportError": "Error during file exportation",
     "launchGenerationSuccess": "Variant generation launched",
-    "launchGenerationError": "Variant generation could not launched"
+    "launchGenerationError": "Variant generation could not launched",
+    "generationInProgress": "Generation in progress...",
+    "backButtonLabel": "back"
 }
   
