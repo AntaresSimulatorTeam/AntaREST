@@ -36,10 +36,10 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flex: '1',
     width: '100%',
     display: 'flex',
-    padding: theme.spacing(2),
     flexFlow: 'column nowrap',
     alignItems: 'center',
     overflowY: 'auto',
+    margin: theme.spacing(2),
   },
 }));
 

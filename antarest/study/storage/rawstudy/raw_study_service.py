@@ -215,7 +215,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
-        shutil.rmtree(study_path)
+        shutil.rmtree(study_path, ignore_errors=True)
         self.remove_from_cache(metadata.id)
 
     def delete_output(self, metadata: RawStudy, output_name: str) -> None:

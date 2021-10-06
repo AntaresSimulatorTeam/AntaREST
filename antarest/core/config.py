@@ -90,7 +90,7 @@ class StorageConfig:
     @staticmethod
     def from_dict(data: JSON) -> "StorageConfig":
         return StorageConfig(
-            tmp_dir=data.get("tmp_dir", Path(tempfile.gettempdir())),
+            tmp_dir=Path(data.get("tmp_dir", tempfile.gettempdir())),
             matrixstore=Path(data["matrixstore"]),
             workspaces={
                 n: WorkspaceConfig.from_dict(w)

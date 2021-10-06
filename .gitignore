@@ -135,6 +135,9 @@ dmypy.json
 # IDE Pycharm
 .idea/
 
+# VSCode
+.vscode/
+
 # Study examples
 *-gitignore/
 

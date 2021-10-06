@@ -41,11 +41,11 @@ def configure_logger(config: Config) -> None:
         "formatters": {
             "console": {
                 "class": "antarest.core.logging.utils.CustomDefaultFormatter",
-                "format": "%(asctime)s - %(threadName)s - %(name)s - %(ip)s - %(user)s - %(pid)s - %(levelname)s - %(message)s",
+                "format": "%(asctime)s - %(trace_id)s - %(threadName)s - %(name)s - %(ip)s - %(user)s - %(pid)s - %(levelname)s - %(message)s",
             },
             "json": {
                 "class": f"{JsonFormatter.__module__}.{JsonFormatter.__name__}",
-                "format": "%(asctime)s - %(threadName)s - %(name)s - %(ip)s - %(user)s - %(pid)s - %(levelname)s - %(message)s",
+                "format": "%(asctime)s - %(trace_id)s - %(threadName)s - %(name)s - %(ip)s - %(user)s - %(pid)s - %(levelname)s - %(message)s",
             },
         },
         "handlers": {

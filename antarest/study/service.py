@@ -457,14 +457,17 @@ class StudyService:
         study = self._get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.DELETE)
 
+        study_info = study.to_json_summary()
+        self.repository.delete(study.id)
+        self.event_bus.push(Event(EventType.STUDY_DELETED, study_info))
+
+        # delete the files afterward for
+        # if the study cannot be deleted from database for foreign key reason
         if self._assert_study_unarchived(study, False):
             self._get_study_storage_service(study).delete(study)
         else:
             if isinstance(study, RawStudy):
                 os.unlink(self.raw_study_service.get_archive_path(study))
-        study_info = study.to_json_summary()
-        self.repository.delete(study.id)
-        self.event_bus.push(Event(EventType.STUDY_DELETED, study_info))
 
         logger.info("study %s deleted by user %s", uuid, params.get_user_id())
 

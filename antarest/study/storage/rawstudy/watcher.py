@@ -104,13 +104,13 @@ class Watcher:
                                     child.is_dir()
                                     and any(
                                         [
-                                            re.search(regex, child.stem)
+                                            re.search(regex, child.name)
                                             for regex in filter_in
                                         ]
                                     )
                                     and not any(
                                         [
-                                            re.search(regex, child.stem)
+                                            re.search(regex, child.name)
                                             for regex in filter_out
                                         ]
                                     )

@@ -30,6 +30,9 @@ class VariantStudySnapshot(Base):  # type: ignore
         "polymorphic_identity": "variant_study_snapshot",
     }
 
+    def __str__(self) -> str:
+        return f"[Snapshot]: id={self.id}, created_at={self.created_at}"
+
 
 @dataclass
 class CommandBlock(Base):  # type: ignore
@@ -89,3 +92,6 @@ class VariantStudy(Study):
         order_by="CommandBlock.index",
         cascade="all, delete, delete-orphan",
     )
+
+    def __str__(self) -> str:
+        return super().__str__() + f", snapshot={self.snapshot}"

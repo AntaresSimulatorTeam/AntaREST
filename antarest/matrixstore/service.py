@@ -187,11 +187,11 @@ class MatrixService(ISimpleMatrixService):
     def file_importation(self, file: bytes) -> str:
         str_file = str(file, "UTF-8")
         reader = csv.reader(str_file.split("\n"), delimiter="\t")
-        data = []
+        data: List[List[float]] = []
         columns: List[int] = []
         for row in reader:
             if row:
-                data.append([int(elm) for elm in row])
+                data.append([float(elm) for elm in row])
             if len(columns) == 0:
                 columns = list(range(0, len(row)))
 

@@ -23,7 +23,7 @@ export default createMuiTheme({
     },
   },
   typography: {
-    fontFamily: "'Open Sans', sans-serif",
+    fontFamily: "'Inter', sans-serif",
   },
   palette: {
     primary: {

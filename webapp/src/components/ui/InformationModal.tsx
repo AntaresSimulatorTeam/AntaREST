@@ -1,5 +1,5 @@
-import React, { PropsWithChildren } from 'react';
-import { createStyles, makeStyles, Theme, Button, Paper, Typography } from '@material-ui/core';
+import React, { PropsWithChildren, ReactNode } from 'react';
+import { createStyles, makeStyles, Theme, Button, Paper } from '@material-ui/core';
 import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
@@ -73,13 +73,14 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 interface PropTypes {
     open: boolean;
-    title: string;
+    title: ReactNode;
     onButtonClick: () => void;
     fixedSize?: boolean;
+    buttonName?: string;
 }
 
 const InformationModal = (props: PropsWithChildren<PropTypes>) => {
-  const { title, open, onButtonClick, fixedSize, children } = props;
+  const { title, open, onButtonClick, fixedSize, buttonName, children } = props;
   const classes = useStyles();
 
   return (
@@ -97,9 +98,9 @@ const InformationModal = (props: PropsWithChildren<PropTypes>) => {
       <Fade in={open}>
         <Paper className={fixedSize ? clsx(classes.main, classes.fixedSize) : clsx(classes.main, classes.autosize)}>
           <div className={classes.titlebox}>
-            <Typography className={classes.title}>
+            <div className={classes.title}>
               {title}
-            </Typography>
+            </div>
           </div>
           <div className={classes.content}>
             {children}
@@ -111,7 +112,7 @@ const InformationModal = (props: PropsWithChildren<PropTypes>) => {
               color="primary"
               onClick={onButtonClick}
             >
-              Ok
+              {buttonName}
             </Button>
           </div>
         </Paper>

@@ -117,7 +117,7 @@ const Data = (props: PropTypes) => {
         onUpdateClick={onUpdateClick}
         onMatrixClick={onMatrixClick}
       />
-      {matrixModal && (
+      {matrixModal && currentMatrix && (
         <MatrixModal
           open={matrixModal} // Why 'openModal &&' ? => Otherwise previous data are still present
           matrixInfo={currentMatrix}
