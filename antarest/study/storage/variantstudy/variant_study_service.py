@@ -26,7 +26,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import TaskResult
+from antarest.core.tasks.model import TaskResult, TaskDTO
 from antarest.core.tasks.service import (
     ITaskService,
     TaskUpdateNotifier,
@@ -709,6 +709,15 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return self.generator.generate(
             commands, dest_path, variant_study, notifier=notify
+        )
+
+    def get_study_task(
+        self, study_id: str, params: RequestParameters
+    ) -> TaskDTO:
+        variant_study = self._get_variant_study(study_id, params)
+        task_id = variant_study.generation_task
+        return self.task_service.status_task(
+            task_id=task_id, request_params=params, with_logs=True
         )
 
     def create(self, study: VariantStudy) -> VariantStudy:

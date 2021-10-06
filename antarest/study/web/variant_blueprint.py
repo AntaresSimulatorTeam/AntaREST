@@ -9,6 +9,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
 )
+from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -349,6 +350,17 @@ def create_study_variant_routes(
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.generate(
             sanitized_uuid, denormalize, params
+        )
+
+    @bp.get("/studies/{uuid}/task")
+    def get_study_task(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> TaskDTO:
+        request_params = RequestParameters(user=current_user)
+        sanitized_uuid = sanitize_uuid(uuid)
+        return variant_study_service.get_study_task(
+            sanitized_uuid, request_params
         )
 
     @bp.post(

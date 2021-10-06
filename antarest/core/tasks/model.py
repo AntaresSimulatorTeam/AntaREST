@@ -34,6 +34,11 @@ class TaskResult(BaseModel):
     return_value: Optional[str]
 
 
+class TaskLogDTO(BaseModel):
+    id: str
+    message: str
+
+
 class TaskDTO(BaseModel):
     id: str
     name: str
@@ -42,6 +47,7 @@ class TaskDTO(BaseModel):
     creation_date_utc: float
     completion_date_utc: Optional[float]
     result: Optional[TaskResult]
+    logs: Optional[List[TaskLogDTO]]
 
 
 class TaskListFilter(BaseModel):
@@ -75,6 +81,9 @@ class TaskJobLog(Base):  # type: ignore
     def __repr__(self) -> str:
         return f"id={self.id}, message={self.message}, task_id={self.task_id}"
 
+    def to_dto(self):
+        return TaskLogDTO(id=self.id, message=self.message)
+
 
 class TaskJob(Base):  # type: ignore
     __tablename__ = "taskjob"
@@ -93,7 +102,7 @@ class TaskJob(Base):  # type: ignore
     # this is not a foreign key to prevent the need to delete the job history if the user is deleted
     owner_id = Column(Integer(), nullable=True)
 
-    def to_dto(self) -> TaskDTO:
+    def to_dto(self, with_logs: bool = False) -> TaskDTO:
         return TaskDTO(
             id=self.id,
             owner=self.owner_id,
@@ -110,6 +119,7 @@ class TaskJob(Base):  # type: ignore
             )
             if self.completion_date
             else None,
+            logs=[log.to_dto() for log in self.logs] if with_logs else None,
         )
 
     def __eq__(self, other: Any) -> bool:

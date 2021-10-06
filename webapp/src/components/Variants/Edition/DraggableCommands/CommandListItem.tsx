@@ -11,6 +11,7 @@ import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined'
 import InfoIcon from '@material-ui/icons/Info';
 import { CommandItem } from '../CommandTypes';
 import CommandImportButton from './CommandImportButton';
+import { CommandResultDTO } from '../../../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   item: {
@@ -184,18 +185,15 @@ function Item({ provided, item, style, isDragging, index, generationStatus, gene
   };
 
   const itemElements = () => {
-    if (generationStatus) {
-      if (generationIndex === index) {
-        return <CircularProgress color="primary" style={{ width: '24px', height: '24px', margin: '0px 16px' }} />;
-      }
-
-      if (item.results !== undefined) {
-        const { success } = item.results;
-        return <InfoIcon className={clsx(classes.headerIcon, success ? classes.successIconColor : classes.errorIconColor)} />;
-      }
-      return <></>;
+    if (generationStatus && generationIndex === index) {
+      return <CircularProgress color="primary" style={{ width: '24px', height: '24px', margin: '0px 16px' }} />;
     }
-    return <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />;
+    return (
+      <>
+        {item.results !== undefined && <InfoIcon className={clsx(classes.headerIcon, (item.results as CommandResultDTO).success ? classes.successIconColor : classes.errorIconColor)} /> }
+        <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />
+      </>
+    );
   };
 
   return (

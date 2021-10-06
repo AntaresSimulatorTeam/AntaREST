@@ -248,4 +248,35 @@ export interface CommandResultDTO {
   message: string;
 }
 
+export interface TaskResult {
+  success: boolean;
+  message: string;
+  return_value?: string;
+}
+
+export interface TaskLogDTO {
+  id: string;
+  message: string;
+}
+
+export enum TaskStatus {
+  PENDING = 1,
+  RUNNING = 2,
+  COMPLETED = 3,
+  FAILED = 4,
+  TIMEOUT = 5,
+  CANCELLED = 6,
+}
+
+export interface TaskDTO {
+  id: string;
+  name: string;
+  owner?: number;
+  status: TaskStatus;
+  creation_date_utc: number;
+  completion_date_utc?: number;
+  result?: TaskResult;
+  logs?: Array<TaskLogDTO>;
+}
+
 export default {};

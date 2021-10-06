@@ -44,7 +44,10 @@ class ITaskService(ABC):
 
     @abstractmethod
     def status_task(
-        self, task_id: str, request_params: RequestParameters
+        self,
+        task_id: str,
+        request_params: RequestParameters,
+        with_logs: bool = False,
     ) -> TaskDTO:
         raise NotImplementedError()
 
@@ -102,7 +105,10 @@ class TaskJobService(ITaskService):
         return str(task.id)
 
     def status_task(
-        self, task_id: str, request_params: RequestParameters
+        self,
+        task_id: str,
+        request_params: RequestParameters,
+        with_logs: bool = False,
     ) -> TaskDTO:
         if not request_params.user:
             raise MustBeAuthenticatedError()
@@ -113,7 +119,7 @@ class TaskJobService(ITaskService):
                 status_code=HTTPStatus.NOT_FOUND,
                 detail=f"Failed to retrieve task {task_id} in db",
             )
-        return task.to_dto()
+        return task.to_dto(with_logs)
 
     def list_tasks(
         self, task_filter: TaskListFilter, request_params: RequestParameters

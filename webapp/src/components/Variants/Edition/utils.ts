@@ -1,4 +1,4 @@
-import { CommandDTO } from '../../../common/types';
+import { CommandDTO, TaskDTO, TaskStatus } from '../../../common/types';
 import { CommandEnum, CommandItem, JsonCommandItem } from './CommandTypes';
 
 export const CommandList = [
@@ -56,5 +56,7 @@ export const exportJson = (json: object, filename: string): void => {
   link.click();
   link.remove();
 };
+
+export const isTaskFinal = (task: TaskDTO): boolean => !(task.status === TaskStatus.PENDING || task.status === TaskStatus.RUNNING);
 
 export default {};
