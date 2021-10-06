@@ -100,7 +100,7 @@ class TaskJobService(ITaskService):
                 owner_id=request_params.user.impersonator,
             )
         )
-        future = self.threadpool.submit(self._run_task, action, task)
+        future = self.threadpool.submit(self._run_task, action, task.id)
         self.tasks[task.id] = future
         return str(task.id)
 
@@ -160,15 +160,16 @@ class TaskJobService(ITaskService):
                     break
                 time.sleep(2)
 
-    def _run_task(self, callback: Task, task: TaskJob) -> None:
+    def _run_task(self, callback: Task, task_id: str) -> None:
         with db():
+            task = self.repo.get_or_raise(task_id)
             task.status = TaskStatus.RUNNING.value
             self.repo.save(task)
         try:
             with db():
-                result = callback(self._task_logger(task.id))
+                result = callback(self._task_logger(task_id))
             self._update_task_status(
-                task,
+                task_id,
                 TaskStatus.COMPLETED if result.success else TaskStatus.FAILED,
                 result.success,
                 result.message,
@@ -178,14 +179,16 @@ class TaskJobService(ITaskService):
             logger.error(
                 f"Exception when running task {task.name}", exc_info=e
             )
-            self._update_task_status(task, TaskStatus.FAILED, False, str(e))
+            self._update_task_status(task_id, TaskStatus.FAILED, False, str(e))
 
     def _task_logger(self, task_id: str) -> Callable[[str], None]:
         def log_msg(message: str) -> None:
-            task = self.repo.get(task_id)
-            if task:
-                task.logs.append(TaskJobLog(message=message, task_id=task_id))
-                with db():
+            with db():
+                task = self.repo.get(task_id)
+                if task:
+                    task.logs.append(
+                        TaskJobLog(message=message, task_id=task_id)
+                    )
                     self.repo.save(task)
 
         return log_msg
@@ -200,7 +203,7 @@ class TaskJobService(ITaskService):
             )
             for task in previous_tasks:
                 self._update_task_status(
-                    task,
+                    task.id,
                     TaskStatus.FAILED,
                     False,
                     "Task was interrupted due to server restart",
@@ -208,13 +211,14 @@ class TaskJobService(ITaskService):
 
     def _update_task_status(
         self,
-        task: TaskJob,
+        task_id: str,
         status: TaskStatus,
         result: bool,
         message: str,
         command_result: Optional[str] = None,
     ) -> None:
         with db():
+            task = self.repo.get_or_raise(task_id)
             task.status = status.value
             task.result_msg = message
             task.result_status = result

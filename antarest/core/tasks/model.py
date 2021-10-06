@@ -81,7 +81,7 @@ class TaskJobLog(Base):  # type: ignore
     def __repr__(self) -> str:
         return f"id={self.id}, message={self.message}, task_id={self.task_id}"
 
-    def to_dto(self):
+    def to_dto(self) -> TaskLogDTO:
         return TaskLogDTO(id=self.id, message=self.message)
 
 
