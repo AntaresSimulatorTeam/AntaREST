@@ -29,5 +29,6 @@
   "uploadingmatrix": "Chargement des matrices",
   "analyzingmatrix": "Analyse des matrices",
   "copyid": "Copie l'identifiant de la matrice",
-  "onMatrixIdCopySuccess": "Identifiant de matrice copié !"
+  "onMatrixIdCopySuccess": "Identifiant de matrice copié !",
+  "jsonFormat": "Format JSON"
 }

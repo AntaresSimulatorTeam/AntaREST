@@ -121,6 +121,7 @@ const DataModal = (props: PropTypes) => {
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
   const [selectedGroupList, setSelectedGroupList] = useState<Array<GroupDTO>>([]);
   const [name, setName] = useState<string>('');
+  const [isJson, setIsJson] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [currentFile, setFile] = useState<File|undefined>();
   const [importing, setImporting] = useState(false);
@@ -130,7 +131,7 @@ const DataModal = (props: PropTypes) => {
     let closeModal = true;
     try {
       setImporting(true);
-      const msg = await saveMatrix(name, publicStatus, selectedGroupList, onNewDataUpdate, currentFile, data, setUploadProgress);
+      const msg = await saveMatrix(name, publicStatus, selectedGroupList, onNewDataUpdate, currentFile, data, isJson, setUploadProgress);
       enqueueSnackbar(t(msg), { variant: 'success' });
     } catch (e) {
       const error = e as Error;
@@ -252,6 +253,18 @@ const DataModal = (props: PropTypes) => {
               </div>
               )
             }
+        </div>
+        <div className={classes.parameters}>
+          <div className={classes.parameterHeader}>
+            <Typography className={classes.parameterTitle}>
+              {t('data:jsonFormat')}
+            </Typography>
+            <Checkbox
+              checked={isJson}
+              onChange={() => setIsJson(!isJson)}
+              inputProps={{ 'aria-label': 'primary checkbox' }}
+            />
+          </div>
         </div>
         <div className={classes.parameters}>
           <div className={classes.parameterHeader}>

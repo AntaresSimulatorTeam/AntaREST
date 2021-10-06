@@ -50,13 +50,14 @@ export const saveMatrix = async (
   onNewDataUpdate: (newData: MatrixDataSetDTO) => void,
   file?: File,
   data?: MatrixDataSetDTO,
+  json?: boolean,
   onProgress?: (progress: number) => void,
 ): Promise<string> => {
   if (!name.replace(/\s/g, '')) throw Error('data:emptyName');
 
   if (data === undefined) {
     if (file) {
-      const matrixInfos = await createMatrixByImportation(file, onProgress);
+      const matrixInfos = await createMatrixByImportation(file, !!json, onProgress);
       await createMatrix(name, publicStatus, selectedGroupList, matrixInfos, onNewDataUpdate);
     } else throw Error('data:fileNotUploaded');
   } else {

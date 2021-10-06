@@ -48,6 +48,7 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
 
     @bp.post("/matrix/_import", tags=[APITag.matrix])
     def create_by_importation(
+        json: bool = False,
         file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -55,7 +56,7 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
             f"Importing new matrix dataset", extra={"user": current_user.id}
         )
         if current_user.id is not None:
-            return service.create_by_importation(file)
+            return service.create_by_importation(file, json)
         raise UserHasNotPermissionError()
 
     @bp.get("/matrix/{id}", tags=[APITag.matrix])

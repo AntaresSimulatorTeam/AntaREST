@@ -12,7 +12,7 @@ export const getMatrix = async (id: string): Promise<MatrixDTO> => {
   return res.data;
 };
 
-export const createMatrixByImportation = async (file: File, onProgress?: (progress: number) => void): Promise<Array<MatrixInfoDTO>> => {
+export const createMatrixByImportation = async (file: File, json: boolean, onProgress?: (progress: number) => void): Promise<Array<MatrixInfoDTO>> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
@@ -29,7 +29,7 @@ export const createMatrixByImportation = async (file: File, onProgress?: (progre
       'Access-Control-Allow-Origin': '*',
     },
   };
-  const res = await client.post('/v1/matrix/_import', formData, restconfig);
+  const res = await client.post(`/v1/matrix/_import?json=${json}`, formData, restconfig);
   return res.data;
 };
 

@@ -1,4 +1,5 @@
 import csv
+import json
 import time
 from abc import abstractmethod, ABC
 from datetime import datetime
@@ -160,7 +161,9 @@ class MatrixService(ISimpleMatrixService):
                 )
         return matrix_hash
 
-    def create_by_importation(self, file: UploadFile) -> List[MatrixInfoDTO]:
+    def create_by_importation(
+        self, file: UploadFile, json: bool = False
+    ) -> List[MatrixInfoDTO]:
         with file.file as f:
             if file.content_type == "application/zip":
                 input_zip = ZipFile(BytesIO(f.read()))
@@ -177,28 +180,32 @@ class MatrixService(ISimpleMatrixService):
                             not name.startswith(".DS_Store"),
                         ]
                     ):
-                        id = self.file_importation(files[name])
+                        id = self.file_importation(files[name], json)
                         matrix_info.append(MatrixInfoDTO(id=id, name=name))
                 return matrix_info
             else:
-                id = self.file_importation(f.read())
+                id = self.file_importation(f.read(), json)
                 return [MatrixInfoDTO(id=id, name=file.filename)]
 
-    def file_importation(self, file: bytes) -> str:
+    def file_importation(self, file: bytes, is_json: bool = False) -> str:
         str_file = str(file, "UTF-8")
-        reader = csv.reader(str_file.split("\n"), delimiter="\t")
-        data: List[List[float]] = []
-        columns: List[int] = []
-        for row in reader:
-            if row:
-                data.append([float(elm) for elm in row])
-            if len(columns) == 0:
-                columns = list(range(0, len(row)))
+        if is_json:
+            return self.create(MatrixContent.parse_raw(file))
+        else:
+            data: List[List[float]] = []
+            reader = csv.reader(str_file.split("\n"), delimiter="\t")
 
-        matrix = MatrixContent(
-            data=data,
-        )
-        return self.create(matrix)
+            columns: List[int] = []
+            for row in reader:
+                if row:
+                    data.append([float(elm) for elm in row])
+                if len(columns) == 0:
+                    columns = list(range(0, len(row)))
+
+            matrix = MatrixContent(
+                data=data,
+            )
+            return self.create(matrix)
 
     def get_dataset(
         self,
