@@ -114,7 +114,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         return (self.get_study_path(metadata) / "study.antares").is_file()
 
-    def get_raw(self, metadata: RawStudy) -> FileStudy:
+    def get_raw(self, metadata: RawStudy, use_cache: bool = True) -> FileStudy:
         """
         Fetch a study object and its config
         Args:
@@ -126,7 +126,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study_config, study_tree = self.study_factory.create_from_fs(
-            study_path, metadata.id
+            study_path, metadata.id, use_cache=use_cache
         )
         return FileStudy(config=study_config, tree=study_tree)
 

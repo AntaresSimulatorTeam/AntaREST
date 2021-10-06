@@ -463,6 +463,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             url=url,
             depth=depth,
             formatted=formatted,
+            use_cache=use_cache,
         )
 
     def edit_study(
@@ -795,7 +796,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 f"Error while generating {metadata.id}"
             )
 
-    def get_raw(self, metadata: VariantStudy) -> FileStudy:
+    def get_raw(
+        self, metadata: VariantStudy, use_cache: bool = True
+    ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
         Args:
@@ -806,7 +809,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         study_path = self.get_study_path(metadata)
         study_config, study_tree = self.study_factory.create_from_fs(
-            study_path, metadata.id, Path(metadata.path) / "output"
+            study_path,
+            metadata.id,
+            Path(metadata.path) / "output",
+            use_cache=use_cache,
         )
         return FileStudy(config=study_config, tree=study_tree)
 

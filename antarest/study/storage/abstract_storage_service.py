@@ -167,7 +167,7 @@ class AbstractStorageService(IStudyStorageService[T]):
 
         """
         self._check_study_exists(metadata)
-        study = self.get_raw(metadata)
+        study = self.get_raw(metadata, use_cache)
         parts = [item for item in url.split("/") if item]
 
         if url == "" and depth == -1:
@@ -292,6 +292,7 @@ class AbstractStorageService(IStudyStorageService[T]):
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)
             shutil.rmtree(path_output, ignore_errors=True)
+            output_name = None
 
         return output_name
 
@@ -379,11 +380,12 @@ class AbstractStorageService(IStudyStorageService[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_raw(self, metadata: T) -> FileStudy:
+    def get_raw(self, metadata: T, use_cache: bool = True) -> FileStudy:
         """
         Fetch a study raw tree object and its config
         Args:
             metadata: study
+            use_cache: indicate if the cache should be used
 
         Returns: the config and study tree object
 
