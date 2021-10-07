@@ -55,4 +55,15 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tabbed
 
+
+nav:
+  - 'Home': index.md
+  - 'Antares ecosystem' : 'https://antares-doc.readthedocs.io'
+  - 'User guide':
+      - 'Introduction': 'user-guide/0-introduction.md'
+  - 'Install':
+      - 'Introduction': 'install/0-introduction.md'
+  - 'Changelog': 'CHANGELOG.md'
+
+
 copyright: Copyright &copy; 2007 - 2021 RTE
