@@ -15,7 +15,8 @@ class TaskJobRepository:
 
     def get(self, id: str) -> Optional[TaskJob]:
         task: TaskJob = db.session.get(TaskJob, id)
-        db.session.refresh(task)
+        if task is not None:
+            db.session.refresh(task)
         return task
 
     def list(
