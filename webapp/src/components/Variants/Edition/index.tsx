@@ -247,8 +247,9 @@ const EditionView = (props: PropTypes) => {
       setCurrentCommandGenerationIndex(0);
       // Launch generation task
       const genTaskId = await applyCommands(studyId);
-      setTaskId(genTaskId);
+      console.log('TASK:', genTaskId);
       setGenerationStatus(true);
+      setTaskId(genTaskId);
       enqueueSnackbar(t('variants:launchGenerationSuccess'), { variant: 'success' });
     } catch (e) {
       enqueueSnackbar(t('variants:launchGenerationError'), { variant: 'error' });
@@ -264,9 +265,8 @@ const EditionView = (props: PropTypes) => {
         console.log('ELEMENT AT: ', tmpCommand[currentCommandGenerationIndex]);
         const index = tmpCommand.findIndex((item) => item.id === commandResult.id);
         console.log('INDEX:', index);
-        tmpCommand[index].results = commandResult;
+        tmpCommand[index] = { ...tmpCommand[index], results: commandResult };
         if (currentCommandGenerationIndex === commands.length - 1) {
-          // setGenerationStatus(false);
           setCurrentCommandGenerationIndex(-1);
         } else {
           setCurrentCommandGenerationIndex(currentCommandGenerationIndex + 1);
@@ -278,20 +278,24 @@ const EditionView = (props: PropTypes) => {
     const taskStart = (genTaskId: string) => {
       if (genTaskId === taskId) {
         if (commands.length > 0) setCurrentCommandGenerationIndex(0);
-        // setTaskId(ev.payload as string);
-        // setGenerationStatus(true);
+        setTaskId(ev.payload as string);
+        setGenerationStatus(true);
       }
     };
 
     const taskEnd = (genTaskId: string, event: WSEvent) => {
+      console.log('TASK END:', genTaskId, ' AND ', taskId);
       if (genTaskId === taskId && generationStatus) {
         setCurrentCommandGenerationIndex(-1);
         setTaskId('');
+        console.log('OOOOOOOHHH');
         if (event === WSEvent.TASK_COMPLETED) enqueueSnackbar(t('variants:taskCompleted'), { variant: 'success' });
         else enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
         setGenerationStatus(false);
       }
     };
+
+    console.log('TASK ID INSIDE: ', taskId);
 
     switch (ev.type) {
       case WSEvent.STUDY_VARIANT_GENERATION_COMMAND_RESULT:
@@ -344,6 +348,7 @@ const EditionView = (props: PropTypes) => {
             currentIndex = (commands.length > task.logs.length) ? task.logs.length : -1;
           }
         }
+        setTaskId(task.id);
         setCurrentCommandGenerationIndex(currentIndex);
         setGenerationStatus(!isFinal);
         console.log('ITEMS FINAL: ', items);
@@ -359,7 +364,8 @@ const EditionView = (props: PropTypes) => {
   useEffect(() => {
     addWsListener(listen);
     return () => removeWsListener(listen);
-  }, [addWsListener, listen, removeWsListener]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addWsListener, removeWsListener]);
 
   return (
     <div className={classes.root}>
