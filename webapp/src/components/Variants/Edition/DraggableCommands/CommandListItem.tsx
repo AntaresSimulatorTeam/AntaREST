@@ -194,8 +194,8 @@ function Item({ provided, item, style, isDragging, index, generationStatus, gene
     }
     return (
       <>
-        {item.results !== undefined && <InfoIcon className={clsx(classes.headerIcon, (item.results as CommandResultDTO).success ? classes.successIconColor : classes.errorIconColor)} onClick={() => setLogModalOpen(true)} /> }
         {!generationStatus && <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />}
+        {item.results !== undefined && <InfoIcon className={clsx(classes.headerIcon, (item.results as CommandResultDTO).success ? classes.successIconColor : classes.errorIconColor)} onClick={() => setLogModalOpen(true)} /> }
       </>
     );
   };
@@ -238,7 +238,7 @@ function Item({ provided, item, style, isDragging, index, generationStatus, gene
             </div>
           </AccordionDetails>
         </Accordion>
-        <div style={{ height: '100%', display: 'flex', alignItems: 'center' }}>
+        <div style={{ height: '100%', width: '80px', display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
           {itemElements()}
         </div>
       </div>

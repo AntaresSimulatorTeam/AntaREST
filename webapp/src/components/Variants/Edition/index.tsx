@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { DropResult } from 'react-beautiful-dnd';
 import QueueIcon from '@material-ui/icons/Queue';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
-import PowerIcon from '@material-ui/icons/Power';
 import { connect, ConnectedProps } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
@@ -248,7 +247,6 @@ const EditionView = (props: PropTypes) => {
       setCurrentCommandGenerationIndex(0);
       // Launch generation task
       const genTaskId = await applyCommands(studyId);
-      console.log('GEN TASK: ', genTaskId);
       setTaskId(genTaskId);
       setGenerationStatus(true);
       enqueueSnackbar(t('variants:launchGenerationSuccess'), { variant: 'success' });
@@ -268,7 +266,7 @@ const EditionView = (props: PropTypes) => {
         console.log('INDEX:', index);
         tmpCommand[index].results = commandResult;
         if (currentCommandGenerationIndex === commands.length - 1) {
-          setGenerationStatus(false);
+          // setGenerationStatus(false);
           setCurrentCommandGenerationIndex(-1);
         } else {
           setCurrentCommandGenerationIndex(currentCommandGenerationIndex + 1);
@@ -280,38 +278,39 @@ const EditionView = (props: PropTypes) => {
     const taskStart = (genTaskId: string) => {
       if (genTaskId === taskId) {
         if (commands.length > 0) setCurrentCommandGenerationIndex(0);
-        setTaskId(ev.payload as string);
-        setGenerationStatus(true);
+        // setTaskId(ev.payload as string);
+        // setGenerationStatus(true);
       }
     };
 
     const taskEnd = (genTaskId: string, event: WSEvent) => {
-      if (genTaskId === taskId) {
+      if (genTaskId === taskId && generationStatus) {
         setCurrentCommandGenerationIndex(-1);
         setTaskId('');
-        setGenerationStatus(false);
         if (event === WSEvent.TASK_COMPLETED) enqueueSnackbar(t('variants:taskCompleted'), { variant: 'success' });
         else enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
+        setGenerationStatus(false);
       }
     };
 
     switch (ev.type) {
       case WSEvent.STUDY_VARIANT_GENERATION_COMMAND_RESULT:
+        console.log('EVENT STUDY: ', ev);
         manageCommandResults(ev.payload as CommandResultDTO);
         break;
       case WSEvent.TASK_STARTED:
-        console.log('EVENT: ', ev);
+        console.log('EVENT STARTED: ', ev);
         taskStart(ev.payload as string);
         break;
       case WSEvent.TASK_COMPLETED:
       case WSEvent.TASK_FAILED:
-        console.log('EVENT: ', ev);
+        console.log('EVENT FINISH: ', ev);
         taskEnd(ev.payload as string, ev.type);
         break;
       default:
         break;
     }
-  }, [commands, currentCommandGenerationIndex, enqueueSnackbar, studyId, t, taskId]);
+  }, [commands, currentCommandGenerationIndex, enqueueSnackbar, generationStatus, studyId, t, taskId]);
 
   useEffect(() => {
     const init = async () => {

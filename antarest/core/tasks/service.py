@@ -189,14 +189,14 @@ class TaskJobService(ITaskService):
             )
             self.event_bus.push(
                 Event(
-                    EventType.TASK_COMPLETED if result.success else EventType.TASK_FAILED,
+                    EventType.TASK_COMPLETED
+                    if result.success
+                    else EventType.TASK_FAILED,
                     task_id,
                 )
             )
         except Exception as e:
-            logger.error(
-                f"Exception when running task {task_id}", exc_info=e
-            )
+            logger.error(f"Exception when running task {task_id}", exc_info=e)
             self._update_task_status(task_id, TaskStatus.FAILED, False, str(e))
             self.event_bus.push(
                 Event(

@@ -19,6 +19,7 @@ class EventType:
     TASK_COMPLETED = "TASK_COMPLETED"
     TASK_FAILED = "TASK_FAILED"
 
+
 @dataclass
 class Event:
     type: str

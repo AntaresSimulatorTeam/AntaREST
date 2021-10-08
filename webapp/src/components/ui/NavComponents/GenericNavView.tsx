@@ -49,7 +49,7 @@ const GenericNavView = (props: PropTypes) => {
         items={navList}
         onItemClick={onItemClick}
       />
-      { items[navState]() }
+      { items[navState] !== undefined && items[navState]() }
     </div>
   );
 };

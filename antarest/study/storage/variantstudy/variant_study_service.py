@@ -20,7 +20,8 @@ from antarest.core.exceptions import (
     CommandNotFoundError,
     VariantGenerationError,
     VariantStudyParentNotValid,
-    CommandNotValid, CommandUpdateAuthorizationError,
+    CommandNotValid,
+    CommandUpdateAuthorizationError,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
@@ -172,9 +173,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     f"Command at index {i} for study {study_id}"
                 )
 
-    def _check_update_authorization(
-        self, metadata: VariantStudy
-    ) -> None:
+    def _check_update_authorization(self, metadata: VariantStudy) -> None:
         if metadata.generation_task:
             try:
                 previous_task = self.task_service.status_task(
@@ -182,9 +181,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     RequestParameters(DEFAULT_ADMIN_USER),
                 )
                 if not previous_task.status.is_final():
-                    logger.error(
-                        f"{metadata.id} generation in progress"
-                    )
+                    logger.error(f"{metadata.id} generation in progress")
                     raise CommandUpdateAuthorizationError(metadata.id)
             except HTTPException as e:
                 logger.warning(

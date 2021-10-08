@@ -32,22 +32,6 @@ const VariantView = (props: PropTypes) => {
     'variants:variantDependencies': () => <VariantTreeView study={study} />,
   });
 
-  useEffect(() => {
-    // we add a check on study type because when creating a new variant the option is set to edition
-    // but the parent component has not already fetched/set the study object, so there is a first render with the parent study object and edit option on
-    const edition = option === 'edition' && study?.type === 'variantstudy';
-    setEditionMode(edition);
-  }, [option, study]);
-
-  useEffect(() => {
-    setItems(study?.type === 'variantstudy' ? {
-      'variants:variantDependencies': () => <VariantTreeView study={study} />,
-      'variants:editionMode': () => <EditionView studyId={study !== undefined ? study.id : ''} />,
-    } : {
-      'variants:variantDependencies': () => <VariantTreeView study={study} />,
-    });
-  }, [study]);
-
   const onEditModeChange = (item: string) => {
     if (item === 'variants:variantDependencies') {
       history.replace(`/study/${study !== undefined ? study.id : ''}/variants`);
@@ -55,6 +39,24 @@ const VariantView = (props: PropTypes) => {
       history.replace(`/study/${study !== undefined ? study.id : ''}/variants/edition`);
     }
   };
+
+  useEffect(() => {
+    const edition = option === 'edition' && study?.type === 'variantstudy';
+    console.log('EDITION: ', editionMode);
+    console.log('STUDY: ', study?.type);
+    setEditionMode(edition);
+    setItems(study?.type === 'variantstudy' ? {
+      'variants:variantDependencies': () => <VariantTreeView study={study} />,
+      'variants:editionMode': () => <EditionView studyId={study !== undefined ? study.id : ''} />,
+    } : {
+      'variants:variantDependencies': () => <VariantTreeView study={study} />,
+    });
+    return () => {
+      setItems({
+        'variants:variantDependencies': () => <VariantTreeView study={study} />,
+      });
+    };
+  }, [study, option, editionMode]);
 
   return (
     <div className={classes.root}>
