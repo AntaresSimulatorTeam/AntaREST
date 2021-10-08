@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -65,10 +66,12 @@ interface PropTypes {
   title: string;
   content?: string;
   close: () => void;
+  // eslint-disable-next-line react/require-default-props
+  style?: CSSProperties;
 }
 
 const LogModal = (props: PropTypes) => {
-  const { title, isOpen, content, close } = props;
+  const { title, style, isOpen, content, close } = props;
   const classes = useStyles();
   const [t] = useTranslation();
 
@@ -85,7 +88,7 @@ const LogModal = (props: PropTypes) => {
       }}
     >
       <Fade in={isOpen}>
-        <Paper className={classes.main}>
+        <Paper className={classes.main} style={style !== undefined ? style : {}}>
           <div className={classes.titlebox}>
             <Typography className={classes.title}>{title}</Typography>
           </div>

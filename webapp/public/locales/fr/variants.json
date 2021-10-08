@@ -29,5 +29,6 @@
     "launchGenerationSuccess": "Génération de variante lancée avec succès",
     "launchGenerationError": "Erreur lors du lancement de la génération",
     "generationInProgress": "Generation de l'étude en cours...",
-    "backButtonLabel": "retour"
+    "taskCompleted": "Tâche terminée avec succès",
+    "taskFailed": "Erreur: l'exécution de la tâche a échoué"
   }

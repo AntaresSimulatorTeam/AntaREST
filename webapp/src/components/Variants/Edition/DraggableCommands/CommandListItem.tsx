@@ -1,5 +1,6 @@
 // @flow
 import React, { CSSProperties, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { DraggableProvided } from 'react-beautiful-dnd';
 import ReactJson, { InteractionProps } from 'react-json-view';
@@ -12,6 +13,7 @@ import InfoIcon from '@material-ui/icons/Info';
 import { CommandItem } from '../CommandTypes';
 import CommandImportButton from './CommandImportButton';
 import { CommandResultDTO } from '../../../../common/types';
+import LogModal from '../../../ui/LogModal';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   item: {
@@ -164,8 +166,10 @@ interface PropsType {
 
 function Item({ provided, item, style, isDragging, index, generationStatus, generationIndex, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport }: PropsType) {
   const classes = useStyles();
+  const [t] = useTranslation();
   const [jsonData, setJsonData] = useState<object>(item.args);
   const [isExpanded, setExpanded] = useState<boolean>(false);
+  const [logModalOpen, setLogModalOpen] = useState<boolean>(false);
 
   const updateJson = (e: InteractionProps) => {
     setJsonData(e.updated_src);
@@ -190,8 +194,8 @@ function Item({ provided, item, style, isDragging, index, generationStatus, gene
     }
     return (
       <>
-        {item.results !== undefined && <InfoIcon className={clsx(classes.headerIcon, (item.results as CommandResultDTO).success ? classes.successIconColor : classes.errorIconColor)} /> }
-        <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />
+        {item.results !== undefined && <InfoIcon className={clsx(classes.headerIcon, (item.results as CommandResultDTO).success ? classes.successIconColor : classes.errorIconColor)} onClick={() => setLogModalOpen(true)} /> }
+        {!generationStatus && <DeleteIcon className={classes.deleteIcon} onClick={() => onDelete(index)} />}
       </>
     );
   };
@@ -225,11 +229,11 @@ function Item({ provided, item, style, isDragging, index, generationStatus, gene
             <div className={classes.details}>
               <div className={classes.header}>
                 {item.updated && <SaveOutlinedIcon className={classes.headerIcon} onClick={() => onSave(index)} />}
-                <CommandImportButton onImport={onImport} />
-                <CloudDownloadOutlinedIcon className={classes.headerIcon} onClick={() => onCommandExport(index)} />
+                {!generationStatus && <CommandImportButton onImport={onImport} /> }
+                {!generationStatus && <CloudDownloadOutlinedIcon className={classes.headerIcon} onClick={() => onCommandExport(index)} />}
               </div>
               <div className={classes.json}>
-                <ReactJson src={jsonData} onEdit={updateJson} onDelete={updateJson} onAdd={updateJson} />
+                <ReactJson src={jsonData} onEdit={!generationStatus ? updateJson : undefined} onDelete={!generationStatus ? updateJson : undefined} onAdd={!generationStatus ? updateJson : undefined} />
               </div>
             </div>
           </AccordionDetails>
@@ -238,6 +242,16 @@ function Item({ provided, item, style, isDragging, index, generationStatus, gene
           {itemElements()}
         </div>
       </div>
+      {
+        item.results !== undefined && (
+        <LogModal
+          isOpen={logModalOpen}
+          title={t('singlestudy:taskLog')}
+          content={item.results.message}
+          close={() => setLogModalOpen(false)}
+          style={{ width: '400px', height: '200px' }}
+        />
+        )}
     </div>
   );
 }

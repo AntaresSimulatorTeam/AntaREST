@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { makeStyles, createStyles, Theme, Typography } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, Typography, Button } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { DropResult } from 'react-beautiful-dnd';
@@ -7,12 +7,13 @@ import QueueIcon from '@material-ui/icons/Queue';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
 import PowerIcon from '@material-ui/icons/Power';
 import { connect, ConnectedProps } from 'react-redux';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
 import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal } from './utils';
 import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getTask } from '../../../services/api/variant';
 import AddCommandModal from './AddCommandModal';
-import { CommandDTO, WSEvent, WSMessage, CommandResultDTO } from '../../../common/types';
+import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
 import { addListener, removeListener } from '../../../ducks/websockets';
 
@@ -27,8 +28,15 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     overflowY: 'hidden',
   },
   header: {
-    width: '100%',
+    width: '90%',
     height: '80px',
+    display: 'flex',
+    flexFlow: 'row nowrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  editHeader: {
+    flex: 1,
     display: 'flex',
     flexFlow: 'row nowrap',
     justifyContent: 'flex-end',
@@ -119,6 +127,7 @@ const EditionView = (props: PropTypes) => {
   const { studyId, addWsListener, removeWsListener } = props;
   const [openAddCommandModal, setOpenAddCommandModal] = useState<boolean>(false);
   const [generationStatus, setGenerationStatus] = useState<boolean>(false);
+  const [taskId, setTaskId] = useState<string>('');
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(-1);
   const [commands, setCommands] = useState<Array<CommandItem>>([]);
 
@@ -129,7 +138,7 @@ const EditionView = (props: PropTypes) => {
     try {
       const elm = commands[source.index];
       const newItems = reorder(commands, source.index, destination.index);
-      setCommands(newItems);
+      setCommands(newItems.map((item) => ({ ...item, results: undefined })));
       await moveCommand(studyId, (elm.id as string), destination.index);
       enqueueSnackbar(t('variants:moveSuccess'), { variant: 'success' });
     } catch (e) {
@@ -158,7 +167,7 @@ const EditionView = (props: PropTypes) => {
     try {
       const elm = commands[index];
       await deleteCommand(studyId, (elm.id as string));
-      setCommands((commandList) => commandList.filter((item, idx) => idx !== index));
+      setCommands((commandList) => commandList.filter((item, idx) => idx !== index).map((item) => ({ ...item, results: undefined })));
       enqueueSnackbar(t('variants:deleteSuccess'), { variant: 'success' });
     } catch (e) {
       enqueueSnackbar(t('variants:deleteError'), { variant: 'error' });
@@ -238,7 +247,9 @@ const EditionView = (props: PropTypes) => {
       setCommands(fromCommandDTOToCommandItem(dtoItems));
       setCurrentCommandGenerationIndex(0);
       // Launch generation task
-      await applyCommands(studyId);
+      const genTaskId = await applyCommands(studyId);
+      console.log('GEN TASK: ', genTaskId);
+      setTaskId(genTaskId);
       setGenerationStatus(true);
       enqueueSnackbar(t('variants:launchGenerationSuccess'), { variant: 'success' });
     } catch (e) {
@@ -247,38 +258,75 @@ const EditionView = (props: PropTypes) => {
   };
 
   const listen = useCallback((ev: WSMessage) => {
-    const commandResult = ev.payload as CommandResultDTO;
-    console.log('RESULTS: ', commandResult);
-    if (studyId === commandResult.study_id) {
-      let tmpCommand: Array<CommandItem> = [];
-      tmpCommand = tmpCommand.concat(commands);
-      console.log('ELEMENT AT: ', tmpCommand[currentCommandGenerationIndex]);
-      const index = tmpCommand.findIndex((item) => item.id === commandResult.id);
-      console.log('INDEX:', index);
-      switch (ev.type) {
-        case WSEvent.STUDY_VARIANT_GENERATION_COMMAND_RESULT:
-          tmpCommand[index].results = commandResult;
-          if (currentCommandGenerationIndex === commands.length - 1) {
-            setGenerationStatus(false);
-            setCurrentCommandGenerationIndex(-1);
-          } else {
-            setCurrentCommandGenerationIndex(currentCommandGenerationIndex + 1);
-          }
-          setCommands(tmpCommand);
-          break;
-        default:
-          break;
+    const manageCommandResults = (commandResult: CommandResultDTO) => {
+      if (studyId === commandResult.study_id) {
+        console.log('RESULTS: ', commandResult);
+        let tmpCommand: Array<CommandItem> = [];
+        tmpCommand = tmpCommand.concat(commands);
+        console.log('ELEMENT AT: ', tmpCommand[currentCommandGenerationIndex]);
+        const index = tmpCommand.findIndex((item) => item.id === commandResult.id);
+        console.log('INDEX:', index);
+        tmpCommand[index].results = commandResult;
+        if (currentCommandGenerationIndex === commands.length - 1) {
+          setGenerationStatus(false);
+          setCurrentCommandGenerationIndex(-1);
+        } else {
+          setCurrentCommandGenerationIndex(currentCommandGenerationIndex + 1);
+        }
+        setCommands(tmpCommand);
       }
+    };
+
+    const taskStart = (genTaskId: string) => {
+      if (genTaskId === taskId) {
+        if (commands.length > 0) setCurrentCommandGenerationIndex(0);
+        setTaskId(ev.payload as string);
+        setGenerationStatus(true);
+      }
+    };
+
+    const taskEnd = (genTaskId: string, event: WSEvent) => {
+      if (genTaskId === taskId) {
+        setCurrentCommandGenerationIndex(-1);
+        setTaskId('');
+        setGenerationStatus(false);
+        if (event === WSEvent.TASK_COMPLETED) enqueueSnackbar(t('variants:taskCompleted'), { variant: 'success' });
+        else enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
+      }
+    };
+
+    switch (ev.type) {
+      case WSEvent.STUDY_VARIANT_GENERATION_COMMAND_RESULT:
+        manageCommandResults(ev.payload as CommandResultDTO);
+        break;
+      case WSEvent.TASK_STARTED:
+        console.log('EVENT: ', ev);
+        taskStart(ev.payload as string);
+        break;
+      case WSEvent.TASK_COMPLETED:
+      case WSEvent.TASK_FAILED:
+        console.log('EVENT: ', ev);
+        taskEnd(ev.payload as string, ev.type);
+        break;
+      default:
+        break;
     }
-  }, [commands, currentCommandGenerationIndex, studyId]);
+  }, [commands, currentCommandGenerationIndex, enqueueSnackbar, studyId, t, taskId]);
 
   useEffect(() => {
     const init = async () => {
+      let items: Array<CommandItem> = [];
       try {
         const dtoItems = await getCommands(studyId);
         console.log('ITEMS: ', dtoItems);
-        const items: Array<CommandItem> = fromCommandDTOToCommandItem(dtoItems);
+        items = fromCommandDTOToCommandItem(dtoItems);
         console.log('ITEMS YO: ', items);
+      } catch (e) {
+        console.log(e);
+        enqueueSnackbar(t('variants:fetchCommandError'), { variant: 'error' });
+      }
+
+      try {
         const task = await getTask(studyId);
 
         let currentIndex = -1;
@@ -288,9 +336,10 @@ const EditionView = (props: PropTypes) => {
           if (!isFinal) { currentIndex = 0; }
         } else {
           console.log('TASK LOGS: ', task.logs);
-          task.logs.forEach((elm, i) => {
+          task.logs.forEach((elm: TaskLogDTO, i: number) => {
             const results: CommandResultDTO = (JSON.parse(elm.message) as CommandResultDTO);
-            items[i] = { ...items[i], results };
+            console.log('I: ', i, '; ITEM LENGTH: ', items.length, '; IDS: (', items[i].id, ', ', results.id, ')');
+            if (i < items.length && items[i].id === results.id) items[i] = { ...items[i], results };
           });
           if (!isFinal) {
             currentIndex = (commands.length > task.logs.length) ? task.logs.length : -1;
@@ -300,10 +349,10 @@ const EditionView = (props: PropTypes) => {
         setGenerationStatus(!isFinal);
         console.log('ITEMS FINAL: ', items);
         setCommands(items);
-      } catch (e) {
-        console.log(e);
-        enqueueSnackbar(t('variants:fetchCommandError'), { variant: 'error' });
+      } catch (error) {
+        console.log(error);
       }
+      setCommands(items);
     };
     init();
   }, [commands.length, enqueueSnackbar, studyId, t]);
@@ -318,10 +367,15 @@ const EditionView = (props: PropTypes) => {
       {
         !generationStatus ? (
           <div className={classes.header}>
-            <CommandImportButton onImport={onGlobalImport} />
-            <CloudDownloadOutlinedIcon className={classes.headerIcon} onClick={onGlobalExport} />
-            <QueueIcon className={classes.headerIcon} onClick={() => setOpenAddCommandModal(true)} />
-            <PowerIcon className={classes.headerIcon} onClick={onGeneration} />
+            <Button color="primary" variant="outlined" onClick={onGeneration}>
+              <FontAwesomeIcon icon="bolt" style={{ marginRight: '0.6em' }} />
+              <Typography>Generate</Typography>
+            </Button>
+            <div className={classes.editHeader}>
+              <CommandImportButton onImport={onGlobalImport} />
+              <CloudDownloadOutlinedIcon className={classes.headerIcon} onClick={onGlobalExport} />
+              <QueueIcon className={classes.headerIcon} onClick={() => setOpenAddCommandModal(true)} />
+            </div>
           </div>
         ) : (
           <div className={classes.header}>

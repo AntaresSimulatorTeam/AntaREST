@@ -30,6 +30,7 @@
     "launchGenerationSuccess": "Variant generation launched",
     "launchGenerationError": "Variant generation could not launched",
     "generationInProgress": "Generation in progress...",
-    "backButtonLabel": "back"
+    "taskCompleted": "Task completed successfully",
+    "taskFailed": "Error: Task failed"
 }
   

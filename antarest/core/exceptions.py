@@ -29,6 +29,11 @@ class CommandNotValid(HTTPException):
         super().__init__(EXPECTATION_FAILED, message)
 
 
+class CommandUpdateAuthorizationError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(EXPECTATION_FAILED, message)
+
+
 class StudyAlreadyExistError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)

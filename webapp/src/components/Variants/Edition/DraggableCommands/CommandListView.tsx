@@ -32,6 +32,7 @@ function CommandListView({ items, generationStatus, generationIndex, onDragEnd, 
     <DragDropContext onDragEnd={onDragEnd}>
       <Droppable
         droppableId="droppable"
+        isDropDisabled={generationStatus}
         mode="virtual"
         renderClone={(provided, snapshot, rubric) => (
           <CommandListItem

@@ -9,7 +9,7 @@ from typing import Callable, Optional, List, Dict
 from fastapi import HTTPException
 
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import (
     RequestParameters,
@@ -100,6 +100,12 @@ class TaskJobService(ITaskService):
                 owner_id=request_params.user.impersonator,
             )
         )
+        self.event_bus.push(
+            Event(
+                EventType.TASK_STARTED,
+                str(task.id),
+            )
+        )
         future = self.threadpool.submit(self._run_task, action, task.id)
         self.tasks[task.id] = future
         return str(task.id)
@@ -161,6 +167,12 @@ class TaskJobService(ITaskService):
                 time.sleep(2)
 
     def _run_task(self, callback: Task, task_id: str) -> None:
+        self.event_bus.push(
+            Event(
+                EventType.TASK_IN_PROGRESS,
+                task_id,
+            )
+        )
         with db():
             task = self.repo.get_or_raise(task_id)
             task.status = TaskStatus.RUNNING.value
@@ -175,11 +187,23 @@ class TaskJobService(ITaskService):
                 result.message,
                 result.return_value,
             )
+            self.event_bus.push(
+                Event(
+                    EventType.TASK_COMPLETED if result.success else EventType.TASK_FAILED,
+                    task_id,
+                )
+            )
         except Exception as e:
             logger.error(
-                f"Exception when running task {task.name}", exc_info=e
+                f"Exception when running task {task_id}", exc_info=e
             )
             self._update_task_status(task_id, TaskStatus.FAILED, False, str(e))
+            self.event_bus.push(
+                Event(
+                    EventType.TASK_FAILED,
+                    task_id,
+                )
+            )
 
     def _task_logger(self, task_id: str) -> Callable[[str], None]:
         def log_msg(message: str) -> None:

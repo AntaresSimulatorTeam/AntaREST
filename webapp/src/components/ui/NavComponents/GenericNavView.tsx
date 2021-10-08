@@ -17,19 +17,23 @@ interface PropTypes {
         [item: string]: () => JSX.Element;
     };
     initialValue: string;
+    // eslint-disable-next-line react/require-default-props
+    onClick?: (item: string) => void;
 }
 
 const GenericNavView = (props: PropTypes) => {
-  const { items, initialValue } = props;
+  const { items, initialValue, onClick = undefined } = props;
   const classes = useStyles();
   const [navList, setNavList] = useState<Array<string>>([]);
   const [navState, setNavState] = useState<string>(initialValue);
   const onItemClick = (item: string) => {
+    if (onClick !== undefined) onClick(item);
     setNavState(item);
   };
 
   useEffect(() => {
     const list = Object.keys(items);
+    console.log(list);
     setNavList(list);
 
     if (list.find((item) => item === initialValue)) setNavState(initialValue);
