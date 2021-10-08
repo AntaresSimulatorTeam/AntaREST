@@ -35,6 +35,7 @@ nav:
     - 'Introduction': 'install/0-INSTALL.md'
   - 'Develop':
     - 'Introduction': 'architecture/0-introduction.md'
+  - 'Antares ecosystem' : 'https://antares-doc.readthedocs.io'
   - 'Changelog': 'CHANGELOG.md'
 
 extra:
