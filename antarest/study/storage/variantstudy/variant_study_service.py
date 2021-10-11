@@ -27,7 +27,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import TaskResult, TaskDTO
+from antarest.core.tasks.model import TaskResult, TaskDTO, TaskEventMessages
 from antarest.core.tasks.service import (
     ITaskService,
     TaskUpdateNotifier,
@@ -612,6 +612,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             metadata.generation_task = self.task_service.add_task(
                 action=callback,
                 name=f"Generation of {metadata.id} study",
+                event_messages=TaskEventMessages(
+                    start=metadata.id, running=metadata.id, end=metadata.id
+                ),
                 request_params=RequestParameters(DEFAULT_ADMIN_USER),
             )
             self.repository.save(metadata)

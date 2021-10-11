@@ -12,7 +12,7 @@ import CommandListView from './DraggableCommands/CommandListView';
 import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal } from './utils';
 import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getTask } from '../../../services/api/variant';
 import AddCommandModal from './AddCommandModal';
-import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO } from '../../../common/types';
+import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO, TaskEventPayload } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
 import { addListener, removeListener } from '../../../ducks/websockets';
 
@@ -126,8 +126,8 @@ const EditionView = (props: PropTypes) => {
   const { studyId, addWsListener, removeWsListener } = props;
   const [openAddCommandModal, setOpenAddCommandModal] = useState<boolean>(false);
   const [generationStatus, setGenerationStatus] = useState<boolean>(false);
-  const [taskId, setTaskId] = useState<string>('');
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(-1);
+  const [expandedIndex, setExpandedIndex] = useState<number>(-1);
   const [commands, setCommands] = useState<Array<CommandItem>>([]);
 
   const onDragEnd = async ({ destination, source }: DropResult) => {
@@ -246,25 +246,28 @@ const EditionView = (props: PropTypes) => {
       setCommands(fromCommandDTOToCommandItem(dtoItems));
       setCurrentCommandGenerationIndex(0);
       // Launch generation task
-      const genTaskId = await applyCommands(studyId);
-      console.log('TASK:', genTaskId);
+      await applyCommands(studyId);
       setGenerationStatus(true);
-      setTaskId(genTaskId);
       enqueueSnackbar(t('variants:launchGenerationSuccess'), { variant: 'success' });
     } catch (e) {
       enqueueSnackbar(t('variants:launchGenerationError'), { variant: 'error' });
     }
   };
 
+  const onExpanded = (index: number, value: boolean) => {
+    if (value) {
+      setExpandedIndex(index);
+    } else {
+      setExpandedIndex(-1);
+    }
+  };
+
   const listen = useCallback((ev: WSMessage) => {
     const manageCommandResults = (commandResult: CommandResultDTO) => {
       if (studyId === commandResult.study_id) {
-        console.log('RESULTS: ', commandResult);
         let tmpCommand: Array<CommandItem> = [];
         tmpCommand = tmpCommand.concat(commands);
-        console.log('ELEMENT AT: ', tmpCommand[currentCommandGenerationIndex]);
         const index = tmpCommand.findIndex((item) => item.id === commandResult.id);
-        console.log('INDEX:', index);
         tmpCommand[index] = { ...tmpCommand[index], results: commandResult };
         if (currentCommandGenerationIndex === commands.length - 1) {
           setCurrentCommandGenerationIndex(-1);
@@ -275,55 +278,46 @@ const EditionView = (props: PropTypes) => {
       }
     };
 
-    const taskStart = (genTaskId: string) => {
-      if (genTaskId === taskId) {
+    const taskStart = (taskPayload: TaskEventPayload) => {
+      if (taskPayload.message === studyId) {
         if (commands.length > 0) setCurrentCommandGenerationIndex(0);
-        setTaskId(ev.payload as string);
         setGenerationStatus(true);
       }
     };
 
-    const taskEnd = (genTaskId: string, event: WSEvent) => {
-      console.log('TASK END:', genTaskId, ' AND ', taskId);
-      if (genTaskId === taskId && generationStatus) {
+    const taskEnd = (taskPayload: TaskEventPayload, event: WSEvent) => {
+      if (taskPayload.message === studyId) {
         setCurrentCommandGenerationIndex(-1);
-        setTaskId('');
-        console.log('OOOOOOOHHH');
         if (event === WSEvent.TASK_COMPLETED) enqueueSnackbar(t('variants:taskCompleted'), { variant: 'success' });
         else enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
         setGenerationStatus(false);
       }
     };
 
-    console.log('TASK ID INSIDE: ', taskId);
-
     switch (ev.type) {
       case WSEvent.STUDY_VARIANT_GENERATION_COMMAND_RESULT:
-        console.log('EVENT STUDY: ', ev);
         manageCommandResults(ev.payload as CommandResultDTO);
         break;
       case WSEvent.TASK_STARTED:
         console.log('EVENT STARTED: ', ev);
-        taskStart(ev.payload as string);
+        taskStart(ev.payload as TaskEventPayload);
         break;
       case WSEvent.TASK_COMPLETED:
       case WSEvent.TASK_FAILED:
         console.log('EVENT FINISH: ', ev);
-        taskEnd(ev.payload as string, ev.type);
+        taskEnd(ev.payload as TaskEventPayload, ev.type);
         break;
       default:
         break;
     }
-  }, [commands, currentCommandGenerationIndex, enqueueSnackbar, generationStatus, studyId, t, taskId]);
+  }, [commands, currentCommandGenerationIndex, enqueueSnackbar, studyId, t]);
 
   useEffect(() => {
     const init = async () => {
       let items: Array<CommandItem> = [];
       try {
         const dtoItems = await getCommands(studyId);
-        console.log('ITEMS: ', dtoItems);
         items = fromCommandDTOToCommandItem(dtoItems);
-        console.log('ITEMS YO: ', items);
       } catch (e) {
         console.log(e);
         enqueueSnackbar(t('variants:fetchCommandError'), { variant: 'error' });
@@ -338,20 +332,16 @@ const EditionView = (props: PropTypes) => {
         if (task.logs === undefined || task.logs.length === 0) {
           if (!isFinal) { currentIndex = 0; }
         } else {
-          console.log('TASK LOGS: ', task.logs);
           task.logs.forEach((elm: TaskLogDTO, i: number) => {
             const results: CommandResultDTO = (JSON.parse(elm.message) as CommandResultDTO);
-            console.log('I: ', i, '; ITEM LENGTH: ', items.length, '; IDS: (', items[i].id, ', ', results.id, ')');
             if (i < items.length && items[i].id === results.id) items[i] = { ...items[i], results };
           });
           if (!isFinal) {
             currentIndex = (commands.length > task.logs.length) ? task.logs.length : -1;
           }
         }
-        setTaskId(task.id);
         setCurrentCommandGenerationIndex(currentIndex);
         setGenerationStatus(!isFinal);
-        console.log('ITEMS FINAL: ', items);
         setCommands(items);
       } catch (error) {
         console.log(error);
@@ -388,7 +378,7 @@ const EditionView = (props: PropTypes) => {
           </div>
         )}
       <div className={classes.body}>
-        <CommandListView items={commands} generationStatus={generationStatus} generationIndex={currentCommandGenerationIndex} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} />
+        <CommandListView items={commands} generationStatus={generationStatus} expandedIndex={expandedIndex} generationIndex={currentCommandGenerationIndex} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} onExpanded={onExpanded} />
       </div>
       {openAddCommandModal && (
         <AddCommandModal

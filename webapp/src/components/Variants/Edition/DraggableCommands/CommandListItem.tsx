@@ -162,13 +162,14 @@ interface PropsType {
     onSave: (index: number) => void;
     onCommandImport: (index: number, json: object) => void;
     onCommandExport: (index: number) => void;
+    onExpanded: (index: number, value: boolean) => void;
+    expandedIndex: number;
 }
 
-function Item({ provided, item, style, isDragging, index, generationStatus, generationIndex, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport }: PropsType) {
+function Item({ provided, item, style, isDragging, index, generationStatus, generationIndex, expandedIndex, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport, onExpanded }: PropsType) {
   const classes = useStyles();
   const [t] = useTranslation();
   const [jsonData, setJsonData] = useState<object>(item.args);
-  const [isExpanded, setExpanded] = useState<boolean>(false);
   const [logModalOpen, setLogModalOpen] = useState<boolean>(false);
 
   const updateJson = (e: InteractionProps) => {
@@ -208,17 +209,18 @@ function Item({ provided, item, style, isDragging, index, generationStatus, gene
       {...provided.dragHandleProps}
       ref={provided.innerRef}
       style={getStyle({ provided, style, isDragging })}
-      className={isExpanded ? clsx(classes.itemContainer, classes.onTopVisible) : clsx(classes.itemContainer, classes.onTopInvisible)}
+      className={expandedIndex === index ? clsx(classes.itemContainer, classes.onTopVisible) : clsx(classes.itemContainer, classes.onTopInvisible)}
     >
       <div className={classes.item}>
         <Accordion
           className={isDragging ? classes.draggingListItem : classes.normalItem}
+          expanded={expandedIndex === index}
         >
           <AccordionSummary
             expandIcon={<ExpandMore />}
             aria-controls="panel1a-content"
             id="panel1a-header"
-            onClick={() => setExpanded(!isExpanded)}
+            onClick={() => onExpanded(index, !(expandedIndex === index))}
           >
             <div className={classes.infos}>
               <Typography color="primary" style={{ fontSize: '0.9em' }}>{item.action}</Typography>

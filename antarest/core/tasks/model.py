@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Sequence  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
+from antarest.core.interfaces.eventbus import Event
 from antarest.core.persistence import Base
 
 
@@ -35,6 +36,17 @@ class TaskResult(BaseModel):
 
 
 class TaskLogDTO(BaseModel):
+    id: str
+    message: str
+
+
+class TaskEventMessages(BaseModel):
+    start: Any
+    running: Any
+    end: Any
+
+
+class TaskEventPayload(BaseModel):
     id: str
     message: str
 

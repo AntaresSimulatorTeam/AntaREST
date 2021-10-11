@@ -231,7 +231,7 @@ export enum WSEvent {
   STUDY_JOB_STATUS_UPDATE='STUDY_JOB_STATUS_UPDATE',
   STUDY_VARIANT_GENERATION_COMMAND_RESULT='STUDY_VARIANT_GENERATION_COMMAND_RESULT',
   TASK_STARTED = 'TASK_STARTED',
-  TASK_IN_PROGRESS = 'TASK_IN_PROGRESS',
+  TASK_RUNNING = 'TASK_RUNNING',
   TASK_COMPLETED = 'TASK_COMPLETED',
   TASK_FAILED = 'TASK_FAILED',
 }
@@ -281,6 +281,11 @@ export interface TaskDTO {
   completion_date_utc?: number;
   result?: TaskResult;
   logs?: Array<TaskLogDTO>;
+}
+
+export interface TaskEventPayload {
+  id: string;
+  message: string;
 }
 
 export default {};
