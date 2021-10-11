@@ -192,54 +192,57 @@ class TaskJobService(ITaskService):
                     ).dict(),
                 )
             )
+
         with db():
             task = self.repo.get_or_raise(task_id)
             task.status = TaskStatus.RUNNING.value
             self.repo.save(task)
-        try:
-            with db():
+            try:
                 result = callback(self._task_logger(task_id))
-            self._update_task_status(
-                task_id,
-                TaskStatus.COMPLETED if result.success else TaskStatus.FAILED,
-                result.success,
-                result.message,
-                result.return_value,
-            )
+                self._update_task_status(
+                    task_id,
+                    TaskStatus.COMPLETED
+                    if result.success
+                    else TaskStatus.FAILED,
+                    result.success,
+                    result.message,
+                    result.return_value,
+                )
 
-            if event_messages is not None:
-                self.event_bus.push(
-                    Event(
-                        EventType.TASK_COMPLETED
-                        if result.success
-                        else EventType.TASK_FAILED,
-                        TaskEventPayload(
-                            id=task_id, message=event_messages.end
-                        ).dict(),
+                if event_messages is not None:
+                    self.event_bus.push(
+                        Event(
+                            EventType.TASK_COMPLETED
+                            if result.success
+                            else EventType.TASK_FAILED,
+                            TaskEventPayload(
+                                id=task_id, message=event_messages.end
+                            ).dict(),
+                        )
                     )
+            except Exception as e:
+                logger.error(
+                    f"Exception when running task {task_id}", exc_info=e
                 )
-        except Exception as e:
-            logger.error(f"Exception when running task {task_id}", exc_info=e)
-            self._update_task_status(task_id, TaskStatus.FAILED, False, str(e))
-            if event_messages is not None:
-                self.event_bus.push(
-                    Event(
-                        EventType.TASK_FAILED,
-                        TaskEventPayload(
-                            id=task_id, message=event_messages.end
-                        ).dict(),
+                self._update_task_status(
+                    task_id, TaskStatus.FAILED, False, str(e)
+                )
+                if event_messages is not None:
+                    self.event_bus.push(
+                        Event(
+                            EventType.TASK_FAILED,
+                            TaskEventPayload(
+                                id=task_id, message=event_messages.end
+                            ).dict(),
+                        )
                     )
-                )
 
     def _task_logger(self, task_id: str) -> Callable[[str], None]:
         def log_msg(message: str) -> None:
-            with db():
-                task = self.repo.get(task_id)
-                if task:
-                    task.logs.append(
-                        TaskJobLog(message=message, task_id=task_id)
-                    )
-                    self.repo.save(task)
+            task = self.repo.get(task_id)
+            if task:
+                task.logs.append(TaskJobLog(message=message, task_id=task_id))
+                self.repo.save(task)
 
         return log_msg
 
@@ -267,12 +270,11 @@ class TaskJobService(ITaskService):
         message: str,
         command_result: Optional[str] = None,
     ) -> None:
-        with db():
-            task = self.repo.get_or_raise(task_id)
-            task.status = status.value
-            task.result_msg = message
-            task.result_status = result
-            task.result = command_result
-            if status.is_final():
-                task.completion_date = datetime.datetime.utcnow()
-            self.repo.save(task)
+        task = self.repo.get_or_raise(task_id)
+        task.status = status.value
+        task.result_msg = message
+        task.result_status = result
+        task.result = command_result
+        if status.is_final():
+            task.completion_date = datetime.datetime.utcnow()
+        self.repo.save(task)
