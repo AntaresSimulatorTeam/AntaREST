@@ -91,28 +91,32 @@ class AbstractStorageService(IStudyStorageService[T]):
         file_settings = {}
         file_metadata = {}
 
-        study_path = self.get_study_path(study)
-        patch_metadata = self.patch_service.get(study).study or PatchStudy()
+        patch_metadata = PatchStudy()
 
-        try:
-            if study_path:
-                config = FileStudyTreeConfig(
-                    study_path=study_path,
-                    path=study_path,
-                    study_id="",
-                    version=-1,
+        if not summary:
+            try:
+                patch_metadata = (
+                    self.patch_service.get(study).study or PatchStudy()
                 )
-                raw_study = self.study_factory.create_from_config(config)
-                file_metadata = raw_study.get(url=["study", "antares"])
-                file_settings = raw_study.get(
-                    url=["settings", "generaldata", "general"]
+                study_path = self.get_study_path(study)
+                if study_path:
+                    config = FileStudyTreeConfig(
+                        study_path=study_path,
+                        path=study_path,
+                        study_id="",
+                        version=-1,
+                    )
+                    raw_study = self.study_factory.create_from_config(config)
+                    file_metadata = raw_study.get(url=["study", "antares"])
+                    file_settings = raw_study.get(
+                        url=["settings", "generaldata", "general"]
+                    )
+            except Exception as e:
+                logger.error(
+                    "Failed to retrieve general settings for study %s",
+                    study.id,
+                    exc_info=e,
                 )
-        except Exception as e:
-            logger.error(
-                "Failed to retrieve general settings for study %s",
-                study.id,
-                exc_info=e,
-            )
 
         study_workspace = DEFAULT_WORKSPACE_NAME
         if hasattr(study, "workspace"):
