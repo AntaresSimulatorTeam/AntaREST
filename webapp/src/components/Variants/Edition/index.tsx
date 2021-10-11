@@ -7,6 +7,7 @@ import QueueIcon from '@material-ui/icons/Queue';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
 import { connect, ConnectedProps } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import debug from 'debug';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
 import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal } from './utils';
@@ -15,6 +16,8 @@ import AddCommandModal from './AddCommandModal';
 import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO, TaskEventPayload } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
 import { addListener, removeListener } from '../../../ducks/websockets';
+
+const logInfo = debug('antares:variantedition:info');
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -354,8 +357,7 @@ const EditionView = (props: PropTypes) => {
   useEffect(() => {
     addWsListener(listen);
     return () => removeWsListener(listen);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addWsListener, removeWsListener]);
+  }, [addWsListener, listen, removeWsListener]);
 
   return (
     <div className={classes.root}>
