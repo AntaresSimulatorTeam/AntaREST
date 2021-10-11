@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
+import { areEqual, FixedSizeGrid, FixedSizeList, GridChildComponentProps, ListChildComponentProps } from 'react-window';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import { StudyMetadata } from '../../common/types';
 import { removeStudies } from '../../ducks/study';
 import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy, copyStudy as callCopyStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy } from '../../services/api/study';
@@ -32,6 +34,49 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     paddingTop: theme.spacing(2),
   },
 }));
+
+const Row = React.memo((props: ListChildComponentProps) => {
+  const { data, index, style } = props;
+  const { studies, isList, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = data;
+  const study = studies[index];
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', ...style, top: `${parseFloat((style || {}).top as string) + 16}px` }}>
+      <StudyListElementView
+        key={study.id}
+        study={study}
+        listMode={isList}
+        importStudy={importStudy}
+        launchStudy={launchStudy}
+        deleteStudy={deleteStudy}
+        archiveStudy={archiveStudy}
+        unarchiveStudy={unarchiveStudy}
+      />
+    </div>
+  );
+}, areEqual);
+
+const Block = (props: GridChildComponentProps) => {
+  const { data, rowIndex, columnIndex, style } = props;
+  const { studies, isList, importStudy, columnCount, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = data;
+  const study = studies[rowIndex * columnCount + columnIndex];
+  if (study) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', ...style, top: `${parseFloat((style || {}).top as string) + 16}px` }}>
+        <StudyListElementView
+          key={study.id}
+          study={study}
+          listMode={isList}
+          importStudy={importStudy}
+          launchStudy={launchStudy}
+          deleteStudy={deleteStudy}
+          archiveStudy={archiveStudy}
+          unarchiveStudy={unarchiveStudy}
+        />
+      </div>
+    );
+  }
+  return <div />;
+};
 
 const mapState = () => ({ /* noop */ });
 
@@ -101,24 +146,60 @@ const StudyListing = (props: PropTypes) => {
     }
   };
 
+  const innerElementType = forwardRef<HTMLDivElement, React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>>((innerProps, ref) => {
+    const { style } = innerProps;
+    return (
+      <div
+        ref={ref}
+        style={{
+          ...style,
+          height: `${parseFloat((style || {}).height as string) + 8 * 2}px`,
+        }}
+      // eslint-disable-next-line react/jsx-props-no-spreading
+        {...innerProps}
+      />
+    );
+  });
+
+  const GridSizer = (gridSizerProps: {width: number; height: number}) => {
+    const { width, height } = gridSizerProps;
+    const columnCount = Math.floor(width / 428);
+    return (
+      <FixedSizeGrid
+        height={height}
+        width={width}
+        innerElementType={innerElementType}
+        rowCount={Math.ceil(studies.length / columnCount)}
+        columnCount={columnCount}
+        rowHeight={206}
+        columnWidth={428}
+        itemData={{ studies, columnCount, isList, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy }}
+      >
+        {Block}
+      </FixedSizeGrid>
+    );
+  };
+
   return (
     <div className={classes.root}>
-      <div className={isList ? classes.containerList : classes.containerGrid}>
+      <AutoSizer>
         {
-          studies.map((s) => (
-            <StudyListElementView
-              key={s.id}
-              study={s}
-              listMode={isList}
-              importStudy={importStudy}
-              launchStudy={launchStudy}
-              deleteStudy={deleteStudy}
-              archiveStudy={archiveStudy}
-              unarchiveStudy={unarchiveStudy}
-            />
-          ))
-        }
-      </div>
+            ({ height, width }) => (isList ? (
+              <FixedSizeList
+                height={height}
+                width={width}
+                innerElementType={innerElementType}
+                itemCount={studies.length}
+                itemSize={66}
+                itemData={{ studies, isList, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy }}
+              >
+                {Row}
+              </FixedSizeList>
+            ) : (
+              <GridSizer width={width} height={height} />
+            ))
+          }
+      </AutoSizer>
     </div>
   );
 };
