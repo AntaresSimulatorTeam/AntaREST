@@ -127,12 +127,19 @@ const SingleStudyView = (props: PropTypes) => {
     [studyId, studyJobs, fetchStudyInfo],
   );
   useEffect(() => {
-    if (tab === 'informations' || tab === 'variants' || tab === 'treeView') setInitTab(tab);
-    else {
+    if (tab === 'informations' || tab === 'treeView') setInitTab(tab);
+    else if (tab === 'variants') {
+      setInitTab('variants');
+      if (study?.type === 'variantstudy') {
+        history.replace({ pathname: `/study/${studyId}/variants/edition` });
+      } else {
+        history.replace({ pathname: `/study/${studyId}/variants` });
+      }
+    } else {
       setInitTab('informations');
       history.replace({ pathname: `/study/${studyId}/informations` });
     }
-  }, [studyId, history, tab, option]);
+  }, [studyId, history, tab, study]);
 
   useEffect(() => {
     if (studyId) {

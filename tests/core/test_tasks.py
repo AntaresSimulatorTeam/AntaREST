@@ -32,9 +32,9 @@ def test_service() -> TaskJobService:
 
     repo_mock = Mock(spec=TaskJobRepository)
     creation_date = datetime.datetime.utcnow()
-    repo_mock.list.return_value = [
-        TaskJob(id="a", name="b", status=2, creation_date=creation_date)
-    ]
+    task = TaskJob(id="a", name="b", status=2, creation_date=creation_date)
+    repo_mock.list.return_value = [task]
+    repo_mock.get_or_raise.return_value = task
     service = TaskJobService(
         config=Config(), repository=repo_mock, event_bus=Mock()
     )
@@ -93,16 +93,19 @@ def test_service() -> TaskJobService:
 
     repo_mock.reset_mock()
     now = datetime.datetime.utcnow()
-    repo_mock.save.side_effect = lambda x: TaskJob(
+    task = TaskJob(
         name="failed action",
         owner_id=1,
         id="a",
         creation_date=now,
         status=TaskStatus.PENDING.value,
     )
+    repo_mock.save.side_effect = lambda x: task
+    repo_mock.get_or_raise.return_value = task
     service.add_task(
         action_fail,
         "failed action",
+        None,
         RequestParameters(user=DEFAULT_ADMIN_USER),
     )
     service.await_task("a")
@@ -151,13 +154,15 @@ def test_service() -> TaskJobService:
 
     repo_mock.reset_mock()
     now = datetime.datetime.utcnow()
-    repo_mock.save.side_effect = lambda x: TaskJob(
+    task = TaskJob(
         name="Unnamed",
         owner_id=1,
         id="a",
         creation_date=now,
         status=TaskStatus.PENDING.value,
     )
+    repo_mock.save.side_effect = lambda x: task
+    repo_mock.get_or_raise.return_value = task
     repo_mock.get.side_effect = [
         TaskJob(
             name="Unnamed",
@@ -176,6 +181,7 @@ def test_service() -> TaskJobService:
     ]
     service.add_task(
         action_ok,
+        None,
         None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )

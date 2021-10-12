@@ -21,12 +21,17 @@ from antarest.core.exceptions import (
     VariantGenerationError,
     VariantStudyParentNotValid,
     CommandNotValid,
+    CommandUpdateAuthorizationError,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import TaskResult
+from antarest.core.tasks.model import (
+    TaskResult,
+    TaskDTO,
+    CustomTaskEventMessages,
+)
 from antarest.core.tasks.service import (
     ITaskService,
     TaskUpdateNotifier,
@@ -172,6 +177,22 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     f"Command at index {i} for study {study_id}"
                 )
 
+    def _check_update_authorization(self, metadata: VariantStudy) -> None:
+        if metadata.generation_task:
+            try:
+                previous_task = self.task_service.status_task(
+                    metadata.generation_task,
+                    RequestParameters(DEFAULT_ADMIN_USER),
+                )
+                if not previous_task.status.is_final():
+                    logger.error(f"{metadata.id} generation in progress")
+                    raise CommandUpdateAuthorizationError(metadata.id)
+            except HTTPException as e:
+                logger.warning(
+                    f"Failed to retrieve generation task for study {metadata.id}",
+                    exc_info=e,
+                )
+
     def append_command(
         self, study_id: str, command: CommandDTO, params: RequestParameters
     ) -> str:
@@ -184,6 +205,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: None
         """
         study = self._get_variant_study(study_id, params)
+        self._check_update_authorization(study)
         index = len(study.commands)
         new_id = str(uuid4())
         command_block = CommandBlock(
@@ -212,6 +234,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: None
         """
         study = self._get_variant_study(study_id, params)
+        self._check_update_authorization(study)
         self._check_commands_validity(study_id, commands)
         first_index = len(study.commands)
         study.commands.extend(
@@ -242,8 +265,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: None
         """
         study = self._get_variant_study(study_id, params)
+        self._check_update_authorization(study)
         self._check_commands_validity(study_id, commands)
-
         study.commands = []
         study.commands.extend(
             [
@@ -275,6 +298,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: None
         """
         study = self._get_variant_study(study_id, params)
+        self._check_update_authorization(study)
+
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0 and len(study.commands) > new_index >= 0:
             command = study.commands[index]
@@ -296,6 +321,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: None
         """
         study = self._get_variant_study(study_id, params)
+        self._check_update_authorization(study)
+
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:
             study.commands.pop(index)
@@ -314,6 +341,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: None
         """
         study = self._get_variant_study(study_id, params)
+        self._check_update_authorization(study)
+
         study.commands = []
         self.repository.save(metadata=study, update_modification_date=True)
 
@@ -333,8 +362,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             params: request parameters
         Returns: None
         """
-        self._check_commands_validity(study_id, [command])
         study = self._get_variant_study(study_id, params)
+        self._check_update_authorization(study)
+        self._check_commands_validity(study_id, [command])
+
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:
             study.commands[index].command = command.action
@@ -558,7 +589,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     )
                     if not previous_task.status.is_final():
                         logger.info(
-                            f"Returing already existing variant study {metadata.id} generation"
+                            f"Returning already existing variant study {metadata.id} generation"
                         )
                         return str(metadata.generation_task)
                 except HTTPException as e:
@@ -585,6 +616,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             metadata.generation_task = self.task_service.add_task(
                 action=callback,
                 name=f"Generation of {metadata.id} study",
+                custom_event_messages=CustomTaskEventMessages(
+                    start=metadata.id, running=metadata.id, end=metadata.id
+                ),
                 request_params=RequestParameters(DEFAULT_ADMIN_USER),
             )
             self.repository.save(metadata)
@@ -709,6 +743,15 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return self.generator.generate(
             commands, dest_path, variant_study, notifier=notify
+        )
+
+    def get_study_task(
+        self, study_id: str, params: RequestParameters
+    ) -> TaskDTO:
+        variant_study = self._get_variant_study(study_id, params)
+        task_id = variant_study.generation_task
+        return self.task_service.status_task(
+            task_id=task_id, request_params=params, with_logs=True
         )
 
     def create(self, study: VariantStudy) -> VariantStudy:

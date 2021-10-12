@@ -1,6 +1,9 @@
 import datetime
+from http import HTTPStatus
 from operator import and_
 from typing import Optional, List
+
+from fastapi import HTTPException
 
 from antarest.core.tasks.model import TaskJob, TaskListFilter
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -17,6 +20,12 @@ class TaskJobRepository:
         task: TaskJob = db.session.get(TaskJob, id)
         if task is not None:
             db.session.refresh(task)
+        return task
+
+    def get_or_raise(self, id: str) -> TaskJob:
+        task = self.get(id)
+        if task is None:
+            raise HTTPException(HTTPStatus.NOT_FOUND, f"Task {id} not found")
         return task
 
     def list(

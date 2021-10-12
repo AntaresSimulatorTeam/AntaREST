@@ -137,6 +137,7 @@ const refreshHandlers = (state: WebsocketState): void => {
     // eslint-disable-next-line no-param-reassign
     state.socket.onmessage = (ev: MessageEvent): void => {
       const message: WSMessage = JSON.parse(ev.data);
+      logInfo('Processing logs', message, state.listeners);
       state.listeners.forEach((l) => {
         l(message);
       });
@@ -207,7 +208,7 @@ export default (state = initialState, action: WebsocketAction): WebsocketState =
     case 'WS/REMOVE_LISTENER':
       return {
         ...state,
-        listeners: state.listeners.filter((l) => l === action.payload),
+        listeners: state.listeners.filter((l) => l !== action.payload),
       };
     case 'WS/ADD_LISTENER':
       return {
