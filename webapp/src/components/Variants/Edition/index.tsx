@@ -17,7 +17,7 @@ import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO, TaskEvent
 import CommandImportButton from './DraggableCommands/CommandImportButton';
 import { addListener, removeListener } from '../../../ducks/websockets';
 
-const logInfo = debug('antares:variantedition:info');
+const logError = debug('antares:variantedition:error');
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -302,12 +302,10 @@ const EditionView = (props: PropTypes) => {
         manageCommandResults(ev.payload as CommandResultDTO);
         break;
       case WSEvent.TASK_STARTED:
-        console.log('EVENT STARTED: ', ev);
         taskStart(ev.payload as TaskEventPayload);
         break;
       case WSEvent.TASK_COMPLETED:
       case WSEvent.TASK_FAILED:
-        console.log('EVENT FINISH: ', ev);
         taskEnd(ev.payload as TaskEventPayload, ev.type);
         break;
       default:
@@ -322,7 +320,7 @@ const EditionView = (props: PropTypes) => {
         const dtoItems = await getCommands(studyId);
         items = fromCommandDTOToCommandItem(dtoItems);
       } catch (e) {
-        console.log(e);
+        logError('Error: ', e);
         enqueueSnackbar(t('variants:fetchCommandError'), { variant: 'error' });
       }
 
@@ -347,7 +345,7 @@ const EditionView = (props: PropTypes) => {
         setGenerationStatus(!isFinal);
         setCommands(items);
       } catch (error) {
-        console.log(error);
+        logError('Error: ', error);
       }
       setCommands(items);
     };
