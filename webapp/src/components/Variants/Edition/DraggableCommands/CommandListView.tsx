@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FixedSizeList, areEqual, ListChildComponentProps } from 'react-window';
 import { DragDropContext, Droppable, Draggable, OnDragEndResponder } from 'react-beautiful-dnd';
 import { CommandItem } from '../CommandTypes';
@@ -30,6 +30,14 @@ export type DraggableListProps = {
 };
 
 function CommandListView({ items, generationStatus, generationIndex, expandedIndex, onDragEnd, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport, onExpanded }: DraggableListProps) {
+  const listRef = useRef(null);
+
+  useEffect(() => {
+    if (listRef && listRef !== null && listRef.current) {
+      if (generationIndex >= 0) (listRef.current as any).scrollToItem(generationIndex, 'smart');
+    }
+  }, [generationIndex]);
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <Droppable
@@ -62,6 +70,7 @@ function CommandListView({ items, generationStatus, generationIndex, expandedInd
             itemSize={80}
             width={300}
             outerRef={provided.innerRef}
+            ref={listRef}
             itemData={{ items, onDelete, onArgsUpdate, onSave, onCommandImport, onCommandExport, onExpanded, generationStatus, generationIndex, expandedIndex }}
             style={{ width: '100%', height: '90%' }}
           >
