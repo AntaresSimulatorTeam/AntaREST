@@ -27,7 +27,11 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import TaskResult, TaskDTO, TaskEventMessages
+from antarest.core.tasks.model import (
+    TaskResult,
+    TaskDTO,
+    CustomTaskEventMessages,
+)
 from antarest.core.tasks.service import (
     ITaskService,
     TaskUpdateNotifier,
@@ -261,8 +265,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: None
         """
         study = self._get_variant_study(study_id, params)
-        self._check_commands_validity(study_id, commands)
         self._check_update_authorization(study)
+        self._check_commands_validity(study_id, commands)
         study.commands = []
         study.commands.extend(
             [
@@ -358,9 +362,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             params: request parameters
         Returns: None
         """
-        self._check_commands_validity(study_id, [command])
         study = self._get_variant_study(study_id, params)
         self._check_update_authorization(study)
+        self._check_commands_validity(study_id, [command])
 
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:
@@ -612,7 +616,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             metadata.generation_task = self.task_service.add_task(
                 action=callback,
                 name=f"Generation of {metadata.id} study",
-                event_messages=TaskEventMessages(
+                custom_event_messages=CustomTaskEventMessages(
                     start=metadata.id, running=metadata.id, end=metadata.id
                 ),
                 request_params=RequestParameters(DEFAULT_ADMIN_USER),

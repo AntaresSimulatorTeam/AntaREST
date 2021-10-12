@@ -40,10 +40,10 @@ class TaskLogDTO(BaseModel):
     message: str
 
 
-class TaskEventMessages(BaseModel):
-    start: Any
-    running: Any
-    end: Any
+class CustomTaskEventMessages(BaseModel):
+    start: str
+    running: str
+    end: str
 
 
 class TaskEventPayload(BaseModel):

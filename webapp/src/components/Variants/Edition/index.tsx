@@ -301,7 +301,7 @@ const EditionView = (props: PropTypes) => {
       case WSEvent.STUDY_VARIANT_GENERATION_COMMAND_RESULT:
         manageCommandResults(ev.payload as CommandResultDTO);
         break;
-      case WSEvent.TASK_STARTED:
+      case WSEvent.TASK_ADDED:
         taskStart(ev.payload as TaskEventPayload);
         break;
       case WSEvent.TASK_COMPLETED:

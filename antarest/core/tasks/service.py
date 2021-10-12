@@ -22,7 +22,7 @@ from antarest.core.tasks.model import (
     TaskStatus,
     TaskJobLog,
     TaskResult,
-    TaskEventMessages,
+    CustomTaskEventMessages,
     TaskEventPayload,
 )
 from antarest.core.tasks.repository import TaskJobRepository
@@ -40,7 +40,7 @@ class ITaskService(ABC):
         self,
         action: Task,
         name: Optional[str],
-        event_messages: Optional[TaskEventMessages],
+        custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
         raise NotImplementedError()
@@ -92,7 +92,7 @@ class TaskJobService(ITaskService):
         self,
         action: Task,
         name: Optional[str],
-        event_messages: Optional[TaskEventMessages],
+        custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
         if not request_params.user:
@@ -105,17 +105,18 @@ class TaskJobService(ITaskService):
             )
         )
 
-        if event_messages is not None:
-            self.event_bus.push(
-                Event(
-                    EventType.TASK_STARTED,
-                    TaskEventPayload(
-                        id=task.id, message=event_messages.start
-                    ).dict(),
-                )
+        self.event_bus.push(
+            Event(
+                EventType.TASK_ADDED,
+                TaskEventPayload(
+                    id=task.id, message=custom_event_messages.start
+                ).dict()
+                if custom_event_messages is not None
+                else f"Task {task.id} added",
             )
+        )
         future = self.threadpool.submit(
-            self._run_task, action, task.id, event_messages
+            self._run_task, action, task.id, custom_event_messages
         )
         self.tasks[task.id] = future
         return str(task.id)
@@ -180,18 +181,19 @@ class TaskJobService(ITaskService):
         self,
         callback: Task,
         task_id: str,
-        event_messages: Optional[TaskEventMessages] = None,
+        custom_event_messages: Optional[CustomTaskEventMessages] = None,
     ) -> None:
 
-        if event_messages is not None:
-            self.event_bus.push(
-                Event(
-                    EventType.TASK_RUNNING,
-                    TaskEventPayload(
-                        id=task_id, message=event_messages.running
-                    ).dict(),
-                )
+        self.event_bus.push(
+            Event(
+                EventType.TASK_RUNNING,
+                TaskEventPayload(
+                    id=task_id, message=custom_event_messages.running
+                ).dict()
+                if custom_event_messages is not None
+                else f"Task {task_id} is running",
             )
+        )
 
         with db():
             task = self.repo.get_or_raise(task_id)
@@ -208,18 +210,18 @@ class TaskJobService(ITaskService):
                     result.message,
                     result.return_value,
                 )
-
-                if event_messages is not None:
-                    self.event_bus.push(
-                        Event(
-                            EventType.TASK_COMPLETED
-                            if result.success
-                            else EventType.TASK_FAILED,
-                            TaskEventPayload(
-                                id=task_id, message=event_messages.end
-                            ).dict(),
-                        )
+                self.event_bus.push(
+                    Event(
+                        EventType.TASK_COMPLETED
+                        if result.success
+                        else EventType.TASK_FAILED,
+                        TaskEventPayload(
+                            id=task_id, message=custom_event_messages.end
+                        ).dict()
+                        if custom_event_messages is not None
+                        else f'Task {task_id} {"completed" if result.success else "failed"}',
                     )
+                )
             except Exception as e:
                 logger.error(
                     f"Exception when running task {task_id}", exc_info=e
@@ -227,15 +229,16 @@ class TaskJobService(ITaskService):
                 self._update_task_status(
                     task_id, TaskStatus.FAILED, False, str(e)
                 )
-                if event_messages is not None:
-                    self.event_bus.push(
-                        Event(
-                            EventType.TASK_FAILED,
-                            TaskEventPayload(
-                                id=task_id, message=event_messages.end
-                            ).dict(),
-                        )
+                self.event_bus.push(
+                    Event(
+                        EventType.TASK_FAILED,
+                        TaskEventPayload(
+                            id=task_id, message=custom_event_messages.end
+                        ).dict()
+                        if custom_event_messages is not None
+                        else f"Task {task_id} failed",
                     )
+                )
 
     def _task_logger(self, task_id: str) -> Callable[[str], None]:
         def log_msg(message: str) -> None:
