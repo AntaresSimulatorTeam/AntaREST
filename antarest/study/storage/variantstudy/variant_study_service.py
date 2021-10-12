@@ -585,7 +585,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     )
                     if not previous_task.status.is_final():
                         logger.info(
-                            f"Returing already existing variant study {metadata.id} generation"
+                            f"Returning already existing variant study {metadata.id} generation"
                         )
                         return str(metadata.generation_task)
                 except HTTPException as e:
