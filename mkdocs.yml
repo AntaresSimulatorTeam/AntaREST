@@ -29,6 +29,7 @@ theme:
 
 nav:
   - Home: index.md
+  - 'Antares ecosystem' : 'https://antares-doc.readthedocs.io'
   - 'User guide':
       - 'Introduction': 'user-guide/0-introduction.md'
   - 'Build':
