@@ -4,7 +4,7 @@ import shutil
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, cast
+from typing import List, Optional, cast, Dict, Union
 from uuid import uuid4
 
 import dataclasses
@@ -87,6 +87,7 @@ from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
     CommandResultDTO,
+    VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.repository import (
     VariantStudyRepository,
@@ -396,6 +397,23 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, study, StudyPermissionType.READ)
         return study
 
+    def get_all_variants_children(
+        self, parent_id: str, params: RequestParameters
+    ) -> VariantTreeDTO:
+        study = self._get_variant_study(
+            parent_id, params, raw_study_accepted=True
+        )
+        children_tree = VariantTreeDTO(
+            node=self.get_study_information(study, summary=True), children=[]
+        )
+        children = self.get_variants_children(parent_id, params)
+        for child in children:
+            children_tree.children.append(
+                self.get_all_variants_children(child.id, params)
+            )
+
+        return children_tree
+
     def get_variants_children(
         self, parent_id: str, params: RequestParameters
     ) -> List[StudyMetadataDTO]:
@@ -598,18 +616,21 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                         exc_info=e,
                     )
 
+            # this is important because the callback will be called outside of the current db context so we need to fetch the id attribute before
+            study_id = metadata.id
+
             def callback(notifier: TaskUpdateNotifier) -> TaskResult:
                 generate_result = self._generate(
-                    metadata.id,
+                    study_id,
                     denormalize,
                     RequestParameters(DEFAULT_ADMIN_USER),
                     notifier,
                 )
                 return TaskResult(
                     success=generate_result.success,
-                    message=f"{metadata.id} generated successfully"
+                    message=f"{study_id} generated successfully"
                     if generate_result.success
-                    else f"{metadata.id} not generated",
+                    else f"{study_id} not generated",
                     return_value=generate_result.json(),
                 )
 

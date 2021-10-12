@@ -481,8 +481,18 @@ def test_variant_manager(app: FastAPI):
         },
     )
     variant_id = res.json()
-    assert res.status_code == 200
-
+    client.post(
+        f"/v1/studies/{variant_id}/variants?name=bar",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    client.post(
+        f"/v1/studies/{variant_id}/variants?name=baz",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
     res = client.get(
         f"/v1/studies/{base_study_id}/variants",
         headers={
@@ -492,6 +502,27 @@ def test_variant_manager(app: FastAPI):
     assert len(res.json()) == 1
     assert res.status_code == 200
 
+    res = client.get(
+        f"/v1/studies/{base_study_id}/variants?recursive=true",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    children = res.json()
+    assert children["node"]["name"] == "foo"
+    assert len(children["children"]) == 1
+    assert children["children"][0]["node"]["name"] == "foo"
+    assert len(children["children"][0]["children"]) == 2
+    assert children["children"][0]["children"][0]["node"]["name"] == "bar"
+    assert children["children"][0]["children"][1]["node"]["name"] == "baz"
+
+    res = client.post(
+        f"/v1/studies/{base_study_id}/variants?name=foo",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    variant_id = res.json()
     res = client.get(
         f"/v1/studies/{variant_id}/parents",
         headers={
