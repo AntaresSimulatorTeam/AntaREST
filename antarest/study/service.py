@@ -131,10 +131,13 @@ class StudyService:
             )
         )
 
-    def get_studies_information(self, params: RequestParameters) -> JSON:
+    def get_studies_information(
+        self, summary: bool, params: RequestParameters
+    ) -> JSON:
         """
         Get information for all studies.
         Args:
+            summary: indicate if just basic information should be retrieved
             params: request parameters
 
         Returns: List of study information
@@ -143,18 +146,18 @@ class StudyService:
         logger.info("studies metadata asked by user %s", params.get_user_id())
         studies: Dict[str, StudyMetadataDTO] = {}
         for study in self._get_study_metadatas(params):
-            study_metadata = self._try_get_studies_information(study)
+            study_metadata = self._try_get_studies_information(study, summary)
             if study_metadata is not None:
                 studies[study_metadata.id] = study_metadata
         return studies
 
     def _try_get_studies_information(
-        self, study: Study
+        self, study: Study, summary: bool
     ) -> Optional[StudyMetadataDTO]:
         try:
             return self._get_study_storage_service(
                 study
-            ).get_study_information(study)
+            ).get_study_information(study, summary)
         except Exception as e:
             logger.warning(
                 "Failed to build study %s metadata", study.id, exc_info=e
