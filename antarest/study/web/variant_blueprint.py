@@ -84,20 +84,15 @@ def create_study_variant_routes(
     )
     def get_variants(
         uuid: str,
-        recursive: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Union[List[StudyMetadataDTO], VariantTreeDTO]:
+    ) -> VariantTreeDTO:
         logger.info(
             f"Fetching variant children of study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        if recursive:
-            return variant_study_service.get_all_variants_children(
-                sanitized_uuid, params
-            )
-        return variant_study_service.get_variants_children(
+        return variant_study_service.get_all_variants_children(
             sanitized_uuid, params
         )
 

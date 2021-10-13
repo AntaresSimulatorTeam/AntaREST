@@ -406,7 +406,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         children_tree = VariantTreeDTO(
             node=self.get_study_information(study, summary=True), children=[]
         )
-        children = self.get_variants_children(parent_id, params)
+        children = self._get_variants_children(parent_id, params)
         for child in children:
             children_tree.children.append(
                 self.get_all_variants_children(child.id, params)
@@ -414,7 +414,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return children_tree
 
-    def get_variants_children(
+    def _get_variants_children(
         self, parent_id: str, params: RequestParameters
     ) -> List[StudyMetadataDTO]:
         self._get_variant_study(
