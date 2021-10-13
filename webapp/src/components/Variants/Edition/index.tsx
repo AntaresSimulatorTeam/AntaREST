@@ -8,6 +8,7 @@ import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined'
 import { connect, ConnectedProps } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import debug from 'debug';
+import { AxiosError } from 'axios';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
 import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal } from './utils';
@@ -16,6 +17,7 @@ import AddCommandModal from './AddCommandModal';
 import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO, TaskEventPayload } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
 import { addListener, removeListener } from '../../../ducks/websockets';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 const logError = debug('antares:variantedition:error');
 
@@ -317,11 +319,11 @@ const EditionView = (props: PropTypes) => {
     const init = async () => {
       let items: Array<CommandItem> = [];
       try {
-        const dtoItems = await getCommands(studyId);
+        const dtoItems = await getCommands(`${studyId}1`);
         items = fromCommandDTOToCommandItem(dtoItems);
       } catch (e) {
         logError('Error: ', e);
-        enqueueSnackbar(t('variants:fetchCommandError'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('variants:fetchCommandError'), e as AxiosError);
       }
 
       try {
