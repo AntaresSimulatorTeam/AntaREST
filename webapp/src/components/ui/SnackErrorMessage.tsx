@@ -118,7 +118,7 @@ const SnackErrorMessage = forwardRef<HTMLDivElement, Props>((props: Props, ref) 
           details.response !== undefined && (
           <Collapse in={expanded} timeout="auto" unmountOnExit>
             <Paper className={classes.collapse}>
-              <Grid container spacing={2} className={classes.details}>
+              <Grid container spacing={1} className={classes.details}>
                 <Grid item xs={6}>
                   <Typography className={classes.label}>Status :</Typography>
                   <Typography className={classes.errorMessage}>{details.response.status}</Typography>

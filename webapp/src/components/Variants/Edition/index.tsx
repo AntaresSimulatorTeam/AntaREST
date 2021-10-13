@@ -319,7 +319,7 @@ const EditionView = (props: PropTypes) => {
     const init = async () => {
       let items: Array<CommandItem> = [];
       try {
-        const dtoItems = await getCommands(`${studyId}1`);
+        const dtoItems = await getCommands(studyId);
         items = fromCommandDTOToCommandItem(dtoItems);
       } catch (e) {
         logError('Error: ', e);
