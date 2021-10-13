@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict
+from typing import List, Dict, Union
 
 from fastapi import APIRouter, Depends, Body
 
@@ -9,6 +9,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
 )
+from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -17,6 +18,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.model import (
     GenerationResultInfoDTO,
     CommandDTO,
+    VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
@@ -83,14 +85,14 @@ def create_study_variant_routes(
     def get_variants(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> List[StudyMetadataDTO]:
+    ) -> VariantTreeDTO:
         logger.info(
             f"Fetching variant children of study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.get_variants_children(
+        return variant_study_service.get_all_variants_children(
             sanitized_uuid, params
         )
 
@@ -148,7 +150,7 @@ def create_study_variant_routes(
         summary="Append a command to variant",
         responses={
             200: {
-                "description": "The id a the appended command",
+                "description": "The id of the study",
             }
         },
     )
@@ -164,6 +166,31 @@ def create_study_variant_routes(
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.append_commands(
+            sanitized_uuid, commands, params
+        )
+
+    @bp.put(
+        "/studies/{uuid}/commands",
+        tags=[APITag.study_variant_management],
+        summary="Replace all commands from variant",
+        responses={
+            200: {
+                "description": "The id of the study",
+            }
+        },
+    )
+    def replace_commands(
+        uuid: str,
+        commands: List[CommandDTO] = Body(...),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> str:
+        logger.info(
+            f"Replacing all commands of variant study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        sanitized_uuid = sanitize_uuid(uuid)
+        return variant_study_service.replace_commands(
             sanitized_uuid, commands, params
         )
 
@@ -283,6 +310,23 @@ def create_study_variant_routes(
             sanitized_uuid, sanitized_cid, params
         )
 
+    @bp.delete(
+        "/studies/{uuid}/commands",
+        tags=[APITag.study_variant_management],
+        summary="Clear variant's commands",
+    )
+    def remove_all_commands(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Removing all commands from variant study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        sanitized_uuid = sanitize_uuid(uuid)
+        variant_study_service.remove_all_commands(sanitized_uuid, params)
+
     @bp.put(
         "/studies/{uuid}/generate",
         tags=[APITag.study_variant_management],
@@ -307,6 +351,17 @@ def create_study_variant_routes(
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.generate(
             sanitized_uuid, denormalize, params
+        )
+
+    @bp.get("/studies/{uuid}/task")
+    def get_study_task(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> TaskDTO:
+        request_params = RequestParameters(user=current_user)
+        sanitized_uuid = sanitize_uuid(uuid)
+        return variant_study_service.get_study_task(
+            sanitized_uuid, request_params
         )
 
     @bp.post(

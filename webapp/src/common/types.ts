@@ -55,6 +55,16 @@ export interface StudyMetadata {
   folder?: string;
 }
 
+export interface VariantTreeDTO {
+  node: StudyMetadataDTO;
+  children: Array<VariantTreeDTO>;
+}
+
+export interface VariantTree {
+  node: StudyMetadata;
+  children: Array<VariantTree>;
+}
+
 export type JobStatus =
   | 'JobStatus.RUNNING'
   | 'JobStatus.PENDING'
@@ -228,7 +238,12 @@ export enum WSEvent {
   STUDY_JOB_STARTED='STUDY_JOB_STARTED',
   STUDY_JOB_LOG_UPDATE='STUDY_JOB_LOG_UPDATE',
   STUDY_JOB_COMPLETED='STUDY_JOB_COMPLETED',
-  STUDY_JOB_STATUS_UPDATE='STUDY_JOB_STATUS_UPDATE'
+  STUDY_JOB_STATUS_UPDATE='STUDY_JOB_STATUS_UPDATE',
+  STUDY_VARIANT_GENERATION_COMMAND_RESULT='STUDY_VARIANT_GENERATION_COMMAND_RESULT',
+  TASK_ADDED = 'TASK_ADDED',
+  TASK_RUNNING = 'TASK_RUNNING',
+  TASK_COMPLETED = 'TASK_COMPLETED',
+  TASK_FAILED = 'TASK_FAILED',
 }
 
 export interface WSMessage {
@@ -238,6 +253,49 @@ export interface WSMessage {
 
 export type Components = {
   [item: string]: () => JSX.Element;
+}
+
+export interface CommandResultDTO {
+  study_id: string;
+  id: string;
+  success: boolean;
+  message: string;
+}
+
+export interface TaskResult {
+  success: boolean;
+  message: string;
+  return_value?: string;
+}
+
+export interface TaskLogDTO {
+  id: string;
+  message: string;
+}
+
+export enum TaskStatus {
+  PENDING = 1,
+  RUNNING = 2,
+  COMPLETED = 3,
+  FAILED = 4,
+  TIMEOUT = 5,
+  CANCELLED = 6,
+}
+
+export interface TaskDTO {
+  id: string;
+  name: string;
+  owner?: number;
+  status: TaskStatus;
+  creation_date_utc: number;
+  completion_date_utc?: number;
+  result?: TaskResult;
+  logs?: Array<TaskLogDTO>;
+}
+
+export interface TaskEventPayload {
+  id: string;
+  message: string;
 }
 
 export default {};

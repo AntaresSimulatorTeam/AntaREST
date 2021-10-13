@@ -1,6 +1,4 @@
 from http import HTTPStatus
-from http.client import EXPECTATION_FAILED
-
 from fastapi import HTTPException
 
 
@@ -11,7 +9,7 @@ class StudyNotFoundError(HTTPException):
 
 class VariantGenerationError(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(EXPECTATION_FAILED, message)
+        super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
 
 
 class NoParentStudyError(HTTPException):
@@ -22,6 +20,16 @@ class NoParentStudyError(HTTPException):
 class CommandNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class CommandNotValid(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
+
+
+class CommandUpdateAuthorizationError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.LOCKED, message)
 
 
 class StudyAlreadyExistError(HTTPException):

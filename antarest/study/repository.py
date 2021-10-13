@@ -29,6 +29,9 @@ class StudyMetadataRepository:
         logger.debug(f"save study {metadata.id}")
         return metadata
 
+    def refresh(self, metadata: Study) -> None:
+        db.session.refresh(metadata)
+
     def get(self, id: str) -> Optional[Study]:
         metadata: Study = db.session.query(Study).get(id)
         return metadata

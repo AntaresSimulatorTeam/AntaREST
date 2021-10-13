@@ -15,7 +15,9 @@ import {
   faEdit,
   faShieldAlt,
   faUsers,
+  faBolt,
 } from '@fortawesome/free-solid-svg-icons';
+import { faQuestionCircle, faCopy } from '@fortawesome/free-regular-svg-icons';
 
 export default function (): void {
   library.add(
@@ -32,5 +34,8 @@ export default function (): void {
     faEdit,
     faShieldAlt,
     faUsers,
+    faQuestionCircle,
+    faCopy,
+    faBolt,
   );
 }

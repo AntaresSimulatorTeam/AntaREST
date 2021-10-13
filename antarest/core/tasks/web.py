@@ -1,12 +1,12 @@
 import logging
-from typing import Any
+from typing import Any, List
 
 from fastapi import APIRouter, Depends
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import TaskListFilter
+from antarest.core.tasks.model import TaskListFilter, TaskJobLog
 from antarest.core.tasks.service import TaskJobService
 from antarest.login.auth import Auth
 
@@ -39,12 +39,13 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
     def get_task(
         task_id: str,
         wait_for_completion: bool = False,
+        with_logs: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         request_params = RequestParameters(user=current_user)
-        task_status = service.status_task(task_id, request_params)
+        task_status = service.status_task(task_id, request_params, with_logs)
         if wait_for_completion and not task_status.status.is_final():
             service.await_task(task_id)
-        return service.status_task(task_id, request_params)
+        return service.status_task(task_id, request_params, with_logs)
 
     return bp

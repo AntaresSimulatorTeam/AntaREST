@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useState, useEffect } from 'react';
-import { createStyles, makeStyles, Theme, TextField, Typography, Button, Checkbox, Chip } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, TextField, Typography, Button, Checkbox, Chip, Tooltip, CircularProgress } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import clsx from 'clsx';
 import GenericModal from '../ui/GenericModal';
 import { getGroups } from '../../services/api/user';
 import { GroupDTO, MatrixDataSetDTO } from '../../common/types';
-import { saveMatrix } from './utils';
+import { loaderStyle, saveMatrix } from './utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -18,6 +20,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
     overflowY: 'auto',
     overflowX: 'hidden',
+    position: 'relative',
   },
   mandatoryInfos: {
     flex: '1',
@@ -100,6 +103,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
       margin: theme.spacing(0.5),
     },
   },
+  ...loaderStyle,
 }));
 
 interface PropTypes {
@@ -117,19 +121,24 @@ const DataModal = (props: PropTypes) => {
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
   const [selectedGroupList, setSelectedGroupList] = useState<Array<GroupDTO>>([]);
   const [name, setName] = useState<string>('');
+  const [isJson, setIsJson] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [currentFile, setFile] = useState<File|undefined>();
+  const [importing, setImporting] = useState(false);
   const [publicStatus, setPublic] = useState<boolean>(false);
 
   const onSave = async () => {
     let closeModal = true;
     try {
-      const msg = await saveMatrix(name, publicStatus, selectedGroupList, onNewDataUpdate, currentFile, data);
+      setImporting(true);
+      const msg = await saveMatrix(name, publicStatus, selectedGroupList, onNewDataUpdate, currentFile, data, isJson, setUploadProgress);
       enqueueSnackbar(t(msg), { variant: 'success' });
     } catch (e) {
       const error = e as Error;
       enqueueSnackbar(t(error.message), { variant: 'error' });
       if (error.message === 'data:fileNotUploaded' || error.message === 'data:emptyName') closeModal = false;
     } finally {
+      setImporting(false);
       if (closeModal) onClose();
     }
   };
@@ -149,6 +158,14 @@ const DataModal = (props: PropTypes) => {
       setSelectedGroupList(selectedGroupList.filter((elm) => item.id !== elm.id));
     }
   };
+
+  const HelperIcon = React.forwardRef<HTMLInputElement>((p, ref) => {
+    if (ref) {
+      // eslint-disable-next-line react/jsx-props-no-spreading
+      return <span {...p} style={{ marginLeft: '0.5em' }} ref={ref}><FontAwesomeIcon icon={['far', 'question-circle']} /></span>;
+    }
+    return <div />;
+  });
 
   useEffect(() => {
     const init = async () => {
@@ -175,11 +192,34 @@ const DataModal = (props: PropTypes) => {
   return (
     <GenericModal
       open={open}
-      handleClose={onClose}
-      handleSave={onSave}
+      handleClose={importing ? undefined : onClose}
+      handleSave={importing ? undefined : onSave}
       title={data ? data.name : t('data:newMatrixTitle')}
     >
       <div className={classes.root}>
+        {
+          importing && (
+            <>
+              <div className={classes.rootLoader}>
+                {
+                  uploadProgress < 100 ? (
+                    <div className={classes.loaderContainer}>
+                      <CircularProgress variant="determinate" className={classes.loaderWheel} value={uploadProgress} />
+                      <div className={classes.loaderMessage}>{t('data:uploadingmatrix')}</div>
+                    </div>
+                  ) : (
+                    <div className={classes.loaderContainer}>
+                      <CircularProgress className={classes.loaderWheel} />
+                      <div className={classes.loaderMessage}>{t('data:analyzingmatrix')}</div>
+                    </div>
+                  )
+                }
+
+              </div>
+              <div className={clsx(classes.rootLoader, classes.shadow)} />
+            </>
+          )
+        }
         <div className={classes.mandatoryInfos}>
           <TextField
             className={classes.info}
@@ -206,10 +246,25 @@ const DataModal = (props: PropTypes) => {
                   <Typography noWrap className={classes.filename}>
                     {currentFile ? currentFile.name : t('data:choosefile')}
                   </Typography>
+                  <Tooltip title={t('data:uploadHelp') as string} placement="top">
+                    <HelperIcon />
+                  </Tooltip>
                 </label>
               </div>
               )
             }
+        </div>
+        <div className={classes.parameters}>
+          <div className={classes.parameterHeader}>
+            <Typography className={classes.parameterTitle}>
+              {t('data:jsonFormat')}
+            </Typography>
+            <Checkbox
+              checked={isJson}
+              onChange={() => setIsJson(!isJson)}
+              inputProps={{ 'aria-label': 'primary checkbox' }}
+            />
+          </div>
         </div>
         <div className={classes.parameters}>
           <div className={classes.parameterHeader}>

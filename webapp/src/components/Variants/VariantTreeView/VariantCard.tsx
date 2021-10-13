@@ -52,7 +52,7 @@ const VariantCard = (props: PropsType) => {
   return (
     <g>
       <foreignObject width={250} height={150} x={-125} y={-75}>
-        <Card onClick={() => history.push(`/study/${id}/variants`)} style={style.root(theme, studyId === id)}>
+        <Card onClick={() => history.push(`/study/${id}/variants/`)} style={style.root(theme, studyId === id)}>
           <div style={style.header()}>
             <h3 style={{ fontSize: '0.8em', color: theme.palette.primary.main, marginBottom: '2px' }}>{name}</h3>
             <h3 style={{ fontSize: '0.7em', color: 'gray', marginTop: '0px' }}>{id}</h3>

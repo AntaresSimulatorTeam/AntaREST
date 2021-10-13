@@ -5,7 +5,7 @@ import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 
 const getStudiesRaw = async (): Promise<{[sid: string]: StudyMetadataDTO}> => {
-  const res = await client.get('/v1/studies');
+  const res = await client.get('/v1/studies?summary=true');
   return res.data;
 };
 

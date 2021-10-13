@@ -1,10 +1,11 @@
 {
   "name": "antares-web",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "private": true,
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.35",
     "@fortawesome/free-brands-svg-icons": "^5.15.3",
+    "@fortawesome/free-regular-svg-icons": "^5.15.4",
     "@fortawesome/free-solid-svg-icons": "^5.15.3",
     "@fortawesome/react-fontawesome": "^0.1.14",
     "@handsontable/react": "^9.0.1",
@@ -59,6 +60,7 @@
     "react-router-dom": "^5.2.0",
     "react-router-redux": "^4.0.8",
     "react-scripts": "3.3.0",
+    "react-virtualized-auto-sizer": "^1.0.6",
     "react-window": "^1.8.6",
     "redux": "^4.1.0",
     "redux-devtools-extension": "^2.13.9",
@@ -105,6 +107,7 @@
     "@types/react-resizable": "^1.7.2",
     "@types/react-router-dom": "^5.1.7",
     "@types/react-virtualized": "^9.21.11",
+    "@types/react-virtualized-auto-sizer": "^1.0.1",
     "@types/react-window": "^1.8.3",
     "@types/socket.io-client": "^1.4.36",
     "@types/swagger-ui-react": "^3.35.1",

@@ -1,12 +1,14 @@
-import { createStyles, makeStyles, useTheme } from '@material-ui/core';
+import { Button, createStyles, makeStyles, useTheme } from '@material-ui/core';
 import debug from 'debug';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import Tree from 'react-d3-tree';
 import { CustomNodeElementProps, Point, RawNodeDatum } from 'react-d3-tree/lib/types/common';
+import { useTranslation } from 'react-i18next';
 import { StudyMetadata } from '../../../common/types';
 import VariantCard from './VariantCard';
 import { getTreeNodes } from './utils';
+import CreateVariantModal from '../CreateVariantModal';
 
 const logError = debug('antares:varianttree:error');
 
@@ -14,6 +16,22 @@ const useStyles = makeStyles(() => createStyles({
   root: {
     width: '100%',
     height: '100%',
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  header: {
+    width: '100%',
+    height: '60px',
+    display: 'flex',
+    flexFlow: 'row nowrap',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  tree: {
+    width: '100%',
+    flex: 1,
   },
   cardBody: {
     width: '100%',
@@ -35,8 +53,10 @@ const VariantTreeView = (props: PropsType) => {
   const { study } = props;
   const [translate, setTranslte] = useState<Point>({ x: 0, y: 0 });
   const [data, setData] = useState<RawNodeDatum[]>([]);
+  const [openModal, setOpenModal] = useState<boolean>(false);
   const classes = useStyles();
   const theme = useTheme();
+  const [t] = useTranslation();
   const history = useHistory();
   const treeContainer = useCallback((node) => {
     if (node !== null) {
@@ -59,11 +79,18 @@ const VariantTreeView = (props: PropsType) => {
       }
     };
     init();
+    return () => setData([]);
   }, [study]);
 
   return (
-    <div className={classes.root} ref={treeContainer}>
-      {
+    <div className={classes.root}>
+      <div className={classes.header}>
+        <Button color="primary" variant="outlined" style={{ margin: theme.spacing(0, 3) }} onClick={() => setOpenModal(true)}>
+          {t('variants:createVariant')}
+        </Button>
+      </div>
+      <div className={classes.tree} ref={treeContainer}>
+        {
           data !== undefined && data.length > 0 && (
           <Tree
             data={data}
@@ -79,6 +106,8 @@ const VariantTreeView = (props: PropsType) => {
           />
           )
       }
+      </div>
+      <CreateVariantModal open={openModal} onClose={() => setOpenModal(false)} parentId={study !== undefined ? study.id : ''} />
     </div>
   );
 };

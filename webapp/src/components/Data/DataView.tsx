@@ -7,13 +7,17 @@ import {
   List,
   ListItem,
   Collapse,
+  Tooltip,
 } from '@material-ui/core';
 import clsx from 'clsx';
 import CreateIcon from '@material-ui/icons/Create';
 import DeleteIcon from '@material-ui/icons/HighlightOff';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
+import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import { MatrixDataSetDTO, MatrixInfoDTO, UserInfo } from '../../common/types';
+import { CopyIcon } from './utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -75,6 +79,11 @@ const useStyles = makeStyles((theme: Theme) =>
       paddingLeft: theme.spacing(1),
       paddingRight: theme.spacing(1),
       borderRadius: theme.shape.borderRadius,
+      cursor: 'pointer',
+    },
+    matrixid: {
+      fontFamily: 'monospace',
+      color: 'grey',
     },
     deleteIcon: {
       color: theme.palette.error.light,
@@ -104,6 +113,8 @@ interface PropTypes {
 const DataView = (props: PropTypes) => {
   const classes = useStyles();
   const { data, user, filter, onDeleteClick, onUpdateClick, onMatrixClick } = props;
+  const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const [toogleList, setToogleList] = useState<Array<boolean>>([]);
 
   const onButtonChange = (index: number) => {
@@ -114,9 +125,16 @@ const DataView = (props: PropTypes) => {
     }
   };
 
-  const matchFilter = (input: string): boolean =>
-    // Very basic search => possibly modify
-    input.search(filter) >= 0;
+  const copyId = (matrixId: string): void => {
+    try {
+      navigator.clipboard.writeText(matrixId);
+      enqueueSnackbar(t('data:onMatrixIdCopySuccess'), { variant: 'success' });
+    } catch (e) {
+      enqueueSnackbar(t('data:onMatrixIdCopyError'), { variant: 'error' });
+    }
+  };
+
+  const matchFilter = (input: string): boolean => input.search(filter) >= 0;
 
   useEffect(() => {
     const initToogleList: Array<boolean> = [];
@@ -153,11 +171,15 @@ const DataView = (props: PropTypes) => {
                 <List component="div" disablePadding className={classes.matrixList}>
                   {dataset.matrices.map((matrixItem) => (
                     <ListItem
-                      key={matrixItem.id}
+                      key={matrixItem.name}
                       className={classes.matrixItem}
-                      onClick={() => onMatrixClick(matrixItem)}
                     >
-                      <Typography className={classes.text}>{matrixItem.name}</Typography>
+                      <Tooltip title={t('data:copyid') as string} placement="top">
+                        <CopyIcon style={{ marginRight: '0.5em', cursor: 'pointer' }} onClick={() => copyId(matrixItem.id)} />
+                      </Tooltip>
+                      <Tooltip title={matrixItem.id} placement="top">
+                        <Typography onClick={() => onMatrixClick(matrixItem)} className={classes.text}>{matrixItem.name}</Typography>
+                      </Tooltip>
                     </ListItem>
                   ))}
                 </List>

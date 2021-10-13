@@ -1,5 +1,5 @@
-import { CommandDTO } from '../../../common/types';
-import { CommandEnum, CommandItem } from './CommandTypes';
+import { CommandDTO, TaskDTO, TaskStatus } from '../../../common/types';
+import { CommandEnum, CommandItem, JsonCommandItem } from './CommandTypes';
 
 export const CommandList = [
   CommandEnum.CREATE_AREA,
@@ -31,11 +31,32 @@ export const reorder = <T>(
 };
 
 export const fromCommandDTOToCommandItem = (commands: Array<CommandDTO>): Array<CommandItem> => {
-  const dtoItems: Array<CommandItem> = commands.map((elm) => {
-    const dtoItem: CommandItem = { id: elm?.id, action: elm.action, args: elm.args, updated: false };
-    return dtoItem;
-  });
+  const dtoItems: Array<CommandItem> = commands.map((elm) => ({ id: elm?.id, action: elm.action, args: elm.args, updated: false }));
   return dtoItems;
 };
+
+export const fromCommandDTOToJsonCommand = (commands: Array<CommandDTO>): Array<JsonCommandItem> => {
+  const dtoItems: Array<JsonCommandItem> = commands.map((elm) => ({ action: elm.action, args: elm.args }));
+  return dtoItems;
+};
+
+function isString(json: object, name: string): boolean {
+  return (typeof (json as any)[name] === 'string' || (json as any)[name] instanceof String);
+}
+
+export const checkCommandValidity = (json: object): boolean => ('action' in json && 'args' in json && isString(json, 'action'));
+
+export const exportJson = (json: object, filename: string): void => {
+  const fileData = JSON.stringify(json);
+  const blob = new Blob([fileData], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = url;
+  link.click();
+  link.remove();
+};
+
+export const isTaskFinal = (task: TaskDTO): boolean => !(task.status === TaskStatus.PENDING || task.status === TaskStatus.RUNNING);
 
 export default {};

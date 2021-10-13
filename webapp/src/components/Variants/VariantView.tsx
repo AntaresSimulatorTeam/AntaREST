@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { createStyles, makeStyles } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
 import { Components, StudyMetadata } from '../../common/types';
-import VariantNav from './VariantNavSwitch';
 import VariantTreeView from './VariantTreeView';
 import EditionView from './Edition';
+import GenericNavView from '../ui/NavComponents/GenericNavView';
 
 const useStyles = makeStyles(() => createStyles({
   root: {
@@ -25,48 +25,46 @@ interface PropTypes {
 const VariantView = (props: PropTypes) => {
   const { option = '', study } = props;
   const history = useHistory();
-  const items: Components = {
-    'variants:variantDependencies': () => <VariantTreeView study={study} />,
-    'variants:editionMode': () => <EditionView studyId={study !== undefined ? study.id : ''} />,
-    //    'variants:testGeneration': () => <div style={{ width: '100%', height: '100%' }}>Test generation</div>,
-  };
+
   const classes = useStyles();
-  const [navState, setNavState] = useState<string>(option === 'edition' && study?.type === 'variantstudy' ? 'variants:editionMode' : 'variants:variantDependencies');
-  const [editionMode, setEditionMode] = useState<boolean>(option === 'edition');
+  const [editionMode, setEditionMode] = useState<boolean>(false);
+  const [items, setItems] = useState<Components>({
+    'variants:variantDependencies': () => <VariantTreeView study={study} />,
+  });
 
-  const onItemClick = (item: string) => {
-    setNavState(item);
-  };
-
-  useEffect(() => {
-    // we add a check on study type because when creating a new variant the option is set to edition
-    // but the parent component has not already fetched/set the study object, so there is a first render with the parent study object and edit option on
-    setEditionMode(option === 'edition' && study?.type === 'variantstudy');
-    setNavState(option === 'edition' && study?.type === 'variantstudy' ? 'variants:editionMode' : 'variants:variantDependencies');
-  }, [option, study]);
-
-  const onEditModeChange = () => {
-    if (editionMode) {
-      setNavState('variants:variantDependencies');
+  const onEditModeChange = (item: string) => {
+    if (item === 'variants:variantDependencies') {
       history.replace(`/study/${study !== undefined ? study.id : ''}/variants`);
     } else {
       history.replace(`/study/${study !== undefined ? study.id : ''}/variants/edition`);
-      setNavState('variants:editionMode');
     }
-    setEditionMode(!editionMode);
   };
+
+  useEffect(() => {
+    const edition = option === 'edition' && study?.type === 'variantstudy';
+    console.log('EDITION: ', editionMode);
+    console.log('STUDY: ', study?.type);
+    setEditionMode(edition);
+    setItems(study?.type === 'variantstudy' ? {
+      'variants:variantDependencies': () => <VariantTreeView study={study} />,
+      'variants:editionMode': () => <EditionView studyId={study !== undefined ? study.id : ''} />,
+    } : {
+      'variants:variantDependencies': () => <VariantTreeView study={study} />,
+    });
+    return () => {
+      setItems({
+        'variants:variantDependencies': () => <VariantTreeView study={study} />,
+      });
+    };
+  }, [study, option, editionMode]);
 
   return (
     <div className={classes.root}>
-      <VariantNav
-        currentItem={navState}
-        editionMode={editionMode}
-        onItemClick={onItemClick}
-        onEditModeChange={onEditModeChange}
-        studyId={study !== undefined ? study.id : ''}
-        editable={study !== undefined ? study.type === 'variantstudy' : false}
+      <GenericNavView
+        items={items}
+        initialValue={editionMode ? 'variants:editionMode' : 'variants:variantDependencies'}
+        onClick={onEditModeChange}
       />
-      { items[navState]() }
     </div>
   );
 };

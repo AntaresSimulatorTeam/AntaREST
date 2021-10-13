@@ -141,7 +141,7 @@ const StudyBlockSummaryView = (props: StudyListingItemPropTypes) => {
               style={{ color: theme.palette.primary.light }}
               onClick={() => unarchiveStudy(study)}
             >
-              {t('studymanager:archive')}
+              {t('studymanager:unarchive')}
             </ButtonLoader>
           ) : (
             <>

@@ -1,10 +1,10 @@
 import client from './client';
-import { CommandDTO, StudyMetadata, StudyMetadataDTO } from '../../common/types';
-import { convertStudyDtoToMetadata } from '../utils';
+import { CommandDTO, StudyMetadata, StudyMetadataDTO, TaskDTO, VariantTree } from '../../common/types';
+import { convertStudyDtoToMetadata, convertVariantTreeDTO } from '../utils';
 
-export const getVariantChildrens = async (id: string): Promise<StudyMetadata[]> => {
+export const getVariantChildren = async (id: string): Promise<VariantTree> => {
   const res = await client.get(`/v1/studies/${id}/variants`);
-  return res.data.map((elm: StudyMetadataDTO) => convertStudyDtoToMetadata(elm.id, elm));
+  return convertVariantTreeDTO(res.data);
 };
 
 export const getVariantParents = async (id: string): Promise<StudyMetadata[]> => {
@@ -18,8 +18,7 @@ export const createVariant = async (id: string, name: string): Promise<string> =
 };
 
 export const appendCommands = async (studyId: string, commands: Array<CommandDTO>): Promise<string> => {
-  const data = { commands };
-  const res = await client.post(`/v1/studies/${studyId}/commands`, data);
+  const res = await client.post(`/v1/studies/${studyId}/commands`, commands);
   return res.data;
 };
 
@@ -38,13 +37,38 @@ export const updateCommand = async (studyId: string, commandId: string, command:
   return res.data;
 };
 
+export const replaceCommands = async (studyId: string, commands: Array<CommandDTO>): Promise<string> => {
+  const res = await client.put(`/v1/studies/${studyId}/commands`, commands);
+  return res.data;
+};
+
 export const deleteCommand = async (studyId: string, commandId: string): Promise<any> => {
   const res = await client.delete(`/v1/studies/${studyId}/commands/${commandId}`);
   return res.data;
 };
 
+export const deleteAllCommands = async (studyId: string): Promise<any> => {
+  const res = await client.delete(`/v1/studies/${studyId}/commands`);
+  return res.data;
+};
+
+export const getCommand = async (studyId: string, commandId: string): Promise<CommandDTO> => {
+  const res = await client.get(`/v1/studies/${studyId}/commands/${commandId}`);
+  return res.data;
+};
+
 export const getCommands = async (studyId: string): Promise<Array<CommandDTO>> => {
   const res = await client.get(`/v1/studies/${studyId}/commands`);
+  return res.data;
+};
+
+export const applyCommands = async (studyId: string, denormalize = false): Promise<string> => {
+  const res = await client.put(`/v1/studies/${studyId}/generate?denormalize=${denormalize}`);
+  return res.data;
+};
+
+export const getTask = async (studyId: string): Promise<TaskDTO> => {
+  const res = await client.get(`/v1/studies/${studyId}/task`);
   return res.data;
 };
 
