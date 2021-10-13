@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict
+from typing import List, Dict, Union
 
 from fastapi import APIRouter, Depends, Body
 
@@ -18,6 +18,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.model import (
     GenerationResultInfoDTO,
     CommandDTO,
+    VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
@@ -84,14 +85,14 @@ def create_study_variant_routes(
     def get_variants(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> List[StudyMetadataDTO]:
+    ) -> VariantTreeDTO:
         logger.info(
             f"Fetching variant children of study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.get_variants_children(
+        return variant_study_service.get_all_variants_children(
             sanitized_uuid, params
         )
 

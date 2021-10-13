@@ -1,10 +1,10 @@
 import client from './client';
-import { CommandDTO, StudyMetadata, StudyMetadataDTO, TaskDTO } from '../../common/types';
-import { convertStudyDtoToMetadata } from '../utils';
+import { CommandDTO, StudyMetadata, StudyMetadataDTO, TaskDTO, VariantTree } from '../../common/types';
+import { convertStudyDtoToMetadata, convertVariantTreeDTO } from '../utils';
 
-export const getVariantChildrens = async (id: string): Promise<StudyMetadata[]> => {
+export const getVariantChildren = async (id: string): Promise<VariantTree> => {
   const res = await client.get(`/v1/studies/${id}/variants`);
-  return res.data.map((elm: StudyMetadataDTO) => convertStudyDtoToMetadata(elm.id, elm));
+  return convertVariantTreeDTO(res.data);
 };
 
 export const getVariantParents = async (id: string): Promise<StudyMetadata[]> => {

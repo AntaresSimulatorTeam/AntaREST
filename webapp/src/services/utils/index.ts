@@ -1,5 +1,5 @@
 import { useSnackbar, OptionsObject } from 'notistack';
-import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType } from '../../common/types';
+import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType, VariantTreeDTO, VariantTree } from '../../common/types';
 
 export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDTO): StudyMetadata => ({
   id: sid,
@@ -15,6 +15,11 @@ export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDT
   managed: metadata.managed,
   archived: metadata.archived,
   folder: metadata.folder,
+});
+
+export const convertVariantTreeDTO = (variantTree: VariantTreeDTO): VariantTree => ({
+  node: convertStudyDtoToMetadata(variantTree.node.id, variantTree.node),
+  children: (variantTree.children || []).map((child: VariantTreeDTO) => convertVariantTreeDTO(child)),
 });
 
 export const useNotif = (): (message: React.ReactNode, options?: OptionsObject | undefined) => React.ReactText => {

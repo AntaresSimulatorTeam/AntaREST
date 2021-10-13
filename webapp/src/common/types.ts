@@ -55,6 +55,16 @@ export interface StudyMetadata {
   folder?: string;
 }
 
+export interface VariantTreeDTO {
+  node: StudyMetadataDTO;
+  children: Array<VariantTreeDTO>;
+}
+
+export interface VariantTree {
+  node: StudyMetadata;
+  children: Array<VariantTree>;
+}
+
 export type JobStatus =
   | 'JobStatus.RUNNING'
   | 'JobStatus.PENDING'

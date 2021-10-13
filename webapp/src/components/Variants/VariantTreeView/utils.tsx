@@ -1,9 +1,9 @@
 import moment from 'moment';
 import { RawNodeDatum } from 'react-d3-tree/lib/types/common';
-import { StudyMetadata } from '../../../common/types';
-import { getVariantChildrens, getVariantParents } from '../../../services/api/variant';
+import { StudyMetadata, VariantTree } from '../../../common/types';
+import { getVariantChildren, getVariantParents } from '../../../services/api/variant';
 
-export const buildNodeFromMetadata = (study: StudyMetadata): RawNodeDatum =>
+const buildNodeFromMetadata = (study: StudyMetadata): RawNodeDatum =>
   ({
     name: study.name,
     attributes: {
@@ -16,18 +16,17 @@ export const buildNodeFromMetadata = (study: StudyMetadata): RawNodeDatum =>
     children: [],
   });
 
-export const buildTree = async (node: RawNodeDatum) => {
-  const children: Array<StudyMetadata> = await getVariantChildrens(String(node.attributes?.id));
-  if (children.length === 0) return;
+const convertVariantTreeToNodeDatum = (tree: VariantTree): RawNodeDatum => {
+  const nodeDatum = buildNodeFromMetadata(tree.node);
+  nodeDatum.children = (tree.children || []).map((el: VariantTree) => convertVariantTreeToNodeDatum(el));
+  return nodeDatum;
+};
+
+const buildTree = async (node: RawNodeDatum) => {
+  const childrenTree: VariantTree = await getVariantChildren(String(node.attributes?.id));
+  if ((childrenTree.children || []).length === 0) return;
   // eslint-disable-next-line no-param-reassign
-  node.children = [];
-  await Promise.all(
-    children.map(async (elm) => {
-      const elmNode = buildNodeFromMetadata(elm);
-      await buildTree(elmNode);
-      if (node.children !== undefined) node.children.push({ ...elmNode });
-    }),
-  );
+  node.children = convertVariantTreeToNodeDatum(childrenTree).children;
 };
 
 export const getTreeNodes = async (study: StudyMetadata): Promise<RawNodeDatum> => {
@@ -52,4 +51,4 @@ export const getTreeNodes = async (study: StudyMetadata): Promise<RawNodeDatum> 
   return currentNode;
 };
 
-export default buildTree;
+export default {};
