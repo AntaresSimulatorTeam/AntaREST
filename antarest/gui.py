@@ -53,9 +53,7 @@ if __name__ == "__main__":
 
     server = Process(
         target=run_server,
-        args=(
-            config_file,
-        ),
+        args=(config_file,),
     )
     server.start()
     countdown = 10
@@ -69,6 +67,3 @@ if __name__ == "__main__":
         time.sleep(1)
         countdown -= 1
     front(server)
-
-
-
