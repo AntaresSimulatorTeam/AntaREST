@@ -2,10 +2,6 @@ from PyQt5.QtCore import QUrl
 from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 
-import os
-import sys
-
-import platform
 import sys
 import time
 from pathlib import Path
@@ -14,7 +10,6 @@ import requests
 import uvicorn
 
 from antarest import __version__
-from cefpython3 import cefpython as cef
 from multiprocessing import Process
 
 from antarest.main import fastapi_app, get_arguments
