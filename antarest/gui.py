@@ -4,6 +4,7 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView
 
 import sys
 import time
+import multiprocessing
 from pathlib import Path
 
 import requests
@@ -45,6 +46,7 @@ def run_server(config_file: Path):
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     config_file, display_version, no_front, auto_upgrade_db = get_arguments()
 
     if display_version:
