@@ -69,6 +69,11 @@ jobs:
         with:
           name: server-${{ matrix.os }}
           path: dist/server*
+      - name: Archive gui binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: gui-${{ matrix.os }}
+          path: dist/gui*
       - name: Archive tool binary
         uses: actions/upload-artifact@v2
         with:
