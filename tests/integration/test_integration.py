@@ -499,15 +499,6 @@ def test_variant_manager(app: FastAPI):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert len(res.json()) == 1
-    assert res.status_code == 200
-
-    res = client.get(
-        f"/v1/studies/{base_study_id}/variants?recursive=true",
-        headers={
-            "Authorization": f'Bearer {admin_credentials["access_token"]}'
-        },
-    )
     children = res.json()
     assert children["node"]["name"] == "foo"
     assert len(children["children"]) == 1
