@@ -1,14 +1,16 @@
 import multiprocessing
 import sys
 import time
+import webbrowser
 from multiprocessing import Process
 from pathlib import Path
 
 import requests
+from plyer import notification  # type: ignore
 
 from antarest import __version__
 
-import uvicorn
+import uvicorn  # type: ignore
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
@@ -27,6 +29,10 @@ def run_server(config_file: Path) -> None:
     uvicorn.run(app, host="127.0.0.1", port=8080)
 
 
+def open_app() -> None:
+    webbrowser.open("http://localhost:8080")
+
+
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     config_file, display_version, no_front, auto_upgrade_db = get_arguments()
@@ -35,11 +41,19 @@ if __name__ == "__main__":
         print(__version__)
         sys.exit()
 
+    notification.notify(
+        title="AntaresWebServer",
+        message="Antares Web Server started, you can manage the application within the systray app",
+        app_name="AntaresWebServer",
+        app_icon=RESOURCE_PATH / "webapp" / "favicon.ico",
+        timeout=600,
+    )
+
     app = QApplication([])
     app.setQuitOnLastWindowClosed(False)
 
     # Adding an icon
-    icon = QIcon("icon.png")
+    icon = QIcon(str(RESOURCE_PATH / "webapp" / "logo16.png"))
 
     # Adding item on the menu bar
     tray = QSystemTrayIcon()
@@ -48,10 +62,9 @@ if __name__ == "__main__":
 
     # Creating the options
     menu = QMenu()
-    option1 = QAction("Geeks for Geeks")
-    option2 = QAction("GFG")
-    menu.addAction(option1)
-    menu.addAction(option2)
+    openapp = QAction("Open application")
+    menu.addAction(openapp)
+    openapp.triggered.connect(open_app)
 
     # To quit the app
     quit = QAction("Quit")
@@ -60,6 +73,7 @@ if __name__ == "__main__":
 
     # Adding options to the System Tray
     tray.setContextMenu(menu)
+    app.processEvents()  # type: ignore
 
     server = Process(
         target=run_server,

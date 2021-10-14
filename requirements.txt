@@ -29,3 +29,4 @@ psycopg2-binary
 python-json-logger
 click
 pyqt5
+plyer
