@@ -4,7 +4,7 @@ from typing import Optional, List
 from fastapi import HTTPException
 
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
@@ -309,7 +309,10 @@ class LoginService:
             user_list = []
             roles = self.get_all_roles_in_group(group.id, params)
             for role in roles:
-                user = self.users.get(role.identity_id)
+                user = self.get_user(
+                    role.identity_id,
+                    RequestParameters(user=DEFAULT_ADMIN_USER),
+                )
                 if user:
                     user_list.append(
                         UserRoleDTO(id=user.id, name=user.name, role=role.type)
