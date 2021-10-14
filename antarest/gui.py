@@ -1,3 +1,6 @@
+from typing import Any
+
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import QUrl, Qt
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import (
@@ -7,13 +10,13 @@ from PyQt5.QtWidgets import (
     QLabel,
     QSizePolicy,
 )
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineDownloadItem
 
 from antarest import __version__
 
 try:
     # Include in try/except block if you're also targeting Mac/Linux
-    from PyQt5.QtWinExtras import QtWin
+    from PyQt5.QtWinExtras import QtWin  # type: ignore
 
     myappid = f'com.rte-france.antares.web.{__version__.replace(".","_")}'
     QtWin.setCurrentProcessExplicitAppUserModelID(myappid)
@@ -27,7 +30,7 @@ import multiprocessing
 from pathlib import Path
 
 import requests
-import uvicorn
+import uvicorn  # type: ignore
 
 from multiprocessing import Process
 
@@ -38,7 +41,7 @@ RESOURCE_PATH = get_local_path() / "resources"
 
 
 class ErrorWindow(QMainWindow):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(ErrorWindow, self).__init__(*args, **kwargs)
         self.setWindowIcon(
             QIcon(str(RESOURCE_PATH / "webapp" / "favicon.ico"))
@@ -49,38 +52,52 @@ class ErrorWindow(QMainWindow):
         self.label.setAlignment(Qt.AlignCenter)
         self.setCentralWidget(self.label)
 
-    def center(self):
-        frameGm = self.frameGeometry()
+    def center(self) -> None:
+        frame_gm = self.frameGeometry()
         screen = QApplication.desktop().screenNumber(
-            QApplication.desktop().cursor().pos()
+            QApplication.desktop().cursor().pos()  # type: ignore
         )
-        centerPoint = QApplication.desktop().screenGeometry(screen).center()
-        frameGm.moveCenter(centerPoint)
-        self.move(frameGm.topLeft())
+        center_point = QApplication.desktop().screenGeometry(screen).center()
+        frame_gm.moveCenter(center_point)
+        self.move(frame_gm.topLeft())
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setWindowIcon(
             QIcon(str(RESOURCE_PATH / "webapp" / "favicon.ico"))
         )
         self.setMinimumSize(1280, 720)
         self.browser = QWebEngineView()
+        self.browser.page().profile().downloadRequested.connect(  # type: ignore
+            self.on_downloadRequested
+        )
         self.browser.setUrl(QUrl("http://localhost:8080"))
         self.setCentralWidget(self.browser)
 
-    def center(self):
-        frameGm = self.frameGeometry()
-        screen = QApplication.desktop().screenNumber(
-            QApplication.desktop().cursor().pos()
+    @QtCore.pyqtSlot("QWebEngineDownloadItem*")
+    def on_downloadRequested(self, download: QWebEngineDownloadItem) -> None:
+        old_path = download.url().path()  # download.path()
+        suffix = download.mimeType().split("/")[-1]
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save File", f"{old_path}.{suffix}"
         )
-        centerPoint = QApplication.desktop().screenGeometry(screen).center()
-        frameGm.moveCenter(centerPoint)
-        self.move(frameGm.topLeft())
+        if path:
+            download.setPath(path)
+            download.accept()
+
+    def center(self) -> None:
+        frame_gm = self.frameGeometry()
+        screen = QApplication.desktop().screenNumber(
+            QApplication.desktop().cursor().pos()  # type: ignore
+        )
+        center_point = QApplication.desktop().screenGeometry(screen).center()
+        frame_gm.moveCenter(center_point)
+        self.move(frame_gm.topLeft())
 
 
-def run_server(config_file: Path):
+def run_server(config_file: Path) -> None:
     app, _ = fastapi_app(
         config_file,
         mount_front=True,
@@ -102,7 +119,7 @@ if __name__ == "__main__":
     splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
     splash.setMask(splash_pix.mask())
     splash.show()
-    app.processEvents()
+    app.processEvents()  # type: ignore
     server = Process(
         target=run_server,
         args=(config_file,),
@@ -122,12 +139,14 @@ if __name__ == "__main__":
         time.sleep(1)
         countdown -= 1
 
+    window: QMainWindow
     if not server_started:
         window = ErrorWindow()
+        window.center()
     else:
         window = MainWindow()
+        window.center()
 
-    window.center()
     window.show()
     splash.close()
 
