@@ -2,6 +2,17 @@ from PyQt5.QtCore import QUrl
 from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 
+from antarest import __version__
+
+try:
+    # Include in try/except block if you're also targeting Mac/Linux
+    from PyQt5.QtWinExtras import QtWin
+    myappid = f'com.rte-france.antares.web.{__version__.replace(".","_")}'
+    QtWin.setCurrentProcessExplicitAppUserModelID(myappid)
+except ImportError:
+    pass
+
+
 import sys
 import time
 import multiprocessing
@@ -9,17 +20,22 @@ from pathlib import Path
 
 import requests
 import uvicorn
+from PyQt5.uic.properties import QtGui
 
-from antarest import __version__
+
 from multiprocessing import Process
 
+from antarest.core.utils.utils import get_local_path
 from antarest.main import fastapi_app, get_arguments
+
+RESOURCE_PATH = get_local_path() / "resources"
 
 
 class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setBaseSize(1024, 800)
+        self.setWindowIcon(QtGui.QIcon(str(RESOURCE_PATH / "webapp" / 'favicon.ico')))
         self.setMinimumSize(1024, 800)
         self.browser = QWebEngineView()
         self.browser.setUrl(QUrl("http://localhost:8080"))
