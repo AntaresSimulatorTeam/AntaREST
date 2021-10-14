@@ -1,7 +1,8 @@
+import csv
 import hashlib
 import json
 import logging
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from sqlalchemy import exists, and_  # type: ignore
 from sqlalchemy.orm import aliased  # type: ignore
@@ -12,6 +13,7 @@ from antarest.matrixstore.model import (
     Matrix,
     MatrixContent,
     MatrixDataSet,
+    MatrixData,
 )
 
 logger = logging.getLogger(__name__)
@@ -107,29 +109,80 @@ class MatrixContentRepository:
         self.bucket.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
+    def initialize_matrix_content(data: MatrixContent) -> None:
+        if data.index is None:
+            data.index = list(range(0, len(data.data)))
+        else:
+            assert len(data.index) == len(data.data)
+        if data.columns is None:
+            if len(data.data) > 0:
+                data.columns = list(range(0, len(data.data[0])))
+            else:
+                data.columns = []
+        else:
+            if len(data.data) > 0:
+                assert len(data.columns) == len(data.data[0])
+            else:
+                assert len(data.columns) == 0
+
+    @staticmethod
     def _compute_hash(data: str) -> str:
         return hashlib.sha256(data.encode()).hexdigest()
 
+    def _write_matrix_data(self, h: str, data: List[List[MatrixData]]) -> None:
+        file_path = self.bucket / f"{h}.tsv"
+        with open(file_path, "w", newline="") as fd:
+            tsv_output = csv.writer(fd, delimiter="\t")
+            tsv_output.writerows(data)
+
+    def _migration(self, h: str) -> bool:
+        # TODO:remove this method once the migration has been done
+        old_matrix_path = self.bucket / h
+        if old_matrix_path.exists():
+            data_json = json.load(open(old_matrix_path), newline="")
+            data = MatrixContent.parse_obj(data_json).data
+
+            self._write_matrix_data(h, data)
+            old_matrix_path.unlink()
+            return True
+        return False
+
     def get(self, id: str) -> Optional[MatrixContent]:
-        file = self.bucket / id
+        self._migration(id)
+
+        file = self.bucket / f"{id}.tsv"
         if not file.exists():
             return None
 
-        data = json.load(open(file))
-        return MatrixContent.parse_obj(data)
+        tsv_data = csv.reader(open(file, newline=""), delimiter="\t")
+        data = [[cast(MatrixData, s) for s in l] for l in list(tsv_data)]
+        matrix_content = MatrixContent(data=data)
+        self.initialize_matrix_content(matrix_content)
+
+        return matrix_content
 
     def exists(self, id: str) -> bool:
-        file = self.bucket / id
+        self._migration(id)
+
+        file = self.bucket / f"{id}.tsv"
         return file.exists()
 
     def save(self, content: MatrixContent) -> str:
         stringify = content.json()
         h = MatrixContentRepository._compute_hash(stringify)
-        if not (self.bucket / h).exists():
-            (self.bucket / h).write_text(stringify)
+
+        migration = self._migration(h)
+
+        if not migration and not (self.bucket / f"{h}.tsv").exists():
+            self._write_matrix_data(h, content.data)
         return h
 
     def delete(self, id: str) -> None:
-        file = self.bucket / id
-        if file.exists():
-            file.unlink()
+        # TODO: remove this part once the migration has been done
+        old_matrix_file = self.bucket / id
+        if old_matrix_file.exists():
+            old_matrix_file.unlink()
+
+        matrix_file = self.bucket / f"{id}.tsv"
+        if matrix_file.exists():
+            matrix_file.unlink()

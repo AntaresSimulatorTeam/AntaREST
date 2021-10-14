@@ -41,7 +41,7 @@ def build_matrixstore(
         service = MatrixService(
             repo=repo,
             repo_dataset=dataset_repo,
-            content=content,
+            matrix_content_repository=content,
             user_service=user_service,
         )
 

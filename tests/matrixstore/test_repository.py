@@ -50,12 +50,8 @@ def test_bucket_cyclelife(tmp_path: Path):
     config = Config(storage=StorageConfig(matrixstore=tmp_path))
     repo = MatrixContentRepository(config)
 
-    a = MatrixContent(
-        index=["1", "2"], columns=["a", "b"], data=[[1, 2], [3, 4]]
-    )
-    b = MatrixContent(
-        index=["3", "4"], columns=["c", "d"], data=[[5, 6], [7, 8]]
-    )
+    a = MatrixContent(index=[0, 1], columns=[0, 1], data=[[1, 2], [3, 4]])
+    b = MatrixContent(index=[0, 1], columns=[0, 1], data=[[5, 6], [7, 8]])
 
     aid = repo.save(a)
     assert aid == repo.save(a)

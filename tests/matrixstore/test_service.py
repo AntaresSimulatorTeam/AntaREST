@@ -57,7 +57,7 @@ def test_save():
     service = MatrixService(
         repo=repo,
         repo_dataset=Mock(),
-        content=repo_content,
+        matrix_content_repository=repo_content,
         user_service=Mock(),
     )
     id = service.create(dto)
@@ -317,11 +317,11 @@ def test_import():
     service = MatrixService(
         repo=repo,
         repo_dataset=Mock(),
-        content=repo_content,
+        matrix_content_repository=repo_content,
         user_service=Mock(),
     )
     service.repo.get.return_value = None
-    service.repo_content.save.return_value = id
+    service.matrix_content_repository.save.return_value = id
     service.repo.save.return_value = exp_matrix
 
     # CSV importation

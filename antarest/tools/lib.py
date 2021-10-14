@@ -1,3 +1,4 @@
+import csv
 import json
 import logging
 import os
@@ -8,12 +9,14 @@ from zipfile import ZipFile
 
 import requests
 from pathlib import Path
-from typing import List, Optional, Union, Callable, Set
+from typing import List, Optional, Union, Callable, Set, cast
 
 from requests import Session
 
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import StopWatch, get_local_path
+from antarest.matrixstore.model import MatrixData, MatrixContent
+from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -91,15 +94,24 @@ class RemoteVariantGenerator(IVariantGenerator):
 
         logger.info("Uploading matrices")
         matrix_dataset: List[str] = []
-        for matrix in os.listdir(matrices_dir):
-            with open(matrices_dir / matrix, "r") as fh:
-                matrix_data = json.load(fh)
+        for matrix_file in os.listdir(matrices_dir):
+            with open(matrices_dir / matrix_file, "r", newline="") as fh:
+                tsv_data = csv.reader(fh, delimiter="\t")
+                data = [
+                    [cast(MatrixData, s) for s in l] for l in list(tsv_data)
+                ]
+                matrix_content = MatrixContent(data=data)
+                MatrixContentRepository.initialize_matrix_content(
+                    matrix_content
+                )
+
+                matrix_data = matrix_content.__dict__
                 res = self.session.post(
                     self.build_url(f"/v1/matrix"), json=matrix_data
                 )
                 assert res.status_code == 200
                 matrix_id = res.json()
-                assert matrix_id == matrix
+                assert matrix_id == matrix_file.split(".")[0]
                 matrix_dataset.append(matrix_id)
         # TODO could create a dataset from theses matrices using "variant_<study_id>" as name
         # also the matrix could be named after the command name where they are used
