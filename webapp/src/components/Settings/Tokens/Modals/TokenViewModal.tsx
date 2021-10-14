@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { createStyles,
   makeStyles,
   Theme,
@@ -15,6 +16,7 @@ import { BotDTO, BotIdentityDTO } from '../../../../common/types';
 import { getBotInfos } from '../../../../services/api/user';
 import InformationModal from '../../../ui/InformationModal';
 import { roleToString } from '../../../../services/utils';
+import enqueueErrorSnackbar from '../../../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -52,7 +54,7 @@ const TokenViewModal = (props: PropTypes) => {
           setBotInfos(res);
         }
       } catch (e) {
-        enqueueSnackbar(t('settings:tokensError'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('settings:tokensError'), e as AxiosError);
       }
     };
     init();

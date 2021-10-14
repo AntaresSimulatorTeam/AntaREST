@@ -18,6 +18,8 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { MatrixDataSetDTO, MatrixInfoDTO, UserInfo } from '../../common/types';
 import { CopyIcon } from './utils';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import { AxiosError } from 'axios';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -130,7 +132,7 @@ const DataView = (props: PropTypes) => {
       navigator.clipboard.writeText(matrixId);
       enqueueSnackbar(t('data:onMatrixIdCopySuccess'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('data:onMatrixIdCopyError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('data:onMatrixIdCopyError'), e as AxiosError);
     }
   };
 

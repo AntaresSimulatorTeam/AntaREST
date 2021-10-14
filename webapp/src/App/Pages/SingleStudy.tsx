@@ -13,6 +13,8 @@ import Informations from '../../components/SingleStudy/Informations';
 import VariantView from '../../components/Variants/VariantView';
 import { LaunchJob, StudyMetadata, WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
+import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
+import { AxiosError } from 'axios';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -70,7 +72,7 @@ const SingleStudyView = (props: PropTypes) => {
       const studyMetadata = await getStudyMetadata(studyId);
       setStudy(studyMetadata);
     } catch (e) {
-      enqueueSnackbar(t('studymanager:failtoloadstudy'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
     }
   }, [studyId, enqueueSnackbar, t]);
 

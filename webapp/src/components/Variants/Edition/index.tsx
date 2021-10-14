@@ -147,7 +147,7 @@ const EditionView = (props: PropTypes) => {
       enqueueSnackbar(t('variants:moveSuccess'), { variant: 'success' });
     } catch (e) {
       setCommands(oldCommands);
-      enqueueSnackbar(t('variants:moveError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('variants:moveError'), e as AxiosError);
     }
   };
 
@@ -163,7 +163,7 @@ const EditionView = (props: PropTypes) => {
         enqueueSnackbar(t('variants:saveSuccess'), { variant: 'success' });
       }
     } catch (e) {
-      enqueueSnackbar(t('variants:saveError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('variants:saveError'), e as AxiosError);
     }
   };
 
@@ -174,7 +174,7 @@ const EditionView = (props: PropTypes) => {
       setCommands((commandList) => commandList.filter((item, idx) => idx !== index).map((item) => ({ ...item, results: undefined })));
       enqueueSnackbar(t('variants:deleteSuccess'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('variants:deleteError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('variants:deleteError'), e as AxiosError);
     }
   };
 
@@ -185,7 +185,7 @@ const EditionView = (props: PropTypes) => {
       setCommands(commands.concat([{ ...elmDTO, id: newId, updated: false }]));
       enqueueSnackbar(t('variants:addSuccess'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('variants:addError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('variants:addError'), e as AxiosError);
     }
   };
 
@@ -209,7 +209,7 @@ const EditionView = (props: PropTypes) => {
       setCommands(tmpCommand);
       enqueueSnackbar(t('variants:importSuccess'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('variants:importError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('variants:importError'), e as AxiosError);
     }
   };
 
@@ -218,7 +218,7 @@ const EditionView = (props: PropTypes) => {
       const elm = await getCommand(studyId, commands[index].id as string);
       exportJson({ action: elm.action, args: elm.args }, `${elm.id}_command.json`);
     } catch (e) {
-      enqueueSnackbar(t('variants:exportError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('variants:exportError'), e as AxiosError);
     }
   };
 
@@ -227,7 +227,7 @@ const EditionView = (props: PropTypes) => {
       const items = await getCommands(studyId);
       exportJson(fromCommandDTOToJsonCommand(items), `${studyId}_commands.json`);
     } catch (e) {
-      enqueueSnackbar(t('variants:exportError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('variants:exportError'), e as AxiosError);
     }
   };
 
@@ -240,7 +240,7 @@ const EditionView = (props: PropTypes) => {
       setCommands(fromCommandDTOToCommandItem(dtoItems));
       enqueueSnackbar(t('variants:importSuccess'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('variants:importError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('variants:importError'), e as AxiosError);
     }
   };
 
@@ -255,7 +255,7 @@ const EditionView = (props: PropTypes) => {
       setGenerationStatus(true);
       enqueueSnackbar(t('variants:launchGenerationSuccess'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('variants:launchGenerationError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('variants:launchGenerationError'), e as AxiosError);
     }
   };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { CircularProgress, createStyles, makeStyles, Theme, Tooltip } from '@material-ui/core';
@@ -8,6 +9,7 @@ import InformationModal from '../ui/InformationModal';
 import MatrixView from '../ui/MatrixView';
 import { getMatrix } from '../../services/api/matrix';
 import { CopyIcon, loaderStyle } from './utils';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -57,7 +59,7 @@ const MatrixModal = (props: PropTypes) => {
           setCurrentMatrix(matrixContent);
         }
       } catch (error) {
-        enqueueSnackbar(t('data:matrixError'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('data:matrixError'), error as AxiosError);
       } finally {
         setLoading(false);
       }
