@@ -2,6 +2,7 @@ import debug from 'debug';
 import moment from 'moment';
 import clsx from 'clsx';
 import React, { useState } from 'react';
+import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
 import {
   makeStyles,
@@ -38,6 +39,7 @@ import ConfirmationModal from '../ui/ConfirmationModal';
 import PermissionModal from './PermissionModal';
 import ButtonLoader from '../ui/ButtonLoader';
 import RenameModal from './RenameModal';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -245,7 +247,7 @@ const InformationView = (props: PropTypes) => {
           variant: 'success',
         });
       } catch (e) {
-        enqueueSnackbar(t('studymanager:failtorunstudy'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtorunstudy'), e as AxiosError);
         logError('Failed to launch study', study, e);
       }
     }
@@ -256,7 +258,7 @@ const InformationView = (props: PropTypes) => {
       await callArchiveStudy(study.id);
       enqueueSnackbar(t('studymanager:archivesuccess', { studyname: study.name }), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('studymanager:archivefailure', { studyname: study.name }), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:archivefailure', { studyname: study.name }), e as AxiosError);
     }
   };
 
@@ -265,7 +267,7 @@ const InformationView = (props: PropTypes) => {
       await callUnarchiveStudy(study.id);
       enqueueSnackbar(t('studymanager:unarchivesuccess', { studyname: study.name }), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('studymanager:unarchivefailure', { studyname: study.name }), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:unarchivefailure', { studyname: study.name }), e as AxiosError);
     }
   };
 
@@ -277,7 +279,7 @@ const InformationView = (props: PropTypes) => {
         removeStudy(study.id);
         history.push('/');
       } catch (e) {
-        enqueueSnackbar(t('studymanager:failtodeletestudy'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtodeletestudy'), e as AxiosError);
         logError('Failed to delete study', study, e);
       }
       setOpenConfirmationModal(false);
@@ -289,7 +291,7 @@ const InformationView = (props: PropTypes) => {
       try {
         await callRenameStudy(study.id, name);
       } catch (e) {
-        enqueueSnackbar(t('studymanager:failtodeletestudy'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtodeletestudy'), e as AxiosError);
         logError('Failed to delete study', study, e);
       }
     }

@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useState } from 'react';
+import { AxiosError } from 'axios';
 import {
   makeStyles,
   createStyles,
@@ -15,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { getStudyJobLog } from '../../services/api/study';
 import { LaunchJob } from '../../common/types';
 import LogModal from '../ui/LogModal';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -112,7 +114,7 @@ const TaskView = (props: PropTypes) => {
         setLogModalContent(logData);
         setLogModalOpen(true);
       } catch (e) {
-        enqueueSnackbar(t('singlestudy:failtofetchlogs'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failtofetchlogs'), e as AxiosError);
       }
     })();
   };

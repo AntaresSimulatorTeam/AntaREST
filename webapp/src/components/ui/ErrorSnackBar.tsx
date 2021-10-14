@@ -9,7 +9,8 @@ export type SnackbarDetails = {
   exception: string;
 };
 
-const enqueueErrorSnackbar = (enqueueSnackbar: (message: SnackbarMessage, options?: OptionsObject | undefined) => SnackbarKey, message: string, details: AxiosError) => enqueueSnackbar(message, { variant: 'error',
+const enqueueErrorSnackbar = (enqueueSnackbar: (message: SnackbarMessage, options?: OptionsObject | undefined) => SnackbarKey, message: SnackbarMessage, details: AxiosError) => enqueueSnackbar(message, { variant: 'error',
+  persist: true,
   content: (key, msg) => (
     <SnackErrorMessage id={key} message={msg} details={details} />
   ) });

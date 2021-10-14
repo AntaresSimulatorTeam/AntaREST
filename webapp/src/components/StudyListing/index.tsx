@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 import React, { forwardRef } from 'react';
+=======
+import React from 'react';
+import { AxiosError } from 'axios';
+>>>>>>> 05beb10c (replace error snackbar)
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
@@ -10,6 +15,7 @@ import { StudyMetadata } from '../../common/types';
 import { removeStudies } from '../../ducks/study';
 import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy, copyStudy as callCopyStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy } from '../../services/api/study';
 import StudyListElementView from './StudyListingItemView';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const logError = debug('antares:studyblockview:error');
 
@@ -112,7 +118,7 @@ const StudyListing = (props: PropTypes) => {
       await callCopyStudy(study.id, `${study.name} (${t('main:copy')})`, withOutputs);
       enqueueSnackbar(t('studymanager:studycopiedsuccess', { studyname: study.name }), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('studymanager:failtocopystudy'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtocopystudy'), e as AxiosError);
       logError('Failed to copy/import study', study, e);
     }
   };
@@ -122,7 +128,7 @@ const StudyListing = (props: PropTypes) => {
       await callArchiveStudy(study.id);
       enqueueSnackbar(t('studymanager:archivesuccess', { studyname: study.name }), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('studymanager:archivesuccess', { studyname: study.name }), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:archivefailure', { studyname: study.name }), e as AxiosError);
     }
   };
 
@@ -131,7 +137,7 @@ const StudyListing = (props: PropTypes) => {
       await callUnarchiveStudy(study.id);
       enqueueSnackbar(t('studymanager:unarchivesuccess', { studyname: study.name }), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('studymanager:unarchivefailure', { studyname: study.name }), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:unarchivefailure', { studyname: study.name }), e as AxiosError);
     }
   };
 
@@ -141,7 +147,7 @@ const StudyListing = (props: PropTypes) => {
       await callDeleteStudy(study.id);
       removeStudy(study.id);
     } catch (e) {
-      enqueueSnackbar(t('studymanager:failtodeletestudy'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtodeletestudy'), e as AxiosError);
       logError('Failed to delete study', study, e);
     }
   };

@@ -1,6 +1,8 @@
 import { Button, createStyles, makeStyles, useTheme } from '@material-ui/core';
 import debug from 'debug';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSnackbar } from 'notistack';
+import { AxiosError } from 'axios';
 import { useHistory } from 'react-router-dom';
 import Tree from 'react-d3-tree';
 import { CustomNodeElementProps, Point, RawNodeDatum } from 'react-d3-tree/lib/types/common';
@@ -9,6 +11,7 @@ import { StudyMetadata } from '../../../common/types';
 import VariantCard from './VariantCard';
 import { getTreeNodes } from './utils';
 import CreateVariantModal from '../CreateVariantModal';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 const logError = debug('antares:varianttree:error');
 
@@ -56,6 +59,7 @@ const VariantTreeView = (props: PropsType) => {
   const [openModal, setOpenModal] = useState<boolean>(false);
   const classes = useStyles();
   const theme = useTheme();
+  const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
   const history = useHistory();
   const treeContainer = useCallback((node) => {
@@ -75,12 +79,13 @@ const VariantTreeView = (props: PropsType) => {
         const rootNode = await getTreeNodes(study);
         setData([{ ...rootNode }]);
       } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('variants:fetchTreeDataError'), e as AxiosError);
         logError('Failed to fetch tree data', e);
       }
     };
     init();
     return () => setData([]);
-  }, [study]);
+  }, [enqueueSnackbar, study, t]);
 
   return (
     <div className={classes.root}>
