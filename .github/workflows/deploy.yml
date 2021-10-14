@@ -50,8 +50,8 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > ./resources/commit_id
-          pyinstaller -F antarest/gui.py -n TestServer --hidden-import='antarest.dbmodel' --hidden-import='plyer.platforms.linux' --hidden-import='plyer.platforms.linux.notification' --additional-hooks-dir extra-hooks --add-data resources:resources --add-data alembic:alembic --add-data alembic.ini:.
-          pyinstaller -F antarest/gui.py -n AntaresWebServer --hidden-import='antarest.dbmodel' --hidden-import='plyer.platforms.linux' --additional-hooks-dir extra-hooks --add-data resources:resources --add-data alembic:alembic --add-data alembic.ini:.
+          pyinstaller -F antarest/gui.py -n AntaresWebServer --hidden-import='antarest.dbmodel' --hidden-import='plyer.platforms.linux' --hidden-import='plyer.platforms.linux.notification' --additional-hooks-dir extra-hooks --add-data resources:resources --add-data alembic:alembic --add-data alembic.ini:.
+          pyinstaller -F antarest/main.py -n TestWebServer --hidden-import='antarest.dbmodel' --additional-hooks-dir extra-hooks --add-data resources:resources --add-data alembic:alembic --add-data alembic.ini:.
           pyinstaller -F antarest/tools/cli.py -n AntaresTool --hidden-import='sqlalchemy.sql.default_comparator' --hidden-import='sqlalchemy.ext.baked' --additional-hooks-dir extra-hooks --add-data resources:resources
           dist/TestServer -v
           dist/AntaresTool --help
