@@ -48,7 +48,7 @@ export const checkCommandValidity = (json: object): boolean => ('action' in json
 
 export const exportJson = (json: object, filename: string): void => {
   const fileData = JSON.stringify(json);
-  const blob = new Blob([fileData], { type: 'text/plain' });
+  const blob = new Blob([fileData], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.download = filename;
