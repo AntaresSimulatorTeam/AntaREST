@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Fragment } from 'react';
+import { AxiosError } from 'axios';
 import {
   makeStyles,
   createStyles,
@@ -19,7 +20,6 @@ import { useTranslation } from 'react-i18next';
 import { MatrixDataSetDTO, MatrixInfoDTO, UserInfo } from '../../common/types';
 import { CopyIcon } from './utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
-import { AxiosError } from 'axios';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

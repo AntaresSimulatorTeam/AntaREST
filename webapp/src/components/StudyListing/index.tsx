@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 import React, { forwardRef } from 'react';
-=======
-import React from 'react';
 import { AxiosError } from 'axios';
->>>>>>> 05beb10c (replace error snackbar)
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';

@@ -1,5 +1,6 @@
 import debug from 'debug';
 import React, { useCallback, useEffect, useState } from 'react';
+import { AxiosError } from 'axios';
 import { useParams, Link, useHistory } from 'react-router-dom';
 import { Breadcrumbs, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,6 @@ import VariantView from '../../components/Variants/VariantView';
 import { LaunchJob, StudyMetadata, WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
-import { AxiosError } from 'axios';
 
 const logError = debug('antares:singlestudyview:error');
 
