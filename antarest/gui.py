@@ -11,8 +11,8 @@ from plyer import notification  # type: ignore
 from antarest import __version__
 
 import uvicorn  # type: ignore
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QAction
 
 from antarest.core.utils.utils import get_local_path
 from antarest.main import fastapi_app, get_arguments
