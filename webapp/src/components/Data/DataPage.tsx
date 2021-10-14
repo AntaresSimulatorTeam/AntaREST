@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
+import { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { AppState } from '../../App/reducers';
@@ -10,6 +11,7 @@ import { MatrixDataSetDTO, IDType, MatrixInfoDTO } from '../../common/types';
 import DataModal from './DataModal';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import MatrixModal from './MatrixModal';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -55,7 +57,7 @@ const Data = (props: PropTypes) => {
       setDataList(dataList.filter((item) => item.id !== idForDeletion));
       enqueueSnackbar(t('data:onMatrixDeleteSuccess'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('data:onMatrixDeleteError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('data:onMatrixDeleteError'), e as AxiosError);
     }
     setIdForDeletion(-1);
     setOpenConfirmationModal(false);
@@ -92,7 +94,7 @@ const Data = (props: PropTypes) => {
         const matrix = await getMatrixList();
         setDataList(matrix);
       } catch (e) {
-        enqueueSnackbar(t('data:matrixError'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('data:matrixError'), e as AxiosError);
       }
     };
     init();

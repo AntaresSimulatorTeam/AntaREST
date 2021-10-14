@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +10,7 @@ import { getGroups, createGroup, updateGroup, deleteGroup, getGroupInfos } from 
 import { GroupDTO, UserGroup } from '../../../common/types';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import UserGroupView from '../UserGroupView';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -58,21 +60,25 @@ const GroupsSettings = (props: PropTypes) => {
       setGroupList(groupList.filter((item) => item.group.id !== deletedGroupId));
       enqueueSnackbar(t('settings:onGroupDeleteSuccess'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('settings:onGroupDeleteError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('settings:onGroupDeleteError'), e as AxiosError);
     }
     setIdForDeletion('');
     setOpenConfirmationModal(false);
   };
 
   const onItemClick = async (groupId: string) => {
-    const tmpList = ([] as Array<UserGroup>).concat(groupList);
-    const groupInfos = await getGroupInfos(groupId);
-    const index = tmpList.findIndex((item) => item.group.id === groupInfos.group.id);
-    if (index >= 0) {
-      tmpList[index] = groupInfos;
-      setGroupList(tmpList);
-    } else {
-      // SNACKBAR
+    try {
+      const tmpList = ([] as Array<UserGroup>).concat(groupList);
+      const groupInfos = await getGroupInfos(groupId);
+      const index = tmpList.findIndex((item) => item.group.id === groupInfos.group.id);
+      if (index >= 0) {
+        tmpList[index] = groupInfos;
+        setGroupList(tmpList);
+      } else {
+        enqueueSnackbar(t('settings:groupInfosError'), { variant: 'error' });
+      }
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('settings:groupInfosError'), e as AxiosError);
     }
   };
 
@@ -104,7 +110,7 @@ const GroupsSettings = (props: PropTypes) => {
         enqueueSnackbar(t('settings:onGroupCreation'), { variant: 'success' });
       }
     } catch (e) {
-      enqueueSnackbar(t('settings:onGroupSaveError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('settings:onGroupSaveError'), e as AxiosError);
     }
     onModalClose();
   };
@@ -118,7 +124,7 @@ const GroupsSettings = (props: PropTypes) => {
           .map((group) => ({ group, users: [] }));
         setGroupList(groups);
       } catch (e) {
-        enqueueSnackbar(t('settings:groupsError'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('settings:groupsError'), e as AxiosError);
       }
     };
     init();

@@ -22,7 +22,9 @@ const App: React.FC<{}> = () => (
   <Provider store={reduxStore}>
     <Router basename={getConfig().applicationHome}>
       <ThemeProvider theme={theme}>
-        <SnackbarProvider maxSnack={5}>
+        <SnackbarProvider
+          maxSnack={5}
+        >
           <div style={{ height: '100vh' }}>
             <LoginWrapper>
               <MenuBar />

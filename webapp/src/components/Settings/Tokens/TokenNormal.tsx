@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { UserInfo, BotDTO, IDType } from '../../../common/types';
@@ -9,6 +10,7 @@ import ConfirmationModal from '../../ui/ConfirmationModal';
 import TokenCreationModal from './Modals/TokenCreationModal';
 import TokenViewModal from './Modals/TokenViewModal';
 import GenericListView from '../GenericListView';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 interface PropTypes {
   user: UserInfo | undefined;
@@ -51,7 +53,7 @@ const TokenNormal = (props: PropTypes) => {
       setTokenList(tokenList.filter((item) => item.id !== idForDeletion));
       enqueueSnackbar(t('settings:onTokenDeleteSuccess'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('settings:onTokenDeleteError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('settings:onTokenDeleteError'), e as AxiosError);
     }
     setIdForDeletion(-1);
     setOpenConfirmationModal(false);
@@ -81,7 +83,7 @@ const TokenNormal = (props: PropTypes) => {
           setTokenList(data);
         }
       } catch (e) {
-        enqueueSnackbar(t('settings:tokensError'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('settings:tokensError'), e as AxiosError);
       }
     };
     init();

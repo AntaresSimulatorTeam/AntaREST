@@ -35,6 +35,7 @@
   "onGroupDeleteSuccess": "Groupe supprimé avec succès",
   "onUserDeleteSuccess": "Utilisateur supprimé avec succès",
   "onTokenDeleteSuccess": "Token supprimé avec succès",
+  "groupInfosError": "Erreur lors de la récupération des groupes",
   "onUserCreation": "Utilisateur créé avec succès",
   "onUserUpdate": "Utilisateur modifié avec succès",
   "onUserSaveError": "Utilisateur non sauvegardé",
