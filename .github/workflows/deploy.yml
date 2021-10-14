@@ -51,7 +51,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > ./resources/commit_id
-          pyinstaller -F antarest/gui.py -n gui --windowed --hidden-import='sqlalchemy.sql.default_comparator' --hidden-import='antarest.dbmodel' --additional-hooks-dir extra-hooks --add-data resources:resources --add-data alembic:alembic --add-data alembic.ini:.
+          pyinstaller -F antarest/gui.py --icon=resources/webapp/favicon.ico -n AntaresWeb --windowed --hidden-import='sqlalchemy.sql.default_comparator' --hidden-import='antarest.dbmodel' --additional-hooks-dir extra-hooks --add-data resources:resources --add-data alembic:alembic --add-data alembic.ini:.
           pyinstaller -F antarest/main.py -n server --hidden-import='antarest.dbmodel' --additional-hooks-dir extra-hooks --add-data resources:resources --add-data alembic:alembic --add-data alembic.ini:.
           pyinstaller -F antarest/tools/cli.py -n antarestool --hidden-import='sqlalchemy.sql.default_comparator' --hidden-import='sqlalchemy.ext.baked' --additional-hooks-dir extra-hooks --add-data resources:resources
           dist/server -v
@@ -60,7 +60,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           git log -1 HEAD --format=%H > .\resources\commit_id
-          pyinstaller -F antarest\gui.py -n gui --windowed --hidden-import='sqlalchemy.sql.default_comparator' --hidden-import='antarest.dbmodel' --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources" --add-data ".\alembic;.\alembic" --add-binary ".\alembic.ini;.\alembic.ini"
+          pyinstaller -F antarest\gui.py -n AntaresWeb --icon=.\resources\webapp\favicon.ico --windowed --hidden-import='sqlalchemy.sql.default_comparator' --hidden-import='antarest.dbmodel' --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources" --add-data ".\alembic;.\alembic" --add-binary ".\alembic.ini;.\alembic.ini"
           pyinstaller -F antarest\main.py -n server --hidden-import='antarest.dbmodel' --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources" --add-data ".\alembic;.\alembic" --add-data ".\alembic.ini;.\"
           pyinstaller -F antarest\tools\cli.py -n antarestool --hidden-import='sqlalchemy.sql.default_comparator' --hidden-import='sqlalchemy.ext.baked' --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources"
           dist\antarestool.exe --help
@@ -73,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: gui-${{ matrix.os }}
-          path: dist/gui*
+          path: dist/AntaresWeb*
       - name: Archive tool binary
         uses: actions/upload-artifact@v2
         with:
