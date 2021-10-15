@@ -1,0 +1,118 @@
+- update_config       
+
+{
+  target: INI_TARGET, // list that
+  value: INI_MODEL // dynamic
+}
+
+VALUE = Union[STRING, ENUM, FLOAT, INT] // text field, select, number field, number field for int
+INI_MODEL: Dict[str, Union[INI_MODEL, UNION[List[VALUE], VALUE]]]
+
+
+- replace_matrix        
+
+{
+  target: INPUT_SERIES_MATRIX // list that
+  value: MATRIX // check size
+}
+
+- create_area           
+
+{
+  area_name: STRING // check regex
+}
+
+- remove_area           
+
+{
+  id: AREA_ID // select list area
+}
+
+- create_cluster           
+
+{
+  area_id: AREA_ID // select list area
+  cluster_name: STRING // check regex 
+  prepro: MATRIX // check size
+  modulation: MATRIX // check size
+  parameters: INI_MODEL // InputThermalClustersAreaList
+}
+
+- remove_cluster 
+
+{
+  area_id: AREA_ID // select list area
+  cluster_id: // select list cluster
+}
+
+- create_link           
+
+{
+  area1: AREA_ID // select list area  
+  area2: AREA_ID // select list area
+  parameters: INI_MODEL // InputLinkAreaProperties
+  series: MATRIX // check size
+}
+
+- remove_link 
+
+{
+  // select list link, set area_from, area_to
+  area1: AREA_ID 
+  area2: AREA_ID
+} 
+
+- create_district           
+
+{
+  name: STRING // check regex
+  base_filter: CHECKBOX // "add-all" | "remove-all"
+  filter_items: LIST<AREA_ID> // multiselect list area
+  output: CHECKBOX
+  comments: STRING
+}
+
+- remove_district 
+
+{
+  id: DISTRICT_ID // select list district
+}
+
+- create_binding_constraint
+
+{
+  name: STRING // check regex
+  enabled: CHECKBOX
+  time_step: TIMESTEP // select "hourly" | "weekly" | "daily"
+  operator: CONSTRAINT_OPERATOR // select "equal" | "both" | "greater" | "less"
+  coeffs: LIST<CONSTRAINT_COEFF> // see below 
+  values: MATRIX // check size
+  comments: STRING
+}
+
+// transform into Dict["<area_id>(\.<area_id>|%<cluster_id>)", Union[(int, float), (float,)]
+CONSTRAINT_COEFF{
+  type: "cluster" | "link" // determine which one of the two below will be displayed
+  link: (AREA_ID, AREA_ID) // select list area, select list cluster
+  cluster: (AREA_ID, CLUSTER_ID) // select list link
+  coeff: NUMBER 
+  offset: NUMBER // optional, check type int
+}
+
+- update_binding_constraint
+
+{
+  id: BINDING_CONSTRAINT_ID // list binding constraints => prefill with current valuation (use revert method)
+  enabled: CHECKBOX
+  time_step: TIMESTEP // select "hourly" | "weekly" | "daily"
+  operator: CONSTRAINT_OPERATOR // select "equal" | "both" | "greater" | "less"
+  coeffs: LIST<CONSTRAINT_COEFF> // see create_init_constraint 
+  values: MATRIX // check size
+  comments: STRING
+}
+
+- remove_binding_constraint
+
+{
+  id: BINDING_CONSTRAINT_ID // list binding constraints
+}
