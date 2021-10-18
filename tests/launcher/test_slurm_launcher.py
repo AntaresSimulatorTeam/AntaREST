@@ -1,3 +1,4 @@
+import os
 import uuid
 from pathlib import Path
 from unittest.mock import Mock, ANY
@@ -13,6 +14,27 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
 )
 from antarest.launcher.model import JobStatus
 from antarest.study.model import StudyMetadataDTO
+
+
+@pytest.fixture
+def launcher_config(tmp_path: Path) -> Config:
+    config = Config(
+        launcher=LauncherConfig(
+            slurm=SlurmConfig(
+                local_workspace=tmp_path,
+                default_json_db_name="default_json_db_name",
+                slurm_script_path="slurm_script_path",
+                antares_versions_on_remote_server=["42"],
+                username="username",
+                hostname="hostname",
+                port=42,
+                private_key_file=Path("private_key_file"),
+                key_password="key_password",
+                password="password",
+            )
+        )
+    )
+    return config
 
 
 @pytest.mark.unit_test
@@ -133,8 +155,16 @@ def test_slurm_launcher_delete_function(tmp_path: str):
     assert not directory_path.exists()
 
 
+@pytest.mark.parametrize(
+    "version,job_status", [(42, JobStatus.RUNNING), (99, JobStatus.FAILED)]
+)
 @pytest.mark.unit_test
-def test_run_study(tmp_path: Path):
+def test_run_study(
+    tmp_path: Path,
+    launcher_config: Config,
+    version: int,
+    job_status: JobStatus,
+):
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
@@ -142,31 +172,15 @@ def test_run_study(tmp_path: Path):
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    config = Config(
-        launcher=LauncherConfig(
-            slurm=SlurmConfig(
-                local_workspace=tmp_path,
-                default_json_db_name="default_json_db_name",
-                slurm_script_path="slurm_script_path",
-                antares_versions_on_remote_server=["42"],
-                username="username",
-                hostname="hostname",
-                port=42,
-                private_key_file=Path("private_key_file"),
-                key_password="key_password",
-                password="password",
-            )
-        )
-    )
     study_metadata_dto = Mock(spec=StudyMetadataDTO)
-    study_metadata_dto.version = 42
+    study_metadata_dto.version = version
     storage_service = Mock()
 
     storage_service.get_study_information = Mock(
         return_value=study_metadata_dto
     )
     slurm_launcher = SlurmLauncher(
-        config=config,
+        config=launcher_config,
         storage_service=storage_service,
         callbacks=Mock(),
         event_bus=Mock(),
@@ -186,14 +200,15 @@ def test_run_study(tmp_path: Path):
     slurm_launcher._clean_local_workspace.assert_called_once()
     storage_service.export_study_flat.assert_called_once()
     slurm_launcher.callbacks.update_status.assert_called_once_with(
-        ANY, JobStatus.RUNNING, None, None
+        ANY, job_status, None, None
     )
     slurm_launcher.start.assert_called_once()
-    slurm_launcher._delete_study.assert_called_once()
+    if job_status == JobStatus.RUNNING:
+        slurm_launcher._delete_study.assert_called_once()
 
 
 @pytest.mark.unit_test
-def test_check_state(tmp_path: Path):
+def test_check_state(tmp_path: Path, launcher_config: Config):
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
@@ -201,26 +216,10 @@ def test_check_state(tmp_path: Path):
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    config = Config(
-        launcher=LauncherConfig(
-            slurm=SlurmConfig(
-                local_workspace=tmp_path,
-                default_json_db_name="default_json_db_name",
-                slurm_script_path="slurm_script_path",
-                antares_versions_on_remote_server=["42"],
-                username="username",
-                hostname="hostname",
-                port=42,
-                private_key_file=Path("private_key_file"),
-                key_password="key_password",
-                password="password",
-            )
-        )
-    )
 
     storage_service = Mock()
     slurm_launcher = SlurmLauncher(
-        config=config,
+        config=launcher_config,
         storage_service=storage_service,
         callbacks=Mock(),
         event_bus=Mock(),
@@ -258,3 +257,51 @@ def test_check_state(tmp_path: Path):
     assert slurm_launcher._delete_study.call_count == 2
     assert data_repo_tinydb.remove_study.call_count == 2
     slurm_launcher.stop.assert_called_once()
+
+
+@pytest.mark.unit_test
+def test_clean_local_workspace(tmp_path: Path, launcher_config: Config):
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+
+    storage_service = Mock()
+    slurm_launcher = SlurmLauncher(
+        config=launcher_config,
+        storage_service=storage_service,
+        callbacks=Mock(),
+        event_bus=Mock(),
+    )
+
+    (launcher_config.launcher.slurm.local_workspace / "machin.txt").touch()
+
+    assert os.listdir(launcher_config.launcher.slurm.local_workspace)
+    slurm_launcher._clean_local_workspace()
+    assert not os.listdir(launcher_config.launcher.slurm.local_workspace)
+
+
+@pytest.mark.unit_test
+def test_import_study_output(launcher_config):
+    slurm_launcher = SlurmLauncher(
+        config=launcher_config,
+        storage_service=Mock(),
+        callbacks=Mock(),
+        event_bus=Mock(),
+    )
+    slurm_launcher.job_id_to_study_id["1"] = "2"
+    slurm_launcher.storage_service.import_output.return_value = "output"
+    res = slurm_launcher._import_study_output("1")
+
+    slurm_launcher.storage_service.import_output.assert_called_once_with(
+        "2",
+        launcher_config.launcher.slurm.local_workspace
+        / "OUTPUT"
+        / "1"
+        / "output",
+        params=ANY,
+    )
+    assert res == "output"
