@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { createStyles, makeStyles, Theme, TextField, Typography, Chip, Select, MenuItem } from '@material-ui/core';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import { useSnackbar } from 'notistack';
@@ -8,6 +9,7 @@ import GenericModal from '../ui/GenericModal';
 import { getGroups, getUsers } from '../../services/api/user';
 import { GroupDTO, StudyMetadataOwner, StudyPublicMode, UserDTO } from '../../common/types';
 import { updatePermission } from './utils';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -103,7 +105,7 @@ const PermissionModal = (props: PropTypes) => {
       await updatePermission(studyId, groups, publicMode, owner, selectedOwner, selectedGroupList, currentPublicMode);
       enqueueSnackbar(t('singlestudy:onPermissionUpdate'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('singlestudy:onPermissionError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:onPermissionError'), e as AxiosError);
     } finally {
       onClose();
     }
@@ -131,7 +133,7 @@ const PermissionModal = (props: PropTypes) => {
           setOwner(foundUser);
         }
       } catch (e) {
-        enqueueSnackbar(t('settings:groupsError'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('settings:groupsError'), e as AxiosError);
       }
     };
     init();

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { createStyles, makeStyles, Theme, TextField } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,7 @@ import GroupsAssignmentView from '../GroupsAssignmentView';
 import { getGroups, getUserInfos } from '../../../services/api/user';
 import { GroupDTO, RoleType, RoleDTO, UserDTO } from '../../../common/types';
 import { saveUser } from './utils';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   infos: {
@@ -88,7 +90,7 @@ const UserModal = (props: PropTypes) => {
       if (userInfos) enqueueSnackbar(t('settings:onUserUpdate'), { variant: 'success' });
       else enqueueSnackbar(t('settings:onUserCreation'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('settings:onUserSaveError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('settings:onUserSaveError'), e as AxiosError);
     }
     onClose();
   };
@@ -110,7 +112,7 @@ const UserModal = (props: PropTypes) => {
           setRoleList(filteredRoles);
         }
       } catch (e) {
-        enqueueSnackbar(t('settings:groupsError'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('settings:groupsError'), e as AxiosError);
       }
     };
     init();

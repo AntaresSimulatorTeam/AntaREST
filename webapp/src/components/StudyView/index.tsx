@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { AxiosError } from 'axios';
 import debug from 'debug';
 import { useSnackbar } from 'notistack';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
@@ -8,6 +9,7 @@ import StudyTreeView from './StudyTreeView';
 import StudyDataView from './StudyDataView';
 import MainContentLoader from '../ui/loaders/MainContentLoader';
 import { StudyDataType, StudyMetadata } from '../../common/types';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const logError = debug('antares:studyview:error');
 
@@ -68,7 +70,7 @@ const StudyView = (props: PropTypes) => {
       const data = await getStudyData(sid, '', -1);
       setStudyData(data);
     } catch (e) {
-      enqueueSnackbar(<Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, <Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, e as AxiosError);
       logError('Failed to fetch study data', sid, e);
     } finally {
       setLoaded(true);

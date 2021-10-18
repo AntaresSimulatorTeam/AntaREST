@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useState } from 'react';
+import { AxiosError } from 'axios';
 import { createStyles, makeStyles, Theme, TextField } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import GenericModal from '../ui/GenericModal';
 import { createVariant } from '../../services/api/variant';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   infos: {
@@ -46,7 +48,7 @@ const CreateVariantModal = (props: PropTypes) => {
       onClose();
       history.push(`/study/${newId}/variants/edition`);
     } catch (e) {
-      enqueueSnackbar(t('variants:onVariantCreationError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('variants:onVariantCreationError'), e as AxiosError);
     }
   };
 

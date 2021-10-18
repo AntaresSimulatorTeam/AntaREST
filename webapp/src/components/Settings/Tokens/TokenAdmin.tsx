@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { UserInfo, UserToken, BotDTO } from '../../../common/types';
@@ -9,6 +10,7 @@ import TokenPrinter from '../TokenPrinter';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import TokenCreationModal from './Modals/TokenCreationModal';
 import TokenViewModal from './Modals/TokenViewModal';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 interface PropTypes {
   user: UserInfo | undefined;
@@ -61,7 +63,7 @@ const TokenAdmin = (props: PropTypes) => {
         enqueueSnackbar(t('settings:onTokenDeleteSuccess'), { variant: 'success' });
       }
     } catch (e) {
-      enqueueSnackbar(t('settings:onTokenDeleteError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('settings:onTokenDeleteError'), e as AxiosError);
     }
     setIdForDeletion(undefined);
     setOpenConfirmationModal(false);
@@ -95,7 +97,7 @@ const TokenAdmin = (props: PropTypes) => {
         const data = await getAdminTokenList();
         setTokenList(data);
       } catch (e) {
-        enqueueSnackbar(t('settings:tokensError'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('settings:tokensError'), e as AxiosError);
       }
     };
     init();

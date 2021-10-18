@@ -1,5 +1,6 @@
 import debug from 'debug';
 import React, { useCallback, useEffect, useState } from 'react';
+import { AxiosError } from 'axios';
 import { useParams, Link, useHistory } from 'react-router-dom';
 import { Breadcrumbs, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +14,7 @@ import Informations from '../../components/SingleStudy/Informations';
 import VariantView from '../../components/Variants/VariantView';
 import { LaunchJob, StudyMetadata, WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
+import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -70,7 +72,7 @@ const SingleStudyView = (props: PropTypes) => {
       const studyMetadata = await getStudyMetadata(studyId);
       setStudy(studyMetadata);
     } catch (e) {
-      enqueueSnackbar(t('studymanager:failtoloadstudy'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
     }
   }, [studyId, enqueueSnackbar, t]);
 
