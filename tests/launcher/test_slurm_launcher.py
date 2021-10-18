@@ -12,6 +12,7 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
 )
 from antarest.launcher.model import JobStatus
+from antarest.study.model import StudyMetadataDTO
 
 
 @pytest.mark.unit_test
@@ -157,8 +158,13 @@ def test_run_study(tmp_path: Path):
             )
         )
     )
-
+    study_metadata_dto = Mock(spec=StudyMetadataDTO)
+    study_metadata_dto.version = 42
     storage_service = Mock()
+
+    storage_service.get_study_information = Mock(
+        return_value=study_metadata_dto
+    )
     slurm_launcher = SlurmLauncher(
         config=config,
         storage_service=storage_service,
