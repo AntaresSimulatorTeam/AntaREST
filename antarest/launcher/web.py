@@ -91,4 +91,16 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         logger.info(f"Listing launch engines")
         return {"engines": service.get_launchers()}
 
+    @bp.get(
+        "/studies/_versions",
+        tags=[APITag.launcher],
+        summary="Get list of supported study version",
+    )
+    def get_versions(
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        logger.info(f"Fetching version list")
+        return service.get_versions(params=params)
+
     return bp

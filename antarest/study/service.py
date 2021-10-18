@@ -302,9 +302,9 @@ class StudyService:
                 logger.info(
                     f"Found studies {studies_with_same_path} with same path, de duplicating"
                 )
-                for study in studies_with_same_path[1:]:
-                    logger.info(f"Removing study {study}")
-                    self.repository.delete(study)
+                for study_name in studies_with_same_path[1:]:
+                    logger.info(f"Removing study {study_name}")
+                    self.repository.delete(study_name)
 
     def sync_studies_on_disk(self, folders: List[StudyFolder]) -> None:
         """
