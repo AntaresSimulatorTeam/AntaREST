@@ -53,7 +53,7 @@ class Watcher:
         Returns: true if watcher get the lock, false else.
 
         """
-        with FileLock(str(base_path / f"{Watcher.LOCK}.lock")):
+        with FileLock(str(Path(base_path) / f"{Watcher.LOCK}.lock")):
             start = (
                 int(f"0{Watcher.LOCK.read_text()}")
                 if Watcher.LOCK.exists()

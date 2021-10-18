@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import clsx from 'clsx';
 import { connect, ConnectedProps } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Button, Popover, ButtonBase, makeStyles, Theme, createStyles } from '@material-ui/core';
@@ -97,7 +98,7 @@ const UserBadge = (props: PropTypes) => {
 
   return (
     <>
-      <ButtonBase onClick={handleClick}>
+      <ButtonBase id="userbadge-account-icon" onClick={handleClick}>
         <FontAwesomeIcon size="2x" icon="user" />
       </ButtonBase>
       <Popover
@@ -116,7 +117,7 @@ const UserBadge = (props: PropTypes) => {
       >
         <div className={classes.root}>
           <div className={classes.content}>
-            <div className={classes.header}>
+            <div className={clsx(classes.header, 'toto')}>
               <FontAwesomeIcon className={classes.usericon} icon="user-circle" size="3x" />
               <div className={classes.username}>{userName}</div>
             </div>

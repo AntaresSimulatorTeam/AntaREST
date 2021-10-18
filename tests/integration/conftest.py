@@ -88,7 +88,7 @@ def app_with_front(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
 
 
 def run_server(app_with_front: FastAPI):
-    uvicorn.run(app_with_front, host="0.0.0.0", port=8080)
+    uvicorn.run(app_with_front, host="0.0.0.0", port=8082)
 
 
 @pytest.fixture
@@ -101,7 +101,7 @@ def running_app_with_ui(app_with_front: FastAPI):
     countdown = 10
     while countdown > 0:
         try:
-            res = requests.get("http://localhost:8080")
+            res = requests.get("http://localhost:8082")
             if res.status_code == 200:
                 break
         except requests.ConnectionError:

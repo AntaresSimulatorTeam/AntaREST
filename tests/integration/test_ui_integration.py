@@ -45,7 +45,7 @@ def test_ui(running_app_with_ui: Process):
         context = browser.new_context()
         context.set_default_timeout(10000)
         page = context.new_page()
-        page.goto("http://localhost:8080")
+        page.goto("http://localhost:8082")
         assert page.title() == "Antares Web"
 
         # login
@@ -54,16 +54,22 @@ def test_ui(running_app_with_ui: Process):
         page.press("button", "Enter")
 
         page.on("console", log_console)
+       # page.once('load', () => console.log('Page loaded!'))
 
         with page.expect_websocket() as ws:
             page.wait_for_selector(".studylistingcontainer")
             assert retry(page, lambda: check_studylist(page, 1))
 
-            page.fill("#studyname", "foo")
+            page.fill("#studyname", "foo1")
             page.click("#createstudysubmit")
             ws.value.expect_event("framereceived")
             page.reload(wait_until="domcontentloaded")
             page.wait_for_selector(".studylistingcontainer")
             assert retry(page, lambda: check_studylist(page, 2))
+
+
+            # Logout
+            page.click("#userbadge-account-icon")
+            page.click("text=Déconnexion")
 
         browser.close()
