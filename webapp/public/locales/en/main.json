@@ -24,5 +24,9 @@
   "edit": "Edit",
   "copy": "Copy",
   "data": "Data",
-  "websocketstatusmessage": "Websocket connection unavailable. Check your internet connection or try to refresh the page."
+  "websocketstatusmessage": "Websocket connection unavailable. Check your internet connection or try to refresh the page.",
+  "helpmodal": "Help",
+  "mail": "Enter your mail...",
+  "issue": "Your problem",
+  "comment": "Comment"
 }

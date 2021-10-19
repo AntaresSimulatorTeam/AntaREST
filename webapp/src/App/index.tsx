@@ -16,6 +16,7 @@ import JobManagement from './Pages/JobManagement';
 import UserSettings from './Pages/Settings';
 import Data from './Pages/Data';
 import { addWsListeners } from '../services/utils/globalWsListeners';
+import HelpWrapper from './HelpWrapper';
 
 const reduxStore = createStore();
 addWsListeners(reduxStore);
@@ -30,6 +31,7 @@ const App: React.FC<{}> = () => (
           <div style={{ height: '100vh' }}>
             <LoginWrapper>
               <MenuBar />
+              <HelpWrapper />
               <div style={{ position: 'absolute', bottom: 0, width: '100%', overflow: 'hidden', top: TOOLBAR_HEIGHT }}>
                 <Switch>
                   <Route path="/" exact key="home">
