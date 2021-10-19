@@ -68,10 +68,6 @@ const mapState = (state: AppState) => ({
 
 const mapDispatch = ({
   loadStudies: initStudies,
-  addWsListener: addListener,
-  addStudy: (study: StudyMetadata) => addStudies([study]),
-  deleteStudy: (id: string) => removeStudies([id]),
-  removeWsListener: removeListener,
 });
 
 const connector = connect(mapState, mapDispatch);
@@ -79,7 +75,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const StudyManagement = (props: PropTypes) => {
-  const { studies, addStudy, deleteStudy, loadStudies, addWsListener, removeWsListener } = props;
+  const { studies, loadStudies } = props;
   const classes = useStyles();
   const [t] = useTranslation();
   const [filteredStudies, setFilteredStudies] = useState<Array<StudyMetadata>>(studies);
@@ -129,29 +125,9 @@ const StudyManagement = (props: PropTypes) => {
     }
   };
 
-  const listen = async (ev: WSMessage) => {
-    const studySummary = ev.payload as StudySummary;
-    switch (ev.type) {
-      case WSEvent.STUDY_CREATED:
-        addStudy(await getStudyMetadata(studySummary.id));
-        break;
-      case WSEvent.STUDY_DELETED:
-        deleteStudy(studySummary.id);
-        break;
-      case WSEvent.STUDY_EDITED:
-        addStudy(await getStudyMetadata(studySummary.id));
-        break;
-
-      default:
-        break;
-    }
-  };
-
   useEffect(() => {
-    addWsListener(listen);
     init();
     getAllStudies(false);
-    return () => removeWsListener(listen);
   }, []);
 
   useEffect(() => {

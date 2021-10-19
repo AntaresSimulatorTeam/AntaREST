@@ -2,10 +2,11 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import debug from 'debug';
 import { Action } from 'redux';
-import { ThunkAction } from 'redux-thunk';
+import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { UserInfo, WSMessage } from '../common/types';
 import { AppState } from '../App/reducers';
 import { getConfig } from '../services/config';
+import globalWsListeners from '../services/utils/globalWsListeners';
 
 const logInfo = debug('antares:websocket:info');
 const logError = debug('antares:websocket:error');
@@ -23,6 +24,21 @@ export interface WebsocketState {
 const initialState: WebsocketState = {
   listeners: [],
   connected: false,
+};
+
+const addGlobalListeners = (dispatch: ThunkDispatch<AppState, unknown, Action<any>>): void => {
+  const action = (callback: (ev: WSMessage) => void): void => {
+    dispatch({
+      type: 'WS/ADD_LISTENER',
+      payload: callback,
+    });
+    dispatch({
+      type: 'WS/REFRESH_HANDLERS',
+    });
+  };
+  globalWsListeners.forEach((callback: (ev: WSMessage) => void) => {
+    action(callback);
+  });
 };
 
 /** ******************************************* */
