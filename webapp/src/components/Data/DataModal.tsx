@@ -5,10 +5,12 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import clsx from 'clsx';
+import axios, { AxiosError } from 'axios';
 import GenericModal from '../ui/GenericModal';
 import { getGroups } from '../../services/api/user';
 import { GroupDTO, MatrixDataSetDTO } from '../../common/types';
 import { loaderStyle, saveMatrix } from './utils';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -134,9 +136,13 @@ const DataModal = (props: PropTypes) => {
       const msg = await saveMatrix(name, publicStatus, selectedGroupList, onNewDataUpdate, currentFile, data, isJson, setUploadProgress);
       enqueueSnackbar(t(msg), { variant: 'success' });
     } catch (e) {
-      const error = e as Error;
-      enqueueSnackbar(t(error.message), { variant: 'error' });
-      if (error.message === 'data:fileNotUploaded' || error.message === 'data:emptyName') closeModal = false;
+      if (axios.isAxiosError(e)) {
+        enqueueErrorSnackbar(enqueueSnackbar, t(e.message), e as AxiosError);
+      } else {
+        const error = e as Error;
+        enqueueSnackbar(t(error.message), { variant: 'error' });
+        if (error.message === 'data:fileNotUploaded' || error.message === 'data:emptyName') closeModal = false;
+      }
     } finally {
       setImporting(false);
       if (closeModal) onClose();

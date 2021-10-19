@@ -5,7 +5,7 @@ from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import List, IO, Optional, cast, Union, Dict
+from typing import List, IO, Optional, cast, Union, Dict, Tuple
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -287,6 +287,24 @@ class StudyService:
             "study %s created by user %s", raw.id, params.get_user_id()
         )
         return str(raw.id)
+
+    def remove_duplicates(self) -> None:
+        study_paths: Dict[str, List[str]] = {}
+        for study in self.repository.get_all():
+            if isinstance(study, RawStudy) and not study.archived:
+                path = str(study.path)
+                if not path in study_paths:
+                    study_paths[path] = []
+                study_paths[path].append(study.id)
+
+        for studies_with_same_path in study_paths.values():
+            if len(studies_with_same_path) > 1:
+                logger.info(
+                    f"Found studies {studies_with_same_path} with same path, de duplicating"
+                )
+                for study in studies_with_same_path[1:]:
+                    logger.info(f"Removing study {study}")
+                    self.repository.delete(study)
 
     def sync_studies_on_disk(self, folders: List[StudyFolder]) -> None:
         """

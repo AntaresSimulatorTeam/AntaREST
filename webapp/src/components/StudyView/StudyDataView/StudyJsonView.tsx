@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import ReactJson from 'react-json-view';
@@ -8,6 +9,7 @@ import SaveIcon from '@material-ui/icons/Save';
 import { editStudy, getStudyData } from '../../../services/api/study';
 import { CommonStudyStyle } from './utils/utils';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   ...CommonStudyStyle(theme),
@@ -49,7 +51,7 @@ const StudyJsonView = (props: PropTypes) => {
         enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
         setSaveAllowed(false);
       } catch (e) {
-        enqueueSnackbar(t('studymanager:failtosavedata'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtosavedata'), e as AxiosError);
       }
     } else {
       enqueueSnackbar(t('studymanager:failtosavedata'), { variant: 'error' });
@@ -69,7 +71,7 @@ const StudyJsonView = (props: PropTypes) => {
         setJsonData(res);
         setSaveAllowed(false);
       } catch (e) {
-        enqueueSnackbar(t('studymanager:failtoretrievedata'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoretrievedata'), e as AxiosError);
       } finally {
         setLoaded(true);
       }

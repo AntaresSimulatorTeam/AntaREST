@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
+import axios, { AxiosError } from 'axios';
 import { makeStyles, Theme, createStyles, Paper } from '@material-ui/core';
 import debug from 'debug';
 import { useSnackbar } from 'notistack';
@@ -10,6 +11,7 @@ import { MatrixType } from '../../../common/types';
 import MatrixView from '../../ui/MatrixView';
 import ImportForm from '../../ui/ImportForm';
 import { CommonStudyStyle } from './utils/utils';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 const logErr = debug('antares:createimportform:error');
 
@@ -58,7 +60,11 @@ const StudyMatrixView = (props: PropTypes) => {
         setData(res);
       }
     } catch (e) {
-      enqueueSnackbar(t('studymanager:failtoretrievedata'), { variant: 'error' });
+      if (axios.isAxiosError(e)) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoretrievedata'), e as AxiosError);
+      } else {
+        enqueueSnackbar(t('studymanager:failtoretrievedata'), { variant: 'error' });
+      }
     } finally {
       setLoaded(true);
     }
@@ -69,7 +75,7 @@ const StudyMatrixView = (props: PropTypes) => {
       await importFile(file, study, formatedPath);
     } catch (e) {
       logErr('Failed to import file', file, e);
-      enqueueSnackbar(t('studymanager:failtosavedata'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtosavedata'), e as AxiosError);
     }
     refreshView();
     enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });

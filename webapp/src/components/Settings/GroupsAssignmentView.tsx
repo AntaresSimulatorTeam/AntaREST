@@ -9,8 +9,8 @@ import { GroupDTO, RoleType, RoleDTO, JWTGroup } from '../../common/types';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      width: '300px',
-      height: '250px',
+      width: '600px',
+      height: '400px',
       display: 'flex',
       flexFlow: 'column nowrap',
       justifyContent: 'flex-start',
@@ -31,37 +31,42 @@ const useStyles = makeStyles((theme: Theme) =>
       height: '60px',
       flexFlow: 'row nowrap',
       justifyContent: 'flex-start',
+      display: 'flex',
       alignItems: 'center',
-      overflow: 'hidden',
       margin: theme.spacing(1),
     },
     select: {
       margin: theme.spacing(2),
+      maxWidth: '400px',
     },
-    roleList: {
-      width: '90%',
+    roleListContainer: {
+      width: '100%',
       flex: '1',
       overflow: 'auto',
       padding: theme.spacing(1),
+    },
+    roleList: {
       display: 'flex',
       flexFlow: 'column nowrap',
       alignItems: 'center',
+      padding: theme.spacing(1),
     },
     role: {
       flex: 'none',
       height: '40px',
       width: '100%',
-      margin: theme.spacing(0.1),
+      margin: theme.spacing(0.5),
       padding: theme.spacing(1),
-      boxSizing: 'border-box',
       display: 'flex',
       flexFlow: 'row nowrap',
       alignItems: 'center',
+      justifyContent: 'space-between',
     },
     close: {
       color: theme.palette.error.main,
       marginLeft: theme.spacing(1),
       marginRight: theme.spacing(1),
+      cursor: 'pointer',
     },
   }));
 
@@ -140,27 +145,29 @@ const GroupsAssignmentView = (props: PropTypes) => {
           {t('settings:addButton')}
         </Button>
       </div>
-      <div className={classes.roleList}>
-        {roleList.map((item) => (
-          <Paper key={item.group_id} className={classes.role}>
-            <CloseIcon className={classes.close} onClick={() => deleteRole(item.group_id)} />
-            <Typography>{item.group_name}</Typography>
-            <Select
-              value={item.type}
-              onChange={(event: React.ChangeEvent<{ value: unknown }>) =>
-                updateRole(item.group_id, event.target.value as RoleType)
-              }
-              label={t('settings:roleLabel')}
-              className={classes.select}
-            >
-              {getMenuItems(item.group_id).map((menuItem) => (
-                <MenuItem key={menuItem.role} value={menuItem.role}>
-                  {t(menuItem.tr)}
-                </MenuItem>
-              ))}
-            </Select>
-          </Paper>
-        ))}
+      <div className={classes.roleListContainer}>
+        <div className={classes.roleList}>
+          {roleList.map((item) => (
+            <Paper key={item.group_id} className={classes.role}>
+              <CloseIcon className={classes.close} onClick={() => deleteRole(item.group_id)} />
+              <Typography style={{ flexGrow: 1 }}>{item.group_name}</Typography>
+              <Select
+                value={item.type}
+                onChange={(event: React.ChangeEvent<{ value: unknown }>) =>
+                  updateRole(item.group_id, event.target.value as RoleType)
+                }
+                label={t('settings:roleLabel')}
+                className={classes.select}
+              >
+                {getMenuItems(item.group_id).map((menuItem) => (
+                  <MenuItem key={menuItem.role} value={menuItem.role}>
+                    {t(menuItem.tr)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Paper>
+          ))}
+        </div>
       </div>
     </div>
   );

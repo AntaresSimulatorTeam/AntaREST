@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { createStyles, makeStyles, Theme, TextField, Typography } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +10,7 @@ import GroupsAssignmentView from '../../GroupsAssignmentView';
 import { getGroups } from '../../../../services/api/user';
 import { GroupDTO, RoleType, RoleDTO, BotDTO, JWTGroup } from '../../../../common/types';
 import { saveToken } from './utils';
+import enqueueErrorSnackbar from '../../../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   infos: {
@@ -101,7 +103,7 @@ const TokenCreationModal = (props: PropTypes) => {
       enqueueSnackbar(t('settings:onTokenCreation'), { variant: 'success' });
       onClose();
     } catch (e) {
-      enqueueSnackbar(t('settings:onTokenSaveError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('settings:onTokenSaveError'), e as AxiosError);
     }
   };
 
@@ -114,7 +116,7 @@ const TokenCreationModal = (props: PropTypes) => {
         setGroupList(filteredGroup);
         if (filteredGroup.length > 0) setActiveGroup(filteredGroup[0]);
       } catch (e) {
-        enqueueSnackbar(t('settings:tokensError'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('settings:tokensError'), e as AxiosError);
       }
     };
     init();

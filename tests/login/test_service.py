@@ -264,6 +264,9 @@ def test_get_group_info():
     roles.get_all_by_group.return_value = [
         Role(group=group, identity=user, type=RoleType.RUNNER)
     ]
+    roles.get_all_by_user.return_value = [
+        Role(group=group, identity=user, type=RoleType.RUNNER)
+    ]
 
     service = LoginService(
         user_repo=users,

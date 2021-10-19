@@ -90,7 +90,7 @@ def test_scan(tmp_path: Path):
 
 
 def process(x: int) -> bool:
-    return Watcher._get_lock()
+    return Watcher._get_lock(2)
 
 
 @pytest.mark.unit_test

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +10,7 @@ import { getUsers, deleteUser } from '../../../services/api/user';
 import { UserDTO, IDType } from '../../../common/types';
 import UserModal from './UserModal';
 import ConfirmationModal from '../../ui/ConfirmationModal';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -53,7 +55,7 @@ const UsersSettings = (props: PropTypes) => {
       setUserList(userList.filter((item) => item.id !== idForDeletion));
       enqueueSnackbar(t('settings:onUserDeleteSuccess'), { variant: 'success' });
     } catch (e) {
-      enqueueSnackbar(t('settings:onUserDeleteError'), { variant: 'error' });
+      enqueueErrorSnackbar(enqueueSnackbar, t('settings:onUserDeleteError'), e as AxiosError);
     }
     setIdForDeletion(-1);
     setOpenConfirmationModal(false);
@@ -73,7 +75,7 @@ const UsersSettings = (props: PropTypes) => {
         const users = await getUsers();
         setUserList(users);
       } catch (e) {
-        enqueueSnackbar(t('settings:usersError'), { variant: 'error' });
+        enqueueErrorSnackbar(enqueueSnackbar, t('settings:usersError'), e as AxiosError);
       }
     };
     init();

@@ -80,7 +80,7 @@ const VariantTreeView = (props: PropsType) => {
     };
     init();
     return () => setData([]);
-  }, [study]);
+  }, [study, t]);
 
   return (
     <div className={classes.root}>
