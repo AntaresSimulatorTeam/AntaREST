@@ -150,6 +150,15 @@ interface AddListenerAction extends Action {
   payload: (ev: WSMessage) => void;
 }
 
+export const addListenerAction = (callback: (ev: WSMessage) => void): AddListenerAction => ({
+  type: 'WS/ADD_LISTENER',
+  payload: callback,
+});
+
+export const refreshHandlerAction = (): RefreshHandlersAction => ({
+  type: 'WS/REFRESH_HANDLERS',
+});
+
 export const addListener = (callback: (ev: WSMessage) => void): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch): void => {
   dispatch({
     type: 'WS/ADD_LISTENER',
