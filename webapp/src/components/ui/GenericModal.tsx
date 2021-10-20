@@ -64,12 +64,13 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 interface PropTypes {
     open: boolean;
     title: string;
+    buttonTitle: string;
     handleClose?: () => void;
-    handleSave?: () => void;
+    handleAction?: () => void;
 }
 
 const GenericModal = (props: PropsWithChildren<PropTypes>) => {
-  const { title, open, handleClose, handleSave, children } = props;
+  const { title, open, buttonTitle, handleClose, handleAction, children } = props;
   const classes = useStyles();
   const [t] = useTranslation();
 
@@ -105,14 +106,14 @@ const GenericModal = (props: PropsWithChildren<PropTypes>) => {
               {t('settings:cancelButton')}
             </Button>
             )}
-            {handleSave && (
+            {handleAction && (
             <Button
               variant="contained"
               className={classes.button}
               color="primary"
-              onClick={handleSave}
+              onClick={handleAction}
             >
-              {t('settings:saveButton')}
+              {buttonTitle}
             </Button>
             )}
           </div>
@@ -124,7 +125,7 @@ const GenericModal = (props: PropsWithChildren<PropTypes>) => {
 
 GenericModal.defaultProps = {
   handleClose: undefined,
-  handleSave: undefined,
+  handleAction: undefined,
 };
 
 export default GenericModal;

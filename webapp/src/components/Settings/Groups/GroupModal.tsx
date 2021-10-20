@@ -49,8 +49,9 @@ const GroupModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={() => onSave(text)}
+      handleAction={() => onSave(text)}
       title={group ? `${t('settings:group')} - ${group.name}` : t('settings:newGroupTitle')}
+      buttonTitle={t('settings:saveButton')}
     >
       <div className={classes.infos}>
         <TextField

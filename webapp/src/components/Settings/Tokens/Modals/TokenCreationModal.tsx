@@ -126,8 +126,9 @@ const TokenCreationModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={onSave}
+      handleAction={onSave}
       title={t('settings:newTokenTitle')}
+      buttonTitle={t('settings:saveButton')}
     >
       <div className={classes.infos}>
         <TextField

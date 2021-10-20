@@ -19,6 +19,7 @@
   "newUserTitle": "Create new user",
   "cancelButton": "Cancel",
   "saveButton": "Save",
+  "sendButton": "Send",
   "roleLabel": "Role",
   "addButton": "Add",
   "permissionsLabel": "Permissions",

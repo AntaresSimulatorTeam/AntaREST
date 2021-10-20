@@ -52,16 +52,17 @@ const HelpModal = (props: PropTypes) => {
   const [t] = useTranslation();
   const { open, onClose } = props;
 
-  const onSave = async () => {
-    console.log('save');
+  const onSend = async () => {
+    console.log('send');
   };
 
   return (
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={onSave}
+      handleAction={onSend}
       title={t('main:helpmodal')}
+      buttonTitle={t('settings:sendButton')}
     >
       <div className={classes.root}>
         <form className={classes.form}>
