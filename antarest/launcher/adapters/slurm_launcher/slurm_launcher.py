@@ -33,6 +33,10 @@ logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
 
+class VersionNotSupportedError(Exception):
+    pass
+
+
 class SlurmLauncher(AbstractLauncher):
     def __init__(
         self,
@@ -245,6 +249,21 @@ class SlurmLauncher(AbstractLauncher):
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
 
+    def _assert_study_version_is_supported(
+        self, study_uuid: str, params: RequestParameters
+    ) -> None:
+        study_version = self.storage_service.get_study_information(
+            study_uuid, params=params
+        ).version
+        if (
+            str(study_version)
+            not in self.slurm_config.antares_versions_on_remote_server
+        ):
+            raise VersionNotSupportedError(
+                f"Study version ({study_version}) is not supported. Currently supported versions are"
+                f" {', '.join(self.slurm_config.antares_versions_on_remote_server)}"
+            )
+
     def _run_study(
         self, study_uuid: str, launch_uuid: str, params: RequestParameters
     ) -> None:
@@ -261,6 +280,8 @@ class SlurmLauncher(AbstractLauncher):
                 self.storage_service.export_study_flat(
                     study_uuid, params, study_path, outputs=False
                 )
+
+                self._assert_study_version_is_supported(study_uuid, params)
 
                 run_with(
                     self.launcher_args, self.launcher_params, show_banner=False
