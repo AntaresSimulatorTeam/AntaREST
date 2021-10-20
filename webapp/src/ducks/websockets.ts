@@ -2,11 +2,10 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import debug from 'debug';
 import { Action } from 'redux';
-import { ThunkAction, ThunkDispatch } from 'redux-thunk';
+import { ThunkAction } from 'redux-thunk';
 import { UserInfo, WSMessage } from '../common/types';
 import { AppState } from '../App/reducers';
 import { getConfig } from '../services/config';
-import globalWsListeners from '../services/utils/globalWsListeners';
 
 const logInfo = debug('antares:websocket:info');
 const logError = debug('antares:websocket:error');
@@ -24,21 +23,6 @@ export interface WebsocketState {
 const initialState: WebsocketState = {
   listeners: [],
   connected: false,
-};
-
-const addGlobalListeners = (dispatch: ThunkDispatch<AppState, unknown, Action<any>>): void => {
-  const action = (callback: (ev: WSMessage) => void): void => {
-    dispatch({
-      type: 'WS/ADD_LISTENER',
-      payload: callback,
-    });
-    dispatch({
-      type: 'WS/REFRESH_HANDLERS',
-    });
-  };
-  globalWsListeners.forEach((callback: (ev: WSMessage) => void) => {
-    action(callback);
-  });
 };
 
 /** ******************************************* */
@@ -165,6 +149,15 @@ interface AddListenerAction extends Action {
   type: 'WS/ADD_LISTENER';
   payload: (ev: WSMessage) => void;
 }
+
+export const addListenerAction = (callback: (ev: WSMessage) => void): AddListenerAction => ({
+  type: 'WS/ADD_LISTENER',
+  payload: callback,
+});
+
+export const refreshHandlerAction = (): RefreshHandlersAction => ({
+  type: 'WS/REFRESH_HANDLERS',
+});
 
 export const addListener = (callback: (ev: WSMessage) => void): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch): void => {
   dispatch({

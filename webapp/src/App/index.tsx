@@ -15,8 +15,10 @@ import SwaggerDoc from './Pages/SwaggerDoc';
 import JobManagement from './Pages/JobManagement';
 import UserSettings from './Pages/Settings';
 import Data from './Pages/Data';
+import { addWsListeners } from '../services/utils/globalWsListeners';
 
 const reduxStore = createStore();
+addWsListeners(reduxStore);
 
 const App: React.FC<{}> = () => (
   <Provider store={reduxStore}>
