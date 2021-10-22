@@ -1,7 +1,9 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
+import { Editor, EditorState } from 'draft-js';
+import 'draft-js/dist/Draft.css';
 import {
   makeStyles,
   createStyles,
@@ -13,6 +15,7 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import CreateIcon from '@material-ui/icons/Create';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import { getStudyData } from '../../services/api/study';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -74,13 +77,35 @@ const useStyles = makeStyles((theme: Theme) =>
     content: {
       flex: 1,
       width: '100%',
+      backgroundColor: 'red',
     },
   }));
 
-const TaskView = () => {
+interface Props {
+    studyId: string;
+}
+
+const TaskView = (props: Props) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+  const { studyId } = props;
+  const [editorState, setEditorState] = useState(
+    () => EditorState.createEmpty(),
+  );
+  const [editionMode, setEditionMode] = useState<boolean>(false);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const data = await getStudyData(studyId, '/settings/comments/', -1);
+        console.log('COMMENTS: ', data);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:fetchCommentsError'), e as AxiosError);
+      }
+    };
+    init();
+  }, [enqueueSnackbar, studyId, t]);
 
   return (
     <Paper className={classes.root}>
@@ -92,6 +117,7 @@ const TaskView = () => {
           <CreateIcon className={classes.editButton} />
         </div>
         <div className={classes.content} />
+        <Editor readOnly={!editionMode} editorState={editorState} onChange={setEditorState} />
       </div>
     </Paper>
   );

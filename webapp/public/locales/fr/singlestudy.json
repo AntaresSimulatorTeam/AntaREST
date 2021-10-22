@@ -34,5 +34,6 @@
   "fullPublicModeText": "Permission publique totale",
   "generalInfo": "Informations générales",
   "renamestudy": "Renommer l'étude",
-  "notes": "Notes"
+  "notes": "Notes",
+  "fetchCommentsError": "Echec lors de la récupération des commentaires"
 }

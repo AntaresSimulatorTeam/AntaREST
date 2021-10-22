@@ -34,5 +34,6 @@
   "fullPublicModeText": "Total public permission",
   "generalInfo": "General informations",
   "renamestudy": "Rename study",
-  "notes": "Notes"
+  "notes": "Notes",
+  "fetchCommentsError": "Failed to fetch comments"
 }

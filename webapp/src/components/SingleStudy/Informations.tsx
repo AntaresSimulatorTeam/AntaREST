@@ -19,16 +19,15 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   otherInfo: {
     flex: 1,
-    height: '100%',
+    height: '98%',
     minWidth: '350px',
     minHeight: '250px',
     display: 'flex',
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    margin: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-  }
+    boxSizing: 'border-box',
+  },
 }));
 
 interface PropTypes {
@@ -44,7 +43,7 @@ const Informations = (props: PropTypes) => {
       <InformationView study={study} />
       <div className={classes.otherInfo}>
         <TaskView jobs={jobs} />
-        <NoteView />
+        <NoteView studyId={study.id} />
       </div>
     </div>
   );
