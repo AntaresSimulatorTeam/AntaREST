@@ -21,17 +21,14 @@ import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
+      width: '100%',
       flex: 1,
-      height: '95%',
-      minWidth: '350px',
-      minHeight: '250px',
       display: 'flex',
       flexFlow: 'column nowrap',
       justifyContent: 'flex-start',
       alignItems: 'center',
       backgroundColor: 'white',
       margin: theme.spacing(1),
-      paddingBottom: theme.spacing(1),
       overflowY: 'auto',
       overflowX: 'hidden',
     },

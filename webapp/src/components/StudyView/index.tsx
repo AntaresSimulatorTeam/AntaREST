@@ -69,6 +69,7 @@ const StudyView = (props: PropTypes) => {
     try {
       const data = await getStudyData(sid, '', -1);
       setStudyData(data);
+      console.log('DATA:', data);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, <Translation>{(t) => t('studymanager:failtoretrievedata')}</Translation>, e as AxiosError);
       logError('Failed to fetch study data', sid, e);
