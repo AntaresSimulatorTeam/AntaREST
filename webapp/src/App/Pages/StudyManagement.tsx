@@ -12,15 +12,14 @@ import debug from 'debug';
 import { AppState } from '../reducers';
 import StudyCreationTools from '../../components/StudyCreationTools';
 import StudyListing from '../../components/StudyListing';
-import { initStudies, addStudies, removeStudies } from '../../ducks/study';
-import { getStudies, getStudyMetadata } from '../../services/api/study';
+import { initStudies } from '../../ducks/study';
+import { getStudies } from '../../services/api/study';
 import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
 import SortView from '../../components/ui/SortView';
 import { SortItem } from '../../components/ui/SortView/utils';
 import StudySearchTool from '../../components/StudySearchTool';
-import { StudyMetadata, StudySummary, WSEvent, WSMessage, UserDTO, GroupDTO, GenericInfo } from '../../common/types';
+import { StudyMetadata, UserDTO, GroupDTO, GenericInfo } from '../../common/types';
 import AutoCompleteView from '../../components/StudySearchTool/AutoCompleteView';
-import { addListener, removeListener } from '../../ducks/websockets';
 import theme from '../theme';
 import { getGroups, getUsers } from '../../services/api/user';
 import { loadState, saveState } from '../../services/utils/localStorage';
@@ -68,10 +67,6 @@ const mapState = (state: AppState) => ({
 
 const mapDispatch = ({
   loadStudies: initStudies,
-  addWsListener: addListener,
-  addStudy: (study: StudyMetadata) => addStudies([study]),
-  deleteStudy: (id: string) => removeStudies([id]),
-  removeWsListener: removeListener,
 });
 
 const connector = connect(mapState, mapDispatch);
@@ -79,7 +74,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const StudyManagement = (props: PropTypes) => {
-  const { studies, addStudy, deleteStudy, loadStudies, addWsListener, removeWsListener } = props;
+  const { studies, loadStudies } = props;
   const classes = useStyles();
   const [t] = useTranslation();
   const [filteredStudies, setFilteredStudies] = useState<Array<StudyMetadata>>(studies);
@@ -129,29 +124,9 @@ const StudyManagement = (props: PropTypes) => {
     }
   };
 
-  const listen = async (ev: WSMessage) => {
-    const studySummary = ev.payload as StudySummary;
-    switch (ev.type) {
-      case WSEvent.STUDY_CREATED:
-        addStudy(await getStudyMetadata(studySummary.id));
-        break;
-      case WSEvent.STUDY_DELETED:
-        deleteStudy(studySummary.id);
-        break;
-      case WSEvent.STUDY_EDITED:
-        addStudy(await getStudyMetadata(studySummary.id));
-        break;
-
-      default:
-        break;
-    }
-  };
-
   useEffect(() => {
-    addWsListener(listen);
     init();
     getAllStudies(false);
-    return () => removeWsListener(listen);
   }, []);
 
   useEffect(() => {
