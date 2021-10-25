@@ -114,6 +114,6 @@ def test_version():
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get(f"/v1/studies/_versions")
+    res = client.get(f"/v1/launcher/_versions")
     assert res.status_code == 200
     assert res.json() == output

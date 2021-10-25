@@ -14,6 +14,10 @@ from requests import Session
 
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import StopWatch, get_local_path
+from antarest.study.model import (
+    STUDY_REFERENCE_TEMPLATES,
+    NEW_DEFAULT_STUDY_VERSION,
+)
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -192,8 +196,8 @@ class LocalVariantGenerator(IVariantGenerator):
 
     def init_dest_path(self) -> None:
         if not os.listdir(self.output_path):
-            version_template = RawStudyService.study_templates[
-                RawStudyService.new_default_version
+            version_template = STUDY_REFERENCE_TEMPLATES[
+                NEW_DEFAULT_STUDY_VERSION
             ]
             empty_study_zip = get_local_path() / "resources" / version_template
             with ZipFile(empty_study_zip) as zip_output:

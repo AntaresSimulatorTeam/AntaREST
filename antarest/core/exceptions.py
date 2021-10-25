@@ -56,7 +56,7 @@ class StudyTypeUnsupported(HTTPException):
 
 
 class UnsupportedStudyVersion(HTTPException):
-    def __init__(self, version: int) -> None:
+    def __init__(self, version: str) -> None:
         super().__init__(
             HTTPStatus.BAD_REQUEST,
             f"Study version {version} is not supported",

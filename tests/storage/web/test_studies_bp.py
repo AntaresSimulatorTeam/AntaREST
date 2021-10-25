@@ -33,6 +33,7 @@ from antarest.study.model import (
     MatrixIndex,
     StudySimResultDTO,
     StudySimSettingsDTO,
+    STUDY_REFERENCE_TEMPLATES,
 )
 
 ADMIN = JWTUser(
@@ -581,3 +582,22 @@ def test_study_permission_management(tmp_path: Path) -> None:
 
     result = client.put("/v1/studies/existing-study/public_mode/UNKNOWN")
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY.value
+
+
+@pytest.mark.unit_test
+def test_get_study_versions(tmp_path: Path) -> None:
+
+    app = FastAPI(title=__name__)
+    build_storage(
+        app,
+        cache=Mock(),
+        task_service=Mock(),
+        storage_service=Mock(),
+        user_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
+        config=CONFIG,
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+
+    result = client.get("/v1/studies/_versions")
+    assert result.json() == list(STUDY_REFERENCE_TEMPLATES.keys())

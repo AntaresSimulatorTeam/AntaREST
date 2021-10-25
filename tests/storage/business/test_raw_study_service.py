@@ -226,7 +226,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(get_default_workspace_path(config) / "study1"),
-        version=720,
+        version="720",
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
     )
@@ -259,7 +259,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
         patch_service=Mock(),
     )
 
-    def create_study(version: int):
+    def create_study(version: str):
         metadata = RawStudy(
             id=f"study{version}",
             workspace=DEFAULT_WORKSPACE_NAME,
@@ -270,11 +270,11 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
         )
         return study_service.create(metadata)
 
-    md613 = create_study(613)
-    md700 = create_study(700)
-    md710 = create_study(710)
-    md720 = create_study(720)
-    md803 = create_study(803)
+    md613 = create_study("613")
+    md700 = create_study("700")
+    md710 = create_study("710")
+    md720 = create_study("720")
+    md803 = create_study("803")
 
     path_study = path_studies / md613.id
     general_data_file = path_study / "settings" / "generaldata.ini"
