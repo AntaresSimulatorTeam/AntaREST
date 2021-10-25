@@ -23,15 +23,15 @@ groups_metadata = Table(
 )
 
 STUDY_REFERENCE_TEMPLATES: Dict[str, str] = {
-    "600": "placeholder",  # TODO: Replace this with the correct template
+    "600": "empty_study_613.zip",
     "613": "empty_study_613.zip",
-    "640": "placeholder",  # TODO: Replace this with the correct template
+    "640": "empty_study_613.zip",
     "700": "empty_study_700.zip",
     "710": "empty_study_710.zip",
     "720": "empty_study_720.zip",
     "800": "empty_study_803.zip",
     "803": "empty_study_803.zip",
-    "810": "placeholder",  # TODO: Replace this with the correct template
+    "810": "empty_study_810.zip",
 }
 
 NEW_DEFAULT_STUDY_VERSION: str = "803"
