@@ -35,6 +35,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     fontSize: '.8rem',
     whiteSpace: 'pre',
     padding: '10px 5px 10px 5px',
+    maxHeight: '200px',
+    overflowY: 'auto',
   },
   titleblock: {
     flexGrow: 1,
