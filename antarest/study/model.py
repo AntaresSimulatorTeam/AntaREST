@@ -22,6 +22,20 @@ groups_metadata = Table(
     Column("study_id", String(36), ForeignKey("study.id")),
 )
 
+STUDY_REFERENCE_TEMPLATES: Dict[str, str] = {
+    "600": "empty_study_613.zip",
+    "613": "empty_study_613.zip",
+    "640": "empty_study_613.zip",
+    "700": "empty_study_700.zip",
+    "710": "empty_study_710.zip",
+    "720": "empty_study_720.zip",
+    "800": "empty_study_803.zip",
+    "803": "empty_study_803.zip",
+    "810": "empty_study_810.zip",
+}
+
+NEW_DEFAULT_STUDY_VERSION: str = "803"
+
 
 class StudyContentStatus(enum.Enum):
     VALID = "VALID"
@@ -323,3 +337,8 @@ class MatrixAggregationResult(BaseModel):
     index: MatrixIndex
     data: Dict[str, Dict[str, Dict[str, List[Optional[float]]]]]
     warnings: List[str]
+
+
+class ReferenceStudy(BaseModel):
+    version: str
+    template_name: str

@@ -120,7 +120,7 @@ def create_study_routes(
     )
     def create_study(
         name: str,
-        version: Optional[int] = None,
+        version: Optional[str] = None,
         groups: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -289,6 +289,18 @@ def create_study_routes(
         storage_service.set_public_mode(uuid_sanitized, mode, params)
 
         return ""
+
+    @bp.get(
+        "/studies/_versions",
+        tags=[APITag.study_management],
+        summary="Show available study versions",
+    )
+    def get_studies_version(
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        logger.info(f"Fetching version list")
+        return StudyService.get_studies_versions(params=params)
 
     @bp.get(
         "/studies/{uuid}",

@@ -41,6 +41,8 @@ from antarest.study.model import (
     StudyDownloadDTO,
     MatrixAggregationResult,
     StudySimResultDTO,
+    STUDY_REFERENCE_TEMPLATES,
+    NEW_DEFAULT_STUDY_VERSION,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.area_management import (
@@ -249,7 +251,7 @@ class StudyService:
     def create_study(
         self,
         study_name: str,
-        version: Optional[int],
+        version: Optional[str],
         group_ids: List[str],
         params: RequestParameters,
     ) -> str:
@@ -274,7 +276,7 @@ class StudyService:
             path=study_path,
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            version=version or RawStudyService.new_default_version,
+            version=version or NEW_DEFAULT_STUDY_VERSION,
         )
 
         raw = self.raw_study_service.create(raw)
@@ -302,9 +304,9 @@ class StudyService:
                 logger.info(
                     f"Found studies {studies_with_same_path} with same path, de duplicating"
                 )
-                for study in studies_with_same_path[1:]:
-                    logger.info(f"Removing study {study}")
-                    self.repository.delete(study)
+                for study_name in studies_with_same_path[1:]:
+                    logger.info(f"Removing study {study_name}")
+                    self.repository.delete(study_name)
 
     def sync_studies_on_disk(self, folders: List[StudyFolder]) -> None:
         """
@@ -1044,3 +1046,7 @@ class StudyService:
             return self.variant_study_service
         else:
             raise StudyTypeUnsupported(study.id, study.type)
+
+    @staticmethod
+    def get_studies_versions(params: RequestParameters) -> List[str]:
+        return list(STUDY_REFERENCE_TEMPLATES.keys())
