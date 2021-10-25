@@ -1,4 +1,5 @@
 {
   "failedtoretrievejobs": "Failed to retrieve job information",
-  "failedtoretrievelogs": "Failed to retrieve job logs"
+  "failedtoretrievelogs": "Failed to retrieve job logs",
+  "logdetails": "No logs found"
 }

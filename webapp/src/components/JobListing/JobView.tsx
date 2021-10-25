@@ -1,11 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { makeStyles, createStyles, Theme, Paper, Typography, useTheme } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, Paper, Typography, IconButton, useTheme } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import debug from 'debug';
 import moment from 'moment';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
+import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import { AppState } from '../../App/reducers';
 import { LaunchJob } from '../../common/types';
 import { getStudyJobLog } from '../../services/api/study';
@@ -28,11 +30,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexWrap: 'wrap',
   },
   logs: {
-    display: 'block',
+    display: 'none',
     marginTop: '10px',
     fontSize: '.8rem',
-    height: '20px',
-    padding: '10px 5px 5px 5px',
+    whiteSpace: 'pre',
+    padding: '10px 5px 10px 5px',
   },
   titleblock: {
     flexGrow: 1,
@@ -54,6 +56,12 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   dateicon: {
     marginRight: '0.5em',
+  },
+  dateandicon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '190px',
   },
 }));
 
@@ -79,6 +87,8 @@ const JobView = (props: PropTypes) => {
   const theme = useTheme();
   const classes = useStyles();
   const createNotif = useNotif();
+  const [logs, setLogs] = useState<string>();
+  const [logView, setLogView] = useState<boolean>();
 
   const renderStatus = () => {
     let color = theme.palette.grey[400];
@@ -92,22 +102,46 @@ const JobView = (props: PropTypes) => {
     return (<div className={classes.dot} style={{ backgroundColor: color }} />);
   };
 
-  console.log(job);
-
-  const test = async () => {
+  const getLog = async () => {
     try {
-      console.log(job.id);
       const JobLog = await getStudyJobLog(job.id);
-      console.log(JobLog);
+      setLogs(JobLog);
     } catch (e) {
       logError('woops', e);
       createNotif(t('jobs:failedtoretrievelogs'), { variant: 'error' });
     }
   };
 
+  const ToggleLogView = (view: boolean | undefined) => {
+    if (view === true) {
+      setLogView(false);
+    } else {
+      setLogView(true);
+    }
+  };
+
+  const LogView = () => {
+    let view;
+    if (logView === true) {
+      view = (
+        <Paper className={classes.logs} style={{ display: 'block' }} variant="outlined">
+          {logs != null ? logs : t('jobs:logdetails')}
+        </Paper>
+      );
+    } else {
+      view = (
+        <Paper className={classes.logs} style={{ display: 'none' }} variant="outlined">
+          {logs != null ? logs : t('jobs:logdetails')}
+        </Paper>
+      );
+    }
+    return view;
+  };
+
   useEffect(() => {
-    test();
+    getLog();
   }, []);
+
   return (
     <Paper className={classes.root} elevation={1}>
       <div className={classes.jobs}>
@@ -125,26 +159,30 @@ const JobView = (props: PropTypes) => {
             {t('main:unknown')}
           </Typography>
           )}
-
         </div>
-        <div className={classes.dateblock}>
-          <div>
-            <FontAwesomeIcon className={classes.dateicon} icon="calendar" />
-            {moment(job.creationDate).format('DD/MM/YY - HH:mm')}
+        <div className={classes.dateandicon}>
+          <div className={classes.dateblock}>
+            <div>
+              <FontAwesomeIcon className={classes.dateicon} icon="calendar" />
+              {moment(job.creationDate).format('DD/MM/YY - HH:mm')}
+            </div>
+            <div>
+              {job.completionDate && (
+                <>
+                  <FontAwesomeIcon className={classes.dateicon} icon="calendar-check" />
+                  {moment(job.completionDate).format('DD/MM/YY - HH:mm')}
+                </>
+              )}
+            </div>
           </div>
           <div>
-            {job.completionDate && (
-              <>
-                <FontAwesomeIcon className={classes.dateicon} icon="calendar-check" />
-                {moment(job.completionDate).format('DD/MM/YY - HH:mm')}
-              </>
-            )}
+            <IconButton onClick={() => ToggleLogView(logView)}>
+              {logView === true ? <ArrowDropDownIcon /> : <ArrowDropUpIcon />}
+            </IconButton>
           </div>
         </div>
       </div>
-      <Paper className={classes.logs} variant="outlined">
-        Les logs ici
-      </Paper>
+      {LogView()}
     </Paper>
   );
 };
