@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { makeStyles, createStyles, Theme, Paper, Typography, IconButton, useTheme } from '@material-ui/core';
 import { Link } from 'react-router-dom';
@@ -25,16 +25,15 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     paddingBottom: theme.spacing(2),
   },
   jobs: {
-    width: '99%',
     display: 'flex',
     flexWrap: 'wrap',
   },
   logs: {
     display: 'none',
-    marginTop: '10px',
+    marginTop: theme.spacing(2),
     fontSize: '.8rem',
     whiteSpace: 'pre',
-    padding: '10px 5px 10px 5px',
+    padding: theme.spacing(1),
     maxHeight: '200px',
     overflowY: 'auto',
   },
@@ -104,45 +103,34 @@ const JobView = (props: PropTypes) => {
     return (<div className={classes.dot} style={{ backgroundColor: color }} />);
   };
 
-  const getLog = async () => {
+  const getLog = useCallback(async () => {
     try {
-      const JobLog = await getStudyJobLog(job.id);
-      setLogs(JobLog);
+      const jobLog = await getStudyJobLog(job.id);
+      setLogs(jobLog);
     } catch (e) {
       logError('woops', e);
       createNotif(t('jobs:failedtoretrievelogs'), { variant: 'error' });
     }
-  };
+  }, [job, createNotif, t]);
 
-  const ToggleLogView = (view: boolean | undefined) => {
-    if (view === true) {
-      setLogView(false);
-    } else {
-      setLogView(true);
-    }
-  };
-
-  const LogView = () => {
-    let view;
-    if (logView === true) {
-      view = (
+  const renderLogView = () => {
+    if (logView) {
+      return (
         <Paper className={classes.logs} style={{ display: 'block' }} variant="outlined">
           {logs != null ? logs : t('jobs:logdetails')}
         </Paper>
       );
-    } else {
-      view = (
-        <Paper className={classes.logs} style={{ display: 'none' }} variant="outlined">
-          {logs != null ? logs : t('jobs:logdetails')}
-        </Paper>
-      );
     }
-    return view;
+    return (
+      <Paper className={classes.logs} style={{ display: 'none' }} variant="outlined">
+        {logs != null ? logs : t('jobs:logdetails')}
+      </Paper>
+    );
   };
 
   useEffect(() => {
     getLog();
-  }, []);
+  }, [getLog]);
 
   return (
     <Paper className={classes.root} elevation={1}>
@@ -178,13 +166,13 @@ const JobView = (props: PropTypes) => {
             </div>
           </div>
           <div>
-            <IconButton onClick={() => ToggleLogView(logView)}>
-              {logView === true ? <ArrowDropDownIcon /> : <ArrowDropUpIcon />}
+            <IconButton onClick={() => setLogView(!logView)}>
+              {logView === true ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
             </IconButton>
           </div>
         </div>
       </div>
-      {LogView()}
+      {renderLogView()}
     </Paper>
   );
 };
