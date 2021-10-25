@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
-import { ContentState, Editor, EditorState } from 'draft-js';
+import { Editor, EditorState } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import {
   makeStyles,
@@ -17,6 +17,7 @@ import CreateIcon from '@material-ui/icons/Create';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import TextEditorModal from '../ui/TextEditorModal';
 import { getStudyData, importFile } from '../../services/api/study';
+import { defaultBlockRenderMap, htmlToDraftJs } from '../ui/Utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -74,13 +75,14 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     content: {
       flex: 1,
-      width: '95%',
+      width: '100%',
+      padding: theme.spacing(2, 2),
       height: 0,
       display: 'flex',
       flexFlow: 'column nowrap',
       justifyContent: 'flex-start',
       alignItems: 'center',
-      overflowY: 'scroll',
+      overflowY: 'auto',
       overflowX: 'hidden',
       boxSizing: 'border-box',
     },
@@ -101,12 +103,14 @@ const NoteView = (props: Props) => {
   const [editionMode, setEditionMode] = useState<boolean>(false);
   const [content, setContent] = useState<string>('');
 
+  const extendedBlockRenderMap = defaultBlockRenderMap();
+
   const onSave = async (newContent: string) => {
     try {
       const blob: Blob = new Blob([newContent], { type: 'text/plain' });
       const file: File = new File([blob], 'comments.txt', { type: 'text/plain' });
       await importFile(file, studyId, 'settings/comments');
-      setEditorState(EditorState.createWithContent(ContentState.createFromText(newContent)));
+      setEditorState(EditorState.createWithContent(htmlToDraftJs(newContent, extendedBlockRenderMap)));
       setContent(newContent);
       setEditionMode(false);
       enqueueSnackbar(t('singlestudy:commentsSaved'), { variant: 'success' });
@@ -119,13 +123,14 @@ const NoteView = (props: Props) => {
     const init = async () => {
       try {
         const data = await getStudyData(studyId, '/settings/comments/', -1);
-        setEditorState(EditorState.createWithContent(ContentState.createFromText(data)));
+        setEditorState(EditorState.createWithContent(htmlToDraftJs(data, extendedBlockRenderMap)));
         setContent(data);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:fetchCommentsError'), e as AxiosError);
       }
     };
     init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enqueueSnackbar, studyId, t]);
 
   return (
@@ -138,7 +143,12 @@ const NoteView = (props: Props) => {
           <CreateIcon className={classes.editButton} onClick={() => setEditionMode(true)} />
         </div>
         <div className={classes.content}>
-          <Editor readOnly={!editionMode} editorState={editorState} onChange={setEditorState} />
+          <Editor
+            readOnly={!editionMode}
+            editorState={editorState}
+            onChange={setEditorState}
+            blockRenderMap={extendedBlockRenderMap}
+          />
         </div>
       </div>
       {

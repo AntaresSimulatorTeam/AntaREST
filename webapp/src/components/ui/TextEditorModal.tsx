@@ -5,7 +5,11 @@ import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
-import { ContentState, Editor, EditorState, convertToRaw, RichUtils } from 'draft-js';
+import { Editor, EditorState, RichUtils } from 'draft-js';
+import FormatAlignCenterIcon from '@material-ui/icons/FormatAlignCenter';
+import FormatAlignLeftIcon from '@material-ui/icons/FormatAlignLeft';
+import FormatAlignRightIcon from '@material-ui/icons/FormatAlignRight';
+import { defaultBlockRenderMap, DraftJsToHtml, htmlToDraftJs } from './Utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -83,6 +87,16 @@ const useStyles = makeStyles((theme: Theme) =>
         color: theme.palette.secondary.main,
       },
     },
+    alignIcon: {
+      width: '20px',
+      height: 'auto',
+      color: theme.palette.primary.main,
+      cursor: 'pointer',
+      margin: theme.spacing(0, 2),
+      '&:hover': {
+        color: theme.palette.secondary.main,
+      },
+    },
   }));
 
 interface PropTypes {
@@ -101,16 +115,14 @@ const TextEditorModal = (props: PropTypes) => {
     () => EditorState.createEmpty(),
   );
   const [initContent, setInitContent] = useState<string>('');
+  const [textAlignment, setTextAlignment] = useState<string>('left');
   const classes = useStyles();
   const [t] = useTranslation();
 
-  const getRawText = () => {
-    const { blocks } = convertToRaw(editorState.getCurrentContent());
-    return blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
-  };
+  const extendedBlockRenderMap = defaultBlockRenderMap();
 
   const onContentSave = () => {
-    const value = getRawText();
+    const value = DraftJsToHtml(editorState);
     if (initContent !== value) {
       onSave(value);
     }
@@ -122,9 +134,10 @@ const TextEditorModal = (props: PropTypes) => {
 
   useEffect(() => {
     if (content !== undefined) {
-      setEditorState(EditorState.createWithContent(ContentState.createFromText(content)));
+      setEditorState(EditorState.createWithContent(htmlToDraftJs(content, extendedBlockRenderMap)));
       setInitContent(content);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content]);
 
   return (
@@ -149,16 +162,24 @@ const TextEditorModal = (props: PropTypes) => {
               <Typography className={classes.textIcon} style={{ fontWeight: 'bold' }} onClick={() => onStyleClick('BOLD')}>B</Typography>
               <Typography className={classes.textIcon} style={{ fontStyle: 'italic' }} onClick={() => onStyleClick('ITALIC')}>I</Typography>
               <Typography className={classes.textIcon} style={{ textDecoration: 'underline' }} onClick={() => onStyleClick('UNDERLINE')}>U</Typography>
+              <FormatAlignLeftIcon className={classes.alignIcon} onClick={() => setTextAlignment('left')} />
+              <FormatAlignCenterIcon className={classes.alignIcon} onClick={() => setTextAlignment('center')} />
+              <FormatAlignRightIcon className={classes.alignIcon} onClick={() => setTextAlignment('right')} />
             </div>
             <div className={classes.content}>
-              <Editor editorState={editorState} onChange={setEditorState} />
+              <Editor
+                editorState={editorState}
+                onChange={setEditorState}
+                blockRenderMap={extendedBlockRenderMap}
+                textAlignment={textAlignment as any}
+              />
             </div>
           </div>
           <div className={classes.footer}>
             <Button variant="contained" className={classes.button} onClick={close}>
               {t('main:closeButton')}
             </Button>
-            <Button variant="contained" className={classes.button} color="primary" onClick={() => onContentSave()} disabled={initContent === getRawText()}>
+            <Button variant="contained" className={classes.button} color="primary" onClick={() => onContentSave()} disabled={initContent === DraftJsToHtml(editorState)}>
               {t('main:save')}
             </Button>
           </div>
