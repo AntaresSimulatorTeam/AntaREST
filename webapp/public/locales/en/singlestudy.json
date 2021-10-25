@@ -35,5 +35,7 @@
   "generalInfo": "General informations",
   "renamestudy": "Rename study",
   "notes": "Notes",
-  "fetchCommentsError": "Failed to fetch comments"
+  "fetchCommentsError": "Failed to fetch comments",
+  "commentsSaved": "Comments saved successfully",
+  "commentsNotSaved": "Comments not saved"
 }

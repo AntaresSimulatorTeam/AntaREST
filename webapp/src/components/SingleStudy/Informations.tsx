@@ -15,7 +15,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'flex-start',
     boxSizing: 'border-box',
     padding: theme.spacing(1),
-    overflow: 'auto',
+    overflow: 'hidden',
   },
   otherInfo: {
     flex: 1,

@@ -22,7 +22,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       width: '100%',
-      flex: 1,
+      height: '48%',
       display: 'flex',
       flexFlow: 'column nowrap',
       justifyContent: 'flex-start',
@@ -31,6 +31,7 @@ const useStyles = makeStyles((theme: Theme) =>
       margin: theme.spacing(1),
       overflowY: 'auto',
       overflowX: 'hidden',
+      boxSizing: 'border-box',
     },
     header: {
       width: '100%',
