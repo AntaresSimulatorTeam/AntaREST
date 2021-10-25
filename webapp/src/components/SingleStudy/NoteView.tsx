@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import CreateIcon from '@material-ui/icons/Create';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import TextEditorModal from '../ui/TextEditorModal';
-import { getStudyData, importFile } from '../../services/api/study';
+import { editComments, getComments, getStudyData, importFile } from '../../services/api/study';
 import { defaultBlockRenderMap, htmlToDraftJs } from '../ui/Utils';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -107,9 +107,10 @@ const NoteView = (props: Props) => {
 
   const onSave = async (newContent: string) => {
     try {
-      const blob: Blob = new Blob([newContent], { type: 'text/plain' });
+      /*const blob: Blob = new Blob([newContent], { type: 'text/plain' });
       const file: File = new File([blob], 'comments.txt', { type: 'text/plain' });
-      await importFile(file, studyId, 'settings/comments');
+      await importFile(file, studyId, 'settings/comments');*/
+      await editComments(studyId, newContent);
       setEditorState(EditorState.createWithContent(htmlToDraftJs(newContent, extendedBlockRenderMap)));
       setContent(newContent);
       setEditionMode(false);
@@ -122,7 +123,7 @@ const NoteView = (props: Props) => {
   useEffect(() => {
     const init = async () => {
       try {
-        const data = await getStudyData(studyId, '/settings/comments/', -1);
+        const data = await getComments(studyId);
         setEditorState(EditorState.createWithContent(htmlToDraftJs(data, extendedBlockRenderMap)));
         setContent(data);
       } catch (e) {
