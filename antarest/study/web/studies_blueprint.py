@@ -291,6 +291,18 @@ def create_study_routes(
         return ""
 
     @bp.get(
+        "/studies/_versions",
+        tags=[APITag.study_management],
+        summary="Show available study versions",
+    )
+    def get_studies_version(
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        params = RequestParameters(user=current_user)
+        logger.info(f"Fetching version list")
+        return StudyService.get_studies_versions(params=params)
+
+    @bp.get(
         "/studies/{uuid}",
         tags=[APITag.study_management],
         summary="Get Study information",
@@ -442,17 +454,5 @@ def create_study_routes(
         params = RequestParameters(user=current_user)
         storage_service.unarchive(study_id, params)
         return ""
-
-    @bp.get(
-        "/studies/_versions",
-        tags=[APITag.study_management],
-        summary="Show available study versions",
-    )
-    def get_studies_version(
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        params = RequestParameters(user=current_user)
-        logger.info(f"Fetching version list")
-        return str(StudyService.get_studies_versions(params=params))
 
     return bp
