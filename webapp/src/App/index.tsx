@@ -16,6 +16,9 @@ import JobManagement from './Pages/JobManagement';
 import UserSettings from './Pages/Settings';
 import Data from './Pages/Data';
 import { addWsListeners } from '../services/utils/globalWsListeners';
+import MatrixView from '../components/ui/MatrixView';
+import mockdata from '../components/ui/test.json';
+import { MatrixType } from '../common/types';
 
 const reduxStore = createStore();
 addWsListeners(reduxStore);
@@ -32,6 +35,9 @@ const App: React.FC<{}> = () => (
               <MenuBar />
               <div style={{ position: 'absolute', bottom: 0, width: '100%', overflow: 'hidden', top: TOOLBAR_HEIGHT }}>
                 <Switch>
+                  <Route path="/test" exact key="home">
+                    <MatrixView matrix={mockdata as any as MatrixType} readOnly />
+                  </Route>
                   <Route path="/" exact key="home">
                     <StudyManagement />
                   </Route>

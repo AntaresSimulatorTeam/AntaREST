@@ -72,4 +72,6 @@ class LocalLauncher(AbstractLauncher):
             )
 
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
-        raise NotImplementedError()
+        return "Test\nxdfgdfgpkdlfxgmldfg\ndfgdf\nadzadza\nadzadza\nzdazdazd\nadazdazdaz\nezfazdzad\nadzadzadza\nadzahdizoa\nzadza\nadzadza\nadzad\nazdazd\nazdazd\nazdazd" \
+               "\ndfgdf\nadzadza\nadzadza\nzdazdazd\nadazdazdaz\nezfazdzad\nadzadzadza\nadzahdizoa\nzadza\nadzadza\nadzad\nazdazd\nazdazd\nazdazd" \
+               "\ndfgdf\nadzadza\nadzadza\nzdazdazd\nadazdazdaz\nezfazdzad\nadzadzadza\nadzahdizoa\nzadza\nadzadza\nadzad\nazdazd\nazdazd\nazdazd"
