@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import Plot from 'react-plotly.js';
 import { HotTable, HotColumn } from '@handsontable/react';
 import { createStyles, makeStyles, Theme, ButtonGroup, Button } from '@material-ui/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { MatrixType } from '../../common/types';
+import { MatrixType } from '../../../common/types';
 import 'handsontable/dist/handsontable.min.css';
+import MatrixGraphView from './MatrixGraphView';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -15,9 +15,22 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexDirection: 'column',
     alignItems: 'center',
   },
+  buttongroup: {
+    width: '100%',
+  },
   button: {
-    marginTop: theme.spacing(3),
     marginBottom: theme.spacing(3),
+  },
+  disable: {
+    backgroundColor: '#002a5e !important',
+    color: 'white !important',
+  },
+  enable: {
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+    color: 'rgba(0, 0, 0, 0.26)',
+    '&:hover': {
+      color: 'white',
+    },
   },
 }));
 
@@ -68,17 +81,7 @@ export default function MatrixView(props: PropTypes) {
       );
     }
     return (
-      <Plot
-        data={columns.map((val, i) => (
-          {
-            x: index,
-            y: data.map((a) => a[i]),
-            type: 'scatter',
-            mode: 'lines',
-          }
-        ))}
-        layout={{ width: 960, height: 720 }}
-      />
+      <MatrixGraphView matrix={matrix} />
     );
   };
 
@@ -86,26 +89,28 @@ export default function MatrixView(props: PropTypes) {
 
   return (
     <div className={classes.root}>
-      <ButtonGroup className={classes.button} variant="contained">
-        {toggleView ? (
-          <Button color="primary" disabled>
-            <FontAwesomeIcon size="2x" icon="table" />
-          </Button>
-        ) : (
-          <Button color="primary" onClick={changeView}>
-            <FontAwesomeIcon size="2x" icon="table" />
-          </Button>
-        )}
-        {toggleView ? (
-          <Button color="primary" onClick={changeView}>
-            <FontAwesomeIcon size="2x" icon="chart-area" />
-          </Button>
-        ) : (
-          <Button color="primary" disabled>
-            <FontAwesomeIcon size="2x" icon="chart-area" />
-          </Button>
-        )}
-      </ButtonGroup>
+      <div className={classes.buttongroup}>
+        <ButtonGroup className={classes.button} variant="contained">
+          {toggleView ? (
+            <Button disabled className={classes.disable} color="primary">
+              <FontAwesomeIcon size="2x" icon="table" />
+            </Button>
+          ) : (
+            <Button className={classes.enable} color="primary" onClick={changeView}>
+              <FontAwesomeIcon size="2x" icon="table" />
+            </Button>
+          )}
+          {toggleView ? (
+            <Button className={classes.enable} color="primary" onClick={changeView}>
+              <FontAwesomeIcon size="2x" icon="chart-area" />
+            </Button>
+          ) : (
+            <Button className={classes.disable} color="primary" disabled>
+              <FontAwesomeIcon size="2x" icon="chart-area" />
+            </Button>
+          )}
+        </ButtonGroup>
+      </div>
       {renderHandleView()}
     </div>
   );

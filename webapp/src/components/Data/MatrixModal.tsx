@@ -6,7 +6,7 @@ import { CircularProgress, createStyles, makeStyles, Theme, Tooltip } from '@mat
 import clsx from 'clsx';
 import { MatrixInfoDTO, MatrixType } from '../../common/types';
 import InformationModal from '../ui/InformationModal';
-import MatrixView from '../ui/MatrixView';
+import MatrixView from '../ui/MatrixView/index';
 import { getMatrix } from '../../services/api/matrix';
 import { CopyIcon, loaderStyle } from './utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
