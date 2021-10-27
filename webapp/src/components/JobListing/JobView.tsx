@@ -41,7 +41,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     minHeight: '60px',
   },
   loaderContainer: {
-    height: '100%', width: '100%', position: 'relative'
+    height: '100%',
+    width: '100%',
+    position: 'relative',
   },
   titleblock: {
     flexGrow: 1,
