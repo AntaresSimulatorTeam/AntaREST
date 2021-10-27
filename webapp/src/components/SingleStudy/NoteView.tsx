@@ -16,8 +16,8 @@ import { useTranslation } from 'react-i18next';
 import CreateIcon from '@material-ui/icons/Create';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import TextEditorModal from '../ui/TextEditorModal';
-import { editComments, getComments, getStudyData, importFile } from '../../services/api/study';
-import { defaultBlockRenderMap, htmlToDraftJs } from '../ui/Utils';
+import { editComments, getComments } from '../../services/api/study';
+import { defaultBlockRenderMap, htmlToDraftJs, xmlToJson } from '../ui/Utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -107,9 +107,6 @@ const NoteView = (props: Props) => {
 
   const onSave = async (newContent: string) => {
     try {
-      /*const blob: Blob = new Blob([newContent], { type: 'text/plain' });
-      const file: File = new File([blob], 'comments.txt', { type: 'text/plain' });
-      await importFile(file, studyId, 'settings/comments');*/
       await editComments(studyId, newContent);
       setEditorState(EditorState.createWithContent(htmlToDraftJs(newContent, extendedBlockRenderMap)));
       setContent(newContent);
@@ -124,6 +121,7 @@ const NoteView = (props: Props) => {
     const init = async () => {
       try {
         const data = await getComments(studyId);
+        console.log('XML TO JSON: ', xmlToJson(data));
         setEditorState(EditorState.createWithContent(htmlToDraftJs(data, extendedBlockRenderMap)));
         setContent(data);
       } catch (e) {

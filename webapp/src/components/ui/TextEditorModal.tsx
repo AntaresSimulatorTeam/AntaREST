@@ -169,7 +169,7 @@ const TextEditorModal = (props: PropTypes) => {
             <div className={classes.content}>
               <Editor
                 editorState={editorState}
-                onChange={setEditorState}
+                onChange={(e) => { console.log(e.getCurrentContent()); setEditorState(e); }}
                 blockRenderMap={extendedBlockRenderMap}
                 textAlignment={textAlignment as any}
               />
