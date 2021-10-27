@@ -135,8 +135,8 @@ class MatrixService(ISimpleMatrixService):
                 self.repo.save(
                     Matrix(
                         id=matrix_hash,
-                        width=len(data[0] or []),
-                        height=len(data or []),
+                        width=len(data[0] if len(data) > 0 else []),
+                        height=len(data),
                         created_at=datetime.utcnow(),
                     )
                 )
