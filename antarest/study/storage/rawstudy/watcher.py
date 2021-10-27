@@ -23,15 +23,14 @@ class Watcher:
     """
 
     LOCK = Path("watcher")
-    DELAY = 2
 
     def __init__(self, config: Config, service: StudyService):
         self.service = service
         self.config = config
-
         self.thread = (
             threading.Thread(target=self._loop, daemon=True)
-            if not config.storage.watcher_lock or Watcher._get_lock()
+            if not config.storage.watcher_lock
+            or Watcher._get_lock(config.storage.watcher_lock_delay)
             else None
         )
 
@@ -45,7 +44,7 @@ class Watcher:
             self.thread.start()
 
     @staticmethod
-    def _get_lock() -> bool:
+    def _get_lock(lock_delay: int) -> bool:
         """
         Force watcher to run only one by access a lock on filesystem.
 
@@ -59,7 +58,7 @@ class Watcher:
                 else 0
             )
             now = int(time())
-            if now - start > Watcher.DELAY:
+            if now - start > lock_delay:
                 Watcher.LOCK.write_text(str(now))
                 logger.info("Watcher get lock")
                 return True
@@ -68,6 +67,17 @@ class Watcher:
                 return False
 
     def _loop(self) -> None:
+        try:
+            logger.info(
+                "Removing duplicates, this is a temporary fix that should be removed when previous duplicates are removed"
+            )
+            with db():
+                self.service.remove_duplicates()
+        except Exception as e:
+            logger.error(
+                "Unexpected error when removing duplicates", exc_info=e
+            )
+
         while True:
             self._scan()
             sleep(2)

@@ -86,6 +86,7 @@ class StorageConfig:
     tmp_dir: Path = Path(tempfile.gettempdir())
     workspaces: Dict[str, WorkspaceConfig] = field(default_factory=lambda: {})
     watcher_lock: bool = True
+    watcher_lock_delay: int = 10
 
     @staticmethod
     def from_dict(data: JSON) -> "StorageConfig":
@@ -98,6 +99,7 @@ class StorageConfig:
             },
             archive_dir=Path(data["archive_dir"]),
             watcher_lock=data.get("watcher_lock", True),
+            watcher_lock_delay=data.get("watcher_lock_delay", 10),
         )
 
 

@@ -28,9 +28,7 @@ export type AppState = CombinedState<{
 
 export default function createMainStore(): Store<AppState> {
   const reduxStore = createStore(reducers, composeWithDevTools(applyMiddleware(...[thunk, logger])));
-
   setLogoutInterceptor(() => reduxStore.dispatch(logoutAction()), () => reduxStore.dispatch(initStudies([])));
-
   reduxStore.subscribe(
     throttle(() => {
       persistAuthState(reduxStore.getState().auth);

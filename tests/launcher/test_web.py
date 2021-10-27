@@ -104,3 +104,16 @@ def test_jobs() -> None:
             call(None, RequestParameters(DEFAULT_ADMIN_USER)),
         ]
     )
+
+
+@pytest.mark.unit_test
+def test_version():
+    service = Mock()
+    output = {"local": ["1", "2"], "slurm": ["3", "4"]}
+    service.get_versions.return_value = output
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.get(f"/v1/launcher/_versions")
+    assert res.status_code == 200
+    assert res.json() == output

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { InputBase, makeStyles, Theme, createStyles } from '@material-ui/core';
+import { InputBase, makeStyles, Theme, createStyles, Typography } from '@material-ui/core';
 import moment from 'moment';
 import { AppState } from '../../App/reducers';
 import { GenericInfo, GroupDTO, StudyMetadata, UserDTO } from '../../common/types';
@@ -60,6 +60,13 @@ const useStyles = makeStyles((theme: Theme) =>
         backgroundColor: '#00000000',
       },
     },
+    counter: {
+      marginLeft: theme.spacing(1),
+      marginRight: theme.spacing(1),
+      fontSize: '0.8em',
+      fontStyle: 'italic',
+      color: '#3e3e3e',
+    },
   }));
 
 const mapState = (state: AppState) => ({
@@ -87,6 +94,7 @@ const StudySearchTool = (props: PropTypes) => {
   const { filterManaged, setLoading, setFiltered, versionFilter, sortItem, sortList, studies, userFilter, groupFilter } = props;
   const classes = useStyles();
   const [t] = useTranslation();
+  const [resultCount, setResultCount] = useState(studies.length);
   const [searchName, setSearchName] = useState<string>('');
 
   const sortStudies = (): Array<StudyMetadata> => {
@@ -115,6 +123,7 @@ const StudySearchTool = (props: PropTypes) => {
     setLoading(true);
     const f = filter(currentName);
     setFiltered(f);
+    setResultCount(f.length);
     setLoading(false);
     if (currentName !== searchName) setSearchName(currentName);
   };
@@ -122,6 +131,7 @@ const StudySearchTool = (props: PropTypes) => {
   useEffect(() => {
     const f = filter(searchName);
     setFiltered(f);
+    setResultCount(f.length);
   }, [studies, sortItem, userFilter, groupFilter, versionFilter, filterManaged]);
 
   return (
@@ -135,6 +145,9 @@ const StudySearchTool = (props: PropTypes) => {
           name: 'searchstring',
         }}
       />
+      <Typography className={classes.counter}>
+        {`(${resultCount})`}
+      </Typography>
     </div>
   );
 };

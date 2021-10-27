@@ -21,6 +21,7 @@ from antarest.study.model import (
     RawStudy,
     DEFAULT_WORKSPACE_NAME,
     Study,
+    STUDY_REFERENCE_TEMPLATES,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
@@ -45,16 +46,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
     Instantiate and manage tree struct for each request
 
     """
-
-    study_templates = {
-        613: "empty_study_613.zip",
-        700: "empty_study_700.zip",
-        710: "empty_study_710.zip",
-        720: "empty_study_720.zip",
-        800: "empty_study_803.zip",
-        803: "empty_study_803.zip",
-    }
-    new_default_version = 803
 
     def __init__(
         self,
@@ -139,7 +130,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns: new study information
 
         """
-        version_template: Optional[str] = RawStudyService.study_templates.get(
+        version_template: Optional[str] = STUDY_REFERENCE_TEMPLATES.get(
             metadata.version, None
         )
         if version_template is None:

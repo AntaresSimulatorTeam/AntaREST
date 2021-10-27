@@ -112,6 +112,31 @@ def test_sync_studies_from_disk() -> None:
     repository.save.assert_called_once()
 
 
+def test_remove_duplicate() -> None:
+    ma = RawStudy(id="a", path="a")
+    mb = RawStudy(id="b", path="a")
+
+    repository = Mock()
+    repository.get_all.return_value = [ma, mb]
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
+    service = StudyService(
+        raw_study_service=Mock(),
+        variant_study_service=Mock(),
+        user_service=Mock(),
+        repository=repository,
+        event_bus=Mock(),
+        task_service=Mock(),
+        config=config,
+    )
+
+    service.remove_duplicates()
+    repository.delete.assert_called_once_with(mb.id)
+
+
 def test_create_study() -> None:
     # Mock
     repository = Mock()

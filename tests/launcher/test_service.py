@@ -4,7 +4,12 @@ from uuid import uuid4
 
 import pytest
 
-from antarest.core.config import Config
+from antarest.core.config import (
+    Config,
+    LauncherConfig,
+    SlurmConfig,
+    LocalConfig,
+)
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
@@ -193,3 +198,40 @@ def test_service_get_jobs_from_database():
         == fake_execution_result
     )
     repository.get_all.assert_called_once()
+
+
+@pytest.mark.unit_test
+@pytest.mark.parametrize(
+    "config_local,config_slurm,expected_output",
+    [
+        (None, None, {}),
+        (
+            None,
+            SlurmConfig(antares_versions_on_remote_server=["42", "43"]),
+            {"slurm": ["42", "43"]},
+        ),
+        (
+            LocalConfig(binaries={"24": Path(), "34": Path()}),
+            None,
+            {"local": ["24", "34"]},
+        ),
+        (
+            LocalConfig(binaries={"24": Path(), "34": Path()}),
+            SlurmConfig(antares_versions_on_remote_server=["42", "43"]),
+            {"local": ["24", "34"], "slurm": ["42", "43"]},
+        ),
+    ],
+)
+def test_service_get_versions(config_local, config_slurm, expected_output):
+    config = Config(
+        launcher=LauncherConfig(local=config_local, slurm=config_slurm)
+    )
+    launcher_service = LauncherService(
+        config=config,
+        storage_service=Mock(),
+        repository=Mock(),
+        factory_launcher=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert expected_output == launcher_service.get_versions(params=Mock())

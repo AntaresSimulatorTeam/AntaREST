@@ -1,6 +1,6 @@
 from datetime import datetime
 from http import HTTPStatus
-from typing import List, Optional, cast
+from typing import List, Optional, cast, Dict
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -154,3 +154,17 @@ class LauncherService:
                 job_id, log_type
             )
         raise JobNotFound()
+
+    def get_versions(self, params: RequestParameters) -> Dict[str, List[str]]:
+        output_dict = {}
+        if self.config.launcher.local:
+            output_dict["local"] = list(
+                self.config.launcher.local.binaries.keys()
+            )
+
+        if self.config.launcher.slurm:
+            output_dict[
+                "slurm"
+            ] = self.config.launcher.slurm.antares_versions_on_remote_server
+
+        return output_dict

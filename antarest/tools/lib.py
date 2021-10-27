@@ -5,7 +5,7 @@ import os
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Set, cast
+from typing import List, Optional, Set
 from zipfile import ZipFile
 
 import requests
@@ -20,11 +20,14 @@ from antarest.matrixstore.service import (
     SimpleMatrixService,
 )
 from antarest.study.common.uri_resolver_service import UriResolverService
+from antarest.study.model import (
+    STUDY_REFERENCE_TEMPLATES,
+    NEW_DEFAULT_STUDY_VERSION,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -189,8 +192,8 @@ class LocalVariantGenerator(IVariantGenerator):
 
     def init_dest_path(self) -> None:
         if not os.listdir(self.output_path):
-            version_template = RawStudyService.study_templates[
-                RawStudyService.new_default_version
+            version_template = STUDY_REFERENCE_TEMPLATES[
+                NEW_DEFAULT_STUDY_VERSION
             ]
             empty_study_zip = get_local_path() / "resources" / version_template
             with ZipFile(empty_study_zip) as zip_output:
