@@ -51,10 +51,9 @@ export default function MatrixView(props: PropTypes) {
     setGrid(tmpData);
   }, [columns, data, index, prependIndex, readOnly]);
 
-  const handleView = () => {
-    let view;
+  const renderHandleView = () => {
     if (toggleView) {
-      view = (
+      return (
         <HotTable
           data={grid}
           licenseKey="non-commercial-and-evaluation"
@@ -67,29 +66,23 @@ export default function MatrixView(props: PropTypes) {
           }
         </HotTable>
       );
-    } else {
-      view = (
-        <Plot
-          data={columns.map((val, i) => (
-            {
-              x: index,
-              y: data.map((a) => a[i]),
-              type: 'scatter',
-              mode: 'lines',
-            }
-          ))}
-          layout={{ width: 960, height: 720 }}
-        />
-      );
     }
-    return view;
+    return (
+      <Plot
+        data={columns.map((val, i) => (
+          {
+            x: index,
+            y: data.map((a) => a[i]),
+            type: 'scatter',
+            mode: 'lines',
+          }
+        ))}
+        layout={{ width: 960, height: 720 }}
+      />
+    );
   };
 
   const changeView = () => setToggleView(!toggleView);
-
-  useEffect(() => {
-    handleView();
-  }, [toggleView]);
 
   return (
     <div className={classes.root}>
@@ -113,7 +106,7 @@ export default function MatrixView(props: PropTypes) {
           </Button>
         )}
       </ButtonGroup>
-      {handleView()}
+      {renderHandleView()}
     </div>
   );
 }

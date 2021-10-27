@@ -105,7 +105,7 @@ const MenuBar = (props: PropTypes) => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <FontAwesomeIcon size="1x" icon={['fab', 'github']} />
+            <FontAwesomeIcon size="2x" icon={['fab', 'github']} />
           </a>
         </div>
         <div className={classes.altmenuitem}>
