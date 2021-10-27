@@ -12,6 +12,7 @@ import { AppState } from '../../App/reducers';
 import { LaunchJob } from '../../common/types';
 import { getStudyJobLog } from '../../services/api/study';
 import { useNotif } from '../../services/utils';
+import SimpleLoader from '../ui/loaders/SimpleLoader';
 
 const logError = debug('antares:studymanagement:error');
 
@@ -36,6 +37,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     padding: theme.spacing(1),
     maxHeight: '200px',
     overflowY: 'auto',
+    position: 'relative',
+    minHeight: '60px',
+  },
+  loaderContainer: {
+    height: '100%', width: '100%', position: 'relative'
   },
   titleblock: {
     flexGrow: 1,
@@ -89,6 +95,7 @@ const JobView = (props: PropTypes) => {
   const classes = useStyles();
   const createNotif = useNotif();
   const [logs, setLogs] = useState<string>();
+  const [logLoading, setLogLoading] = useState(false);
   const [logView, setLogView] = useState<boolean>();
 
   const renderStatus = () => {
@@ -105,32 +112,35 @@ const JobView = (props: PropTypes) => {
 
   const getLog = useCallback(async () => {
     try {
+      setLogLoading(true);
       const jobLog = await getStudyJobLog(job.id);
       setLogs(jobLog);
     } catch (e) {
       logError('woops', e);
       createNotif(t('jobs:failedtoretrievelogs'), { variant: 'error' });
+    } finally {
+      setLogLoading(false);
     }
   }, [job, createNotif, t]);
 
   const renderLogView = () => {
     if (logView) {
       return (
-        <Paper className={classes.logs} style={{ display: 'block' }} variant="outlined">
-          {logs != null ? logs : t('jobs:logdetails')}
+        <Paper className={classes.logs} style={{ display: logView ? 'block' : 'none' }} variant="outlined">
+          {logLoading ? <div className={classes.loaderContainer}><SimpleLoader /></div> : logs || t('jobs:logdetails')}
         </Paper>
       );
     }
-    return (
-      <Paper className={classes.logs} style={{ display: 'none' }} variant="outlined">
-        {logs != null ? logs : t('jobs:logdetails')}
-      </Paper>
-    );
+    return <div />;
   };
 
   useEffect(() => {
-    getLog();
-  }, [getLog]);
+    if (logView) {
+      getLog();
+    } else {
+      setLogs(undefined);
+    }
+  }, [getLog, logView]);
 
   return (
     <Paper className={classes.root} elevation={1}>
@@ -167,7 +177,7 @@ const JobView = (props: PropTypes) => {
           </div>
           <div>
             <IconButton onClick={() => setLogView(!logView)}>
-              {logView === true ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
+              {logView ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
             </IconButton>
           </div>
         </div>

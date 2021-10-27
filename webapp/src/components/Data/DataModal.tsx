@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useState, useEffect } from 'react';
-import { createStyles, makeStyles, Theme, TextField, Typography, Button, Checkbox, Chip, Tooltip, CircularProgress } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, TextField, Typography, Button, Checkbox, Chip, Tooltip } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import clsx from 'clsx';
 import axios, { AxiosError } from 'axios';
 import GenericModal from '../ui/GenericModal';
 import { getGroups } from '../../services/api/user';
 import { GroupDTO, MatrixDataSetDTO } from '../../common/types';
-import { loaderStyle, saveMatrix } from './utils';
+import { saveMatrix } from './utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import SimpleLoader from '../ui/loaders/SimpleLoader';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -105,7 +105,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
       margin: theme.spacing(0.5),
     },
   },
-  ...loaderStyle,
 }));
 
 interface PropTypes {
@@ -205,25 +204,8 @@ const DataModal = (props: PropTypes) => {
       <div className={classes.root}>
         {
           importing && (
-            <>
-              <div className={classes.rootLoader}>
-                {
-                  uploadProgress < 100 ? (
-                    <div className={classes.loaderContainer}>
-                      <CircularProgress variant="determinate" className={classes.loaderWheel} value={uploadProgress} />
-                      <div className={classes.loaderMessage}>{t('data:uploadingmatrix')}</div>
-                    </div>
-                  ) : (
-                    <div className={classes.loaderContainer}>
-                      <CircularProgress className={classes.loaderWheel} />
-                      <div className={classes.loaderMessage}>{t('data:analyzingmatrix')}</div>
-                    </div>
-                  )
-                }
-
-              </div>
-              <div className={clsx(classes.rootLoader, classes.shadow)} />
-            </>
+            uploadProgress < 100 ? <SimpleLoader message="data:uploadingmatrix" progress={uploadProgress} /> :
+            <SimpleLoader message="data:analyzingmatrix" />
           )
         }
         <div className={classes.mandatoryInfos}>
