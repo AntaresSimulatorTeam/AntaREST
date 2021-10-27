@@ -12,9 +12,9 @@ from antarest.login.model import User, Password, Group
 from antarest.login.repository import UserRepository, GroupRepository
 from antarest.matrixstore.model import (
     Matrix,
-    MatrixContent,
     MatrixDataSet,
     MatrixDataSetRelation,
+    MatrixContent,
 )
 from antarest.matrixstore.repository import (
     MatrixRepository,
@@ -50,12 +50,13 @@ def test_bucket_cyclelife(tmp_path: Path):
     config = Config(storage=StorageConfig(matrixstore=tmp_path))
     repo = MatrixContentRepository(config)
 
-    a = MatrixContent(
-        index=["1", "2"], columns=["a", "b"], data=[[1, 2], [3, 4]]
-    )
-    b = MatrixContent(
-        index=["3", "4"], columns=["c", "d"], data=[[5, 6], [7, 8]]
-    )
+    a = [[1, 2], [3, 4]]
+    b = [[5, 6], [7, 8]]
+
+    matrix_content_a = MatrixContent(data=a)
+    matrix_content_b = MatrixContent(data=b)
+    MatrixContentRepository.initialize_matrix_content(matrix_content_a)
+    MatrixContentRepository.initialize_matrix_content(matrix_content_b)
 
     aid = repo.save(a)
     assert aid == repo.save(a)
@@ -63,8 +64,8 @@ def test_bucket_cyclelife(tmp_path: Path):
     bid = repo.save(b)
     assert aid != bid
 
-    assert a == repo.get(aid)
-    assert b == repo.get(bid)
+    assert matrix_content_a == repo.get(aid)
+    assert matrix_content_b == repo.get(bid)
 
     repo.delete(aid)
     assert repo.get(aid) is None

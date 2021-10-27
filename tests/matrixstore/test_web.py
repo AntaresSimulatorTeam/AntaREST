@@ -9,7 +9,7 @@ from starlette.testclient import TestClient
 from antarest.core.config import Config, SecurityConfig
 from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrixstore
-from antarest.matrixstore.model import MatrixDTO, MatrixInfoDTO, MatrixContent
+from antarest.matrixstore.model import MatrixDTO, MatrixInfoDTO
 from tests.login.test_web import create_auth_token
 
 
@@ -47,11 +47,7 @@ def test_create() -> None:
         columns=["a", "b"],
         data=[[1, 2], [3, 4]],
     )
-    matrix_content = MatrixContent(
-        index=["1", "2"],
-        columns=["a", "b"],
-        data=[[1, 2], [3, 4]],
-    )
+    matrix_data = [[1, 2], [3, 4]]
 
     service = Mock()
     service.create.return_value = matrix
@@ -61,7 +57,7 @@ def test_create() -> None:
     res = client.post(
         "/v1/matrix",
         headers=create_auth_token(app),
-        json=matrix_content.dict(),
+        json=matrix_data,
     )
     assert res.status_code == 200
     assert res.json() == matrix.dict()

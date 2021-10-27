@@ -1,6 +1,8 @@
-from antarest.matrixstore.model import MatrixContent
+from typing import List
 
-credit_modulations = MatrixContent(data=[[1] * 101] * 2)
-inflow_pattern = MatrixContent(data=[[1]] * 365)
-max_power = MatrixContent(data=[[0, 24, 0, 24]] * 365)
-reservoir = MatrixContent(data=[[0, 0.5, 1]] * 365)
+from antarest.matrixstore.model import MatrixData
+
+credit_modulations: List[List[MatrixData]] = [[1.0] * 101] * 2
+inflow_pattern: List[List[MatrixData]] = [[1.0]] * 365
+max_power: List[List[MatrixData]] = [[0.0, 24.0, 0.0, 24.0]] * 365
+reservoir: List[List[MatrixData]] = [[0.0, 0.5, 1.0]] * 365

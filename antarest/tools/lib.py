@@ -1,48 +1,41 @@
+import csv
 import json
 import logging
 import os
 import shutil
-import time
 from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import List, Optional, Set
 from zipfile import ZipFile
 
 import requests
-from pathlib import Path
-from typing import List, Optional, Union, Callable, Set
-
 from requests import Session
 
+from antarest.core.cache.business.local_chache import LocalCache
+from antarest.core.config import CacheConfig
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import StopWatch, get_local_path
-from antarest.study.model import (
-    STUDY_REFERENCE_TEMPLATES,
-    NEW_DEFAULT_STUDY_VERSION,
-)
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
-from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-)
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.utils import (
-    strip_matrix_protocol,
-)
-from antarest.study.storage.variantstudy.model.model import (
-    CommandDTO,
-    GenerationResultInfoDTO,
-)
-from antarest.core.cache.business.local_chache import LocalCache
-from antarest.core.config import CacheConfig, Config, StorageConfig
+from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import (
     SimpleMatrixService,
 )
 from antarest.study.common.uri_resolver_service import UriResolverService
+from antarest.study.model import (
+    STUDY_REFERENCE_TEMPLATES,
+    NEW_DEFAULT_STUDY_VERSION,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.model import (
+    CommandDTO,
+    GenerationResultInfoDTO,
 )
 from antarest.study.storage.variantstudy.variant_command_extractor import (
     VariantCommandsExtractor,
@@ -95,15 +88,18 @@ class RemoteVariantGenerator(IVariantGenerator):
 
         logger.info("Uploading matrices")
         matrix_dataset: List[str] = []
-        for matrix in os.listdir(matrices_dir):
-            with open(matrices_dir / matrix, "r") as fh:
-                matrix_data = json.load(fh)
+        for matrix_file in os.listdir(matrices_dir):
+            with open(matrices_dir / matrix_file, "r", newline="") as fh:
+                tsv_data = csv.reader(fh, delimiter="\t")
+                matrix_data = [
+                    [MatrixData(s) for s in l] for l in list(tsv_data)
+                ]
                 res = self.session.post(
                     self.build_url(f"/v1/matrix"), json=matrix_data
                 )
                 assert res.status_code == 200
                 matrix_id = res.json()
-                assert matrix_id == matrix
+                assert matrix_id == matrix_file.split(".")[0]
                 matrix_dataset.append(matrix_id)
         # TODO could create a dataset from theses matrices using "variant_<study_id>" as name
         # also the matrix could be named after the command name where they are used

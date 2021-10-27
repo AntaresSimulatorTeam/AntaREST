@@ -1,4 +1,5 @@
-from typing import List, Optional, cast
+import logging
+from typing import List, Optional, cast, Union
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
@@ -10,7 +11,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
-from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     IDateMatrixSerializer,
     FactoryDateSerializer,
@@ -20,12 +21,13 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import 
     LinkHeadWriter,
     AreaHeadWriter,
 )
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
-    MatrixNode,
-)
+
+logger = logging.getLogger(__name__)
 
 
-class OutputSeriesMatrix(MatrixNode):
+class OutputSeriesMatrix(
+    LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON]
+):
     """
     Generic node to handle output matrix behavior.
     Node needs a DateSerializer and a HeadWriter to work
@@ -39,9 +41,17 @@ class OutputSeriesMatrix(MatrixNode):
         head_writer: HeadWriter,
         freq: str,
     ):
-        super().__init__(context=context, config=config, freq=freq)
+        super().__init__(context=context, config=config)
         self.date_serializer = date_serializer
         self.head_writer = head_writer
+
+    def get_lazy_content(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+    ) -> str:
+        return f"matrixfile://{self.config.path.name}"
 
     def parse(
         self,
@@ -101,6 +111,37 @@ class OutputSeriesMatrix(MatrixNode):
                 f"Output Series Matrix f{self.config.path} not exists"
             )
         return errors
+
+    def load(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        formatted: bool = True,
+    ) -> Union[bytes, JSON]:
+        if not formatted:
+            if self.config.path.exists():
+                return self.config.path.read_bytes()
+
+            logger.warning(f"Missing file {self.config.path}")
+            return b""
+
+        return self.parse()
+
+    def dump(
+        self, data: Union[bytes, JSON], url: Optional[List[str]] = None
+    ) -> None:
+        if isinstance(data, bytes):
+            self.config.path.parent.mkdir(exist_ok=True, parents=True)
+            self.config.path.write_bytes(data)
+        else:
+            self._dump_json(data)
+
+    def normalize(self) -> None:
+        pass  # no external store in this node
+
+    def denormalize(self) -> None:
+        pass  # no external store in this node
 
 
 class LinkOutputSeriesMatrix(OutputSeriesMatrix):

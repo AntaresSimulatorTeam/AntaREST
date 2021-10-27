@@ -1,17 +1,10 @@
-import abc
-from abc import abstractmethod
-from typing import Union, List, Any, Optional, Tuple
+from typing import Union, List, Any
 
 from antarest.core.custom_types import JSON
-from antarest.matrixstore.model import MatrixContent, MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     MATRIX_PROTOCOL_PREFIX,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -22,7 +15,7 @@ def validate_matrix(
     if isinstance(matrix, list):
         matrix_id = MATRIX_PROTOCOL_PREFIX + values[
             "command_context"
-        ].matrix_service.create(data=MatrixContent(data=matrix))
+        ].matrix_service.create(data=matrix)
     elif isinstance(matrix, str):
         if values["command_context"].matrix_service.exists(matrix):
             matrix_id = MATRIX_PROTOCOL_PREFIX + matrix

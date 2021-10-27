@@ -4,14 +4,12 @@ from typing import Optional, List
 from unittest.mock import Mock
 
 from antarest.core.custom_types import JSON
-from antarest.matrixstore.model import MatrixContent
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
-from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
@@ -23,11 +21,7 @@ MOCK_MATRIX_JSON = {
 }
 
 
-MOCK_MATRIX_DTO = MatrixContent(
-    index=["1", "2"],
-    columns=["a", "b"],
-    data=[[1, 2], [3, 4]],
-)
+MOCK_MATRIX_DTO = [[1, 2], [3, 4]]
 
 
 class MockMatrixNode(MatrixNode):
