@@ -1,3 +1,5 @@
 {
-  "failedtoretrievejobs": "Echec de la récupération des tâches"
+  "failedtoretrievejobs": "Échec de la récupération des tâches",
+  "failedtoretrievelogs": "Échec de la récupération des logs",
+  "logdetails": "Pas de logs"
 }
