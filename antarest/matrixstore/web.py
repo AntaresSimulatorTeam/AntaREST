@@ -14,7 +14,7 @@ from antarest.login.auth import Auth
 from antarest.matrixstore.model import (
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
-    MatrixContent,
+    MatrixData,
 )
 from antarest.matrixstore.service import MatrixService
 
@@ -38,7 +38,9 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
 
     @bp.post("/matrix", tags=[APITag.matrix])
     def create(
-        matrix: MatrixContent = Body(description="matrix dto", default={}),
+        matrix: List[List[MatrixData]] = Body(
+            description="matrix dto", default={}
+        ),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Creating new matrix", extra={"user": current_user.id})

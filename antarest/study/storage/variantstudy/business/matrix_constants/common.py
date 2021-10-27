@@ -1,3 +1,5 @@
-from antarest.matrixstore.model import MatrixContent
+from typing import List
 
-NULL_MATRIX = MatrixContent(data=[[]])
+from antarest.matrixstore.model import MatrixData
+
+NULL_MATRIX: List[List[MatrixData]] = [[]]

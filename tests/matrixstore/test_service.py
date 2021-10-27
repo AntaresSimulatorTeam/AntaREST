@@ -35,11 +35,7 @@ def test_save():
     repo = Mock()
 
     # Input
-    dto = MatrixContent(
-        data=[[1, 2]],
-        index=["1"],
-        columns=["a", "b"],
-    )
+    dto = [[1, 2]]
 
     # Expected
     matrix = Matrix(
@@ -48,8 +44,6 @@ def test_save():
         height=1,
         created_at=ANY,
     )
-
-    content = MatrixContent(index=["1"], columns=["a", "b"], data=[[1, 2]])
 
     repo.get.return_value = None
 
@@ -65,7 +59,7 @@ def test_save():
     # Verify
     assert id == "my-id"
     repo.save.assert_called_once_with(matrix)
-    repo_content.save.assert_called_once_with(content)
+    repo_content.save.assert_called_once_with(dto)
 
 
 def test_get():

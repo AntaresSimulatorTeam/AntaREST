@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 
 from antarest.core.custom_types import JSON
-from antarest.matrixstore.model import MatrixContent
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -40,13 +39,8 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
             return
 
         matrix = self.parse()
-        dto = MatrixContent(
-            index=matrix["index"],
-            columns=matrix["columns"],
-            data=matrix["data"],
-        )
 
-        uuid = self.context.matrix.create(dto)
+        uuid = self.context.matrix.create(matrix["data"])
         self.get_link_path().write_text(
             self.context.resolver.build_matrix_uri(uuid)
         )

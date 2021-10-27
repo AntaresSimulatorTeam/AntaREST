@@ -4,7 +4,7 @@ from abc import abstractmethod, ABC
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, cast
 from zipfile import ZipFile
 
 from fastapi import UploadFile
@@ -27,6 +27,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetDTO,
     MatrixInfoDTO,
     MatrixDataSetRelation,
+    MatrixData,
 )
 from antarest.matrixstore.repository import (
     MatrixRepository,
@@ -37,7 +38,7 @@ from antarest.matrixstore.repository import (
 
 class ISimpleMatrixService(ABC):
     @abstractmethod
-    def create(self, data: MatrixContent) -> str:
+    def create(self, data: List[List[MatrixData]]) -> str:
         raise NotImplementedError()
 
     @abstractmethod
@@ -60,8 +61,7 @@ class SimpleMatrixService(ISimpleMatrixService):
         config = Config(storage=StorageConfig(matrixstore=matrix_path))
         self.matrix_content_repository = MatrixContentRepository(config)
 
-    def create(self, data: MatrixContent) -> str:
-        self.matrix_content_repository.initialize_matrix_content(data)
+    def create(self, data: List[List[MatrixData]]) -> str:
         matrix_hash = self.matrix_content_repository.save(data)
         return matrix_hash
 
@@ -128,16 +128,15 @@ class MatrixService(ISimpleMatrixService):
 
         return matrix, content
 
-    def create(self, data: MatrixContent) -> str:
-        self.matrix_content_repository.initialize_matrix_content(data)
+    def create(self, data: List[List[MatrixData]]) -> str:
         matrix_hash = self.matrix_content_repository.save(data)
         with db():
             if not self.repo.get(matrix_hash):
                 self.repo.save(
                     Matrix(
                         id=matrix_hash,
-                        width=len(data.columns or []),
-                        height=len(data.index or []),
+                        width=len(data[0] or []),
+                        height=len(data or []),
                         created_at=datetime.utcnow(),
                     )
                 )
@@ -172,22 +171,19 @@ class MatrixService(ISimpleMatrixService):
     def file_importation(self, file: bytes, is_json: bool = False) -> str:
         str_file = str(file, "UTF-8")
         if is_json:
-            return self.create(MatrixContent.parse_raw(file))
+            return self.create(MatrixContent.parse_raw(file).data)
         else:
-            data: List[List[float]] = []
+            data: List[List[MatrixData]] = []
             reader = csv.reader(str_file.split("\n"), delimiter="\t")
 
             columns: List[int] = []
             for row in reader:
                 if row:
-                    data.append([float(elm) for elm in row])
+                    data.append([MatrixData(elm) for elm in row])
                 if len(columns) == 0:
                     columns = list(range(0, len(row)))
 
-            matrix = MatrixContent(
-                data=data,
-            )
-            return self.create(matrix)
+            return self.create(data)
 
     def get_dataset(
         self,
@@ -315,11 +311,11 @@ class MatrixService(ISimpleMatrixService):
         return id
 
     def get(self, id: str) -> Optional[MatrixDTO]:
-        data = self.matrix_content_repository.get(id)
+        matrix_content = self.matrix_content_repository.get(id)
         matrix = self.repo.get(id)
 
-        if data and matrix:
-            return MatrixService._to_dto(matrix, data)
+        if matrix_content and matrix:
+            return MatrixService._to_dto(matrix, matrix_content)
         else:
             return None
 
