@@ -5,6 +5,11 @@
   value: INI_MODEL // dynamic
 }
 
+<pre>{<br>
+target:&nbsp;&lt;INIT_TARGET&gt;<br>
+value:&nbsp;&lt;INI_MODEL&gt;<br>
+}</pre>
+
 VALUE = Union[STRING, ENUM, FLOAT, INT] // text field, select, number field, number field for int
 INI_MODEL: Dict[str, Union[INI_MODEL, UNION[List[VALUE], VALUE]]]
 
@@ -15,18 +20,28 @@ INI_MODEL: Dict[str, Union[INI_MODEL, UNION[List[VALUE], VALUE]]]
   target: INPUT_SERIES_MATRIX // list that
   value: MATRIX // check size
 }
+<pre>{<br>
+target:&nbsp;&lt;INPUT_SERIES_MATRIX&gt;<br>
+value:&nbsp;&lt;MATRIX&gt;<br>
+}</pre>
 
 - create_area           
 
 {
   area_name: STRING // check regex
 }
+<pre>{<br>
+area_name:&nbsp;&lt;STRING&gt;<br>
+}</pre>
 
 - remove_area           
 
 {
   id: AREA_ID // select list area
 }
+<pre>{<br>
+id:&nbsp;&lt;AREA_ID&gt;<br>
+}</pre>
 
 - create_cluster           
 
@@ -37,6 +52,13 @@ INI_MODEL: Dict[str, Union[INI_MODEL, UNION[List[VALUE], VALUE]]]
   modulation: MATRIX // check size
   parameters: INI_MODEL // InputThermalClustersAreaList
 }
+<pre>{<br>
+area_id:&nbsp;&lt;AREA_ID&gt;<br>
+cluster_name:&nbsp;&lt;STRING&gt;<br>
+prepro:&nbsp;&lt;STRING&gt;<br>
+modulation:&nbsp;&lt;MATRIX&gt;<br>
+parameters:&nbsp;&lt;INI_MODEL&gt;<br>
+}</pre>
 
 - remove_cluster 
 
@@ -44,6 +66,10 @@ INI_MODEL: Dict[str, Union[INI_MODEL, UNION[List[VALUE], VALUE]]]
   area_id: AREA_ID // select list area
   cluster_id: // select list cluster
 }
+<pre>{<br>
+area_id:&nbsp;&lt;AREA_ID&gt;<br>
+cluster_id:&nbsp;&lt;CLUSTER_ID&gt;<br>
+}</pre>
 
 - create_link           
 
@@ -53,6 +79,10 @@ INI_MODEL: Dict[str, Union[INI_MODEL, UNION[List[VALUE], VALUE]]]
   parameters: INI_MODEL // InputLinkAreaProperties
   series: MATRIX // check size
 }
+<pre>{<br>
+target:&nbsp;&lt;area src id&gt;<br>
+value:&nbsp;&lt;area target id&gt;<br>
+}</pre>
 
 - remove_link 
 
@@ -61,6 +91,10 @@ INI_MODEL: Dict[str, Union[INI_MODEL, UNION[List[VALUE], VALUE]]]
   area1: AREA_ID 
   area2: AREA_ID
 } 
+<pre>{<br>
+target:&nbsp;&lt;area src id&gt;<br>
+value:&nbsp;&lt;area target id&gt;<br>
+}</pre>
 
 - create_district           
 
@@ -71,12 +105,20 @@ INI_MODEL: Dict[str, Union[INI_MODEL, UNION[List[VALUE], VALUE]]]
   output: CHECKBOX
   comments: STRING
 }
+<pre>{<br>
+target:&nbsp;&lt;area src id&gt;<br>
+value:&nbsp;&lt;area target id&gt;<br>
+}</pre>
 
 - remove_district 
 
 {
   id: DISTRICT_ID // select list district
 }
+<pre>{<br>
+target:&nbsp;&lt;area src id&gt;<br>
+value:&nbsp;&lt;area target id&gt;<br>
+}</pre>
 
 - create_binding_constraint
 
@@ -89,6 +131,10 @@ INI_MODEL: Dict[str, Union[INI_MODEL, UNION[List[VALUE], VALUE]]]
   values: MATRIX // check size
   comments: STRING
 }
+<pre>{<br>
+target:&nbsp;&lt;area src id&gt;<br>
+value:&nbsp;&lt;area target id&gt;<br>
+}</pre>
 
 // transform into Dict["<area_id>(\.<area_id>|%<cluster_id>)", Union[(int, float), (float,)]
 CONSTRAINT_COEFF{
@@ -98,6 +144,10 @@ CONSTRAINT_COEFF{
   coeff: NUMBER 
   offset: NUMBER // optional, check type int
 }
+<pre>{<br>
+target:&nbsp;&lt;area src id&gt;<br>
+value:&nbsp;&lt;area target id&gt;<br>
+}</pre>
 
 - update_binding_constraint
 
@@ -110,9 +160,17 @@ CONSTRAINT_COEFF{
   values: MATRIX // check size
   comments: STRING
 }
+<pre>{<br>
+target:&nbsp;&lt;area src id&gt;<br>
+value:&nbsp;&lt;area target id&gt;<br>
+}</pre>
 
 - remove_binding_constraint
 
 {
   id: BINDING_CONSTRAINT_ID // list binding constraints
 }
+<pre>{<br>
+target:&nbsp;&lt;area src id&gt;<br>
+value:&nbsp;&lt;area target id&gt;<br>
+}</pre>
