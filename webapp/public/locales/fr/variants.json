@@ -30,5 +30,6 @@
     "launchGenerationError": "Erreur lors du lancement de la génération",
     "generationInProgress": "Generation de l'étude en cours...",
     "taskCompleted": "Tâche terminée avec succès",
-    "taskFailed": "Erreur: l'exécution de la tâche a échoué"
+    "taskFailed": "Erreur: l'exécution de la tâche a échoué",
+    "nameEmptyError": "Entrée invalide, le nom est vide"
   }
