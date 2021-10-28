@@ -251,6 +251,12 @@ export interface WSMessage {
   payload: unknown;
 }
 
+export interface WSLogMessage {
+  log: string;
+  job_id: string;
+  study_id: string;
+}
+
 export type Components = {
   [item: string]: () => JSX.Element;
 }
