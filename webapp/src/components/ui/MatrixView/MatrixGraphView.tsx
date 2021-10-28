@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Plot from 'react-plotly.js';
-import { createStyles, makeStyles, Theme } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, InputLabel, FormControl, Box, OutlinedInput, Chip, Select, MenuItem } from '@material-ui/core';
 import { MatrixType } from '../../../common/types';
 import 'handsontable/dist/handsontable.min.css';
 
@@ -13,21 +13,29 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexDirection: 'column',
     alignItems: 'center',
   },
-  buttongroup: {
+
+  form: {
+    minWidth: '200px',
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
+  },
+  input: {
+    top: '-7px',
+    left: '14px',
+  },
+  container: {
     width: '100%',
   },
-  button: {
-    marginBottom: theme.spacing(3),
+  box: {
+    marginRight: theme.spacing(1),
+    height: '24px',
+    '& span': {
+      padding: '8px',
+    },
   },
-  disable: {
-    backgroundColor: '#002a5e !important',
-    color: 'white !important',
-  },
-  enable: {
-    backgroundColor: 'rgba(0, 0, 0, 0.12)',
-    color: 'rgba(0, 0, 0, 0.26)',
-    '&:hover': {
-      color: 'white',
+  select: {
+    '& .MuiSelect-select': {
+      paddingBottom: theme.spacing(1) + 4,
     },
   },
 }));
@@ -41,19 +49,53 @@ export default function MatrixGraphView(props: PropTypes) {
   const { matrix } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const classes = useStyles();
+  const [columnName, setColumnName] = useState<string[]>([]);
+
+  const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setColumnName(event.target.value as string[]);
+  };
 
   return (
     <div className={classes.root}>
+      <div className={classes.container}>
+        <FormControl className={classes.form}>
+          <InputLabel className={classes.input} id="demo-multiple-chip-label">Col</InputLabel>
+          <Select
+            className={classes.select}
+            labelId="demo-multiple-chip-label"
+            id="demo-multiple-chip"
+            multiple
+            value={columnName}
+            onChange={handleChange}
+            input={<OutlinedInput id="select-multiple-chip" label="Col" />}
+            renderValue={(selected) => (
+              <Box>
+                {(selected as string[]).map((value) => (
+                  <Chip className={classes.box} key={value} label={value} />
+                ))}
+              </Box>
+            )}
+          >
+            {columns.map((column) => (
+              <MenuItem
+                key={column}
+                value={column}
+              >
+                {column}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </div>
       <Plot
-        data={columns.map((val, i) => (
+        data={columnName.map((val, i) => (
           {
             x: index,
             y: data.map((a) => a[i]),
-            type: 'scatter',
             mode: 'lines',
           }
         ))}
-        layout={{ width: 960, height: 720 }}
+        layout={{ width: 691, height: 518 }}
       />
     </div>
   );

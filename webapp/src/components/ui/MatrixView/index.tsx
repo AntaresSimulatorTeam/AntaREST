@@ -51,7 +51,6 @@ export default function MatrixView(props: PropTypes) {
   const [grid, setGrid] = useState<Array<CellType>>([]);
   const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
   const [toggleView, setToggleView] = useState<boolean>(true);
-
   useEffect(() => {
     const columnsData: Array<ColumnsType> = (prependIndex ? [{ title: 'Time', readOnly }] : []).concat(
       columns.map((title) => ({ title: String(title), readOnly })),
