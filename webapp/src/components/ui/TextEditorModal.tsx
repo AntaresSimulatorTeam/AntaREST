@@ -5,11 +5,11 @@ import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
-import { Editor, EditorState, RichUtils } from 'draft-js';
+import { Editor, EditorState, RichUtils, getDefaultKeyBinding, ContentState } from 'draft-js';
 import FormatAlignCenterIcon from '@material-ui/icons/FormatAlignCenter';
 import FormatAlignLeftIcon from '@material-ui/icons/FormatAlignLeft';
 import FormatAlignRightIcon from '@material-ui/icons/FormatAlignRight';
-import { defaultBlockRenderMap, DraftJsToHtml, htmlToDraftJs } from './Utils';
+import { convertXMLToHTML, defaultBlockRenderMap, DraftJsToHtml, htmlToDraftJs } from './Utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -122,7 +122,8 @@ const TextEditorModal = (props: PropTypes) => {
   const extendedBlockRenderMap = defaultBlockRenderMap();
 
   const onContentSave = () => {
-    const value = DraftJsToHtml(editorState);
+    //const value = DraftJsToHtml(editorState);
+    const value = editorState.getCurrentContent().getPlainText();
     if (initContent !== value) {
       onSave(value);
     }
@@ -132,10 +133,22 @@ const TextEditorModal = (props: PropTypes) => {
     setEditorState(RichUtils.toggleInlineStyle(editorState, type));
   };
 
+  const handleKeyBindings = (e: any) => {
+    if (e.keyCode === 9) {
+      console.log('TAB');
+      const newEditorState = RichUtils.onTab(e, editorState, 6 /* maxDepth */);
+      if (newEditorState !== editorState) {
+        setEditorState(newEditorState);
+      }
+    }
+    getDefaultKeyBinding(e);
+  };
+
   useEffect(() => {
     if (content !== undefined) {
       setEditorState(EditorState.createWithContent(htmlToDraftJs(content, extendedBlockRenderMap)));
       setInitContent(content);
+      console.log('RESULT ULTIME: ', convertXMLToHTML(content));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content]);
@@ -171,6 +184,7 @@ const TextEditorModal = (props: PropTypes) => {
                 editorState={editorState}
                 onChange={(e) => { console.log(e.getCurrentContent()); setEditorState(e); }}
                 blockRenderMap={extendedBlockRenderMap}
+                onTab={handleKeyBindings}
                 textAlignment={textAlignment as any}
               />
             </div>

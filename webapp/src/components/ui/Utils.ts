@@ -44,6 +44,7 @@ export const DraftJsToHtml = (editorState: EditorState): string => {
   console.log('STATE: ', editorState.getCurrentContent());
   const rawContentState = convertToRaw(editorState.getCurrentContent());
   console.log('RAW: ', rawContentState);
+  console.log('ARRAY: ', editorState.getCurrentContent().getBlocksAsArray());
   return toDraftJsHtml(draftToHtml(
     rawContentState,
   ));
@@ -51,21 +52,77 @@ export const DraftJsToHtml = (editorState: EditorState): string => {
 
 export const xmlToJson = (data: string): string => xml2json(data, { compact: false, spaces: 4 });
 
-const xmlToRaw = (data: string) => {
-  const xmlStr = xml2json(data, { compact: false, spaces: 4 });
-  const xmlElement: XMLElement = JSON.parse(xmlStr);
-  console.log('OUI OUI: ', xmlStr);
-  const result = '';
+
+interface Balise {
+  openBalise: string;
+  closeBalise: string;
+}
+
+const checkAttributes = (node: XMLElement): Balise => {
+  let openBalise = ''; let
+    closeBalise = '';
+  if (node.attributes !== undefined) {
+    const list = Object.keys(node.attributes);
+    for (let i = 0; i < list.length; i++) {
+      switch (list[i]) {
+        case 'fontweight':
+          if (node.attributes[list[i]] === '700') { // BOLD
+            openBalise += '<b>';
+            closeBalise = `</b>${closeBalise}`;
+          }
+          break;
+        case 'fontunderline':
+          openBalise += '<u>';
+          closeBalise = `</u>${closeBalise}`;
+          break;
+        case 'fontstyle':
+          if (node.attributes[list[i]] === '93') { // BOLD
+            openBalise += '<i>';
+            closeBalise = `</i>${closeBalise}`;
+          }
+          break;
+
+        default:
+          break;
+      }
+    }
+  }
+  return { openBalise, closeBalise };
 };
+
+const XmlToHTML = { paragraph: 'div',
+  text: 'span' };
 
 const nodeProcess = (node: XMLElement): string => {
   let res = '';
   if (node.type !== undefined) {
     console.log('TITLE');
-    if(node.type === 'element') {
-      
+    if (node.type === 'element') {
+      if (node.name !== undefined) {
+        let balises: Balise = { openBalise: '', closeBalise: '' };
+        switch (node.name) {
+          case 'paragraph':
+          case 'text':
+            balises = checkAttributes(node);
+            balises.openBalise = `<${XmlToHTML[node.name]}>${balises.openBalise}`;
+            balises.closeBalise += `</${XmlToHTML[node.name]}>`;
+            break;
+          case 'symbol':
+            balises.openBalise = '&nbsp;';
+            break;
+          default:
+            break;
+        }
+
+        if (node.elements !== undefined && node.elements.length > 0) {
+          for (let j = 0; j < node.elements.length; j++) {
+            res += nodeProcess(node.elements[j]);
+          }
+          return balises.openBalise + res + balises.closeBalise;
+        }
+      }
     } else if (node.type === 'text') {
-      
+      if (node.text !== undefined) return (node.text as string);
     }
   } else if (node.elements !== undefined) {
     for (let i = 0; i < node.elements.length; i++) {
@@ -74,6 +131,13 @@ const nodeProcess = (node: XMLElement): string => {
   }
 
   return res;
+};
+
+export const convertXMLToHTML = (data: string) => {
+  const xmlStr = xml2json(data, { compact: false, spaces: 4 });
+  const xmlElement: XMLElement = JSON.parse(xmlStr);
+  console.log('OUI OUI: ', xmlStr);
+  return nodeProcess(xmlElement);
 };
 
 /*
