@@ -25,7 +25,7 @@ class JobStatus(enum.Enum):
 class JobResultDTO(BaseModel):
     id: str
     study_id: str
-    launcher: str
+    launcher: Optional[str]
     status: JobStatus
     creation_date: str
     completion_date: Optional[str]
