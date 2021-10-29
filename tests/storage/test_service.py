@@ -631,7 +631,7 @@ def test_assert_permission() -> None:
 
     # wrong owner
     repository.get.return_value = Study(id=uuid, owner=wrong)
-    study = service._get_study(uuid)
+    study = service.get_study(uuid)
     with pytest.raises(UserHasNotPermissionError):
         assert_permission(jwt, study, StudyPermissionType.READ)
     assert not assert_permission(

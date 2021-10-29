@@ -16,7 +16,7 @@ from antarest.core.requests import (
 )
 from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
-from antarest.study.main import build_storage
+from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
 from tests.conftest import assert_study
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
@@ -36,7 +36,7 @@ def assert_url_content(
     storage_service: StudyService, url: str, expected_output: dict
 ) -> None:
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         user_service=Mock(),
@@ -400,7 +400,7 @@ def test_sta_mini_copy(storage_service) -> None:
     destination_study_name = "copy-STA-mini"
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         user_service=Mock(),
@@ -502,7 +502,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -537,7 +537,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     sta_mini_output_zip_path = Path(sta_mini_output_zip_filepath)
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),

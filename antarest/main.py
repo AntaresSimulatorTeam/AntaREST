@@ -34,7 +34,7 @@ from antarest.launcher.main import build_launcher
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.main import build_login
 from antarest.matrixstore.main import build_matrixstore
-from antarest.study.main import build_storage
+from antarest.study.main import build_study_service
 
 logger = logging.getLogger(__name__)
 
@@ -227,7 +227,7 @@ def fastapi_app(
 
     matrix_service = build_matrixstore(application, config, user_service)
 
-    storage = build_storage(
+    study_service = build_study_service(
         application,
         config,
         matrix_service=matrix_service,
@@ -240,12 +240,12 @@ def fastapi_app(
     launcher = build_launcher(
         application,
         config,
-        service_storage=storage,
+        study_service=study_service,
         event_bus=event_bus,
     )
 
     services["event_bus"] = event_bus
-    services["study"] = storage
+    services["study"] = study_service
     services["launcher"] = launcher
     services["matrix"] = matrix_service
     services["user"] = user_service
