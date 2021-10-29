@@ -12,7 +12,7 @@ from antarest.core.config import (
     WorkspaceConfig,
 )
 from antarest.matrixstore.service import MatrixService
-from antarest.study.main import build_storage
+from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
@@ -22,7 +22,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 
 def assert_url_content(storage_service: StudyService, url: str) -> bytes:
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         user_service=Mock(),
@@ -66,7 +66,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
     repo = Mock()
     repo.get.return_value = md
 
-    service = build_storage(
+    service = build_study_service(
         application=Mock(),
         config=config,
         cache=Mock(),
@@ -106,7 +106,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
     repo = Mock()
     repo.get.return_value = md
 
-    service = build_storage(
+    service = build_study_service(
         application=Mock(),
         config=config,
         cache=Mock(),

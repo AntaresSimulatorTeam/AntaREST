@@ -13,17 +13,17 @@ from antarest.study.service import StudyService
 def build_launcher(
     application: FastAPI,
     config: Config,
-    service_storage: Optional[StudyService] = None,
+    study_service: Optional[StudyService] = None,
     service_launcher: Optional[LauncherService] = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> Optional[LauncherService]:
 
-    if service_storage and not service_launcher:
-        repository = JobResultRepository()
+    if study_service and not service_launcher:
+        repository = JobResultRepository(study_service=study_service)
         service_launcher = LauncherService(
             config=config,
-            storage_service=service_storage,
-            repository=repository,
+            study_service=study_service,
+            job_result_repository=repository,
             event_bus=event_bus,
         )
 

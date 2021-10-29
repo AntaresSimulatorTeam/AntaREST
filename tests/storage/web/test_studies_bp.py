@@ -24,7 +24,7 @@ from antarest.core.requests import (
 )
 from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
-from antarest.study.main import build_storage
+from antarest.study.main import build_study_service
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     PublicMode,
@@ -59,7 +59,7 @@ def test_server() -> None:
     mock_service.get.return_value = {}
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -82,7 +82,7 @@ def test_404() -> None:
     mock_storage_service.get.side_effect = UrlNotMatchJsonDataError("Test")
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -105,7 +105,7 @@ def test_server_with_parameters() -> None:
     mock_storage_service.get.return_value = {}
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -147,7 +147,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
     storage_service.create_study.return_value = "my-uuid"
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -184,7 +184,7 @@ def test_import_study_zipped(tmp_path: Path, project_path) -> None:
     mock_storage_service.import_study.return_value = study_name
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -213,7 +213,7 @@ def test_copy_study(tmp_path: Path) -> None:
     storage_service.copy_study.return_value = "/studies/study-copied"
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -247,7 +247,7 @@ def test_list_studies(tmp_path: str) -> None:
     storage_service.get_studies_information.return_value = studies
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -268,7 +268,7 @@ def test_study_metadata(tmp_path: str) -> None:
     storage_service.get_study_information.return_value = study
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -292,7 +292,7 @@ def test_export_files(tmp_path: Path) -> None:
     mock_storage_service.export_study.return_value = file_export
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -318,7 +318,7 @@ def test_export_params(tmp_path: Path) -> None:
     mock_storage_service.export_study.return_value = export_file
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -343,7 +343,7 @@ def test_delete_study() -> None:
     mock_storage_service = Mock()
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -364,7 +364,7 @@ def test_edit_study() -> None:
     mock_storage_service.edit_study.return_value = {}
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -388,7 +388,7 @@ def test_edit_study_fail() -> None:
     mock_storage_service = Mock()
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -411,7 +411,7 @@ def test_validate() -> None:
     mock_service.check_errors.return_value = ["Hello"]
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -451,7 +451,7 @@ def test_output_download() -> None:
     )
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -475,7 +475,7 @@ def test_sim_reference() -> None:
     output_id = "my-output-id"
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -518,7 +518,7 @@ def test_sim_result() -> None:
     ]
     mock_service.get_study_sim_result.return_value = result_data
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -537,7 +537,7 @@ def test_study_permission_management(tmp_path: Path) -> None:
     storage_service = Mock()
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -588,7 +588,7 @@ def test_study_permission_management(tmp_path: Path) -> None:
 def test_get_study_versions(tmp_path: Path) -> None:
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
