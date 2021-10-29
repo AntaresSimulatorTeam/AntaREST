@@ -84,7 +84,7 @@ def test_service_run_study(get_current_user_mock):
     event_bus.push.assert_called_once_with(
         Event(
             EventType.STUDY_JOB_STARTED,
-            pending.to_dict(),
+            pending.to_dto().dict(),
         )
     )
 

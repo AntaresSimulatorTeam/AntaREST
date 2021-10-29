@@ -62,11 +62,9 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timedelta] = None
     ) -> CredentialsDTO:
         access_token = jwt_manager.create_access_token(
-            subject=json.dumps(user.to_dict()), expires_time=expire
+            subject=user.json(), expires_time=expire
         )
-        refresh_token = jwt_manager.create_refresh_token(
-            subject=json.dumps(user.to_dict())
-        )
+        refresh_token = jwt_manager.create_refresh_token(subject=user.json())
         return CredentialsDTO(
             user=user.id,
             access_token=access_token.decode()
@@ -329,7 +327,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
             jwt_group = JWTGroup(
                 id=group.id,
                 name=group.name,
-                role=RoleType.from_dict(role.role),
+                role=RoleType(role.role),
             )
             groups.append(jwt_group)
 
@@ -412,6 +410,6 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     def auth_needed(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        return JSONResponse(current_user.to_dict())
+        return current_user
 
     return bp

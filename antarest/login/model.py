@@ -124,18 +124,8 @@ class Identity(Base):  # type: ignore
     name = Column(String(255))
     type = Column(String(50))
 
-    @staticmethod
-    def from_dict(data: JSON) -> "Identity":
-        return Identity(
-            id=data["id"],
-            name=data["name"],
-        )
-
     def to_dto(self) -> UserInfo:
         return UserInfo(id=self.id, name=self.name)
-
-    def to_dict(self) -> JSON:
-        return self.to_dto().dict()
 
     __mapper_args__ = {
         "polymorphic_identity": "identities",
@@ -175,10 +165,6 @@ class User(Identity):
         self._pwd = pwd.get()
 
     @staticmethod
-    def from_dict(data: JSON) -> "User":
-        return User(id=data.get("id"), name=data["name"])
-
-    @staticmethod
     def from_dto(data: UserInfo) -> "User":
         return User(id=data.id, name=data.name)
 
@@ -208,10 +194,6 @@ class UserLdap(Identity):
     __mapper_args__ = {
         "polymorphic_identity": "users_ldap",
     }
-
-    @staticmethod
-    def from_dict(data: JSON) -> "UserLdap":
-        return UserLdap(id=data.get("id"), name=data["name"])
 
     def __eq__(self, o: Any) -> bool:
         if not isinstance(o, UserLdap):
@@ -243,15 +225,6 @@ class Bot(Identity):
         "polymorphic_identity": "bots",
     }
 
-    @staticmethod
-    def from_dict(data: JSON) -> "Bot":
-        return Bot(
-            id=data["id"],
-            name=data["name"],
-            owner=data["owner"],
-            is_author=data["isAuthor"],
-        )
-
     def to_dto(self) -> BotDTO:
         return BotDTO(
             id=self.id,
@@ -260,13 +233,10 @@ class Bot(Identity):
             is_author=self.is_author,
         )
 
-    def to_dict(self) -> JSON:
-        return self.to_dto().dict()
-
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Bot):
             return False
-        return self.to_dict() == other.to_dict()
+        return self.to_dto().dict() == other.to_dto().dict()
 
 
 @dataclass
@@ -285,18 +255,8 @@ class Group(Base):  # type: ignore
     )
     name = Column(String(255))
 
-    @staticmethod
-    def from_dict(data: JSON) -> "Group":
-        return Group(
-            id=data.get("id"),
-            name=data["name"],
-        )
-
     def to_dto(self) -> GroupDTO:
         return GroupDTO(id=self.id, name=self.name)
-
-    def to_dict(self) -> JSON:
-        return self.to_dto().dict()
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Group):
@@ -321,23 +281,12 @@ class Role(Base):  # type: ignore
     identity = relationship("Identity")
     group = relationship("Group")
 
-    @staticmethod
-    def from_dict(data: JSON) -> "Role":
-        return Role(
-            type=RoleType.from_dict(data["type"]),
-            identity=User.from_dict(data["user"]),
-            group=Group.from_dict(data["group"]),
-        )
-
     def to_dto(self) -> RoleDetailDTO:
         return RoleDetailDTO(
             type=self.type,
             group=self.group.to_dto(),
             user=self.identity.to_dto(),
         )
-
-    def to_dict(self) -> JSON:
-        return self.to_dto().dict()
 
 
 class CredentialsDTO(BaseModel):

@@ -59,16 +59,13 @@ class JobResult(DTO, Base):  # type: ignore
             exit_code=self.exit_code,
         )
 
-    def to_dict(self) -> JSON:
-        return self.to_dto().dict()
-
     def __eq__(self, o: Any) -> bool:
         if not isinstance(o, JobResult):
             return False
-        return o.to_dict() == self.to_dict()
+        return o.to_dto().dict() == self.to_dto().dict()
 
     def __str__(self) -> str:
-        return str(self.to_dict())
+        return str(self.to_dto().dict())
 
     def __repr__(self) -> str:
         return self.__str__()
