@@ -17,7 +17,7 @@ import CreateIcon from '@material-ui/icons/Create';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import TextEditorModal from '../ui/TextEditorModal';
 import { editComments, getComments } from '../../services/api/study';
-import { defaultBlockRenderMap, htmlToDraftJs, xmlToJson } from '../ui/Utils';
+import { convertXMLToHTML, defaultBlockRenderMap, htmlToDraftJs, xmlToJson } from '../ui/Utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -122,7 +122,8 @@ const NoteView = (props: Props) => {
       try {
         const data = await getComments(studyId);
         console.log('XML TO JSON: ', xmlToJson(data));
-        setEditorState(EditorState.createWithContent(htmlToDraftJs(data, extendedBlockRenderMap)));
+        const xmlToHtml = convertXMLToHTML(data);
+        setEditorState(EditorState.createWithContent(htmlToDraftJs(xmlToHtml, extendedBlockRenderMap)));
         setContent(data);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:fetchCommentsError'), e as AxiosError);

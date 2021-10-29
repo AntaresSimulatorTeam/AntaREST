@@ -146,9 +146,10 @@ const TextEditorModal = (props: PropTypes) => {
 
   useEffect(() => {
     if (content !== undefined) {
-      setEditorState(EditorState.createWithContent(htmlToDraftJs(content, extendedBlockRenderMap)));
+      const xmlToHtml = convertXMLToHTML(content);
+      setEditorState(EditorState.createWithContent(htmlToDraftJs(xmlToHtml, extendedBlockRenderMap)));
       setInitContent(content);
-      console.log('RESULT ULTIME: ', convertXMLToHTML(content));
+      console.log('RESULT ULTIME: ', xmlToHtml);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content]);

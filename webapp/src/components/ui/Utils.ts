@@ -52,11 +52,14 @@ export const DraftJsToHtml = (editorState: EditorState): string => {
 
 export const xmlToJson = (data: string): string => xml2json(data, { compact: false, spaces: 4 });
 
-
 interface Balise {
   openBalise: string;
   closeBalise: string;
 }
+
+const XmlToHTML = { paragraph: 'div',
+  text: 'span',
+  symbol: 'li' };
 
 const checkAttributes = (node: XMLElement): Balise => {
   let openBalise = ''; let
@@ -90,13 +93,9 @@ const checkAttributes = (node: XMLElement): Balise => {
   return { openBalise, closeBalise };
 };
 
-const XmlToHTML = { paragraph: 'div',
-  text: 'span' };
-
 const nodeProcess = (node: XMLElement): string => {
   let res = '';
   if (node.type !== undefined) {
-    console.log('TITLE');
     if (node.type === 'element') {
       if (node.name !== undefined) {
         let balises: Balise = { openBalise: '', closeBalise: '' };
@@ -108,7 +107,9 @@ const nodeProcess = (node: XMLElement): string => {
             balises.closeBalise += `</${XmlToHTML[node.name]}>`;
             break;
           case 'symbol':
-            balises.openBalise = '&nbsp;';
+            balises = checkAttributes(node);
+            balises.openBalise = `<${XmlToHTML[node.name]}>&ensp;`;
+            balises.closeBalise += `</${XmlToHTML[node.name]}>`;
             break;
           default:
             break;
@@ -136,7 +137,6 @@ const nodeProcess = (node: XMLElement): string => {
 export const convertXMLToHTML = (data: string) => {
   const xmlStr = xml2json(data, { compact: false, spaces: 4 });
   const xmlElement: XMLElement = JSON.parse(xmlStr);
-  console.log('OUI OUI: ', xmlStr);
   return nodeProcess(xmlElement);
 };
 
