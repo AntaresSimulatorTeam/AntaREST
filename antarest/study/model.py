@@ -264,13 +264,13 @@ class StudySimResultDTO(BaseModel):
     status: str
 
 
-class StudyDownloadType(enum.Enum):
+class StudyDownloadType(str, enum.Enum):
     LINK = "LINK"
     DISTRICT = "DISTRICT"
     AREA = "AREA"
 
 
-class StudyDownloadLevelDTO(enum.Enum):
+class StudyDownloadLevelDTO(str, enum.Enum):
     ANNUAL = "annual"
     MONTHLY = "monthly"
     WEEKLY = "weekly"
