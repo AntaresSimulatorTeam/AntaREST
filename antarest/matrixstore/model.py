@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime
 from typing import Any, List, Optional, Union
 
-from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic import BaseModel, validator
 from sqlalchemy import Column, String, Enum, DateTime, Table, ForeignKey, Integer, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore

@@ -5,6 +5,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 import pytest
 from fastapi import UploadFile
+from sqlalchemy import create_engine
 
 from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.requests import (
@@ -12,6 +13,8 @@ from antarest.core.requests import (
     UserHasNotPermissionError,
 )
 from antarest.core.roles import RoleType
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.dbmodel import Base
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
@@ -28,6 +31,14 @@ from antarest.matrixstore.service import MatrixService
 
 
 def test_save():
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+
     # Init Mock
     repo_content = Mock()
     repo_content.save.return_value = "my-id"

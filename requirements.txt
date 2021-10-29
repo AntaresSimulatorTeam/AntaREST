@@ -8,7 +8,6 @@ redis~=3.5.3
 requests~=2.25.1
 pandas~=1.1.5
 numpy~=1.19.5
-dataclasses-json
 fastapi[all]~=0.65.2
 fastapi-jwt-auth
 python-multipart

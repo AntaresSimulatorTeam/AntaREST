@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Any, List, Optional
 
 import bcrypt
-from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic.main import BaseModel
 from sqlalchemy import Column, Integer, Sequence, String, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
@@ -17,6 +16,75 @@ from antarest.core.roles import RoleType
 class UserInfo(BaseModel):
     id: int
     name: str
+
+
+class BotRoleCreateDTO(BaseModel):
+    group: str
+    role: int
+
+
+class BotCreateDTO(BaseModel):
+    name: str
+    roles: List[BotRoleCreateDTO]
+    is_author: bool = True
+
+
+class UserCreateDTO(BaseModel):
+    name: str
+    password: str
+
+
+class GroupDTO(BaseModel):
+    id: Optional[str] = None
+    name: str
+
+
+class RoleCreationDTO(BaseModel):
+    type: RoleType
+    group_id: str
+    identity_id: int
+
+
+class RoleDTO(BaseModel):
+    group_id: str
+    group_name: str
+    identity_id: int
+    type: RoleType
+
+
+class IdentityDTO(BaseModel):
+    id: int
+    name: str
+    roles: List[RoleDTO]
+
+
+class RoleDetailDTO(BaseModel):
+    group: GroupDTO
+    identity: UserInfo
+    type: RoleType
+
+
+class BotIdentityDTO(BaseModel):
+    id: int
+    name: str
+    isAuthor: bool
+    roles: List[RoleDTO]
+
+
+class BotDTO(UserInfo):
+    owner: int
+    is_author: bool
+
+
+class UserRoleDTO(BaseModel):
+    id: int
+    name: str
+    role: RoleType
+
+
+class UserGroup(BaseModel):
+    group: GroupDTO
+    users: List[UserRoleDTO]
 
 
 class Password:
@@ -63,8 +131,11 @@ class Identity(Base):  # type: ignore
             name=data["name"],
         )
 
+    def to_dto(self) -> UserInfo:
+        return UserInfo(id=self.id, name=self.name)
+
     def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name}
+        return self.to_dto().dict()
 
     __mapper_args__ = {
         "polymorphic_identity": "identities",
@@ -181,39 +252,21 @@ class Bot(Identity):
             is_author=data["isAuthor"],
         )
 
+    def to_dto(self) -> BotDTO:
+        return BotDTO(
+            id=self.id,
+            name=self.name,
+            owner=self.owner,
+            is_author=self.is_author,
+        )
+
     def to_dict(self) -> JSON:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "owner": self.owner,
-            "isAuthor": self.is_author,
-        }
+        return self.to_dto().dict()
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Bot):
             return False
         return self.to_dict() == other.to_dict()
-
-
-class BotRoleCreateDTO(BaseModel):
-    group: str
-    role: int
-
-
-class BotCreateDTO(BaseModel):
-    name: str
-    roles: List[BotRoleCreateDTO]
-    is_author: bool = True
-
-
-class UserCreateDTO(BaseModel):
-    name: str
-    password: str
-
-
-class GroupDTO(BaseModel):
-    id: Optional[str] = None
-    name: str
 
 
 @dataclass
@@ -239,56 +292,17 @@ class Group(Base):  # type: ignore
             name=data["name"],
         )
 
+    def to_dto(self) -> GroupDTO:
+        return GroupDTO(id=self.id, name=self.name)
+
     def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name}
+        return self.to_dto().dict()
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Group):
             return False
 
         return bool(self.id == other.id and self.name == other.name)
-
-
-class RoleCreationDTO(BaseModel):
-    type: RoleType
-    group_id: str
-    identity_id: int
-
-
-@dataclass
-class RoleDTO(DataClassJsonMixin):  # type: ignore
-    group_id: str
-    group_name: str
-    identity_id: int
-    type: RoleType
-
-
-@dataclass
-class IdentityDTO(DataClassJsonMixin):  # type: ignore
-    id: int
-    name: str
-    roles: List[RoleDTO]
-
-
-@dataclass
-class BotIdentityDTO(DataClassJsonMixin):  # type: ignore
-    id: int
-    name: str
-    isAuthor: bool
-    roles: List[RoleDTO]
-
-
-@dataclass
-class UserRoleDTO(DataClassJsonMixin):  # type: ignore
-    id: int
-    name: str
-    role: RoleType
-
-
-@dataclass
-class UserGroup(DataClassJsonMixin):  # type: ignore
-    group: GroupDTO
-    users: List[UserRoleDTO]
 
 
 @dataclass
@@ -315,12 +329,15 @@ class Role(Base):  # type: ignore
             group=Group.from_dict(data["group"]),
         )
 
+    def to_dto(self) -> RoleDetailDTO:
+        return RoleDetailDTO(
+            type=self.type,
+            group=self.group.to_dto(),
+            user=self.identity.to_dto(),
+        )
+
     def to_dict(self) -> JSON:
-        return {
-            "type": self.type.to_dict(),
-            "user": self.identity.to_dict(),
-            "group": self.group.to_dict(),
-        }
+        return self.to_dto().dict()
 
 
 class CredentialsDTO(BaseModel):
