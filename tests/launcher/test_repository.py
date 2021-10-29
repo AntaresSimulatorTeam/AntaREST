@@ -21,7 +21,7 @@ def test_job_result() -> None:
     )
 
     with db():
-        repo = JobResultRepository(study_service=Mock())
+        repo = JobResultRepository()
         study_id = str(uuid4())
         a = JobResult(
             id=str(uuid4()),
@@ -63,7 +63,7 @@ def test_update_object():
     )
 
     with db():
-        repo = JobResultRepository(study_service=Mock())
+        repo = JobResultRepository()
         uuid = str(uuid4())
         a = JobResult(
             id=uuid,

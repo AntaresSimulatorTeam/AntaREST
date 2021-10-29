@@ -19,7 +19,7 @@ def build_launcher(
 ) -> Optional[LauncherService]:
 
     if study_service and not service_launcher:
-        repository = JobResultRepository(study_service=study_service)
+        repository = JobResultRepository()
         service_launcher = LauncherService(
             config=config,
             study_service=study_service,

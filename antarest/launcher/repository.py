@@ -4,12 +4,11 @@ from sqlalchemy import exists  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import JobResult
-from antarest.study.service import StudyService
 
 
 class JobResultRepository:
-    def __init__(self, study_service: StudyService) -> None:
-        self.study_service = study_service
+    def __init__(self) -> None:
+        pass
 
     def save(self, job: JobResult) -> JobResult:
         res = db.session.query(exists().where(JobResult.id == job.id)).scalar()
