@@ -88,7 +88,7 @@ class LauncherService:
                     EventType.STUDY_JOB_COMPLETED
                     if final_status
                     else EventType.STUDY_JOB_STATUS_UPDATE,
-                    job_result.to_dict(),
+                    job_result.to_dto().dict(),
                 )
             )
 
@@ -115,7 +115,7 @@ class LauncherService:
         self.event_bus.push(
             Event(
                 EventType.STUDY_JOB_STARTED,
-                job_status.to_dict(),
+                job_status.to_dto().dict(),
             )
         )
 

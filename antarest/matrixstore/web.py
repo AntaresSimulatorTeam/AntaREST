@@ -15,6 +15,8 @@ from antarest.matrixstore.model import (
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
     MatrixData,
+    MatrixDTO,
+    MatrixDataSetDTO,
 )
 from antarest.matrixstore.service import MatrixService
 
@@ -36,10 +38,12 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
 
     auth = Auth(config)
 
-    @bp.post("/matrix", tags=[APITag.matrix])
+    @bp.post(
+        "/matrix", tags=[APITag.matrix], description="Upload a new matrix"
+    )
     def create(
         matrix: List[List[MatrixData]] = Body(
-            description="matrix dto", default={}
+            description="matrix dto", default=[]
         ),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -48,7 +52,12 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
             return service.create(matrix)
         raise UserHasNotPermissionError()
 
-    @bp.post("/matrix/_import", tags=[APITag.matrix])
+    @bp.post(
+        "/matrix/_import",
+        tags=[APITag.matrix],
+        description="Import a new matrix or zip matrices",
+        response_model=List[MatrixInfoDTO],
+    )
     def create_by_importation(
         json: bool = False,
         file: UploadFile = File(...),
@@ -61,14 +70,16 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
             return service.create_by_importation(file, json)
         raise UserHasNotPermissionError()
 
-    @bp.get("/matrix/{id}", tags=[APITag.matrix])
+    @bp.get("/matrix/{id}", tags=[APITag.matrix], response_model=MatrixDTO)
     def get(id: str, user: JWTUser = Depends(auth.get_current_user)) -> Any:
         logger.info(f"Fetching matrix", extra={"user": user.id})
         if user.id is not None:
             return service.get(id)
         raise UserHasNotPermissionError()
 
-    @bp.post("/matrixdataset", tags=[APITag.matrix])
+    @bp.post(
+        "/matrixdataset", tags=[APITag.matrix], response_model=MatrixDataSetDTO
+    )
     def create_dataset(
         metadata: MatrixDataSetUpdateDTO = Body(...),
         matrices: List[MatrixInfoDTO] = Body(...),
@@ -83,7 +94,11 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
             metadata, matrices, request_params
         ).to_dto()
 
-    @bp.put("/matrixdataset/{id}/metadata", tags=[APITag.matrix])
+    @bp.put(
+        "/matrixdataset/{id}/metadata",
+        tags=[APITag.matrix],
+        response_model=MatrixDataSetDTO,
+    )
     def update_dataset_metadata(
         id: str,
         metadata: MatrixDataSetUpdateDTO,
@@ -95,7 +110,11 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
         request_params = RequestParameters(user=user)
         return service.update_dataset(id, metadata, request_params).to_dto()
 
-    @bp.get("/matrixdataset/_search", tags=[APITag.matrix])
+    @bp.get(
+        "/matrixdataset/_search",
+        tags=[APITag.matrix],
+        response_model=List[MatrixDataSetDTO],
+    )
     def query_datasets(
         name: Optional[str],
         filter_own: bool = False,

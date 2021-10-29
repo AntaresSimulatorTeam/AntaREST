@@ -28,14 +28,13 @@ logger = logging.getLogger(__name__)
 
 
 def create_study_variant_routes(
-    study_service: StudyService,
     variant_study_service: VariantStudyService,
     config: Config,
 ) -> APIRouter:
     """
     Endpoint implementation for studies area management
     Args:
-        study_service: study service facade to handle request
+        variant_study_service: study service facade to handle request
         config: main server configuration
 
     Returns:
@@ -226,6 +225,7 @@ def create_study_variant_routes(
         responses={
             200: {
                 "description": "The detail of a command content",
+                "model": CommandDTO,
             }
         },
     )
@@ -331,12 +331,7 @@ def create_study_variant_routes(
         "/studies/{uuid}/generate",
         tags=[APITag.study_variant_management],
         summary="Generate variant snapshot",
-        responses={
-            200: {
-                "description": "The result of the generation process",
-                "model": GenerationResultInfoDTO,
-            }
-        },
+        response_model=str,
     )
     def generate_variant(
         uuid: str,
@@ -353,8 +348,13 @@ def create_study_variant_routes(
             sanitized_uuid, denormalize, params
         )
 
-    @bp.get("/studies/{uuid}/task")
-    def get_study_task(
+    @bp.get(
+        "/studies/{uuid}/task",
+        tags=[APITag.study_variant_management],
+        summary="Get study generation task",
+        response_model=TaskDTO,
+    )
+    def get_study_generation_task(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> TaskDTO:

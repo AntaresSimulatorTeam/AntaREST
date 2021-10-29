@@ -135,7 +135,6 @@ def build_study_service(
     )
     application.include_router(
         create_study_variant_routes(
-            study_service=storage_service,
             variant_study_service=variant_study_service,
             config=config,
         )

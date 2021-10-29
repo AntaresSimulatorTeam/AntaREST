@@ -45,7 +45,7 @@ class Auth:
 
         auth_jwt.jwt_required()
 
-        user = JWTUser.from_dict(json.loads(auth_jwt.get_jwt_subject()))
+        user = JWTUser.parse_obj(json.loads(auth_jwt.get_jwt_subject()))
         return user
 
     @staticmethod
@@ -54,7 +54,7 @@ class Auth:
     ) -> Optional[JWTUser]:
         try:
             token_data = jwt_manager._verified_token(token)
-            return JWTUser.from_dict(json.loads(token_data["sub"]))
+            return JWTUser.parse_obj(json.loads(token_data["sub"]))
         except Exception as e:
             logger.debug("Failed to retrieve user from token", exc_info=e)
         return None

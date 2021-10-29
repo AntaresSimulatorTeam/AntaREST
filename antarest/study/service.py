@@ -135,7 +135,7 @@ class StudyService:
 
     def get_studies_information(
         self, summary: bool, params: RequestParameters
-    ) -> JSON:
+    ) -> Dict[str, StudyMetadataDTO]:
         """
         Get information for all studies.
         Args:

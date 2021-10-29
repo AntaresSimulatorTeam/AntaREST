@@ -1,5 +1,8 @@
 from typing import Any, List, Tuple
 
+from fastapi import FastAPI
+from fastapi.routing import APIRoute
+
 sim = "{sim} = simulation index <br/>"
 area = "{area} = area name to select <br/>"
 link = "{link} = link name to select <br/>"
@@ -26,3 +29,9 @@ urls: List[Tuple[str, str]] = [
 def get_path_examples() -> Any:
     examples = {url: {"value": url, "description": des} for url, des in urls}
     return examples
+
+
+def customize_openapi(app: FastAPI) -> None:
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            route.operation_id = route.name

@@ -36,6 +36,8 @@ from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     StudyDownloadType,
     StudyDownloadLevelDTO,
+    StudyMetadataDTO,
+    OwnerInfo,
 )
 
 ADMIN = JWTUser(
@@ -241,8 +243,34 @@ def test_copy_study(tmp_path: Path) -> None:
 @pytest.mark.unit_test
 def test_list_studies(tmp_path: str) -> None:
     studies = {
-        "study1": {"antares": {"caption": ""}},
-        "study2": {"antares": {"caption": ""}},
+        "study1": StudyMetadataDTO(
+            id="a",
+            name="study1",
+            version=700,
+            created=0,
+            updated=0,
+            type="RawStudy",
+            owner=OwnerInfo(name="foo"),
+            groups=[],
+            public_mode=PublicMode.FULL,
+            workspace="default",
+            managed=True,
+            archived=False,
+        ),
+        "study2": StudyMetadataDTO(
+            id="b",
+            name="study2",
+            version=700,
+            created=0,
+            updated=0,
+            type="RawStudy",
+            owner=OwnerInfo(name="foo"),
+            groups=[],
+            public_mode=PublicMode.FULL,
+            workspace="default",
+            managed=True,
+            archived=False,
+        ),
     }
 
     storage_service = Mock()
@@ -261,11 +289,26 @@ def test_list_studies(tmp_path: str) -> None:
     client = TestClient(app)
     result = client.get("/v1/studies")
 
-    assert result.json() == studies
+    assert {
+        k: StudyMetadataDTO.parse_obj(v) for k, v in result.json().items()
+    } == studies
 
 
 def test_study_metadata(tmp_path: str) -> None:
-    study = {"antares": {"caption": ""}}
+    study = StudyMetadataDTO(
+        id="a",
+        name="b",
+        version=700,
+        created=0,
+        updated=0,
+        type="RawStudy",
+        owner=OwnerInfo(name="foo"),
+        groups=[],
+        public_mode=PublicMode.FULL,
+        workspace="default",
+        managed=True,
+        archived=False,
+    )
     storage_service = Mock()
     storage_service.get_study_information.return_value = study
 
@@ -282,7 +325,7 @@ def test_study_metadata(tmp_path: str) -> None:
     client = TestClient(app)
     result = client.get("/v1/studies/1")
 
-    assert result.json() == study
+    assert StudyMetadataDTO.parse_obj(result.json()) == study
 
 
 @pytest.mark.unit_test
@@ -491,7 +534,8 @@ def test_sim_reference() -> None:
     mock_service.set_sim_reference.assert_called_once_with(
         study_id, output_id, True, PARAMS
     )
-    assert res.json() == "OK"
+    assert res.status_code == 200
+    assert res.json() == ""
 
 
 @pytest.mark.unit_test

@@ -22,7 +22,7 @@ def build(security_disabled: bool = False, admin: bool = False) -> Auth:
             {
                 "id": "admin" if admin else "group",
                 "name": "group",
-                "role": RoleType.ADMIN.to_dict(),
+                "role": RoleType.ADMIN.value,
             }
         ],
     }

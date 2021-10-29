@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 from fastapi import APIRouter, Depends
 
@@ -15,6 +15,7 @@ from antarest.study.storage.area_management import (
     AreaType,
     AreaCreationDTO,
     AreaPatchUpdateDTO,
+    AreaInfoDTO,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ def create_study_area_routes(
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
         summary="Get all areas basic info",
+        response_model=List[AreaInfoDTO],
     )
     def get_areas(
         uuid: str,
@@ -57,6 +59,7 @@ def create_study_area_routes(
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
         summary="Create a new area/cluster",
+        response_model=AreaInfoDTO,
     )
     def create_area(
         uuid: str,
@@ -74,6 +77,7 @@ def create_study_area_routes(
         "/studies/{uuid}/areas/{area_id}",
         tags=[APITag.study_data],
         summary="Update area information",
+        response_model=AreaInfoDTO,
     )
     def update_area_info(
         uuid: str,
@@ -93,6 +97,7 @@ def create_study_area_routes(
         "/studies/{uuid}/areas/{area_id}",
         tags=[APITag.study_data],
         summary="Delete an area",
+        response_model=str,
     )
     def delete_area(
         uuid: str,

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 from antarest import __version__
 from antarest.core.config import Config
@@ -32,6 +33,15 @@ def get_commit_id(path_resources: Path) -> Optional[str]:
     return commit_id
 
 
+class StatusDTO(BaseModel):
+    status: str
+
+
+class VersionDTO(BaseModel):
+    version: str
+    gitcommit: Optional[str]
+
+
 def create_utils_routes(config: Config) -> APIRouter:
     """
     Utility endpoints
@@ -45,18 +55,19 @@ def create_utils_routes(config: Config) -> APIRouter:
     """
     bp = APIRouter()
 
-    @bp.get("/health", tags=[APITag.misc])
+    @bp.get("/health", tags=[APITag.misc], response_model=StatusDTO)
     def health() -> Any:
-        return {"status": "available"}
+        return StatusDTO(status="available")
 
-    @bp.get("/version", tags=[APITag.misc], summary="Get application version")
+    @bp.get(
+        "/version",
+        tags=[APITag.misc],
+        summary="Get application version",
+        response_model=VersionDTO,
+    )
     def version() -> Any:
-        version_data = {"version": __version__}
-
-        commit_id = get_commit_id(config.resources_path)
-        if commit_id is not None:
-            version_data["gitcommit"] = commit_id
-
-        return version_data
+        return VersionDTO(
+            version=__version__, gitcommit=get_commit_id(config.resources_path)
+        )
 
     return bp
