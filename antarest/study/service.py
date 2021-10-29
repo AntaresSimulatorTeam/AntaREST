@@ -643,12 +643,12 @@ class StudyService:
             path=path,
         )
         study = self.raw_study_service.import_study(study, stream)
-        #status = self._analyse_study(study)
+        # status = self._analyse_study(study)
         self._save_study(
             study,
             owner=params.user,
             group_ids=group_ids,
-        #    content_status=status,
+            #    content_status=status,
         )
         self.event_bus.push(
             Event(EventType.STUDY_CREATED, study.to_json_summary())
