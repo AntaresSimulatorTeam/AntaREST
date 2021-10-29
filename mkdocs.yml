@@ -30,11 +30,13 @@ theme:
 nav:
   - Home: index.md
   - 'User guide':
-      - 'Introduction': 'user-guide/0-introduction.md'
+    - 'Introduction': 'user-guide/0-introduction.md'
+    - 'Variant manager': 'user-guide/2-variant_manager.md'
   - 'Build':
     - 'Introduction': 'install/0-INSTALL.md'
   - 'Develop':
     - 'Introduction': 'architecture/0-introduction.md'
+    - 'Roadmap': 'architecture/5-roadmap.md'
   - 'Antares ecosystem' : 'https://antares-doc.readthedocs.io'
   - 'Changelog': 'CHANGELOG.md'
 

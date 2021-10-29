@@ -9,6 +9,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import debug from 'debug';
 import { AxiosError } from 'axios';
+import HelpIcon from '@material-ui/icons/Help';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
 import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal } from './utils';
@@ -372,6 +373,13 @@ const EditionView = (props: PropTypes) => {
               <CommandImportButton onImport={onGlobalImport} />
               <CloudDownloadOutlinedIcon className={classes.headerIcon} onClick={onGlobalExport} />
               <QueueIcon className={classes.headerIcon} onClick={() => setOpenAddCommandModal(true)} />
+              <a
+                href="https://antares-web.readthedocs.io/en/latest/user-guide/2-variant_manager/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <HelpIcon className={classes.headerIcon} />
+              </a>
             </div>
           </div>
         ) : (
