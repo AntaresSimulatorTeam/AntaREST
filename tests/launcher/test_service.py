@@ -4,9 +4,14 @@ from uuid import uuid4
 
 import pytest
 
-from antarest.core.config import Config
+from antarest.core.config import (
+    Config,
+    LauncherConfig,
+    SlurmConfig,
+    LocalConfig,
+)
 from antarest.core.interfaces.eventbus import Event, EventType
-from antarest.core.jwt import JWTUser
+from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
@@ -56,8 +61,8 @@ def test_service_run_study(get_current_user_mock):
 
     launcher_service = LauncherService(
         config=Config(),
-        storage_service=storage_service_mock,
-        repository=repository,
+        study_service=storage_service_mock,
+        job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=event_bus,
     )
@@ -79,7 +84,7 @@ def test_service_run_study(get_current_user_mock):
     event_bus.push.assert_called_once_with(
         Event(
             EventType.STUDY_JOB_STARTED,
-            pending.to_dict(),
+            pending.to_dto().dict(),
         )
     )
 
@@ -89,6 +94,7 @@ def test_service_get_result_from_launcher():
     launcher_mock = Mock()
     fake_execution_result = JobResult(
         id=str(uuid4()),
+        study_id="sid",
         job_status=JobStatus.SUCCESS,
         msg="Hello, World!",
         exit_code=0,
@@ -104,8 +110,8 @@ def test_service_get_result_from_launcher():
 
     launcher_service = LauncherService(
         config=Config(),
-        storage_service=Mock(),
-        repository=repository,
+        study_service=Mock(),
+        job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
     )
@@ -113,7 +119,7 @@ def test_service_get_result_from_launcher():
     job_id = uuid4()
     assert (
         launcher_service.get_result(
-            job_uuid=job_id, params=RequestParameters()
+            job_uuid=job_id, params=RequestParameters(user=DEFAULT_ADMIN_USER)
         )
         == fake_execution_result
     )
@@ -124,6 +130,7 @@ def test_service_get_result_from_database():
     launcher_mock = Mock()
     fake_execution_result = JobResult(
         id=str(uuid4()),
+        study_id="sid",
         job_status=JobStatus.SUCCESS,
         msg="Hello, World!",
         exit_code=0,
@@ -139,15 +146,15 @@ def test_service_get_result_from_database():
 
     launcher_service = LauncherService(
         config=Config(),
-        storage_service=Mock(),
-        repository=repository,
+        study_service=Mock(),
+        job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
     )
 
     assert (
         launcher_service.get_result(
-            job_uuid=uuid4(), params=RequestParameters()
+            job_uuid=uuid4(), params=RequestParameters(user=DEFAULT_ADMIN_USER)
         )
         == fake_execution_result
     )
@@ -176,20 +183,61 @@ def test_service_get_jobs_from_database():
 
     launcher_service = LauncherService(
         config=Config(),
-        storage_service=Mock(),
-        repository=repository,
+        study_service=Mock(),
+        job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
     )
 
     study_id = uuid4()
     assert (
-        launcher_service.get_jobs(str(study_id), params=RequestParameters())
+        launcher_service.get_jobs(
+            str(study_id), params=RequestParameters(user=DEFAULT_ADMIN_USER)
+        )
         == fake_execution_result
     )
     repository.find_by_study.assert_called_once_with(str(study_id))
     assert (
-        launcher_service.get_jobs(None, params=RequestParameters())
+        launcher_service.get_jobs(
+            None, params=RequestParameters(user=DEFAULT_ADMIN_USER)
+        )
         == fake_execution_result
     )
     repository.get_all.assert_called_once()
+
+
+@pytest.mark.unit_test
+@pytest.mark.parametrize(
+    "config_local,config_slurm,expected_output",
+    [
+        (None, None, {}),
+        (
+            None,
+            SlurmConfig(antares_versions_on_remote_server=["42", "43"]),
+            {"slurm": ["42", "43"]},
+        ),
+        (
+            LocalConfig(binaries={"24": Path(), "34": Path()}),
+            None,
+            {"local": ["24", "34"]},
+        ),
+        (
+            LocalConfig(binaries={"24": Path(), "34": Path()}),
+            SlurmConfig(antares_versions_on_remote_server=["42", "43"]),
+            {"local": ["24", "34"], "slurm": ["42", "43"]},
+        ),
+    ],
+)
+def test_service_get_versions(config_local, config_slurm, expected_output):
+    config = Config(
+        launcher=LauncherConfig(local=config_local, slurm=config_slurm)
+    )
+    launcher_service = LauncherService(
+        config=config,
+        study_service=Mock(),
+        job_result_repository=Mock(),
+        factory_launcher=Mock(),
+        event_bus=Mock(),
+    )
+
+    assert expected_output == launcher_service.get_versions(params=Mock())

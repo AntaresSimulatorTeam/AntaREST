@@ -1,3 +1,5 @@
-from antarest.matrixstore.model import MatrixContent
+from typing import List
 
-reservoir = MatrixContent(data=[[0, 0.5, 1]] * 12)
+from antarest.matrixstore.model import MatrixData
+
+reservoir: List[List[MatrixData]] = [[0.0, 0.5, 1.0]] * 12

@@ -73,6 +73,14 @@ const GenericModal = (props: PropsWithChildren<PropTypes>) => {
   const classes = useStyles();
   const [t] = useTranslation();
 
+  const handleGlobalKeyDown = (keyboardEvent: React.KeyboardEvent<HTMLDivElement>) => {
+    if (keyboardEvent.key === 'Enter' && handleSave) {
+      handleSave();
+    } else if (keyboardEvent.key === 'Escape' && handleClose) {
+      handleClose();
+    }
+  };
+
   return (
     <Modal
       aria-labelledby="transition-modal-title"
@@ -86,7 +94,7 @@ const GenericModal = (props: PropsWithChildren<PropTypes>) => {
       }}
     >
       <Fade in={open}>
-        <Paper className={classes.main}>
+        <Paper className={classes.main} onKeyDown={handleGlobalKeyDown}>
           <div className={classes.titlebox}>
             <Typography className={classes.title}>
               {title}

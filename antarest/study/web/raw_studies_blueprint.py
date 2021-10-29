@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any
+from typing import Any, List
 
 from fastapi import APIRouter, HTTPException, File, Depends, Body
 from fastapi.params import Param
@@ -41,6 +41,7 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw",
         tags=[APITag.study_raw_data],
         summary="Read data",
+        response_model=JSON,
     )
     def get_study(
         uuid: str,
@@ -73,7 +74,7 @@ def create_raw_study_routes(
 
     @bp.post(
         "/studies/{uuid}/raw",
-        status_code=HTTPStatus.NO_CONTENT.value,
+        status_code=HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
         summary="Update data by posting formatted data",
     )
@@ -96,13 +97,11 @@ def create_raw_study_routes(
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
         storage_service.edit_study(uuid, path, new, params)
-        content = ""
-
-        return content
+        return ""
 
     @bp.put(
         "/studies/{uuid}/raw",
-        status_code=HTTPStatus.NO_CONTENT.value,
+        status_code=HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
         summary="Update data by posting a raw file",
     )
@@ -127,6 +126,7 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw/validate",
         summary="Launch test validation on study",
         tags=[APITag.study_raw_data],
+        response_model=List[str],
     )
     def validate(
         uuid: str, current_user: JWTUser = Depends(auth.get_current_user)

@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TypeVar
 
-from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -21,6 +20,20 @@ groups_metadata = Table(
     Column("group_id", String(36), ForeignKey("groups.id")),
     Column("study_id", String(36), ForeignKey("study.id")),
 )
+
+STUDY_REFERENCE_TEMPLATES: Dict[str, str] = {
+    "600": "empty_study_613.zip",
+    "613": "empty_study_613.zip",
+    "640": "empty_study_613.zip",
+    "700": "empty_study_700.zip",
+    "710": "empty_study_710.zip",
+    "720": "empty_study_720.zip",
+    "800": "empty_study_803.zip",
+    "803": "empty_study_803.zip",
+    "810": "empty_study_810.zip",
+}
+
+NEW_DEFAULT_STUDY_VERSION: str = "803"
 
 
 class StudyContentStatus(enum.Enum):
@@ -250,52 +263,18 @@ class StudySimResultDTO(BaseModel):
     status: str
 
 
-class StudyDownloadType(enum.Enum):
+class StudyDownloadType(str, enum.Enum):
     LINK = "LINK"
-    CLUSTER = "CLUSTER"
+    DISTRICT = "DISTRICT"
     AREA = "AREA"
 
-    @staticmethod
-    def from_dict(value: str) -> "StudyDownloadType":
-        mapping = {
-            "LINK": StudyDownloadType.LINK,
-            "CLUSTER": StudyDownloadType.CLUSTER,
-            "AREA": StudyDownloadType.AREA,
-        }
 
-        if value in mapping:
-            return mapping[value]
-        else:
-            raise ValueError(f"any StudyDownloadType for value {value}")
-
-    def to_dict(self) -> str:
-        return str(self.value)
-
-
-class StudyDownloadLevelDTO(enum.Enum):
+class StudyDownloadLevelDTO(str, enum.Enum):
     ANNUAL = "annual"
     MONTHLY = "monthly"
     WEEKLY = "weekly"
     DAILY = "daily"
     HOURLY = "hourly"
-
-    @staticmethod
-    def from_dict(value: str) -> "StudyDownloadLevelDTO":
-        mapping = {
-            "annual": StudyDownloadLevelDTO.ANNUAL,
-            "monthly": StudyDownloadLevelDTO.MONTHLY,
-            "weekly": StudyDownloadLevelDTO.WEEKLY,
-            "daily": StudyDownloadLevelDTO.DAILY,
-            "hourly": StudyDownloadLevelDTO.HOURLY,
-        }
-
-        if value in mapping:
-            return mapping[value]
-        else:
-            raise ValueError(f"any StudyDownloadLevelDTO for value {value}")
-
-    def to_dict(self) -> str:
-        return str(self.value)
 
 
 class StudyDownloadDTO(BaseModel):
@@ -303,9 +282,9 @@ class StudyDownloadDTO(BaseModel):
     DTO used to download outputs
     """
 
-    type: str
+    type: StudyDownloadType
     years: Optional[List[int]]
-    level: str
+    level: StudyDownloadLevelDTO
     filterIn: Optional[str]
     filterOut: Optional[str]
     filter: Optional[List[str]]
@@ -323,3 +302,8 @@ class MatrixAggregationResult(BaseModel):
     index: MatrixIndex
     data: Dict[str, Dict[str, Dict[str, List[Optional[float]]]]]
     warnings: List[str]
+
+
+class ReferenceStudy(BaseModel):
+    version: str
+    template_name: str

@@ -1,13 +1,14 @@
 from dataclasses import dataclass, field
 from typing import List, Union
 
+from pydantic import BaseModel
+
 from antarest.core.custom_types import JSON
 from antarest.core.roles import RoleType
 from antarest.login.model import Group, Identity
 
 
-@dataclass
-class JWTGroup:
+class JWTGroup(BaseModel):
     """
     Sub JWT domain with groups data belongs to user
     """
@@ -16,20 +17,8 @@ class JWTGroup:
     name: str
     role: RoleType
 
-    @staticmethod
-    def from_dict(data: JSON) -> "JWTGroup":
-        return JWTGroup(
-            id=data["id"],
-            name=data["name"],
-            role=RoleType.from_dict(data["role"]),
-        )
 
-    def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name, "role": self.role.to_dict()}
-
-
-@dataclass
-class JWTUser:
+class JWTUser(BaseModel):
     """
     JWT domain with user data.
     """
@@ -37,25 +26,7 @@ class JWTUser:
     id: int
     type: str
     impersonator: int
-    groups: List[JWTGroup] = field(default_factory=lambda: list())
-
-    @staticmethod
-    def from_dict(data: JSON) -> "JWTUser":
-        groups = data["groups"] if "groups" in data else []
-        return JWTUser(
-            id=data["id"],
-            impersonator=data["impersonator"],
-            type=data["type"],
-            groups=[JWTGroup.from_dict(g) for g in groups],
-        )
-
-    def to_dict(self) -> JSON:
-        return {
-            "id": self.id,
-            "impersonator": self.impersonator,
-            "type": self.type,
-            "groups": [g.to_dict() for g in self.groups],
-        }
+    groups: List[JWTGroup] = []
 
     def is_site_admin(self) -> bool:
         """

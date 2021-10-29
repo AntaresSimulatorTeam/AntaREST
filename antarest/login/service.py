@@ -172,7 +172,7 @@ class LoginService:
             if not params.user.is_site_admin():
                 for role_create in bot.roles:
                     role = self.roles.get(params.user.id, role_create.group)
-                    role_type = RoleType.from_dict(role_create.role)
+                    role_type = RoleType(role_create.role)
                     if not (role and role.type.is_higher_or_equals(role_type)):
                         raise UserHasNotPermissionError()
 
@@ -197,7 +197,7 @@ class LoginService:
             )
 
             for role_create in bot.roles:
-                role_type = RoleType.from_dict(role_create.role)
+                role_type = RoleType(role_create.role)
                 self.roles.save(
                     Role(
                         group=Group(id=role_create.group),

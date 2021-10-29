@@ -22,6 +22,7 @@ from antarest.study.model import (
     StudyDownloadDTO,
     MatrixAggregationResult,
     MatrixIndex,
+    StudyDownloadType,
 )
 from antarest.study.service import StudyService, UserHasNotPermissionError
 from antarest.study.storage.permissions import (
@@ -366,7 +367,7 @@ def test_download_output() -> None:
     assert result == res_matrix
 
     # LINK TYPE
-    input_data.type = "LINK"
+    input_data.type = StudyDownloadType.LINK
     input_data.filter = ["east>west"]
     res_matrix = MatrixAggregationResult(
         index=MatrixIndex(),
@@ -382,7 +383,7 @@ def test_download_output() -> None:
     assert result == res_matrix
 
     # CLUSTER TYPE
-    input_data.type = "CLUSTER"
+    input_data.type = StudyDownloadType.DISTRICT
     input_data.filter = []
     input_data.filterIn = "n"
     res_matrix = MatrixAggregationResult(
@@ -631,7 +632,7 @@ def test_assert_permission() -> None:
 
     # wrong owner
     repository.get.return_value = Study(id=uuid, owner=wrong)
-    study = service._get_study(uuid)
+    study = service.get_study(uuid)
     with pytest.raises(UserHasNotPermissionError):
         assert_permission(jwt, study, StudyPermissionType.READ)
     assert not assert_permission(

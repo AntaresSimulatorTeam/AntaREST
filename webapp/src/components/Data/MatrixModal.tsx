@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { CircularProgress, createStyles, makeStyles, Theme, Tooltip } from '@material-ui/core';
-import clsx from 'clsx';
+import { createStyles, makeStyles, Theme, Tooltip } from '@material-ui/core';
 import { MatrixInfoDTO, MatrixType } from '../../common/types';
 import InformationModal from '../ui/InformationModal';
 import MatrixView from '../ui/MatrixView';
 import { getMatrix } from '../../services/api/matrix';
-import { CopyIcon, loaderStyle } from './utils';
+import { CopyIcon } from './utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import SimpleLoader from '../ui/loaders/SimpleLoader';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -19,7 +19,6 @@ const useStyles = makeStyles((theme: Theme) =>
       padding: theme.spacing(2),
       position: 'relative',
     },
-    ...loaderStyle,
   }));
 
 interface PropTypes {
@@ -90,16 +89,7 @@ const MatrixModal = (props: PropTypes) => {
     >
       <div className={classes.matrixView}>
         {
-          loading && (
-            <>
-              <div className={classes.rootLoader}>
-                <div className={classes.loaderContainer}>
-                  <CircularProgress className={classes.loaderWheel} />
-                </div>
-              </div>
-              <div className={clsx(classes.rootLoader, classes.shadow)} />
-            </>
-          )
+          loading && <SimpleLoader />
         }
         <MatrixView
           readOnly={false}

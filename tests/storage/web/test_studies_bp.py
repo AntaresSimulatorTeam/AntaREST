@@ -24,7 +24,7 @@ from antarest.core.requests import (
 )
 from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
-from antarest.study.main import build_storage
+from antarest.study.main import build_study_service
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     PublicMode,
@@ -33,6 +33,11 @@ from antarest.study.model import (
     MatrixIndex,
     StudySimResultDTO,
     StudySimSettingsDTO,
+    STUDY_REFERENCE_TEMPLATES,
+    StudyDownloadType,
+    StudyDownloadLevelDTO,
+    StudyMetadataDTO,
+    OwnerInfo,
 )
 
 ADMIN = JWTUser(
@@ -58,7 +63,7 @@ def test_server() -> None:
     mock_service.get.return_value = {}
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -81,7 +86,7 @@ def test_404() -> None:
     mock_storage_service.get.side_effect = UrlNotMatchJsonDataError("Test")
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -104,7 +109,7 @@ def test_server_with_parameters() -> None:
     mock_storage_service.get.return_value = {}
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -146,7 +151,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
     storage_service.create_study.return_value = "my-uuid"
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -183,7 +188,7 @@ def test_import_study_zipped(tmp_path: Path, project_path) -> None:
     mock_storage_service.import_study.return_value = study_name
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -212,7 +217,7 @@ def test_copy_study(tmp_path: Path) -> None:
     storage_service.copy_study.return_value = "/studies/study-copied"
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -238,15 +243,41 @@ def test_copy_study(tmp_path: Path) -> None:
 @pytest.mark.unit_test
 def test_list_studies(tmp_path: str) -> None:
     studies = {
-        "study1": {"antares": {"caption": ""}},
-        "study2": {"antares": {"caption": ""}},
+        "study1": StudyMetadataDTO(
+            id="a",
+            name="study1",
+            version=700,
+            created=0,
+            updated=0,
+            type="RawStudy",
+            owner=OwnerInfo(name="foo"),
+            groups=[],
+            public_mode=PublicMode.FULL,
+            workspace="default",
+            managed=True,
+            archived=False,
+        ),
+        "study2": StudyMetadataDTO(
+            id="b",
+            name="study2",
+            version=700,
+            created=0,
+            updated=0,
+            type="RawStudy",
+            owner=OwnerInfo(name="foo"),
+            groups=[],
+            public_mode=PublicMode.FULL,
+            workspace="default",
+            managed=True,
+            archived=False,
+        ),
     }
 
     storage_service = Mock()
     storage_service.get_studies_information.return_value = studies
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -258,16 +289,31 @@ def test_list_studies(tmp_path: str) -> None:
     client = TestClient(app)
     result = client.get("/v1/studies")
 
-    assert result.json() == studies
+    assert {
+        k: StudyMetadataDTO.parse_obj(v) for k, v in result.json().items()
+    } == studies
 
 
 def test_study_metadata(tmp_path: str) -> None:
-    study = {"antares": {"caption": ""}}
+    study = StudyMetadataDTO(
+        id="a",
+        name="b",
+        version=700,
+        created=0,
+        updated=0,
+        type="RawStudy",
+        owner=OwnerInfo(name="foo"),
+        groups=[],
+        public_mode=PublicMode.FULL,
+        workspace="default",
+        managed=True,
+        archived=False,
+    )
     storage_service = Mock()
     storage_service.get_study_information.return_value = study
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -279,7 +325,7 @@ def test_study_metadata(tmp_path: str) -> None:
     client = TestClient(app)
     result = client.get("/v1/studies/1")
 
-    assert result.json() == study
+    assert StudyMetadataDTO.parse_obj(result.json()) == study
 
 
 @pytest.mark.unit_test
@@ -291,7 +337,7 @@ def test_export_files(tmp_path: Path) -> None:
     mock_storage_service.export_study.return_value = file_export
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -317,7 +363,7 @@ def test_export_params(tmp_path: Path) -> None:
     mock_storage_service.export_study.return_value = export_file
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -342,7 +388,7 @@ def test_delete_study() -> None:
     mock_storage_service = Mock()
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -363,7 +409,7 @@ def test_edit_study() -> None:
     mock_storage_service.edit_study.return_value = {}
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -387,7 +433,7 @@ def test_edit_study_fail() -> None:
     mock_storage_service = Mock()
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -410,7 +456,7 @@ def test_validate() -> None:
     mock_service.check_errors.return_value = ["Hello"]
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -438,9 +484,9 @@ def test_output_download() -> None:
     mock_service.download_outputs.return_value = output_data
 
     study_download = StudyDownloadDTO(
-        type="AREA",
+        type=StudyDownloadType.AREA,
         years=[1],
-        level="annual",
+        level=StudyDownloadLevelDTO.ANNUAL,
         filterIn="",
         filterOut="",
         filter=[],
@@ -450,7 +496,7 @@ def test_output_download() -> None:
     )
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -474,7 +520,7 @@ def test_sim_reference() -> None:
     output_id = "my-output-id"
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -488,7 +534,8 @@ def test_sim_reference() -> None:
     mock_service.set_sim_reference.assert_called_once_with(
         study_id, output_id, True, PARAMS
     )
-    assert res.json() == "OK"
+    assert res.status_code == 200
+    assert res.json() == ""
 
 
 @pytest.mark.unit_test
@@ -517,7 +564,7 @@ def test_sim_result() -> None:
     ]
     mock_service.get_study_sim_result.return_value = result_data
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -536,7 +583,7 @@ def test_study_permission_management(tmp_path: Path) -> None:
     storage_service = Mock()
 
     app = FastAPI(title=__name__)
-    build_storage(
+    build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
@@ -581,3 +628,22 @@ def test_study_permission_management(tmp_path: Path) -> None:
 
     result = client.put("/v1/studies/existing-study/public_mode/UNKNOWN")
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY.value
+
+
+@pytest.mark.unit_test
+def test_get_study_versions(tmp_path: Path) -> None:
+
+    app = FastAPI(title=__name__)
+    build_study_service(
+        app,
+        cache=Mock(),
+        task_service=Mock(),
+        storage_service=Mock(),
+        user_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
+        config=CONFIG,
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+
+    result = client.get("/v1/studies/_versions")
+    assert result.json() == list(STUDY_REFERENCE_TEMPLATES.keys())

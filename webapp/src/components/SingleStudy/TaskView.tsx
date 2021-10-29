@@ -104,7 +104,7 @@ const TaskView = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const [logModalOpen, setLogModalOpen] = useState(false);
+  const [jobIdDetail, setJobIdDetail] = useState<string>();
   const [logModalContent, setLogModalContent] = useState<string | undefined>();
 
   const openLogView = (jobId: string) => {
@@ -112,7 +112,7 @@ const TaskView = (props: PropTypes) => {
       try {
         const logData = await getStudyJobLog(jobId);
         setLogModalContent(logData);
-        setLogModalOpen(true);
+        setJobIdDetail(jobId);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failtofetchlogs'), e as AxiosError);
       }
@@ -122,10 +122,11 @@ const TaskView = (props: PropTypes) => {
   return (
     <Paper className={classes.root}>
       <LogModal
-        isOpen={logModalOpen}
+        isOpen={!!jobIdDetail}
         title={t('singlestudy:taskLog')}
+        jobId={jobIdDetail}
         content={logModalContent}
-        close={() => setLogModalOpen(false)}
+        close={() => setJobIdDetail(undefined)}
       />
       <div className={classes.header}>
         <Typography className={classes.title}>{t('singlestudy:currentTask')}</Typography>

@@ -1,12 +1,11 @@
 import csv
-import json
 import time
 from abc import abstractmethod, ABC
 from datetime import datetime
 from io import BytesIO
-from typing import List, Optional, Tuple
-from zipfile import ZipFile
 from pathlib import Path
+from typing import List, Optional, Tuple, cast
+from zipfile import ZipFile
 
 from fastapi import UploadFile
 
@@ -28,6 +27,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetDTO,
     MatrixInfoDTO,
     MatrixDataSetRelation,
+    MatrixData,
 )
 from antarest.matrixstore.repository import (
     MatrixRepository,
@@ -38,7 +38,7 @@ from antarest.matrixstore.repository import (
 
 class ISimpleMatrixService(ABC):
     @abstractmethod
-    def create(self, data: MatrixContent) -> str:
+    def create(self, data: List[List[MatrixData]]) -> str:
         raise NotImplementedError()
 
     @abstractmethod
@@ -53,38 +53,20 @@ class ISimpleMatrixService(ABC):
     def delete(self, id: str) -> None:
         raise NotImplementedError()
 
-    @staticmethod
-    def _initialize_matrix_content(data: MatrixContent) -> None:
-        if data.index is None:
-            data.index = list(range(0, len(data.data)))
-        else:
-            assert len(data.index) == len(data.data)
-        if data.columns is None:
-            if len(data.data) > 0:
-                data.columns = list(range(0, len(data.data[0])))
-            else:
-                data.columns = []
-        else:
-            if len(data.data) > 0:
-                assert len(data.columns) == len(data.data[0])
-            else:
-                assert len(data.columns) == 0
-
 
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_path: Path):
         self.matrix_path = matrix_path
         assert matrix_path.exists() and matrix_path.is_dir()
         config = Config(storage=StorageConfig(matrixstore=matrix_path))
-        self.repo_content = MatrixContentRepository(config)
+        self.matrix_content_repository = MatrixContentRepository(config)
 
-    def create(self, data: MatrixContent) -> str:
-        SimpleMatrixService._initialize_matrix_content(data)
-        matrix_hash = self.repo_content.save(data)
+    def create(self, data: List[List[MatrixData]]) -> str:
+        matrix_hash = self.matrix_content_repository.save(data)
         return matrix_hash
 
     def get(self, id: str) -> Optional[MatrixDTO]:
-        data = self.repo_content.get(id)
+        data = self.matrix_content_repository.get(id)
         if data:
             assert data.columns is not None
             assert data.index is not None
@@ -100,10 +82,10 @@ class SimpleMatrixService(ISimpleMatrixService):
             return None
 
     def exists(self, id: str) -> bool:
-        return self.repo_content.exists(id)
+        return self.matrix_content_repository.exists(id)
 
     def delete(self, id: str) -> None:
-        self.repo_content.delete(id)
+        self.matrix_content_repository.delete(id)
 
 
 class MatrixService(ISimpleMatrixService):
@@ -111,12 +93,12 @@ class MatrixService(ISimpleMatrixService):
         self,
         repo: MatrixRepository,
         repo_dataset: MatrixDataSetRepository,
-        content: MatrixContentRepository,  # TODO: refactor variable name
+        matrix_content_repository: MatrixContentRepository,
         user_service: LoginService,
     ):
         self.repo = repo
         self.repo_dataset = repo_dataset
-        self.repo_content = content
+        self.matrix_content_repository = matrix_content_repository
         self.user_service = user_service
 
     @staticmethod
@@ -146,16 +128,15 @@ class MatrixService(ISimpleMatrixService):
 
         return matrix, content
 
-    def create(self, data: MatrixContent) -> str:
-        MatrixService._initialize_matrix_content(data)
-        matrix_hash = self.repo_content.save(data)
+    def create(self, data: List[List[MatrixData]]) -> str:
+        matrix_hash = self.matrix_content_repository.save(data)
         with db():
             if not self.repo.get(matrix_hash):
                 self.repo.save(
                     Matrix(
                         id=matrix_hash,
-                        width=len(data.columns or []),
-                        height=len(data.index or []),
+                        width=len(data[0] if len(data) > 0 else []),
+                        height=len(data),
                         created_at=datetime.utcnow(),
                     )
                 )
@@ -190,22 +171,19 @@ class MatrixService(ISimpleMatrixService):
     def file_importation(self, file: bytes, is_json: bool = False) -> str:
         str_file = str(file, "UTF-8")
         if is_json:
-            return self.create(MatrixContent.parse_raw(file))
+            return self.create(MatrixContent.parse_raw(file).data)
         else:
-            data: List[List[float]] = []
+            data: List[List[MatrixData]] = []
             reader = csv.reader(str_file.split("\n"), delimiter="\t")
 
             columns: List[int] = []
             for row in reader:
                 if row:
-                    data.append([float(elm) for elm in row])
+                    data.append([MatrixData(elm) for elm in row])
                 if len(columns) == 0:
                     columns = list(range(0, len(row)))
 
-            matrix = MatrixContent(
-                data=data,
-            )
-            return self.create(matrix)
+            return self.create(data)
 
     def get_dataset(
         self,
@@ -333,19 +311,21 @@ class MatrixService(ISimpleMatrixService):
         return id
 
     def get(self, id: str) -> Optional[MatrixDTO]:
-        data = self.repo_content.get(id)
+        matrix_content = self.matrix_content_repository.get(id)
         matrix = self.repo.get(id)
 
-        if data and matrix:
-            return MatrixService._to_dto(matrix, data)
+        if matrix_content and matrix:
+            return MatrixService._to_dto(matrix, matrix_content)
         else:
             return None
 
     def exists(self, id: str) -> bool:
-        return self.repo_content.exists(id) and self.repo.exists(id)
+        return self.matrix_content_repository.exists(id) and self.repo.exists(
+            id
+        )
 
     def delete(self, id: str) -> None:
-        self.repo_content.delete(id)
+        self.matrix_content_repository.delete(id)
         self.repo.delete(id)
 
     @staticmethod

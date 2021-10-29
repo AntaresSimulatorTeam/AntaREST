@@ -1,7 +1,8 @@
+import csv
 import hashlib
 import json
 import logging
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from sqlalchemy import exists, and_  # type: ignore
 from sqlalchemy.orm import aliased  # type: ignore
@@ -12,6 +13,7 @@ from antarest.matrixstore.model import (
     Matrix,
     MatrixContent,
     MatrixDataSet,
+    MatrixData,
 )
 
 logger = logging.getLogger(__name__)
@@ -107,29 +109,61 @@ class MatrixContentRepository:
         self.bucket.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
+    def initialize_matrix_content(matrix_content: MatrixContent) -> None:
+        if matrix_content.index is None:
+            matrix_content.index = list(range(0, len(matrix_content.data)))
+        else:
+            assert len(matrix_content.index) == len(matrix_content.data)
+        if matrix_content.columns is None:
+            if len(matrix_content.data) > 0:
+                matrix_content.columns = list(
+                    range(0, len(matrix_content.data[0]))
+                )
+            else:
+                matrix_content.columns = []
+        else:
+            if len(matrix_content.data) > 0:
+                assert len(matrix_content.columns) == len(
+                    matrix_content.data[0]
+                )
+            else:
+                assert len(matrix_content.columns) == 0
+
+    @staticmethod
     def _compute_hash(data: str) -> str:
         return hashlib.sha256(data.encode()).hexdigest()
 
+    def _write_matrix_data(self, h: str, data: List[List[MatrixData]]) -> None:
+        file_path = self.bucket / f"{h}.tsv"
+        with open(file_path, "w", newline="") as fd:
+            tsv_output = csv.writer(fd, delimiter="\t")
+            tsv_output.writerows(data)
+
     def get(self, id: str) -> Optional[MatrixContent]:
-        file = self.bucket / id
+        file = self.bucket / f"{id}.tsv"
         if not file.exists():
             return None
 
-        data = json.load(open(file))
-        return MatrixContent.parse_obj(data)
+        tsv_data = csv.reader(open(file, newline=""), delimiter="\t")
+        data = [[MatrixData(s) for s in l] for l in list(tsv_data)]
+        matrix_content = MatrixContent(data=data)
+        self.initialize_matrix_content(matrix_content)
+
+        return matrix_content
 
     def exists(self, id: str) -> bool:
-        file = self.bucket / id
+        file = self.bucket / f"{id}.tsv"
         return file.exists()
 
-    def save(self, content: MatrixContent) -> str:
-        stringify = content.json()
+    def save(self, content: List[List[MatrixData]]) -> str:
+        stringify = json.dumps(content)
         h = MatrixContentRepository._compute_hash(stringify)
-        if not (self.bucket / h).exists():
-            (self.bucket / h).write_text(stringify)
+
+        if not (self.bucket / f"{h}.tsv").exists():
+            self._write_matrix_data(h, content)
         return h
 
     def delete(self, id: str) -> None:
-        file = self.bucket / id
-        if file.exists():
-            file.unlink()
+        matrix_file = self.bucket / f"{id}.tsv"
+        if matrix_file.exists():
+            matrix_file.unlink()

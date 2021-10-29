@@ -5,6 +5,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 import pytest
 from fastapi import UploadFile
+from sqlalchemy import create_engine
 
 from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.requests import (
@@ -12,6 +13,8 @@ from antarest.core.requests import (
     UserHasNotPermissionError,
 )
 from antarest.core.roles import RoleType
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.dbmodel import Base
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
@@ -28,6 +31,14 @@ from antarest.matrixstore.service import MatrixService
 
 
 def test_save():
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+
     # Init Mock
     repo_content = Mock()
     repo_content.save.return_value = "my-id"
@@ -35,11 +46,7 @@ def test_save():
     repo = Mock()
 
     # Input
-    dto = MatrixContent(
-        data=[[1, 2]],
-        index=["1"],
-        columns=["a", "b"],
-    )
+    dto = [[1, 2]]
 
     # Expected
     matrix = Matrix(
@@ -49,15 +56,13 @@ def test_save():
         created_at=ANY,
     )
 
-    content = MatrixContent(index=["1"], columns=["a", "b"], data=[[1, 2]])
-
     repo.get.return_value = None
 
     # Test
     service = MatrixService(
         repo=repo,
         repo_dataset=Mock(),
-        content=repo_content,
+        matrix_content_repository=repo_content,
         user_service=Mock(),
     )
     id = service.create(dto)
@@ -65,7 +70,7 @@ def test_save():
     # Verify
     assert id == "my-id"
     repo.save.assert_called_once_with(matrix)
-    repo_content.save.assert_called_once_with(content)
+    repo_content.save.assert_called_once_with(dto)
 
 
 def test_get():
@@ -317,11 +322,11 @@ def test_import():
     service = MatrixService(
         repo=repo,
         repo_dataset=Mock(),
-        content=repo_content,
+        matrix_content_repository=repo_content,
         user_service=Mock(),
     )
     service.repo.get.return_value = None
-    service.repo_content.save.return_value = id
+    service.matrix_content_repository.save.return_value = id
     service.repo.save.return_value = exp_matrix
 
     # CSV importation

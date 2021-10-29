@@ -9,6 +9,7 @@ from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
+from antarest.login.ldap import LdapService
 from antarest.login.model import (
     User,
     Password,
@@ -257,8 +258,11 @@ def test_get_group_info():
     groups.get.return_value = group
 
     users = Mock()
-    user = User(id=3)
+    user = User(id=3, name="John")
     users.get.return_value = user
+
+    ldap = Mock(spec=LdapService)
+    ldap.get.return_value = UserLdap(id=4, name="Jane")
 
     roles = Mock()
     roles.get_all_by_group.return_value = [
@@ -273,7 +277,7 @@ def test_get_group_info():
         bot_repo=Mock(),
         group_repo=groups,
         role_repo=roles,
-        ldap=Mock(),
+        ldap=ldap,
         event_bus=Mock(),
     )
 
@@ -377,7 +381,7 @@ def test_get_bot():
 
 def test_get_bot_info():
     bots = Mock()
-    bot = Bot(name="bot", owner=3)
+    bot = Bot(id=4, name="bot", owner=3, is_author=False)
     bots.get.return_value = bot
 
     roles = Mock()

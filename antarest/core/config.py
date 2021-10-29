@@ -25,7 +25,7 @@ class ExternalAuthConfig:
     def from_dict(data: JSON) -> "ExternalAuthConfig":
         return ExternalAuthConfig(
             url=data.get("url", None),
-            default_group_role=RoleType.from_dict(
+            default_group_role=RoleType(
                 data.get("default_group_role", RoleType.READER.value)
             ),
         )

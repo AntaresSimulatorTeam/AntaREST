@@ -35,7 +35,7 @@ test_dir: Path = Path(__file__).parent
 def generate_study_with_server(
     client: TestClient,
     name: str,
-    study_version: int,
+    study_version: str,
     commands: List[CommandDTO],
     matrices_dir: Path,
 ) -> Tuple[GenerationResultInfoDTO, str]:
@@ -70,7 +70,7 @@ def test_variant_manager(app: FastAPI, tmp_path: str):
     matrix_dir = Path(tmp_path) / "empty_matrix_store"
     matrix_dir.mkdir(parents=True, exist_ok=True)
     res, study_id = generate_study_with_server(
-        client, "test", 720, commands, matrix_dir
+        client, "test", "720", commands, matrix_dir
     )
     assert res is not None and res.success
 

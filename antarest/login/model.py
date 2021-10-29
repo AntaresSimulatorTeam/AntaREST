@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Any, List, Optional
 
 import bcrypt
-from dataclasses_json import DataClassJsonMixin  # type: ignore
 from pydantic.main import BaseModel
 from sqlalchemy import Column, Integer, Sequence, String, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
@@ -17,6 +16,75 @@ from antarest.core.roles import RoleType
 class UserInfo(BaseModel):
     id: int
     name: str
+
+
+class BotRoleCreateDTO(BaseModel):
+    group: str
+    role: int
+
+
+class BotCreateDTO(BaseModel):
+    name: str
+    roles: List[BotRoleCreateDTO]
+    is_author: bool = True
+
+
+class UserCreateDTO(BaseModel):
+    name: str
+    password: str
+
+
+class GroupDTO(BaseModel):
+    id: Optional[str] = None
+    name: str
+
+
+class RoleCreationDTO(BaseModel):
+    type: RoleType
+    group_id: str
+    identity_id: int
+
+
+class RoleDTO(BaseModel):
+    group_id: Optional[str]
+    group_name: str
+    identity_id: int
+    type: RoleType
+
+
+class IdentityDTO(BaseModel):
+    id: int
+    name: str
+    roles: List[RoleDTO]
+
+
+class RoleDetailDTO(BaseModel):
+    group: GroupDTO
+    identity: UserInfo
+    type: RoleType
+
+
+class BotIdentityDTO(BaseModel):
+    id: int
+    name: str
+    isAuthor: bool
+    roles: List[RoleDTO]
+
+
+class BotDTO(UserInfo):
+    owner: int
+    is_author: bool
+
+
+class UserRoleDTO(BaseModel):
+    id: int
+    name: str
+    role: RoleType
+
+
+class UserGroup(BaseModel):
+    group: GroupDTO
+    users: List[UserRoleDTO]
 
 
 class Password:
@@ -56,15 +124,8 @@ class Identity(Base):  # type: ignore
     name = Column(String(255))
     type = Column(String(50))
 
-    @staticmethod
-    def from_dict(data: JSON) -> "Identity":
-        return Identity(
-            id=data["id"],
-            name=data["name"],
-        )
-
-    def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name}
+    def to_dto(self) -> UserInfo:
+        return UserInfo(id=self.id, name=self.name)
 
     __mapper_args__ = {
         "polymorphic_identity": "identities",
@@ -104,10 +165,6 @@ class User(Identity):
         self._pwd = pwd.get()
 
     @staticmethod
-    def from_dict(data: JSON) -> "User":
-        return User(id=data.get("id"), name=data["name"])
-
-    @staticmethod
     def from_dto(data: UserInfo) -> "User":
         return User(id=data.id, name=data.name)
 
@@ -137,10 +194,6 @@ class UserLdap(Identity):
     __mapper_args__ = {
         "polymorphic_identity": "users_ldap",
     }
-
-    @staticmethod
-    def from_dict(data: JSON) -> "UserLdap":
-        return UserLdap(id=data.get("id"), name=data["name"])
 
     def __eq__(self, o: Any) -> bool:
         if not isinstance(o, UserLdap):
@@ -172,48 +225,18 @@ class Bot(Identity):
         "polymorphic_identity": "bots",
     }
 
-    @staticmethod
-    def from_dict(data: JSON) -> "Bot":
-        return Bot(
-            id=data["id"],
-            name=data["name"],
-            owner=data["owner"],
-            is_author=data["isAuthor"],
+    def to_dto(self) -> BotDTO:
+        return BotDTO(
+            id=self.id,
+            name=self.name,
+            owner=self.owner,
+            is_author=self.is_author,
         )
-
-    def to_dict(self) -> JSON:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "owner": self.owner,
-            "isAuthor": self.is_author,
-        }
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Bot):
             return False
-        return self.to_dict() == other.to_dict()
-
-
-class BotRoleCreateDTO(BaseModel):
-    group: str
-    role: int
-
-
-class BotCreateDTO(BaseModel):
-    name: str
-    roles: List[BotRoleCreateDTO]
-    is_author: bool = True
-
-
-class UserCreateDTO(BaseModel):
-    name: str
-    password: str
-
-
-class GroupDTO(BaseModel):
-    id: Optional[str] = None
-    name: str
+        return self.to_dto().dict() == other.to_dto().dict()
 
 
 @dataclass
@@ -232,63 +255,14 @@ class Group(Base):  # type: ignore
     )
     name = Column(String(255))
 
-    @staticmethod
-    def from_dict(data: JSON) -> "Group":
-        return Group(
-            id=data.get("id"),
-            name=data["name"],
-        )
-
-    def to_dict(self) -> JSON:
-        return {"id": self.id, "name": self.name}
+    def to_dto(self) -> GroupDTO:
+        return GroupDTO(id=self.id, name=self.name)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Group):
             return False
 
         return bool(self.id == other.id and self.name == other.name)
-
-
-class RoleCreationDTO(BaseModel):
-    type: RoleType
-    group_id: str
-    identity_id: int
-
-
-@dataclass
-class RoleDTO(DataClassJsonMixin):  # type: ignore
-    group_id: str
-    group_name: str
-    identity_id: int
-    type: RoleType
-
-
-@dataclass
-class IdentityDTO(DataClassJsonMixin):  # type: ignore
-    id: int
-    name: str
-    roles: List[RoleDTO]
-
-
-@dataclass
-class BotIdentityDTO(DataClassJsonMixin):  # type: ignore
-    id: int
-    name: str
-    isAuthor: bool
-    roles: List[RoleDTO]
-
-
-@dataclass
-class UserRoleDTO(DataClassJsonMixin):  # type: ignore
-    id: int
-    name: str
-    role: RoleType
-
-
-@dataclass
-class UserGroup(DataClassJsonMixin):  # type: ignore
-    group: GroupDTO
-    users: List[UserRoleDTO]
 
 
 @dataclass
@@ -307,17 +281,15 @@ class Role(Base):  # type: ignore
     identity = relationship("Identity")
     group = relationship("Group")
 
-    @staticmethod
-    def from_dict(data: JSON) -> "Role":
-        return Role(
-            type=RoleType.from_dict(data["type"]),
-            identity=User.from_dict(data["user"]),
-            group=Group.from_dict(data["group"]),
+    def to_dto(self) -> RoleDetailDTO:
+        return RoleDetailDTO(
+            type=self.type,
+            group=self.group.to_dto(),
+            identity=self.identity.to_dto(),
         )
 
-    def to_dict(self) -> JSON:
-        return {
-            "type": self.type.to_dict(),
-            "user": self.identity.to_dict(),
-            "group": self.group.to_dict(),
-        }
+
+class CredentialsDTO(BaseModel):
+    user: int
+    access_token: str
+    refresh_token: str

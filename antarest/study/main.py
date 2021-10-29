@@ -15,10 +15,10 @@ from antarest.study.repository import (
     StudyMetadataRepository,
 )
 from antarest.study.service import StudyService
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
 )
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -39,7 +39,7 @@ from antarest.study.web.studies_blueprint import create_study_routes
 from antarest.study.web.variant_blueprint import create_study_variant_routes
 
 
-def build_storage(
+def build_study_service(
     application: FastAPI,
     config: Config,
     user_service: LoginService,
@@ -135,7 +135,6 @@ def build_storage(
     )
     application.include_router(
         create_study_variant_routes(
-            study_service=storage_service,
             variant_study_service=variant_study_service,
             config=config,
         )

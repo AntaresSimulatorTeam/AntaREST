@@ -112,7 +112,7 @@ const InformationModal = (props: PropsWithChildren<PropTypes>) => {
               color="primary"
               onClick={onButtonClick}
             >
-              {buttonName}
+              {buttonName || 'OK'}
             </Button>
           </div>
         </Paper>
