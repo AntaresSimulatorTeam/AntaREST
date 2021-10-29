@@ -266,24 +266,8 @@ class StudySimResultDTO(BaseModel):
 
 class StudyDownloadType(enum.Enum):
     LINK = "LINK"
-    CLUSTER = "CLUSTER"
+    DISTRICT = "DISTRICT"
     AREA = "AREA"
-
-    @staticmethod
-    def from_dict(value: str) -> "StudyDownloadType":
-        mapping = {
-            "LINK": StudyDownloadType.LINK,
-            "CLUSTER": StudyDownloadType.CLUSTER,
-            "AREA": StudyDownloadType.AREA,
-        }
-
-        if value in mapping:
-            return mapping[value]
-        else:
-            raise ValueError(f"any StudyDownloadType for value {value}")
-
-    def to_dict(self) -> str:
-        return str(self.value)
 
 
 class StudyDownloadLevelDTO(enum.Enum):
@@ -293,33 +277,15 @@ class StudyDownloadLevelDTO(enum.Enum):
     DAILY = "daily"
     HOURLY = "hourly"
 
-    @staticmethod
-    def from_dict(value: str) -> "StudyDownloadLevelDTO":
-        mapping = {
-            "annual": StudyDownloadLevelDTO.ANNUAL,
-            "monthly": StudyDownloadLevelDTO.MONTHLY,
-            "weekly": StudyDownloadLevelDTO.WEEKLY,
-            "daily": StudyDownloadLevelDTO.DAILY,
-            "hourly": StudyDownloadLevelDTO.HOURLY,
-        }
-
-        if value in mapping:
-            return mapping[value]
-        else:
-            raise ValueError(f"any StudyDownloadLevelDTO for value {value}")
-
-    def to_dict(self) -> str:
-        return str(self.value)
-
 
 class StudyDownloadDTO(BaseModel):
     """
     DTO used to download outputs
     """
 
-    type: str
+    type: StudyDownloadType
     years: Optional[List[int]]
-    level: str
+    level: StudyDownloadLevelDTO
     filterIn: Optional[str]
     filterOut: Optional[str]
     filter: Optional[List[str]]

@@ -34,6 +34,8 @@ from antarest.study.model import (
     StudySimResultDTO,
     StudySimSettingsDTO,
     STUDY_REFERENCE_TEMPLATES,
+    StudyDownloadType,
+    StudyDownloadLevelDTO,
 )
 
 ADMIN = JWTUser(
@@ -439,9 +441,9 @@ def test_output_download() -> None:
     mock_service.download_outputs.return_value = output_data
 
     study_download = StudyDownloadDTO(
-        type="AREA",
+        type=StudyDownloadType.AREA,
         years=[1],
-        level="annual",
+        level=StudyDownloadLevelDTO.ANNUAL,
         filterIn="",
         filterOut="",
         filter=[],

@@ -88,17 +88,16 @@ class StudyDownloader:
         data: StudyDownloadDTO,
     ) -> None:
 
-        if StudyDownloadLevelDTO.from_dict(data.level):
-            files_matcher = (
-                [f"values-{str(data.level)}", f"details-{str(data.level)}"]
-                if data.includeClusters
-                else [f"values-{str(data.level)}"]
+        files_matcher = (
+            [f"values-{data.level.value}", f"details-{data.level.value}"]
+            if data.includeClusters
+            else [f"values-{data.level.value}"]
+        )
+        for elm in files_matcher:
+            tmp_url = f"{url}/{elm}"
+            StudyDownloader.read_columns(
+                matrix, prefix, year, area_name, study, tmp_url, data
             )
-            for elm in files_matcher:
-                tmp_url = f"{url}/{elm}"
-                StudyDownloader.read_columns(
-                    matrix, prefix, year, area_name, study, tmp_url, data
-                )
 
     @staticmethod
     def apply_type_filters(
@@ -115,9 +114,9 @@ class StudyDownloader:
     ) -> None:
 
         if first_element_type_condition:
-            if StudyDownloadType.from_dict(
-                data.type
-            ) == StudyDownloadType.LINK and isinstance(type_elm[elm], Area):
+            if data.type == StudyDownloadType.LINK and isinstance(
+                type_elm[elm], Area
+            ):
                 if type_elm[elm].links:
                     for out_link in type_elm[elm].links.keys():
                         if second_element_type_condition(out_link):
@@ -161,8 +160,7 @@ class StudyDownloader:
         for elm in type_elm.keys():
             filtered_url = (
                 f"{url}/@ {elm}"
-                if StudyDownloadType.from_dict(data.type)
-                == StudyDownloadType.CLUSTER
+                if data.type == StudyDownloadType.DISTRICT
                 else f"{url}/{elm}"
             )
 
@@ -249,12 +247,11 @@ class StudyDownloader:
         url: str,
         data: StudyDownloadDTO,
     ) -> None:
-        data_type = StudyDownloadType.from_dict(data.type)
-        if data_type == StudyDownloadType.AREA:
+        if data.type == StudyDownloadType.AREA:
             StudyDownloader.select_filter(
                 matrix, prefix, year, config.areas, study, f"{url}/areas", data
             )
-        elif data_type == StudyDownloadType.CLUSTER:
+        elif data.type == StudyDownloadType.DISTRICT:
             StudyDownloader.select_filter(
                 matrix,
                 prefix,
