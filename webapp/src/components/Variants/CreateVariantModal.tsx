@@ -42,11 +42,15 @@ const CreateVariantModal = (props: PropTypes) => {
   const [name, setName] = useState<string>('');
 
   const onSave = async () => {
+    if (!name) {
+      enqueueSnackbar(t('variants:nameEmptyError'), { variant: 'error' });
+      return;
+    }
     try {
       const newId = await createVariant(parentId, name);
       setName('');
       onClose();
-      history.push(`/study/${newId}/variants/edition`);
+      history.push(`/study/${newId}`);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('variants:onVariantCreationError'), e as AxiosError);
     }
