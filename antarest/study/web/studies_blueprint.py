@@ -2,7 +2,7 @@ import io
 import logging
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict
 
 from fastapi import APIRouter, File, Depends, Request
 from fastapi.params import Param
@@ -22,6 +22,9 @@ from antarest.study.model import (
     PublicMode,
     StudyDownloadDTO,
     StudyMetadataPatchDTO,
+    StudySimResultDTO,
+    StudyMetadataDTO,
+    MatrixAggregationResult,
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.study_download_utils import StudyDownloader
@@ -45,7 +48,12 @@ def create_study_routes(
     auth = Auth(config)
     ftm = FileTransferManager.get_instance(config)
 
-    @bp.get("/studies", tags=[APITag.study_management], summary="Get Studies")
+    @bp.get(
+        "/studies",
+        tags=[APITag.study_management],
+        summary="Get Studies",
+        response_model=Dict[str, StudyMetadataDTO],
+    )
     def get_studies(
         summary: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -59,9 +67,10 @@ def create_study_routes(
 
     @bp.post(
         "/studies/_import",
-        status_code=HTTPStatus.CREATED.value,
+        status_code=HTTPStatus.CREATED,
         tags=[APITag.study_management],
         summary="Import Study",
+        response_model=str,
     )
     def import_study(
         study: bytes = File(...),
@@ -80,9 +89,10 @@ def create_study_routes(
 
     @bp.post(
         "/studies/{uuid}/copy",
-        status_code=HTTPStatus.CREATED.value,
+        status_code=HTTPStatus.CREATED,
         tags=[APITag.study_management],
         summary="Copy Study",
+        response_model=str,
     )
     def copy_study(
         uuid: str,
@@ -114,9 +124,10 @@ def create_study_routes(
 
     @bp.post(
         "/studies",
-        status_code=HTTPStatus.CREATED.value,
+        status_code=HTTPStatus.CREATED,
         tags=[APITag.study_management],
         summary="Create a new empty study",
+        response_model=str,
     )
     def create_study(
         name: str,
@@ -142,6 +153,14 @@ def create_study_routes(
         "/studies/{uuid}/export",
         tags=[APITag.study_management],
         summary="Export Study",
+        response_class=FileResponse,
+        responses={
+            200: {
+                "content": {
+                    "application/zip": {},
+                },
+            },
+        },
     )
     def export_study(
         uuid: str,
@@ -167,7 +186,7 @@ def create_study_routes(
 
     @bp.delete(
         "/studies/{uuid}",
-        status_code=HTTPStatus.OK.value,
+        status_code=HTTPStatus.OK,
         tags=[APITag.study_management],
         summary="Delete Study",
     )
@@ -184,9 +203,10 @@ def create_study_routes(
 
     @bp.post(
         "/studies/{uuid}/output",
-        status_code=HTTPStatus.ACCEPTED.value,
+        status_code=HTTPStatus.ACCEPTED,
         tags=[APITag.study_outputs],
         summary="Import Output",
+        response_model=str,
     )
     def import_output(
         uuid: str,
@@ -306,6 +326,7 @@ def create_study_routes(
         "/studies/{uuid}",
         tags=[APITag.study_management],
         summary="Get Study information",
+        response_model=StudyMetadataDTO,
     )
     def get_study_metadata(
         uuid: str,
@@ -322,6 +343,7 @@ def create_study_routes(
         "/studies/{uuid}",
         tags=[APITag.study_management],
         summary="Update Study information",
+        response_model=StudyMetadataDTO,
     )
     def update_study_metadata(
         uuid: str,
@@ -351,6 +373,7 @@ def create_study_routes(
                 },
             },
         },
+        response_model=MatrixAggregationResult,
     )
     def output_download(
         study_id: str,
@@ -386,6 +409,7 @@ def create_study_routes(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
         tags=[APITag.study_outputs],
+        response_model=List[StudySimResultDTO],
     )
     def sim_result(
         study_id: str,
@@ -419,7 +443,7 @@ def create_study_routes(
         output_id = sanitize_uuid(output_id)
         params = RequestParameters(user=current_user)
         storage_service.set_sim_reference(study_id, output_id, status, params)
-        return "OK"
+        return ""
 
     @bp.put(
         "/studies/{study_id}/archive",

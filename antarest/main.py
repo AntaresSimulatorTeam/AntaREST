@@ -21,6 +21,7 @@ from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.persistence import upgrade_db
+from antarest.core.swagger import customize_openapi
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import (
@@ -251,6 +252,7 @@ def fastapi_app(
     services["user"] = user_service
     services["cache"] = cache
 
+    customize_openapi(application)
     return application, services
 
 

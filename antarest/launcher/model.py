@@ -1,7 +1,8 @@
 import enum
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional, List
 
+from pydantic import BaseModel
 from sqlalchemy import Integer, Column, Enum, String, DateTime  # type: ignore
 
 from antarest.core.custom_types import JSON
@@ -21,6 +22,18 @@ class JobStatus(enum.Enum):
     RUNNING = "running"
 
 
+class JobResultDTO(BaseModel):
+    id: str
+    study_id: str
+    launcher: str
+    status: JobStatus
+    creation_date: str
+    completion_date: Optional[str]
+    msg: Optional[str]
+    output_id: Optional[str]
+    exit_code: Optional[int]
+
+
 class JobResult(DTO, Base):  # type: ignore
     __tablename__ = "job_result"
     id = Column(String(36), primary_key=True)
@@ -33,18 +46,21 @@ class JobResult(DTO, Base):  # type: ignore
     output_id = Column(String())
     exit_code = Column(Integer)
 
+    def to_dto(self) -> JobResultDTO:
+        return JobResultDTO(
+            id=self.id,
+            study_id=self.study_id,
+            launcher=self.launcher,
+            status=self.job_status,
+            creation_date=str(self.creation_date),
+            completion_date=str(self.completion_date),
+            msg=self.msg,
+            output_id=self.output_id,
+            exit_code=self.exit_code,
+        )
+
     def to_dict(self) -> JSON:
-        return {
-            "id": self.id,
-            "study_id": self.study_id,
-            "launcher": self.launcher,
-            "status": str(self.job_status),
-            "creation_date": str(self.creation_date),
-            "completion_date": str(self.completion_date),
-            "msg": self.msg,
-            "output_id": self.output_id,
-            "exit_code": self.exit_code,
-        }
+        return self.to_dto().dict()
 
     def __eq__(self, o: Any) -> bool:
         if not isinstance(o, JobResult):
@@ -56,3 +72,11 @@ class JobResult(DTO, Base):  # type: ignore
 
     def __repr__(self) -> str:
         return self.__str__()
+
+
+class JobCreationDTO(BaseModel):
+    job_id: str
+
+
+class LauncherEnginesDTO(BaseModel):
+    engines: List[str]

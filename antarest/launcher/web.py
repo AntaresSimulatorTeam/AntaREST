@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -8,7 +8,13 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
-from antarest.launcher.model import LogType
+from antarest.launcher.model import (
+    LogType,
+    JobCreationDTO,
+    JobResult,
+    JobResultDTO,
+    LauncherEnginesDTO,
+)
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
 
@@ -24,6 +30,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/launcher/run/{study_id}",
         tags=[APITag.launcher],
         summary="Run study",
+        response_model=JobCreationDTO,
     )
     def run(
         study_id: str,
@@ -38,9 +45,16 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         )
 
         params = RequestParameters(user=current_user)
-        return {"job_id": service.run_study(study_id, params, selected_engine)}
+        return JobCreationDTO(
+            job_id=service.run_study(study_id, params, selected_engine)
+        )
 
-    @bp.get("/launcher/jobs", tags=[APITag.launcher], summary="Retrieve jobs")
+    @bp.get(
+        "/launcher/jobs",
+        tags=[APITag.launcher],
+        summary="Retrieve jobs",
+        response_model=List[JobResultDTO],
+    )
     def get_job(
         study: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -50,12 +64,13 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return [job.to_dict() for job in service.get_jobs(study, params)]
+        return [job.to_dto() for job in service.get_jobs(study, params)]
 
     @bp.get(
         "/launcher/jobs/{job_id}",
         tags=[APITag.launcher],
         summary="Retrieve job info from job id",
+        response_model=JobResultDTO,
     )
     def get_result(
         job_id: UUID, current_user: JWTUser = Depends(auth.get_current_user)
@@ -64,7 +79,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
             f"Fetching job info {job_id}", extra={"user": current_user.id}
         )
         params = RequestParameters(user=current_user)
-        return service.get_result(job_id, params).to_dict()
+        return service.get_result(job_id, params).to_dto()
 
     @bp.get(
         "/launcher/jobs/{job_id}/logs",
@@ -86,15 +101,17 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/launcher/engines",
         tags=[APITag.launcher],
         summary="Retrieve available engines",
+        response_model=LauncherEnginesDTO,
     )
     def get_engines() -> Any:
         logger.info(f"Listing launch engines")
-        return {"engines": service.get_launchers()}
+        return LauncherEnginesDTO(engines=service.get_launchers())
 
     @bp.get(
         "/launcher/_versions",
         tags=[APITag.launcher],
         summary="Get list of supported study version for all configures launchers",
+        response_model=Dict[str, List[str]],
     )
     def get_versions(
         current_user: JWTUser = Depends(auth.get_current_user),

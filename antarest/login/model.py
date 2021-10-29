@@ -321,3 +321,9 @@ class Role(Base):  # type: ignore
             "user": self.identity.to_dict(),
             "group": self.group.to_dict(),
         }
+
+
+class CredentialsDTO(BaseModel):
+    user: int
+    access_token: str
+    refresh_token: str

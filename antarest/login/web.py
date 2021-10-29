@@ -26,6 +26,7 @@ from antarest.login.model import (
     RoleCreationDTO,
     UserInfo,
     GroupDTO,
+    CredentialsDTO,
 )
 from antarest.login.service import LoginService
 
@@ -54,24 +55,29 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
 
     def generate_tokens(
         user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timedelta] = None
-    ) -> Any:
+    ) -> CredentialsDTO:
         access_token = jwt_manager.create_access_token(
             subject=json.dumps(user.to_dict()), expires_time=expire
         )
         refresh_token = jwt_manager.create_refresh_token(
             subject=json.dumps(user.to_dict())
         )
-        return {
-            "user": user.id,
-            "access_token": access_token.decode()
+        return CredentialsDTO(
+            user=user.id,
+            access_token=access_token.decode()
             if isinstance(access_token, bytes)
             else access_token,
-            "refresh_token": refresh_token.decode()
+            refresh_token=refresh_token.decode()
             if isinstance(refresh_token, bytes)
             else refresh_token,
-        }
+        )
 
-    @bp.post("/login", tags=[APITag.users], summary="Login")
+    @bp.post(
+        "/login",
+        tags=[APITag.users],
+        summary="Login",
+        response_model=CredentialsDTO,
+    )
     def login(
         credentials: UserCredentials,
         jwt_manager: AuthJWT = Depends(),
@@ -88,7 +94,12 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
 
         return resp
 
-    @bp.post("/refresh", tags=[APITag.users], summary="Refresh access token")
+    @bp.post(
+        "/refresh",
+        tags=[APITag.users],
+        summary="Refresh access token",
+        response_model=CredentialsDTO,
+    )
     def refresh(jwt_manager: AuthJWT = Depends()) -> Any:
         jwt_manager.jwt_refresh_token_required()
         identity = json.loads(jwt_manager.get_jwt_subject())
@@ -306,7 +317,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         tokens = generate_tokens(
             jwt, jwt_manager, expire=timedelta(days=368 * 200)
         )
-        return tokens["access_token"]
+        return tokens.access_token
 
     @bp.get("/bots/{id}", tags=[APITag.users])
     def get_bot(
