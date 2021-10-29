@@ -1,3 +1,4 @@
+from typing import Dict, Any, cast
 from unittest.mock import Mock, call
 from uuid import uuid4
 
@@ -10,7 +11,7 @@ from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.launcher.main import build_launcher
-from antarest.launcher.model import JobResult, JobStatus
+from antarest.launcher.model import JobResult, JobStatus, JobResultDTO
 
 ADMIN = JWTUser(
     id=1,
@@ -55,6 +56,7 @@ def test_result() -> None:
     job = uuid4()
     result = JobResult(
         id=str(job),
+        study_id=str(uuid4()),
         job_status=JobStatus.SUCCESS,
         msg="hello world",
         exit_code=0,
@@ -68,7 +70,7 @@ def test_result() -> None:
     res = client.get(f"/v1/launcher/jobs/{job}")
 
     assert res.status_code == 200
-    assert res.json() == result.to_dict()
+    assert JobResultDTO.parse_obj(res.json()) == result.to_dto()
     service.get_result.assert_called_once_with(
         job, RequestParameters(DEFAULT_ADMIN_USER)
     )
@@ -93,11 +95,11 @@ def test_jobs() -> None:
     client = TestClient(app)
     res = client.get(f"/v1/launcher/jobs?study={str(study_id)}")
     assert res.status_code == 200
-    assert res.json() == [result.to_dict()]
+    assert [JobResultDTO.parse_obj(j) for j in res.json()] == [result.to_dto()]
 
     res = client.get(f"/v1/launcher/jobs")
     assert res.status_code == 200
-    assert res.json() == [result.to_dict()]
+    assert [JobResultDTO.parse_obj(j) for j in res.json()] == [result.to_dto()]
     service.get_jobs.assert_has_calls(
         [
             call(str(study_id), RequestParameters(DEFAULT_ADMIN_USER)),

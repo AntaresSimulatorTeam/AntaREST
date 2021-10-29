@@ -255,7 +255,7 @@ def test_list_studies(tmp_path: str) -> None:
             public_mode=PublicMode.FULL,
             workspace="default",
             managed=True,
-            archived=False
+            archived=False,
         ),
         "study2": StudyMetadataDTO(
             id="b",
@@ -269,8 +269,8 @@ def test_list_studies(tmp_path: str) -> None:
             public_mode=PublicMode.FULL,
             workspace="default",
             managed=True,
-            archived=False
-        )
+            archived=False,
+        ),
     }
 
     storage_service = Mock()
@@ -289,7 +289,9 @@ def test_list_studies(tmp_path: str) -> None:
     client = TestClient(app)
     result = client.get("/v1/studies")
 
-    assert result.json() == studies
+    assert {
+        k: StudyMetadataDTO.parse_obj(v) for k, v in result.json().items()
+    } == studies
 
 
 def test_study_metadata(tmp_path: str) -> None:
@@ -305,7 +307,7 @@ def test_study_metadata(tmp_path: str) -> None:
         public_mode=PublicMode.FULL,
         workspace="default",
         managed=True,
-        archived=False
+        archived=False,
     )
     storage_service = Mock()
     storage_service.get_study_information.return_value = study
@@ -323,7 +325,7 @@ def test_study_metadata(tmp_path: str) -> None:
     client = TestClient(app)
     result = client.get("/v1/studies/1")
 
-    assert result.json() == study
+    assert StudyMetadataDTO.parse_obj(result.json()) == study
 
 
 @pytest.mark.unit_test

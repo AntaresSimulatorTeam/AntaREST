@@ -94,6 +94,7 @@ def test_service_get_result_from_launcher():
     launcher_mock = Mock()
     fake_execution_result = JobResult(
         id=str(uuid4()),
+        study_id="sid",
         job_status=JobStatus.SUCCESS,
         msg="Hello, World!",
         exit_code=0,
@@ -129,6 +130,7 @@ def test_service_get_result_from_database():
     launcher_mock = Mock()
     fake_execution_result = JobResult(
         id=str(uuid4()),
+        study_id="sid",
         job_status=JobStatus.SUCCESS,
         msg="Hello, World!",
         exit_code=0,
