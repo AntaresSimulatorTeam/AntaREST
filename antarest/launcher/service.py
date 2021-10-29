@@ -6,11 +6,13 @@ from uuid import UUID
 from fastapi import HTTPException
 
 from antarest.core.config import Config
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.interfaces.eventbus import (
     IEventBus,
     Event,
     EventType,
 )
+from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -22,6 +24,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.permissions import (
     check_permission,
     StudyPermissionType,
+    assert_permission,
 )
 
 
@@ -118,12 +121,42 @@ class LauncherService:
 
         return job_uuid
 
+    def _filter_from_user_permission(
+        self, job_results: List[JobResult], user: Optional[JWTUser]
+    ) -> List[JobResult]:
+        if not user:
+            return []
+
+        allowed_job_results = []
+        for job_result in job_results:
+            try:
+                if check_permission(
+                    user,
+                    self.study_service.get_study(job_result.study_id),
+                    StudyPermissionType.RUN,
+                ):
+                    allowed_job_results.append(job_result)
+            except StudyNotFoundError:
+                pass
+        return allowed_job_results
+
     def get_result(
         self, job_uuid: UUID, params: RequestParameters
     ) -> JobResult:
         job_result = self.job_result_repository.get(str(job_uuid))
-        if job_result:
-            return job_result
+
+        try:
+            if job_result:
+                study = self.study_service.get_study(job_result.study_id)
+                assert_permission(
+                    user=params.user,
+                    study=study,
+                    permission_type=StudyPermissionType.READ,
+                )
+                return job_result
+
+        except StudyNotFoundError:
+            pass
 
         raise JobNotFound()
 
@@ -132,13 +165,13 @@ class LauncherService:
     ) -> List[JobResult]:
 
         if study_uid is not None:
-            job_results = self.job_result_repository.find_by_study(
-                study_uid, params.user
-            )
+            job_results = self.job_result_repository.find_by_study(study_uid)
         else:
-            job_results = self.job_result_repository.get_all(params.user)
+            job_results = self.job_result_repository.get_all()
 
-        return job_results
+        return self._filter_from_user_permission(
+            job_results=job_results, user=params.user
+        )
 
     def get_log(
         self, job_id: str, log_type: LogType, params: RequestParameters

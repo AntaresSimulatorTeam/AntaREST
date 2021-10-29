@@ -4,7 +4,6 @@ from uuid import uuid4
 import pytest
 from sqlalchemy import create_engine
 
-from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import db, DBSessionMiddleware
 from antarest.launcher.model import JobResult, JobStatus
@@ -43,14 +42,14 @@ def test_job_result() -> None:
         c = repo.get(a.id)
         assert a == c
 
-        d = repo.find_by_study(study_id, DEFAULT_ADMIN_USER)
+        d = repo.find_by_study(study_id)
         assert len(d) == 1
         assert a == d[0]
 
         repo.delete(a.id)
         assert repo.get(a.id) is None
 
-        assert len(repo.find_by_study(study_id, DEFAULT_ADMIN_USER)) == 0
+        assert len(repo.find_by_study(study_id)) == 0
 
 
 @pytest.mark.unit_test
