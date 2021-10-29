@@ -25,6 +25,7 @@ from antarest.login.model import (
     UserCreateDTO,
     IdentityDTO,
     BotRoleCreateDTO,
+    RoleDetailDTO,
 )
 from antarest.main import JwtSettings
 
@@ -77,18 +78,12 @@ def create_auth_token(
     )
     token = create_token(
         expires_time=expires_delta,
-        subject=json.dumps(
-            JWTUser(
-                id=0,
-                impersonator=0,
-                type="users",
-                groups=[
-                    JWTGroup(id="group", name="group", role=RoleType.ADMIN)
-                ],
-            )
-            .to_dto()
-            .dict(),
-        ),
+        subject=JWTUser(
+            id=0,
+            impersonator=0,
+            type="users",
+            groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
+        ).json(),
     )
     return {
         "Authorization": f"Bearer {token if isinstance(token, str) else token.decode()}"
@@ -116,7 +111,9 @@ def test_auth_needed() -> None:
 @pytest.mark.unit_test
 def test_auth() -> None:
     service = Mock()
-    service.authenticate.return_value = User(id=0, name="admin")
+    service.authenticate.return_value = JWTUser(
+        id=0, type="user", impersonator=0
+    )
 
     app = create_app(service)
     client = TestClient(app)
@@ -147,7 +144,7 @@ def test_auth_fail() -> None:
 @pytest.mark.unit_test
 def test_expiration() -> None:
     service = Mock()
-    service.get_user.return_value = User(id=0, name="admin")
+    service.get_user.return_value = JWTUser(id=0, type="user", impersonator=0)
 
     app = create_app(service)
     client = TestClient(app, raise_server_exceptions=False)
@@ -164,7 +161,7 @@ def test_expiration() -> None:
 @pytest.mark.unit_test
 def test_refresh() -> None:
     service = Mock()
-    service.get_jwt.return_value = User(id=0, name="admin")
+    service.get_jwt.return_value = JWTUser(id=0, type="user", impersonator=0)
 
     app = create_app(service)
     client = TestClient(app)
@@ -218,9 +215,7 @@ def test_user_id_with_details() -> None:
         "/v1/users/1?details=true", headers=create_auth_token(app)
     )
     assert res.status_code == 200
-    assert (
-        res.json() == IdentityDTO(id=1, name="user", roles=[]).to_dto().dict()
-    )
+    assert res.json() == IdentityDTO(id=1, name="user", roles=[]).dict()
 
 
 @pytest.mark.unit_test
@@ -343,7 +338,9 @@ def test_role() -> None:
     client = TestClient(app)
     res = client.get("/v1/roles/group/g", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert res.json() == [role.to_dto().dict()]
+    assert [RoleDetailDTO.parse_obj(el) for el in res.json()] == [
+        role.to_dto()
+    ]
 
 
 @pytest.mark.unit_test
@@ -365,7 +362,7 @@ def test_role_create() -> None:
     )
 
     assert res.status_code == 200
-    assert res.json() == role.to_dto().dict()
+    assert RoleDetailDTO.parse_obj(res.json()) == role.to_dto().dict()
 
 
 @pytest.mark.unit_test
@@ -418,7 +415,7 @@ def test_bot_create() -> None:
 
 @pytest.mark.unit_test
 def test_bot() -> None:
-    bot = Bot(id=0, owner=4, is_author=False)
+    bot = Bot(id=0, owner=4, is_author=False, name="foo")
     service = Mock()
     service.get_bot.return_value = bot
 
@@ -431,7 +428,7 @@ def test_bot() -> None:
 
 @pytest.mark.unit_test
 def test_all_bots() -> None:
-    bots = [Bot(id=0, owner=4, is_author=False)]
+    bots = [Bot(id=0, owner=4, is_author=False, name="foo")]
     service = Mock()
     service.get_all_bots.return_value = bots
     service.get_all_bots_by_owner.return_value = bots

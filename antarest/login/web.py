@@ -292,7 +292,6 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     @bp.delete(
         "/roles/{group}/{user}",
         tags=[APITag.users],
-        response_model=List[int],
     )
     def roles_delete(
         user: int,

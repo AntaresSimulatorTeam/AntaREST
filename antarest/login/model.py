@@ -46,7 +46,7 @@ class RoleCreationDTO(BaseModel):
 
 
 class RoleDTO(BaseModel):
-    group_id: str
+    group_id: Optional[str]
     group_name: str
     identity_id: int
     type: RoleType
@@ -285,7 +285,7 @@ class Role(Base):  # type: ignore
         return RoleDetailDTO(
             type=self.type,
             group=self.group.to_dto(),
-            user=self.identity.to_dto(),
+            identity=self.identity.to_dto(),
         )
 
 
