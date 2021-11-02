@@ -413,9 +413,12 @@ const InformationView = (props: PropTypes) => {
               <DownloadLink url={getExportUrl(study.id, false)}>
                 <Button className={classes.exportButton}>{t('main:export')}</Button>
               </DownloadLink>
+              {study.managed && (
               <ButtonLoader className={classes.archivingButton} onClick={archiveStudy}>
                 {t('studymanager:archive')}
               </ButtonLoader>
+              )}
+
             </>
           )}
         </div>

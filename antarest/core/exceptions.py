@@ -55,6 +55,14 @@ class StudyTypeUnsupported(HTTPException):
         )
 
 
+class NotAManagedStudyException(HTTPException):
+    def __init__(self, uuid: str) -> None:
+        super().__init__(
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            f"Study {uuid} is not managed",
+        )
+
+
 class UnsupportedStudyVersion(HTTPException):
     def __init__(self, version: str) -> None:
         super().__init__(
