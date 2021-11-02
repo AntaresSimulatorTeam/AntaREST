@@ -138,7 +138,7 @@ export default function MatrixGraphView(props: PropTypes) {
                     mode: 'lines',
                   }
                 ))}
-                layout={{ width: width, height: height }}
+                layout={{ width, height }}
               />
             )
           }
