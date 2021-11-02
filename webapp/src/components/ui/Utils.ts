@@ -52,18 +52,28 @@ export const DraftJsToHtml = (editorState: EditorState): string => {
 
 export const xmlToJson = (data: string): string => xml2json(data, { compact: false, spaces: 4 });
 
-interface Balise {
+type ListType = 'Numbered List' | 'Bullet List';
+
+interface AttributesUtils {
   openBalise: string;
   closeBalise: string;
+  list?: ListType;
+}
+
+interface NodeProcessResult {
+  result: string;
+  lastListStatus?: ListType;
 }
 
 const XmlToHTML = { paragraph: 'div',
   text: 'span',
-  symbol: 'li' };
+  symbol: 'span' };
 
-const checkAttributes = (node: XMLElement): Balise => {
+const checkAttributes = (node: XMLElement): AttributesUtils => {
   let openBalise = ''; let
     closeBalise = '';
+  let listType: ListType = 'Bullet List';
+  let isList = false;
   if (node.attributes !== undefined) {
     const list = Object.keys(node.attributes);
     for (let i = 0; i < list.length; i++) {
@@ -84,50 +94,72 @@ const checkAttributes = (node: XMLElement): Balise => {
             closeBalise = `</i>${closeBalise}`;
           }
           break;
-
+        case 'liststyle':
+          if (node.attributes[list[i]] === 'Bullet List' || node.attributes[list[i]] === 'Numbered List') { // BOLD
+            isList = true;
+            listType = node.attributes[list[i]] as ListType;
+          }
+          break;
         default:
           break;
       }
     }
   }
-  return { openBalise, closeBalise };
+  return { openBalise, closeBalise, list: isList ? listType : undefined };
 };
 
-const nodeProcess = (node: XMLElement): string => {
-  let res = '';
+const nodeProcess = (node: XMLElement, prevListStatus: ListType | undefined, isLastSon = false): NodeProcessResult => {
+  const res: NodeProcessResult = { result: '' };
   if (node.type !== undefined) {
     if (node.type === 'element') {
       if (node.name !== undefined) {
-        let balises: Balise = { openBalise: '', closeBalise: '' };
-        switch (node.name) {
-          case 'paragraph':
-          case 'text':
-            balises = checkAttributes(node);
-            balises.openBalise = `<${XmlToHTML[node.name]}>${balises.openBalise}`;
-            balises.closeBalise += `</${XmlToHTML[node.name]}>`;
-            break;
-          case 'symbol':
-            balises = checkAttributes(node);
-            balises.openBalise = `<${XmlToHTML[node.name]}>&ensp;`;
-            balises.closeBalise += `</${XmlToHTML[node.name]}>`;
-            break;
-          default:
-            break;
+        //console.log('ELEMENT NAME: ', node.name);
+        let attributesUtils: AttributesUtils = { openBalise: '', closeBalise: '' };
+        if (Object.keys(XmlToHTML).includes(node.name)) {
+          attributesUtils = checkAttributes(node);
+
+          // List case
+          if (attributesUtils.list !== undefined) {
+            console.log('LIST ELEMENT: ', node);
+            if (prevListStatus === undefined) {
+              attributesUtils.openBalise = `${attributesUtils.list === 'Numbered List' ? '<ol><li>' : '<ul><li>'}${attributesUtils.openBalise}`;
+            } else if (prevListStatus !== attributesUtils.list) {
+              const closePrevBalise = (prevListStatus === 'Numbered List' ? '</ol>' : '</ul>'); // Close previous list
+              attributesUtils.openBalise = `${closePrevBalise}${attributesUtils.list === 'Numbered List' ? '<ol><li>' : '<ul><li>'}${attributesUtils.openBalise}`;
+            } else {
+              attributesUtils.openBalise += `<li>${attributesUtils.openBalise}`;
+            }
+            attributesUtils.closeBalise += '</li>';
+            if (isLastSon) attributesUtils.closeBalise += (attributesUtils.list === 'Numbered List' ? '</ol>' : '</ul>');
+          } else if (prevListStatus !== undefined) {
+            //console.log('NOT LIST ELEMENT / PREVIOUS LIST');
+            const closePrevBalise = (prevListStatus === 'Numbered List' ? '</ol>' : '</ul>'); // Close previous list
+            attributesUtils.openBalise = `${closePrevBalise}<${(XmlToHTML as any)[node.name]}>${attributesUtils.openBalise}`;
+            attributesUtils.closeBalise += `</${(XmlToHTML as any)[node.name]}>`;
+          } else {
+            //console.log('NOT LIST ELEMENT');
+            attributesUtils.openBalise = `<${(XmlToHTML as any)[node.name]}>${attributesUtils.openBalise}`;
+            attributesUtils.closeBalise += `</${(XmlToHTML as any)[node.name]}>`;
+          }
         }
 
         if (node.elements !== undefined && node.elements.length > 0) {
+          let completeResult: NodeProcessResult = { result: '' };
           for (let j = 0; j < node.elements.length; j++) {
-            res += nodeProcess(node.elements[j]);
+            completeResult = nodeProcess(node.elements[j], completeResult.lastListStatus, j === node.elements.length - 1);
+            res.result += completeResult.result;
           }
-          return balises.openBalise + res + balises.closeBalise;
+          return { result: attributesUtils.openBalise + res.result + attributesUtils.closeBalise, lastListStatus: attributesUtils.list };
         }
       }
     } else if (node.type === 'text') {
-      if (node.text !== undefined) return (node.text as string);
+      if (node.text !== undefined) return { result: (node.text as string) };
     }
   } else if (node.elements !== undefined) {
+    let completeResult: NodeProcessResult = { result: '' };
     for (let i = 0; i < node.elements.length; i++) {
-      res += nodeProcess(node.elements[i]);
+      completeResult = nodeProcess(node.elements[i], completeResult.lastListStatus, i === node.elements.length - 1);
+      res.result += completeResult.result;
     }
   }
 
@@ -137,7 +169,11 @@ const nodeProcess = (node: XMLElement): string => {
 export const convertXMLToHTML = (data: string) => {
   const xmlStr = xml2json(data, { compact: false, spaces: 4 });
   const xmlElement: XMLElement = JSON.parse(xmlStr);
-  return nodeProcess(xmlElement);
+  return nodeProcess(xmlElement, undefined, true).result;
+};
+
+export const convertHTMLToXML = (data: string) => {
+  const htmlStr = xml2json(data, { compact: false, spaces: 4 });
 };
 
 /*
@@ -154,6 +190,25 @@ elements: {
   name?: 'NAME OF ELEMENT' or text?: ''
   elements
 }
+
+PARAMS:
+textcolor
+fontweight
+fontpointsize
+fontfamily
+fontstyle
+fontunderline
+fontface
+alignment
+parspacingafter
+parspacingbefore
+linespacing
+margin-left
+margin-right
+margin-top
+margin-bottom
+leftindent
+leftsubindent
 */
 
 export default {};
