@@ -5,11 +5,11 @@ import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
-import { Editor, EditorState, RichUtils, getDefaultKeyBinding, ContentState } from 'draft-js';
+import { Editor, EditorState, RichUtils, getDefaultKeyBinding } from 'draft-js';
 import FormatAlignCenterIcon from '@material-ui/icons/FormatAlignCenter';
 import FormatAlignLeftIcon from '@material-ui/icons/FormatAlignLeft';
 import FormatAlignRightIcon from '@material-ui/icons/FormatAlignRight';
-import { convertXMLToHTML, defaultBlockRenderMap, DraftJsToHtml, htmlToDraftJs } from './Utils';
+import { convertDraftJSToXML, convertXMLToDraftJS } from './Utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -119,11 +119,8 @@ const TextEditorModal = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
 
-  const extendedBlockRenderMap = defaultBlockRenderMap();
-
   const onContentSave = () => {
-    //const value = DraftJsToHtml(editorState);
-    const value = editorState.getCurrentContent().getPlainText();
+    const value = convertDraftJSToXML(editorState);
     if (initContent !== value) {
       onSave(value);
     }
@@ -135,7 +132,6 @@ const TextEditorModal = (props: PropTypes) => {
 
   const handleKeyBindings = (e: any) => {
     if (e.keyCode === 9) {
-      console.log('TAB');
       const newEditorState = RichUtils.onTab(e, editorState, 6 /* maxDepth */);
       if (newEditorState !== editorState) {
         setEditorState(newEditorState);
@@ -146,10 +142,8 @@ const TextEditorModal = (props: PropTypes) => {
 
   useEffect(() => {
     if (content !== undefined) {
-      const xmlToHtml = convertXMLToHTML(content);
-      setEditorState(EditorState.createWithContent(htmlToDraftJs(xmlToHtml, extendedBlockRenderMap)));
+      setEditorState(EditorState.createWithContent(convertXMLToDraftJS(content)));
       setInitContent(content);
-      console.log('RESULT ULTIME: ', xmlToHtml);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content]);
@@ -183,8 +177,7 @@ const TextEditorModal = (props: PropTypes) => {
             <div className={classes.content}>
               <Editor
                 editorState={editorState}
-                onChange={(e) => { console.log(e.getCurrentContent()); setEditorState(e); }}
-                blockRenderMap={extendedBlockRenderMap}
+                onChange={setEditorState}
                 onTab={handleKeyBindings}
                 textAlignment={textAlignment as any}
               />
@@ -194,7 +187,7 @@ const TextEditorModal = (props: PropTypes) => {
             <Button variant="contained" className={classes.button} onClick={close}>
               {t('main:closeButton')}
             </Button>
-            <Button variant="contained" className={classes.button} color="primary" onClick={() => onContentSave()} disabled={initContent === DraftJsToHtml(editorState)}>
+            <Button variant="contained" className={classes.button} color="primary" onClick={() => onContentSave()}>
               {t('main:save')}
             </Button>
           </div>

@@ -17,7 +17,7 @@ import CreateIcon from '@material-ui/icons/Create';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import TextEditorModal from '../ui/TextEditorModal';
 import { editComments, getComments } from '../../services/api/study';
-import { convertXMLToHTML, defaultBlockRenderMap, htmlToDraftJs, xmlToJson } from '../ui/Utils';
+import { convertXMLToDraftJS } from '../ui/Utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -103,12 +103,10 @@ const NoteView = (props: Props) => {
   const [editionMode, setEditionMode] = useState<boolean>(false);
   const [content, setContent] = useState<string>('');
 
-  const extendedBlockRenderMap = defaultBlockRenderMap();
-
   const onSave = async (newContent: string) => {
     try {
       await editComments(studyId, newContent);
-      setEditorState(EditorState.createWithContent(htmlToDraftJs(newContent, extendedBlockRenderMap)));
+      setEditorState(EditorState.createWithContent(convertXMLToDraftJS(newContent)));
       setContent(newContent);
       setEditionMode(false);
       enqueueSnackbar(t('singlestudy:commentsSaved'), { variant: 'success' });
@@ -121,76 +119,7 @@ const NoteView = (props: Props) => {
     const init = async () => {
       try {
         const data = await getComments(studyId);
-        //console.log('XML TO JSON: ', xmlToJson(data));
-        //const xmlToHtml = convertXMLToHTML(data);
-        const xmlToHtml = convertXMLToHTML(`
-        <?xml version="1.0" encoding="UTF-8"?>
-        <richtext version="1.0.0.0" xmlns="http://www.wxwidgets.org">
-          <paragraphlayout textcolor="#000000" fontpointsize="9" fontfamily="70" fontstyle="90" fontweight="400" fontunderlined="0" fontface="Segoe UI" alignment="1" parspacingafter="10" parspacingbefore="0" linespacing="10" margin-left="5,4098" margin-right="5,4098" margin-top="5,4098" margin-bottom="5,4098">
-            <paragraph>
-              <text>This is a test.</text>
-            </paragraph>
-            <paragraph alignment="2">
-              <text>There is centered.</text>
-            </paragraph>
-            <paragraph alignment="2">
-              <text fontweight="700">And bold</text>
-            </paragraph>
-            <paragraph alignment="3">
-              <text fontweight="400">To the right and</text>
-              <text fontstyle="93" fontweight="400">" there in italic"</text>
-            </paragraph>
-            <paragraph alignment="1">
-              <text></text>
-            </paragraph>
-            <paragraph alignment="1" leftindent="200" leftsubindent="0">
-              <text>indenting twice</text>
-            </paragraph>
-            <paragraph alignment="1">
-              <text></text>
-            </paragraph>
-            <paragraph alignment="1">
-              <text fontunderlined="1">This is underlined.</text>
-              <text fontunderlined="0">" "</text>
-              <text fontstyle="93" fontweight="700" fontunderlined="0">"And now a multilined "</text>
-            </paragraph>
-            <paragraph alignment="1">
-              <text fontstyle="93" fontweight="700" fontunderlined="0">bold and italic</text>
-            </paragraph>
-            <paragraph alignment="1">
-              <text></text>
-            </paragraph>
-            <paragraph alignment="1">
-              <text fontstyle="90">Some bullet points:</text>
-            </paragraph>
-            <paragraph alignment="1" leftindent="60" leftsubindent="60" bulletstyle="512" bulletnumber="1" bulletname="standard/circle" liststyle="Bullet List">
-              <text>first</text>
-            </paragraph>
-            <paragraph alignment="1" leftindent="60" leftsubindent="60" bulletstyle="512" bulletnumber="2" bulletname="standard/circle" liststyle="Bullet List">
-              <text>second</text>
-            </paragraph>
-            <paragraph alignment="1" leftindent="60" leftsubindent="60" bulletstyle="512" bulletnumber="3" bulletname="standard/circle" liststyle="Bullet List">
-              <text>third</text>
-            </paragraph>
-            <paragraph alignment="1">
-              <text></text>
-            </paragraph>
-            <paragraph alignment="1">
-              <text>And list :</text>
-            </paragraph>
-            <paragraph alignment="1" leftindent="60" leftsubindent="60" bulletstyle="4353" bulletnumber="1" liststyle="Numbered List">
-              <text>a</text>
-            </paragraph>
-            <paragraph alignment="1" leftindent="60" leftsubindent="60" bulletstyle="4353" bulletnumber="2" liststyle="Numbered List">
-              <text>b</text>
-            </paragraph>
-            <paragraph alignment="1" leftindent="60" leftsubindent="60" bulletstyle="4353" bulletnumber="3" liststyle="Numbered List">
-              <text>c</text>
-            </paragraph>
-          </paragraphlayout>
-        </richtext>`);
-        console.log('XML TO HTML: ', xmlToHtml);
-        setEditorState(EditorState.createWithContent(htmlToDraftJs(xmlToHtml, extendedBlockRenderMap)));
+        setEditorState(EditorState.createWithContent(convertXMLToDraftJS(data)));
         setContent(data);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:fetchCommentsError'), e as AxiosError);
@@ -214,7 +143,6 @@ const NoteView = (props: Props) => {
             readOnly={!editionMode}
             editorState={editorState}
             onChange={setEditorState}
-            blockRenderMap={extendedBlockRenderMap}
           />
         </div>
       </div>
