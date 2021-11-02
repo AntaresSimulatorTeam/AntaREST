@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Plot from 'react-plotly.js';
 import { createStyles, makeStyles, Theme, InputLabel, FormControl, Box, OutlinedInput, Chip, Select, MenuItem, FormControlLabel, Checkbox } from '@material-ui/core';
 import AutoSizer from 'react-virtualized-auto-sizer';
+import { useTranslation } from 'react-i18next';
 import { MatrixType } from '../../../common/types';
 import 'handsontable/dist/handsontable.min.css';
 
@@ -38,6 +39,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   select: {
     '& .MuiSelect-select': {
       paddingBottom: theme.spacing(1) + 4,
+      minWidth: '200px',
     },
   },
   monotonous: {
@@ -56,6 +58,7 @@ interface PropTypes {
 
 export default function MatrixGraphView(props: PropTypes) {
   // eslint-disable-next-line react/destructuring-assignment
+  const [t] = useTranslation();
   const { matrix } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const classes = useStyles();
@@ -86,7 +89,7 @@ export default function MatrixGraphView(props: PropTypes) {
     <div className={classes.root}>
       <div className={classes.container}>
         <FormControl className={classes.form}>
-          <InputLabel className={classes.input} id="demo-multiple-chip-label">Col</InputLabel>
+          <InputLabel className={classes.input} id="demo-multiple-chip-label">{t('data:graphSelector')}</InputLabel>
           <Select
             className={classes.select}
             labelId="demo-multiple-chip-label"
@@ -94,7 +97,7 @@ export default function MatrixGraphView(props: PropTypes) {
             multiple
             value={columnName}
             onChange={handleChange}
-            input={<OutlinedInput id="select-multiple-chip" label="Col" />}
+            input={<OutlinedInput id="select-multiple-chip" label={t('data:graphSelector')} />}
             renderValue={(selected) => (
               <Box>
                 {(selected as string[]).map((value) => (
