@@ -66,10 +66,10 @@ export interface VariantTree {
 }
 
 export type JobStatus =
-  | 'JobStatus.RUNNING'
-  | 'JobStatus.PENDING'
-  | 'JobStatus.SUCCESS'
-  | 'JobStatus.FAILED';
+  | 'running'
+  | 'pending'
+  | 'success'
+  | 'failed';
 
 export interface LaunchJob {
   id: string;

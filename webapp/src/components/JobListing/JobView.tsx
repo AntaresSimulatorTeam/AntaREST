@@ -102,11 +102,11 @@ const JobView = (props: PropTypes) => {
 
   const renderStatus = () => {
     let color = theme.palette.grey[400];
-    if (job.status === 'JobStatus.SUCCESS') {
+    if (job.status === 'success') {
       color = theme.palette.success.main;
-    } else if (job.status === 'JobStatus.FAILED') {
+    } else if (job.status === 'failed') {
       color = theme.palette.error.main;
-    } else if (job.status === 'JobStatus.RUNNING') {
+    } else if (job.status === 'running') {
       color = theme.palette.warning.main;
     }
     return (<div className={classes.dot} style={{ backgroundColor: color }} />);

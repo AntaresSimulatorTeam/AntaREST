@@ -86,7 +86,7 @@ const SingleStudyView = (props: PropTypes) => {
   };
 
   const renderStatus = () => {
-    if (studyJobs && studyJobs.length > 0 && studyJobs[0].status === 'JobStatus.RUNNING') {
+    if (studyJobs && studyJobs.length > 0 && studyJobs[0].status === 'running') {
       return <PulsingDot style={{ height: '0.5em', width: '0.5em', marginRight: '0.5em' }} />;
     }
     return undefined;
