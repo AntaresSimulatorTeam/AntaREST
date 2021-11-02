@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Plot from 'react-plotly.js';
-import { createStyles, makeStyles, Theme, InputLabel, FormControl, Box, OutlinedInput, Chip, Select, MenuItem } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, InputLabel, FormControl, Box, OutlinedInput, Chip, Select, MenuItem, FormControlLabel, Checkbox } from '@material-ui/core';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import { MatrixType } from '../../../common/types';
 import 'handsontable/dist/handsontable.min.css';
 
@@ -25,6 +26,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   container: {
     width: '100%',
+    display: 'flex',
+    alignItems: 'center',
   },
   box: {
     marginRight: theme.spacing(1),
@@ -38,6 +41,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
       paddingBottom: theme.spacing(1) + 4,
     },
   },
+  monotonous: {
+    marginLeft: theme.spacing(2),
+  },
 }));
 
 interface PropTypes {
@@ -50,9 +56,28 @@ export default function MatrixGraphView(props: PropTypes) {
   const { data = [], columns = [], index = [] } = matrix;
   const classes = useStyles();
   const [columnName, setColumnName] = useState<string[]>([]);
+  const [monotonous, setMonotonous] = useState<boolean>(false);
 
   const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     setColumnName(event.target.value as string[]);
+  };
+
+  const monotonousChange = () => {
+    setMonotonous(!monotonous);
+  };
+
+  console.log(index);
+
+  const test = (tabBase: Array<number>) => {
+    const tab = [...tabBase];
+    for (let i = 0; i < tab.length; i += 1) {
+      if (i === 0) {
+        tab.splice(i, 1, 100 / tab.length);
+      } else {
+        tab.splice(i, 1, 100 / tab.length + tab[i - 1]);
+      }
+    }
+    return tab;
   };
 
   return (
@@ -86,17 +111,33 @@ export default function MatrixGraphView(props: PropTypes) {
             ))}
           </Select>
         </FormControl>
+        <FormControlLabel
+          className={classes.monotonous}
+          control={(
+            <Checkbox
+              checked={monotonous}
+              onChange={monotonousChange}
+              name="checked"
+              color="primary"
+            />
+          )}
+          label="Affichage Monotone"
+        />
       </div>
-      <Plot
-        data={columnName.map((val, i) => (
-          {
-            x: index,
-            y: data.map((a) => a[i]),
-            mode: 'lines',
-          }
-        ))}
-        layout={{ width: 691, height: 518 }}
-      />
+      <div>
+        <Autosizer>
+          <Plot
+            data={columnName.map((val, i) => (
+              {
+                x: monotonous ? test(index as Array<number>) : index,
+                y: monotonous ? data.map((a) => a[i]).sort((b, c) => c - b) : data.map((a) => a[i]),
+                mode: 'lines',
+              }
+            ))}
+            layout={{ width: 691, height: 518 }}
+          />
+        </Autosizer>
+      </div>
     </div>
   );
 }
