@@ -10,7 +10,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
     width: '100%',
     height: '100%',
-    overflow: 'auto',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -53,19 +52,8 @@ export default function MatrixView(props: PropTypes) {
   const [grid, setGrid] = useState<Array<CellType>>([]);
   const [formatedColumns, setColumns] = useState<Array<ColumnsType>>([]);
   const [toggleView, setToggleView] = useState<boolean>(true);
-  useEffect(() => {
-    const columnsData: Array<ColumnsType> = (prependIndex ? [{ title: 'Time', readOnly }] : []).concat(
-      columns.map((title) => ({ title: String(title), readOnly })),
-    );
-    setColumns(columnsData);
 
-    const tmpData = data.map((row, i) => (
-      prependIndex ? [index[i]].concat(row) : row
-    ));
-    setGrid(tmpData);
-  }, [columns, data, index, prependIndex, readOnly]);
-
-  const renderHandleView = () => {
+  const renderView = () => {
     if (toggleView) {
       return (
         <HotTable
@@ -87,6 +75,18 @@ export default function MatrixView(props: PropTypes) {
   };
 
   const changeView = () => setToggleView(!toggleView);
+
+  useEffect(() => {
+    const columnsData: Array<ColumnsType> = (prependIndex ? [{ title: 'Time', readOnly }] : []).concat(
+      columns.map((title) => ({ title: String(title), readOnly })),
+    );
+    setColumns(columnsData);
+
+    const tmpData = data.map((row, i) => (
+      prependIndex ? [index[i]].concat(row) : row
+    ));
+    setGrid(tmpData);
+  }, [columns, data, index, prependIndex, readOnly]);
 
   return (
     <div className={classes.root}>
@@ -112,7 +112,7 @@ export default function MatrixView(props: PropTypes) {
           )}
         </ButtonGroup>
       </div>
-      {renderHandleView()}
+      {renderView()}
     </div>
   );
 }

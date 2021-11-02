@@ -9,7 +9,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
     width: '100%',
     height: '100%',
-    overflow: 'auto',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -44,6 +43,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   monotonous: {
     marginLeft: theme.spacing(2),
   },
+  autosizer: {
+    display: 'block',
+    width: '100%',
+    height: '100%',
+  },
 }));
 
 interface PropTypes {
@@ -66,9 +70,7 @@ export default function MatrixGraphView(props: PropTypes) {
     setMonotonous(!monotonous);
   };
 
-  console.log(index);
-
-  const test = (tabBase: Array<number>) => {
+  const unitChange = (tabBase: Array<number>) => {
     const tab = [...tabBase];
     for (let i = 0; i < tab.length; i += 1) {
       if (i === 0) {
@@ -124,19 +126,23 @@ export default function MatrixGraphView(props: PropTypes) {
           label="Affichage Monotone"
         />
       </div>
-      <div>
-        <Autosizer>
-          <Plot
-            data={columnName.map((val, i) => (
-              {
-                x: monotonous ? test(index as Array<number>) : index,
-                y: monotonous ? data.map((a) => a[i]).sort((b, c) => c - b) : data.map((a) => a[i]),
-                mode: 'lines',
-              }
-            ))}
-            layout={{ width: 691, height: 518 }}
-          />
-        </Autosizer>
+      <div className={classes.autosizer}>
+        <AutoSizer>
+          {
+            ({ height, width }) => (
+              <Plot
+                data={columnName.map((val, i) => (
+                  {
+                    x: monotonous ? unitChange(index as Array<number>) : index,
+                    y: monotonous ? data.map((a) => a[i]).sort((b, c) => c - b) : data.map((a) => a[i]),
+                    mode: 'lines',
+                  }
+                ))}
+                layout={{ width: width, height: height }}
+              />
+            )
+          }
+        </AutoSizer>
       </div>
     </div>
   );
