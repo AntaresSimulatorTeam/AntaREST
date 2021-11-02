@@ -17,6 +17,7 @@ from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
     UnsupportedOperationOnArchivedStudy,
+    NotAManagedStudyException,
 )
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import JWTUser
@@ -62,6 +63,7 @@ from antarest.study.storage.rawstudy.raw_study_service import (
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import (
     get_default_workspace_path,
+    is_managed,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (
@@ -917,6 +919,9 @@ class StudyService:
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study.id, study.type)
+
+        if not is_managed(study):
+            raise NotAManagedStudyException(study.id)
 
         self.raw_study_service.archive(study)
         study.archived = True

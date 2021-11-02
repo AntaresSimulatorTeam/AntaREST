@@ -157,6 +157,7 @@ const StudyBlockSummaryView = (props: StudyListingItemPropTypes) => {
                   {t('main:export')}
                 </Button>
               </DownloadLink>
+              {study.managed && (
               <ButtonLoader
                 size="small"
                 style={{ color: theme.palette.primary.light }}
@@ -164,6 +165,8 @@ const StudyBlockSummaryView = (props: StudyListingItemPropTypes) => {
               >
                 {t('studymanager:archive')}
               </ButtonLoader>
+              )}
+
             </>
           )}
         </div>
