@@ -132,7 +132,7 @@ export default function MatrixGraphView(props: PropTypes) {
                     x: monotonic ? unitChange(index as Array<number>) : index,
                     y: monotonic ? data.map((a) => a[i]).sort((b, c) => c - b) : data.map((a) => a[i]),
                     mode: 'lines',
-                    name: `Colonne ${columnName[i]}`,
+                    name: `${columnName[i]}`,
                   }
                 ))}
                 layout={{ width, height }}
