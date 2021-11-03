@@ -6,9 +6,8 @@ import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import { Editor, EditorState, RichUtils, getDefaultKeyBinding } from 'draft-js';
-import FormatAlignCenterIcon from '@material-ui/icons/FormatAlignCenter';
-import FormatAlignLeftIcon from '@material-ui/icons/FormatAlignLeft';
-import FormatAlignRightIcon from '@material-ui/icons/FormatAlignRight';
+import FormatListBulletedIcon from '@material-ui/icons/FormatListBulleted';
+import FormatListNumberedIcon from '@material-ui/icons/FormatListNumbered';
 import { convertDraftJSToXML, convertXMLToDraftJS } from './Utils';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -115,7 +114,6 @@ const TextEditorModal = (props: PropTypes) => {
     () => EditorState.createEmpty(),
   );
   const [initContent, setInitContent] = useState<string>('');
-  const [textAlignment, setTextAlignment] = useState<string>('left');
   const classes = useStyles();
   const [t] = useTranslation();
 
@@ -128,6 +126,15 @@ const TextEditorModal = (props: PropTypes) => {
 
   const onStyleClick = (type: string) => {
     setEditorState(RichUtils.toggleInlineStyle(editorState, type));
+  };
+
+  const toggleBulletPoints = (type: string) => { // ordered-list-item unordered-list-item
+    setEditorState(
+      RichUtils.toggleBlockType(
+        editorState,
+        type,
+      ),
+    );
   };
 
   const handleKeyBindings = (e: any) => {
@@ -170,16 +177,15 @@ const TextEditorModal = (props: PropTypes) => {
               <Typography className={classes.textIcon} style={{ fontWeight: 'bold' }} onClick={() => onStyleClick('BOLD')}>B</Typography>
               <Typography className={classes.textIcon} style={{ fontStyle: 'italic' }} onClick={() => onStyleClick('ITALIC')}>I</Typography>
               <Typography className={classes.textIcon} style={{ textDecoration: 'underline' }} onClick={() => onStyleClick('UNDERLINE')}>U</Typography>
-              <FormatAlignLeftIcon className={classes.alignIcon} onClick={() => setTextAlignment('left')} />
-              <FormatAlignCenterIcon className={classes.alignIcon} onClick={() => setTextAlignment('center')} />
-              <FormatAlignRightIcon className={classes.alignIcon} onClick={() => setTextAlignment('right')} />
+              <FormatListBulletedIcon className={classes.alignIcon} onClick={() => toggleBulletPoints('unordered-list-item')} />
+              <FormatListNumberedIcon className={classes.alignIcon} onClick={() => toggleBulletPoints('ordered-list-item')} />
             </div>
             <div className={classes.content}>
               <Editor
                 editorState={editorState}
                 onChange={setEditorState}
                 onTab={handleKeyBindings}
-                textAlignment={textAlignment as any}
+                textAlignment="left"
               />
             </div>
           </div>
