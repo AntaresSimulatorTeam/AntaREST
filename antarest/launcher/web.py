@@ -120,4 +120,25 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         logger.info(f"Fetching version list")
         return service.get_versions(params=params)
 
+    @bp.post(
+        "/launcher/jobs/{job_id}/kill",
+        tags=[APITag.launcher],
+        summary="Kill job",
+    )
+    def kill_job(
+        job_id: str,
+        engine: Optional[str] = None,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(f"Killing job {job_id}", extra={"user": current_user.id})
+
+        selected_engine = (
+            engine if engine is not None else config.launcher.default
+        )
+
+        params = RequestParameters(user=current_user)
+        return service.kill_job(
+            job_id=job_id, params=params, launcher=selected_engine
+        )
+
     return bp

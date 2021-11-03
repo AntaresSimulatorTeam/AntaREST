@@ -328,10 +328,10 @@ def test_kill_job(
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
         study_service=Mock(),
-        data_repo_tinydb=data_repo_tinydb_mock,
         callbacks=Mock(),
         event_bus=Mock(),
     )
+    slurm_launcher.data_repo_tinydb = data_repo_tinydb_mock
 
     slurm_launcher.kill_job(job_id=launch_id)
 

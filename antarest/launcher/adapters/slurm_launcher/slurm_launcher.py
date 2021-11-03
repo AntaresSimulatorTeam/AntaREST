@@ -47,7 +47,6 @@ class SlurmLauncher(AbstractLauncher):
         self,
         config: Config,
         study_service: StudyService,
-        data_repo_tinydb: Optional[DataRepoTinydb],
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
     ) -> None:
@@ -66,7 +65,7 @@ class SlurmLauncher(AbstractLauncher):
         )
         self.launcher_args = self._init_launcher_arguments()
         self.launcher_params = self._init_launcher_parameters()
-        self.data_repo_tinydb = data_repo_tinydb or DataRepoTinydb(
+        self.data_repo_tinydb = DataRepoTinydb(
             database_name=(
                 self.launcher_params.json_dir
                 / self.launcher_params.default_json_db_name

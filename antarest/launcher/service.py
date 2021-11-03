@@ -128,7 +128,7 @@ class LauncherService:
 
     def kill_job(
         self, job_id: str, params: RequestParameters, launcher: str
-    ) -> None:
+    ) -> JobResult:
 
         job_result = self.job_result_repository.get(job_id)
         assert job_result
@@ -147,7 +147,7 @@ class LauncherService:
         job_status = JobResult(
             id=str(job_id),
             study_id=study_uuid,
-            job_status=JobStatus.CANCELLED,
+            job_status=JobStatus.FAILED,
             launcher=launcher,
         )
         self.job_result_repository.save(job_status)
@@ -157,6 +157,8 @@ class LauncherService:
                 job_status.to_dto().dict(),
             )
         )
+
+        return job_status
 
     def _filter_from_user_permission(
         self, job_results: List[JobResult], user: Optional[JWTUser]

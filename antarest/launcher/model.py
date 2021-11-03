@@ -5,7 +5,6 @@ from typing import Any, Optional, List
 from pydantic import BaseModel
 from sqlalchemy import Integer, Column, Enum, String, DateTime  # type: ignore
 
-from antarest.core.custom_types import JSON
 from antarest.core.persistence import Base
 from antarest.core.utils.utils import DTO
 
@@ -20,7 +19,6 @@ class JobStatus(enum.Enum):
     FAILED = "failed"
     SUCCESS = "success"
     RUNNING = "running"
-    CANCELLED = "cancelled"
 
 
 class JobResultDTO(BaseModel):
