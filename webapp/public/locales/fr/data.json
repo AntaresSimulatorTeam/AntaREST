@@ -31,5 +31,6 @@
   "copyid": "Copie l'identifiant de la matrice",
   "onMatrixIdCopySuccess": "Identifiant de matrice copié !",
   "jsonFormat": "Format JSON",
-  "graphSelector": "Sélectionnez une colonne"
+  "graphSelector": "Colonnes",
+  "monotonicView": "Monotone"
 }

@@ -16,7 +16,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
 
   form: {
-    minWidth: '200px',
+    minWidth: '100px',
     marginTop: theme.spacing(1),
     marginBottom: theme.spacing(1),
   },
@@ -39,10 +39,10 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   select: {
     '& .MuiSelect-select': {
       paddingBottom: theme.spacing(1) + 4,
-      minWidth: '200px',
+      minWidth: '100px',
     },
   },
-  monotonous: {
+  monotonic: {
     marginLeft: theme.spacing(2),
   },
   autosizer: {
@@ -63,41 +63,34 @@ export default function MatrixGraphView(props: PropTypes) {
   const { data = [], columns = [], index = [] } = matrix;
   const classes = useStyles();
   const [columnName, setColumnName] = useState<string[]>([]);
-  const [monotonous, setMonotonous] = useState<boolean>(false);
+  const [monotonic, setMonotonic] = useState<boolean>(false);
 
   const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     setColumnName(event.target.value as string[]);
   };
 
-  const monotonousChange = () => {
-    setMonotonous(!monotonous);
+  const monotonicChange = () => {
+    setMonotonic(!monotonic);
   };
 
   const unitChange = (tabBase: Array<number>) => {
-    const tab = [...tabBase];
-    for (let i = 0; i < tab.length; i += 1) {
-      if (i === 0) {
-        tab.splice(i, 1, 100 / tab.length);
-      } else {
-        tab.splice(i, 1, 100 / tab.length + tab[i - 1]);
-      }
-    }
-    return tab;
+    const stepLength = 100 / tabBase.length;
+    return tabBase.map((el, i) => stepLength * (i + 1));
   };
 
   return (
     <div className={classes.root}>
       <div className={classes.container}>
         <FormControl className={classes.form}>
-          <InputLabel className={classes.input} id="demo-multiple-chip-label">{t('data:graphSelector')}</InputLabel>
+          <InputLabel className={classes.input} id="chip-label">{t('data:graphSelector')}</InputLabel>
           <Select
             className={classes.select}
-            labelId="demo-multiple-chip-label"
-            id="demo-multiple-chip"
+            labelId="chip-label"
+            id="chip"
             multiple
             value={columnName}
             onChange={handleChange}
-            input={<OutlinedInput id="select-multiple-chip" label={t('data:graphSelector')} />}
+            input={<OutlinedInput id="select-chip" label={t('data:graphSelector')} />}
             renderValue={(selected) => (
               <Box>
                 {(selected as string[]).map((value) => (
@@ -117,16 +110,16 @@ export default function MatrixGraphView(props: PropTypes) {
           </Select>
         </FormControl>
         <FormControlLabel
-          className={classes.monotonous}
+          className={classes.monotonic}
           control={(
             <Checkbox
-              checked={monotonous}
-              onChange={monotonousChange}
+              checked={monotonic}
+              onChange={monotonicChange}
               name="checked"
               color="primary"
             />
           )}
-          label="Affichage Monotone"
+          label={t('data:monotonicView')}
         />
       </div>
       <div className={classes.autosizer}>
@@ -136,9 +129,10 @@ export default function MatrixGraphView(props: PropTypes) {
               <Plot
                 data={columnName.map((val, i) => (
                   {
-                    x: monotonous ? unitChange(index as Array<number>) : index,
-                    y: monotonous ? data.map((a) => a[i]).sort((b, c) => c - b) : data.map((a) => a[i]),
+                    x: monotonic ? unitChange(index as Array<number>) : index,
+                    y: monotonic ? data.map((a) => a[i]).sort((b, c) => c - b) : data.map((a) => a[i]),
                     mode: 'lines',
+                    name: `Colonne ${columnName[i]}`,
                   }
                 ))}
                 layout={{ width, height }}

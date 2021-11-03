@@ -31,5 +31,6 @@
     "copyid": "Copy the matrix id",
     "onMatrixIdCopySuccess": "Matrix id copied !",
     "jsonFormat": "JSON Format",
-    "graphSelector":  "Seletc a column"
+    "graphSelector":  "Columns",
+    "monotonicView": "Monotone"
   }
