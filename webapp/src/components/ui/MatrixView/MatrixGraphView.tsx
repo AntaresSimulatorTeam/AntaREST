@@ -86,7 +86,7 @@ export default function MatrixGraphView(props: PropTypes) {
           <Select
             className={classes.select}
             labelId="chip-label"
-            id="chip"
+            id="matrix-chip"
             multiple
             value={columnName}
             onChange={handleChange}
