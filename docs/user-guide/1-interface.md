@@ -69,14 +69,14 @@ Here we can:
 - edit the command list composing the variant
 - monitor or verify the result of the generation process
 
-:hammer-and-wrench: The command edition view is under active development. Form fields will be soon added to guide the command edition.
+:hammer_and_wrench: The command edition view is under active development. Form fields will be soon added to guide the command edition.
 
 ![](../assets/media/img/studyvariantedit.png)
 
 ### Detailed view
 
 The detailed view is a tree representation of a study files. 
-It can be browsed and node can be viewed and edited. \
+It can be browsed and node can be viewed and edited.\
 :warning: The view can take some time to load the first time.
 
 
