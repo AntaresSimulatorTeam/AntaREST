@@ -1,7 +1,9 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable no-plusplus */
 import { ContentState, convertFromHTML, convertToRaw, EditorState } from 'draft-js';
 import draftToHtml from 'draftjs-to-html';
 import { Element as XMLElement, js2xml, xml2json } from 'xml-js';
+import { getVariantParents } from '../../services/api/variant';
 
 interface BlockMap {
   from: string;
@@ -13,8 +15,7 @@ const blockMap: Array<BlockMap> = [{ from: 'ins', to: 'u' },
   { from: 'strong', to: 'b' }];
 
 const XmlToHTML = { paragraph: 'p',
-  text: 'span',
-  symbol: 'span' };
+  text: 'span' };
 
 type ListType = 'Numbered List' | 'Bullet List';
 
@@ -61,7 +62,7 @@ const parseXMLAttributes = (node: XMLElement): AttributesUtils => {
             closeBalise = `</b>${closeBalise}`;
           }
           break;
-        case 'fontunderline':
+        case 'fontunderlined':
           openBalise += '<u>';
           closeBalise = `</u>${closeBalise}`;
           break;
@@ -161,9 +162,9 @@ CONVERT DRAFT JS INTERNAL MODEL TO CUSTOM ANTARES XML
 */
 
 const HTMLToAttributes = {
-  b: { fontweight: '700' },
+  b: { fontweight: '92' },
   i: { fontstyle: '93' },
-  u: { fontunderline: '1' },
+  u: { fontunderlined: '1' },
 };
 
 const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 0): number => {
@@ -202,7 +203,7 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
                 // eslint-disable-next-line no-param-reassign
                 node.attributes = { ...node.attributes, ...(HTMLToAttributes as any)[node.name] };
                 // eslint-disable-next-line no-param-reassign
-                node.name = 'symbol';
+                node.name = 'text';
                 parseSon(node);
               }
             }
@@ -222,10 +223,10 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
                 alignment: '1',
                 leftindent: '60',
                 leftsubindent: '60',
-                bulletstyle: '512',
-                bulletname: 'standard/circle',
+                bulletstyle: parent.name === 'ol' ? '4353' : '512',
                 bulletnumber: listSeq.toString(),
                 liststyle: parent.name === 'ol' ? 'Numbered List' : 'Bullet List' };
+              if (parent.name === 'ul') node.attributes = { ...node.attributes, bulletname: 'standard/circle' };
               // eslint-disable-next-line no-param-reassign
               node.name = 'paragraph';
               parseSon(node);
@@ -234,15 +235,41 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
 
           case 'ul':
           case 'ol':
-            parseSon(node);
+            if (node.elements !== undefined && node.elements.length > 0 && parent.elements && parent.elements.length > 0) {
+              parseSon(node);
+              let newElements: Array<XMLElement> = [];
+              const index = parent.elements?.findIndex((elm) => elm === node);
+              console.log('INDEX: ', index, '; LENGTH: ', parent.elements?.length);
+              newElements = newElements.concat(parent.elements.slice(0, index));
+              newElements = newElements.concat(node.elements);
+              newElements = newElements.concat(parent.elements.slice(index + 1));
+              parent.elements = newElements;
+
+            }
+            else {
+              parent.elements = parent.elements?.filter((elm) => elm !== node);
+            }
             // eslint-disable-next-line no-param-reassign
-            node.name = 'paragraph';
+            //node.name = 'paragraph';
             break;
 
           default:
             parseSon(node);
             break;
         }
+      }
+    } else if (node.type === 'text' && parent.name !== 'text') {
+      if (node.text !== undefined) {
+        node.type = 'element';
+        const { text } = node;
+        node.text = undefined;
+        node.name = 'text';
+        node.elements = [
+          {
+            type: 'text',
+            text,
+          },
+        ];
       }
     }
   } else if (node.elements !== undefined) {
@@ -264,7 +291,7 @@ const convertHTMLToXML = (data: string): string => {
 const addXMLHeader = (xmlData: string): string => {
   let res = '<?xml version="1.0" encoding="UTF-8"?>';
   res += '<richtext version="1.0.0.0" xmlns="http://www.wxwidgets.org">';
-  res += '<paragraphlayout textcolor="#000000" fontpointsize="9" fontfamily="70" fontstyle="90" fontweight="400" fontunderlined="0" fontface="Segoe UI" alignment="1" parspacingafter="10" parspacingbefore="0" linespacing="10">';
+  res += '<paragraphlayout textcolor="#000000" fontpointsize="9" fontfamily="70" fontstyle="90" fontweight="90" fontunderlined="0" fontface="Segoe UI" alignment="1" parspacingafter="10" parspacingbefore="0" linespacing="10">';
   res += xmlData;
   res += '</paragraphlayout>';
   res += '</richtext>';
@@ -302,7 +329,7 @@ fontweight
 fontpointsize
 fontfamily
 fontstyle
-fontunderline
+fontunderlined
 fontface
 alignment
 parspacingafter
