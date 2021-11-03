@@ -16,6 +16,8 @@ import {
   faShieldAlt,
   faUsers,
   faBolt,
+  faTable,
+  faChartArea,
 } from '@fortawesome/free-solid-svg-icons';
 import { faQuestionCircle, faCopy } from '@fortawesome/free-regular-svg-icons';
 
@@ -37,5 +39,7 @@ export default function (): void {
     faQuestionCircle,
     faCopy,
     faBolt,
+    faTable,
+    faChartArea,
   );
 }

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { createStyles, makeStyles, Theme, Tooltip } from '@material-ui/core';
 import { MatrixInfoDTO, MatrixType } from '../../common/types';
 import InformationModal from '../ui/InformationModal';
-import MatrixView from '../ui/MatrixView';
+import MatrixView from '../ui/MatrixView/index';
 import { getMatrix } from '../../services/api/matrix';
 import { CopyIcon } from './utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
