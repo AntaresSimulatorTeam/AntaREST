@@ -4,6 +4,7 @@ import os
 import shutil
 import threading
 import time
+from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Optional, Dict
 from uuid import UUID, uuid4
@@ -37,15 +38,20 @@ class VersionNotSupportedError(Exception):
     pass
 
 
+class JobIdNotFound(Exception):
+    pass
+
+
 class SlurmLauncher(AbstractLauncher):
     def __init__(
         self,
         config: Config,
-        storage_service: StudyService,
+        study_service: StudyService,
+        data_repo_tinydb: Optional[DataRepoTinydb],
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
     ) -> None:
-        super().__init__(config, storage_service, callbacks)
+        super().__init__(config, study_service, callbacks)
         if config.launcher.slurm is None:
             raise LauncherInitException()
 
@@ -60,7 +66,7 @@ class SlurmLauncher(AbstractLauncher):
         )
         self.launcher_args = self._init_launcher_arguments()
         self.launcher_params = self._init_launcher_parameters()
-        self.data_repo_tinydb = DataRepoTinydb(
+        self.data_repo_tinydb = data_repo_tinydb or DataRepoTinydb(
             database_name=(
                 self.launcher_params.json_dir
                 / self.launcher_params.default_json_db_name
@@ -264,6 +270,13 @@ class SlurmLauncher(AbstractLauncher):
                 f" {', '.join(self.slurm_config.antares_versions_on_remote_server)}"
             )
 
+    def _clean_up_study(self, launch_id: str) -> None:
+        self.data_repo_tinydb.remove_study(launch_id)
+        self._delete_study(
+            self.slurm_config.local_workspace / "OUTPUT" / launch_id
+        )
+        del self.job_id_to_study_id[launch_id]
+
     def _run_study(
         self, study_uuid: str, launch_uuid: str, params: RequestParameters
     ) -> None:
@@ -316,13 +329,6 @@ class SlurmLauncher(AbstractLauncher):
 
         return launch_uuid
 
-    def _clean_up_study(self, launch_id: str) -> None:
-        self.data_repo_tinydb.remove_study(launch_id)
-        self._delete_study(
-            self.slurm_config.local_workspace / "OUTPUT" / launch_id
-        )
-        del self.job_id_to_study_id[launch_id]
-
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
@@ -330,3 +336,15 @@ class SlurmLauncher(AbstractLauncher):
                 if log_path:
                     return log_path.read_text()
         return None
+
+    def kill_job(self, job_id: str) -> None:
+        launcher_args = deepcopy(self.launcher_args)
+        for study in self.data_repo_tinydb.get_list_of_studies():
+            if study.name == job_id:
+                launcher_args.job_id_to_kill = study.job_id
+                run_with(
+                    launcher_args, self.launcher_params, show_banner=False
+                )
+                return
+
+        raise JobIdNotFound()

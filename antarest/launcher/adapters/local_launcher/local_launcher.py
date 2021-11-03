@@ -73,3 +73,6 @@ class LocalLauncher(AbstractLauncher):
 
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         raise NotImplementedError()
+
+    def kill_job(self, job_id: str) -> None:
+        pass

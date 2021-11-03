@@ -20,6 +20,7 @@ class JobStatus(enum.Enum):
     FAILED = "failed"
     SUCCESS = "success"
     RUNNING = "running"
+    CANCELLED = "cancelled"
 
 
 class JobResultDTO(BaseModel):
