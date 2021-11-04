@@ -75,4 +75,4 @@ class LocalLauncher(AbstractLauncher):
         raise NotImplementedError()
 
     def kill_job(self, job_id: str) -> None:
-        pass
+        raise NotImplementedError()

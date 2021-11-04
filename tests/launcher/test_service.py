@@ -253,17 +253,17 @@ def test_service_kill_job():
         event_bus=Mock(),
         factory_launcher=Mock(),
     )
+    launcher = "slurm"
     job_result_mock = Mock()
     job_result_mock.study_id = "study_id"
+    job_result_mock.launcher = launcher
     launcher_service.job_result_repository.get.return_value = job_result_mock
     launcher_service.launchers = {"slurm": Mock()}
     job_id = "job_id"
-    launcher = "slurm"
 
     job_status = launcher_service.kill_job(
         job_id=job_id,
         params=RequestParameters(user=DEFAULT_ADMIN_USER),
-        launcher=launcher,
     )
 
     launcher_service.launchers[launcher].kill_job.assert_called_once_with(

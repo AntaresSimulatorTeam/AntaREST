@@ -126,13 +126,12 @@ class LauncherService:
 
         return job_uuid
 
-    def kill_job(
-        self, job_id: str, params: RequestParameters, launcher: str
-    ) -> JobResult:
+    def kill_job(self, job_id: str, params: RequestParameters) -> JobResult:
 
         job_result = self.job_result_repository.get(job_id)
         assert job_result
         study_uuid = job_result.study_id
+        launcher = job_result.launcher
         study = self.study_service.get_study(study_uuid)
         assert_permission(
             user=params.user,

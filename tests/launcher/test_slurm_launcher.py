@@ -1,7 +1,7 @@
 import os
 import uuid
 from argparse import Namespace
-from pathlib import Path, PosixPath
+from pathlib import Path
 from unittest.mock import Mock, ANY, patch
 
 import pytest
@@ -351,7 +351,7 @@ def test_kill_job(
         xpansion_mode=False,
     )
     launcher_parameters = MainParameters(
-        json_dir=PosixPath(tmp_path),
+        json_dir=Path(tmp_path),
         default_json_db_name="default_json_db_name",
         slurm_script_path="slurm_script_path",
         antares_versions_on_remote_server=["42"],
@@ -359,7 +359,7 @@ def test_kill_job(
             "username": "username",
             "hostname": "hostname",
             "port": 42,
-            "private_key_file": PosixPath("private_key_file"),
+            "private_key_file": Path("private_key_file"),
             "key_password": "key_password",
             "password": "password",
         },
