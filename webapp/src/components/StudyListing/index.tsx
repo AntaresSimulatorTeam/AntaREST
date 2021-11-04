@@ -174,6 +174,7 @@ const StudyListing = (props: PropTypes) => {
     const columnCount = Math.floor(width / 428);
     return (
       <FixedSizeGrid
+        // eslint-disable-next-line react/prop-types
         initialScrollTop={scrollPosition.rowIndex * 206}
         onItemsRendered={({
           visibleRowStartIndex,
