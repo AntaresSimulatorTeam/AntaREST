@@ -40,8 +40,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 let scrollState = 0;
 
-const listItemHeight = 66.5;
-const gridItemHeight = 206.5;
+const LIST_ITEM_HEIGHT = 66.5;
+const GRID_ITEM_HEIGHT = 206.5;
 
 const Row = React.memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
@@ -178,7 +178,7 @@ const StudyListing = (props: PropTypes) => {
     return (
       <FixedSizeGrid
         // eslint-disable-next-line react/prop-types
-        initialScrollTop={scrollPosition * gridItemHeight}
+        initialScrollTop={scrollPosition * GRID_ITEM_HEIGHT}
         onItemsRendered={({
           visibleRowStartIndex,
         }) => { scrollState = visibleRowStartIndex; }}
@@ -207,7 +207,7 @@ const StudyListing = (props: PropTypes) => {
         {
             ({ height, width }) => (isList ? (
               <FixedSizeList
-                initialScrollOffset={scrollPosition * listItemHeight}
+                initialScrollOffset={scrollPosition * LIST_ITEM_HEIGHT}
                 onItemsRendered={({
                   visibleStartIndex,
                 }) => { scrollState = visibleStartIndex; }}
