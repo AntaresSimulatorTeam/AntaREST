@@ -241,3 +241,36 @@ def test_service_get_versions(config_local, config_slurm, expected_output):
     )
 
     assert expected_output == launcher_service.get_versions(params=Mock())
+
+
+@pytest.mark.unit_test
+def test_service_kill_job():
+
+    launcher_service = LauncherService(
+        config=Mock(),
+        study_service=Mock(),
+        job_result_repository=Mock(),
+        event_bus=Mock(),
+        factory_launcher=Mock(),
+    )
+    launcher = "slurm"
+    job_result_mock = Mock()
+    job_result_mock.study_id = "study_id"
+    job_result_mock.launcher = launcher
+    launcher_service.job_result_repository.get.return_value = job_result_mock
+    launcher_service.launchers = {"slurm": Mock()}
+    job_id = "job_id"
+
+    job_status = launcher_service.kill_job(
+        job_id=job_id,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+    launcher_service.launchers[launcher].kill_job.assert_called_once_with(
+        job_id=job_id
+    )
+
+    assert job_status.job_status == JobStatus.FAILED
+    launcher_service.job_result_repository.save.assert_called_once_with(
+        job_status
+    )

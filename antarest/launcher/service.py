@@ -92,6 +92,10 @@ class LauncherService:
                 )
             )
 
+    def _assert_launcher_is_initialized(self, launcher: str) -> None:
+        if launcher not in self.launchers:
+            raise LauncherServiceNotAvailableException(launcher)
+
     def run_study(
         self, study_uuid: str, params: RequestParameters, launcher: str
     ) -> UUID:
@@ -99,8 +103,9 @@ class LauncherService:
             uuid=study_uuid, params=params
         )
         study_version = study_info.version
-        if launcher not in self.launchers:
-            raise LauncherServiceNotAvailableException(launcher)
+
+        self._assert_launcher_is_initialized(launcher)
+
         job_uuid: UUID = self.launchers[launcher].run_study(
             study_uuid, str(study_version), params
         )
@@ -120,6 +125,39 @@ class LauncherService:
         )
 
         return job_uuid
+
+    def kill_job(self, job_id: str, params: RequestParameters) -> JobResult:
+
+        job_result = self.job_result_repository.get(job_id)
+        assert job_result
+        study_uuid = job_result.study_id
+        launcher = job_result.launcher
+        study = self.study_service.get_study(study_uuid)
+        assert_permission(
+            user=params.user,
+            study=study,
+            permission_type=StudyPermissionType.RUN,
+        )
+
+        self._assert_launcher_is_initialized(launcher)
+
+        self.launchers[launcher].kill_job(job_id=job_id)
+
+        job_status = JobResult(
+            id=str(job_id),
+            study_id=study_uuid,
+            job_status=JobStatus.FAILED,
+            launcher=launcher,
+        )
+        self.job_result_repository.save(job_status)
+        self.event_bus.push(
+            Event(
+                EventType.STUDY_JOB_CANCELLED,
+                job_status.to_dto().dict(),
+            )
+        )
+
+        return job_status
 
     def _filter_from_user_permission(
         self, job_results: List[JobResult], user: Optional[JWTUser]
@@ -189,8 +227,7 @@ class LauncherService:
                         params=params,
                     ),
                 )
-            if job_result.launcher not in self.launchers:
-                raise LauncherServiceNotAvailableException(job_result.launcher)
+            self._assert_launcher_is_initialized(job_result.launcher)
             return self.launchers[job_result.launcher].get_log(
                 job_id, log_type
             )

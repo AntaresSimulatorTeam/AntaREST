@@ -38,3 +38,7 @@ class AbstractLauncher(ABC):
     @abstractmethod
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         raise NotImplementedError()
+
+    @abstractmethod
+    def kill_job(self, job_id: str) -> None:
+        raise NotImplementedError()
