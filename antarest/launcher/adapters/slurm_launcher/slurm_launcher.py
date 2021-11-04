@@ -13,7 +13,7 @@ from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import (
     MainOptionParser,
-    MainOptionsParameters,
+    ParserParameters,
 )
 from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config, SlurmConfig
@@ -66,7 +66,7 @@ class SlurmLauncher(AbstractLauncher):
         self.launcher_args = self._init_launcher_arguments()
         self.launcher_params = self._init_launcher_parameters()
         self.data_repo_tinydb = DataRepoTinydb(
-            database_name=(
+            database_file_path=(
                 self.launcher_params.json_dir
                 / self.launcher_params.default_json_db_name
             ),
@@ -94,7 +94,7 @@ class SlurmLauncher(AbstractLauncher):
         self.thread = None
 
     def _init_launcher_arguments(self) -> argparse.Namespace:
-        main_options_parameters = MainOptionsParameters(
+        main_options_parameters = ParserParameters(
             default_wait_time=self.slurm_config.default_wait_time,
             default_time_limit=self.slurm_config.default_time_limit,
             default_n_cpu=self.slurm_config.default_n_cpu,
@@ -130,7 +130,7 @@ class SlurmLauncher(AbstractLauncher):
             default_json_db_name=self.slurm_config.default_json_db_name,
             slurm_script_path=self.slurm_config.slurm_script_path,
             antares_versions_on_remote_server=self.slurm_config.antares_versions_on_remote_server,
-            default_ssh_dict_from_embedded_json={
+            default_ssh_dict={
                 "username": self.slurm_config.username,
                 "hostname": self.slurm_config.hostname,
                 "port": self.slurm_config.port,
