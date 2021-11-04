@@ -1,9 +1,9 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-plusplus */
-import { ContentState, convertFromHTML, convertToRaw, EditorState } from 'draft-js';
+import { ContentState, convertToRaw, EditorState } from 'draft-js';
 import draftToHtml from 'draftjs-to-html';
+import { convertToHTML, convertFromHTML } from 'draft-convert';
 import { Element as XMLElement, js2xml, xml2json } from 'xml-js';
-import { getVariantParents } from '../../services/api/variant';
 
 interface BlockMap {
   from: string;
@@ -86,7 +86,7 @@ const parseXMLAttributes = (node: XMLElement): AttributesUtils => {
   return { openBalise, closeBalise, list: isList ? listType : undefined };
 };
 
-const parseXMLToHTMLNode = (node: XMLElement, prevListSeq: ListType | undefined, isLastSon = false): NodeProcessResult => {
+const parseXMLToHTMLNode = (node: XMLElement, parent: XMLElement, prevListSeq: ListType | undefined, isLastSon = false): NodeProcessResult => {
   const res: NodeProcessResult = { result: '' };
   if (node.type !== undefined) {
     if (node.type === 'element') {
@@ -94,6 +94,15 @@ const parseXMLToHTMLNode = (node: XMLElement, prevListSeq: ListType | undefined,
         let attributesUtils: AttributesUtils = { openBalise: '', closeBalise: '' };
         if (Object.keys(XmlToHTML).includes(node.name)) {
           attributesUtils = parseXMLAttributes(node);
+
+          /* if (node.name === 'text' &&
+            (node.elements === undefined || node.elements.length === 0) &&
+            parent !== node &&
+            parent.name === 'paragraph' &&
+            parent.elements?.length === 1 &&
+            Object.keys(parent.attributes !== undefined ? parent.attributes : {}).length === 0) {
+            return { result: '&nbsp; ' };
+          } */
 
           if (attributesUtils.list !== undefined) {
             if (prevListSeq === undefined) {
@@ -119,19 +128,19 @@ const parseXMLToHTMLNode = (node: XMLElement, prevListSeq: ListType | undefined,
         if (node.elements !== undefined && node.elements.length > 0) {
           let completeResult: NodeProcessResult = { result: '' };
           for (let j = 0; j < node.elements.length; j++) {
-            completeResult = parseXMLToHTMLNode(node.elements[j], completeResult.listSeq, j === node.elements.length - 1);
+            completeResult = parseXMLToHTMLNode(node.elements[j], node, completeResult.listSeq, j === node.elements.length - 1);
             res.result += completeResult.result;
           }
           return { result: attributesUtils.openBalise + res.result + attributesUtils.closeBalise, listSeq: attributesUtils.list };
         }
       }
     } else if (node.type === 'text') {
-      if (node.text !== undefined) return { result: (node.text as string) };
+      if (node.text !== undefined) return { result: replaceAll((node.text as string), '"', '') };
     }
   } else if (node.elements !== undefined) {
     let completeResult: NodeProcessResult = { result: '' };
     for (let i = 0; i < node.elements.length; i++) {
-      completeResult = parseXMLToHTMLNode(node.elements[i], completeResult.listSeq, i === node.elements.length - 1);
+      completeResult = parseXMLToHTMLNode(node.elements[i], node, completeResult.listSeq, i === node.elements.length - 1);
       res.result += completeResult.result;
     }
   }
@@ -142,17 +151,13 @@ const parseXMLToHTMLNode = (node: XMLElement, prevListSeq: ListType | undefined,
 const convertXMLToHTML = (data: string): string => {
   const xmlStr = xml2json(data, { compact: false, spaces: 4 });
   const xmlElement: XMLElement = JSON.parse(xmlStr);
-  return parseXMLToHTMLNode(xmlElement, undefined, true).result;
+  return parseXMLToHTMLNode(xmlElement, xmlElement, undefined, true).result;
 };
 
 export const convertXMLToDraftJS = (data: string): ContentState => {
   const htmlData = convertXMLToHTML(data);
   console.log('XML TO HTML: ', htmlData);
-  const blocks = convertFromHTML(htmlData, undefined);
-  return ContentState.createFromBlockArray(
-    blocks.contentBlocks,
-    blocks.entityMap,
-  );
+  return convertFromHTML(htmlData);
 };
 
 /*
@@ -167,15 +172,47 @@ const HTMLToAttributes = {
   u: { fontunderlined: '1' },
 };
 
-const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 0): number => {
-  let listSeq = 0;
+enum ParseHTMLToXMLNodeActions {
+  DELETE = 'DELETE',
+  COPYCHILD = 'COPYCHILD',
+  NONE = 'NONE'
+}
 
-  const parseSon = (nodeElement: XMLElement): void => {
+interface ParseHTMLToXMLActionList {
+  action: ParseHTMLToXMLNodeActions;
+  node: XMLElement;
+}
+
+const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 0): ParseHTMLToXMLNodeActions => {
+  let action: ParseHTMLToXMLNodeActions = ParseHTMLToXMLNodeActions.NONE;
+  const parseChild = (nodeElement: XMLElement): void => {
     if (nodeElement.elements !== undefined) {
-      let prevListSeq = 0;
+      const actionList: Array<ParseHTMLToXMLActionList> = [];
+      let childAction: ParseHTMLToXMLNodeActions = ParseHTMLToXMLNodeActions.NONE;
       for (let i = 0; i < nodeElement.elements.length; i++) {
-        prevListSeq = parseHTMLToXMLNode(nodeElement.elements[i], nodeElement, prevListSeq);
+        childAction = parseHTMLToXMLNode(nodeElement.elements[i], nodeElement, i);
+        if (childAction !== ParseHTMLToXMLNodeActions.NONE) {
+          actionList.push({ action: childAction, node: nodeElement.elements[i] });
+        }
       }
+      actionList.forEach((elm: ParseHTMLToXMLActionList) => {
+        if (nodeElement.elements !== undefined) {
+          if (elm.action === ParseHTMLToXMLNodeActions.DELETE) {
+            nodeElement.elements = nodeElement.elements.filter((item) => item !== elm.node);
+            console.log('OH YEAH DELETE');
+          } else if (elm.node.elements !== undefined && elm.node.elements.length > 0) {
+            let newElements: Array<XMLElement> = [];
+            const index = nodeElement.elements.findIndex((item) => item === elm.node);
+            if (index !== undefined && index >= 0) {
+              newElements = newElements.concat(nodeElement.elements.slice(0, index));
+              newElements = newElements.concat(elm.node.elements);
+              newElements = newElements.concat(nodeElement.elements.slice(index + 1));
+              node.elements = newElements;
+              console.log('OH YEAH COPY');
+            }
+          }
+        }
+      });
     }
   };
 
@@ -184,84 +221,97 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
       if (node.name !== undefined) {
         switch (node.name) {
           case 'p':
-            // eslint-disable-next-line no-param-reassign
             node.name = 'paragraph';
-            parseSon(node);
+            if (node.elements === undefined || node.elements.length === 0) {
+              console.log('P IS EMPTY MAN');
+              node.elements = [{
+                type: 'element',
+                name: 'text',
+                elements: [{
+                  type: 'text',
+                  text: '',
+                },
+                ],
+              }];
+            } else {
+              parseChild(node);
+            }
             break;
 
           case 'b':
           case 'i':
           case 'u':
-            if (parent !== node) {
-              if ((parent.name === 'paragraph' || parent.name === 'text') && parent.elements !== undefined && parent.elements.length === 1) {
-                // eslint-disable-next-line no-param-reassign
-                parent.attributes = { ...parent.attributes, ...(HTMLToAttributes as any)[node.name] };
-                // eslint-disable-next-line no-param-reassign
-                parent.elements = node.elements;
-                parseSon(parent);
-              } else {
-                // eslint-disable-next-line no-param-reassign
-                node.attributes = { ...node.attributes, ...(HTMLToAttributes as any)[node.name] };
-                // eslint-disable-next-line no-param-reassign
-                node.name = 'text';
-                parseSon(node);
-              }
+            if ((parent !== node) && (parent.name === 'paragraph' || parent.name === 'text') && parent.elements !== undefined && parent.elements.length === 1) {
+              // eslint-disable-next-line no-param-reassign
+              parent.attributes = { ...parent.attributes, ...(HTMLToAttributes as any)[node.name] };
+              // eslint-disable-next-line no-param-reassign
+              parent.elements = node.elements;
+              parseChild(parent);
+            } else {
+              // eslint-disable-next-line no-param-reassign
+              node.attributes = { ...node.attributes, ...(HTMLToAttributes as any)[node.name] };
+              // eslint-disable-next-line no-param-reassign
+              node.name = 'text';
+              parseChild(node);
             }
             break;
 
           case 'span':
             // eslint-disable-next-line no-param-reassign
             node.name = 'text';
-            parseSon(node);
+            parseChild(node);
             break;
 
           case 'li':
             if (parent !== node && parent.name !== undefined && (parent.name === 'ol' || parent.name === 'ul')) {
-              listSeq = (lastListSeq + 1);
               // eslint-disable-next-line no-param-reassign
               node.attributes = { ...node.attributes,
                 alignment: '1',
                 leftindent: '60',
                 leftsubindent: '60',
                 bulletstyle: parent.name === 'ol' ? '4353' : '512',
-                bulletnumber: listSeq.toString(),
+                bulletnumber: lastListSeq.toString(),
                 liststyle: parent.name === 'ol' ? 'Numbered List' : 'Bullet List' };
               if (parent.name === 'ul') node.attributes = { ...node.attributes, bulletname: 'standard/circle' };
               // eslint-disable-next-line no-param-reassign
               node.name = 'paragraph';
-              parseSon(node);
+              parseChild(node);
             }
             break;
 
           case 'ul':
           case 'ol':
-            if (node.elements !== undefined && node.elements.length > 0 && parent.elements && parent.elements.length > 0) {
-              parseSon(node);
-              let newElements: Array<XMLElement> = [];
+            if (node.elements !== undefined && node.elements.length > 0 && parent !== node && parent.elements && parent.elements.length > 0) {
+              parseChild(node);
+              /* let newElements: Array<XMLElement> = [];
               const index = parent.elements?.findIndex((elm) => elm === node);
               console.log('INDEX: ', index, '; LENGTH: ', parent.elements?.length);
               newElements = newElements.concat(parent.elements.slice(0, index));
               newElements = newElements.concat(node.elements);
               newElements = newElements.concat(parent.elements.slice(index + 1));
-              parent.elements = newElements;
-
+              parent.elements = newElements; */
+              console.log('COPY CHILD FOR ', node.name);
+              action = ParseHTMLToXMLNodeActions.COPYCHILD;
+            } else {
+              action = ParseHTMLToXMLNodeActions.DELETE;
+              console.log('DELETE CHILD FOR ', node.name);
+              // parent.elements = parent.elements?.filter((elm) => elm !== node);
             }
-            else {
-              parent.elements = parent.elements?.filter((elm) => elm !== node);
-            }
-            // eslint-disable-next-line no-param-reassign
-            //node.name = 'paragraph';
             break;
 
           default:
-            parseSon(node);
+            parseChild(node);
             break;
         }
       }
     } else if (node.type === 'text' && parent.name !== 'text') {
       if (node.text !== undefined) {
         node.type = 'element';
-        const { text } = node;
+        let { text } = node;
+        if (text !== undefined &&
+           typeof text === 'string' &&
+           text.length > 0 &&
+           (text[0] === ' ' || text[text.length - 1] === ' ')) text = `"${text}"`;
         node.text = undefined;
         node.name = 'text';
         node.elements = [
@@ -273,9 +323,10 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
       }
     }
   } else if (node.elements !== undefined) {
-    parseSon(node);
+    parseChild(node);
   }
-  return listSeq;
+
+  return action;
 };
 
 const convertHTMLToXML = (data: string): string => {

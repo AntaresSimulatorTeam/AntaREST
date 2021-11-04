@@ -143,6 +143,7 @@ const NoteView = (props: Props) => {
             readOnly={!editionMode}
             editorState={editorState}
             onChange={setEditorState}
+            textAlignment="left"
           />
         </div>
       </div>
