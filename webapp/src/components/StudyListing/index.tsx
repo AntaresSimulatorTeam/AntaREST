@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useEffect } from 'react';
 import { AxiosError } from 'axios';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
@@ -8,10 +8,11 @@ import { useTranslation } from 'react-i18next';
 import { areEqual, FixedSizeGrid, FixedSizeList, GridChildComponentProps, ListChildComponentProps } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { StudyMetadata } from '../../common/types';
-import { removeStudies } from '../../ducks/study';
+import { removeStudies, updateScrollPosition } from '../../ducks/study';
 import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy, copyStudy as callCopyStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy } from '../../services/api/study';
 import StudyListElementView from './StudyListingItemView';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import { AppState } from '../../App/reducers';
 
 const logError = debug('antares:studyblockview:error');
 
@@ -36,6 +37,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     paddingTop: theme.spacing(2),
   },
 }));
+
+let scrollState = 0;
 
 const Row = React.memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
@@ -80,10 +83,13 @@ const Block = (props: GridChildComponentProps) => {
   return <div />;
 };
 
-const mapState = () => ({ /* noop */ });
+const mapState = (state: AppState) => ({
+  scrollPosition: state.study.scrollPosition,
+});
 
 const mapDispatch = ({
   removeStudy: (sid: string) => removeStudies([sid]),
+  updateScroll: updateScrollPosition,
 });
 
 const connector = connect(mapState, mapDispatch);
@@ -96,7 +102,7 @@ type PropTypes = PropsFromRedux & OwnProps;
 
 const StudyListing = (props: PropTypes) => {
   const classes = useStyles();
-  const { studies, removeStudy, isList } = props;
+  const { studies, removeStudy, isList, scrollPosition, updateScroll } = props;
   const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
   const launchStudy = async (study: StudyMetadata) => {
@@ -168,6 +174,10 @@ const StudyListing = (props: PropTypes) => {
     const columnCount = Math.floor(width / 428);
     return (
       <FixedSizeGrid
+        initialScrollTop={scrollPosition.rowIndex * 206}
+        onItemsRendered={({
+          visibleRowStartIndex,
+        }) => { scrollState = visibleRowStartIndex; }}
         height={height}
         width={width}
         innerElementType={innerElementType}
@@ -182,12 +192,20 @@ const StudyListing = (props: PropTypes) => {
     );
   };
 
+  useEffect(() =>
+    () => {
+      updateScroll({ rowIndex: scrollState, columnIndex: 0 });
+    });
   return (
     <div className={classes.root}>
       <AutoSizer>
         {
             ({ height, width }) => (isList ? (
               <FixedSizeList
+                initialScrollOffset={scrollPosition.rowIndex * 66.5}
+                onItemsRendered={({
+                  visibleStartIndex,
+                }) => { scrollState = visibleStartIndex; }}
                 height={height}
                 width={width}
                 innerElementType={innerElementType}

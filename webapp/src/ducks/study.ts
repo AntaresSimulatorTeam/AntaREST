@@ -6,18 +6,35 @@ import { StudyMetadata } from '../common/types';
 /* State                                        */
 /** ******************************************* */
 
+interface ScrollPosition {
+  rowIndex: number;
+  columnIndex: number;
+}
+
 export interface StudyState {
   current?: string;
   studies: StudyMetadata[];
+  scrollPosition: ScrollPosition;
 }
 
 const initialState: StudyState = {
   studies: [],
+  scrollPosition: { rowIndex: 0, columnIndex: 0 },
 };
 
 /** ******************************************* */
 /* Actions                                      */
 /** ******************************************* */
+
+interface UpdateScrollPositionAction extends Action {
+  type: 'STUDY/SCROLL_POSITION';
+  payload: ScrollPosition;
+}
+
+export const updateScrollPosition = (scrollPosition: ScrollPosition): UpdateScrollPositionAction => ({
+  type: 'STUDY/SCROLL_POSITION',
+  payload: scrollPosition,
+});
 
 interface InitStudyListAction extends Action {
   type: 'STUDY/INIT_STUDY_LIST';
@@ -59,7 +76,7 @@ export const addStudies = (studies: StudyMetadata[]): AddStudyAction => ({
   payload: studies,
 });
 
-type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | AddStudyAction;
+type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | AddStudyAction | UpdateScrollPositionAction;
 
 /** ******************************************* */
 /* Selectors                                    */
@@ -93,6 +110,14 @@ export default (state = initialState, action: StudyAction): StudyState => {
         ...state,
         studies: state.studies.filter((s) => action.payload.map((study) => study.id).indexOf(s.id) === -1).concat(action.payload),
       };
+    case 'STUDY/SCROLL_POSITION':
+      if (state.scrollPosition.rowIndex !== action.payload.rowIndex) {
+        return {
+          ...state,
+          scrollPosition: action.payload,
+        };
+      }
+      return state;
     default:
       return state;
   }
