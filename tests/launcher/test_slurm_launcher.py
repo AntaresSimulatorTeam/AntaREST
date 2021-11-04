@@ -125,7 +125,7 @@ def test_init_slurm_launcher_parameters(tmp_path: Path):
         main_parameters.antares_versions_on_remote_server
         == config.launcher.slurm.antares_versions_on_remote_server
     )
-    assert main_parameters.default_ssh_dict_from_embedded_json == {
+    assert main_parameters.default_ssh_dict == {
         "username": config.launcher.slurm.username,
         "hostname": config.launcher.slurm.hostname,
         "port": config.launcher.slurm.port,
@@ -355,7 +355,7 @@ def test_kill_job(
         default_json_db_name="default_json_db_name",
         slurm_script_path="slurm_script_path",
         antares_versions_on_remote_server=["42"],
-        default_ssh_dict_from_embedded_json={
+        default_ssh_dict={
             "username": "username",
             "hostname": "hostname",
             "port": 42,
