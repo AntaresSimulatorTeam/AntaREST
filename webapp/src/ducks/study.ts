@@ -6,20 +6,15 @@ import { StudyMetadata } from '../common/types';
 /* State                                        */
 /** ******************************************* */
 
-interface ScrollPosition {
-  rowIndex: number;
-  columnIndex: number;
-}
-
 export interface StudyState {
   current?: string;
   studies: StudyMetadata[];
-  scrollPosition: ScrollPosition;
+  scrollPosition: number;
 }
 
 const initialState: StudyState = {
   studies: [],
-  scrollPosition: { rowIndex: 0, columnIndex: 0 },
+  scrollPosition: 0,
 };
 
 /** ******************************************* */
@@ -28,10 +23,10 @@ const initialState: StudyState = {
 
 interface UpdateScrollPositionAction extends Action {
   type: 'STUDY/SCROLL_POSITION';
-  payload: ScrollPosition;
+  payload: number;
 }
 
-export const updateScrollPosition = (scrollPosition: ScrollPosition): UpdateScrollPositionAction => ({
+export const updateScrollPosition = (scrollPosition: number): UpdateScrollPositionAction => ({
   type: 'STUDY/SCROLL_POSITION',
   payload: scrollPosition,
 });
@@ -111,7 +106,7 @@ export default (state = initialState, action: StudyAction): StudyState => {
         studies: state.studies.filter((s) => action.payload.map((study) => study.id).indexOf(s.id) === -1).concat(action.payload),
       };
     case 'STUDY/SCROLL_POSITION':
-      if (state.scrollPosition.rowIndex !== action.payload.rowIndex) {
+      if (state.scrollPosition !== action.payload) {
         return {
           ...state,
           scrollPosition: action.payload,

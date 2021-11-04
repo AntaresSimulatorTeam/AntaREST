@@ -40,6 +40,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 let scrollState = 0;
 
+const listItemHeight = 66.5;
+const gridItemHeight = 206.5;
+
 const Row = React.memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
   const { studies, isList, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = data;
@@ -175,7 +178,7 @@ const StudyListing = (props: PropTypes) => {
     return (
       <FixedSizeGrid
         // eslint-disable-next-line react/prop-types
-        initialScrollTop={scrollPosition.rowIndex * 206}
+        initialScrollTop={scrollPosition * gridItemHeight}
         onItemsRendered={({
           visibleRowStartIndex,
         }) => { scrollState = visibleRowStartIndex; }}
@@ -195,15 +198,16 @@ const StudyListing = (props: PropTypes) => {
 
   useEffect(() =>
     () => {
-      updateScroll({ rowIndex: scrollState, columnIndex: 0 });
-    });
+      updateScroll(scrollState);
+    }, [updateScroll]);
+
   return (
     <div className={classes.root}>
       <AutoSizer>
         {
             ({ height, width }) => (isList ? (
               <FixedSizeList
-                initialScrollOffset={scrollPosition.rowIndex * 66.5}
+                initialScrollOffset={scrollPosition * listItemHeight}
                 onItemsRendered={({
                   visibleStartIndex,
                 }) => { scrollState = visibleStartIndex; }}
