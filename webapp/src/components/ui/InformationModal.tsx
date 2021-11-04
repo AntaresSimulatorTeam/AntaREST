@@ -121,4 +121,9 @@ const InformationModal = (props: PropsWithChildren<PropTypes>) => {
   );
 };
 
+InformationModal.defaultProps = {
+  fixedSize: undefined,
+  buttonName: 'OK',
+};
+
 export default InformationModal;
