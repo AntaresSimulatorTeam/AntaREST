@@ -289,22 +289,88 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
             break;
         }
       }
-    } else if (node.type === 'text' && parent.name !== 'text') {
+    } else if (node.type === 'text') { // && parent.name !== 'text'
       if (node.text !== undefined) {
         node.type = 'element';
-        let { text } = node;
+        const { text } = node;
         if (text !== undefined &&
-           typeof text === 'string' &&
-           text.length > 0 &&
-           (text[0] === ' ' || text[text.length - 1] === ' ')) text = `"${text}"`;
-        node.text = undefined;
-        node.name = 'text';
-        node.elements = [
-          {
-            type: 'text',
-            text,
-          },
-        ];
+          typeof text === 'string' &&
+          text.length > 0) {
+          const elements: Array<XMLElement> = [];
+          const tabList = text.split('&nbsp;');
+          let quoteList: Array<string> = [];
+          for (let i = 0; i < tabList.length; i++) {
+            quoteList = tabList[i].split('"');
+            for (let j = 0; j < quoteList.length; j++) {
+              if (quoteList[j].length > 0) {
+                elements.push({
+                  type: 'element',
+                  name: 'text',
+                  elements: [{
+                    type: 'text',
+                    text: (quoteList[j][0] === ' ' || quoteList[j][quoteList[j].length - 1] === ' ') ? `"${quoteList[j]}"` : quoteList[j],
+                  }],
+                });
+              }
+              if (j !== (quoteList.length - 1)) {
+                elements.push({
+                  type: 'element',
+                  name: 'symbol',
+                  elements: [{
+                    type: 'text',
+                    text: 34,
+                  }],
+                });
+              }
+            }
+
+            if (quoteList.length === 0) {
+              if (tabList[i].length > 0) {
+                elements.push({
+                  type: 'element',
+                  name: 'text',
+                  elements: [{
+                    type: 'text',
+                    text: (tabList[i][0] === ' ' || tabList[i][tabList[i].length - 1] === ' ') ? `"${tabList[i]}"` : tabList[i],
+                  }],
+                });
+              }
+            }
+
+            if (i !== (tabList.length - 1)) {
+              elements.push({
+                type: 'element',
+                name: 'symbol',
+                elements: [{
+                  type: 'text',
+                  text: 9,
+                }],
+              });
+            }
+          }
+
+          if (tabList.length === 0) {
+            node.text = undefined;
+            node.name = 'text';
+            node.elements = [{
+              type: 'text',
+              text: (text[0] === ' ' || text[text.length - 1] === ' ') ? `"${text}"` : text,
+            }];
+          } else {
+            node.text = undefined;
+            node.name = 'paragraph';
+            node.elements = elements;
+          }
+        } else {
+          node.text = undefined;
+          node.name = 'text';
+          node.elements = [
+            {
+              type: 'text',
+              text,
+            },
+          ];
+        }
       }
     }
   } else if (node.elements !== undefined) {
@@ -346,12 +412,6 @@ export const convertDraftJSToXML = (editorState: EditorState): string => {
 
 /*
 NOTE:
-<paragraph> => p
-<text> => <p>
-<symbol> => \tab
-blocks: Array<RawDraftContentBlock>;
-entityMap: { [key: string]: RawDraftEntity };
-
 elements: {
   type: 'element' | 'text
   attributes: {}
@@ -359,24 +419,6 @@ elements: {
   elements
 }
 
-PARAMS:
-textcolor
-fontweight
-fontpointsize
-fontfamily
-fontstyle
-fontunderlined
-fontface
-alignment
-parspacingafter
-parspacingbefore
-linespacing
-margin-left
-margin-right
-margin-top
-margin-bottom
-leftindent
-leftsubindent
 */
 
 export default {};
