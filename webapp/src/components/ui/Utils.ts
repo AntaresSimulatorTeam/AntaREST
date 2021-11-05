@@ -92,17 +92,19 @@ const parseXMLToHTMLNode = (node: XMLElement, parent: XMLElement, prevListSeq: L
     if (node.type === 'element') {
       if (node.name !== undefined) {
         let attributesUtils: AttributesUtils = { openBalise: '', closeBalise: '' };
-        if (Object.keys(XmlToHTML).includes(node.name)) {
+        if (node.name === 'symbol') {
+          if (node.elements !== undefined &&
+             node.elements.length === 1 &&
+             node.elements[0].type === 'text' &&
+             node.elements[0].text !== undefined) {
+            if (node.elements[0].text === '9') {
+              return { result: '&nbsp;' };
+            } if (node.elements[0].text === '34') {
+              return { result: '"' };
+            }
+          }
+        } else if (Object.keys(XmlToHTML).includes(node.name)) {
           attributesUtils = parseXMLAttributes(node);
-
-          /* if (node.name === 'text' &&
-            (node.elements === undefined || node.elements.length === 0) &&
-            parent !== node &&
-            parent.name === 'paragraph' &&
-            parent.elements?.length === 1 &&
-            Object.keys(parent.attributes !== undefined ? parent.attributes : {}).length === 0) {
-            return { result: '&nbsp; ' };
-          } */
 
           if (attributesUtils.list !== undefined) {
             if (prevListSeq === undefined) {
@@ -242,29 +244,23 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
           case 'i':
           case 'u':
             if ((parent !== node) && (parent.name === 'paragraph' || parent.name === 'text') && parent.elements !== undefined && parent.elements.length === 1) {
-              // eslint-disable-next-line no-param-reassign
               parent.attributes = { ...parent.attributes, ...(HTMLToAttributes as any)[node.name] };
-              // eslint-disable-next-line no-param-reassign
               parent.elements = node.elements;
               parseChild(parent);
             } else {
-              // eslint-disable-next-line no-param-reassign
               node.attributes = { ...node.attributes, ...(HTMLToAttributes as any)[node.name] };
-              // eslint-disable-next-line no-param-reassign
               node.name = 'text';
               parseChild(node);
             }
             break;
 
           case 'span':
-            // eslint-disable-next-line no-param-reassign
             node.name = 'text';
             parseChild(node);
             break;
 
           case 'li':
             if (parent !== node && parent.name !== undefined && (parent.name === 'ol' || parent.name === 'ul')) {
-              // eslint-disable-next-line no-param-reassign
               node.attributes = { ...node.attributes,
                 alignment: '1',
                 leftindent: '60',
@@ -273,7 +269,6 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
                 bulletnumber: lastListSeq.toString(),
                 liststyle: parent.name === 'ol' ? 'Numbered List' : 'Bullet List' };
               if (parent.name === 'ul') node.attributes = { ...node.attributes, bulletname: 'standard/circle' };
-              // eslint-disable-next-line no-param-reassign
               node.name = 'paragraph';
               parseChild(node);
             }
@@ -283,19 +278,9 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
           case 'ol':
             if (node.elements !== undefined && node.elements.length > 0 && parent !== node && parent.elements && parent.elements.length > 0) {
               parseChild(node);
-              /* let newElements: Array<XMLElement> = [];
-              const index = parent.elements?.findIndex((elm) => elm === node);
-              console.log('INDEX: ', index, '; LENGTH: ', parent.elements?.length);
-              newElements = newElements.concat(parent.elements.slice(0, index));
-              newElements = newElements.concat(node.elements);
-              newElements = newElements.concat(parent.elements.slice(index + 1));
-              parent.elements = newElements; */
-              console.log('COPY CHILD FOR ', node.name);
               action = ParseHTMLToXMLNodeActions.COPYCHILD;
             } else {
               action = ParseHTMLToXMLNodeActions.DELETE;
-              console.log('DELETE CHILD FOR ', node.name);
-              // parent.elements = parent.elements?.filter((elm) => elm !== node);
             }
             break;
 
