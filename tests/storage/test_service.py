@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -39,6 +39,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
+@pytest.mark.unit_test
 def test_get_studies_uuid() -> None:
     bob = User(id=1, name="bob")
     alice = User(id=2, name="alice")
@@ -74,6 +75,7 @@ def test_get_studies_uuid() -> None:
     assert [a, c] == studies
 
 
+@pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
     ma = RawStudy(id="a", path="a")
     fa = StudyFolder(path=Path("a"), workspace="", groups=[])
@@ -113,6 +115,7 @@ def test_sync_studies_from_disk() -> None:
     repository.save.assert_called_once()
 
 
+@pytest.mark.unit_test
 def test_remove_duplicate() -> None:
     ma = RawStudy(id="a", path="a")
     mb = RawStudy(id="b", path="a")
@@ -138,6 +141,7 @@ def test_remove_duplicate() -> None:
     repository.delete.assert_called_once_with(mb.id)
 
 
+@pytest.mark.unit_test
 def test_create_study() -> None:
     # Mock
     repository = Mock()
@@ -214,6 +218,7 @@ def test_create_study() -> None:
     repository.save.assert_called_once_with(expected)
 
 
+@pytest.mark.unit_test
 def test_save_metadata() -> None:
     # Mock
     repository = Mock()
@@ -276,6 +281,7 @@ def test_save_metadata() -> None:
     repository.save.assert_called_once_with(study)
 
 
+@pytest.mark.unit_test
 def test_download_output() -> None:
     study_service = Mock()
     repository = Mock()
@@ -400,6 +406,7 @@ def test_download_output() -> None:
     assert result == res_matrix
 
 
+@pytest.mark.unit_test
 def test_change_owner() -> None:
     uuid = str(uuid4())
     alice = User(id=1)
@@ -447,6 +454,7 @@ def test_change_owner() -> None:
         )
 
 
+@pytest.mark.unit_test
 def test_manage_group() -> None:
     uuid = str(uuid4())
     alice = User(id=1)
@@ -534,6 +542,7 @@ def test_manage_group() -> None:
     )
 
 
+@pytest.mark.unit_test
 def test_set_public_mode() -> None:
     uuid = str(uuid4())
     group_admin = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
@@ -576,6 +585,7 @@ def test_set_public_mode() -> None:
     )
 
 
+@pytest.mark.unit_test
 def test_check_errors():
     study_service = Mock()
     study_service.check_errors.return_value = ["Hello", "World"]
@@ -603,6 +613,7 @@ def test_check_errors():
     repo.get.assert_called_once_with("hello world")
 
 
+@pytest.mark.unit_test
 def test_assert_permission() -> None:
     uuid = str(uuid4())
     admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
@@ -681,3 +692,26 @@ def test_assert_permission() -> None:
         jwt_2, study, StudyPermissionType.WRITE, raising=False
     )
     assert assert_permission(jwt_2, study, StudyPermissionType.READ)
+
+
+@pytest.mark.unit_test
+def test_delete_study_calls_callback():
+    study_uuid = "my_study"
+    service = StudyService(
+        raw_study_service=Mock(),
+        variant_study_service=Mock(),
+        user_service=Mock(),
+        repository=Mock(),
+        event_bus=Mock(),
+        task_service=Mock(),
+        config=Mock(),
+    )
+    callback = Mock()
+    service.add_callback(callback)
+
+    service.delete_study(
+        study_uuid,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+    callback.assert_called_once_with(study_uuid)
