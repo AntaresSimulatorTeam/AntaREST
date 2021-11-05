@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import {
   makeStyles,
@@ -10,10 +10,11 @@ import {
   Typography,
   GridList,
   GridListTile,
+  Button,
 } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { getStudyJobLog } from '../../services/api/study';
+import { getStudyJobLog, killStudy } from '../../services/api/study';
 import { LaunchJob } from '../../common/types';
 import LogModal from '../ui/LogModal';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
@@ -93,6 +94,20 @@ const useStyles = makeStyles((theme: Theme) =>
     label: {
       fontWeight: 'bold',
     },
+    statusTile: {
+      '& div': {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+      },
+    },
+    statusText: {
+      display: 'block !important',
+      width: 'auto !important',
+    },
+    killButton: {
+    },
   }));
 
 interface PropTypes {
@@ -119,6 +134,10 @@ const TaskView = (props: PropTypes) => {
     })();
   };
 
+  const killTask = () => {
+    console.log('test');
+  };
+
   return (
     <Paper className={classes.root}>
       <LogModal
@@ -140,9 +159,12 @@ const TaskView = (props: PropTypes) => {
                   <Typography className={classes.label}>{t('singlestudy:taskId')}</Typography>
                   <Typography>{item.id}</Typography>
                 </GridListTile>
-                <GridListTile className={classes.gridTile}>
-                  <Typography className={classes.label}>{t('singlestudy:taskStatus')}</Typography>
-                  <Typography>{item.status}</Typography>
+                <GridListTile className={`${classes.gridTile} ${classes.statusTile}`}>
+                  <div className={classes.statusText}>
+                    <Typography className={classes.label}>{t('singlestudy:taskStatus')}</Typography>
+                    <Typography>{item.status}</Typography>
+                  </div>
+                  {item.status !== 'success' ? <Button variant="contained" className={classes.killButton} onClick={killTask}>Stop</Button> : <Button disabled variant="contained" className={classes.killButton} onClick={killTask}>Stop</Button>}
                 </GridListTile>
                 <GridListTile className={classes.gridTile}>
                   <Typography className={classes.label}>
