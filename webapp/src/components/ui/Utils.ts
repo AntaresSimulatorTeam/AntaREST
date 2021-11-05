@@ -157,8 +157,9 @@ const convertXMLToHTML = (data: string): string => {
 };
 
 export const convertXMLToDraftJS = (data: string): ContentState => {
+  console.log('DATA: ', data);
   const htmlData = convertXMLToHTML(data);
-  console.log('XML TO HTML: ', htmlData);
+  console.log('XML TO HTML FOR DRAFT: ', htmlData);
   return convertFromHTML(htmlData);
 };
 
@@ -177,6 +178,7 @@ const HTMLToAttributes = {
 enum ParseHTMLToXMLNodeActions {
   DELETE = 'DELETE',
   COPYCHILD = 'COPYCHILD',
+  TEXTTOELEMENTS = 'TEXTTOELEMENTS',
   NONE = 'NONE'
 }
 
@@ -187,7 +189,8 @@ interface ParseHTMLToXMLActionList {
 
 const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 0): ParseHTMLToXMLNodeActions => {
   let action: ParseHTMLToXMLNodeActions = ParseHTMLToXMLNodeActions.NONE;
-  const parseChild = (nodeElement: XMLElement): void => {
+  const parseChild = (nodeElement: XMLElement): ParseHTMLToXMLNodeActions => {
+    let resultAction: ParseHTMLToXMLNodeActions = ParseHTMLToXMLNodeActions.NONE;
     if (nodeElement.elements !== undefined) {
       const actionList: Array<ParseHTMLToXMLActionList> = [];
       let childAction: ParseHTMLToXMLNodeActions = ParseHTMLToXMLNodeActions.NONE;
@@ -202,7 +205,7 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
           if (elm.action === ParseHTMLToXMLNodeActions.DELETE) {
             nodeElement.elements = nodeElement.elements.filter((item) => item !== elm.node);
             console.log('OH YEAH DELETE');
-          } else if (elm.node.elements !== undefined && elm.node.elements.length > 0) {
+          } else if (elm.action === ParseHTMLToXMLNodeActions.COPYCHILD && elm.node.elements !== undefined && elm.node.elements.length > 0) {
             let newElements: Array<XMLElement> = [];
             const index = nodeElement.elements.findIndex((item) => item === elm.node);
             if (index !== undefined && index >= 0) {
@@ -212,8 +215,49 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
               node.elements = newElements;
               console.log('OH YEAH COPY');
             }
+          } else {
+            console.log('TRANSFERT TO PARENT');
+            resultAction = elm.action;
           }
         }
+      });
+    }
+    return resultAction;
+  };
+
+  const checkForQuote = (data: string, elements: Array<XMLElement>): void => {
+    const quoteList: Array<string> = data.split('"');
+    if (quoteList.length > 1) {
+      for (let j = 0; j < quoteList.length; j++) {
+        if (quoteList[j].length > 0) {
+          elements.push({
+            type: 'element',
+            name: 'text',
+            elements: [{
+              type: 'text',
+              text: (quoteList[j][0] === ' ' || quoteList[j][quoteList[j].length - 1] === ' ') ? `"${quoteList[j]}"` : quoteList[j],
+            }],
+          });
+        }
+        if (j !== (quoteList.length - 1)) {
+          elements.push({
+            type: 'element',
+            name: 'symbol',
+            elements: [{
+              type: 'text',
+              text: 34,
+            }],
+          });
+        }
+      }
+    } else if (data.length > 0) {
+      elements.push({
+        type: 'element',
+        name: 'text',
+        elements: [{
+          type: 'text',
+          text: (data[0] === ' ' || data[data.length - 1] === ' ') ? `"${data}"` : data,
+        }],
       });
     }
   };
@@ -236,7 +280,13 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
                 ],
               }];
             } else {
-              parseChild(node);
+              if (parseChild(node) === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS &&
+              node.elements !== undefined &&
+              node.elements.length > 0) {
+                console.log('TEXT TO ELEMENT IN PARAGRAPH');
+                node.elements = node.elements[0].elements;
+                action = ParseHTMLToXMLNodeActions.COPYCHILD;
+              }
             }
             break;
 
@@ -250,13 +300,25 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
             } else {
               node.attributes = { ...node.attributes, ...(HTMLToAttributes as any)[node.name] };
               node.name = 'text';
-              parseChild(node);
+              if (parseChild(node) === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS &&
+              node.elements !== undefined &&
+              node.elements.length > 0) {
+                console.log('TEXT TO ELEMENT IN STYLE TEXT');
+                node.elements = node.elements[0].elements;
+                action = ParseHTMLToXMLNodeActions.COPYCHILD;
+              }
             }
             break;
 
           case 'span':
             node.name = 'text';
-            parseChild(node);
+            if (parseChild(node) === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS &&
+                node.elements !== undefined &&
+                node.elements.length > 0) {
+                console.log('TEXT TO ELEMENT IN SPAN TEXT');
+              node.elements = node.elements[0].elements;
+              action = ParseHTMLToXMLNodeActions.COPYCHILD;
+            }
             break;
 
           case 'li':
@@ -296,72 +358,60 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
         if (text !== undefined &&
           typeof text === 'string' &&
           text.length > 0) {
+          console.log('STRING TO ANALYZE: ', text);
           const elements: Array<XMLElement> = [];
           const tabList = text.split('&nbsp;');
-          let quoteList: Array<string> = [];
-          for (let i = 0; i < tabList.length; i++) {
-            quoteList = tabList[i].split('"');
-            for (let j = 0; j < quoteList.length; j++) {
-              if (quoteList[j].length > 0) {
-                elements.push({
-                  type: 'element',
-                  name: 'text',
-                  elements: [{
-                    type: 'text',
-                    text: (quoteList[j][0] === ' ' || quoteList[j][quoteList[j].length - 1] === ' ') ? `"${quoteList[j]}"` : quoteList[j],
-                  }],
-                });
-              }
-              if (j !== (quoteList.length - 1)) {
+          if (tabList.length > 1) {
+            for (let i = 0; i < tabList.length; i++) {
+              checkForQuote(tabList[i], elements);
+              if (i !== (tabList.length - 1)) {
                 elements.push({
                   type: 'element',
                   name: 'symbol',
                   elements: [{
                     type: 'text',
-                    text: 34,
+                    text: 9,
                   }],
                 });
               }
             }
 
-            if (quoteList.length === 0) {
-              if (tabList[i].length > 0) {
-                elements.push({
-                  type: 'element',
-                  name: 'text',
-                  elements: [{
-                    type: 'text',
-                    text: (tabList[i][0] === ' ' || tabList[i][tabList[i].length - 1] === ' ') ? `"${tabList[i]}"` : tabList[i],
-                  }],
-                });
-              }
+            console.log('TABLIST: ', tabList);
+            if (parent.type === 'paragraph') {
+              console.log('TEXT PARENT IS A PARAGRAPH');
+              node.text = undefined;
+              node.name = 'paragraph';
+              node.elements = elements;
+              action = ParseHTMLToXMLNodeActions.COPYCHILD;
+            } else {
+              console.log('TEXT PARENT IS: ', parent.type);
             }
-
-            if (i !== (tabList.length - 1)) {
-              elements.push({
-                type: 'element',
-                name: 'symbol',
-                elements: [{
-                  type: 'text',
-                  text: 9,
-                }],
-              });
-            }
-          }
-
-          if (tabList.length === 0) {
-            node.text = undefined;
-            node.name = 'text';
-            node.elements = [{
-              type: 'text',
-              text: (text[0] === ' ' || text[text.length - 1] === ' ') ? `"${text}"` : text,
-            }];
           } else {
-            node.text = undefined;
-            node.name = 'paragraph';
-            node.elements = elements;
+            checkForQuote(text, elements);
+            if (elements.length === 1) {
+              console.log('QUOTES ONE ELEMENT: ', elements);
+              node.text = undefined;
+              node.type = elements[0].type;
+              node.name = elements[0].name;
+              node.elements = elements[0].elements;
+              console.log('NODE: ', node);
+            } else {
+              console.log('NO TAB BUT EVENTUALLY QUOTES', elements);
+              node.text = undefined;
+              node.type = 'element';
+              node.name = 'paragraph';
+              node.elements = elements;
+              if (parent.type === 'paragraph') {
+                console.log('TEXT PARENT IS A PARAGRAPH');
+                action = ParseHTMLToXMLNodeActions.COPYCHILD;
+              } else {
+                console.log('TEXT PARENT IS: ', parent.type);
+                action = ParseHTMLToXMLNodeActions.TEXTTOELEMENTS;
+              }
+            }
           }
         } else {
+          console.log('ZERO OR NOT STRING for: ', node.text);
           node.text = undefined;
           node.name = 'text';
           node.elements = [
@@ -405,7 +455,9 @@ export const convertDraftJSToXML = (editorState: EditorState): string => {
   const htmlElement = toDraftJsHtml(draftToHtml(
     rawContentState,
   ));
+  // const htmlElement: string = toDraftJsHtml(convertToHTML(editorState.getCurrentContent()));
   let htmlToXml = addXMLHeader(htmlElement);
+  console.log('WITH HEADER: ', htmlToXml);
   htmlToXml = convertHTMLToXML(htmlToXml);
   return htmlToXml;
 };
