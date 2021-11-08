@@ -165,14 +165,7 @@ class StudyService:
         except (AttributeError, UnicodeDecodeError):
             pass
 
-        json_response = json.dumps(
-            output,
-            ensure_ascii=False,
-            allow_nan=True,
-            indent=None,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        return json_response
+        return output
 
     def edit_comments(
         self,
@@ -203,7 +196,7 @@ class StudyService:
                 params=params,
             )
         elif isinstance(study, VariantStudy):
-            pass  # Edit comments for variant study
+            raise NotImplementedError()
 
         raise StudyTypeUnsupported(study.id, study.type)
 

@@ -113,7 +113,6 @@ def test_main(app: FastAPI):
     study_id = next(iter(res.json()))
     comments = "<text>Hello</text>"
 
-    print("--------------- STUDY: ", study_id)
     # Set new comments
     res = client.put(
         f"/v1/studies/{study_id}/comments",

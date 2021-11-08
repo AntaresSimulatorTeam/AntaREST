@@ -157,9 +157,7 @@ const convertXMLToHTML = (data: string): string => {
 };
 
 export const convertXMLToDraftJS = (data: string): ContentState => {
-  console.log('DATA: ', data);
   const htmlData = convertXMLToHTML(data);
-  console.log('XML TO HTML FOR DRAFT: ', htmlData);
   return convertFromHTML(htmlData);
 };
 
@@ -204,7 +202,6 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
         if (nodeElement.elements !== undefined) {
           if (elm.action === ParseHTMLToXMLNodeActions.DELETE) {
             nodeElement.elements = nodeElement.elements.filter((item) => item !== elm.node);
-            console.log('OH YEAH DELETE');
           } else if (elm.node.elements !== undefined && elm.node.elements.length > 0) {
             let newElements: Array<XMLElement> = [];
             const index = nodeElement.elements.findIndex((item) => item === elm.node);
@@ -213,10 +210,8 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
               newElements = newElements.concat(elm.node.elements);
               newElements = newElements.concat(nodeElement.elements.slice(index + 1));
               node.elements = newElements;
-              console.log('OH YEAH COPY');
 
               if (elm.action === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS) {
-                console.log('TRANSFERT TO PARENT');
                 resultAction = elm.action;
               }
             }
@@ -273,7 +268,6 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
           case 'p':
             node.name = 'paragraph';
             if (node.elements === undefined || node.elements.length === 0) {
-              console.log('P IS EMPTY MAN');
               node.elements = [{
                 type: 'element',
                 name: 'text',
@@ -294,17 +288,11 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
             if ((parent !== node) && (parent.name === 'paragraph' || parent.name === 'text') && parent.elements !== undefined && parent.elements.length === 1) {
               parent.attributes = { ...parent.attributes, ...(HTMLToAttributes as any)[node.name] };
               parent.elements = node.elements;
-              action = parseChild(parent); // PAS SÛR
-              if (action === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS) {
-                console.log('STYLE UNIQUE PARENT: ', node, ' & PARENT: ', parent);
-              }
+              action = parseChild(parent);
             } else {
               node.attributes = { ...node.attributes, ...(HTMLToAttributes as any)[node.name] };
               node.name = 'text';
               action = parseChild(node);
-              if (action === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS) {
-                console.log('STYLE NO UNIQUE PARENT: ', node);
-              }
             }
             break;
 
@@ -343,14 +331,13 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
             break;
         }
       }
-    } else if (node.type === 'text') { // && parent.name !== 'text'
+    } else if (node.type === 'text') {
       if (node.text !== undefined) {
         node.type = 'element';
         const { text } = node;
         if (text !== undefined &&
           typeof text === 'string' &&
           text.length > 0) {
-          console.log('STRING TO ANALYZE: ', text);
           const elements: Array<XMLElement> = [];
           const tabList = text.split('&nbsp;');
           if (tabList.length > 1) {
@@ -367,50 +354,40 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
                 });
               }
             }
-
-            console.log('TABLIST: ', tabList);
             node.text = undefined;
             node.name = 'paragraph';
             node.elements = elements;
             if (parent.type === 'paragraph') {
-              console.log('TEXT PARENT IS A PARAGRAPH');
               action = ParseHTMLToXMLNodeActions.COPYCHILD;
             } else {
-              console.log('TEXT PARENT IS: ', parent.type);
               action = ParseHTMLToXMLNodeActions.TEXTTOELEMENTS;
             }
           } else {
             const isSelf = checkForQuote(text, elements);
             if (isSelf) {
-              console.log('QUOTES ONE ELEMENT: ', elements);
               if (parent.name !== undefined && parent.name !== 'text') {
                 node.text = undefined;
                 node.type = elements[0].type;
                 node.name = elements[0].name;
                 node.elements = elements[0].elements;
-                console.log('NODE: ', node);
               } else {
                 node.text = text;
                 node.type = 'text';
                 node.elements = undefined;
               }
             } else {
-              console.log('NO TAB BUT EVENTUALLY QUOTES', elements);
               node.text = undefined;
               node.type = 'element';
               node.name = 'paragraph';
               node.elements = elements;
               if (parent.name === 'paragraph') {
-                console.log('TEXT PARENT IS A PARAGRAPH');
                 action = ParseHTMLToXMLNodeActions.COPYCHILD;
               } else {
-                console.log('TEXT PARENT IS: ', parent.type, ' WITH NAME: ', parent.name);
                 action = ParseHTMLToXMLNodeActions.TEXTTOELEMENTS;
               }
             }
           }
-        } else {
-          console.log('ZERO OR NOT STRING for: ', node.text);
+        } else if (parent.name !== undefined && parent.name !== 'text') {
           node.text = undefined;
           node.name = 'text';
           node.elements = [
@@ -419,6 +396,10 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
               text,
             },
           ];
+        } else {
+          node.text = text;
+          node.type = 'text';
+          node.elements = undefined;
         }
       }
     }
@@ -432,10 +413,8 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
 const convertHTMLToXML = (data: string): string => {
   const htmlStr: string = xml2json(data, { compact: false, spaces: 4 });
   const xmlElement: XMLElement = JSON.parse(htmlStr);
-  console.log('HTML TO XML: ', data);
   parseHTMLToXMLNode(xmlElement, xmlElement);
   const res = js2xml(xmlElement, { compact: false, spaces: 4 });
-  console.log('HTML TO XML RESULT: ', res);
   return res;
 };
 
@@ -454,22 +433,8 @@ export const convertDraftJSToXML = (editorState: EditorState): string => {
   const htmlElement = toDraftJsHtml(draftToHtml(
     rawContentState,
   ));
-  // const htmlElement: string = toDraftJsHtml(convertToHTML(editorState.getCurrentContent()));
   let htmlToXml = addXMLHeader(htmlElement);
-  console.log('WITH HEADER: ', htmlToXml);
   htmlToXml = convertHTMLToXML(htmlToXml);
   return htmlToXml;
 };
-
-/*
-NOTE:
-elements: {
-  type: 'element' | 'text
-  attributes: {}
-  name?: 'NAME OF ELEMENT' or text?: ''
-  elements
-}
-
-*/
-
 export default {};
