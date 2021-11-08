@@ -81,7 +81,7 @@ def create_study_routes(
         )
         params = RequestParameters(user=current_user)
         study_id = sanitize_uuid(uuid)
-        return storage_service.get_comments(study_id, params)
+        return study_service.get_comments(study_id, params)
 
     @bp.put(
         "/studies/{uuid}/comments",
@@ -105,7 +105,7 @@ def create_study_routes(
             )
         study_id = sanitize_uuid(uuid)
         params = RequestParameters(user=current_user)
-        storage_service.edit_comments(study_id, new, params)
+        study_service.edit_comments(study_id, new, params)
 
     @bp.post(
         "/studies/_import",

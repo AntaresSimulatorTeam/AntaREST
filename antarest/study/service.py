@@ -151,7 +151,7 @@ class StudyService:
 
         Returns: data study formatted in json
         """
-        study = self._get_study(uuid)
+        study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
         self._assert_study_unarchived(study)
@@ -184,7 +184,7 @@ class StudyService:
         Returns: new data replaced
 
         """
-        study = self._get_study(uuid)
+        study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 

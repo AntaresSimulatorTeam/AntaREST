@@ -129,7 +129,7 @@ def test_main(app: FastAPI):
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
     )
-    assert res.json() == f'"{comments}"'
+    assert res.json() == comments
 
     # study creation
     created = client.post(
