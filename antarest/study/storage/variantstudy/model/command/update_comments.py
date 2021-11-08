@@ -44,9 +44,7 @@ class UpdateComments(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.comments
-        )
+        return str(self.command_name.value)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, UpdateComments):
