@@ -13,6 +13,7 @@
   "taskLog": "Logs",
   "noTasks": "Pas de tâches en cours",
   "failtofetchlogs": "Echec du chargement des logs",
+  "failtokilltask": "Échec de l'annulation de l'étude",
   "owner": "Propriétaire",
   "groupsLabel": "Groupes",
   "publicMode": "Mode public",

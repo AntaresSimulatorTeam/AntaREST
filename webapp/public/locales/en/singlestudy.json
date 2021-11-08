@@ -13,6 +13,7 @@
   "taskLog": "Logs",
   "noTasks": "No tasks",
   "failtofetchlogs": "Failed to fetch logs",
+  "failtokilltask": "Failed to kill task",
   "owner": "Owner",
   "groupsLabel": "Groups",
   "publicMode": "Public mode",

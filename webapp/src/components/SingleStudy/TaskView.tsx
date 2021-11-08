@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { AxiosError } from 'axios';
 import {
   makeStyles,
@@ -134,8 +134,14 @@ const TaskView = (props: PropTypes) => {
     })();
   };
 
-  const killTask = () => {
-    console.log('test');
+  const killTask = (jobId: string) => {
+    (async () => {
+      try {
+        await killStudy(jobId);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failtokilltask'), e as AxiosError);
+      }
+    })();
   };
 
   return (
@@ -164,7 +170,7 @@ const TaskView = (props: PropTypes) => {
                     <Typography className={classes.label}>{t('singlestudy:taskStatus')}</Typography>
                     <Typography>{item.status}</Typography>
                   </div>
-                  {item.status !== 'success' ? <Button variant="contained" className={classes.killButton} onClick={killTask}>Stop</Button> : <Button disabled variant="contained" className={classes.killButton} onClick={killTask}>Stop</Button>}
+                  {item.status === 'running' ? <Button variant="contained" color="primary" className={classes.killButton} onClick={() => killTask(item.id)}>Stop</Button> : <Button disabled color="primary" variant="contained" className={classes.killButton} onClick={() => killTask(item.id)}>Stop</Button>}
                 </GridListTile>
                 <GridListTile className={classes.gridTile}>
                   <Typography className={classes.label}>
