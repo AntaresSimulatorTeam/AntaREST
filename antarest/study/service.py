@@ -101,7 +101,7 @@ class StudyService:
     def add_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
 
-    def _on_deletion_callbacks(self, uuid: str) -> None:
+    def _on_study_delete(self, uuid: str) -> None:
         """Run all callbacks"""
         for callback in self.on_deletion_callbacks:
             callback(uuid)
