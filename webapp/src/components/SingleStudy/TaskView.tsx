@@ -23,19 +23,17 @@ import ConfirmationModal from '../ui/ConfirmationModal';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      flex: 1,
-      height: '95%',
-      minWidth: '350px',
-      minHeight: '250px',
+      width: '100%',
+      height: '48%',
       display: 'flex',
       flexFlow: 'column nowrap',
       justifyContent: 'flex-start',
       alignItems: 'center',
       backgroundColor: 'white',
       margin: theme.spacing(1),
-      paddingBottom: theme.spacing(1),
       overflowY: 'auto',
       overflowX: 'hidden',
+      boxSizing: 'border-box',
     },
     header: {
       width: '100%',

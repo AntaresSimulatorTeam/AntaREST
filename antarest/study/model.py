@@ -50,6 +50,10 @@ class PublicMode(enum.Enum):
     FULL = "FULL"
 
 
+class CommentsDto(BaseModel):
+    comments: str
+
+
 @dataclass
 class Study(Base):  # type: ignore
     """
@@ -82,7 +86,7 @@ class Study(Base):  # type: ignore
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
     def __str__(self) -> str:
-        return f"[Study] id={self.id}, type={self.type}, name={self.name}, version={self.version}, updated_at={self.updated_at}, owner={self.owner}, groups={[str(u)+',' for u in self.groups]}"
+        return f"[Study] id={self.id}, type={self.type}, name={self.name}, version={self.version}, updated_at={self.updated_at}, owner={self.owner}, groups={[str(u) + ',' for u in self.groups]}"
 
     def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name}

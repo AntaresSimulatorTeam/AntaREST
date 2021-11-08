@@ -1,11 +1,12 @@
 import io
+import json
 import logging
 import os
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import List, IO, Optional, cast, Union, Dict
+from typing import List, IO, Optional, cast, Union, Dict, Callable
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -42,6 +43,7 @@ from antarest.study.model import (
     StudyDownloadDTO,
     MatrixAggregationResult,
     StudySimResultDTO,
+    CommentsDto,
     STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
 )
@@ -96,6 +98,17 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
         self.config = config
+        self.on_deletion_callbacks: List[Callable[[str], None]] = []
+
+    def add_on_deletion_callback(
+        self, callback: Callable[[str], None]
+    ) -> None:
+        self.on_deletion_callbacks.append(callback)
+
+    def _on_study_delete(self, uuid: str) -> None:
+        """Run all callbacks"""
+        for callback in self.on_deletion_callbacks:
+            callback(uuid)
 
     def get(
         self,
@@ -124,6 +137,68 @@ class StudyService:
         return self._get_study_storage_service(study).get(
             study, url, depth, formatted
         )
+
+    def get_comments(
+        self,
+        uuid: str,
+        params: RequestParameters,
+    ) -> JSON:
+        """
+        Get study data inside filesystem
+        Args:
+            uuid: study uuid
+            params: request parameters
+
+        Returns: data study formatted in json
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+
+        self._assert_study_unarchived(study)
+        output = self._get_study_storage_service(study).get(
+            metadata=study, url="/settings/comments", depth=-1
+        )
+
+        try:
+            # try to decode string
+            output = output.decode("utf-8")  # type: ignore
+        except (AttributeError, UnicodeDecodeError):
+            pass
+
+        return output
+
+    def edit_comments(
+        self,
+        uuid: str,
+        data: CommentsDto,
+        params: RequestParameters,
+    ) -> JSON:
+        """
+        Replace data inside study.
+
+        Args:
+            uuid: study id
+            data: new data to replace
+            params: request parameters
+
+        Returns: new data replaced
+
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+
+        if isinstance(study, RawStudy):
+            return self.edit_study(
+                uuid=uuid,
+                url="settings/comments",
+                new=bytes(data.comments, "utf-8"),
+                params=params,
+            )
+        elif isinstance(study, VariantStudy):
+            raise NotImplementedError()
+
+        raise StudyTypeUnsupported(study.id, study.type)
 
     def _get_study_metadatas(self, params: RequestParameters) -> List[Study]:
         return list(
@@ -488,13 +563,15 @@ class StudyService:
 
         # delete the files afterward for
         # if the study cannot be deleted from database for foreign key reason
-        if self._assert_study_unarchived(study, False):
+        if self._assert_study_unarchived(study=study, raise_exception=False):
             self._get_study_storage_service(study).delete(study)
         else:
             if isinstance(study, RawStudy):
                 os.unlink(self.raw_study_service.get_archive_path(study))
 
         logger.info("study %s deleted by user %s", uuid, params.get_user_id())
+
+        self._on_study_delete(uuid=uuid)
 
     def delete_output(
         self, uuid: str, output_name: str, params: RequestParameters

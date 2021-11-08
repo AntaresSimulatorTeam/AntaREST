@@ -2,6 +2,7 @@ import React from 'react';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import InformationView from './InformationView';
 import TaskView from './TaskView';
+import NoteView from './NoteView';
 import { LaunchJob, StudyMetadata } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
@@ -14,7 +15,18 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'flex-start',
     boxSizing: 'border-box',
     padding: theme.spacing(1),
-    overflow: 'auto',
+    overflow: 'hidden',
+  },
+  otherInfo: {
+    flex: 1,
+    height: '98%',
+    minWidth: '350px',
+    minHeight: '250px',
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    boxSizing: 'border-box',
   },
 }));
 
@@ -29,7 +41,10 @@ const Informations = (props: PropTypes) => {
   return (
     <div className={classes.root}>
       <InformationView study={study} />
-      <TaskView jobs={jobs} />
+      <div className={classes.otherInfo}>
+        <NoteView studyId={study.id} />
+        <TaskView jobs={jobs} />
+      </div>
     </div>
   );
 };

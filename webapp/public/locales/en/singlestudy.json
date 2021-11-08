@@ -36,5 +36,9 @@
   "generalInfo": "General informations",
   "renamestudy": "Rename study",
   "killStudy": "Cancel",
-  "confirmKill": "Are you sure you want to cancel the simulation job ?"
+  "confirmKill": "Are you sure you want to cancel the simulation job ?",
+  "notes": "Notes",
+  "fetchCommentsError": "Failed to fetch comments",
+  "commentsSaved": "Comments saved successfully",
+  "commentsNotSaved": "Comments not saved"
 }

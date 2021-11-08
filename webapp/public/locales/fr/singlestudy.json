@@ -36,5 +36,9 @@
   "generalInfo": "Informations générales",
   "renamestudy": "Renommer l'étude",
   "killStudy": "Arrêter",
-  "confirmKill" : "Êtes-vous sûr de vouloir arrêter la tâche de simulation ?"
+  "confirmKill" : "Êtes-vous sûr de vouloir arrêter la tâche de simulation ?",
+  "notes": "Notes",
+  "fetchCommentsError": "Echec lors de la récupération des commentaires",
+  "commentsSaved": "Commentaires enregistrés avec succès",
+  "commentsNotSaved": "Erreur lors de l'enregistrement des commentaires"
 }
