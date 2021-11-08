@@ -20,7 +20,7 @@ def build_launcher(
 
     if study_service and not service_launcher:
         repository = JobResultRepository()
-        study_service.add_callback(repository.delete_by_study_id)
+        study_service.add_on_deletion_callback(repository.delete_by_study_id)
         service_launcher = LauncherService(
             config=config,
             study_service=study_service,

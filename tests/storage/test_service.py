@@ -707,7 +707,7 @@ def test_delete_study_calls_callback():
         config=Mock(),
     )
     callback = Mock()
-    service.add_callback(callback)
+    service.add_on_deletion_callback(callback)
 
     service.delete_study(
         study_uuid,

@@ -98,7 +98,9 @@ class StudyService:
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
 
-    def add_callback(self, callback: Callable[[str], None]) -> None:
+    def add_on_deletion_callback(
+        self, callback: Callable[[str], None]
+    ) -> None:
         self.on_deletion_callbacks.append(callback)
 
     def _on_study_delete(self, uuid: str) -> None:

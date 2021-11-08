@@ -14,6 +14,7 @@ class JobResultRepository:
         pass
 
     def save(self, job: JobResult) -> JobResult:
+        logger.debug(f"Saving JobResult {job.id}")
         res = db.session.query(exists().where(JobResult.id == job.id)).scalar()
         if res:
             db.session.merge(job)
@@ -21,7 +22,6 @@ class JobResultRepository:
             db.session.add(job)
 
         db.session.commit()
-        logger.debug(f"JobResult {job.id} saved")
         return job
 
     def get(self, id: str) -> Optional[JobResult]:
@@ -30,28 +30,28 @@ class JobResultRepository:
         return job
 
     def get_all(self) -> List[JobResult]:
+        logger.debug("Retrieving all JobResults")
         job_results: List[JobResult] = db.session.query(JobResult).all()
-        logger.debug(f"All JobResults retrieved")
         return job_results
 
     def find_by_study(self, study_id: str) -> List[JobResult]:
+        logger.debug(f"Retrieving JobResults from study {study_id}")
         job_results: List[JobResult] = (
             db.session.query(JobResult)
             .filter(JobResult.study_id == study_id)
             .all()
         )
-        logger.debug(f"JobResults with study_id {study_id} retrieved")
         return job_results
 
     def delete(self, id: str) -> None:
+        logger.debug(f"Deleting JobResult {id}")
         g = db.session.query(JobResult).get(id)
         db.session.delete(g)
         db.session.commit()
-        logger.debug(f"JobResult {id} deleted")
 
     def delete_by_study_id(self, study_id: str) -> None:
+        logger.debug(f"Deleting JobResults from_study {study_id}")
         db.session.query(JobResult).filter(
             JobResult.study_id == study_id
         ).delete()
         db.session.commit()
-        logger.debug(f"JobResults with study_id {study_id} deleted")
