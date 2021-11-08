@@ -505,7 +505,7 @@ class StudyService:
 
         logger.info("study %s deleted by user %s", uuid, params.get_user_id())
 
-        self._callbacks(uuid=uuid)
+        self._on_study_delete(uuid=uuid)
 
     def delete_output(
         self, uuid: str, output_name: str, params: RequestParameters
