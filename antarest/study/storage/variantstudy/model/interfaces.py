@@ -45,6 +45,10 @@ class ICommandExtractor(abc.ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def extract_comments(self, study: FileStudy) -> List["ICommand"]:  # type: ignore
+        raise NotImplementedError()
+
+    @abstractmethod
     def extract_binding_constraint(
         self,
         study: FileStudy,
@@ -58,6 +62,13 @@ class ICommandExtractor(abc.ABC):
         self,
         study_tree: FileStudyTree,
         url: List[str],
+    ) -> "ICommand":  # type: ignore
+        raise NotImplementedError()
+
+    @abstractmethod
+    def generate_update_comments(
+        self,
+        study_tree: FileStudyTree,
     ) -> "ICommand":  # type: ignore
         raise NotImplementedError()
 
