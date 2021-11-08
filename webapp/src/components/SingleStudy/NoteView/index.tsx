@@ -18,6 +18,7 @@ import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import TextEditorModal from './TextEditorModal';
 import { editComments, getComments } from '../../../services/api/study';
 import { convertXMLToDraftJS } from './utils';
+import SimpleLoader from '../../ui/loaders/SimpleLoader';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -104,16 +105,20 @@ const NoteView = (props: Props) => {
   );
   const [editionMode, setEditionMode] = useState<boolean>(false);
   const [content, setContent] = useState<string>('');
+  const [loaded, setLoaded] = useState(true);
 
   const onSave = async (newContent: string) => {
     try {
+      setLoaded(false);
       await editComments(studyId, newContent);
       setEditorState(EditorState.createWithContent(convertXMLToDraftJS(newContent)));
       setContent(newContent);
-      setEditionMode(false);
       enqueueSnackbar(t('singlestudy:commentsSaved'), { variant: 'success' });
+      setLoaded(true);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:commentsNotSaved'), e as AxiosError);
+    } finally {
+      setEditionMode(false);
     }
   };
 
@@ -136,6 +141,8 @@ const NoteView = (props: Props) => {
       <div className={classes.header}>
         <Typography className={classes.title}>{t('singlestudy:notes')}</Typography>
       </div>
+      {!loaded && <SimpleLoader />}
+      {loaded && (
       <div className={classes.main}>
         <div className={classes.headerButton}>
           <CreateIcon className={classes.editButton} onClick={() => setEditionMode(true)} />
@@ -149,6 +156,7 @@ const NoteView = (props: Props) => {
           />
         </div>
       </div>
+      )}
       {
        editionMode && (
        <TextEditorModal

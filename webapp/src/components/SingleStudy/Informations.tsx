@@ -38,6 +38,7 @@ interface PropTypes {
 const Informations = (props: PropTypes) => {
   const { study, jobs } = props;
   const classes = useStyles();
+
   return (
     <div className={classes.root}>
       <InformationView study={study} />
