@@ -10,13 +10,15 @@ import {
   Typography,
   GridList,
   GridListTile,
+  Button,
 } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { getStudyJobLog } from '../../services/api/study';
+import { getStudyJobLog, killStudy } from '../../services/api/study';
 import { LaunchJob } from '../../common/types';
 import LogModal from '../ui/LogModal';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import ConfirmationModal from '../ui/ConfirmationModal';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -91,6 +93,21 @@ const useStyles = makeStyles((theme: Theme) =>
     label: {
       fontWeight: 'bold',
     },
+    statusTile: {
+      '& div': {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+      },
+    },
+    statusText: {
+      display: 'block !important',
+      width: 'auto !important',
+    },
+    killButtonHide: {
+      display: 'none',
+    },
   }));
 
 interface PropTypes {
@@ -103,7 +120,9 @@ const TaskView = (props: PropTypes) => {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [jobIdDetail, setJobIdDetail] = useState<string>();
+  const [jobIdKill, setJobIdKill] = useState<string>();
   const [logModalContent, setLogModalContent] = useState<string | undefined>();
+  const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
   const openLogView = (jobId: string) => {
     (async () => {
@@ -114,6 +133,20 @@ const TaskView = (props: PropTypes) => {
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failtofetchlogs'), e as AxiosError);
       }
+    })();
+  };
+  const openConfirmModal = (jobId: string) => {
+    setOpenConfirmationModal(true);
+    setJobIdKill(jobId);
+  };
+  const killTask = (jobId: string) => {
+    (async () => {
+      try {
+        await killStudy(jobId);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failtokilltask'), e as AxiosError);
+      }
+      setOpenConfirmationModal(false);
     })();
   };
 
@@ -138,9 +171,12 @@ const TaskView = (props: PropTypes) => {
                   <Typography className={classes.label}>{t('singlestudy:taskId')}</Typography>
                   <Typography>{item.id}</Typography>
                 </GridListTile>
-                <GridListTile className={classes.gridTile}>
-                  <Typography className={classes.label}>{t('singlestudy:taskStatus')}</Typography>
-                  <Typography>{item.status}</Typography>
+                <GridListTile className={`${classes.gridTile} ${classes.statusTile}`}>
+                  <div className={classes.statusText}>
+                    <Typography className={classes.label}>{t('singlestudy:taskStatus')}</Typography>
+                    <Typography>{item.status}</Typography>
+                  </div>
+                  {item.status === 'running' ? <Button variant="contained" color="primary" onClick={() => openConfirmModal(item.id)}>{t('singlestudy:killStudy')}</Button> : <Button color="primary" variant="contained" className={classes.killButtonHide}>{t('singlestudy:killStudy')}</Button>}
                 </GridListTile>
                 <GridListTile className={classes.gridTile}>
                   <Typography className={classes.label}>
@@ -176,6 +212,15 @@ const TaskView = (props: PropTypes) => {
               {t('singlestudy:noTasks')}
             </Typography>
           </div>
+        )}
+        {openConfirmationModal && (
+          <ConfirmationModal
+            open={openConfirmationModal}
+            title={t('main:confirmationModalTitle')}
+            message={t('singlestudy:confirmKill')}
+            handleYes={() => killTask(jobIdKill as string)}
+            handleNo={() => setOpenConfirmationModal(false)}
+          />
         )}
       </div>
     </Paper>

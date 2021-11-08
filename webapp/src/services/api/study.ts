@@ -116,6 +116,11 @@ export const launchStudy = async (sid: string): Promise<string> => {
   return res.data;
 };
 
+export const killStudy = async (jid: string): Promise<string> => {
+  const res = await client.post(`/v1/launcher/jobs/${jid}/kill`);
+  return res.data;
+};
+
 export const mapLaunchJobDTO = (j: any): LaunchJob => ({
   id: j.id,
   studyId: j.study_id,
