@@ -109,6 +109,8 @@ class VariantCommandsExtractor:
         stopwatch.log_elapsed(
             lambda x: logger.info(f"Command extraction done in {x}s"), True
         )
+
+        study_commands += self.command_extractor.extract_comments(study=study)
         return [command.to_dto() for command in study_commands]
 
     def diff(
@@ -188,6 +190,7 @@ class VariantCommandsExtractor:
             elif (
                 command_obj.command_name == CommandName.UPDATE_CONFIG
                 or command_obj.command_name == CommandName.REPLACE_MATRIX
+                or command_obj.command_name == CommandName.UPDATE_COMMENTS
             ):
                 command_list = first_commands
                 priority = 2

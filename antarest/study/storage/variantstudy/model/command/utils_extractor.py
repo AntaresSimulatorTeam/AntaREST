@@ -1,6 +1,4 @@
-import abc
 import logging
-from abc import abstractmethod
 from typing import Optional, List, Tuple, Union
 
 from antarest.core.custom_types import JSON
@@ -38,6 +36,9 @@ from antarest.study.storage.variantstudy.model.command.create_link import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
+)
+from antarest.study.storage.variantstudy.model.command.update_comments import (
+    UpdateComments,
 )
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
@@ -399,6 +400,15 @@ class CommandExtraction(ICommandExtractor):
         )
         return study_commands
 
+    def extract_comments(self, study: FileStudy) -> List[ICommand]:
+        study_tree = study.tree
+        return [
+            UpdateComments(
+                comments=study_tree.get(["settings", "comments"]),
+                command_context=self.command_context,
+            )
+        ]
+
     def extract_binding_constraint(
         self,
         study: FileStudy,
@@ -447,6 +457,17 @@ class CommandExtraction(ICommandExtractor):
         return UpdateConfig(
             target="/".join(url),
             data=data,
+            command_context=self.command_context,
+        )
+
+    def generate_update_comments(
+        self,
+        study_tree: FileStudyTree,
+    ) -> ICommand:
+        url = ["settings", "comments"]
+        comments = study_tree.get(url)
+        return UpdateComments(
+            comments=comments,
             command_context=self.command_context,
         )
 

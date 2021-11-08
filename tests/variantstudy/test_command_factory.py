@@ -203,6 +203,14 @@ from antarest.study.storage.variantstudy.model.command.common import (
             action=CommandName.UPDATE_CONFIG.value,
             args=[{"target": "target", "data": {}}],
         ),
+        CommandDTO(
+            action=CommandName.UPDATE_COMMENTS.value,
+            args={"comments": "comments"},
+        ),
+        CommandDTO(
+            action=CommandName.UPDATE_COMMENTS.value,
+            args=[{"comments": "comments"}],
+        ),
     ],
 )
 @pytest.mark.unit_test
