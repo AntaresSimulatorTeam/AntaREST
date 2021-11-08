@@ -96,14 +96,14 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
         self.config = config
-        self.callbacks: List[Callable[[str], None]] = []
+        self.on_deletion_callbacks: List[Callable[[str], None]] = []
 
     def add_callback(self, callback: Callable[[str], None]) -> None:
-        self.callbacks.append(callback)
+        self.on_deletion_callbacks.append(callback)
 
-    def _callbacks(self, uuid: str) -> None:
+    def _on_deletion_callbacks(self, uuid: str) -> None:
         """Run all callbacks"""
-        for callback in self.callbacks:
+        for callback in self.on_deletion_callbacks:
             callback(uuid)
 
     def get(
