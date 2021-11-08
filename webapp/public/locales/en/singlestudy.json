@@ -34,5 +34,7 @@
   "editPublicModeText": "Public permission write",
   "fullPublicModeText": "Total public permission",
   "generalInfo": "General informations",
-  "renamestudy": "Rename study"
+  "renamestudy": "Rename study",
+  "killStudy": "Annuler",
+  "confirmKill": "Are you sure you want to cancel the simulation ?"
 }
