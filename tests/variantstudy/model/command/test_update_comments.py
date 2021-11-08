@@ -46,7 +46,7 @@ def test_match(command_context: CommandContext):
     assert base.match(other_match)
     assert not base.match(other_not_match, equal=True)
     assert not base.match(other_other)
-    assert base.match_signature() == "update_comments%comments"
+    assert base.match_signature() == "update_comments"
 
 
 def test_revert(command_context: CommandContext):
