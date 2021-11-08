@@ -283,7 +283,7 @@ def generate_diff(base: Path, variant: Path, output_dir: Path) -> None:
     needed_matrices: Set[str] = set()
     for command in diff_commands:
         for matrix in command.get_inner_matrices():
-            needed_matrices.add(matrix)
+            needed_matrices.add(f"{matrix}.tsv")
     for matrix_file in os.listdir(matrices_dir):
         if matrix_file not in needed_matrices:
             os.unlink(matrices_dir / matrix_file)
