@@ -35,6 +35,6 @@
   "fullPublicModeText": "Permission publique totale",
   "generalInfo": "Informations générales",
   "renamestudy": "Renommer l'étude",
-  "killStudy": "Annuler",
-  "confirmKill" : "Êtes-vous sûr de vouloir annuler la simulation ?"
+  "killStudy": "Arrêter",
+  "confirmKill" : "Êtes-vous sûr de vouloir arrêter la tâche de simulation ?"
 }
