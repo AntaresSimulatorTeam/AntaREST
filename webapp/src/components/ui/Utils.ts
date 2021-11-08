@@ -2,7 +2,7 @@
 /* eslint-disable no-plusplus */
 import { ContentState, convertToRaw, EditorState } from 'draft-js';
 import draftToHtml from 'draftjs-to-html';
-import { convertToHTML, convertFromHTML } from 'draft-convert';
+import { convertFromHTML } from 'draft-convert';
 import { Element as XMLElement, js2xml, xml2json } from 'xml-js';
 
 interface BlockMap {
@@ -205,7 +205,7 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
           if (elm.action === ParseHTMLToXMLNodeActions.DELETE) {
             nodeElement.elements = nodeElement.elements.filter((item) => item !== elm.node);
             console.log('OH YEAH DELETE');
-          } else if (elm.action === ParseHTMLToXMLNodeActions.COPYCHILD && elm.node.elements !== undefined && elm.node.elements.length > 0) {
+          } else if (elm.node.elements !== undefined && elm.node.elements.length > 0) {
             let newElements: Array<XMLElement> = [];
             const index = nodeElement.elements.findIndex((item) => item === elm.node);
             if (index !== undefined && index >= 0) {
@@ -214,10 +214,12 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
               newElements = newElements.concat(nodeElement.elements.slice(index + 1));
               node.elements = newElements;
               console.log('OH YEAH COPY');
+
+              if (elm.action === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS) {
+                console.log('TRANSFERT TO PARENT');
+                resultAction = elm.action;
+              }
             }
-          } else {
-            console.log('TRANSFERT TO PARENT');
-            resultAction = elm.action;
           }
         }
       });
@@ -225,7 +227,7 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
     return resultAction;
   };
 
-  const checkForQuote = (data: string, elements: Array<XMLElement>): void => {
+  const checkForQuote = (data: string, elements: Array<XMLElement>): boolean => {
     const quoteList: Array<string> = data.split('"');
     if (quoteList.length > 1) {
       for (let j = 0; j < quoteList.length; j++) {
@@ -259,7 +261,9 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
           text: (data[0] === ' ' || data[data.length - 1] === ' ') ? `"${data}"` : data,
         }],
       });
+      return true;
     }
+    return false;
   };
 
   if (node.type !== undefined) {
@@ -280,13 +284,7 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
                 ],
               }];
             } else {
-              if (parseChild(node) === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS &&
-              node.elements !== undefined &&
-              node.elements.length > 0) {
-                console.log('TEXT TO ELEMENT IN PARAGRAPH');
-                node.elements = node.elements[0].elements;
-                action = ParseHTMLToXMLNodeActions.COPYCHILD;
-              }
+              action = parseChild(node);
             }
             break;
 
@@ -296,29 +294,23 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
             if ((parent !== node) && (parent.name === 'paragraph' || parent.name === 'text') && parent.elements !== undefined && parent.elements.length === 1) {
               parent.attributes = { ...parent.attributes, ...(HTMLToAttributes as any)[node.name] };
               parent.elements = node.elements;
-              parseChild(parent);
+              action = parseChild(parent); // PAS SÛR
+              if (action === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS) {
+                console.log('STYLE UNIQUE PARENT: ', node, ' & PARENT: ', parent);
+              }
             } else {
               node.attributes = { ...node.attributes, ...(HTMLToAttributes as any)[node.name] };
               node.name = 'text';
-              if (parseChild(node) === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS &&
-              node.elements !== undefined &&
-              node.elements.length > 0) {
-                console.log('TEXT TO ELEMENT IN STYLE TEXT');
-                node.elements = node.elements[0].elements;
-                action = ParseHTMLToXMLNodeActions.COPYCHILD;
+              action = parseChild(node);
+              if (action === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS) {
+                console.log('STYLE NO UNIQUE PARENT: ', node);
               }
             }
             break;
 
           case 'span':
             node.name = 'text';
-            if (parseChild(node) === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS &&
-                node.elements !== undefined &&
-                node.elements.length > 0) {
-                console.log('TEXT TO ELEMENT IN SPAN TEXT');
-              node.elements = node.elements[0].elements;
-              action = ParseHTMLToXMLNodeActions.COPYCHILD;
-            }
+            action = parseChild(node);
             break;
 
           case 'li':
@@ -377,35 +369,42 @@ const parseHTMLToXMLNode = (node: XMLElement, parent: XMLElement, lastListSeq = 
             }
 
             console.log('TABLIST: ', tabList);
+            node.text = undefined;
+            node.name = 'paragraph';
+            node.elements = elements;
             if (parent.type === 'paragraph') {
               console.log('TEXT PARENT IS A PARAGRAPH');
-              node.text = undefined;
-              node.name = 'paragraph';
-              node.elements = elements;
               action = ParseHTMLToXMLNodeActions.COPYCHILD;
             } else {
               console.log('TEXT PARENT IS: ', parent.type);
+              action = ParseHTMLToXMLNodeActions.TEXTTOELEMENTS;
             }
           } else {
-            checkForQuote(text, elements);
-            if (elements.length === 1) {
+            const isSelf = checkForQuote(text, elements);
+            if (isSelf) {
               console.log('QUOTES ONE ELEMENT: ', elements);
-              node.text = undefined;
-              node.type = elements[0].type;
-              node.name = elements[0].name;
-              node.elements = elements[0].elements;
-              console.log('NODE: ', node);
+              if (parent.name !== undefined && parent.name !== 'text') {
+                node.text = undefined;
+                node.type = elements[0].type;
+                node.name = elements[0].name;
+                node.elements = elements[0].elements;
+                console.log('NODE: ', node);
+              } else {
+                node.text = text;
+                node.type = 'text';
+                node.elements = undefined;
+              }
             } else {
               console.log('NO TAB BUT EVENTUALLY QUOTES', elements);
               node.text = undefined;
               node.type = 'element';
               node.name = 'paragraph';
               node.elements = elements;
-              if (parent.type === 'paragraph') {
+              if (parent.name === 'paragraph') {
                 console.log('TEXT PARENT IS A PARAGRAPH');
                 action = ParseHTMLToXMLNodeActions.COPYCHILD;
               } else {
-                console.log('TEXT PARENT IS: ', parent.type);
+                console.log('TEXT PARENT IS: ', parent.type, ' WITH NAME: ', parent.name);
                 action = ParseHTMLToXMLNodeActions.TEXTTOELEMENTS;
               }
             }

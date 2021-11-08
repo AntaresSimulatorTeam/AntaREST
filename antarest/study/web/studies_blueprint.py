@@ -67,16 +67,21 @@ def create_study_routes(
         )
         return available_studies
 
-    @bp.get("/studies/{uuid}/comments", tags=[APITag.study_management], summary="Get comments")
+    @bp.get(
+        "/studies/{uuid}/comments",
+        tags=[APITag.study_management],
+        summary="Get comments",
+    )
     def get_comments(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Get comments of study {uuid}", extra={"user": current_user.id})
+        logger.info(
+            f"Get comments of study {uuid}", extra={"user": current_user.id}
+        )
         params = RequestParameters(user=current_user)
         study_id = sanitize_uuid(uuid)
-        json_response = storage_service.get_comments(study_id, params)
-        return Response(content=json_response, media_type="application/json")
+        return storage_service.get_comments(study_id, params)
 
     @bp.put(
         "/studies/{uuid}/comments",
@@ -98,11 +103,9 @@ def create_study_routes(
             raise HTTPException(
                 status_code=400, detail="empty body not authorized"
             )
-
         study_id = sanitize_uuid(uuid)
         params = RequestParameters(user=current_user)
         storage_service.edit_comments(study_id, new, params)
-        return ""
 
     @bp.post(
         "/studies/_import",

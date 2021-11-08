@@ -42,8 +42,8 @@ const Informations = (props: PropTypes) => {
     <div className={classes.root}>
       <InformationView study={study} />
       <div className={classes.otherInfo}>
-        <TaskView jobs={jobs} />
         <NoteView studyId={study.id} />
+        <TaskView jobs={jobs} />
       </div>
     </div>
   );

@@ -145,8 +145,8 @@ class PatchLeaf:
         eq: bool = True
         for attribute in self.__dict__.keys():
             eq = eq and (
-                    getattr(self, attribute, None)
-                    == getattr(other, attribute, None)
+                getattr(self, attribute, None)
+                == getattr(other, attribute, None)
             )
             if not eq:
                 return eq

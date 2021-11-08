@@ -81,14 +81,14 @@ class StudyService:
     """
 
     def __init__(
-            self,
-            raw_study_service: RawStudyService,
-            variant_study_service: VariantStudyService,
-            user_service: LoginService,
-            repository: StudyMetadataRepository,
-            event_bus: IEventBus,
-            task_service: ITaskService,
-            config: Config,
+        self,
+        raw_study_service: RawStudyService,
+        variant_study_service: VariantStudyService,
+        user_service: LoginService,
+        repository: StudyMetadataRepository,
+        event_bus: IEventBus,
+        task_service: ITaskService,
+        config: Config,
     ):
         self.raw_study_service = raw_study_service
         self.variant_study_service = variant_study_service
@@ -111,12 +111,12 @@ class StudyService:
             callback(uuid)
 
     def get(
-            self,
-            uuid: str,
-            url: str,
-            depth: int,
-            formatted: bool,
-            params: RequestParameters,
+        self,
+        uuid: str,
+        url: str,
+        depth: int,
+        formatted: bool,
+        params: RequestParameters,
     ) -> JSON:
         """
         Get study data inside filesystem
@@ -139,9 +139,9 @@ class StudyService:
         )
 
     def get_comments(
-            self,
-            uuid: str,
-            params: RequestParameters,
+        self,
+        uuid: str,
+        params: RequestParameters,
     ) -> JSON:
         """
         Get study data inside filesystem
@@ -156,7 +156,8 @@ class StudyService:
 
         self._assert_study_unarchived(study)
         output = self._get_study_storage_service(study).get(
-            metadata=study, url='/settings/comments', depth=-1)
+            metadata=study, url="/settings/comments", depth=-1
+        )
 
         try:
             # try to decode string
@@ -174,10 +175,10 @@ class StudyService:
         return json_response
 
     def edit_comments(
-            self,
-            uuid: str,
-            data: CommentsDto,
-            params: RequestParameters,
+        self,
+        uuid: str,
+        data: CommentsDto,
+        params: RequestParameters,
     ) -> JSON:
         """
         Replace data inside study.
@@ -195,7 +196,12 @@ class StudyService:
         self._assert_study_unarchived(study)
 
         if isinstance(study, RawStudy):
-            return self.edit_study(uuid=uuid, url='settings/comments', new=bytes(data.comments, 'utf-8'), params=params)
+            return self.edit_study(
+                uuid=uuid,
+                url="settings/comments",
+                new=bytes(data.comments, "utf-8"),
+                params=params,
+            )
         elif isinstance(study, VariantStudy):
             pass  # Edit comments for variant study
 
@@ -232,7 +238,7 @@ class StudyService:
         return studies
 
     def _try_get_studies_information(
-            self, study: Study, summary: bool
+        self, study: Study, summary: bool
     ) -> Optional[StudyMetadataDTO]:
         try:
             return self._get_study_storage_service(
@@ -245,7 +251,7 @@ class StudyService:
         return None
 
     def get_study_information(
-            self, uuid: str, params: RequestParameters
+        self, uuid: str, params: RequestParameters
     ) -> StudyMetadataDTO:
         """
         Get study information
@@ -266,10 +272,10 @@ class StudyService:
         )
 
     def update_study_information(
-            self,
-            uuid: str,
-            metadata_patch: StudyMetadataPatchDTO,
-            params: RequestParameters,
+        self,
+        uuid: str,
+        metadata_patch: StudyMetadataPatchDTO,
+        params: RequestParameters,
     ) -> StudyMetadataDTO:
         """
         Update study metadata
@@ -400,12 +406,12 @@ class StudyService:
         paths = [str(f.path) for f in folders]
         for study in self.repository.get_all():
             if (
-                    isinstance(study, RawStudy)
-                    and not study.archived
-                    and (
+                isinstance(study, RawStudy)
+                and not study.archived
+                and (
                     study.workspace != DEFAULT_WORKSPACE_NAME
                     and study.path not in paths
-            )
+                )
             ):
                 logger.info(
                     "Study=%s is not present in disk and will be deleted",
@@ -463,12 +469,12 @@ class StudyService:
                     )
 
     def copy_study(
-            self,
-            src_uuid: str,
-            dest_study_name: str,
-            group_ids: List[str],
-            params: RequestParameters,
-            with_outputs: bool = False,
+        self,
+        src_uuid: str,
+        dest_study_name: str,
+        group_ids: List[str],
+        params: RequestParameters,
+        with_outputs: bool = False,
     ) -> str:
         """
         Copy study to an other location.
@@ -506,11 +512,11 @@ class StudyService:
         return str(study.id)
 
     def export_study(
-            self,
-            uuid: str,
-            target: Path,
-            params: RequestParameters,
-            outputs: bool = True,
+        self,
+        uuid: str,
+        target: Path,
+        params: RequestParameters,
+        outputs: bool = True,
     ) -> Path:
         """
         Export study to a zip file.
@@ -531,11 +537,11 @@ class StudyService:
         )
 
     def export_study_flat(
-            self,
-            uuid: str,
-            params: RequestParameters,
-            dest: Path,
-            outputs: bool = True,
+        self,
+        uuid: str,
+        params: RequestParameters,
+        dest: Path,
+        outputs: bool = True,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
@@ -575,7 +581,7 @@ class StudyService:
         self._on_study_delete(uuid=uuid)
 
     def delete_output(
-            self, uuid: str, output_name: str, params: RequestParameters
+        self, uuid: str, output_name: str, params: RequestParameters
     ) -> None:
         """
         Delete specific output simulation in study
@@ -605,11 +611,11 @@ class StudyService:
         )
 
     def download_outputs(
-            self,
-            study_id: str,
-            output_id: str,
-            data: StudyDownloadDTO,
-            params: RequestParameters,
+        self,
+        study_id: str,
+        output_id: str,
+        data: StudyDownloadDTO,
+        params: RequestParameters,
     ) -> MatrixAggregationResult:
         """
         Download outputs
@@ -640,7 +646,7 @@ class StudyService:
         return matrix
 
     def get_study_sim_result(
-            self, study_id: str, params: RequestParameters
+        self, study_id: str, params: RequestParameters
     ) -> List[StudySimResultDTO]:
         """
         Get global result information
@@ -665,11 +671,11 @@ class StudyService:
         )
 
     def set_sim_reference(
-            self,
-            study_id: str,
-            output_id: str,
-            status: bool,
-            params: RequestParameters,
+        self,
+        study_id: str,
+        output_id: str,
+        status: bool,
+        params: RequestParameters,
     ) -> None:
         """
         Set simulation as the reference output
@@ -699,10 +705,10 @@ class StudyService:
         )
 
     def import_study(
-            self,
-            stream: IO[bytes],
-            group_ids: List[str],
-            params: RequestParameters,
+        self,
+        stream: IO[bytes],
+        group_ids: List[str],
+        params: RequestParameters,
     ) -> str:
         """
         Import zipped study.
@@ -740,10 +746,10 @@ class StudyService:
         return str(study.id)
 
     def import_output(
-            self,
-            uuid: str,
-            output: Union[IO[bytes], Path],
-            params: RequestParameters,
+        self,
+        uuid: str,
+        output: Union[IO[bytes], Path],
+        params: RequestParameters,
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -768,11 +774,11 @@ class StudyService:
         return res
 
     def edit_study(
-            self,
-            uuid: str,
-            url: str,
-            new: Union[str, bytes, JSON],
-            params: RequestParameters,
+        self,
+        uuid: str,
+        url: str,
+        new: Union[str, bytes, JSON],
+        params: RequestParameters,
     ) -> JSON:
         """
         Replace data inside study.
@@ -811,7 +817,7 @@ class StudyService:
         return cast(JSON, updated)
 
     def change_owner(
-            self, study_id: str, owner_id: int, params: RequestParameters
+        self, study_id: str, owner_id: int, params: RequestParameters
     ) -> None:
         """
         Change study owner
@@ -849,7 +855,7 @@ class StudyService:
         )
 
     def add_group(
-            self, study_id: str, group_id: str, params: RequestParameters
+        self, study_id: str, group_id: str, params: RequestParameters
     ) -> None:
         """
         Attach new group on study.
@@ -883,7 +889,7 @@ class StudyService:
         )
 
     def remove_group(
-            self, study_id: str, group_id: str, params: RequestParameters
+        self, study_id: str, group_id: str, params: RequestParameters
     ) -> None:
         """
         Detach group on study
@@ -915,7 +921,7 @@ class StudyService:
         )
 
     def set_public_mode(
-            self, study_id: str, mode: PublicMode, params: RequestParameters
+        self, study_id: str, mode: PublicMode, params: RequestParameters
     ) -> None:
         """
         Update public mode permission on study
@@ -948,10 +954,10 @@ class StudyService:
         return self.raw_study_service.check_errors(study)
 
     def get_all_areas(
-            self,
-            uuid: str,
-            area_type: Optional[AreaType],
-            params: RequestParameters,
+        self,
+        uuid: str,
+        area_type: Optional[AreaType],
+        params: RequestParameters,
     ) -> List[AreaInfoDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
@@ -959,10 +965,10 @@ class StudyService:
         return self.areas.get_all_areas(study, area_type)
 
     def create_area(
-            self,
-            uuid: str,
-            area_creation_dto: AreaCreationDTO,
-            params: RequestParameters,
+        self,
+        uuid: str,
+        area_creation_dto: AreaCreationDTO,
+        params: RequestParameters,
     ) -> AreaInfoDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
@@ -970,11 +976,11 @@ class StudyService:
         return self.areas.create_area(study, area_creation_dto)
 
     def update_area(
-            self,
-            uuid: str,
-            area_id: str,
-            area_patch_dto: AreaPatchUpdateDTO,
-            params: RequestParameters,
+        self,
+        uuid: str,
+        area_id: str,
+        area_patch_dto: AreaPatchUpdateDTO,
+        params: RequestParameters,
     ) -> AreaInfoDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
@@ -982,7 +988,7 @@ class StudyService:
         return self.areas.update_area(study, area_id, area_patch_dto)
 
     def delete_area(
-            self, uuid: str, area_id: str, params: RequestParameters
+        self, uuid: str, area_id: str, params: RequestParameters
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
@@ -1031,11 +1037,11 @@ class StudyService:
         )
 
     def _save_study(
-            self,
-            study: Study,
-            owner: Optional[JWTUser] = None,
-            group_ids: List[str] = list(),
-            content_status: StudyContentStatus = StudyContentStatus.VALID,
+        self,
+        study: Study,
+        owner: Optional[JWTUser] = None,
+        group_ids: List[str] = list(),
+        content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         """
         Creeate new study with owner, group or content_status.
@@ -1062,7 +1068,7 @@ class StudyService:
             for gid in group_ids:
                 group = next(filter(lambda g: g.id == gid, owner.groups), None)
                 if group is None or not group.role.is_higher_or_equals(
-                        RoleType.WRITER
+                    RoleType.WRITER
                 ):
                     raise UserHasNotPermissionError()
                 groups.append(Group(id=group.id, name=group.name))
@@ -1091,7 +1097,7 @@ class StudyService:
         return study
 
     def _assert_study_unarchived(
-            self, study: Study, raise_exception: bool = True
+        self, study: Study, raise_exception: bool = True
     ) -> bool:
         if study.archived and raise_exception:
             raise UnsupportedOperationOnArchivedStudy(study.id)
@@ -1121,7 +1127,7 @@ class StudyService:
             return StudyContentStatus.ERROR
 
     def _get_study_storage_service(
-            self, study: Study
+        self, study: Study
     ) -> IStudyStorageService[Union[RawStudy, VariantStudy]]:
         if isinstance(study, RawStudy):
             return self.raw_study_service

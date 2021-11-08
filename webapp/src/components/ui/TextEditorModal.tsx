@@ -128,7 +128,7 @@ const TextEditorModal = (props: PropTypes) => {
     setEditorState(RichUtils.toggleInlineStyle(editorState, type));
   };
 
-  const toggleBulletPoints = (type: string) => { // ordered-list-item unordered-list-item
+  const toggleBulletPoints = (type: string) => {
     setEditorState(
       RichUtils.toggleBlockType(
         editorState,

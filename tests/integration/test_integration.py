@@ -110,6 +110,27 @@ def test_main(app: FastAPI):
         },
     )
     assert len(res.json()) == 1
+    study_id = next(iter(res.json()))
+    comments = "<text>Hello</text>"
+
+    print("--------------- STUDY: ", study_id)
+    # Set new comments
+    res = client.put(
+        f"/v1/studies/{study_id}/comments",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+        json={"comments": comments},
+    )
+
+    # Get comments
+    res = client.get(
+        f"/v1/studies/{study_id}/comments",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.json() == f'"{comments}"'
 
     # study creation
     created = client.post(

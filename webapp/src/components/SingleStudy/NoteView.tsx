@@ -41,6 +41,8 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: 'flex-start',
       alignItems: 'center',
       backgroundColor: theme.palette.primary.main,
+      borderTopLeftRadius: theme.shape.borderRadius,
+      borderTopRightRadius: theme.shape.borderRadius,
       paddingLeft: theme.spacing(2),
     },
     title: {
@@ -81,7 +83,7 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       flexFlow: 'column nowrap',
       justifyContent: 'flex-start',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       overflowY: 'auto',
       overflowX: 'hidden',
       boxSizing: 'border-box',
@@ -126,7 +128,7 @@ const NoteView = (props: Props) => {
       }
     };
     init();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => setContent('');
   }, [enqueueSnackbar, studyId, t]);
 
   return (
