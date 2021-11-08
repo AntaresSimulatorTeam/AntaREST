@@ -5,7 +5,7 @@ from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import List, IO, Optional, cast, Union, Dict
+from typing import List, IO, Optional, cast, Union, Dict, Callable
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -96,6 +96,17 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
         self.config = config
+        self.on_deletion_callbacks: List[Callable[[str], None]] = []
+
+    def add_on_deletion_callback(
+        self, callback: Callable[[str], None]
+    ) -> None:
+        self.on_deletion_callbacks.append(callback)
+
+    def _on_study_delete(self, uuid: str) -> None:
+        """Run all callbacks"""
+        for callback in self.on_deletion_callbacks:
+            callback(uuid)
 
     def get(
         self,
@@ -488,13 +499,15 @@ class StudyService:
 
         # delete the files afterward for
         # if the study cannot be deleted from database for foreign key reason
-        if self._assert_study_unarchived(study, False):
+        if self._assert_study_unarchived(study=study, raise_exception=False):
             self._get_study_storage_service(study).delete(study)
         else:
             if isinstance(study, RawStudy):
                 os.unlink(self.raw_study_service.get_archive_path(study))
 
         logger.info("study %s deleted by user %s", uuid, params.get_user_id())
+
+        self._on_study_delete(uuid=uuid)
 
     def delete_output(
         self, uuid: str, output_name: str, params: RequestParameters
