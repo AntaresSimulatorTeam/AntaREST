@@ -33,5 +33,9 @@
   "editPublicModeText": "Permission publique en écriture",
   "fullPublicModeText": "Permission publique totale",
   "generalInfo": "Informations générales",
-  "renamestudy": "Renommer l'étude"
+  "renamestudy": "Renommer l'étude",
+  "notes": "Notes",
+  "fetchCommentsError": "Echec lors de la récupération des commentaires",
+  "commentsSaved": "Commentaires enregistrés avec succès",
+  "commentsNotSaved": "Erreur lors de l'enregistrement des commentaires"
 }

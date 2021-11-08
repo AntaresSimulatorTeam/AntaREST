@@ -4,11 +4,13 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional, List, Dict
 
-from fastapi import APIRouter, File, Depends, Request
+from fastapi import APIRouter, File, Depends, Request, HTTPException
+from fastapi.params import Param, Body
 from markupsafe import escape
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
+from antarest.core.custom_types import JSON
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
@@ -24,6 +26,7 @@ from antarest.study.model import (
     StudySimResultDTO,
     StudyMetadataDTO,
     MatrixAggregationResult,
+    CommentsDto,
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.study_download_utils import StudyDownloader
@@ -63,6 +66,46 @@ def create_study_routes(
             summary, params
         )
         return available_studies
+
+    @bp.get(
+        "/studies/{uuid}/comments",
+        tags=[APITag.study_management],
+        summary="Get comments",
+    )
+    def get_comments(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Get comments of study {uuid}", extra={"user": current_user.id}
+        )
+        params = RequestParameters(user=current_user)
+        study_id = sanitize_uuid(uuid)
+        return study_service.get_comments(study_id, params)
+
+    @bp.put(
+        "/studies/{uuid}/comments",
+        status_code=HTTPStatus.NO_CONTENT.value,
+        tags=[APITag.study_raw_data],
+        summary="Update comments",
+    )
+    def edit_comments(
+        uuid: str,
+        data: CommentsDto,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Editing comments for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        new = data
+        if not new:
+            raise HTTPException(
+                status_code=400, detail="empty body not authorized"
+            )
+        study_id = sanitize_uuid(uuid)
+        params = RequestParameters(user=current_user)
+        study_service.edit_comments(study_id, new, params)
 
     @bp.post(
         "/studies/_import",

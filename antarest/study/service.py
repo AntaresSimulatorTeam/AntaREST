@@ -1,4 +1,5 @@
 import io
+import json
 import logging
 import os
 from datetime import datetime
@@ -42,6 +43,7 @@ from antarest.study.model import (
     StudyDownloadDTO,
     MatrixAggregationResult,
     StudySimResultDTO,
+    CommentsDto,
     STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
 )
@@ -135,6 +137,68 @@ class StudyService:
         return self._get_study_storage_service(study).get(
             study, url, depth, formatted
         )
+
+    def get_comments(
+        self,
+        uuid: str,
+        params: RequestParameters,
+    ) -> JSON:
+        """
+        Get study data inside filesystem
+        Args:
+            uuid: study uuid
+            params: request parameters
+
+        Returns: data study formatted in json
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+
+        self._assert_study_unarchived(study)
+        output = self._get_study_storage_service(study).get(
+            metadata=study, url="/settings/comments", depth=-1
+        )
+
+        try:
+            # try to decode string
+            output = output.decode("utf-8")  # type: ignore
+        except (AttributeError, UnicodeDecodeError):
+            pass
+
+        return output
+
+    def edit_comments(
+        self,
+        uuid: str,
+        data: CommentsDto,
+        params: RequestParameters,
+    ) -> JSON:
+        """
+        Replace data inside study.
+
+        Args:
+            uuid: study id
+            data: new data to replace
+            params: request parameters
+
+        Returns: new data replaced
+
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+
+        if isinstance(study, RawStudy):
+            return self.edit_study(
+                uuid=uuid,
+                url="settings/comments",
+                new=bytes(data.comments, "utf-8"),
+                params=params,
+            )
+        elif isinstance(study, VariantStudy):
+            raise NotImplementedError()
+
+        raise StudyTypeUnsupported(study.id, study.type)
 
     def _get_study_metadatas(self, params: RequestParameters) -> List[Study]:
         return list(

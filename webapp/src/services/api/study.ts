@@ -22,6 +22,11 @@ export const getStudyData = async (sid: string, path = '', depth = 1): Promise<a
   return res.data;
 };
 
+export const getComments = async (sid: string): Promise<any> => {
+  const res = await client.get(`/v1/studies/${sid}/comments`);
+  return res.data;
+};
+
 export const getStudyMetadata = async (sid: string, summary = true): Promise<StudyMetadata> => {
   const res = await client.get(`/v1/studies/${sid}?summary=${summary}`);
   return convertStudyDtoToMetadata(sid, res.data);
@@ -52,6 +57,12 @@ export const unarchiveStudy = async (sid: string): Promise<void> => {
 
 export const deleteStudy = async (sid: string): Promise<any> => {
   const res = await client.delete(`/v1/studies/${sid}`);
+  return res.data;
+};
+
+export const editComments = async (sid: string, newComments: string): Promise<any> => {
+  const data = { comments: newComments };
+  const res = await client.put(`/v1/studies/${sid}/comments`, data);
   return res.data;
 };
 
