@@ -10,6 +10,7 @@ import SortByAlphaIcon from '@material-ui/icons/SortByAlpha';
 import DateRangeIcon from '@material-ui/icons/DateRange';
 import debug from 'debug';
 import { useSnackbar } from 'notistack';
+import { AxiosError } from 'axios';
 import { AppState } from '../reducers';
 import StudyCreationTools from '../../components/StudyCreationTools';
 import StudyListing from '../../components/StudyListing';
@@ -25,9 +26,6 @@ import theme from '../theme';
 import { getGroups, getUsers } from '../../services/api/user';
 import { loadState, saveState } from '../../services/utils/localStorage';
 import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
-import { AxiosError } from 'axios';
-
-const logError = debug('antares:studymanagement:error');
 
 const DEFAULT_LIST_MODE_KEY = 'studylisting.listmode';
 const DEFAULT_FILTER_USER = 'studylisting.filter.user';
