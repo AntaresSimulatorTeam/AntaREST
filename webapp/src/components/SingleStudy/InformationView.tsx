@@ -423,9 +423,11 @@ const InformationView = (props: PropTypes) => {
           )}
         </div>
         <div className={classes.deleteContainer}>
+          {study.managed && (
           <Button className={classes.deleteButton} onClick={() => setOpenConfirmationModal(true)}>
             {t('main:delete')}
           </Button>
+          )}
         </div>
       </div>
       {openConfirmationModal && (

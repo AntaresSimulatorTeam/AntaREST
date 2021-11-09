@@ -14,6 +14,7 @@ from antarest.core.config import Config
 from antarest.core.custom_types import SUB_JSON
 from antarest.core.exceptions import (
     UnsupportedStudyVersion,
+    StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import extract_zip
@@ -35,6 +36,7 @@ from antarest.study.storage.utils import (
     update_antares_info,
     get_default_workspace_path,
     fix_study_root,
+    is_managed,
 )
 
 logger = logging.getLogger(__name__)
@@ -205,9 +207,12 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         """
         self._check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-        shutil.rmtree(study_path, ignore_errors=True)
-        self.remove_from_cache(metadata.id)
+        if self.config.storage.allow_deletion or is_managed(metadata):
+            study_path = self.get_study_path(metadata)
+            shutil.rmtree(study_path, ignore_errors=True)
+            self.remove_from_cache(metadata.id)
+        else:
+            raise StudyDeletionNotAllowed(metadata.id)
 
     def delete_output(self, metadata: RawStudy, output_name: str) -> None:
         """
