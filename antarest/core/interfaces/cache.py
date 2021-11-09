@@ -8,6 +8,8 @@ from antarest.core.custom_types import JSON
 class CacheConstants(Enum):
     RAW_STUDY = "RAW_STUDY"
     STUDY_FACTORY = "STUDY_FACTORY"
+    STUDY_LISTING_SUMMARY = "STUDY_LISTING_SUMMARY"
+    STUDY_LISTING = "STUDY_LISTING"
 
 
 class ICache:

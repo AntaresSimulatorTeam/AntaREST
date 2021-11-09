@@ -9,6 +9,7 @@ import RefreshIcon from '@material-ui/icons/Refresh';
 import SortByAlphaIcon from '@material-ui/icons/SortByAlpha';
 import DateRangeIcon from '@material-ui/icons/DateRange';
 import debug from 'debug';
+import { useSnackbar } from 'notistack';
 import { AppState } from '../reducers';
 import StudyCreationTools from '../../components/StudyCreationTools';
 import StudyListing from '../../components/StudyListing';
@@ -23,6 +24,8 @@ import AutoCompleteView from '../../components/StudySearchTool/AutoCompleteView'
 import theme from '../theme';
 import { getGroups, getUsers } from '../../services/api/user';
 import { loadState, saveState } from '../../services/utils/localStorage';
+import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
+import { AxiosError } from 'axios';
 
 const logError = debug('antares:studymanagement:error');
 
@@ -77,6 +80,7 @@ const StudyManagement = (props: PropTypes) => {
   const { studies, loadStudies } = props;
   const classes = useStyles();
   const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const [filteredStudies, setFilteredStudies] = useState<Array<StudyMetadata>>(studies);
   const [loaded, setLoaded] = useState(true);
   const [isList, setViewState] = useState(loadState<boolean>(DEFAULT_LIST_MODE_KEY, true));
@@ -94,7 +98,7 @@ const StudyManagement = (props: PropTypes) => {
         loadStudies(allStudies);
       }
     } catch (e) {
-      logError('woops', e);
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoretrievestudies'), e as AxiosError);
     } finally {
       setLoaded(true);
     }
