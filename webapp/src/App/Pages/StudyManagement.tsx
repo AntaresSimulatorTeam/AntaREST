@@ -8,7 +8,6 @@ import ViewCompactIcon from '@material-ui/icons/ViewCompact';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import SortByAlphaIcon from '@material-ui/icons/SortByAlpha';
 import DateRangeIcon from '@material-ui/icons/DateRange';
-import debug from 'debug';
 import { useSnackbar } from 'notistack';
 import { AxiosError } from 'axios';
 import { AppState } from '../reducers';
