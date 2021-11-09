@@ -14,10 +14,10 @@ import {
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import CreateIcon from '@material-ui/icons/Create';
-import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
-import TextEditorModal from '../ui/TextEditorModal';
-import { editComments, getComments } from '../../services/api/study';
-import { convertXMLToDraftJS } from '../ui/Utils';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
+import TextEditorModal from './TextEditorModal';
+import { editComments, getComments } from '../../../services/api/study';
+import { convertXMLToDraftJS } from './utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

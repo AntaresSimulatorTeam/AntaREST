@@ -8,7 +8,7 @@ import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import { Editor, EditorState, RichUtils, getDefaultKeyBinding } from 'draft-js';
 import FormatListBulletedIcon from '@material-ui/icons/FormatListBulleted';
 import FormatListNumberedIcon from '@material-ui/icons/FormatListNumbered';
-import { convertDraftJSToXML, convertXMLToDraftJS } from './Utils';
+import { convertDraftJSToXML, convertXMLToDraftJS } from './utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

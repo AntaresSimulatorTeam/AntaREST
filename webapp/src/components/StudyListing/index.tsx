@@ -13,6 +13,7 @@ import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy, copyStu
 import StudyListElementView from './StudyListingItemView';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import { AppState } from '../../App/reducers';
+import { buildStudyTree } from './utils';
 
 const logError = debug('antares:studyblockview:error');
 
@@ -200,6 +201,10 @@ const StudyListing = (props: PropTypes) => {
     () => {
       updateScroll(scrollState);
     }, [updateScroll]);
+
+  useEffect(() => {
+    buildStudyTree(studies);
+  }, [studies]);
 
   return (
     <div className={classes.root}>
