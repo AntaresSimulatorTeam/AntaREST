@@ -154,6 +154,7 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
             )}
           </>
         )}
+        {study.managed && (
         <Button
           size="small"
           style={{ float: 'right', color: theme.palette.error.main }}
@@ -161,6 +162,7 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
         >
           {t('main:delete')}
         </Button>
+        )}
       </div>
     </Paper>
   );

@@ -10,6 +10,7 @@ import pytest
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import (
     StudyNotFoundError,
+    StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
@@ -19,12 +20,15 @@ from antarest.study.storage.rawstudy.raw_study_service import (
 from antarest.study.storage.utils import get_default_workspace_path
 
 
-def build_config(study_path: Path):
+def build_config(
+    study_path: Path,
+    workspace_name: str = DEFAULT_WORKSPACE_NAME,
+    allow_deletion: bool = False,
+):
     return Config(
         storage=StorageConfig(
-            workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=study_path)
-            }
+            workspaces={workspace_name: WorkspaceConfig(path=study_path)},
+            allow_deletion=allow_deletion,
         )
     )
 
@@ -416,8 +420,23 @@ def test_delete_study(tmp_path: Path) -> None:
     (study_path / "study.antares").touch()
 
     cache = Mock()
+
     study_service = RawStudyService(
-        config=build_config(tmp_path),
+        config=build_config(
+            tmp_path, workspace_name="foo", allow_deletion=False
+        ),
+        cache=cache,
+        study_factory=Mock(),
+        path_resources=Path(),
+        patch_service=Mock(),
+    )
+
+    md = RawStudy(id=name, workspace="foo", path=str(study_path))
+    with pytest.raises(StudyDeletionNotAllowed):
+        study_service.delete(md)
+
+    study_service = RawStudyService(
+        config=build_config(tmp_path, allow_deletion=True),
         cache=cache,
         study_factory=Mock(),
         path_resources=Path(),
