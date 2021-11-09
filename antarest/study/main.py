@@ -80,8 +80,8 @@ def build_study_service(
     study_factory = StudyFactory(
         matrix=matrix_service, resolver=resolver, cache=cache
     )
-    metadata_repository = metadata_repository or StudyMetadataRepository()
-    variant_repository = variant_repository or VariantStudyRepository()
+    metadata_repository = metadata_repository or StudyMetadataRepository(cache)
+    variant_repository = variant_repository or VariantStudyRepository(cache)
 
     patch_service = patch_service or PatchService()
 
@@ -120,6 +120,7 @@ def build_study_service(
         repository=metadata_repository,
         event_bus=event_bus,
         task_service=task_service,
+        cache_service=cache,
         config=config,
     )
 

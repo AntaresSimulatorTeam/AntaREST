@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List
 
+from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
@@ -13,6 +14,9 @@ class VariantStudyRepository(StudyMetadataRepository):
     """
     Variant  study repository
     """
+
+    def __init__(self, cache_service: ICache):
+        super().__init__(cache_service)
 
     def get_children(self, parent_id: str) -> List[VariantStudy]:
         studies: List[VariantStudy] = (

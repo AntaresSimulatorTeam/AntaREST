@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 from sqlalchemy import create_engine
 
+from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.persistence import Base
@@ -38,7 +39,7 @@ def test_commands_service() -> VariantStudyService:
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    repository = VariantStudyRepository()
+    repository = VariantStudyRepository(LocalCache())
     service = VariantStudyService(
         raw_study_service=Mock(),
         cache=Mock(),

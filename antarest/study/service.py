@@ -20,6 +20,7 @@ from antarest.core.exceptions import (
     UnsupportedOperationOnArchivedStudy,
     NotAManagedStudyException,
 )
+from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
@@ -88,6 +89,7 @@ class StudyService:
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
         task_service: ITaskService,
+        cache_service: ICache,
         config: Config,
     ):
         self.raw_study_service = raw_study_service
@@ -97,6 +99,7 @@ class StudyService:
         self.event_bus = event_bus
         self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
+        self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
 
@@ -222,13 +225,37 @@ class StudyService:
         Returns: List of study information
 
         """
-        logger.info("studies metadata asked by user %s", params.get_user_id())
+        logger.info("Fetching study listing")
         studies: Dict[str, StudyMetadataDTO] = {}
-        for study in self._get_study_metadatas(params):
-            study_metadata = self._try_get_studies_information(study, summary)
-            if study_metadata is not None:
-                studies[study_metadata.id] = study_metadata
-        return studies
+        cache_key = (
+            CacheConstants.STUDY_LISTING_SUMMARY.value
+            if summary
+            else CacheConstants.STUDY_LISTING.value
+        )
+        cached_studies = self.cache_service.get(cache_key)
+        if cached_studies:
+            for k in cached_studies:
+                studies[k] = StudyMetadataDTO.parse_obj(cached_studies[k])
+        else:
+            for study in self.repository.get_all():
+                study_metadata = self._try_get_studies_information(
+                    study, summary
+                )
+                if study_metadata is not None:
+                    studies[study_metadata.id] = study_metadata
+            self.cache_service.put(cache_key, studies)
+        return {
+            s.id: s
+            for s in filter(
+                lambda study_dto: assert_permission(
+                    params.user,
+                    study_dto,
+                    StudyPermissionType.READ,
+                    raising=False,
+                ),
+                studies.values(),
+            )
+        }
 
     def _try_get_studies_information(
         self, study: Study, summary: bool

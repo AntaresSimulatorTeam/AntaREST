@@ -19,7 +19,7 @@ class LocalCacheElement(BaseModel):
 
 
 class LocalCache(ICache):
-    def __init__(self, config: CacheConfig):
+    def __init__(self, config: CacheConfig = CacheConfig()):
         self.cache: Dict[str, LocalCacheElement] = dict()
         self.lock = threading.Lock()
         self.checker_delay = config.checker_delay
