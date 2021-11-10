@@ -141,7 +141,7 @@ def fastapi_app(
     application.add_middleware(
         DBSessionMiddleware,
         custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
+        session_args={"autocommit": False, "expire_on_commit": False, "autoflush": False},
     )
 
     application.add_middleware(LoggingMiddleware)
