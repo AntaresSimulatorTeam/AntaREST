@@ -16,6 +16,14 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 )
 
 
+DUPLICATE_KEYS = [
+    "playlist_reset",
+    "playlist_year_weight",
+    "playlist_year +",
+    "playlist_year -",
+]
+
+
 class GeneralData(IniFileNode):
     TYPES: Dict[str, Dict[str, Any]] = {
         "general": {
@@ -122,6 +130,6 @@ class GeneralData(IniFileNode):
             context,
             config,
             types=types,
-            reader=MultipleSameKeysIniReader(["playlist_year_weight"]),
-            writer=IniWriter(special_keys=["playlist_year_weight"]),
+            reader=MultipleSameKeysIniReader(DUPLICATE_KEYS),
+            writer=IniWriter(special_keys=DUPLICATE_KEYS),
         )
