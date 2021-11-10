@@ -5,13 +5,16 @@ from uuid import uuid4
 
 import pytest
 
+from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.interfaces.cache import ICache
+from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.core.roles import RoleType
-from antarest.login.model import User, Group
+from antarest.login.model import User, Group, GroupDTO
+from antarest.login.service import LoginService
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -23,7 +26,10 @@ from antarest.study.model import (
     MatrixAggregationResult,
     MatrixIndex,
     StudyDownloadType,
+    StudyMetadataDTO,
+    OwnerInfo,
 )
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService, UserHasNotPermissionError
 from antarest.study.storage.permissions import (
     StudyPermissionType,
@@ -37,8 +43,29 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Set,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 
 
+def build_study_service(
+    raw_study_service: RawStudyService,
+    repository: StudyMetadataRepository,
+    config: Config,
+    user_service: LoginService = Mock(),
+    cache_service: ICache = Mock(),
+) -> StudyService:
+    return StudyService(
+        raw_study_service=raw_study_service,
+        variant_study_service=Mock(),
+        user_service=user_service,
+        repository=repository,
+        event_bus=Mock(),
+        task_service=Mock(),
+        cache_service=cache_service,
+        config=config,
+    )
+
+
+@pytest.mark.unit_test
 def test_get_studies_uuid() -> None:
     bob = User(id=1, name="bob")
     alice = User(id=2, name="alice")
@@ -57,15 +84,7 @@ def test_get_studies_uuid() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = StudyService(
-        raw_study_service=study_service,
-        variant_study_service=Mock(),
-        user_service=Mock(),
-        repository=repository,
-        event_bus=Mock(),
-        task_service=Mock(),
-        config=config,
-    )
+    service = build_study_service(study_service, repository, config)
 
     studies = service._get_study_metadatas(
         RequestParameters(user=JWTUser(id=1, impersonator=1, type="users"))
@@ -74,6 +93,110 @@ def test_get_studies_uuid() -> None:
     assert [a, c] == studies
 
 
+def study_to_dto(study: Study, summary: bool) -> StudyMetadataDTO:
+    return StudyMetadataDTO(
+        id=study.id,
+        name=study.name,
+        version=int(study.version),
+        created=study.created_at.timestamp(),
+        updated=study.updated_at.timestamp(),
+        workspace=DEFAULT_WORKSPACE_NAME,
+        managed=True,
+        type=study.type,
+        archived=study.archived if study.archived is not None else False,
+        owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
+        if study.owner is not None
+        else OwnerInfo(name="Unknown"),
+        groups=[
+            GroupDTO(id=group.id, name=group.name) for group in study.groups
+        ],
+        public_mode=study.public_mode or PublicMode.NONE,
+        horizon=None,
+        scenario=None,
+        status=None,
+        doc=None,
+        folder=None,
+    )
+
+
+@pytest.mark.unit_test
+def test_study_listing() -> None:
+    bob = User(id=1, name="bob")
+    alice = User(id=2, name="alice")
+
+    a = RawStudy(
+        id="A",
+        owner=bob,
+        type="rawstudy",
+        name="A",
+        version=810,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        path="",
+    )
+    b = RawStudy(
+        id="B",
+        owner=alice,
+        type="rawstudy",
+        name="B",
+        version=810,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        path="",
+    )
+    c = RawStudy(
+        id="C",
+        owner=bob,
+        type="rawstudy",
+        name="C",
+        version=810,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        path="",
+    )
+
+    # Mock
+    repository = Mock()
+    repository.get_all.return_value = [a, b, c]
+
+    raw_study_service = Mock(spec=RawStudyService)
+    raw_study_service.get_study_information.side_effect = study_to_dto
+
+    cache = Mock(spec=ICache)
+    cache.get.return_value = None
+
+    config = Config(
+        storage=StorageConfig(
+            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+        )
+    )
+    service = build_study_service(
+        raw_study_service, repository, config, cache_service=cache
+    )
+
+    studies = service.get_studies_information(
+        True,
+        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
+    )
+
+    expected_result = {
+        e.id: e for e in map(lambda x: study_to_dto(x, True), [a, c])
+    }
+    assert expected_result == studies
+    cache.get.return_value = {
+        e.id: e for e in map(lambda x: study_to_dto(x, True), [a, b, c])
+    }
+
+    studies = service.get_studies_information(
+        True,
+        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
+    )
+
+    assert expected_result == studies
+    cache.put.assert_called_once()
+
+
+@pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
     ma = RawStudy(id="a", path="a")
     fa = StudyFolder(path=Path("a"), workspace="", groups=[])
@@ -97,15 +220,7 @@ def test_sync_studies_from_disk() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = StudyService(
-        raw_study_service=Mock(),
-        variant_study_service=Mock(),
-        user_service=Mock(),
-        repository=repository,
-        event_bus=Mock(),
-        task_service=Mock(),
-        config=config,
-    )
+    service = build_study_service(Mock(), repository, config)
 
     service.sync_studies_on_disk([fa, fc])
 
@@ -113,6 +228,7 @@ def test_sync_studies_from_disk() -> None:
     repository.save.assert_called_once()
 
 
+@pytest.mark.unit_test
 def test_remove_duplicate() -> None:
     ma = RawStudy(id="a", path="a")
     mb = RawStudy(id="b", path="a")
@@ -124,20 +240,13 @@ def test_remove_duplicate() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = StudyService(
-        raw_study_service=Mock(),
-        variant_study_service=Mock(),
-        user_service=Mock(),
-        repository=repository,
-        event_bus=Mock(),
-        task_service=Mock(),
-        config=config,
-    )
+    service = build_study_service(Mock(), repository, config)
 
     service.remove_duplicates()
     repository.delete.assert_called_once_with(mb.id)
 
 
+@pytest.mark.unit_test
 def test_create_study() -> None:
     # Mock
     repository = Mock()
@@ -176,15 +285,7 @@ def test_create_study() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = StudyService(
-        raw_study_service=study_service,
-        variant_study_service=Mock(),
-        user_service=Mock(),
-        repository=repository,
-        event_bus=Mock(),
-        task_service=Mock(),
-        config=config,
-    )
+    service = build_study_service(study_service, repository, config)
 
     with pytest.raises(UserHasNotPermissionError):
         service.create_study(
@@ -214,6 +315,7 @@ def test_create_study() -> None:
     repository.save.assert_called_once_with(expected)
 
 
+@pytest.mark.unit_test
 def test_save_metadata() -> None:
     # Mock
     repository = Mock()
@@ -259,15 +361,7 @@ def test_save_metadata() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = StudyService(
-        raw_study_service=study_service,
-        variant_study_service=Mock(),
-        user_service=Mock(),
-        repository=repository,
-        event_bus=Mock(),
-        task_service=Mock(),
-        config=config,
-    )
+    service = build_study_service(study_service, repository, config)
 
     service._save_study(
         RawStudy(id=uuid, workspace=DEFAULT_WORKSPACE_NAME),
@@ -276,6 +370,7 @@ def test_save_metadata() -> None:
     repository.save.assert_called_once_with(study)
 
 
+@pytest.mark.unit_test
 def test_download_output() -> None:
     study_service = Mock()
     repository = Mock()
@@ -336,15 +431,7 @@ def test_download_output() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = StudyService(
-        raw_study_service=study_service,
-        variant_study_service=Mock(),
-        user_service=Mock(),
-        repository=repository,
-        event_bus=Mock(),
-        task_service=Mock(),
-        config=config,
-    )
+    service = build_study_service(study_service, repository, config)
 
     res_study = {"columns": [["H. VAL|Euro/MWh"]], "data": [[0.5]]}
     study_service.get_raw.return_value = FileStudy(
@@ -400,6 +487,7 @@ def test_download_output() -> None:
     assert result == res_matrix
 
 
+@pytest.mark.unit_test
 def test_change_owner() -> None:
     uuid = str(uuid4())
     alice = User(id=1)
@@ -413,14 +501,8 @@ def test_change_owner() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = StudyService(
-        raw_study_service=study_service,
-        variant_study_service=Mock(),
-        user_service=user_service,
-        repository=repository,
-        event_bus=Mock(),
-        task_service=Mock(),
-        config=config,
+    service = build_study_service(
+        study_service, repository, config, user_service=user_service
     )
 
     study = RawStudy(id=uuid, owner=alice)
@@ -447,6 +529,7 @@ def test_change_owner() -> None:
         )
 
 
+@pytest.mark.unit_test
 def test_manage_group() -> None:
     uuid = str(uuid4())
     alice = User(id=1)
@@ -461,14 +544,8 @@ def test_manage_group() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = StudyService(
-        raw_study_service=Mock(),
-        variant_study_service=Mock(),
-        user_service=user_service,
-        repository=repository,
-        event_bus=Mock(),
-        task_service=Mock(),
-        config=config,
+    service = build_study_service(
+        Mock(), repository, config, user_service=user_service
     )
 
     repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a])
@@ -534,6 +611,7 @@ def test_manage_group() -> None:
     )
 
 
+@pytest.mark.unit_test
 def test_set_public_mode() -> None:
     uuid = str(uuid4())
     group_admin = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
@@ -545,14 +623,8 @@ def test_set_public_mode() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = StudyService(
-        raw_study_service=Mock(),
-        variant_study_service=Mock(),
-        user_service=user_service,
-        repository=repository,
-        event_bus=Mock(),
-        task_service=Mock(),
-        config=config,
+    service = build_study_service(
+        Mock(), repository, config, user_service=user_service
     )
 
     repository.get.return_value = Study(id=uuid)
@@ -576,6 +648,7 @@ def test_set_public_mode() -> None:
     )
 
 
+@pytest.mark.unit_test
 def test_check_errors():
     study_service = Mock()
     study_service.check_errors.return_value = ["Hello", "World"]
@@ -588,21 +661,14 @@ def test_check_errors():
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = StudyService(
-        raw_study_service=study_service,
-        variant_study_service=Mock(),
-        user_service=Mock(),
-        repository=repo,
-        event_bus=Mock(),
-        task_service=Mock(),
-        config=config,
-    )
+    service = build_study_service(study_service, repo, config)
 
     assert ["Hello", "World"] == service.check_errors("hello world")
     study_service.check_errors.assert_called_once_with(study)
     repo.get.assert_called_once_with("hello world")
 
 
+@pytest.mark.unit_test
 def test_assert_permission() -> None:
     uuid = str(uuid4())
     admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
@@ -620,15 +686,7 @@ def test_assert_permission() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = StudyService(
-        raw_study_service=Mock(),
-        variant_study_service=Mock(),
-        user_service=Mock(),
-        repository=repository,
-        event_bus=Mock(),
-        task_service=Mock(),
-        config=config,
-    )
+    service = build_study_service(Mock(), repository, config)
 
     # wrong owner
     repository.get.return_value = Study(id=uuid, owner=wrong)
@@ -681,3 +739,18 @@ def test_assert_permission() -> None:
         jwt_2, study, StudyPermissionType.WRITE, raising=False
     )
     assert assert_permission(jwt_2, study, StudyPermissionType.READ)
+
+
+@pytest.mark.unit_test
+def test_delete_study_calls_callback():
+    study_uuid = "my_study"
+    service = build_study_service(Mock(), Mock(), Mock())
+    callback = Mock()
+    service.add_on_deletion_callback(callback)
+
+    service.delete_study(
+        study_uuid,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+    callback.assert_called_once_with(study_uuid)

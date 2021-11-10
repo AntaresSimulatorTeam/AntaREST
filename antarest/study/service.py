@@ -5,7 +5,7 @@ from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import List, IO, Optional, cast, Union, Dict
+from typing import List, IO, Optional, cast, Union, Dict, Callable
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -17,7 +17,9 @@ from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
     UnsupportedOperationOnArchivedStudy,
+    NotAManagedStudyException,
 )
+from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
@@ -41,8 +43,10 @@ from antarest.study.model import (
     StudyDownloadDTO,
     MatrixAggregationResult,
     StudySimResultDTO,
+    CommentsDto,
     STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
+    PatchStudy,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.area_management import (
@@ -62,6 +66,8 @@ from antarest.study.storage.rawstudy.raw_study_service import (
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import (
     get_default_workspace_path,
+    is_managed,
+    remove_from_cache,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (
@@ -84,6 +90,7 @@ class StudyService:
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
         task_service: ITaskService,
+        cache_service: ICache,
         config: Config,
     ):
         self.raw_study_service = raw_study_service
@@ -93,7 +100,19 @@ class StudyService:
         self.event_bus = event_bus
         self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
+        self.cache_service = cache_service
         self.config = config
+        self.on_deletion_callbacks: List[Callable[[str], None]] = []
+
+    def add_on_deletion_callback(
+        self, callback: Callable[[str], None]
+    ) -> None:
+        self.on_deletion_callbacks.append(callback)
+
+    def _on_study_delete(self, uuid: str) -> None:
+        """Run all callbacks"""
+        for callback in self.on_deletion_callbacks:
+            callback(uuid)
 
     def get(
         self,
@@ -123,6 +142,83 @@ class StudyService:
             study, url, depth, formatted
         )
 
+    def get_comments(
+        self,
+        uuid: str,
+        params: RequestParameters,
+    ) -> Union[str, JSON]:
+        """
+        Get study data inside filesystem
+        Args:
+            uuid: study uuid
+            params: request parameters
+
+        Returns: data study formatted in json
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+
+        self._assert_study_unarchived(study)
+        output: Union[str, JSON]
+        if isinstance(study, RawStudy):
+            output = self._get_study_storage_service(study).get(
+                metadata=study, url="/settings/comments", depth=-1
+            )
+        elif isinstance(study, VariantStudy):
+            patch = self.raw_study_service.patch_service.get(study)
+            output = (
+                patch.study or PatchStudy()
+            ).comments or self._get_study_storage_service(study).get(
+                metadata=study, url="/settings/comments", depth=-1
+            )
+        else:
+            raise StudyTypeUnsupported(study.id, study.type)
+
+        try:
+            # try to decode string
+            output = output.decode("utf-8")  # type: ignore
+        except (AttributeError, UnicodeDecodeError):
+            pass
+
+        return output
+
+    def edit_comments(
+        self,
+        uuid: str,
+        data: CommentsDto,
+        params: RequestParameters,
+    ) -> None:
+        """
+        Replace data inside study.
+
+        Args:
+            uuid: study id
+            data: new data to replace
+            params: request parameters
+
+        Returns: new data replaced
+
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+
+        if isinstance(study, RawStudy):
+            self.edit_study(
+                uuid=uuid,
+                url="settings/comments",
+                new=bytes(data.comments, "utf-8"),
+                params=params,
+            )
+        elif isinstance(study, VariantStudy):
+            patch = self.raw_study_service.patch_service.get(study)
+            patch_study = patch.study or PatchStudy()
+            patch_study.comments = data.comments
+            patch.study = patch_study
+            self.raw_study_service.patch_service.save(study, patch)
+        else:
+            raise StudyTypeUnsupported(study.id, study.type)
+
     def _get_study_metadatas(self, params: RequestParameters) -> List[Study]:
         return list(
             filter(
@@ -145,13 +241,37 @@ class StudyService:
         Returns: List of study information
 
         """
-        logger.info("studies metadata asked by user %s", params.get_user_id())
+        logger.info("Fetching study listing")
         studies: Dict[str, StudyMetadataDTO] = {}
-        for study in self._get_study_metadatas(params):
-            study_metadata = self._try_get_studies_information(study, summary)
-            if study_metadata is not None:
-                studies[study_metadata.id] = study_metadata
-        return studies
+        cache_key = (
+            CacheConstants.STUDY_LISTING_SUMMARY.value
+            if summary
+            else CacheConstants.STUDY_LISTING.value
+        )
+        cached_studies = self.cache_service.get(cache_key)
+        if cached_studies:
+            for k in cached_studies:
+                studies[k] = StudyMetadataDTO.parse_obj(cached_studies[k])
+        else:
+            for study in self.repository.get_all():
+                study_metadata = self._try_get_studies_information(
+                    study, summary
+                )
+                if study_metadata is not None:
+                    studies[study_metadata.id] = study_metadata
+            self.cache_service.put(cache_key, studies)
+        return {
+            s.id: s
+            for s in filter(
+                lambda study_dto: assert_permission(
+                    params.user,
+                    study_dto,
+                    StudyPermissionType.READ,
+                    raising=False,
+                ),
+                studies.values(),
+            )
+        }
 
     def _try_get_studies_information(
         self, study: Study, summary: bool
@@ -439,7 +559,7 @@ class StudyService:
         Args:
             uuid: study id
             target: export path
-            params: request parmeters
+            params: request parameters
             outputs: integrate output folder in zip file
 
         """
@@ -450,6 +570,32 @@ class StudyService:
         logger.info("study %s exported by user %s", uuid, params.get_user_id())
         return self._get_study_storage_service(study).export_study(
             study, target, outputs
+        )
+
+    def export_output(
+        self,
+        study_uuid: str,
+        output_uuid: str,
+        target: Path,
+        params: RequestParameters,
+    ) -> Path:
+        """
+        Export study output to a zip file.
+        Args:
+            study_uuid: study id
+            output_uuid: output id
+            target: export path
+            params: request parameters
+        """
+        study = self.get_study(study_uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+
+        logger.info(
+            f"Output {output_uuid} from study {study_uuid} exported by user {params.get_user_id()}"
+        )
+        return self._get_study_storage_service(study).export_output(
+            metadata=study, output_id=output_uuid, target=target
         )
 
     def export_study_flat(
@@ -486,13 +632,15 @@ class StudyService:
 
         # delete the files afterward for
         # if the study cannot be deleted from database for foreign key reason
-        if self._assert_study_unarchived(study, False):
+        if self._assert_study_unarchived(study=study, raise_exception=False):
             self._get_study_storage_service(study).delete(study)
         else:
             if isinstance(study, RawStudy):
                 os.unlink(self.raw_study_service.get_archive_path(study))
 
         logger.info("study %s deleted by user %s", uuid, params.get_user_id())
+
+        self._on_study_delete(uuid=uuid)
 
     def delete_output(
         self, uuid: str, output_name: str, params: RequestParameters
@@ -682,6 +830,7 @@ class StudyService:
         res = self._get_study_storage_service(study).import_output(
             study, output
         )
+        remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(
             "output added to study %s by user %s", uuid, params.get_user_id()
         )
@@ -917,6 +1066,9 @@ class StudyService:
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study.id, study.type)
+
+        if not is_managed(study):
+            raise NotAManagedStudyException(study.id)
 
         self.raw_study_service.archive(study)
         study.archived = True

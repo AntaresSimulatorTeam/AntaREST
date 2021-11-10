@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
-import { makeStyles, createStyles, Theme, Paper, Typography, IconButton, useTheme } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, Paper, Typography, IconButton, useTheme, Button } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
 import debug from 'debug';
 import moment from 'moment';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -10,9 +12,11 @@ import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import { AppState } from '../../App/reducers';
 import { LaunchJob } from '../../common/types';
-import { getStudyJobLog } from '../../services/api/study';
+import { getStudyJobLog, killStudy } from '../../services/api/study';
 import { useNotif } from '../../services/utils';
 import SimpleLoader from '../ui/loaders/SimpleLoader';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import ConfirmationModal from '../ui/ConfirmationModal';
 
 const logError = debug('antares:studymanagement:error');
 
@@ -28,6 +32,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   jobs: {
     display: 'flex',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   logs: {
     display: 'none',
@@ -46,9 +52,10 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     position: 'relative',
   },
   titleblock: {
-    flexGrow: 1,
+    flexGrow: 0.6,
     display: 'flex',
     alignItems: 'center',
+    width: '60%',
   },
   title: {
     color: theme.palette.primary.main,
@@ -72,6 +79,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'space-between',
     width: '190px',
   },
+  killButtonHide: {
+    display: 'none',
+  },
 }));
 
 interface OwnProps {
@@ -93,20 +103,22 @@ type PropTypes = ReduxProps & OwnProps;
 const JobView = (props: PropTypes) => {
   const { study, job } = props;
   const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
   const classes = useStyles();
   const createNotif = useNotif();
   const [logs, setLogs] = useState<string>();
   const [logLoading, setLogLoading] = useState(false);
   const [logView, setLogView] = useState<boolean>();
+  const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
   const renderStatus = () => {
     let color = theme.palette.grey[400];
-    if (job.status === 'JobStatus.SUCCESS') {
+    if (job.status === 'success') {
       color = theme.palette.success.main;
-    } else if (job.status === 'JobStatus.FAILED') {
+    } else if (job.status === 'failed') {
       color = theme.palette.error.main;
-    } else if (job.status === 'JobStatus.RUNNING') {
+    } else if (job.status === 'running') {
       color = theme.palette.warning.main;
     }
     return (<div className={classes.dot} style={{ backgroundColor: color }} />);
@@ -136,6 +148,17 @@ const JobView = (props: PropTypes) => {
     return <div />;
   };
 
+  const killTask = (jobId: string) => {
+    (async () => {
+      try {
+        await killStudy(jobId);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failtokilltask'), e as AxiosError);
+      }
+      setOpenConfirmationModal(false);
+    })();
+  };
+
   useEffect(() => {
     if (logView) {
       getLog();
@@ -162,6 +185,9 @@ const JobView = (props: PropTypes) => {
           </Typography>
           )}
         </div>
+        <div>
+          {job.status === 'running' ? <Button variant="contained" color="primary" onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button> : <Button color="primary" variant="contained" className={classes.killButtonHide} onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button>}
+        </div>
         <div className={classes.dateandicon}>
           <div className={classes.dateblock}>
             <div>
@@ -183,6 +209,15 @@ const JobView = (props: PropTypes) => {
             </IconButton>
           </div>
         </div>
+        {openConfirmationModal && (
+          <ConfirmationModal
+            open={openConfirmationModal}
+            title={t('main:confirmationModalTitle')}
+            message={t('singlestudy:confirmKill')}
+            handleYes={() => killTask(job.id)}
+            handleNo={() => setOpenConfirmationModal(false)}
+          />
+        )}
       </div>
       {renderLogView()}
     </Paper>

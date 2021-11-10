@@ -5,17 +5,16 @@ from typing import Any, Optional, List
 from pydantic import BaseModel
 from sqlalchemy import Integer, Column, Enum, String, DateTime  # type: ignore
 
-from antarest.core.custom_types import JSON
 from antarest.core.persistence import Base
 from antarest.core.utils.utils import DTO
 
 
-class LogType(enum.Enum):
+class LogType(str, enum.Enum):
     STDOUT = "STDOUT"
     STDERR = "STDERR"
 
 
-class JobStatus(enum.Enum):
+class JobStatus(str, enum.Enum):
     PENDING = "pending"
     FAILED = "failed"
     SUCCESS = "success"

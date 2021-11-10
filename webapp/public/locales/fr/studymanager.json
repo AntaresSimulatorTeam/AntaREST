@@ -9,6 +9,7 @@
   "failtorunstudy": "Echec du lancement de l'étude",
   "studylaunched": "{{studyname}} lancée !",
   "savedatasuccess": "Données sauvegardées avec succès",
+  "importcopy": "Copier",
   "failtosavedata": "Erreur lors de la sauvegarde des données",
   "failtocopystudy": "Erreur lors de la copie de l'étude",
   "studycopiedsuccess": "Etude copiée avec succès",

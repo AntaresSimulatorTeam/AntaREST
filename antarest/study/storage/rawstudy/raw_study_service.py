@@ -1,19 +1,17 @@
-import glob
 import logging
-import os
 import shutil
-import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, IO, List
 from uuid import uuid4
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.custom_types import SUB_JSON
 from antarest.core.exceptions import (
     UnsupportedStudyVersion,
+    StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import extract_zip
@@ -35,6 +33,8 @@ from antarest.study.storage.utils import (
     update_antares_info,
     get_default_workspace_path,
     fix_study_root,
+    is_managed,
+    remove_from_cache,
 )
 
 logger = logging.getLogger(__name__)
@@ -205,9 +205,12 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         """
         self._check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-        shutil.rmtree(study_path, ignore_errors=True)
-        self.remove_from_cache(metadata.id)
+        if self.config.storage.allow_deletion or is_managed(metadata):
+            study_path = self.get_study_path(metadata)
+            shutil.rmtree(study_path, ignore_errors=True)
+            remove_from_cache(self.cache, metadata.id)
+        else:
+            raise StudyDeletionNotAllowed(metadata.id)
 
     def delete_output(self, metadata: RawStudy, output_name: str) -> None:
         """
@@ -222,7 +225,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         study_path = self.get_study_path(metadata)
         output_path = study_path / "output" / output_name
         shutil.rmtree(output_path, ignore_errors=True)
-        self.remove_from_cache(metadata.id)
+        remove_from_cache(self.cache, metadata.id)
 
     def import_study(self, metadata: RawStudy, stream: IO[bytes]) -> Study:
         """
@@ -271,7 +274,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         study.save(new, url.split("/"))  # type: ignore
         del study
-        self.remove_from_cache(metadata.id)
+        remove_from_cache(self.cache, metadata.id)
         return new
 
     def export_study_flat(
@@ -317,7 +320,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self, study: RawStudy, output_id: str, status: bool
     ) -> None:
         self.patch_service.set_reference_output(study, output_id, status)
-        self.remove_from_cache(study.id)
+        remove_from_cache(self.cache, study.id)
 
     def archive(self, study: RawStudy) -> None:
         archive_path = self.get_archive_path(study)

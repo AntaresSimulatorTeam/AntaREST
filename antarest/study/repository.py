@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import Optional, List
 
+from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import Study
 
@@ -13,10 +14,14 @@ class StudyMetadataRepository:
     Database connector to manage Study entity
     """
 
+    def __init__(self, cache_service: ICache):
+        self.cache_service = cache_service
+
     def save(
         self, metadata: Study, update_modification_date: bool = False
     ) -> Study:
-
+        metadata_id = metadata.id or metadata.name
+        logger.debug(f"Saving study {metadata_id}")
         if update_modification_date:
             metadata.updated_at = datetime.now()
 
@@ -26,7 +31,7 @@ class StudyMetadataRepository:
         db.session.add(metadata)
         db.session.commit()
 
-        logger.debug(f"save study {metadata.id}")
+        self._invalidate_study_listing_cache()
         return metadata
 
     def refresh(self, metadata: Study) -> None:
@@ -41,8 +46,14 @@ class StudyMetadataRepository:
         return metadatas
 
     def delete(self, id: str) -> None:
+        logger.debug(f"Deleting study {id}")
         u: Study = db.session.query(Study).get(id)
         db.session.delete(u)
         db.session.commit()
+        self._invalidate_study_listing_cache()
 
-        logger.debug(f"delete study {id}")
+    def _invalidate_study_listing_cache(self) -> None:
+        self.cache_service.invalidate(CacheConstants.STUDY_LISTING.value)
+        self.cache_service.invalidate(
+            CacheConstants.STUDY_LISTING_SUMMARY.value
+        )

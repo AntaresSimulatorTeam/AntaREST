@@ -1,21 +1,18 @@
-import glob
 import logging
 import os
 import shutil
 import tempfile
-import time
 from abc import abstractmethod
 from datetime import datetime
 from pathlib import Path
 from typing import List, Union, Optional, IO
 from uuid import uuid4
-from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON, SUB_JSON
-from antarest.core.exceptions import BadOutputError
+from antarest.core.custom_types import JSON
+from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
-from antarest.core.utils.utils import extract_zip
+from antarest.core.utils.utils import extract_zip, StopWatch
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
@@ -39,7 +36,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
     FileStudy,
 )
-from antarest.study.storage.utils import fix_study_root
+from antarest.study.storage.utils import fix_study_root, remove_from_cache
 
 logger = logging.getLogger(__name__)
 
@@ -57,14 +54,6 @@ class AbstractStorageService(IStudyStorageService[T]):
         self.patch_service = patch_service
         self.cache = cache
 
-    def remove_from_cache(self, root_id: str) -> None:
-        self.cache.invalidate_all(
-            [
-                f"{root_id}/{CacheConstants.RAW_STUDY}",
-                f"{root_id}/{CacheConstants.STUDY_FACTORY}",
-            ]
-        )
-
     def patch_update_study_metadata(
         self,
         study: T,
@@ -80,7 +69,7 @@ class AbstractStorageService(IStudyStorageService[T]):
                 }
             },
         )
-        self.remove_from_cache(study.id)
+        remove_from_cache(self.cache, study.id)
         return self.get_study_information(study)
 
     def get_study_information(
@@ -175,7 +164,7 @@ class AbstractStorageService(IStudyStorageService[T]):
         parts = [item for item in url.split("/") if item]
 
         if url == "" and depth == -1:
-            cache_id = f"{metadata.id}/{CacheConstants.RAW_STUDY}"
+            cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
             from_cache: Optional[JSON] = None
             if use_cache:
                 from_cache = self.cache.get(cache_id)
@@ -304,7 +293,7 @@ class AbstractStorageService(IStudyStorageService[T]):
         self, metadata: T, target: Path, outputs: bool = True
     ) -> Path:
         """
-        Export and compresse study inside zip
+        Export and compresses study inside zip
         Args:
             metadata: study
             target: path of the file to export to
@@ -319,23 +308,46 @@ class AbstractStorageService(IStudyStorageService[T]):
         ) as tmpdir:
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
-            start_time = time.time()
-            with ZipFile(target, "w", ZIP_DEFLATED) as zipf:
-                current_dir = os.getcwd()
-                os.chdir(tmp_study_path)
-
-                for path in glob.glob("**", recursive=True):
-                    if outputs or path.split(os.sep)[0] != "output":
-                        zipf.write(path, path)
-
-                zipf.close()
-
-                os.chdir(current_dir)
-            duration = "{:.3f}".format(time.time() - start_time)
-            logger.info(
-                f"Study {path_study} exported (zipped mode) in {duration}s"
+            stopwatch = StopWatch()
+            filename = shutil.make_archive(
+                base_name=os.path.splitext(target)[0],
+                format="zip",
+                root_dir=tmp_study_path,
             )
-        return target
+            stopwatch.log_elapsed(
+                lambda x: logger.info(
+                    f"Study {path_study} exported (zipped mode) in {x}s"
+                )
+            )
+        return target.parent / filename
+
+    def export_output(self, metadata: T, output_id: str, target: Path) -> Path:
+        """
+        Export and compresses study inside zip
+        Args:
+            metadata: study
+            output_id: output id
+            target: path of the file to export to
+
+        Returns: zip file with study files compressed inside
+        """
+        logger.info(f"Exporting output {output_id} from study {metadata.id}")
+
+        path_output = Path(metadata.path) / "output" / output_id
+        if not path_output.exists():
+            raise StudyOutputNotFoundError()
+        stopwatch = StopWatch()
+        filename = shutil.make_archive(
+            base_name=os.path.splitext(target)[0],
+            format="zip",
+            root_dir=path_output,
+        )
+        stopwatch.log_elapsed(
+            lambda x: logger.info(
+                f"Output {output_id} from study {metadata.path} exported in {x}s"
+            )
+        )
+        return target.parent / filename
 
     @abstractmethod
     def export_study_flat(

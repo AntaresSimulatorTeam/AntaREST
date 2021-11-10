@@ -32,6 +32,21 @@ def test_job_result() -> None:
         )
         b = JobResult(
             id=str(uuid4()),
+            study_id=study_id,
+            job_status=JobStatus.FAILED,
+            msg="You failed !!",
+            exit_code=1,
+        )
+        b2 = JobResult(
+            id=str(uuid4()),
+            study_id=study_id,
+            job_status=JobStatus.FAILED,
+            msg="You failed !!",
+            exit_code=1,
+        )
+        b3 = JobResult(
+            id=str(uuid4()),
+            study_id="other_study",
             job_status=JobStatus.FAILED,
             msg="You failed !!",
             exit_code=1,
@@ -39,17 +54,24 @@ def test_job_result() -> None:
 
         a = repo.save(a)
         b = repo.save(b)
+        b2 = repo.save(b2)
+        b3 = repo.save(b3)
         c = repo.get(a.id)
         assert a == c
 
         d = repo.find_by_study(study_id)
-        assert len(d) == 1
+        assert len(d) == 3
         assert a == d[0]
 
         repo.delete(a.id)
         assert repo.get(a.id) is None
 
-        assert len(repo.find_by_study(study_id)) == 0
+        assert len(repo.find_by_study(study_id)) == 2
+
+        repo.delete_by_study_id(study_id=study_id)
+        assert repo.get(b.id) is None
+        assert repo.get(b2.id) is None
+        assert repo.get(b3.id) is not None
 
 
 @pytest.mark.unit_test

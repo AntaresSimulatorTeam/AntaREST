@@ -1,11 +1,11 @@
 import enum
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
-from antarest.study.model import PublicMode, Study
+from antarest.study.model import PublicMode, Study, StudyMetadataDTO
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,9 @@ permission_matrix = {
 
 
 def check_permission(
-    user: JWTUser, study: Study, permission: StudyPermissionType
+    user: JWTUser,
+    study: Union[Study, StudyMetadataDTO],
+    permission: StudyPermissionType,
 ) -> bool:
     """
     Check user permission on study. User has permission if
@@ -82,7 +84,7 @@ def check_permission(
         logger.debug(f"user {user.id} accepted on study {study.id} as owner")
         return True
 
-    study_group_id = [g.id for g in study.groups]
+    study_group_id = [g.id for g in study.groups if g.id is not None]
     group_permission = any(
         role in permission_matrix[permission]["roles"]  # type: ignore
         for role in [
@@ -102,7 +104,7 @@ def check_permission(
 
 def assert_permission(
     user: Optional[JWTUser],
-    study: Optional[Study],
+    study: Optional[Union[Study, StudyMetadataDTO]],
     permission_type: StudyPermissionType,
     raising: bool = True,
 ) -> bool:

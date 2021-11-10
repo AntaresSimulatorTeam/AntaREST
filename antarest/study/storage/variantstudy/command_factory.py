@@ -46,6 +46,9 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import (
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
     UpdateBindingConstraint,
 )
+from antarest.study.storage.variantstudy.model.command.update_comments import (
+    UpdateComments,
+)
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
@@ -149,6 +152,11 @@ class CommandFactory:
 
         elif action == CommandName.UPDATE_CONFIG.value:
             return UpdateConfig(
+                **args,
+                command_context=self.command_context,
+            )
+        elif action == CommandName.UPDATE_COMMENTS.value:
+            return UpdateComments(
                 **args,
                 command_context=self.command_context,
             )

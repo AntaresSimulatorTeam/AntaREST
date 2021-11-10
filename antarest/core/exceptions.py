@@ -1,4 +1,5 @@
 from http import HTTPStatus
+
 from fastapi import HTTPException
 
 
@@ -55,6 +56,22 @@ class StudyTypeUnsupported(HTTPException):
         )
 
 
+class NotAManagedStudyException(HTTPException):
+    def __init__(self, uuid: str) -> None:
+        super().__init__(
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            f"Study {uuid} is not managed",
+        )
+
+
+class StudyDeletionNotAllowed(HTTPException):
+    def __init__(self, uuid: str) -> None:
+        super().__init__(
+            HTTPStatus.FORBIDDEN,
+            f"Study {uuid} (not managed) is not allowed to be deleted",
+        )
+
+
 class UnsupportedStudyVersion(HTTPException):
     def __init__(self, version: str) -> None:
         super().__init__(
@@ -89,3 +106,7 @@ class IncorrectPathError(HTTPException):
 class UrlNotMatchJsonDataError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class StudyOutputNotFoundError(Exception):
+    pass

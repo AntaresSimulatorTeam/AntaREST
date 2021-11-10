@@ -4,6 +4,7 @@ import os
 import shutil
 import threading
 import time
+from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Optional, Dict
 from uuid import UUID, uuid4
@@ -12,7 +13,7 @@ from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import (
     MainOptionParser,
-    MainOptionsParameters,
+    ParserParameters,
 )
 from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config, SlurmConfig
@@ -37,15 +38,19 @@ class VersionNotSupportedError(Exception):
     pass
 
 
+class JobIdNotFound(Exception):
+    pass
+
+
 class SlurmLauncher(AbstractLauncher):
     def __init__(
         self,
         config: Config,
-        storage_service: StudyService,
+        study_service: StudyService,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
     ) -> None:
-        super().__init__(config, storage_service, callbacks)
+        super().__init__(config, study_service, callbacks)
         if config.launcher.slurm is None:
             raise LauncherInitException()
 
@@ -61,7 +66,7 @@ class SlurmLauncher(AbstractLauncher):
         self.launcher_args = self._init_launcher_arguments()
         self.launcher_params = self._init_launcher_parameters()
         self.data_repo_tinydb = DataRepoTinydb(
-            database_name=(
+            database_file_path=(
                 self.launcher_params.json_dir
                 / self.launcher_params.default_json_db_name
             ),
@@ -89,7 +94,7 @@ class SlurmLauncher(AbstractLauncher):
         self.thread = None
 
     def _init_launcher_arguments(self) -> argparse.Namespace:
-        main_options_parameters = MainOptionsParameters(
+        main_options_parameters = ParserParameters(
             default_wait_time=self.slurm_config.default_wait_time,
             default_time_limit=self.slurm_config.default_time_limit,
             default_n_cpu=self.slurm_config.default_n_cpu,
@@ -125,7 +130,7 @@ class SlurmLauncher(AbstractLauncher):
             default_json_db_name=self.slurm_config.default_json_db_name,
             slurm_script_path=self.slurm_config.slurm_script_path,
             antares_versions_on_remote_server=self.slurm_config.antares_versions_on_remote_server,
-            default_ssh_dict_from_embedded_json={
+            default_ssh_dict={
                 "username": self.slurm_config.username,
                 "hostname": self.slurm_config.hostname,
                 "port": self.slurm_config.port,
@@ -264,6 +269,13 @@ class SlurmLauncher(AbstractLauncher):
                 f" {', '.join(self.slurm_config.antares_versions_on_remote_server)}"
             )
 
+    def _clean_up_study(self, launch_id: str) -> None:
+        self.data_repo_tinydb.remove_study(launch_id)
+        self._delete_study(
+            self.slurm_config.local_workspace / "OUTPUT" / launch_id
+        )
+        del self.job_id_to_study_id[launch_id]
+
     def _run_study(
         self, study_uuid: str, launch_uuid: str, params: RequestParameters
     ) -> None:
@@ -316,13 +328,6 @@ class SlurmLauncher(AbstractLauncher):
 
         return launch_uuid
 
-    def _clean_up_study(self, launch_id: str) -> None:
-        self.data_repo_tinydb.remove_study(launch_id)
-        self._delete_study(
-            self.slurm_config.local_workspace / "OUTPUT" / launch_id
-        )
-        del self.job_id_to_study_id[launch_id]
-
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
@@ -330,3 +335,15 @@ class SlurmLauncher(AbstractLauncher):
                 if log_path:
                     return log_path.read_text()
         return None
+
+    def kill_job(self, job_id: str) -> None:
+        launcher_args = deepcopy(self.launcher_args)
+        for study in self.data_repo_tinydb.get_list_of_studies():
+            if study.name == job_id:
+                launcher_args.job_id_to_kill = study.job_id
+                run_with(
+                    launcher_args, self.launcher_params, show_banner=False
+                )
+                return
+
+        raise JobIdNotFound()

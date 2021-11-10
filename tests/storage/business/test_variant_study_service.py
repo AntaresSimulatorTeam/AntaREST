@@ -153,7 +153,7 @@ def test_get_cache(tmp_path: str) -> None:
 
     metadata = VariantStudy(id="study2.py", path=str(path_study))
 
-    cache_id = f"{metadata.id}/{CacheConstants.RAW_STUDY}"
+    cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
     study_service.exists = Mock()
     study_service.exists.return_value = True
 
@@ -291,8 +291,8 @@ def test_delete_study(tmp_path: Path) -> None:
     study_service.delete(md)
     cache.invalidate_all.assert_called_once_with(
         [
-            f"{name}/{CacheConstants.RAW_STUDY}",
-            f"{name}/{CacheConstants.STUDY_FACTORY}",
+            f"{CacheConstants.RAW_STUDY}/{name}",
+            f"{CacheConstants.STUDY_FACTORY}/{name}",
         ]
     )
     assert not study_path.exists()

@@ -18,7 +18,8 @@ PATCH_CONTENT = """
   "study": {
     "scenario": "BAU2025",
     "doc": null,
-    "status": null
+    "status": null,
+    "comments": null
   },
   "areas": {
     "a1": {

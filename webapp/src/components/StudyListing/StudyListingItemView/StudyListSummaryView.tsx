@@ -136,13 +136,14 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
               style={{ color: theme.palette.primary.main }}
               onClick={() => importStudy(study)}
             >
-              {t('main:import')}
+              {t('studymanager:importcopy')}
             </ButtonLoader>
             <DownloadLink url={getExportUrl(study.id, false)}>
               <Button size="small" style={{ color: theme.palette.primary.main }}>
                 {t('main:export')}
               </Button>
             </DownloadLink>
+            {study.managed && (
             <ButtonLoader
               size="small"
               style={{ color: theme.palette.primary.light }}
@@ -150,8 +151,10 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
             >
               {t('studymanager:archive')}
             </ButtonLoader>
+            )}
           </>
         )}
+        {study.managed && (
         <Button
           size="small"
           style={{ float: 'right', color: theme.palette.error.main }}
@@ -159,6 +162,7 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
         >
           {t('main:delete')}
         </Button>
+        )}
       </div>
     </Paper>
   );

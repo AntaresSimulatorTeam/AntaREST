@@ -4,8 +4,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional, List, Dict
 
-from fastapi import APIRouter, File, Depends, Request
-from fastapi.params import Param
+from fastapi import APIRouter, File, Depends, Request, HTTPException, Body
 from markupsafe import escape
 from starlette.responses import FileResponse
 
@@ -20,11 +19,12 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import (
     PublicMode,
-    StudyDownloadDTO,
     StudyMetadataPatchDTO,
     StudySimResultDTO,
     StudyMetadataDTO,
     MatrixAggregationResult,
+    CommentsDto,
+    StudyDownloadDTO,
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.study_download_utils import StudyDownloader
@@ -33,12 +33,12 @@ logger = logging.getLogger(__name__)
 
 
 def create_study_routes(
-    storage_service: StudyService, config: Config
+    study_service: StudyService, config: Config
 ) -> APIRouter:
     """
     Endpoint implementation for studies management
     Args:
-        storage_service: study service facade to handle request
+        study_service: study service facade to handle request
         config: main server configuration
 
     Returns:
@@ -60,10 +60,50 @@ def create_study_routes(
     ) -> Any:
         logger.info(f"Fetching study list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
-        available_studies = storage_service.get_studies_information(
+        available_studies = study_service.get_studies_information(
             summary, params
         )
         return available_studies
+
+    @bp.get(
+        "/studies/{uuid}/comments",
+        tags=[APITag.study_management],
+        summary="Get comments",
+    )
+    def get_comments(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Get comments of study {uuid}", extra={"user": current_user.id}
+        )
+        params = RequestParameters(user=current_user)
+        study_id = sanitize_uuid(uuid)
+        return study_service.get_comments(study_id, params)
+
+    @bp.put(
+        "/studies/{uuid}/comments",
+        status_code=HTTPStatus.NO_CONTENT.value,
+        tags=[APITag.study_raw_data],
+        summary="Update comments",
+    )
+    def edit_comments(
+        uuid: str,
+        data: CommentsDto,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Editing comments for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        new = data
+        if not new:
+            raise HTTPException(
+                status_code=400, detail="empty body not authorized"
+            )
+        study_id = sanitize_uuid(uuid)
+        params = RequestParameters(user=current_user)
+        study_service.edit_comments(study_id, new, params)
 
     @bp.post(
         "/studies/_import",
@@ -83,7 +123,7 @@ def create_study_routes(
         params = RequestParameters(user=current_user)
         group_ids = groups.split(",") if groups is not None else []
 
-        uuid = storage_service.import_study(zip_binary, group_ids, params)
+        uuid = study_service.import_study(zip_binary, group_ids, params)
 
         return uuid
 
@@ -112,7 +152,7 @@ def create_study_routes(
 
         params = RequestParameters(user=current_user)
 
-        destination_uuid = storage_service.copy_study(
+        destination_uuid = study_service.copy_study(
             src_uuid=source_uuid_sanitized,
             dest_study_name=destination_name_sanitized,
             group_ids=group_ids,
@@ -143,7 +183,7 @@ def create_study_routes(
         group_ids = [sanitize_uuid(gid) for gid in group_ids]
 
         params = RequestParameters(user=current_user)
-        uuid = storage_service.create_study(
+        uuid = study_service.create_study(
             name_sanitized, version, group_ids, params
         )
 
@@ -172,7 +212,7 @@ def create_study_routes(
         uuid_sanitized = sanitize_uuid(uuid)
 
         params = RequestParameters(user=current_user)
-        export_path = storage_service.export_study(
+        export_path = study_service.export_study(
             uuid_sanitized, request_tmp_file, params, not no_output
         )
 
@@ -197,7 +237,7 @@ def create_study_routes(
         uuid_sanitized = sanitize_uuid(uuid)
 
         params = RequestParameters(user=current_user)
-        storage_service.delete_study(uuid_sanitized, params)
+        study_service.delete_study(uuid_sanitized, params)
 
         return ""
 
@@ -222,7 +262,7 @@ def create_study_routes(
         zip_binary = io.BytesIO(output)
 
         params = RequestParameters(user=current_user)
-        output_id = storage_service.import_output(
+        output_id = study_service.import_output(
             uuid_sanitized, zip_binary, params
         )
         return output_id
@@ -243,7 +283,7 @@ def create_study_routes(
         )
         uuid_sanitized = sanitize_uuid(uuid)
         params = RequestParameters(user=current_user)
-        storage_service.change_owner(uuid_sanitized, user_id, params)
+        study_service.change_owner(uuid_sanitized, user_id, params)
 
         return ""
 
@@ -264,7 +304,7 @@ def create_study_routes(
         uuid_sanitized = sanitize_uuid(uuid)
         group_id = sanitize_uuid(group_id)
         params = RequestParameters(user=current_user)
-        storage_service.add_group(uuid_sanitized, group_id, params)
+        study_service.add_group(uuid_sanitized, group_id, params)
 
         return ""
 
@@ -286,7 +326,7 @@ def create_study_routes(
         group_id = sanitize_uuid(group_id)
 
         params = RequestParameters(user=current_user)
-        storage_service.remove_group(uuid_sanitized, group_id, params)
+        study_service.remove_group(uuid_sanitized, group_id, params)
 
         return ""
 
@@ -306,7 +346,7 @@ def create_study_routes(
         )
         uuid_sanitized = sanitize_uuid(uuid)
         params = RequestParameters(user=current_user)
-        storage_service.set_public_mode(uuid_sanitized, mode, params)
+        study_service.set_public_mode(uuid_sanitized, mode, params)
 
         return ""
 
@@ -336,7 +376,7 @@ def create_study_routes(
             f"Fetching study {uuid} metadata", extra={"user": current_user.id}
         )
         params = RequestParameters(user=current_user)
-        study_metadata = storage_service.get_study_information(uuid, params)
+        study_metadata = study_service.get_study_information(uuid, params)
         return study_metadata
 
     @bp.put(
@@ -355,7 +395,7 @@ def create_study_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study_metadata = storage_service.update_study_information(
+        study_metadata = study_service.update_study_information(
             uuid, study_metadata_patch, params
         )
         return study_metadata
@@ -378,32 +418,52 @@ def create_study_routes(
     def output_download(
         study_id: str,
         output_id: str,
-        data: StudyDownloadDTO,
         request: Request,
+        data: Optional[StudyDownloadDTO] = Body(default=None),
         tmp_export_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Fetching batch outputs of simulation {output_id} for study {study_id}",
-            extra={"user": current_user.id},
-        )
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_uuid(output_id)
-        params = RequestParameters(user=current_user)
-        content = storage_service.download_outputs(
-            study_id, output_id, data, params
-        )
-        accept = request.headers.get("Accept")
-        if accept == "application/zip" or accept == "application/tar+gz":
-            StudyDownloader.export(content, accept, tmp_export_file)
-            return FileResponse(
-                tmp_export_file,
-                headers={
-                    "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
-                },
-                media_type=accept,
+        if not data:
+            logger.info(
+                f"Fetching whole output of the simulation {output_id} for study {study_id}"
             )
-        return content
+            params = RequestParameters(user=current_user)
+            export_path = study_service.export_output(
+                study_uuid=study_id,
+                output_uuid=output_id,
+                target=tmp_export_file,
+                params=params,
+            )
+
+            return FileResponse(
+                export_path,
+                headers={
+                    "Content-Disposition": f'attachment; filename="{output_id}.zip'
+                },
+                media_type="application/zip",
+            )
+        else:
+            logger.info(
+                f"Fetching batch outputs of simulation {output_id} for study {study_id}",
+                extra={"user": current_user.id},
+            )
+            params = RequestParameters(user=current_user)
+            content = study_service.download_outputs(
+                study_id, output_id, data, params
+            )
+            accept = request.headers.get("Accept")
+            if accept == "application/zip" or accept == "application/tar+gz":
+                StudyDownloader.export(content, accept, tmp_export_file)
+                return FileResponse(
+                    tmp_export_file,
+                    headers={
+                        "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
+                    },
+                    media_type=accept,
+                )
+            return content
 
     @bp.get(
         "/studies/{study_id}/outputs",
@@ -421,7 +481,7 @@ def create_study_routes(
         )
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
-        content = storage_service.get_study_sim_result(study_id, params)
+        content = study_service.get_study_sim_result(study_id, params)
         return content
 
     @bp.put(
@@ -442,7 +502,7 @@ def create_study_routes(
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_uuid(output_id)
         params = RequestParameters(user=current_user)
-        storage_service.set_sim_reference(study_id, output_id, status, params)
+        study_service.set_sim_reference(study_id, output_id, status, params)
         return ""
 
     @bp.put(
@@ -459,7 +519,7 @@ def create_study_routes(
         )
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
-        storage_service.archive(study_id, params)
+        study_service.archive(study_id, params)
         return ""
 
     @bp.put(
@@ -476,7 +536,7 @@ def create_study_routes(
         )
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
-        storage_service.unarchive(study_id, params)
+        study_service.unarchive(study_id, params)
         return ""
 
     return bp

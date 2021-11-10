@@ -1,10 +1,10 @@
 import enum
 import uuid
 from copy import deepcopy
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TypeVar
 
+from dataclasses import dataclass
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -50,6 +50,10 @@ class PublicMode(enum.Enum):
     FULL = "FULL"
 
 
+class CommentsDto(BaseModel):
+    comments: str
+
+
 @dataclass
 class Study(Base):  # type: ignore
     """
@@ -82,7 +86,7 @@ class Study(Base):  # type: ignore
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
     def __str__(self) -> str:
-        return f"[Study] id={self.id}, type={self.type}, name={self.name}, version={self.version}, updated_at={self.updated_at}, owner={self.owner}, groups={[str(u)+',' for u in self.groups]}"
+        return f"[Study] id={self.id}, type={self.type}, name={self.name}, version={self.version}, updated_at={self.updated_at}, owner={self.owner}, groups={[str(u) + ',' for u in self.groups]}"
 
     def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name}
@@ -194,6 +198,7 @@ class PatchStudy(BaseModel, PatchLeaf):
     scenario: Optional[str] = None
     doc: Optional[str] = None
     status: Optional[str] = None
+    comments: Optional[str] = None
 
 
 class PatchArea(BaseModel, PatchLeaf):

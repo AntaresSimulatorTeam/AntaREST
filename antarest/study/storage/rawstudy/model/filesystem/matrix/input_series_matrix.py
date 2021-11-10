@@ -43,7 +43,7 @@ class InputSeriesMatrix(MatrixNode):
                 dtype=float,
                 header=None,
             )
-            matrix = matrix.where(pd.notna(matrix), None)  # TODO fillna ?
+            matrix.dropna(how="any", axis=1, inplace=True)
             data: JSON = matrix.to_dict(orient="split")
 
             return data

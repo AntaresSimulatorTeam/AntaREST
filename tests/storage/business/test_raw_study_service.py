@@ -10,6 +10,7 @@ import pytest
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import (
     StudyNotFoundError,
+    StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
@@ -19,12 +20,15 @@ from antarest.study.storage.rawstudy.raw_study_service import (
 from antarest.study.storage.utils import get_default_workspace_path
 
 
-def build_config(study_path: Path):
+def build_config(
+    study_path: Path,
+    workspace_name: str = DEFAULT_WORKSPACE_NAME,
+    allow_deletion: bool = False,
+):
     return Config(
         storage=StorageConfig(
-            workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=study_path)
-            }
+            workspaces={workspace_name: WorkspaceConfig(path=study_path)},
+            allow_deletion=allow_deletion,
         )
     )
 
@@ -111,7 +115,7 @@ def test_get_cache(tmp_path: str) -> None:
         patch_service=Mock(),
     )
 
-    cache_id = f"{metadata.id}/{CacheConstants.RAW_STUDY}"
+    cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
     assert study_service.get(metadata=metadata, url="", depth=-1) == data
     cache.get.assert_called_with(cache_id)
     cache.put.assert_called_with(cache_id, data)
@@ -416,8 +420,23 @@ def test_delete_study(tmp_path: Path) -> None:
     (study_path / "study.antares").touch()
 
     cache = Mock()
+
     study_service = RawStudyService(
-        config=build_config(tmp_path),
+        config=build_config(
+            tmp_path, workspace_name="foo", allow_deletion=False
+        ),
+        cache=cache,
+        study_factory=Mock(),
+        path_resources=Path(),
+        patch_service=Mock(),
+    )
+
+    md = RawStudy(id=name, workspace="foo", path=str(study_path))
+    with pytest.raises(StudyDeletionNotAllowed):
+        study_service.delete(md)
+
+    study_service = RawStudyService(
+        config=build_config(tmp_path, allow_deletion=True),
         cache=cache,
         study_factory=Mock(),
         path_resources=Path(),
@@ -430,8 +449,8 @@ def test_delete_study(tmp_path: Path) -> None:
     study_service.delete(md)
     cache.invalidate_all.assert_called_once_with(
         [
-            f"{name}/{CacheConstants.RAW_STUDY}",
-            f"{name}/{CacheConstants.STUDY_FACTORY}",
+            f"{CacheConstants.RAW_STUDY}/{name}",
+            f"{CacheConstants.STUDY_FACTORY}/{name}",
         ]
     )
     assert not study_path.exists()
@@ -469,8 +488,8 @@ def test_edit_study(tmp_path: Path) -> None:
     res = study_service.edit_study(md, url, new)
     cache.invalidate_all.assert_called_once_with(
         [
-            f"{id}/{CacheConstants.RAW_STUDY}",
-            f"{id}/{CacheConstants.STUDY_FACTORY}",
+            f"{CacheConstants.RAW_STUDY}/{id}",
+            f"{CacheConstants.STUDY_FACTORY}/{id}",
         ]
     )
     assert new == res

@@ -11,7 +11,7 @@ from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.launcher.main import build_launcher
-from antarest.launcher.model import JobResult, JobStatus, JobResultDTO
+from antarest.launcher.model import JobResult, JobStatus, JobResultDTO, LogType
 
 ADMIN = JWTUser(
     id=1,
@@ -119,3 +119,33 @@ def test_version():
     res = client.get(f"/v1/launcher/_versions")
     assert res.status_code == 200
     assert res.json() == output
+
+
+@pytest.mark.unit_test
+def test_get_job_log():
+    service = Mock()
+    service.get_log.return_value = ""
+    job_id = "job_id"
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.get(f"/v1/launcher/jobs/{job_id}/logs")
+    assert res.status_code == 200
+    service.get_log.assert_called_once_with(
+        job_id, LogType.STDOUT, RequestParameters(user=DEFAULT_ADMIN_USER)
+    )
+
+
+@pytest.mark.unit_test
+def test_kill_job():
+    service = Mock()
+    service.kill_job.return_value.to_dto.return_value = ""
+    job_id = "job_id"
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.post(f"/v1/launcher/jobs/{job_id}/kill")
+    assert res.status_code == 200
+    service.kill_job.assert_called_once_with(
+        job_id=job_id, params=RequestParameters(user=DEFAULT_ADMIN_USER)
+    )

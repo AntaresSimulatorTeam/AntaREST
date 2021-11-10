@@ -85,6 +85,7 @@ class StorageConfig:
     archive_dir: Path = Path("./archives")
     tmp_dir: Path = Path(tempfile.gettempdir())
     workspaces: Dict[str, WorkspaceConfig] = field(default_factory=lambda: {})
+    allow_deletion: bool = False
     watcher_lock: bool = True
     watcher_lock_delay: int = 10
 
@@ -97,6 +98,7 @@ class StorageConfig:
                 n: WorkspaceConfig.from_dict(w)
                 for n, w in data["workspaces"].items()
             },
+            allow_deletion=data.get("allow_deletion", False),
             archive_dir=Path(data["archive_dir"]),
             watcher_lock=data.get("watcher_lock", True),
             watcher_lock_delay=data.get("watcher_lock_delay", 10),

@@ -4,6 +4,7 @@ from unittest.mock import Mock
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
 
+from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.login.model import User, Group
@@ -33,7 +34,7 @@ def test_cyclelife():
     )
 
     with db():
-        repo = StudyMetadataRepository()
+        repo = StudyMetadataRepository(LocalCache())
         a = Study(
             name="a",
             version="42",
@@ -81,7 +82,7 @@ def test_study_inheritance():
     )
 
     with db():
-        repo = StudyMetadataRepository()
+        repo = StudyMetadataRepository(LocalCache())
         a = RawStudy(
             name="a",
             version="42",

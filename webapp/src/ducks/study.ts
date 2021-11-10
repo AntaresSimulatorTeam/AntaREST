@@ -9,15 +9,39 @@ import { StudyMetadata } from '../common/types';
 export interface StudyState {
   current?: string;
   studies: StudyMetadata[];
+  scrollPosition: number;
+  directory: string;
 }
 
 const initialState: StudyState = {
   studies: [],
+  scrollPosition: 0,
+  directory: 'root',
 };
 
 /** ******************************************* */
 /* Actions                                      */
 /** ******************************************* */
+
+interface UpdateScrollPositionAction extends Action {
+  type: 'STUDY/SCROLL_POSITION';
+  payload: number;
+}
+
+export const updateScrollPosition = (scrollPosition: number): UpdateScrollPositionAction => ({
+  type: 'STUDY/SCROLL_POSITION',
+  payload: scrollPosition,
+});
+
+interface FolderPositionAction extends Action {
+  type: 'STUDY/FOLDER_POSITION';
+  payload: string;
+}
+
+export const updateFolderPosition = (dir: string): FolderPositionAction => ({
+  type: 'STUDY/FOLDER_POSITION',
+  payload: dir,
+});
 
 interface InitStudyListAction extends Action {
   type: 'STUDY/INIT_STUDY_LIST';
@@ -59,7 +83,7 @@ export const addStudies = (studies: StudyMetadata[]): AddStudyAction => ({
   payload: studies,
 });
 
-type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | AddStudyAction;
+type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | AddStudyAction | UpdateScrollPositionAction | FolderPositionAction;
 
 /** ******************************************* */
 /* Selectors                                    */
@@ -93,6 +117,22 @@ export default (state = initialState, action: StudyAction): StudyState => {
         ...state,
         studies: state.studies.filter((s) => action.payload.map((study) => study.id).indexOf(s.id) === -1).concat(action.payload),
       };
+    case 'STUDY/SCROLL_POSITION':
+      if (state.scrollPosition !== action.payload) {
+        return {
+          ...state,
+          scrollPosition: action.payload,
+        };
+      }
+      return state;
+    case 'STUDY/FOLDER_POSITION':
+      if (state.directory !== action.payload) {
+        return {
+          ...state,
+          directory: action.payload,
+        };
+      }
+      return state;
     default:
       return state;
   }

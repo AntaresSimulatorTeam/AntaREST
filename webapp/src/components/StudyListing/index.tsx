@@ -1,17 +1,20 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useEffect } from 'react';
 import { AxiosError } from 'axios';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { areEqual, FixedSizeGrid, FixedSizeList, GridChildComponentProps, ListChildComponentProps } from 'react-window';
+import { areEqual, FixedSizeList, ListChildComponentProps } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { StudyMetadata } from '../../common/types';
-import { removeStudies } from '../../ducks/study';
+import { removeStudies, updateScrollPosition } from '../../ducks/study';
 import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy, copyStudy as callCopyStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy } from '../../services/api/study';
 import StudyListElementView from './StudyListingItemView';
+import StudyDirView from './StudyDirView';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import { AppState } from '../../App/reducers';
+import { buildStudyTree } from './utils';
 
 const logError = debug('antares:studyblockview:error');
 
@@ -37,16 +40,19 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
 }));
 
+let scrollState = 0;
+
+const LIST_ITEM_HEIGHT = 66.5;
+
 const Row = React.memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
-  const { studies, isList, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = data;
+  const { studies, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = data;
   const study = studies[index];
   return (
     <div style={{ display: 'flex', justifyContent: 'center', ...style, top: `${parseFloat((style || {}).top as string) + 16}px` }}>
       <StudyListElementView
         key={study.id}
         study={study}
-        listMode={isList}
         importStudy={importStudy}
         launchStudy={launchStudy}
         deleteStudy={deleteStudy}
@@ -57,33 +63,13 @@ const Row = React.memo((props: ListChildComponentProps) => {
   );
 }, areEqual);
 
-const Block = (props: GridChildComponentProps) => {
-  const { data, rowIndex, columnIndex, style } = props;
-  const { studies, isList, importStudy, columnCount, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = data;
-  const study = studies[rowIndex * columnCount + columnIndex];
-  if (study) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', ...style, top: `${parseFloat((style || {}).top as string) + 16}px` }}>
-        <StudyListElementView
-          key={study.id}
-          study={study}
-          listMode={isList}
-          importStudy={importStudy}
-          launchStudy={launchStudy}
-          deleteStudy={deleteStudy}
-          archiveStudy={archiveStudy}
-          unarchiveStudy={unarchiveStudy}
-        />
-      </div>
-    );
-  }
-  return <div />;
-};
-
-const mapState = () => ({ /* noop */ });
+const mapState = (state: AppState) => ({
+  scrollPosition: state.study.scrollPosition,
+});
 
 const mapDispatch = ({
   removeStudy: (sid: string) => removeStudies([sid]),
+  updateScroll: updateScrollPosition,
 });
 
 const connector = connect(mapState, mapDispatch);
@@ -96,7 +82,7 @@ type PropTypes = PropsFromRedux & OwnProps;
 
 const StudyListing = (props: PropTypes) => {
   const classes = useStyles();
-  const { studies, removeStudy, isList } = props;
+  const { studies, removeStudy, isList, scrollPosition, updateScroll } = props;
   const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
   const launchStudy = async (study: StudyMetadata) => {
@@ -163,45 +149,36 @@ const StudyListing = (props: PropTypes) => {
     );
   });
 
-  const GridSizer = (gridSizerProps: {width: number; height: number}) => {
-    const { width, height } = gridSizerProps;
-    const columnCount = Math.floor(width / 428);
-    return (
-      <FixedSizeGrid
-        height={height}
-        width={width}
-        innerElementType={innerElementType}
-        rowCount={Math.ceil(studies.length / columnCount)}
-        columnCount={columnCount}
-        rowHeight={206}
-        columnWidth={428}
-        itemData={{ studies, columnCount, isList, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy }}
-      >
-        {Block}
-      </FixedSizeGrid>
-    );
-  };
+  useEffect(() =>
+    () => {
+      updateScroll(scrollState);
+    }, [updateScroll]);
 
   return (
     <div className={classes.root}>
-      <AutoSizer>
-        {
-            ({ height, width }) => (isList ? (
+      {
+        isList ? (
+          <AutoSizer>
+            { ({ height, width }) => (
               <FixedSizeList
+                initialScrollOffset={scrollPosition * LIST_ITEM_HEIGHT}
+                onItemsRendered={({
+                  visibleStartIndex,
+                }) => { scrollState = visibleStartIndex; }}
                 height={height}
                 width={width}
                 innerElementType={innerElementType}
                 itemCount={studies.length}
                 itemSize={66}
-                itemData={{ studies, isList, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy }}
+                itemData={{ studies, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy }}
               >
                 {Row}
               </FixedSizeList>
-            ) : (
-              <GridSizer width={width} height={height} />
-            ))
-          }
-      </AutoSizer>
+            )
+        }
+          </AutoSizer>
+        ) : <StudyDirView tree={buildStudyTree(studies)} />
+      }
     </div>
   );
 };

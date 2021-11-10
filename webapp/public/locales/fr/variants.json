@@ -3,7 +3,7 @@
     "createVariant": "Créer une variante",
     "editionMode": "Mode édition",
     "testGeneration": "Tester la géneration",
-    "newVariant": "Nouveau variant",
+    "newVariant": "Nouvelle variante",
     "variantNameLabel": "Nom",
     "variantMode": "Vue dépendances",
     "onVariantCreationError": "Erreur lors de la création du variant",

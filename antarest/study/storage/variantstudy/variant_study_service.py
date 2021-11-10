@@ -4,7 +4,7 @@ import shutil
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, cast, Dict, Union
+from typing import List, Optional, cast
 from uuid import uuid4
 
 import dataclasses
@@ -37,12 +37,10 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import (
     Study,
     StudyMetadataDTO,
     StudySimResultDTO,
-    RawStudy,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
@@ -67,8 +65,8 @@ from antarest.study.storage.rawstudy.raw_study_service import (
 )
 from antarest.study.storage.utils import (
     get_default_workspace_path,
-    update_antares_info,
     is_managed,
+    remove_from_cache,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -684,7 +682,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, parent_study, StudyPermissionType.READ)
 
         # Remove from cache
-        self.remove_from_cache(variant_study.id)
+        remove_from_cache(self.cache, variant_study.id)
 
         # Remove snapshot directory if it exist
         dest_path = self.get_study_path(variant_study)
@@ -904,7 +902,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns:
         """
         self.patch_service.set_reference_output(metadata, output_id, status)
-        self.remove_from_cache(metadata.id)
+        remove_from_cache(self.cache, metadata.id)
 
     def delete(self, metadata: VariantStudy) -> None:
         """
@@ -916,7 +914,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study_path = Path(metadata.path)
         if study_path.exists():
             shutil.rmtree(study_path)
-            self.remove_from_cache(metadata.id)
+            remove_from_cache(self.cache, metadata.id)
 
     def delete_output(self, metadata: VariantStudy, output_id: str) -> None:
         """
@@ -929,7 +927,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study_path = Path(metadata.path)
         output_path = study_path / "output" / output_id
         shutil.rmtree(output_path, ignore_errors=True)
-        self.remove_from_cache(metadata.id)
+        remove_from_cache(self.cache, metadata.id)
 
     def get_study_path(self, metadata: Study) -> Path:
         """

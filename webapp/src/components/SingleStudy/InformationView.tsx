@@ -413,16 +413,21 @@ const InformationView = (props: PropTypes) => {
               <DownloadLink url={getExportUrl(study.id, false)}>
                 <Button className={classes.exportButton}>{t('main:export')}</Button>
               </DownloadLink>
+              {study.managed && (
               <ButtonLoader className={classes.archivingButton} onClick={archiveStudy}>
                 {t('studymanager:archive')}
               </ButtonLoader>
+              )}
+
             </>
           )}
         </div>
         <div className={classes.deleteContainer}>
+          {study.managed && (
           <Button className={classes.deleteButton} onClick={() => setOpenConfirmationModal(true)}>
             {t('main:delete')}
           </Button>
+          )}
         </div>
       </div>
       {openConfirmationModal && (

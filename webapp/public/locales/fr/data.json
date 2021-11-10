@@ -30,5 +30,7 @@
   "analyzingmatrix": "Analyse des matrices",
   "copyid": "Copie l'identifiant de la matrice",
   "onMatrixIdCopySuccess": "Identifiant de matrice copié !",
-  "jsonFormat": "Format JSON"
+  "jsonFormat": "Format JSON",
+  "graphSelector": "Colonnes",
+  "monotonicView": "Monotone"
 }

@@ -31,6 +31,7 @@ nav:
   - Home: index.md
   - 'User guide':
     - 'Introduction': 'user-guide/0-introduction.md'
+    - 'User interface': 'user-guide/1-interface.md'
     - 'Variant manager': 'user-guide/2-variant_manager.md'
   - 'Build':
     - 'Introduction': 'install/0-INSTALL.md'
