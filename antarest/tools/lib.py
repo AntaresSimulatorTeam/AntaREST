@@ -227,7 +227,7 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
 
     with open(commands_output_dir / COMMAND_FILE, "w") as fh:
         json.dump(
-            [command.dict(exclude={"id"}) for command in command_list], fh
+            [command.dict(exclude={"id"}) for command in command_list], fh, indent=2
         )
 
 
