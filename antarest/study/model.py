@@ -1,10 +1,10 @@
 import enum
 import uuid
 from copy import deepcopy
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TypeVar
 
+from dataclasses import dataclass
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -295,6 +295,7 @@ class StudyDownloadDTO(BaseModel):
     columns: Optional[List[str]]
     synthesis: bool = False
     includeClusters: bool = False
+    whole_output: bool = False
 
 
 class MatrixIndex(BaseModel):

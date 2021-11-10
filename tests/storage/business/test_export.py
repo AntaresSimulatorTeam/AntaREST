@@ -123,3 +123,35 @@ def test_export_flat(tmp_path: Path):
     copy_without_output_hash = dirhash(tmp_path / "copy_without_output", "md5")
 
     assert root_without_output_hash == copy_without_output_hash
+
+
+@pytest.mark.unit_test
+def test_export_output(tmp_path: Path):
+    output_id = "output_id"
+    root = tmp_path / "folder"
+    root.mkdir()
+    (root / "test").mkdir()
+    (root / "test/file.txt").write_text("Bonjour")
+    (root / "file.txt").write_text("Hello, World")
+    (root / "output" / output_id).mkdir(parents=True)
+    (root / "output" / output_id / "file_output.txt").write_text("42")
+
+    export_path = tmp_path / "study.zip"
+
+    study_factory = Mock()
+    study_service = RawStudyService(
+        config=Config(),
+        study_factory=study_factory,
+        path_resources=Mock(),
+        patch_service=Mock(),
+        cache=Mock(),
+    )
+
+    study = RawStudy(id="Yo", path=root)
+    study_tree = Mock()
+    study_factory.create_from_fs.return_value = (None, study_tree)
+
+    study_service.export_output(study, output_id, export_path)
+    zipf = ZipFile(export_path)
+
+    assert "file_output.txt" in zipf.namelist()

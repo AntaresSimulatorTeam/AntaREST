@@ -12,7 +12,7 @@ from uuid import uuid4
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.core.custom_types import JSON
 from antarest.core.exceptions import BadOutputError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.utils.utils import extract_zip
@@ -304,7 +304,7 @@ class AbstractStorageService(IStudyStorageService[T]):
         self, metadata: T, target: Path, outputs: bool = True
     ) -> Path:
         """
-        Export and compresse study inside zip
+        Export and compresses study inside zip
         Args:
             metadata: study
             target: path of the file to export to
@@ -336,6 +336,50 @@ class AbstractStorageService(IStudyStorageService[T]):
                 f"Study {path_study} exported (zipped mode) in {duration}s"
             )
         return target
+
+    def _export_output(
+        self, metadata: T, output_id: str, target: Path
+    ) -> Path:
+        path_output = Path(metadata.path) / "output" / output_id
+        start_time = time.time()
+        with ZipFile(target, "w", ZIP_DEFLATED) as zipf:
+            current_dir = os.getcwd()
+            os.chdir(path_output)
+
+            for path in glob.glob("**", recursive=True):
+                zipf.write(path, path)
+
+            zipf.close()
+
+            os.chdir(current_dir)
+        stop_time = time.time()
+        duration = "{:.3f}".format(stop_time - start_time)
+        logger.info(
+            f"Output {output_id} from study {metadata.path} exported in {duration}s"
+        )
+        _, study = self.study_factory.create_from_fs(
+            target, "", use_cache=False
+        )
+        return target
+
+    @abstractmethod
+    def export_output(
+        self,
+        metadata: T,
+        output_id: str,
+        target: Path,
+    ) -> Path:
+        """
+        Export and compresse study inside zip
+        Args:
+            metadata: study
+            output_id: output id
+            target: path of the file to export to
+
+        Returns: zip file with study files compressed inside
+
+        """
+        raise NotImplementedError()
 
     @abstractmethod
     def export_study_flat(

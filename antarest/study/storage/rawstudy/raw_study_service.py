@@ -1,14 +1,11 @@
-import glob
 import logging
-import os
 import shutil
-import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, IO, List
 from uuid import uuid4
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.custom_types import SUB_JSON
@@ -296,6 +293,16 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         study.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study {path_study} denormalized in {duration}s")
+
+    def export_output(
+        self,
+        metadata: RawStudy,
+        output_id: str,
+        target: Path,
+    ) -> Path:
+        return self._export_output(
+            metadata=metadata, output_id=output_id, target=target
+        )
 
     def check_errors(
         self,

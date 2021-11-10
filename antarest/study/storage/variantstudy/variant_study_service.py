@@ -4,7 +4,7 @@ import shutil
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, cast, Dict, Union
+from typing import List, Optional, cast
 from uuid import uuid4
 
 import dataclasses
@@ -37,7 +37,6 @@ from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     noop_notifier,
 )
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import (
     Study,
     StudyMetadataDTO,
@@ -67,7 +66,6 @@ from antarest.study.storage.rawstudy.raw_study_service import (
 )
 from antarest.study.storage.utils import (
     get_default_workspace_path,
-    update_antares_info,
     is_managed,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -967,3 +965,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study {path_study} denormalized in {duration}s")
+
+    def export_output(
+        self,
+        metadata: RawStudy,
+        output_id: str,
+        target: Path,
+    ) -> Path:
+        assert self.exists(metadata)
+        return self._export_output(
+            metadata=metadata, output_id=output_id, target=target
+        )

@@ -221,11 +221,25 @@ class IStudyStorageService(ABC, Generic[T]):
         self, metadata: T, target: Path, outputs: bool = True
     ) -> Path:
         """
-        Export and compresse study inside zip
+        Export and compresses study inside zip
         Args:
             metadata: study
             target: path of the file to export to
             outputs: ask to integrated output folder inside exportation
+
+        Returns: zip file with study files compressed inside
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def export_output(self, metadata: T, output_id: str, target: Path) -> Path:
+        """
+        Export and compresses study inside zip
+        Args:
+            metadata: study
+            output_id: output id
+            target: path of the file to export to
 
         Returns: zip file with study files compressed inside
 
