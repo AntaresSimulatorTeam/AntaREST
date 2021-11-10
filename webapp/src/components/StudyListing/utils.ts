@@ -1,6 +1,6 @@
+/* eslint-disable no-plusplus */
 import { StudyMetadata } from '../../common/types';
 
-export type StudyTreeLeaf = StudyMetadata;
 export interface StudyTreeNode {
     name: string;
     child: Array<StudyTreeNode | StudyMetadata>;
@@ -26,7 +26,7 @@ const nodeProcess = (tree: StudyTreeNode, path: Array<string>, study: StudyMetad
 };
 
 export const buildStudyTree = (studies: Array<StudyMetadata>): StudyTreeNode => {
-  const tree: StudyTreeNode = { name: '', child: [] };
+  const tree: StudyTreeNode = { name: 'root', child: [] };
   let path: Array<string> = [];
   for (let i = 0; i < studies.length; i++) {
     if (studies[i].folder !== undefined && studies[i].folder !== null) {
@@ -37,6 +37,32 @@ export const buildStudyTree = (studies: Array<StudyMetadata>): StudyTreeNode => 
     path.reverse();
     nodeProcess(tree, path, studies[i]);
   }
-  console.log('TREE MF: ', tree);
   return tree;
 };
+
+export const isDir = (element: StudyTreeNode | StudyMetadata): boolean => (element as StudyMetadata).id === undefined;
+
+export interface FindNodeResult {
+  path: Array<string>;
+  node: StudyTreeNode | undefined;
+}
+
+export const findNode = (name: string, element: StudyTreeNode, path: Array<string> = []): FindNodeResult => {
+  if (element.name === name) return { node: element, path: path.concat([element.name]) };
+
+  let result: FindNodeResult = {
+    path: [],
+    node: undefined,
+  };
+  for (let i = 0; i < element.child.length; i++) {
+    if (isDir(element.child[i])) {
+      result = findNode(name, element.child[i] as StudyTreeNode, path.concat([element.name]));
+      if (result.node !== undefined) {
+        break;
+      }
+    }
+  }
+  return result;
+};
+
+export default {};
