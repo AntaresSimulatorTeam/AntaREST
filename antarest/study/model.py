@@ -295,7 +295,6 @@ class StudyDownloadDTO(BaseModel):
     columns: Optional[List[str]]
     synthesis: bool = False
     includeClusters: bool = False
-    whole_output: bool = False
 
 
 class MatrixIndex(BaseModel):
