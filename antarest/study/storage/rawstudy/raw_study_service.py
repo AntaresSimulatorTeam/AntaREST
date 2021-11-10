@@ -1,14 +1,11 @@
-import glob
 import logging
-import os
 import shutil
-import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, IO, List
 from uuid import uuid4
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.custom_types import SUB_JSON
