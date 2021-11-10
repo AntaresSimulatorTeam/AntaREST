@@ -62,11 +62,11 @@ export default function MatrixGraphView(props: PropTypes) {
   const { matrix } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const classes = useStyles();
-  const [columnName, setColumnName] = useState<string[]>([]);
+  const [selectedColumns, setSelectedColumns] = useState<number[]>([]);
   const [monotonic, setMonotonic] = useState<boolean>(false);
 
   const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setColumnName(event.target.value as string[]);
+    setSelectedColumns(event.target.value as number[]);
   };
 
   const monotonicChange = () => {
@@ -88,21 +88,21 @@ export default function MatrixGraphView(props: PropTypes) {
             labelId="chip-label"
             id="matrix-chip"
             multiple
-            value={columnName}
+            value={selectedColumns}
             onChange={handleChange}
             input={<OutlinedInput id="select-chip" label={t('data:graphSelector')} />}
             renderValue={(selected) => (
               <Box>
-                {(selected as string[]).map((value) => (
-                  <Chip className={classes.box} key={value} label={value} />
+                {(selected as number[]).map((value) => (
+                  <Chip className={classes.box} key={value} label={columns[value]} />
                 ))}
               </Box>
             )}
           >
-            {columns.map((column) => (
+            {columns.map((column, i) => (
               <MenuItem
                 key={column}
-                value={column}
+                value={i}
               >
                 {column}
               </MenuItem>
@@ -127,12 +127,12 @@ export default function MatrixGraphView(props: PropTypes) {
           {
             ({ height, width }) => (
               <Plot
-                data={columnName.map((val, i) => (
+                data={selectedColumns.map((val) => (
                   {
                     x: monotonic ? unitChange(index as Array<number>) : index,
-                    y: monotonic ? data.map((a) => a[i]).sort((b, c) => c - b) : data.map((a) => a[i]),
+                    y: monotonic ? data.map((a) => a[val]).sort((b, c) => c - b) : data.map((a) => a[val]),
                     mode: 'lines',
-                    name: `${columnName[i]}`,
+                    name: `${columns[val]}`,
                   }
                 ))}
                 layout={{ width, height }}
