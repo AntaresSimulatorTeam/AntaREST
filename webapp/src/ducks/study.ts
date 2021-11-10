@@ -10,11 +10,13 @@ export interface StudyState {
   current?: string;
   studies: StudyMetadata[];
   scrollPosition: number;
+  directory: string;
 }
 
 const initialState: StudyState = {
   studies: [],
   scrollPosition: 0,
+  directory: 'root',
 };
 
 /** ******************************************* */
@@ -29,6 +31,16 @@ interface UpdateScrollPositionAction extends Action {
 export const updateScrollPosition = (scrollPosition: number): UpdateScrollPositionAction => ({
   type: 'STUDY/SCROLL_POSITION',
   payload: scrollPosition,
+});
+
+interface FolderPositionAction extends Action {
+  type: 'STUDY/FOLDER_POSITION';
+  payload: string;
+}
+
+export const updateFolderPosition = (dir: string): FolderPositionAction => ({
+  type: 'STUDY/FOLDER_POSITION',
+  payload: dir,
 });
 
 interface InitStudyListAction extends Action {
@@ -71,7 +83,7 @@ export const addStudies = (studies: StudyMetadata[]): AddStudyAction => ({
   payload: studies,
 });
 
-type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | AddStudyAction | UpdateScrollPositionAction;
+type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | AddStudyAction | UpdateScrollPositionAction | FolderPositionAction;
 
 /** ******************************************* */
 /* Selectors                                    */
@@ -110,6 +122,14 @@ export default (state = initialState, action: StudyAction): StudyState => {
         return {
           ...state,
           scrollPosition: action.payload,
+        };
+      }
+      return state;
+    case 'STUDY/FOLDER_POSITION':
+      if (state.directory !== action.payload) {
+        return {
+          ...state,
+          directory: action.payload,
         };
       }
       return state;
