@@ -46,6 +46,7 @@ from antarest.study.model import (
     CommentsDto,
     STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
+    PatchStudy,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.area_management import (
@@ -144,7 +145,7 @@ class StudyService:
         self,
         uuid: str,
         params: RequestParameters,
-    ) -> JSON:
+    ) -> Union[str, JSON]:
         """
         Get study data inside filesystem
         Args:
@@ -157,9 +158,20 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
 
         self._assert_study_unarchived(study)
-        output = self._get_study_storage_service(study).get(
-            metadata=study, url="/settings/comments", depth=-1
-        )
+        output: Union[str, JSON]
+        if isinstance(study, RawStudy):
+            output = self._get_study_storage_service(study).get(
+                metadata=study, url="/settings/comments", depth=-1
+            )
+        elif isinstance(study, VariantStudy):
+            patch = self.raw_study_service.patch_service.get(study)
+            output = (
+                patch.study or PatchStudy()
+            ).comments or self._get_study_storage_service(study).get(
+                metadata=study, url="/settings/comments", depth=-1
+            )
+        else:
+            raise StudyTypeUnsupported(study.id, study.type)
 
         try:
             # try to decode string
@@ -174,7 +186,7 @@ class StudyService:
         uuid: str,
         data: CommentsDto,
         params: RequestParameters,
-    ) -> JSON:
+    ) -> None:
         """
         Replace data inside study.
 
@@ -191,16 +203,20 @@ class StudyService:
         self._assert_study_unarchived(study)
 
         if isinstance(study, RawStudy):
-            return self.edit_study(
+            self.edit_study(
                 uuid=uuid,
                 url="settings/comments",
                 new=bytes(data.comments, "utf-8"),
                 params=params,
             )
         elif isinstance(study, VariantStudy):
-            raise NotImplementedError()
-
-        raise StudyTypeUnsupported(study.id, study.type)
+            patch = self.raw_study_service.patch_service.get(study)
+            patch_study = patch.study or PatchStudy()
+            patch_study.comments = data.comments
+            patch.study = patch_study
+            self.raw_study_service.patch_service.save(study, patch)
+        else:
+            raise StudyTypeUnsupported(study.id, study.type)
 
     def _get_study_metadatas(self, params: RequestParameters) -> List[Study]:
         return list(

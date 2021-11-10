@@ -198,6 +198,7 @@ class PatchStudy(BaseModel, PatchLeaf):
     scenario: Optional[str] = None
     doc: Optional[str] = None
     status: Optional[str] = None
+    comments: Optional[str] = None
 
 
 class PatchArea(BaseModel, PatchLeaf):
