@@ -1,5 +1,4 @@
 import io
-import json
 import logging
 import os
 from datetime import datetime
@@ -543,7 +542,7 @@ class StudyService:
         Args:
             uuid: study id
             target: export path
-            params: request parmeters
+            params: request parameters
             outputs: integrate output folder in zip file
 
         """
@@ -554,6 +553,32 @@ class StudyService:
         logger.info("study %s exported by user %s", uuid, params.get_user_id())
         return self._get_study_storage_service(study).export_study(
             study, target, outputs
+        )
+
+    def export_output(
+        self,
+        study_uuid: str,
+        output_uuid: str,
+        target: Path,
+        params: RequestParameters,
+    ) -> Path:
+        """
+        Export study output to a zip file.
+        Args:
+            study_uuid: study id
+            output_uuid: output id
+            target: export path
+            params: request parameters
+        """
+        study = self.get_study(study_uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+
+        logger.info(
+            f"Output {output_uuid} from study {study_uuid} exported by user {params.get_user_id()}"
+        )
+        return self._get_study_storage_service(study).export_output(
+            metadata=study, output_id=output_uuid, target=target
         )
 
     def export_study_flat(

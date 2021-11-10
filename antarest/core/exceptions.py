@@ -105,3 +105,7 @@ class IncorrectPathError(HTTPException):
 class UrlNotMatchJsonDataError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class StudyOutputNotFoundError(Exception):
+    pass
