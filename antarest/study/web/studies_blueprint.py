@@ -4,7 +4,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional, List, Dict
 
-from fastapi import APIRouter, File, Depends, Request, HTTPException
+from fastapi import APIRouter, File, Depends, Request, HTTPException, Body
 from markupsafe import escape
 from starlette.responses import FileResponse
 
@@ -19,12 +19,12 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import (
     PublicMode,
-    StudyDownloadDTO,
     StudyMetadataPatchDTO,
     StudySimResultDTO,
     StudyMetadataDTO,
     MatrixAggregationResult,
     CommentsDto,
+    StudyDownloadDTO,
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.study_download_utils import StudyDownloader
@@ -418,14 +418,14 @@ def create_study_routes(
     def output_download(
         study_id: str,
         output_id: str,
-        data: StudyDownloadDTO,
         request: Request,
+        data: Optional[StudyDownloadDTO] = Body(default=None),
         tmp_export_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_uuid(output_id)
-        if data.whole_output:
+        if not data:
             logger.info(
                 f"Fetching whole output of the simulation {output_id} for study {study_id}"
             )

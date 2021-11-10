@@ -1,15 +1,12 @@
-import glob
 import logging
 import os
 import shutil
 import tempfile
-import time
 from abc import abstractmethod
 from datetime import datetime
 from pathlib import Path
 from typing import List, Union, Optional, IO
 from uuid import uuid4
-from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON
@@ -319,23 +316,18 @@ class AbstractStorageService(IStudyStorageService[T]):
         ) as tmpdir:
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
-            start_time = time.time()
-            with ZipFile(target, "w", ZIP_DEFLATED) as zipf:
-                current_dir = os.getcwd()
-                os.chdir(tmp_study_path)
-
-                for path in glob.glob("**", recursive=True):
-                    if outputs or path.split(os.sep)[0] != "output":
-                        zipf.write(path, path)
-
-                zipf.close()
-
-                os.chdir(current_dir)
-            duration = "{:.3f}".format(time.time() - start_time)
-            logger.info(
-                f"Study {path_study} exported (zipped mode) in {duration}s"
+            stopwatch = StopWatch()
+            filename = shutil.make_archive(
+                base_name=os.path.splitext(target)[0],
+                format="zip",
+                root_dir=tmp_study_path,
             )
-        return target
+            stopwatch.log_elapsed(
+                lambda x: logger.info(
+                    f"Study {path_study} exported (zipped mode) in {x}s"
+                )
+            )
+        return target.parent / filename
 
     def export_output(self, metadata: T, output_id: str, target: Path) -> Path:
         """
@@ -353,22 +345,17 @@ class AbstractStorageService(IStudyStorageService[T]):
         if not path_output.exists():
             raise StudyOutputNotFoundError()
         stopwatch = StopWatch()
-        with ZipFile(target, "w", ZIP_DEFLATED) as zipf:
-            current_dir = os.getcwd()
-            os.chdir(path_output)
-
-            for path in glob.glob("**", recursive=True):
-                zipf.write(path, path)
-
-            zipf.close()
-
-            os.chdir(current_dir)
+        filename = shutil.make_archive(
+            base_name=os.path.splitext(target)[0],
+            format="zip",
+            root_dir=path_output,
+        )
         stopwatch.log_elapsed(
             lambda x: logger.info(
                 f"Output {output_id} from study {metadata.path} exported in {x}s"
             )
         )
-        return target
+        return target.parent / filename
 
     @abstractmethod
     def export_study_flat(

@@ -516,18 +516,12 @@ def test_output_download() -> None:
 @pytest.mark.unit_test
 def test_output_whole_download(tmp_path: Path) -> None:
     mock_service = Mock()
-    file_export = tmp_path / "export.zip"
+    file_export = tmp_path / "export"
     output_id = "my_output_id"
 
     with open(file_export, "w") as fh:
         fh.write("Hello")
     mock_service.export_output.return_value = file_export
-
-    study_download = StudyDownloadDTO(
-        type=StudyDownloadType.AREA,
-        level=StudyDownloadLevelDTO.ANNUAL,
-        whole_output=True,
-    )
 
     app = FastAPI(title=__name__)
     build_study_service(
@@ -542,7 +536,6 @@ def test_output_whole_download(tmp_path: Path) -> None:
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post(
         f"/v1/studies/my-uuid/outputs/{output_id}/download",
-        json=study_download.dict(),
     )
     assert res.status_code == 200
 
