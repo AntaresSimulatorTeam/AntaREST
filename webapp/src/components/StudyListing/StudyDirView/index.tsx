@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { connect, ConnectedProps } from 'react-redux';
-import { findNode, StudyTreeNode } from '../utils';
+import { findNode, isDir, StudyTreeNode } from '../utils';
 import DirView from './DirView';
 import { StudyMetadata } from '../../../common/types';
 import { AppState } from '../../../App/reducers';
@@ -29,7 +29,7 @@ const StudyDirView = (props: PropTypes) => {
   const [currentNode, setCurrentNode] = useState<StudyTreeNode>(tree);
 
   const onClick = (element: StudyTreeNode | StudyMetadata): void => {
-    if ((element as StudyMetadata).id === undefined) {
+    if (isDir(element)) {
       setCurrentNode(element as StudyTreeNode);
       const newPath: Array<string> = dirPath.concat([element.name]);
       setDirPath(newPath);

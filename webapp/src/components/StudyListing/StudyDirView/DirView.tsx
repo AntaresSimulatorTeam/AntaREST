@@ -145,7 +145,7 @@ const DirView = (props: Props) => {
       <div className={classes.dirView}>
         <Grid container spacing={1} className={classes.grid} justify="center" alignItems="center">
           {
-            node.child.map((elm, index) =>
+            node.children.map((elm, index) =>
               (isDir(elm) ? (
                 <Tooltip key={`${elm}-${index}`} title={elm.name}>
                   <Paper className={classes.element} onClick={() => onClick(elm)}>

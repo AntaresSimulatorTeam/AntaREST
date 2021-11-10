@@ -3,30 +3,30 @@ import { StudyMetadata } from '../../common/types';
 
 export interface StudyTreeNode {
     name: string;
-    child: Array<StudyTreeNode | StudyMetadata>;
+    children: Array<StudyTreeNode | StudyMetadata>;
   }
 
+export const isDir = (element: StudyTreeNode | StudyMetadata): boolean => (element as StudyMetadata).id === undefined;
+
 const nodeProcess = (tree: StudyTreeNode, path: Array<string>, study: StudyMetadata): void => {
-  const { child } = tree;
-  const { length } = path;
-  if (length === 1) {
-    child.push(study);
+  const { children } = tree;
+  if (path.length === 1) {
+    children.push(study);
     return;
   }
-  const element = path[length - 1];
-  const index = child.findIndex((elm: StudyTreeNode | StudyMetadata) => elm.name === element);
+
+  const element = path.pop() || '';
+  const index = children.findIndex((elm: StudyTreeNode | StudyMetadata) => isDir(elm) && elm.name === element);
   if (index < 0) {
-    path.pop();
-    child.push({ name: element, child: [] });
-    nodeProcess(child[child.length - 1] as StudyTreeNode, path, study);
+    children.push({ name: element, children: [] });
+    nodeProcess(children[children.length - 1] as StudyTreeNode, path, study);
   } else {
-    path.pop();
-    nodeProcess(child[index] as StudyTreeNode, path, study);
+    nodeProcess(children[index] as StudyTreeNode, path, study);
   }
 };
 
 export const buildStudyTree = (studies: Array<StudyMetadata>): StudyTreeNode => {
-  const tree: StudyTreeNode = { name: 'root', child: [] };
+  const tree: StudyTreeNode = { name: 'root', children: [] };
   let path: Array<string> = [];
   for (let i = 0; i < studies.length; i++) {
     if (studies[i].folder !== undefined && studies[i].folder !== null) {
@@ -40,8 +40,6 @@ export const buildStudyTree = (studies: Array<StudyMetadata>): StudyTreeNode => 
   return tree;
 };
 
-export const isDir = (element: StudyTreeNode | StudyMetadata): boolean => (element as StudyMetadata).id === undefined;
-
 export interface FindNodeResult {
   path: Array<string>;
   node: StudyTreeNode | undefined;
@@ -54,9 +52,9 @@ export const findNode = (name: string, element: StudyTreeNode, path: Array<strin
     path: [],
     node: undefined,
   };
-  for (let i = 0; i < element.child.length; i++) {
-    if (isDir(element.child[i])) {
-      result = findNode(name, element.child[i] as StudyTreeNode, path.concat([element.name]));
+  for (let i = 0; i < element.children.length; i++) {
+    if (isDir(element.children[i])) {
+      result = findNode(name, element.children[i] as StudyTreeNode, path.concat([element.name]));
       if (result.node !== undefined) {
         break;
       }
