@@ -34,6 +34,7 @@ from antarest.study.storage.utils import (
     get_default_workspace_path,
     fix_study_root,
     is_managed,
+    remove_from_cache,
 )
 
 logger = logging.getLogger(__name__)
@@ -207,7 +208,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         if self.config.storage.allow_deletion or is_managed(metadata):
             study_path = self.get_study_path(metadata)
             shutil.rmtree(study_path, ignore_errors=True)
-            self.remove_from_cache(metadata.id)
+            remove_from_cache(self.cache, metadata.id)
         else:
             raise StudyDeletionNotAllowed(metadata.id)
 
@@ -224,7 +225,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         study_path = self.get_study_path(metadata)
         output_path = study_path / "output" / output_name
         shutil.rmtree(output_path, ignore_errors=True)
-        self.remove_from_cache(metadata.id)
+        remove_from_cache(self.cache, metadata.id)
 
     def import_study(self, metadata: RawStudy, stream: IO[bytes]) -> Study:
         """
@@ -273,7 +274,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         _, study = self.study_factory.create_from_fs(study_path, metadata.id)
         study.save(new, url.split("/"))  # type: ignore
         del study
-        self.remove_from_cache(metadata.id)
+        remove_from_cache(self.cache, metadata.id)
         return new
 
     def export_study_flat(
@@ -319,7 +320,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self, study: RawStudy, output_id: str, status: bool
     ) -> None:
         self.patch_service.set_reference_output(study, output_id, status)
-        self.remove_from_cache(study.id)
+        remove_from_cache(self.cache, study.id)
 
     def archive(self, study: RawStudy) -> None:
         archive_path = self.get_archive_path(study)

@@ -56,7 +56,7 @@ def test_factory_cache():
     cache = Mock()
     factory = StudyFactory(matrix=Mock(), resolver=Mock(), cache=cache)
     study_id = "study-id"
-    cache_id = f"{study_id}/{CacheConstants.STUDY_FACTORY}"
+    cache_id = f"{CacheConstants.STUDY_FACTORY}/{study_id}"
     config = ConfigPathBuilder.build(path, study_id)
 
     cache.get.return_value = None

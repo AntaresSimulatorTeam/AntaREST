@@ -67,6 +67,7 @@ from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import (
     get_default_workspace_path,
     is_managed,
+    remove_from_cache,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (
@@ -829,6 +830,7 @@ class StudyService:
         res = self._get_study_storage_service(study).import_output(
             study, output
         )
+        remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(
             "output added to study %s by user %s", uuid, params.get_user_id()
         )
