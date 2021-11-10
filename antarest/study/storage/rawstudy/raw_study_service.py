@@ -294,16 +294,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study {path_study} denormalized in {duration}s")
 
-    def export_output(
-        self,
-        metadata: RawStudy,
-        output_id: str,
-        target: Path,
-    ) -> Path:
-        return self._export_output(
-            metadata=metadata, output_id=output_id, target=target
-        )
-
     def check_errors(
         self,
         metadata: RawStudy,

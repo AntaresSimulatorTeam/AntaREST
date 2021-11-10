@@ -965,14 +965,3 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study {path_study} denormalized in {duration}s")
-
-    def export_output(
-        self,
-        metadata: RawStudy,
-        output_id: str,
-        target: Path,
-    ) -> Path:
-        assert self.exists(metadata)
-        return self._export_output(
-            metadata=metadata, output_id=output_id, target=target
-        )

@@ -13,9 +13,9 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.core.config import Config
 from antarest.core.custom_types import JSON
-from antarest.core.exceptions import BadOutputError
+from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
-from antarest.core.utils.utils import extract_zip
+from antarest.core.utils.utils import extract_zip, StopWatch
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
@@ -337,11 +337,22 @@ class AbstractStorageService(IStudyStorageService[T]):
             )
         return target
 
-    def _export_output(
-        self, metadata: T, output_id: str, target: Path
-    ) -> Path:
+    def export_output(self, metadata: T, output_id: str, target: Path) -> Path:
+        """
+        Export and compresses study inside zip
+        Args:
+            metadata: study
+            output_id: output id
+            target: path of the file to export to
+
+        Returns: zip file with study files compressed inside
+        """
+        logger.info(f"Exporting output {output_id} from study {metadata.id}")
+
         path_output = Path(metadata.path) / "output" / output_id
-        start_time = time.time()
+        if not path_output.exists():
+            raise StudyOutputNotFoundError()
+        stopwatch = StopWatch()
         with ZipFile(target, "w", ZIP_DEFLATED) as zipf:
             current_dir = os.getcwd()
             os.chdir(path_output)
@@ -352,34 +363,12 @@ class AbstractStorageService(IStudyStorageService[T]):
             zipf.close()
 
             os.chdir(current_dir)
-        stop_time = time.time()
-        duration = "{:.3f}".format(stop_time - start_time)
-        logger.info(
-            f"Output {output_id} from study {metadata.path} exported in {duration}s"
-        )
-        _, study = self.study_factory.create_from_fs(
-            target, "", use_cache=False
+        stopwatch.log_elapsed(
+            lambda x: logger.info(
+                f"Output {output_id} from study {metadata.path} exported in {x}s"
+            )
         )
         return target
-
-    @abstractmethod
-    def export_output(
-        self,
-        metadata: T,
-        output_id: str,
-        target: Path,
-    ) -> Path:
-        """
-        Export and compresse study inside zip
-        Args:
-            metadata: study
-            output_id: output id
-            target: path of the file to export to
-
-        Returns: zip file with study files compressed inside
-
-        """
-        raise NotImplementedError()
 
     @abstractmethod
     def export_study_flat(
