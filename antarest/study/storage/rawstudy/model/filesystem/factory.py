@@ -52,7 +52,7 @@ class StudyFactory:
         output_path: Optional[Path] = None,
         use_cache: bool = True,
     ) -> Tuple[FileStudyTreeConfig, FileStudyTree]:
-        cache_id = f"{study_id}/{CacheConstants.STUDY_FACTORY}"
+        cache_id = f"{CacheConstants.STUDY_FACTORY}/{study_id}"
         if study_id and use_cache:
             from_cache = self.cache.get(cache_id)
             if from_cache is not None:

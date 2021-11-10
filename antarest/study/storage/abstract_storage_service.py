@@ -12,7 +12,7 @@ from uuid import uuid4
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.core.custom_types import JSON
 from antarest.core.exceptions import BadOutputError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.utils.utils import extract_zip
@@ -39,7 +39,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
     FileStudy,
 )
-from antarest.study.storage.utils import fix_study_root
+from antarest.study.storage.utils import fix_study_root, remove_from_cache
 
 logger = logging.getLogger(__name__)
 
@@ -57,14 +57,6 @@ class AbstractStorageService(IStudyStorageService[T]):
         self.patch_service = patch_service
         self.cache = cache
 
-    def remove_from_cache(self, root_id: str) -> None:
-        self.cache.invalidate_all(
-            [
-                f"{root_id}/{CacheConstants.RAW_STUDY}",
-                f"{root_id}/{CacheConstants.STUDY_FACTORY}",
-            ]
-        )
-
     def patch_update_study_metadata(
         self,
         study: T,
@@ -80,7 +72,7 @@ class AbstractStorageService(IStudyStorageService[T]):
                 }
             },
         )
-        self.remove_from_cache(study.id)
+        remove_from_cache(self.cache, study.id)
         return self.get_study_information(study)
 
     def get_study_information(
@@ -175,7 +167,7 @@ class AbstractStorageService(IStudyStorageService[T]):
         parts = [item for item in url.split("/") if item]
 
         if url == "" and depth == -1:
-            cache_id = f"{metadata.id}/{CacheConstants.RAW_STUDY}"
+            cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
             from_cache: Optional[JSON] = None
             if use_cache:
                 from_cache = self.cache.get(cache_id)

@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from antarest.core.config import Config
 from antarest.core.exceptions import StudyValidationError
+from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Study,
@@ -92,4 +93,13 @@ def is_managed(study: Study) -> bool:
     return (
         not hasattr(study, "workspace")
         or study.workspace == DEFAULT_WORKSPACE_NAME
+    )
+
+
+def remove_from_cache(cache: ICache, root_id: str) -> None:
+    cache.invalidate_all(
+        [
+            f"{CacheConstants.RAW_STUDY}/{root_id}",
+            f"{CacheConstants.STUDY_FACTORY}/{root_id}",
+        ]
     )
