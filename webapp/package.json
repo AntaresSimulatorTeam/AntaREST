@@ -80,6 +80,7 @@
     "socket.io": "^4.3.1",
     "socket.io-client": "^4.3.2",
     "swagger-ui-react": "^3.52.5",
+    "tsparticles": "^1.37.2",  
     "uuid": "^7.0.3",
     "web-streams-polyfill": "^2.1.1",
     "xml-js": "^1.6.11"
