@@ -3,9 +3,12 @@
 import debug from 'debug';
 import { Action } from 'redux';
 import { ThunkAction } from 'redux-thunk';
+import moment from 'moment';
 import { UserInfo, WSMessage } from '../common/types';
 import { AppState } from '../App/reducers';
 import { getConfig } from '../services/config';
+import { refresh } from '../services/api/auth';
+import { loginUser } from './auth';
 
 const logInfo = debug('antares:websocket:info');
 const logError = debug('antares:websocket:error');
@@ -87,6 +90,20 @@ export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, u
   }
 
   try {
+    if (user && user.expirationDate && user.expirationDate < moment()) {
+      refresh(user, (updatedUser: UserInfo) => dispatch(loginUser(updatedUser)), () => { /* noop */ }).then((updatedUser?: UserInfo) => {
+        if (!updatedUser) {
+          reconnectionTimer = null;
+          reconnectLoop();
+        }
+      }).catch((e) => {
+        logError('Should not happen because refresh is already guarded', e);
+        reconnectionTimer = null;
+        reconnectLoop();
+      });
+      return;
+    }
+
     const socket = new WebSocket(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
 
     if (socket) {
