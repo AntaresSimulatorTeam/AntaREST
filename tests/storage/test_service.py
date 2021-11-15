@@ -1,6 +1,7 @@
+import tempfile
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock, seal
 from uuid import uuid4
 
 import pytest
@@ -44,6 +45,10 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+from antarest.study.storage.variantstudy.variant_study_service import (
+    VariantStudyService,
+)
 
 
 def build_study_service(
@@ -52,10 +57,11 @@ def build_study_service(
     config: Config,
     user_service: LoginService = Mock(),
     cache_service: ICache = Mock(),
+    variant_study_service=Mock(),
 ) -> StudyService:
     return StudyService(
         raw_study_service=raw_study_service,
-        variant_study_service=Mock(),
+        variant_study_service=variant_study_service,
         user_service=user_service,
         repository=repository,
         event_bus=Mock(),
@@ -754,3 +760,74 @@ def test_delete_study_calls_callback():
     )
 
     callback.assert_called_once_with(study_uuid)
+
+
+@pytest.mark.unit_test
+def test_delete_with_prefetch(tmp_path: Path):
+    study_uuid = "my_study"
+
+    study_metadata_repository = Mock()
+    raw_study_service = RawStudyService(
+        Config(), Mock(), Mock(), Mock(), Mock()
+    )
+    variant_study_service = VariantStudyService(
+        Mock(),
+        Mock(),
+        raw_study_service,
+        Mock(),
+        Mock(),
+        Mock(),
+        Mock(),
+        Mock(),
+        Mock(),
+    )
+    service = build_study_service(
+        raw_study_service,
+        study_metadata_repository,
+        Mock(),
+        variant_study_service=variant_study_service,
+    )
+
+    study_path = tmp_path / study_uuid
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+    study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="my_study",
+        path=study_path,
+        workspace=DEFAULT_WORKSPACE_NAME,
+    )
+    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+
+    # it freezes the mock and raise Attribute error if anything else than defined is used
+    seal(study_mock)
+
+    study_metadata_repository.get.return_value = study_mock
+
+    # if this fails, it may means the study metadata mock is missing some attribute definition
+    # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)
+    # see the comment in the delete method for more information
+    service.delete_study(
+        study_uuid,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+    # test for variant studies
+    study_mock = Mock(
+        spec=VariantStudy, archived=False, id="my_study", path=study_path
+    )
+    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+
+    # it freezes the mock and raise Attribute error if anything else than defined is used
+    seal(study_mock)
+
+    study_metadata_repository.get.return_value = study_mock
+
+    # if this fails, it may means the study metadata mock is missing some definition
+    # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)
+    # see the comment in the delete method for more information
+    service.delete_study(
+        study_uuid,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )

@@ -627,6 +627,12 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.DELETE)
 
         study_info = study.to_json_summary()
+
+        # this prefetch the workspace because it is lazy loaded and the object is deleted before using workspace attribute in raw study deletion
+        # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
+        if isinstance(study, RawStudy):
+            _ = study.workspace
+
         self.repository.delete(study.id)
         self.event_bus.push(Event(EventType.STUDY_DELETED, study_info))
 
