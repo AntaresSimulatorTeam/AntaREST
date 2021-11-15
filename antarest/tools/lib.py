@@ -3,7 +3,9 @@ import json
 import logging
 import os
 import shutil
+import tempfile
 from abc import ABC, abstractmethod
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Set
 from zipfile import ZipFile
@@ -14,7 +16,11 @@ from requests import Session
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
 from antarest.core.tasks.model import TaskDTO
-from antarest.core.utils.utils import StopWatch, get_local_path
+from antarest.core.utils.utils import (
+    StopWatch,
+    get_local_path,
+    create_new_empty_study,
+)
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import (
     SimpleMatrixService,
@@ -23,6 +29,8 @@ from antarest.study.common.uri_resolver_service import UriResolverService
 from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
+    RawStudy,
+    DEFAULT_WORKSPACE_NAME,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
@@ -233,11 +241,40 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
         )
 
 
-def generate_diff(base: Path, variant: Path, output_dir: Path) -> None:
+def generate_diff(
+    base: Path, variant: Path, output_dir: Path, version: Optional[str] = None
+) -> None:
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
     matrices_dir = output_dir / MATRIX_STORE_DIR
     matrices_dir.mkdir(exist_ok=True)
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        study_id = "temp_empty_study"
+        path_study = Path(tmp_dir) / study_id
+        matrix_path = Path(tmp_dir) / "matrix"
+        matrix_path.mkdir(parents=True)
+        metadata = RawStudy(
+            id=study_id,
+            workspace=DEFAULT_WORKSPACE_NAME,
+            path=path_study,
+            version=version or NEW_DEFAULT_STUDY_VERSION,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+
+        simple_matrix_service = SimpleMatrixService(matrix_path=matrix_path)
+        resolver = UriResolverService(matrix_service=simple_matrix_service)
+
+        study_factory = StudyFactory(
+            matrix=simple_matrix_service, resolver=resolver, cache=LocalCache()
+        )
+
+        empty_study = create_new_empty_study(
+            metadata=metadata,
+            path_resources=get_local_path() / "resources",
+            study_factory=study_factory,
+        )
 
     base_command_file = base / COMMAND_FILE
     if not base_command_file.exists():
@@ -270,8 +307,9 @@ def generate_diff(base: Path, variant: Path, output_dir: Path) -> None:
     local_matrix_service = SimpleMatrixService(matrices_dir)
     extractor = VariantCommandsExtractor(local_matrix_service)
     diff_commands = extractor.diff(
-        parse_commands(base_command_file),
-        parse_commands(variant_command_file),
+        base=parse_commands(base_command_file),
+        variant=parse_commands(variant_command_file),
+        empty_study=empty_study,
     )
 
     with open(output_dir / COMMAND_FILE, "w") as fh:

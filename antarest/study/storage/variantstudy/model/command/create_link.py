@@ -10,7 +10,6 @@ from antarest.study.storage.variantstudy.business.default_values import (
     LinkProperties,
     FilteringOptions,
 )
-from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -23,6 +22,7 @@ from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
     strip_matrix_protocol,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class LinkAlreadyExistError(Exception):
@@ -199,7 +199,7 @@ class CreateLink(ICommand):
         )
 
     def revert(
-        self, history: List["ICommand"], base: Optional[FileStudy] = None
+        self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.remove_link import (
             RemoveLink,

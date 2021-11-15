@@ -8,7 +8,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
-    MATCH_SIGNATURE_SEPARATOR,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -52,25 +51,21 @@ class UpdateComments(ICommand):
         return not equal or (self.comments == other.comments and equal)
 
     def revert(
-        self, history: List["ICommand"], base: Optional[FileStudy] = None
+        self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
         for command in reversed(history):
             if isinstance(command, UpdateComments):
                 return [command]
 
-        if base is not None:
-            from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-                CommandExtraction,
-            )
+        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+            CommandExtraction,
+        )
 
-            return [
-                (
-                    self.command_context.command_extractor
-                    or CommandExtraction(self.command_context.matrix_service)
-                ).generate_update_comments(base.tree)
-            ]
         return [
-            UpdateComments(comments="", command_context=self.command_context)
+            (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
+            ).generate_update_comments(base.tree)
         ]
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:

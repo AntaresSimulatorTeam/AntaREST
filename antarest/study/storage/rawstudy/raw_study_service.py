@@ -5,21 +5,18 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, IO, List
 from uuid import uuid4
-from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.custom_types import SUB_JSON
 from antarest.core.exceptions import (
-    UnsupportedStudyVersion,
     StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import ICache
-from antarest.core.utils.utils import extract_zip
+from antarest.core.utils.utils import extract_zip, create_new_empty_study
 from antarest.study.model import (
     RawStudy,
     DEFAULT_WORKSPACE_NAME,
     Study,
-    STUDY_REFERENCE_TEMPLATES,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
@@ -130,24 +127,11 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns: new study information
 
         """
-        version_template: Optional[str] = STUDY_REFERENCE_TEMPLATES.get(
-            metadata.version, None
+        create_new_empty_study(
+            metadata=metadata,
+            path_resources=self.path_resources,
+            study_factory=self.study_factory,
         )
-        if version_template is None:
-            raise UnsupportedStudyVersion(metadata.version)
-
-        empty_study_zip = self.path_resources / version_template
-
-        path_study = self.get_study_path(metadata)
-        path_study.mkdir()
-
-        with ZipFile(empty_study_zip) as zip_output:
-            zip_output.extractall(path=path_study)
-
-        _, study = self.study_factory.create_from_fs(path_study, metadata.id)
-        update_antares_info(metadata, study)
-
-        metadata.path = str(path_study)
         return metadata
 
     def copy(

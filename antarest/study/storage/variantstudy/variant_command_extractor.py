@@ -114,7 +114,10 @@ class VariantCommandsExtractor:
         return [command.to_dto() for command in study_commands]
 
     def diff(
-        self, base: List[CommandDTO], variant: List[CommandDTO]
+        self,
+        base: List[CommandDTO],
+        variant: List[CommandDTO],
+        empty_study: FileStudy,
     ) -> List[ICommand]:
         stopwatch = StopWatch()
         command_factory = CommandFactory(
@@ -218,7 +221,9 @@ class VariantCommandsExtractor:
             command_list.extend(
                 [
                     (priority, command)
-                    for command in command_obj.revert(base_commands[:index])
+                    for command in command_obj.revert(
+                        history=base_commands[:index], base=empty_study
+                    )
                 ]
             )
         for order, variant_command, base_command in modified_commands:

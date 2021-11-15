@@ -1,10 +1,9 @@
-from typing import Any, List, Optional
+from typing import Any, List
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -13,6 +12,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
     MATCH_SIGNATURE_SEPARATOR,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class RemoveCluster(ICommand):
@@ -112,7 +112,7 @@ class RemoveCluster(ICommand):
         )
 
     def revert(
-        self, history: List["ICommand"], base: Optional[FileStudy] = None
+        self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.create_cluster import (
             CreateCluster,
@@ -130,14 +130,12 @@ class RemoveCluster(ICommand):
             ):
                 # todo revert binding constraints that has the cluster in constraint and also search in base for one
                 return [command]
-        if base is not None:
 
-            return (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
-            ).extract_cluster(base, self.area_id, self.cluster_id)
-            # todo revert binding constraints that has the cluster in constraint
-        return []
+        return (
+            self.command_context.command_extractor
+            or CommandExtraction(self.command_context.matrix_service)
+        ).extract_cluster(base, self.area_id, self.cluster_id)
+        # todo revert binding constraints that has the cluster in constraint
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

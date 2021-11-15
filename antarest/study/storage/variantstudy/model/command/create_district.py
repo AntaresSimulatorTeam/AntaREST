@@ -1,15 +1,13 @@
 from enum import Enum
-from typing import Dict, Any, Optional, List, cast
+from typing import Any, Optional, List, cast
 
 from pydantic import validator
 
-from antarest.study.model import PatchLeafDict
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
     Set,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -18,6 +16,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
     MATCH_SIGNATURE_SEPARATOR,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class DistrictBaseFilter(Enum):
@@ -113,7 +112,7 @@ class CreateDistrict(ICommand):
         )
 
     def revert(
-        self, history: List["ICommand"], base: Optional[FileStudy] = None
+        self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.remove_district import (
             RemoveDistrict,

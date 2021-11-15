@@ -4,6 +4,7 @@ from typing import Optional
 
 import click
 
+from antarest.study.model import NEW_DEFAULT_STUDY_VERSION
 from antarest.tools.lib import (
     generate_diff,
     extract_commands,
@@ -127,9 +128,20 @@ def generate_script(input: str, output: str) -> None:
     type=click.Path(exists=False),
     help="Script output path",
 )
-def generate_script_diff(base: str, variant: str, output: str) -> None:
+@click.option(
+    "--version",
+    "-v",
+    nargs=1,
+    required=False,
+    type=str,
+    help=f"Study version. Default:{NEW_DEFAULT_STUDY_VERSION}",
+    default=NEW_DEFAULT_STUDY_VERSION,
+)
+def generate_script_diff(
+    base: str, variant: str, output: str, version: str
+) -> None:
     """Generate variant script commands from two variant script directories"""
-    generate_diff(Path(base), Path(variant), Path(output))
+    generate_diff(Path(base), Path(variant), Path(output), version)
 
 
 if __name__ == "__main__":

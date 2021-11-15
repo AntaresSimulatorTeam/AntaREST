@@ -33,7 +33,7 @@ STUDY_REFERENCE_TEMPLATES: Dict[str, str] = {
     "810": "empty_study_810.zip",
 }
 
-NEW_DEFAULT_STUDY_VERSION: str = "803"
+NEW_DEFAULT_STUDY_VERSION: str = "810"
 
 
 class StudyContentStatus(enum.Enum):
