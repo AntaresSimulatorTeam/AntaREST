@@ -9,6 +9,7 @@ import { loadState, saveState } from '../services/utils/localStorage';
 import { UserInfo } from '../common/types';
 import { setAuth } from '../services/api/client';
 import { AppState } from '../App/reducers';
+import { reconnectWebsocket } from './websockets';
 
 /** ******************************************* */
 /* State                                        */
@@ -48,10 +49,12 @@ export interface LoginAction extends Action {
 export const loginUser = (user: UserInfo): ThunkAction<void, AppState, unknown, LoginAction> => (dispatch): void => {
   const tokenData = jwt_decode(user.accessToken);
   setAuth(user.accessToken);
+  const updatedUser = { ...user, expirationDate: moment.unix((tokenData as any).exp) };
   dispatch({
     type: 'AUTH/LOGIN',
-    payload: { ...user, expirationDate: moment.unix((tokenData as any).exp) },
+    payload: updatedUser,
   });
+  dispatch(reconnectWebsocket(updatedUser));
 };
 
 export interface LogoutAction extends Action {

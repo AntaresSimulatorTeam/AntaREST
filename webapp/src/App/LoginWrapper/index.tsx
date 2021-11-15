@@ -120,12 +120,17 @@ const LoginWrapper = (props: PropsWithChildren<PropTypes>) => {
         }
         const res = await needAuth();
         setAuthRequired(res);
-        reconnectWs(user);
       } catch (e) {
         setConnexionError(true);
       }
     })();
   }, [user]);
+
+  useEffect(() => {
+    if (authRequired !== undefined && !authRequired) {
+      reconnectWs();
+    }
+  }, [authRequired]);
 
   if (authRequired === undefined) {
     return <AppLoader />;
