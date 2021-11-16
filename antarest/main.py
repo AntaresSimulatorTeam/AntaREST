@@ -19,6 +19,7 @@ from antarest import __version__
 from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
+from antarest.core.filetransfer.web import create_file_transfer_api
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.persistence import upgrade_db
 from antarest.core.swagger import customize_openapi
@@ -248,6 +249,8 @@ def fastapi_app(
         study_service=study_service,
         event_bus=event_bus,
     )
+
+    application.include_router(create_file_transfer_api(config))
 
     services["event_bus"] = event_bus
     services["study"] = study_service

@@ -7,6 +7,7 @@ class APITag:
     study_variant_management = "Manage Study Variant"
     study_raw_data = "Manage Study Raw File Data"
     study_outputs = "Manage Outputs"
+    downloads = "Manage downloads"
     matrix = "Manage Matrix"
     misc = "Miscellaneous"
 
@@ -32,6 +33,9 @@ tags_metadata = [
     },
     {
         "name": APITag.matrix,
+    },
+    {
+        "name": APITag.downloads,
     },
     {
         "name": APITag.study_permissions,

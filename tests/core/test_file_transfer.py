@@ -4,7 +4,7 @@ from fastapi import FastAPI, Depends
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config
-from antarest.core.utils.file_transfer import FileTransferManager
+from antarest.core.filetransfer.service import FileTransferManager
 
 
 def create_app() -> FastAPI:

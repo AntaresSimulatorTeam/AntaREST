@@ -14,7 +14,7 @@ from antarest.core.model import PublicMode
 from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.core.utils.file_transfer import FileTransferManager
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
