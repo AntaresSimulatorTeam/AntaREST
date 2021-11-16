@@ -394,8 +394,8 @@ class StudyService:
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=study_path,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
         )
 

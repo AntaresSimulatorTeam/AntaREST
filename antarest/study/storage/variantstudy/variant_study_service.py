@@ -569,8 +569,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             parent_id=uuid,
             path=study_path,
             public_mode=study.public_mode,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
             version=study.version,
             groups=study.groups,  # Create inherit_group boolean
             owner_id=params.user.impersonator if params.user else None,
@@ -708,7 +708,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if results.success:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
-                created_at=datetime.now(),
+                created_at=datetime.utcnow(),
             )
             self.repository.save(variant_study)
             logger.info(f"Saving new snapshot for study {variant_study.id}")
@@ -817,8 +817,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             parent_id=src_meta.id,
             path=study_path,
             public_mode=src_meta.public_mode,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
             version=src_meta.version,
             groups=src_meta.groups,  # Create inherit_group boolean
             snapshot=None,
