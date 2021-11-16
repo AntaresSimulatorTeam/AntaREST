@@ -1,12 +1,10 @@
-import tempfile
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, seal
+from unittest.mock import Mock, seal
 from uuid import uuid4
 
 import pytest
 
-from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
@@ -32,9 +30,8 @@ from antarest.study.model import (
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService, UserHasNotPermissionError
-from antarest.study.storage.permissions import (
+from antarest.core.permissions import (
     StudyPermissionType,
-    assert_permission,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -45,6 +42,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.utils import assert_permission
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,

@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from markupsafe import escape
 
 from antarest.core.config import Config
-from antarest.core.model import JSON
+from antarest.core.model import JSON, PublicMode, StudyPermissionType
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -37,7 +37,6 @@ from antarest.study.model import (
     StudyFolder,
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
-    PublicMode,
     StudyMetadataPatchDTO,
     StudyMetadataDTO,
     StudyDownloadDTO,
@@ -56,10 +55,6 @@ from antarest.study.storage.area_management import (
     AreaCreationDTO,
     AreaPatchUpdateDTO,
 )
-from antarest.study.storage.permissions import (
-    StudyPermissionType,
-    assert_permission,
-)
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -68,6 +63,7 @@ from antarest.study.storage.utils import (
     get_default_workspace_path,
     is_managed,
     remove_from_cache,
+    assert_permission,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (

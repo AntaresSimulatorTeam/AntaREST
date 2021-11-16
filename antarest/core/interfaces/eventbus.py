@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, List, Awaitable
 
+from antarest.core.model import PermissionInfo, PermissionFullInfo
+
 
 class EventType:
     STUDY_CREATED = "STUDY_CREATED"
@@ -25,6 +27,7 @@ class EventType:
 class Event:
     type: str
     payload: Any
+    permissions: PermissionFullInfo = PermissionFullInfo()
 
 
 class IEventBus(ABC):

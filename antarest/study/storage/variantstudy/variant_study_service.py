@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from filelock import FileLock  # type: ignore
 
 from antarest.core.config import Config
-from antarest.core.model import JSON, SUB_JSON
+from antarest.core.model import JSON, SUB_JSON, StudyPermissionType
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -46,10 +46,6 @@ from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
 )
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.permissions import (
-    assert_permission,
-    StudyPermissionType,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
@@ -67,6 +63,7 @@ from antarest.study.storage.utils import (
     get_default_workspace_path,
     is_managed,
     remove_from_cache,
+    assert_permission,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand

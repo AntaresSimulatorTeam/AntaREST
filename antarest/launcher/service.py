@@ -21,11 +21,10 @@ from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.model import JobResult, JobStatus, LogType
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
-from antarest.study.storage.permissions import (
-    check_permission,
+from antarest.core.model import (
     StudyPermissionType,
-    assert_permission,
 )
+from antarest.study.storage.utils import assert_permission
 
 
 class JobNotFound(HTTPException):
@@ -168,10 +167,11 @@ class LauncherService:
         allowed_job_results = []
         for job_result in job_results:
             try:
-                if check_permission(
+                if assert_permission(
                     user,
                     self.study_service.get_study(job_result.study_id),
                     StudyPermissionType.RUN,
+                    raising=False,
                 ):
                     allowed_job_results.append(job_result)
             except StudyNotFoundError:
