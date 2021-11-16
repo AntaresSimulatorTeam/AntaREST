@@ -64,7 +64,7 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: 'flex-start',
       alignItems: 'center',
       boxSizing: 'border-box',
-      width: '200px',
+      width: '320px',
       backgrounCOlor: '#0000',
       padding: theme.spacing(2),
       margin: theme.spacing(3),

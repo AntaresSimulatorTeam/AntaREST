@@ -12,11 +12,14 @@ export const isDir = (element: StudyTreeNode | StudyMetadata): boolean => (eleme
 
 const nodeProcess = (tree: StudyTreeNode, path: Array<string>, study: StudyMetadata): number => {
   const { children } = tree;
+  let newModificationDate = 0;
   if (path.length === 1) {
     children.push(study);
-    return moment(tree.modificationDate).isAfter(moment(study.modificationDate)) ? tree.modificationDate : study.modificationDate;
+    newModificationDate = moment(tree.modificationDate).isAfter(moment(study.modificationDate)) ? tree.modificationDate : study.modificationDate;
+    // eslint-disable-next-line no-param-reassign
+    tree.modificationDate = newModificationDate;
+    return newModificationDate;
   }
-  let newModificationDate = 0;
   const element = path.pop() || '';
   const index = children.findIndex((elm: StudyTreeNode | StudyMetadata) => isDir(elm) && elm.name === element);
   if (index < 0) {
