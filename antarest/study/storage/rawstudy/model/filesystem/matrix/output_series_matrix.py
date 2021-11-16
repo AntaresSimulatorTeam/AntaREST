@@ -4,7 +4,7 @@ from typing import List, Optional, cast, Union
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )

@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from filelock import FileLock  # type: ignore
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.core.model import JSON, SUB_JSON
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,

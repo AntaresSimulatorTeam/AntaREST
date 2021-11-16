@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from markupsafe import escape
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,

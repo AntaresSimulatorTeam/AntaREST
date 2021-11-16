@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional, Union
 
-from antarest.core.custom_types import ELEMENT, JSON
+from antarest.core.model import ELEMENT, JSON
 
 
 class IReader(ABC):

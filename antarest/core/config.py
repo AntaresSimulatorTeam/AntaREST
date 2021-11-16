@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Any
 
 import yaml
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 
 logger = logging.getLogger(__name__)

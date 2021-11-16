@@ -9,7 +9,7 @@ from typing import List, Union, Optional, IO
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.utils.utils import extract_zip, StopWatch

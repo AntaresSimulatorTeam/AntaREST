@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )

@@ -1,6 +1,6 @@
 from typing import List
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (

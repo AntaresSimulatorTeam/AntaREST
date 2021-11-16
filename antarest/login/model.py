@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, Sequence, String, ForeignKey, Enum, Bool
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
 

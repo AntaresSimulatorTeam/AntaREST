@@ -2,7 +2,7 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Optional, List
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 
 
 class CacheConstants(Enum):

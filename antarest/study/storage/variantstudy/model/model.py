@@ -4,7 +4,7 @@ from typing import List, Tuple, Optional, Union
 from pydantic import BaseModel
 from pydantic.typing import ForwardRef
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.study.model import StudyMetadataDTO
 
 

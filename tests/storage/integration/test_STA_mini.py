@@ -9,7 +9,7 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.requests import (
     RequestParameters,

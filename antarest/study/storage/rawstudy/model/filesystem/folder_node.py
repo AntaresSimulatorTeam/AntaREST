@@ -2,7 +2,7 @@ import shutil
 from abc import abstractmethod, ABC
 from typing import List, Optional, Tuple, Union, Dict
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )

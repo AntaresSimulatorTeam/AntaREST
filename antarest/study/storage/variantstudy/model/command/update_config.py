@@ -1,6 +1,6 @@
 from typing import Any, Union, List, Optional
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,

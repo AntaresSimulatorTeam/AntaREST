@@ -4,7 +4,7 @@ from typing import List, Optional
 import pandas as pd  # type: ignore
 from pandas.errors import EmptyDataError  # type: ignore
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )

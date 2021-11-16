@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Union
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.study.model import Patch, PatchOutputs, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import (

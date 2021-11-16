@@ -2,7 +2,7 @@ from typing import Dict, List, Union, Any, Optional, cast
 
 from pydantic import validator
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
