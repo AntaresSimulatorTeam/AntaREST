@@ -131,6 +131,16 @@ def create_new_empty_study(
         zip_output.extractall(path=path_study)
 
 
+def create_permission_from_study(
+    study: Union[Study, StudyMetadataDTO]
+) -> PermissionInfo:
+    return PermissionInfo(
+        owner=study.owner.id if study.owner is not None else None,
+        groups=[g.id for g in study.groups if g.id is not None],
+        public_mode=study.public_mode,
+    )
+
+
 def assert_permission(
     user: Optional[JWTUser],
     study: Optional[Union[Study, StudyMetadataDTO]],
@@ -156,11 +166,7 @@ def assert_permission(
         logger.error("FAIL permission: study not exist")
         raise ValueError("Metadata is None")
 
-    permission_info = PermissionInfo(
-        owner=study.owner.id if study.owner is not None else None,
-        groups=[g.id for g in study.groups if g.id is not None],
-        public_mode=study.public_mode,
-    )
+    permission_info = create_permission_from_study(study)
     ok = check_permission(user, permission_info, permission_type)
     if raising and not ok:
         logger.error(

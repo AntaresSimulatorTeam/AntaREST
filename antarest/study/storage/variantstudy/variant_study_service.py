@@ -24,7 +24,12 @@ from antarest.core.exceptions import (
     CommandUpdateAuthorizationError,
 )
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.interfaces.eventbus import (
+    IEventBus,
+    Event,
+    EventType,
+    EventChannelDirectory,
+)
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import (
@@ -64,6 +69,7 @@ from antarest.study.storage.utils import (
     is_managed,
     remove_from_cache,
     assert_permission,
+    create_permission_from_study,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -575,7 +581,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
         self.repository.save(variant_study)
         self.event_bus.push(
-            Event(EventType.STUDY_CREATED, variant_study.to_json_summary())
+            Event(
+                EventType.STUDY_CREATED,
+                variant_study.to_json_summary(),
+                create_permission_from_study(variant_study),
+            )
         )
         logger.info(
             "variant study %s created by user %s",
@@ -749,6 +759,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     Event(
                         EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
                         command_result_obj,
+                        channel=EventChannelDirectory.STUDY_GENERATION
+                        + variant_study.id,
                     )
                 )
             except Exception as e:

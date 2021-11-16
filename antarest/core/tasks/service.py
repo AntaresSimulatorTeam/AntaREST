@@ -9,8 +9,14 @@ from typing import Callable, Optional, List, Dict
 from fastapi import HTTPException
 
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.interfaces.eventbus import (
+    IEventBus,
+    Event,
+    EventType,
+    EventChannelDirectory,
+)
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.model import PermissionInfo
 from antarest.core.requests import (
     RequestParameters,
     MustBeAuthenticatedError,
@@ -113,6 +119,7 @@ class TaskJobService(ITaskService):
                 ).dict()
                 if custom_event_messages is not None
                 else f"Task {task.id} added",
+                PermissionInfo(owner=request_params.user.impersonator),
             )
         )
         future = self.threadpool.submit(
@@ -192,6 +199,7 @@ class TaskJobService(ITaskService):
                 ).dict()
                 if custom_event_messages is not None
                 else f"Task {task_id} is running",
+                channel=EventChannelDirectory.TASK + task_id,
             )
         )
 
@@ -220,6 +228,7 @@ class TaskJobService(ITaskService):
                         ).dict()
                         if custom_event_messages is not None
                         else f'Task {task_id} {"completed" if result.success else "failed"}',
+                        channel=EventChannelDirectory.TASK + task_id,
                     )
                 )
             except Exception as e:
@@ -237,6 +246,7 @@ class TaskJobService(ITaskService):
                         ).dict()
                         if custom_event_messages is not None
                         else f"Task {task_id} failed",
+                        channel=EventChannelDirectory.TASK + task_id,
                     )
                 )
 

@@ -17,7 +17,12 @@ from antareslauncher.main_option_parser import (
 )
 from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config, SlurmConfig
-from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.interfaces.eventbus import (
+    IEventBus,
+    Event,
+    EventType,
+    EventChannelDirectory,
+)
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -225,6 +230,7 @@ class SlurmLauncher(AbstractLauncher):
                         "job_id": job_id,
                         "study_id": study_id,
                     },
+                    channel=EventChannelDirectory.JOB_LOGS + job_id,
                 )
             )
 

@@ -32,12 +32,7 @@ class StudyPermissionType(enum.Enum):
 class PermissionInfo:
     owner: Optional[int] = None
     groups: List[str] = field(default_factory=list)
-    public_mode: PublicMode = PublicMode.READ
-
-
-@dataclass
-class PermissionFullInfo(PermissionInfo):
-    permission: StudyPermissionType = StudyPermissionType.READ
+    public_mode: PublicMode = PublicMode.NONE
 
 
 @dataclass

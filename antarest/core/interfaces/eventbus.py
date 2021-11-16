@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, List, Awaitable
 
-from antarest.core.model import PermissionInfo, PermissionFullInfo
+from antarest.core.model import PermissionInfo
 
 
 class EventType:
@@ -23,11 +23,19 @@ class EventType:
     TASK_FAILED = "TASK_FAILED"
 
 
+class EventChannelDirectory:
+    JOB_STATUS = "JOB_STATUS/"
+    JOB_LOGS = "JOB_LOGS/"
+    TASK = "TASK/"
+    STUDY_GENERATION = "GENERATION_TASK/"
+
+
 @dataclass
 class Event:
     type: str
     payload: Any
-    permissions: PermissionFullInfo = PermissionFullInfo()
+    permissions: PermissionInfo = PermissionInfo()
+    channel: Optional[str] = None
 
 
 class IEventBus(ABC):

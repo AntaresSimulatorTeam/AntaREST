@@ -11,6 +11,7 @@ from antarest.core.interfaces.eventbus import (
     IEventBus,
     Event,
     EventType,
+    EventChannelDirectory,
 )
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
@@ -23,8 +24,12 @@ from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
 from antarest.core.model import (
     StudyPermissionType,
+    PermissionInfo,
 )
-from antarest.study.storage.utils import assert_permission
+from antarest.study.storage.utils import (
+    assert_permission,
+    create_permission_from_study,
+)
 
 
 class JobNotFound(HTTPException):
@@ -88,6 +93,7 @@ class LauncherService:
                     if final_status
                     else EventType.STUDY_JOB_STATUS_UPDATE,
                     job_result.to_dto().dict(),
+                    channel=EventChannelDirectory.JOB_STATUS + job_result.id,
                 )
             )
 
@@ -120,6 +126,7 @@ class LauncherService:
             Event(
                 EventType.STUDY_JOB_STARTED,
                 job_status.to_dto().dict(),
+                permissions=create_permission_from_study(study_info),
             )
         )
 
@@ -153,6 +160,7 @@ class LauncherService:
             Event(
                 EventType.STUDY_JOB_CANCELLED,
                 job_status.to_dto().dict(),
+                channel=EventChannelDirectory.JOB_STATUS + job_result.id,
             )
         )
 
