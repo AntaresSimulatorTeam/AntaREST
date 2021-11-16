@@ -63,7 +63,7 @@ class ICommand(ABC, BaseModel):
 
     @abstractmethod
     def revert(
-        self, history: List["ICommand"], base: Optional[FileStudy] = None
+        self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
         """
         Returns the reverse command using history

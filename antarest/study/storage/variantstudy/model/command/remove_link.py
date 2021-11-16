@@ -1,7 +1,6 @@
 from typing import Any, List, Optional
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -10,6 +9,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
     MATCH_SIGNATURE_SEPARATOR,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class RemoveLink(ICommand):
@@ -74,7 +74,7 @@ class RemoveLink(ICommand):
         return self.area1 == other.area1 and self.area2 == other.area2
 
     def revert(
-        self, history: List["ICommand"], base: Optional[FileStudy] = None
+        self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.create_link import (
             CreateLink,
@@ -90,13 +90,11 @@ class RemoveLink(ICommand):
                 and command.area2 == self.area2
             ):
                 return [command]
-        if base is not None:
-            area_from, area_to = sorted([self.area1, self.area2])
-            return (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
-            ).extract_link(base, area_from, area_to)
-        return []
+        area_from, area_to = sorted([self.area1, self.area2])
+        return (
+            self.command_context.command_extractor
+            or CommandExtraction(self.command_context.matrix_service)
+        ).extract_link(base, area_from, area_to)
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

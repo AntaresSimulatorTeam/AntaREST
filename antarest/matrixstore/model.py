@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any, List, Optional, Union
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 from sqlalchemy import Column, String, Enum, DateTime, Table, ForeignKey, Integer, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from sqlalchemy.orm.collections import attribute_mapped_collection  # type: ignore

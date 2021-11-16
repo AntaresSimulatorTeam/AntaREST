@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Union, Any, cast
+from typing import List, Optional, Dict, Union, Any
 
 from pydantic import validator
 
@@ -122,7 +122,7 @@ class UpdateBindingConstraint(ICommand):
         )
 
     def revert(
-        self, history: List["ICommand"], base: Optional[FileStudy] = None
+        self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
             CreateBindingConstraint,
@@ -150,16 +150,14 @@ class UpdateBindingConstraint(ICommand):
                         command_context=command.command_context,
                     )
                 ]
-        if base is not None:
-            from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-                CommandExtraction,
-            )
+        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+            CommandExtraction,
+        )
 
-            return (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
-            ).extract_binding_constraint(base, self.id)
-        return []
+        return (
+            self.command_context.command_extractor
+            or CommandExtraction(self.command_context.matrix_service)
+        ).extract_binding_constraint(base, self.id)
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]
