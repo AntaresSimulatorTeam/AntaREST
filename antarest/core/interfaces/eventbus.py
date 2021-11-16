@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Any, Callable, Optional, List, Awaitable
+
+from pydantic import BaseModel
 
 from antarest.core.model import PermissionInfo
 
@@ -30,8 +31,7 @@ class EventChannelDirectory:
     STUDY_GENERATION = "GENERATION_TASK/"
 
 
-@dataclass
-class Event:
+class Event(BaseModel):
     type: str
     payload: Any
     permissions: PermissionInfo = PermissionInfo()

@@ -40,7 +40,6 @@ class WebsocketConnection:
 class ConnectionManager:
     def __init__(self) -> None:
         self.active_connections: List[WebsocketConnection] = []
-        self.channels: Dict[str, List[WebsocketConnection]] = {}
 
     async def connect(self, websocket: WebSocket, user: JWTUser) -> None:
         await websocket.accept()
@@ -67,16 +66,15 @@ class ConnectionManager:
     def process_message(
         self, message: str, websocket: WebSocket, user: JWTUser
     ) -> None:
-        logger.info(f"Processing message {message} of user {user}")
         connection = self._get_connection(websocket)
         if not connection:
             return
 
         ws_message = WebsocketMessage.parse_raw(message)
-        if ws_message.payload == WebsocketMessageAction.SUBSCRIBE:
+        if ws_message.action == WebsocketMessageAction.SUBSCRIBE:
             if ws_message.payload not in connection.channel_subscriptions:
                 connection.channel_subscriptions.append(ws_message.payload)
-        elif ws_message.payload == WebsocketMessageAction.UNSUBSCRIBE:
+        elif ws_message.action == WebsocketMessageAction.UNSUBSCRIBE:
             if ws_message.payload in connection.channel_subscriptions:
                 connection.channel_subscriptions.remove(ws_message.payload)
 
@@ -101,7 +99,7 @@ def configure_websockets(
     manager = ConnectionManager()
 
     async def send_event_to_ws(event: Event) -> None:
-        event_data = dataclasses.asdict(event)
+        event_data = event.dict()
         del event_data["permissions"]
         await manager.broadcast(
             json.dumps(event_data), event.permissions, event.channel

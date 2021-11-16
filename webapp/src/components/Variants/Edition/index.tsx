@@ -255,7 +255,8 @@ const EditionView = (props: PropTypes) => {
       setCommands(fromCommandDTOToCommandItem(dtoItems));
       setCurrentCommandGenerationIndex(0);
       // Launch generation task
-      await applyCommands(studyId);
+      const res = await applyCommands(studyId);
+      setGenerationTaskId(res);
       setGenerationStatus(true);
       enqueueSnackbar(t('variants:launchGenerationSuccess'), { variant: 'success' });
     } catch (e) {
@@ -300,6 +301,7 @@ const EditionView = (props: PropTypes) => {
         if (event === WSEvent.TASK_COMPLETED) enqueueSnackbar(t('variants:taskCompleted'), { variant: 'success' });
         else enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
         setGenerationStatus(false);
+        setGenerationTaskId(undefined);
       }
     };
 
@@ -349,9 +351,12 @@ const EditionView = (props: PropTypes) => {
             currentIndex = (commands.length > task.logs.length) ? task.logs.length : -1;
           }
         }
-        setGenerationTaskId(task.id);
+        if (!isFinal) {
+          setGenerationTaskId(task.id);
+        }
         setCurrentCommandGenerationIndex(currentIndex);
         setGenerationStatus(!isFinal);
+
         setCommands(items);
       } catch (error) {
         logError('Error: ', error);

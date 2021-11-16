@@ -20,8 +20,7 @@ class CommandDTO(BaseModel):
     args: Union[List[JSON], JSON]
 
 
-@dataclass
-class CommandResultDTO:
+class CommandResultDTO(BaseModel):
     study_id: str
     id: str
     success: bool

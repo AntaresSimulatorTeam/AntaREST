@@ -13,7 +13,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
-from antarest.core.model import PermissionInfo, StudyPermissionType
+from antarest.core.model import PermissionInfo, StudyPermissionType, PublicMode
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.study.model import (
@@ -137,7 +137,9 @@ def create_permission_from_study(
     return PermissionInfo(
         owner=study.owner.id if study.owner is not None else None,
         groups=[g.id for g in study.groups if g.id is not None],
-        public_mode=study.public_mode,
+        public_mode=PublicMode(study.public_mode)
+        if study.public_mode is not None
+        else PublicMode.NONE,
     )
 
 

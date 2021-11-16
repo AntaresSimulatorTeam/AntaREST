@@ -173,12 +173,9 @@ class LauncherConfig:
             logger.error("Could not load local launcher", exc_info=e)
             local = None
 
-        slurm: Optional[SlurmConfig]
-        try:
+        slurm: Optional[SlurmConfig] = None
+        if "slurm" in data:
             slurm = SlurmConfig.from_dict(data["slurm"])
-        except KeyError as e:
-            logger.error("Could not load slurm launcher", exc_info=e)
-            slurm = None
         return LauncherConfig(
             default=data.get("default", "local"),
             local=local,

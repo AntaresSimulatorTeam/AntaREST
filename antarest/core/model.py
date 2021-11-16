@@ -1,14 +1,13 @@
 import enum
 from typing import Any, Dict, List, Union, Optional
-
-from dataclasses import dataclass, field
+from pydantic import BaseModel
 
 JSON = Dict[str, Any]
 ELEMENT = Union[str, int, float, bool, bytes]
 SUB_JSON = Union[ELEMENT, JSON, List, None]
 
 
-class PublicMode(enum.Enum):
+class PublicMode(str, enum.Enum):
     NONE = "NONE"
     READ = "READ"
     EXECUTE = "EXECUTE"
@@ -16,7 +15,7 @@ class PublicMode(enum.Enum):
     FULL = "FULL"
 
 
-class StudyPermissionType(enum.Enum):
+class StudyPermissionType(str, enum.Enum):
     """
     User permission belongs to Study
     """
@@ -28,14 +27,7 @@ class StudyPermissionType(enum.Enum):
     MANAGE_PERMISSIONS = "MANAGE_PERMISSIONS"
 
 
-@dataclass
-class PermissionInfo:
+class PermissionInfo(BaseModel):
     owner: Optional[int] = None
-    groups: List[str] = field(default_factory=list)
+    groups: List[str] = list()
     public_mode: PublicMode = PublicMode.NONE
-
-
-@dataclass
-class Event:
-    type: str
-    payload: Any

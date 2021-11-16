@@ -344,8 +344,8 @@ class StudyService:
         ).patch_update_study_metadata(study, metadata_patch)
         self.event_bus.push(
             Event(
-                EventType.STUDY_EDITED,
-                study.to_json_summary(),
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
         )
@@ -404,8 +404,8 @@ class StudyService:
         self._save_study(raw, params.user, group_ids)
         self.event_bus.push(
             Event(
-                EventType.STUDY_CREATED,
-                raw.to_json_summary(),
+                type=EventType.STUDY_CREATED,
+                payload=raw.to_json_summary(),
                 permissions=create_permission_from_study(raw),
             )
         )
@@ -460,8 +460,8 @@ class StudyService:
                 )
                 self.event_bus.push(
                     Event(
-                        EventType.STUDY_DELETED,
-                        study.to_json_summary(),
+                        type=EventType.STUDY_DELETED,
+                        payload=study.to_json_summary(),
                         permissions=create_permission_from_study(study),
                     )
                 )
@@ -506,8 +506,8 @@ class StudyService:
                     )
                     self.event_bus.push(
                         Event(
-                            EventType.STUDY_CREATED,
-                            study.to_json_summary(),
+                            type=EventType.STUDY_CREATED,
+                            payload=study.to_json_summary(),
                             permissions=create_permission_from_study(study),
                         )
                     )
@@ -550,8 +550,8 @@ class StudyService:
         self._save_study(study, params.user, group_ids)
         self.event_bus.push(
             Event(
-                EventType.STUDY_CREATED,
-                study.to_json_summary(),
+                type=EventType.STUDY_CREATED,
+                payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
         )
@@ -645,18 +645,18 @@ class StudyService:
 
         study_info = study.to_json_summary()
 
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DELETED,
+                payload=study_info,
+                permissions=create_permission_from_study(study),
+            )
+        )
+
         # this prefetch the workspace because it is lazy loaded and the object is deleted before using workspace attribute in raw study deletion
         # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
         if isinstance(study, RawStudy):
             _ = study.workspace
-
-        self.event_bus.push(
-            Event(
-                EventType.STUDY_DELETED,
-                study_info,
-                permissions=create_permission_from_study(study),
-            )
-        )
         self.repository.delete(study.id)
 
         # delete the files afterward for
@@ -692,8 +692,8 @@ class StudyService:
         )
         self.event_bus.push(
             Event(
-                EventType.STUDY_EDITED,
-                study.to_json_summary(),
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
         )
@@ -833,8 +833,8 @@ class StudyService:
         )
         self.event_bus.push(
             Event(
-                EventType.STUDY_CREATED,
-                study.to_json_summary(),
+                type=EventType.STUDY_CREATED,
+                payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
         )
@@ -907,8 +907,8 @@ class StudyService:
 
         self.event_bus.push(
             Event(
-                EventType.STUDY_EDITED,
-                study.to_json_summary(),
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
         )
@@ -943,8 +943,8 @@ class StudyService:
         self.repository.save(study)
         self.event_bus.push(
             Event(
-                EventType.STUDY_EDITED,
-                study.to_json_summary(),
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
         )
@@ -981,14 +981,13 @@ class StudyService:
             params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
         )
         group = self.user_service.get_group(group_id, params)
-        study.groups = study.groups + [
-            group if group not in study.groups else study.groups
-        ]
+        if group not in study.groups:
+            study.groups = study.groups + [group]
         self.repository.save(study)
         self.event_bus.push(
             Event(
-                EventType.STUDY_EDITED,
-                study.to_json_summary(),
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
         )
@@ -1023,8 +1022,8 @@ class StudyService:
         self.repository.save(study)
         self.event_bus.push(
             Event(
-                EventType.STUDY_EDITED,
-                study.to_json_summary(),
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
         )
@@ -1057,8 +1056,8 @@ class StudyService:
         self.repository.save(study)
         self.event_bus.push(
             Event(
-                EventType.STUDY_EDITED,
-                study.to_json_summary(),
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
         )
@@ -1132,8 +1131,8 @@ class StudyService:
         self.repository.save(study)
         self.event_bus.push(
             Event(
-                EventType.STUDY_EDITED,
-                study.to_json_summary(),
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
         )
@@ -1157,8 +1156,8 @@ class StudyService:
         self.repository.save(study)
         self.event_bus.push(
             Event(
-                EventType.STUDY_EDITED,
-                study.to_json_summary(),
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
                 permissions=create_permission_from_study(study),
             )
         )

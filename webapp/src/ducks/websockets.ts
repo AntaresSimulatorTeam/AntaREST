@@ -217,7 +217,7 @@ export const subscribe = (channel: string): ThunkAction<void, AppState, unknown,
   const { websockets } = getState();
   if (websockets.socket) {
     websockets.socket.send(JSON.stringify({
-      type: 'SUBSCRIBE',
+      action: 'SUBSCRIBE',
       payload: channel,
     }));
     dispatch({
@@ -236,7 +236,7 @@ export const unsubscribe = (channel: string): ThunkAction<void, AppState, unknow
   const { websockets } = getState();
   if (websockets.socket) {
     websockets.socket.send(JSON.stringify({
-      type: 'UNSUBSCRIBE',
+      action: 'UNSUBSCRIBE',
       payload: channel,
     }));
     dispatch({

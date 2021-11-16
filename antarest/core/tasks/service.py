@@ -113,13 +113,15 @@ class TaskJobService(ITaskService):
 
         self.event_bus.push(
             Event(
-                EventType.TASK_ADDED,
-                TaskEventPayload(
+                type=EventType.TASK_ADDED,
+                payload=TaskEventPayload(
                     id=task.id, message=custom_event_messages.start
                 ).dict()
                 if custom_event_messages is not None
                 else f"Task {task.id} added",
-                PermissionInfo(owner=request_params.user.impersonator),
+                permissions=PermissionInfo(
+                    owner=request_params.user.impersonator
+                ),
             )
         )
         future = self.threadpool.submit(
@@ -193,8 +195,8 @@ class TaskJobService(ITaskService):
 
         self.event_bus.push(
             Event(
-                EventType.TASK_RUNNING,
-                TaskEventPayload(
+                type=EventType.TASK_RUNNING,
+                payload=TaskEventPayload(
                     id=task_id, message=custom_event_messages.running
                 ).dict()
                 if custom_event_messages is not None
@@ -220,10 +222,10 @@ class TaskJobService(ITaskService):
                 )
                 self.event_bus.push(
                     Event(
-                        EventType.TASK_COMPLETED
+                        type=EventType.TASK_COMPLETED
                         if result.success
                         else EventType.TASK_FAILED,
-                        TaskEventPayload(
+                        payload=TaskEventPayload(
                             id=task_id, message=custom_event_messages.end
                         ).dict()
                         if custom_event_messages is not None
@@ -240,8 +242,8 @@ class TaskJobService(ITaskService):
                 )
                 self.event_bus.push(
                     Event(
-                        EventType.TASK_FAILED,
-                        TaskEventPayload(
+                        type=EventType.TASK_FAILED,
+                        payload=TaskEventPayload(
                             id=task_id, message=custom_event_messages.end
                         ).dict()
                         if custom_event_messages is not None

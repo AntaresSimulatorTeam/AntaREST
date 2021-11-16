@@ -582,9 +582,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self.repository.save(variant_study)
         self.event_bus.push(
             Event(
-                EventType.STUDY_CREATED,
-                variant_study.to_json_summary(),
-                create_permission_from_study(variant_study),
+                type=EventType.STUDY_CREATED,
+                payload=variant_study.to_json_summary(),
+                permissions=create_permission_from_study(variant_study),
             )
         )
         logger.info(
@@ -754,11 +754,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     success=command_result,
                     message=command_message,
                 )
-                notifier(json.dumps(dataclasses.asdict(command_result_obj)))
+                notifier(command_result_obj.json())
                 self.event_bus.push(
                     Event(
-                        EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
-                        command_result_obj,
+                        type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
+                        payload=command_result_obj,
                         channel=EventChannelDirectory.STUDY_GENERATION
                         + variant_study.id,
                     )

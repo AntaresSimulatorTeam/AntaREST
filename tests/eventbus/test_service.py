@@ -36,7 +36,7 @@ def test_lifecycle():
     event_bus = build_eventbus(MagicMock(), Config(), autostart=True)
     test_bucket = []
     lid = event_bus.add_listener(lambda event: test_bucket.append(event))
-    event = Event("test", "foo")
+    event = Event(type="test", payload="foo")
     event_bus.push(event)
     autoretry(lambda: len(test_bucket) == 1, 2)
 

@@ -272,6 +272,9 @@ def test_create_study() -> None:
         groups=[group],
     )
 
+    user_service = Mock()
+    user_service.get_user.return_value = user
+
     study_service = Mock()
     study_service.get_default_workspace_path.return_value = Path("")
     study_service.get_study_information.return_value = {
@@ -289,7 +292,9 @@ def test_create_study() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = build_study_service(study_service, repository, config)
+    service = build_study_service(
+        study_service, repository, config, user_service=user_service
+    )
 
     with pytest.raises(UserHasNotPermissionError):
         service.create_study(
@@ -746,9 +751,23 @@ def test_assert_permission() -> None:
 
 
 @pytest.mark.unit_test
-def test_delete_study_calls_callback():
+def test_delete_study_calls_callback(tmp_path: Path):
     study_uuid = "my_study"
-    service = build_study_service(Mock(), Mock(), Mock())
+    repository_mock = Mock()
+    study_path = tmp_path / study_uuid
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+    repository_mock.get.return_value = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="my_study",
+        path=study_path,
+        groups=[],
+        owner=None,
+        public_mode=PublicMode.NONE,
+        workspace=DEFAULT_WORKSPACE_NAME,
+    )
+    service = build_study_service(Mock(), repository_mock, Mock())
     callback = Mock()
     service.add_on_deletion_callback(callback)
 
@@ -794,6 +813,9 @@ def test_delete_with_prefetch(tmp_path: Path):
         archived=False,
         id="my_study",
         path=study_path,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
@@ -813,7 +835,13 @@ def test_delete_with_prefetch(tmp_path: Path):
 
     # test for variant studies
     study_mock = Mock(
-        spec=VariantStudy, archived=False, id="my_study", path=study_path
+        spec=VariantStudy,
+        archived=False,
+        id="my_study",
+        path=study_path,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
 

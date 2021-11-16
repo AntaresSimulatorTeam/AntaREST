@@ -81,4 +81,4 @@ def check_permission(
     if group_permission:
         return True
 
-    return study.public_mode in permission_matrix[permission]["public_modes"]  # type: ignore
+    return permission_info.public_mode in permission_matrix[permission]["public_modes"]  # type: ignore

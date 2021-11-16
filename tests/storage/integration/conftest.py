@@ -17,6 +17,7 @@ from antarest.core.config import (
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
+from antarest.login.model import User
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
@@ -84,11 +85,13 @@ def storage_service(
     )
 
     task_service_mock = Mock(spec=ITaskService)
+    user_service = Mock()
+    user_service.get_user.return_value = User(id=0, name="test")
     storage_service = build_study_service(
         application=Mock(),
         cache=LocalCache(config=config.cache),
         task_service=task_service_mock,
-        user_service=Mock(),
+        user_service=user_service,
         matrix_service=Mock(spec=MatrixService),
         config=config,
         metadata_repository=repo,
