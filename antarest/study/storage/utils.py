@@ -2,14 +2,20 @@ import logging
 import os
 import shutil
 from pathlib import Path
+from typing import Optional
 from uuid import uuid4
+from zipfile import ZipFile
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyValidationError
+from antarest.core.exceptions import (
+    StudyValidationError,
+    UnsupportedStudyVersion,
+)
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Study,
+    STUDY_REFERENCE_TEMPLATES,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -103,3 +109,27 @@ def remove_from_cache(cache: ICache, root_id: str) -> None:
             f"{CacheConstants.STUDY_FACTORY}/{root_id}",
         ]
     )
+
+
+def create_new_empty_study(
+    version: str, path_study: Path, path_resources: Path
+) -> None:
+    version_template: Optional[str] = STUDY_REFERENCE_TEMPLATES.get(
+        version, None
+    )
+    if version_template is None:
+        raise UnsupportedStudyVersion(version)
+
+    empty_study_zip = path_resources / version_template
+
+    # path_study = Path(metadata.path)
+    # path_study.mkdir()
+
+    with ZipFile(empty_study_zip) as zip_output:
+        zip_output.extractall(path=path_study)
+
+    # config, tree = study_factory.create_from_fs(path_study, metadata.id)
+    # update_antares_info(metadata, tree)
+
+    # metadata.path = str(path_study)
+    # return FileStudy(config=config, tree=tree)

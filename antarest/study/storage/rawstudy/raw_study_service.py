@@ -12,7 +12,7 @@ from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import ICache
-from antarest.core.utils.utils import extract_zip, create_new_empty_study
+from antarest.core.utils.utils import extract_zip
 from antarest.study.model import (
     RawStudy,
     DEFAULT_WORKSPACE_NAME,
@@ -32,6 +32,7 @@ from antarest.study.storage.utils import (
     fix_study_root,
     is_managed,
     remove_from_cache,
+    create_new_empty_study,
 )
 
 logger = logging.getLogger(__name__)
@@ -127,11 +128,20 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns: new study information
 
         """
+        path_study = Path(metadata.path)
+        path_study.mkdir()
+
         create_new_empty_study(
-            metadata=metadata,
+            version=metadata.version,
+            path_study=path_study,
             path_resources=self.path_resources,
-            study_factory=self.study_factory,
         )
+
+        _, tree = self.study_factory.create_from_fs(path_study, metadata.id)
+        update_antares_info(metadata, tree)
+
+        metadata.path = str(path_study)
+
         return metadata
 
     def copy(

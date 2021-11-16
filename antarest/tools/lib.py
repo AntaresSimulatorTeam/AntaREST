@@ -3,9 +3,7 @@ import json
 import logging
 import os
 import shutil
-import tempfile
 from abc import ABC, abstractmethod
-from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Set
 from zipfile import ZipFile
@@ -19,7 +17,6 @@ from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import (
     StopWatch,
     get_local_path,
-    create_new_empty_study,
 )
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import (
@@ -29,13 +26,12 @@ from antarest.study.common.uri_resolver_service import UriResolverService
 from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
-    RawStudy,
-    DEFAULT_WORKSPACE_NAME,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
+from antarest.study.storage.utils import create_new_empty_study
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -249,32 +245,33 @@ def generate_diff(
     matrices_dir = output_dir / MATRIX_STORE_DIR
     matrices_dir.mkdir(exist_ok=True)
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        study_id = "temp_empty_study"
-        path_study = Path(tmp_dir) / study_id
-        matrix_path = Path(tmp_dir) / "matrix"
-        matrix_path.mkdir(parents=True)
-        metadata = RawStudy(
-            id=study_id,
-            workspace=DEFAULT_WORKSPACE_NAME,
-            path=path_study,
-            version=version or NEW_DEFAULT_STUDY_VERSION,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
+    study_id = "empty_base"
+    path_study = output_dir / study_id
+    version = version or NEW_DEFAULT_STUDY_VERSION
+    # metadata = RawStudy(
+    #     id=study_id,
+    #     workspace=DEFAULT_WORKSPACE_NAME,
+    #     path=path_study,
+    #     version=version or NEW_DEFAULT_STUDY_VERSION,
+    #     created_at=datetime.now(),
+    #     updated_at=datetime.now(),
+    # )
 
-        simple_matrix_service = SimpleMatrixService(matrix_path=matrix_path)
-        resolver = UriResolverService(matrix_service=simple_matrix_service)
+    local_matrix_service = SimpleMatrixService(matrices_dir)
+    resolver = UriResolverService(matrix_service=local_matrix_service)
 
-        study_factory = StudyFactory(
-            matrix=simple_matrix_service, resolver=resolver, cache=LocalCache()
-        )
+    study_factory = StudyFactory(
+        matrix=local_matrix_service, resolver=resolver, cache=LocalCache()
+    )
 
-        empty_study = create_new_empty_study(
-            metadata=metadata,
-            path_resources=get_local_path() / "resources",
-            study_factory=study_factory,
-        )
+    create_new_empty_study(
+        version=version,
+        path_study=path_study,
+        path_resources=get_local_path() / "resources",
+    )
+
+    config, tree = study_factory.create_from_fs(path_study, study_id)
+    empty_study = FileStudy(config=config, tree=tree)
 
     base_command_file = base / COMMAND_FILE
     if not base_command_file.exists():
@@ -304,7 +301,6 @@ def generate_diff(
         lambda x: logger.info(f"Variant input matrix copied in {x}s")
     )
 
-    local_matrix_service = SimpleMatrixService(matrices_dir)
     extractor = VariantCommandsExtractor(local_matrix_service)
     diff_commands = extractor.diff(
         base=parse_commands(base_command_file),
