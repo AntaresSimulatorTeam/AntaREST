@@ -30,6 +30,7 @@ from antarest.core.roles import RoleType
 from antarest.core.tasks.service import ITaskService
 from antarest.login.model import Group
 from antarest.login.service import LoginService
+from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import (
     Study,
@@ -49,7 +50,7 @@ from antarest.study.model import (
     PatchStudy,
 )
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.area_management import (
+from antarest.study.business.area_management import (
     AreaManager,
     AreaType,
     AreaInfoDTO,
@@ -100,6 +101,7 @@ class StudyService:
         self.event_bus = event_bus
         self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
+        self.links = LinkManager(self.raw_study_service)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
@@ -1032,6 +1034,16 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         return self.areas.get_all_areas(study, area_type)
+
+    def get_all_links(
+        self,
+        uuid: str,
+        params: RequestParameters,
+    ) -> List[LinkInfoDTO]:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.links.get_all_links(study)
 
     def create_area(
         self,
