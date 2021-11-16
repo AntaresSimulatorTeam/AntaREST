@@ -154,8 +154,8 @@ def test_study_listing() -> None:
         type="rawstudy",
         name="A",
         version=810,
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
         path="",
         workspace=DEFAULT_WORKSPACE_NAME,
     )
@@ -165,8 +165,8 @@ def test_study_listing() -> None:
         type="rawstudy",
         name="B",
         version=810,
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
         path="",
         workspace="other",
     )
@@ -176,8 +176,8 @@ def test_study_listing() -> None:
         type="rawstudy",
         name="C",
         version=810,
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
         path="",
         workspace="other2",
     )

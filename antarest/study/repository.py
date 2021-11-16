@@ -23,7 +23,7 @@ class StudyMetadataRepository:
         metadata_id = metadata.id or metadata.name
         logger.debug(f"Saving study {metadata_id}")
         if update_modification_date:
-            metadata.updated_at = datetime.now()
+            metadata.updated_at = datetime.utcnow()
 
         metadata.groups = [db.session.merge(g) for g in metadata.groups]
         if metadata.owner:
