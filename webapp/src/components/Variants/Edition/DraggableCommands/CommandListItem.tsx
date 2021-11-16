@@ -224,7 +224,6 @@ function Item({ provided, item, style, isDragging, index, generationStatus, gene
           >
             <div className={classes.infos}>
               <Typography color="primary" style={{ fontSize: '0.9em' }}>{item.action}</Typography>
-              <Typography style={{ fontSize: '0.8em', color: 'gray' }}>{item.id}</Typography>
             </div>
           </AccordionSummary>
           <AccordionDetails className={classes.details}>
@@ -240,7 +239,7 @@ function Item({ provided, item, style, isDragging, index, generationStatus, gene
             </div>
           </AccordionDetails>
         </Accordion>
-        <div style={{ height: '100%', width: '80px', display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+        <div style={{ height: '50px', width: '80px', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', boxSizing: 'border-box' }}>
           {itemElements()}
         </div>
       </div>
