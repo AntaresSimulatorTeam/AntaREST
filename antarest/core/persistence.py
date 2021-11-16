@@ -8,6 +8,7 @@ from alembic.config import Config  # type: ignore
 from alembic.util import CommandError  # type: ignore
 from sqlalchemy.ext.declarative import declarative_base  # type: ignore
 
+from antarest.core.utils.utils import get_local_path
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,6 @@ Base = declarative_base()
 
 
 def upgrade_db(config_file: Path) -> None:
-    from antarest.core.utils.utils import get_local_path
 
     os.environ.setdefault("ANTAREST_CONF", str(config_file))
     alembic_cfg = Config(get_local_path() / "alembic.ini")

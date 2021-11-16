@@ -2,6 +2,9 @@ from typing import Any, List, Optional
 
 from antarest.core.custom_types import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -61,12 +64,15 @@ class UpdateComments(ICommand):
             CommandExtraction,
         )
 
-        return [
-            (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
-            ).generate_update_comments(base.tree)
-        ]
+        try:
+            return [
+                (
+                    self.command_context.command_extractor
+                    or CommandExtraction(self.command_context.matrix_service)
+                ).generate_update_comments(base.tree)
+            ]
+        except ChildNotFoundError:
+            return []  # if the file does not exist, there is nothing to revert
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]

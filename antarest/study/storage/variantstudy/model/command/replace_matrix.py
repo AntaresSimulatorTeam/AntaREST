@@ -113,7 +113,9 @@ class ReplaceMatrix(ICommand):
                 ).generate_replace_matrix(base.tree, self.target.split("/"))
             ]
         except ChildNotFoundError:
-            return []  # TODO: Return a DeleteMatrix command ?
+            return (
+                []
+            )  # if the matrix does not exist, there is nothing to revert
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]
