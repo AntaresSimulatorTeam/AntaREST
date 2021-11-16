@@ -39,18 +39,18 @@ const StudyDirView = (props: PropTypes) => {
     }
   };
 
-  const onDirClick = (element: string): void => {
-    const { path, node } = findNode(element, tree, []);
+  const onDirClick = (elements: Array<string>): void => {
+    const node = findNode([tree], elements);
     setCurrentNode(node as StudyTreeNode);
-    setDirPath(path);
-    updateFolderPos(path.join('/'));
+    setDirPath(elements);
+    updateFolderPos(elements.join('/'));
   };
 
-  const updateTree = useCallback((element: string, treeElement: StudyTreeNode): void => {
-    const { path, node } = findNode(element, treeElement, []);
+  const updateTree = useCallback((element: Array<string>, treeElement: StudyTreeNode): void => {
+    const node = findNode([treeElement], element);
     if (node !== undefined) {
       setCurrentNode(node);
-      setDirPath(path);
+      setDirPath(element);
     } else {
       setCurrentNode(treeElement);
       setDirPath([treeElement.name]);
@@ -58,13 +58,13 @@ const StudyDirView = (props: PropTypes) => {
   }, []);
 
   useEffect(() => {
-    updateTree(currentNode.name, tree);
-  }, [currentNode.name, tree, updateTree]);
+    updateTree(dirPath, tree);
+  }, [dirPath, tree, updateTree]);
 
   useEffect(() => {
     const tmpTab = directory.split('/');
     if (tmpTab.length > 0) {
-      updateTree(tmpTab[tmpTab.length - 1], tree);
+      updateTree(tmpTab, tree);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
