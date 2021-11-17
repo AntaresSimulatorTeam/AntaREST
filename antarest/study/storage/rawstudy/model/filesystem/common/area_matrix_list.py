@@ -100,7 +100,8 @@ class AreaMultipleMatrixList(FolderNode):
                 FileStudyTreeConfig,
                 str,
                 Callable[
-                    [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
+                    [ContextServer, FileStudyTreeConfig],
+                    INode[Any, Any, Any],
                 ],
             ],
             INode[Any, Any, Any],

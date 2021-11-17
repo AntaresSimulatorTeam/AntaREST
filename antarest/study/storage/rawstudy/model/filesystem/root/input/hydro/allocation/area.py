@@ -24,7 +24,10 @@ class FixedAllocationKeyIniReader(IniReader):
 
 class InputHydroAllocationArea(IniFileNode):
     def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig, area: str
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        area: str,
     ):
         types = {"[allocation]": {area: int}}
         IniFileNode.__init__(

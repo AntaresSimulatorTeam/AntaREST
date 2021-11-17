@@ -31,5 +31,7 @@ class LinkManager:
     ) -> LinkInfoDTO:
         raise NotImplementedError()
 
-    def delete_area(self, study: RawStudy, area1_id: str, area2_id) -> None:
+    def delete_area(
+        self, study: RawStudy, area1_id: str, area2_id: str
+    ) -> None:
         raise NotImplementedError()

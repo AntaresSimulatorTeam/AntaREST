@@ -26,7 +26,10 @@ class ClusteredRenewableSeries(FolderNode):
 
 class ClusteredRenewableClusterSeries(FolderNode):
     def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig, area: str
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        area: str,
     ):
         super().__init__(context, config)
         self.area = area

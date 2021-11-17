@@ -4,6 +4,7 @@ from typing import Optional, List, Dict
 from pydantic.main import BaseModel
 
 from antarest.core.model import JSON
+from antarest.core.utils.utils import DTO
 
 
 class Cluster(BaseModel):
@@ -89,23 +90,40 @@ class Simulation(BaseModel):
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
 
-class FileStudyTreeConfig(BaseModel):
+class FileStudyTreeConfig(DTO):
     """
     Root object to handle all study parameters which impact tree structure
     """
 
-    study_path: Path
-    path: Path
-    study_id: str
-    version: int
-    output_path: Optional[Path] = None
-    areas: Dict[str, Area] = dict()
-    sets: Dict[str, Set] = dict()
-    outputs: Dict[str, Simulation] = dict()
-    bindings: List[str] = list()
-    store_new_set: bool = False
-    archive_input_series: List[str] = list()
-    enr_modelling: str = "aggregated"
+    def __init__(
+        self,
+        study_path: Path,
+        path: Path,
+        study_id: str,
+        version: int,
+        output_path: Optional[Path] = None,
+        areas: Optional[Dict[str, Area]] = None,
+        sets: Optional[Dict[str, Set]] = None,
+        outputs: Optional[Dict[str, Simulation]] = None,
+        bindings: Optional[List[str]] = None,
+        store_new_set: bool = False,
+        archive_input_series: Optional[List[str]] = None,
+        enr_modelling: str = "aggregated",
+        cache: Optional[Dict[str, List[str]]] = None,
+    ):
+        self.study_path = study_path
+        self.path = path
+        self.study_id = study_id
+        self.version = version
+        self.output_path = output_path
+        self.areas = areas or dict()
+        self.sets = sets or dict()
+        self.outputs = outputs or dict()
+        self.bindings = bindings or list()
+        self.store_new_set = store_new_set
+        self.archive_input_series = archive_input_series or list()
+        self.enr_modelling = enr_modelling
+        self.cache = cache or dict()
 
     def next_file(self, name: str) -> "FileStudyTreeConfig":
         return FileStudyTreeConfig(
@@ -121,22 +139,29 @@ class FileStudyTreeConfig(BaseModel):
             store_new_set=self.store_new_set,
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
+            cache=self.cache,
         )
 
     def area_names(self) -> List[str]:
-        return list(self.areas.keys())
+        return self.cache.get("%areas", list(self.areas.keys()))
 
     def set_names(self, only_output: bool = True) -> List[str]:
-        return [k for k, v in self.sets.items() if v.output]
+        return self.cache.get(
+            f"%districts%{only_output}",
+            [k for k, v in self.sets.items() if v.output or not only_output],
+        )
 
     def get_thermal_names(
         self, area: str, only_enabled: bool = False
     ) -> List[str]:
-        return [
-            thermal.id
-            for thermal in self.areas[area].thermals
-            if not only_enabled or thermal.enabled
-        ]
+        return self.cache.get(
+            f"%thermal%{area}%{only_enabled}%{area}",
+            [
+                thermal.id
+                for thermal in self.areas[area].thermals
+                if not only_enabled or thermal.enabled
+            ],
+        )
 
     def get_renewable_names(
         self,
@@ -144,14 +169,19 @@ class FileStudyTreeConfig(BaseModel):
         only_enabled: bool = False,
         section_name: bool = True,
     ) -> List[str]:
-        return [
-            renewable.id if section_name else renewable.name
-            for renewable in self.areas[area].renewables
-            if not only_enabled or renewable.enabled
-        ]
+        return self.cache.get(
+            f"%renewable%{area}%{only_enabled}%{section_name}",
+            [
+                renewable.id if section_name else renewable.name
+                for renewable in self.areas[area].renewables
+                if not only_enabled or renewable.enabled
+            ],
+        )
 
     def get_links(self, area: str) -> List[str]:
-        return list(self.areas[area].links.keys())
+        return self.cache.get(
+            f"%links%{area}", list(self.areas[area].links.keys())
+        )
 
     def get_filters_synthesis(
         self, area: str, link: Optional[str] = None
@@ -200,3 +230,53 @@ def transform_name_to_id(name: str, lower: bool = True) -> str:
     if lower:
         return study_id_stripped.lower()
     return study_id_stripped
+
+
+class FileStudyTreeConfigDTO(BaseModel):
+    study_path: Path
+    path: Path
+    study_id: str
+    version: int
+    output_path: Optional[Path] = None
+    areas: Dict[str, Area] = dict()
+    sets: Dict[str, Set] = dict()
+    outputs: Dict[str, Simulation] = dict()
+    bindings: List[str] = list()
+    store_new_set: bool = False
+    archive_input_series: List[str] = list()
+    enr_modelling: str = "aggregated"
+
+    @staticmethod
+    def from_build_config(
+        config: FileStudyTreeConfig,
+    ) -> "FileStudyTreeConfigDTO":
+        return FileStudyTreeConfigDTO(
+            study_path=config.study_path,
+            path=config.path,
+            study_id=config.study_id,
+            version=config.version,
+            output_path=config.output_path,
+            areas=config.areas,
+            sets=config.sets,
+            outputs=config.outputs,
+            bindings=config.bindings,
+            store_new_set=config.store_new_set,
+            archive_input_series=config.archive_input_series,
+            enr_modelling=config.enr_modelling,
+        )
+
+    def to_build_config(self) -> FileStudyTreeConfig:
+        return FileStudyTreeConfig(
+            study_path=self.study_path,
+            path=self.path,
+            study_id=self.study_id,
+            version=self.version,
+            output_path=self.output_path,
+            areas=self.areas,
+            sets=self.sets,
+            outputs=self.outputs,
+            bindings=self.bindings,
+            store_new_set=self.store_new_set,
+            archive_input_series=self.archive_input_series,
+            enr_modelling=self.enr_modelling,
+        )
