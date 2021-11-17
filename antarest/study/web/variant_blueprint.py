@@ -4,7 +4,7 @@ from typing import List, Dict, Union
 from fastapi import APIRouter, Depends, Body
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,

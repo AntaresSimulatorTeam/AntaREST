@@ -3,7 +3,7 @@ from typing import List, Union
 
 from pydantic import BaseModel
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 from antarest.login.model import Group, Identity
 

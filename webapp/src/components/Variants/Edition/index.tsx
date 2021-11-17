@@ -17,7 +17,7 @@ import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, upd
 import AddCommandModal from './AddCommandModal';
 import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO, TaskEventPayload } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
-import { addListener, removeListener } from '../../../ducks/websockets';
+import { addListener, removeListener, subscribe, unsubscribe, WsChannel } from '../../../ducks/websockets';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 const logError = debug('antares:variantedition:error');
@@ -119,6 +119,8 @@ const mapState = () => ({
 const mapDispatch = ({
   addWsListener: addListener,
   removeWsListener: removeListener,
+  subscribeChannel: subscribe,
+  unsubscribeChannel: unsubscribe,
 });
 
 const connector = connect(mapState, mapDispatch);
@@ -129,9 +131,10 @@ const EditionView = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { studyId, addWsListener, removeWsListener } = props;
+  const { studyId, addWsListener, removeWsListener, subscribeChannel, unsubscribeChannel } = props;
   const [openAddCommandModal, setOpenAddCommandModal] = useState<boolean>(false);
   const [generationStatus, setGenerationStatus] = useState<boolean>(false);
+  const [generationTaskId, setGenerationTaskId] = useState<string>();
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(-1);
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
   const [commands, setCommands] = useState<Array<CommandItem>>([]);
@@ -252,7 +255,8 @@ const EditionView = (props: PropTypes) => {
       setCommands(fromCommandDTOToCommandItem(dtoItems));
       setCurrentCommandGenerationIndex(0);
       // Launch generation task
-      await applyCommands(studyId);
+      const res = await applyCommands(studyId);
+      setGenerationTaskId(res);
       setGenerationStatus(true);
       enqueueSnackbar(t('variants:launchGenerationSuccess'), { variant: 'success' });
     } catch (e) {
@@ -297,6 +301,7 @@ const EditionView = (props: PropTypes) => {
         if (event === WSEvent.TASK_COMPLETED) enqueueSnackbar(t('variants:taskCompleted'), { variant: 'success' });
         else enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
         setGenerationStatus(false);
+        setGenerationTaskId(undefined);
       }
     };
 
@@ -317,6 +322,8 @@ const EditionView = (props: PropTypes) => {
   }, [commands, currentCommandGenerationIndex, enqueueSnackbar, studyId, t]);
 
   useEffect(() => {
+    const commandGenerationChannel = WsChannel.STUDY_GENERATION + studyId;
+    subscribeChannel(commandGenerationChannel);
     const init = async () => {
       let items: Array<CommandItem> = [];
       try {
@@ -344,8 +351,12 @@ const EditionView = (props: PropTypes) => {
             currentIndex = (commands.length > task.logs.length) ? task.logs.length : -1;
           }
         }
+        if (!isFinal) {
+          setGenerationTaskId(task.id);
+        }
         setCurrentCommandGenerationIndex(currentIndex);
         setGenerationStatus(!isFinal);
+
         setCommands(items);
       } catch (error) {
         logError('Error: ', error);
@@ -353,12 +364,22 @@ const EditionView = (props: PropTypes) => {
       setCommands(items);
     };
     init();
-  }, [commands.length, enqueueSnackbar, studyId, t]);
+    return () => unsubscribeChannel(commandGenerationChannel);
+  }, [commands.length, enqueueSnackbar, studyId, t, subscribeChannel, unsubscribeChannel]);
 
   useEffect(() => {
     addWsListener(listen);
     return () => removeWsListener(listen);
   }, [addWsListener, listen, removeWsListener]);
+
+  useEffect(() => {
+    if (generationTaskId) {
+      const taskChannel = WsChannel.TASK + generationTaskId;
+      subscribeChannel(taskChannel);
+      return () => unsubscribeChannel(taskChannel);
+    }
+    return () => { /* noop */ };
+  }, [generationTaskId, subscribeChannel, unsubscribeChannel]);
 
   return (
     <div className={classes.root}>

@@ -3,7 +3,7 @@ from typing import Optional, List, Dict
 
 from pydantic.main import BaseModel
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 
 
 class Cluster(BaseModel):

@@ -6,6 +6,7 @@ from typing import List
 from redis.client import Redis
 
 from antarest.core.interfaces.eventbus import Event
+from antarest.core.model import PermissionInfo
 from antarest.eventbus.business.interfaces import IEventBusBackend
 
 logger = logging.getLogger(__name__)
@@ -19,15 +20,13 @@ class RedisEventBus(IEventBusBackend):
         self.pubsub.subscribe(REDIS_STORE_KEY)
 
     def push_event(self, event: Event) -> None:
-        self.redis.publish(
-            REDIS_STORE_KEY, json.dumps(dataclasses.asdict(event))
-        )
+        self.redis.publish(REDIS_STORE_KEY, event.json())
 
     def get_events(self) -> List[Event]:
         try:
             event = self.pubsub.get_message(ignore_subscribe_messages=True)
             if event is not None:
-                return [Event(**json.loads(event["data"]))]
+                return [Event.parse_raw(event["data"])]
         except Exception as e:
             logger.error("Failed to retrieve or parse event !", exc_info=e)
 

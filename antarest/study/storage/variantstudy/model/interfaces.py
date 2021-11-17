@@ -2,7 +2,7 @@ import abc
 from abc import abstractmethod
 from typing import List, Tuple, Optional
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,

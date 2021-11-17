@@ -10,6 +10,7 @@ from starlette.responses import FileResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
+from antarest.core.model import PublicMode
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -18,7 +19,6 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import (
-    PublicMode,
     StudyMetadataPatchDTO,
     StudySimResultDTO,
     StudyMetadataDTO,

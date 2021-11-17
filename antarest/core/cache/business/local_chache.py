@@ -6,7 +6,7 @@ from typing import Optional, Dict, List
 from pydantic import BaseModel
 
 from antarest.core.config import CacheConfig
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.core.interfaces.cache import ICache
 
 logger = logging.getLogger(__name__)

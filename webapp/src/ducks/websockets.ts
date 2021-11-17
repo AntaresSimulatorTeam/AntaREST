@@ -201,7 +201,59 @@ export const removeListener = (callback: (ev: WSMessage) => void): ThunkAction<v
   });
 };
 
-type WebsocketAction = ConnectAction | DisconnectAction | AddListenerAction | RemoveListenerAction | RefreshHandlersAction | NotifyConnectedAction;
+export const WsChannel = {
+  JOB_STATUS: 'JOB_STATUS/',
+  JOB_LOGS: 'JOB_LOGS/',
+  TASK: 'TASK/',
+  STUDY_GENERATION: 'GENERATION_TASK/',
+};
+
+interface SubscribeAction extends Action {
+  type: 'WS/SUBSCRIBE';
+  payload: string;
+}
+
+export const subscribe = (channel: string): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch, getState): void => {
+  const { websockets } = getState();
+  if (websockets.socket) {
+    websockets.socket.send(JSON.stringify({
+      action: 'SUBSCRIBE',
+      payload: channel,
+    }));
+    dispatch({
+      type: 'WS/SUBSCRIBE',
+      payload: channel,
+    });
+  }
+};
+
+interface UnSubscribeAction extends Action {
+  type: 'WS/UNSUBSCRIBE';
+  payload: string;
+}
+
+export const unsubscribe = (channel: string): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch, getState): void => {
+  const { websockets } = getState();
+  if (websockets.socket) {
+    websockets.socket.send(JSON.stringify({
+      action: 'UNSUBSCRIBE',
+      payload: channel,
+    }));
+    dispatch({
+      type: 'WS/UNSUBSCRIBE',
+      payload: channel,
+    });
+  }
+};
+
+type WebsocketAction = ConnectAction
+  | DisconnectAction
+  | AddListenerAction
+  | RemoveListenerAction
+  | RefreshHandlersAction
+  | NotifyConnectedAction
+  | SubscribeAction
+  | UnSubscribeAction;
 
 /** ******************************************* */
 /* Selectors                                    */
@@ -246,6 +298,8 @@ export default (state = initialState, action: WebsocketAction): WebsocketState =
       return {
         ...state,
       };
+    case 'WS/SUBSCRIBE':
+    case 'WS/UNSUBSCRIBE':
     default:
       return state;
   }

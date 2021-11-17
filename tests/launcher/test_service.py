@@ -16,7 +16,7 @@ from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
-from antarest.study.model import StudyMetadataDTO, OwnerInfo, PublicMode
+from antarest.study.model import StudyMetadataDTO, OwnerInfo, PublicMode, Study
 
 
 @pytest.mark.unit_test
@@ -83,8 +83,8 @@ def test_service_run_study(get_current_user_mock):
     repository.save.assert_called_once_with(pending)
     event_bus.push.assert_called_once_with(
         Event(
-            EventType.STUDY_JOB_STARTED,
-            pending.to_dto().dict(),
+            type=EventType.STUDY_JOB_STARTED,
+            payload=pending.to_dto().dict(),
         )
     )
 
@@ -108,9 +108,14 @@ def test_service_get_result_from_launcher():
     repository = Mock()
     repository.get.return_value = fake_execution_result
 
+    study_service = Mock()
+    study_service.get_study.return_value = Mock(
+        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
+    )
+
     launcher_service = LauncherService(
         config=Config(),
-        study_service=Mock(),
+        study_service=study_service,
         job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
@@ -144,9 +149,14 @@ def test_service_get_result_from_database():
     repository = Mock()
     repository.get.return_value = fake_execution_result
 
+    study_service = Mock()
+    study_service.get_study.return_value = Mock(
+        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
+    )
+
     launcher_service = LauncherService(
         config=Config(),
-        study_service=Mock(),
+        study_service=study_service,
         job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
@@ -181,9 +191,14 @@ def test_service_get_jobs_from_database():
     repository.find_by_study.return_value = fake_execution_result
     repository.get_all.return_value = fake_execution_result
 
+    study_service = Mock()
+    study_service.get_study.return_value = Mock(
+        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
+    )
+
     launcher_service = LauncherService(
         config=Config(),
-        study_service=Mock(),
+        study_service=study_service,
         job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
@@ -245,21 +260,26 @@ def test_service_get_versions(config_local, config_slurm, expected_output):
 
 @pytest.mark.unit_test
 def test_service_kill_job():
+    study_service = Mock()
+    study_service.get_study.return_value = Mock(
+        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
+    )
 
     launcher_service = LauncherService(
         config=Mock(),
-        study_service=Mock(),
+        study_service=study_service,
         job_result_repository=Mock(),
         event_bus=Mock(),
         factory_launcher=Mock(),
     )
     launcher = "slurm"
+    job_id = "job_id"
     job_result_mock = Mock()
+    job_result_mock.id = job_id
     job_result_mock.study_id = "study_id"
     job_result_mock.launcher = launcher
     launcher_service.job_result_repository.get.return_value = job_result_mock
     launcher_service.launchers = {"slurm": Mock()}
-    job_id = "job_id"
 
     job_status = launcher_service.kill_job(
         job_id=job_id,

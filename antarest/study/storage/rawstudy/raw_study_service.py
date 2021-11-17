@@ -7,7 +7,7 @@ from typing import Optional, IO, List
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.custom_types import SUB_JSON
+from antarest.core.model import SUB_JSON
 from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
 )
