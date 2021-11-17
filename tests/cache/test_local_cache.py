@@ -10,13 +10,14 @@ from antarest.core.config import CacheConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
+    FileStudyTreeConfigDTO,
 )
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 def test_lifecycle():
     cache = LocalCache(CacheConfig())
-    config = FileStudyTreeConfig(
+    config = FileStudyTreeConfigDTO(
         study_path=Path("somepath"),
         path=Path("somepath"),
         study_id="",

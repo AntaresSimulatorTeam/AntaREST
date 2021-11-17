@@ -14,6 +14,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
+    FileStudyTreeConfigDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
@@ -57,7 +58,9 @@ class StudyFactory:
             from_cache = self.cache.get(cache_id)
             if from_cache is not None:
                 logger.info(f"Study {study_id} read from cache")
-                config = FileStudyTreeConfig.parse_obj(from_cache)
+                config = FileStudyTreeConfigDTO.parse_obj(
+                    from_cache
+                ).to_build_config()
                 return config, FileStudyTree(self.context, config)
         start_time = time.time()
         config = ConfigPathBuilder.build(path, study_id, output_path)
@@ -65,7 +68,10 @@ class StudyFactory:
         logger.info(f"Study {study_id} config built in {duration}s")
         result = config, FileStudyTree(self.context, config)
         if study_id and use_cache:
-            self.cache.put(cache_id, config.dict())
+            self.cache.put(
+                cache_id,
+                FileStudyTreeConfigDTO.from_build_config(config).dict(),
+            )
         logger.info(f"Cache new entry from StudyFactory (studyID: {study_id})")
         return result
 

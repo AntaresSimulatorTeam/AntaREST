@@ -15,7 +15,10 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matri
 
 class OutputSimulationModeMcAllAreasSet(FolderNode):
     def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig, set: str
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        set: str,
     ):
         FolderNode.__init__(self, context, config)
         self.set = set

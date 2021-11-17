@@ -15,7 +15,10 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 
 class ClusteredRenewableClusterConfig(IniFileNode):
     def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig, area: str
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        area: str,
     ):
         section = {
             "name": str,
@@ -34,7 +37,10 @@ class ClusteredRenewableClusterConfig(IniFileNode):
 
 class ClusteredRenewableCluster(FolderNode):
     def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig, area: str
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        area: str,
     ):
         FolderNode.__init__(self, context, config)
         self.area = area

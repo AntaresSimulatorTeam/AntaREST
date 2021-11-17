@@ -11,7 +11,10 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 
 class InputLinkAreaProperties(IniFileNode):
     def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig, area: str
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        area: str,
     ):
         section = {
             "hurdles-cost": bool,

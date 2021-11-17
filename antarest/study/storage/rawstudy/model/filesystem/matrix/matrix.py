@@ -21,7 +21,10 @@ logger = logging.getLogger(__name__)
 
 class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
     def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig, freq: str
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        freq: str,
     ) -> None:
         LazyNode.__init__(self, context, config)
         self.freq = freq
