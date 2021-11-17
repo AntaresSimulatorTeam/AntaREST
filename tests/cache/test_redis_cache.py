@@ -9,13 +9,14 @@ from antarest.core.cache.business.redis_cache import (
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
+    FileStudyTreeConfigDTO,
 )
 
 
 def test_lifecycle():
     redis_client = Mock()
     cache = RedisCache(redis_client)
-    config = FileStudyTreeConfig(
+    config = FileStudyTreeConfigDTO(
         study_path=Path("somepath"),
         path=Path("somepath"),
         study_id="",
