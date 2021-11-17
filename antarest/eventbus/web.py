@@ -101,6 +101,7 @@ def configure_websockets(
     async def send_event_to_ws(event: Event) -> None:
         event_data = event.dict()
         del event_data["permissions"]
+        del event_data["channel"]
         await manager.broadcast(
             json.dumps(event_data), event.permissions, event.channel
         )

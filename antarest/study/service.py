@@ -645,6 +645,12 @@ class StudyService:
 
         study_info = study.to_json_summary()
 
+        # this prefetch the workspace because it is lazy loaded and the object is deleted before using workspace attribute in raw study deletion
+        # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
+        if isinstance(study, RawStudy):
+            _ = study.workspace
+        self.repository.delete(study.id)
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DELETED,
@@ -652,12 +658,6 @@ class StudyService:
                 permissions=create_permission_from_study(study),
             )
         )
-
-        # this prefetch the workspace because it is lazy loaded and the object is deleted before using workspace attribute in raw study deletion
-        # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
-        if isinstance(study, RawStudy):
-            _ = study.workspace
-        self.repository.delete(study.id)
 
         # delete the files afterward for
         # if the study cannot be deleted from database for foreign key reason
