@@ -1,8 +1,9 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+from antarest.study.business.link_management import LinkManager
 from antarest.study.model import RawStudy, Patch, PatchLeafDict, PatchArea
-from antarest.study.storage.area_management import (
+from antarest.study.business.area_management import (
     AreaManager,
     AreaType,
     AreaPatchUpdateDTO,
@@ -11,6 +12,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Area,
     Set,
+    Link,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
@@ -30,6 +32,7 @@ def test_create_area():
 def test_get_all_area():
     raw_study_service = Mock(spec=RawStudyService)
     area_manager = AreaManager(raw_study_service=raw_study_service)
+    link_manager = LinkManager(raw_study_service=raw_study_service)
 
     study = RawStudy()
     config = FileStudyTreeConfig(
@@ -40,7 +43,10 @@ def test_get_all_area():
         areas={
             "a1": Area(
                 name="a1",
-                links={},
+                links={
+                    "a2": Link(filters_synthesis=[], filters_year=[]),
+                    "a3": Link(filters_synthesis=[], filters_year=[]),
+                },
                 thermals=[],
                 renewables=[],
                 filters_synthesis=[],
@@ -48,6 +54,14 @@ def test_get_all_area():
             ),
             "a2": Area(
                 name="a2",
+                links={"a3": Link(filters_synthesis=[], filters_year=[])},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=[],
+                filters_year=[],
+            ),
+            "a3": Area(
+                name="a3",
                 links={},
                 thermals=[],
                 renewables=[],
@@ -81,6 +95,13 @@ def test_get_all_area():
             "set": None,
             "id": "a2",
         },
+        {
+            "name": "a3",
+            "type": AreaType.AREA,
+            "metadata": {"country": None},
+            "set": None,
+            "id": "a3",
+        },
     ]
     areas = area_manager.get_all_areas(study, AreaType.AREA)
     assert expected_areas == [area.dict() for area in areas]
@@ -113,6 +134,13 @@ def test_get_all_area():
             "id": "a2",
         },
         {
+            "name": "a3",
+            "type": AreaType.AREA,
+            "metadata": {"country": None},
+            "set": None,
+            "id": "a3",
+        },
+        {
             "name": "s1",
             "type": AreaType.CLUSTER,
             "metadata": {"country": None},
@@ -122,6 +150,22 @@ def test_get_all_area():
     ]
     all = area_manager.get_all_areas(study)
     assert expected_all == [area.dict() for area in all]
+
+    links = link_manager.get_all_links(study)
+    assert [
+        {
+            "area1": "a1",
+            "area2": "a2",
+        },
+        {
+            "area1": "a1",
+            "area2": "a3",
+        },
+        {
+            "area1": "a2",
+            "area2": "a3",
+        },
+    ] == [link.dict() for link in links]
 
     pass
 

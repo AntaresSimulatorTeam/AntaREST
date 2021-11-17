@@ -10,8 +10,9 @@ from antarest.core.requests import (
 )
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.service import StudyService
-from antarest.study.storage.area_management import (
+from antarest.study.business.area_management import (
     AreaType,
     AreaCreationDTO,
     AreaPatchUpdateDTO,
@@ -53,6 +54,24 @@ def create_study_area_routes(
         )
         params = RequestParameters(user=current_user)
         areas_list = study_service.get_all_areas(uuid, type, params)
+        return areas_list
+
+    @bp.get(
+        "/studies/{uuid}/links",
+        tags=[APITag.study_data],
+        summary="Get all links",
+        response_model=List[LinkInfoDTO],
+    )
+    def get_links(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Fetching link list for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        areas_list = study_service.get_all_links(uuid, params)
         return areas_list
 
     @bp.post(

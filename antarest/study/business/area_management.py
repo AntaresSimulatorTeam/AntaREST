@@ -48,11 +48,11 @@ class AreaManager:
         areas_metadata: Dict[str, PatchArea] = metadata.areas or {}  # type: ignore
         result = []
         if area_type is None or area_type == AreaType.AREA:
-            for area_name in file_study.config.areas:
+            for area_name, area in file_study.config.areas.items():
                 result.append(
                     AreaInfoDTO(
                         id=area_name,
-                        name=area_name,
+                        name=area.name,
                         type=AreaType.AREA,
                         metadata=areas_metadata.get(area_name, PatchArea()),
                     )
