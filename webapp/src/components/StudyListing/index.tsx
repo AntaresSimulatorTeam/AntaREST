@@ -177,7 +177,7 @@ const StudyListing = (props: PropTypes) => {
             )
         }
           </AutoSizer>
-        ) : <StudyDirView tree={buildStudyTree(studies)} />
+        ) : <StudyDirView tree={buildStudyTree(studies)} importStudy={importStudy} launchStudy={launchStudy} deleteStudy={deleteStudy} archiveStudy={archiveStudy} unarchiveStudy={unarchiveStudy} />
       }
     </div>
   );

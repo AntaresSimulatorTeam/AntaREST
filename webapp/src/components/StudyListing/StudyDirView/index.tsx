@@ -19,12 +19,17 @@ const connector = connect(mapState, mapDispatch);
 type PropsFromRedux = ConnectedProps<typeof connector>;
 interface OwnProps {
   tree: StudyTreeNode;
+  launchStudy: (study: StudyMetadata) => void;
+  deleteStudy: (study: StudyMetadata) => void;
+  importStudy: (study: StudyMetadata, withOutputs?: boolean) => void;
+  archiveStudy: (study: StudyMetadata) => void;
+  unarchiveStudy: (study: StudyMetadata) => void;
 }
 type PropTypes = PropsFromRedux & OwnProps;
 
 const StudyDirView = (props: PropTypes) => {
   const history = useHistory();
-  const { tree, updateFolderPos, directory } = props;
+  const { tree, updateFolderPos, directory, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = props;
   const [dirPath, setDirPath] = useState<Array<string>>([tree.name]);
   const [currentNode, setCurrentNode] = useState<StudyTreeNode>(tree);
 
@@ -75,6 +80,11 @@ const StudyDirView = (props: PropTypes) => {
       node={currentNode}
       onClick={onClick}
       onDirClick={onDirClick}
+      importStudy={importStudy}
+      launchStudy={launchStudy}
+      deleteStudy={deleteStudy}
+      archiveStudy={archiveStudy}
+      unarchiveStudy={unarchiveStudy}
     />
   );
 };

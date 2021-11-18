@@ -1,14 +1,18 @@
 /* eslint-disable react/no-array-index-key */
-import React from 'react';
+import React, { useState } from 'react';
 import clsx from 'clsx';
 import moment from 'moment';
-import { makeStyles, createStyles, Theme, Paper, Typography, Tooltip, Breadcrumbs, Grid } from '@material-ui/core';
+import { useTranslation } from 'react-i18next';
+import { makeStyles, createStyles, Theme, Paper, Typography, Tooltip, Breadcrumbs, Grid, Menu, MenuItem, useTheme } from '@material-ui/core';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import FolderIcon from '@material-ui/icons/Folder';
 import DescriptionIcon from '@material-ui/icons/Description';
 import HomeRoundedIcon from '@material-ui/icons/HomeRounded';
-import { StudyTreeNode } from '../utils';
+import { isDir, StudyTreeNode } from '../utils';
 import { StudyMetadata } from '../../../common/types';
+import DownloadLink from '../../ui/DownloadLink';
+import { getExportUrl } from '../../../services/api/study';
+import ConfirmationModal from '../../ui/ConfirmationModal';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -115,14 +119,34 @@ interface Props {
     node: StudyTreeNode;
     onClick: (element: StudyTreeNode | StudyMetadata) => void;
     onDirClick: (element: Array<string>) => void;
+    launchStudy: (study: StudyMetadata) => void;
+    deleteStudy: (study: StudyMetadata) => void;
+    importStudy: (study: StudyMetadata, withOutputs?: boolean) => void;
+    archiveStudy: (study: StudyMetadata) => void;
+    unarchiveStudy: (study: StudyMetadata) => void;
 }
 
 const DirView = (props: Props) => {
   const classes = useStyles();
-  const { node, onClick, dirPath, onDirClick } = props;
+  const theme = useTheme();
+  const { node, onClick, dirPath, onDirClick, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = props;
+  const [t] = useTranslation();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
+  const open = Boolean(anchorEl);
 
-  const isDir = (element: StudyTreeNode | StudyMetadata) => (element as StudyMetadata).id === undefined;
+  const deleteStudyAndCloseModal = (study: StudyMetadata) => {
+    deleteStudy(study);
+    setOpenConfirmationModal(false);
+  };
 
+  const onContextMenu = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    (event as any).preventDefault();
+    setAnchorEl((event as any).currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
   return (
     <div className={classes.root}>
       <div className={classes.header}>
@@ -166,15 +190,71 @@ const DirView = (props: Props) => {
                 </Tooltip>
               ) : (
                 <Tooltip key={`${elm}-${index}`} title={elm.name}>
-                  <Paper className={classes.element} onClick={() => onClick(elm)}>
-                    <DescriptionIcon className={(elm as StudyMetadata).managed ? clsx(classes.icon, classes.secondaryColor) : classes.icon} />
-                    <div className={classes.elementNameContainer}>
-                      <Typography noWrap className={classes.elementName}>{elm.name}</Typography>
-                    </div>
-                    <div className={classes.elementNameContainer} style={{ justifyContent: 'center' }}>
-                      <Typography noWrap className={classes.elementDate}>{moment.unix(elm.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
-                    </div>
-                  </Paper>
+                  <>
+                    <Paper
+                      className={classes.element}
+                      onClick={() => onClick(elm)}
+                      onContextMenu={onContextMenu}
+                      id="paper-file"
+                      aria-controls="file-menu"
+                      aria-haspopup="true"
+                      aria-expanded={open ? 'true' : undefined}
+                    >
+                      <DescriptionIcon className={(elm as StudyMetadata).managed ? clsx(classes.icon, classes.secondaryColor) : classes.icon} />
+                      <div className={classes.elementNameContainer}>
+                        <Typography noWrap className={classes.elementName}>{elm.name}</Typography>
+                      </div>
+                      <div className={classes.elementNameContainer} style={{ justifyContent: 'center' }}>
+                        <Typography noWrap className={classes.elementDate}>{moment.unix(elm.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
+                      </div>
+                    </Paper>
+                    <Menu
+                      id="file-menu"
+                      aria-labelledby="demo-positioned-button"
+                      anchorEl={anchorEl}
+                      open={open}
+                      onClose={handleClose}
+                      anchorOrigin={{
+                        vertical: 'top',
+                        horizontal: 'center',
+                      }}
+                      transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'left',
+                      }}
+                    >
+                      {
+                        (elm as StudyMetadata).archived ?
+                          <MenuItem onClick={() => unarchiveStudy(elm as StudyMetadata)}>{t('studymanager:unarchive')}</MenuItem> : (
+                            <>
+                              <MenuItem onClick={() => launchStudy(elm as StudyMetadata)} style={{ color: theme.palette.secondary.main }}>{t('main:launch')}</MenuItem>
+                              <MenuItem onClick={() => importStudy(elm as StudyMetadata)} style={{ color: theme.palette.primary.main }}>{t('studymanager:importcopy')}</MenuItem>
+                              <MenuItem>
+                                <DownloadLink url={getExportUrl((elm as StudyMetadata).id, false)}>
+                                  <span style={{ color: theme.palette.primary.main }}>{t('main:export')}</span>
+                                </DownloadLink>
+                              </MenuItem>
+                              {
+                                (elm as StudyMetadata).managed &&
+                                <MenuItem onClick={() => archiveStudy(elm as StudyMetadata)} style={{ color: theme.palette.primary.main }}>{t('studymanager:archive')}</MenuItem>
+                              }
+                            </>
+                          )}
+                      {
+                            (elm as StudyMetadata).managed &&
+                            <MenuItem onClick={() => setOpenConfirmationModal(true)} style={{ color: theme.palette.error.main }}>{t('main:delete')}</MenuItem>
+                          }
+                    </Menu>
+                    {openConfirmationModal && (
+                    <ConfirmationModal
+                      open={openConfirmationModal}
+                      title={t('main:confirmationModalTitle')}
+                      message={t('studymanager:confirmdelete')}
+                      handleYes={() => deleteStudyAndCloseModal(elm as StudyMetadata)}
+                      handleNo={() => setOpenConfirmationModal(false)}
+                    />
+                    )}
+                  </>
                 </Tooltip>
               )))
         }
