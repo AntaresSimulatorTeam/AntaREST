@@ -38,6 +38,7 @@ const JobListing = (props: PropTypes) => {
         {
           jobs
             .sort((a, b) => (moment(a.completionDate).isAfter(moment(b.completionDate)) ? -1 : 1))
+            .reduce((prevVal, curVal) => { if (prevVal.find((el) => el.studyId === curVal.studyId)) { return prevVal; } return prevVal.concat([curVal]); }, [] as LaunchJob[])
             .map((job) => (
               <div key={job.id} className={classes.job}>
                 <JobView job={job} />
