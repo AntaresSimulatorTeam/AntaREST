@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import logging
 import shutil
@@ -7,7 +8,6 @@ from pathlib import Path
 from typing import List, Optional, cast
 from uuid import uuid4
 
-import dataclasses
 from fastapi import HTTPException
 from filelock import FileLock  # type: ignore
 
@@ -61,6 +61,9 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
     InputSeriesMatrix,
 )
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
+    RawFileNode,
+)
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -76,8 +79,14 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
 )
+from antarest.study.storage.variantstudy.model.command.update_comments import (
+    UpdateComments,
+)
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
+)
+from antarest.study.storage.variantstudy.model.command_context import (
+    CommandContext,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
@@ -527,17 +536,39 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if isinstance(tree_node, IniFileNode):
             self.append_command(
                 metadata.id,
-                UpdateConfig(target=url, data=new).to_dto(),
+                UpdateConfig(
+                    target=url,
+                    data=new,
+                    command_context=self.command_factory.command_context,
+                ).to_dto(),
                 RequestParameters(user=DEFAULT_ADMIN_USER),
             )
         elif isinstance(tree_node, InputSeriesMatrix):
             self.append_command(
                 metadata.id,
-                ReplaceMatrix(target=url, matrix=SUB_JSON).to_dto(),
+                ReplaceMatrix(
+                    target=url,
+                    matrix=new,
+                    command_context=self.command_factory.command_context,
+                ).to_dto(),
+                RequestParameters(user=DEFAULT_ADMIN_USER),
+            )
+        elif (
+            isinstance(tree_node, RawFileNode)
+            and url.split("/")[-1] == "comments"
+        ):
+            self.append_command(
+                metadata.id,
+                UpdateComments(
+                    target=url,
+                    comments=new,
+                    command_context=self.command_factory.command_context,
+                ).to_dto(),
                 RequestParameters(user=DEFAULT_ADMIN_USER),
             )
         else:
             raise NotImplementedError()
+        remove_from_cache(self.cache, metadata.id)
         return new
 
     def create_variant_study(

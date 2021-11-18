@@ -898,14 +898,14 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(study.id, study.type)
+        study_service = self._get_study_storage_service(study)
 
-        updated = self.raw_study_service.edit_study(study, url, new)
+        updated = study_service.edit_study(study, url, new)
 
-        self.raw_study_service.edit_study(
-            study, url="study/antares/lastsave", new=int(time())
-        )
+        if isinstance(study_service, RawStudyService):
+            study_service.edit_study(
+                study, url="study/antares/lastsave", new=int(time())
+            )
 
         self.event_bus.push(
             Event(
