@@ -53,9 +53,6 @@ class CommandBlock(Base):  # type: ignore
     command = Column(String(255))
     version = Column(Integer)
     args = Column(String())
-    __mapper_args__ = {
-        "polymorphic_identity": "variant_study_snapshot",
-    }
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
