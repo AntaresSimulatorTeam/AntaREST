@@ -1,5 +1,5 @@
 /* eslint-disable react/no-array-index-key */
-import React, { useState } from 'react';
+import React, { Fragment, useState } from 'react';
 import clsx from 'clsx';
 import moment from 'moment';
 import { useTranslation } from 'react-i18next';
@@ -131,9 +131,11 @@ const DirView = (props: Props) => {
   const theme = useTheme();
   const { node, onClick, dirPath, onDirClick, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = props;
   const [t] = useTranslation();
-  const [anchorEl, setAnchorEl] = useState(null);
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
-  const open = Boolean(anchorEl);
+  const [contextMenu, setContextMenu] = React.useState<{
+    mouseX: number;
+    mouseY: number;
+  } | null>(null);
 
   const deleteStudyAndCloseModal = (study: StudyMetadata) => {
     deleteStudy(study);
@@ -142,11 +144,38 @@ const DirView = (props: Props) => {
 
   const onContextMenu = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     (event as any).preventDefault();
-    setAnchorEl((event as any).currentTarget);
+    setContextMenu(
+      contextMenu === null
+        ? {
+          mouseX: event.clientX - 2,
+          mouseY: event.clientY - 4,
+        }
+        : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
+      // Other native context menus might behave different.
+      // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
+        null,
+    );
   };
   const handleClose = () => {
-    setAnchorEl(null);
+    setContextMenu(null);
   };
+
+  const getMenuUnarchived = (study: StudyMetadata) => [
+
+    (key: string) => <MenuItem key={key} onClick={() => { launchStudy(study); console.log(study.name); }} style={{ color: theme.palette.secondary.main }}>{t('main:launch')}</MenuItem>,
+    (key: string) => <MenuItem key={key} onClick={() => importStudy(study)} style={{ color: theme.palette.primary.main }}>{t('studymanager:importcopy')}</MenuItem>,
+    (key: string) => (
+      <MenuItem key={key}>
+        <DownloadLink url={getExportUrl(study.id, false)}>
+          <span style={{ color: theme.palette.primary.main }}>{t('main:export')}</span>
+        </DownloadLink>
+      </MenuItem>
+    ),
+
+    (key: string) => study.managed &&
+    <MenuItem key={key} onClick={() => archiveStudy(study)} style={{ color: theme.palette.primary.main }}>{t('studymanager:archive')}</MenuItem>,
+
+  ];
   return (
     <div className={classes.root}>
       <div className={classes.header}>
@@ -177,7 +206,7 @@ const DirView = (props: Props) => {
           {
             node.children.map((elm, index) =>
               (isDir(elm) ? (
-                <Tooltip key={`${elm}-${index}`} title={elm.name}>
+                <Tooltip key={`${elm.name}-${index}`} title={elm.name}>
                   <Paper className={classes.element} onClick={() => onClick(elm)}>
                     <FolderIcon className={classes.icon} />
                     <div className={classes.elementNameContainer}>
@@ -189,16 +218,15 @@ const DirView = (props: Props) => {
                   </Paper>
                 </Tooltip>
               ) : (
-                <Tooltip key={`${elm}-${index}`} title={elm.name}>
-                  <>
+                <Fragment key={`${elm.name}-${index}`}>
+                  <Tooltip title={elm.name}>
                     <Paper
                       className={classes.element}
                       onClick={() => onClick(elm)}
                       onContextMenu={onContextMenu}
-                      id="paper-file"
-                      aria-controls="file-menu"
+                      id={`paper-file-${elm.name}-${index}`}
+                      aria-controls={`file-menu-${elm.name}-${index}`}
                       aria-haspopup="true"
-                      aria-expanded={open ? 'true' : undefined}
                     >
                       <DescriptionIcon className={(elm as StudyMetadata).managed ? clsx(classes.icon, classes.secondaryColor) : classes.icon} />
                       <div className={classes.elementNameContainer}>
@@ -208,44 +236,28 @@ const DirView = (props: Props) => {
                         <Typography noWrap className={classes.elementDate}>{moment.unix(elm.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
                       </div>
                     </Paper>
-                    <Menu
-                      id="file-menu"
-                      aria-labelledby="demo-positioned-button"
-                      anchorEl={anchorEl}
-                      open={open}
-                      onClose={handleClose}
-                      anchorOrigin={{
-                        vertical: 'top',
-                        horizontal: 'center',
-                      }}
-                      transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'left',
-                      }}
-                    >
-                      {
+                  </Tooltip>
+                  <Menu
+                    open={contextMenu !== null}
+                    onClose={handleClose}
+                    anchorReference="anchorPosition"
+                    anchorPosition={
+                      contextMenu !== null
+                        ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+                        : undefined
+                    }
+                  >
+                    {
                         (elm as StudyMetadata).archived ?
                           <MenuItem onClick={() => unarchiveStudy(elm as StudyMetadata)}>{t('studymanager:unarchive')}</MenuItem> : (
-                            <>
-                              <MenuItem onClick={() => launchStudy(elm as StudyMetadata)} style={{ color: theme.palette.secondary.main }}>{t('main:launch')}</MenuItem>
-                              <MenuItem onClick={() => importStudy(elm as StudyMetadata)} style={{ color: theme.palette.primary.main }}>{t('studymanager:importcopy')}</MenuItem>
-                              <MenuItem>
-                                <DownloadLink url={getExportUrl((elm as StudyMetadata).id, false)}>
-                                  <span style={{ color: theme.palette.primary.main }}>{t('main:export')}</span>
-                                </DownloadLink>
-                              </MenuItem>
-                              {
-                                (elm as StudyMetadata).managed &&
-                                <MenuItem onClick={() => archiveStudy(elm as StudyMetadata)} style={{ color: theme.palette.primary.main }}>{t('studymanager:archive')}</MenuItem>
-                              }
-                            </>
+                            getMenuUnarchived(elm as StudyMetadata).map((item, id) => { console.log('STUDY: ', (elm as StudyMetadata).name, 'INDEX: ', `${(elm as StudyMetadata).id}-${index}-${id}`); return item(`${(elm as StudyMetadata).id}-${index}-${id}`); })
                           )}
-                      {
+                    {
                             (elm as StudyMetadata).managed &&
                             <MenuItem onClick={() => setOpenConfirmationModal(true)} style={{ color: theme.palette.error.main }}>{t('main:delete')}</MenuItem>
-                          }
-                    </Menu>
-                    {openConfirmationModal && (
+                    }
+                  </Menu>
+                  {openConfirmationModal && (
                     <ConfirmationModal
                       open={openConfirmationModal}
                       title={t('main:confirmationModalTitle')}
@@ -253,9 +265,8 @@ const DirView = (props: Props) => {
                       handleYes={() => deleteStudyAndCloseModal(elm as StudyMetadata)}
                       handleNo={() => setOpenConfirmationModal(false)}
                     />
-                    )}
-                  </>
-                </Tooltip>
+                  )}
+                </Fragment>
               )))
         }
         </Grid>
