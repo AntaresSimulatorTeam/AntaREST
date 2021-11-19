@@ -177,11 +177,7 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
         ("/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k", b"", {}),
         (
             "/v1/studies/STA-mini/raw?path=input/load/series/load_fr",
-            {
-                "columns": [0],
-                "index": list(range(100)),
-                "data": [[i] for i in range(100)],
-            },
+            [[i] for i in range(100)],
             None,
         ),
         (

@@ -14,6 +14,7 @@ from antarest.core.requests import (
 from antarest.core.roles import RoleType
 from antarest.login.model import User, Group, GroupDTO
 from antarest.login.service import LoginService
+from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -33,6 +34,7 @@ from antarest.study.service import StudyService, UserHasNotPermissionError
 from antarest.core.permissions import (
     StudyPermissionType,
 )
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     FileStudyTreeConfig,
@@ -41,9 +43,21 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Set,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
+    IniFileNode,
+)
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
+from antarest.study.storage.variantstudy.model.command_context import (
+    CommandContext,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+from antarest.study.storage.variantstudy.model.interfaces import (
+    ICommandExtractor,
+)
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -502,9 +516,13 @@ def test_change_owner() -> None:
     alice = User(id=1)
     bob = User(id=2, name="Bob")
 
+    mock_file_study = Mock()
+    mock_file_study.tree.get_node.return_value = Mock(spec=IniFileNode)
+
     repository = Mock()
     user_service = Mock()
-    study_service = Mock()
+    study_service = Mock(spec=RawStudyService)
+    study_service.get_raw.return_value = mock_file_study
     config = Config(
         storage=StorageConfig(
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
@@ -513,10 +531,14 @@ def test_change_owner() -> None:
     service = build_study_service(
         study_service, repository, config, user_service=user_service
     )
+    service.variant_study_service.command_factory.command_context = Mock(
+        spec=CommandContext
+    )
 
     study = RawStudy(id=uuid, owner=alice)
     repository.get.return_value = study
     user_service.get_user.return_value = bob
+    service._edit_study_using_command = Mock()
 
     service.change_owner(
         uuid, 2, RequestParameters(JWTUser(id=1, impersonator=1, type="users"))
@@ -526,8 +548,8 @@ def test_change_owner() -> None:
     )
     repository.save.assert_called_once_with(RawStudy(id=uuid, owner=bob))
 
-    study_service.edit_study.assert_called_once_with(
-        study, url="study/antares/author", new="Bob"
+    service._edit_study_using_command.assert_called_once_with(
+        study=study, url="study/antares/author", data="Bob"
     )
 
     with pytest.raises(UserHasNotPermissionError):
@@ -857,3 +879,13 @@ def test_delete_with_prefetch(tmp_path: Path):
         study_uuid,
         params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
+
+
+@pytest.mark.unit_test
+def test_edit_study_with_command():
+    pass  # TODO
+
+
+@pytest.mark.unit_test
+def test_create_command():
+    pass  # TODO

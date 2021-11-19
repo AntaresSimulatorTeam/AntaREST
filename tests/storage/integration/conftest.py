@@ -87,6 +87,8 @@ def storage_service(
     task_service_mock = Mock(spec=ITaskService)
     user_service = Mock()
     user_service.get_user.return_value = User(id=0, name="test")
+    matrix_service = Mock(spec=MatrixService)
+    matrix_service.create.return_value = "matrix_id"
     storage_service = build_study_service(
         application=Mock(),
         cache=LocalCache(config=config.cache),
