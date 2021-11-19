@@ -137,7 +137,7 @@ def test_study_listing() -> None:
         created_at=datetime.now(),
         updated_at=datetime.now(),
         path="",
-        workspace=DEFAULT_WORKSPACE_NAME
+        workspace=DEFAULT_WORKSPACE_NAME,
     )
     b = RawStudy(
         id="B",
@@ -148,7 +148,7 @@ def test_study_listing() -> None:
         created_at=datetime.now(),
         updated_at=datetime.now(),
         path="",
-        workspace="other"
+        workspace="other",
     )
     c = RawStudy(
         id="C",
@@ -159,7 +159,7 @@ def test_study_listing() -> None:
         created_at=datetime.now(),
         updated_at=datetime.now(),
         path="",
-        workspace="other2"
+        workspace="other2",
     )
 
     # Mock

@@ -215,7 +215,9 @@ class Bot(Identity):
         ForeignKey("identities.id"),
         primary_key=True,
     )
-    owner = Column(Integer, ForeignKey("users.id"))
+    owner = Column(
+        Integer, ForeignKey("identities.id", name="bots_owner_fkey")
+    )
     is_author = Column(Boolean(), default=True)
 
     def get_impersonator(self) -> int:
@@ -223,6 +225,7 @@ class Bot(Identity):
 
     __mapper_args__ = {
         "polymorphic_identity": "bots",
+        "inherit_condition": id == Identity.id,
     }
 
     def to_dto(self) -> BotDTO:
