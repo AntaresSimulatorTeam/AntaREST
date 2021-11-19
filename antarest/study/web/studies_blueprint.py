@@ -46,7 +46,7 @@ def create_study_routes(
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
-    ftm = FileTransferManager.get_instance(config)
+    ftm = FileTransferManager.get_instance()
 
     @bp.get(
         "/studies",

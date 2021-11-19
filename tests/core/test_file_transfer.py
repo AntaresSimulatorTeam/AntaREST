@@ -14,7 +14,7 @@ def create_app() -> FastAPI:
 
 def test_file_request():
     app = create_app()
-    ftm = FileTransferManager.get_instance(Config())
+    ftm = FileTransferManager.get_instance()
 
     @app.get("/dummy")
     def dummy_endpoint(tmppath: Path = Depends(ftm.request_tmp_file)):

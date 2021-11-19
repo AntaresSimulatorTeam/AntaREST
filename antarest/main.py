@@ -222,6 +222,7 @@ def fastapi_app(
 
     services: Dict[str, Any] = {}
 
+    filetransfer_service = build_filetransfer_service(application, config)
     redis_client = (
         new_redis_instance(config.redis) if config.redis is not None else None
     )
@@ -249,8 +250,6 @@ def fastapi_app(
         study_service=study_service,
         event_bus=event_bus,
     )
-
-    application.include_router(create_file_transfer_api(config))
 
     services["event_bus"] = event_bus
     services["study"] = study_service
