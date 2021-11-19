@@ -132,7 +132,8 @@ const DirView = (props: Props) => {
   const { node, onClick, dirPath, onDirClick, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = props;
   const [t] = useTranslation();
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
-  const [contextMenu, setContextMenu] = React.useState<{
+  const [menuId, setMenuId] = useState<string>('');
+  const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
     mouseY: number;
   } | null>(null);
@@ -142,7 +143,7 @@ const DirView = (props: Props) => {
     setOpenConfirmationModal(false);
   };
 
-  const onContextMenu = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  const onContextMenu = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, id: string) => {
     (event as any).preventDefault();
     setContextMenu(
       contextMenu === null
@@ -155,6 +156,7 @@ const DirView = (props: Props) => {
       // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
         null,
     );
+    setMenuId(id);
   };
   const handleClose = () => {
     setContextMenu(null);
@@ -162,7 +164,7 @@ const DirView = (props: Props) => {
 
   const getMenuUnarchived = (study: StudyMetadata) => [
 
-    (key: string) => <MenuItem key={key} onClick={() => { launchStudy(study); console.log(study.name); }} style={{ color: theme.palette.secondary.main }}>{t('main:launch')}</MenuItem>,
+    (key: string) => <MenuItem key={key} onClick={() => launchStudy(study)} style={{ color: theme.palette.secondary.main }}>{t('main:launch')}</MenuItem>,
     (key: string) => <MenuItem key={key} onClick={() => importStudy(study)} style={{ color: theme.palette.primary.main }}>{t('studymanager:importcopy')}</MenuItem>,
     (key: string) => (
       <MenuItem key={key}>
@@ -223,7 +225,7 @@ const DirView = (props: Props) => {
                     <Paper
                       className={classes.element}
                       onClick={() => onClick(elm)}
-                      onContextMenu={onContextMenu}
+                      onContextMenu={(e) => onContextMenu(e, (elm as StudyMetadata).id)}
                       id={`paper-file-${elm.name}-${index}`}
                       aria-controls={`file-menu-${elm.name}-${index}`}
                       aria-haspopup="true"
@@ -238,7 +240,7 @@ const DirView = (props: Props) => {
                     </Paper>
                   </Tooltip>
                   <Menu
-                    open={contextMenu !== null}
+                    open={contextMenu !== null && menuId === (elm as StudyMetadata).id}
                     onClose={handleClose}
                     anchorReference="anchorPosition"
                     anchorPosition={
@@ -250,7 +252,7 @@ const DirView = (props: Props) => {
                     {
                         (elm as StudyMetadata).archived ?
                           <MenuItem onClick={() => unarchiveStudy(elm as StudyMetadata)}>{t('studymanager:unarchive')}</MenuItem> : (
-                            getMenuUnarchived(elm as StudyMetadata).map((item, id) => { console.log('STUDY: ', (elm as StudyMetadata).name, 'INDEX: ', `${(elm as StudyMetadata).id}-${index}-${id}`); return item(`${(elm as StudyMetadata).id}-${index}-${id}`); })
+                            getMenuUnarchived(elm as StudyMetadata).map((item, id) => item(`${(elm as StudyMetadata).id}-${index}-${id}`))
                           )}
                     {
                             (elm as StudyMetadata).managed &&
