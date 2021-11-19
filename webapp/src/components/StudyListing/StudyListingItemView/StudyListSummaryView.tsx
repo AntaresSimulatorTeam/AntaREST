@@ -1,5 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
+import moment from 'moment';
 import { makeStyles, Button, createStyles, Theme, Paper, Typography, Tooltip } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { useTranslation } from 'react-i18next';
@@ -42,6 +43,11 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     managed: {
       backgroundColor: theme.palette.secondary.main,
+    },
+    datetime: {
+      color: 'gray',
+      fontSize: '0.7em',
+      marginLeft: theme.spacing(1.5),
     },
     titleContainer: {
       display: 'flex',
@@ -108,6 +114,7 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
               {study.workspace}
             </div>
           </div>
+          <Typography className={classes.datetime}>{moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
         </div>
         <Typography color="textSecondary" className={classes.id}>
           {study.id}

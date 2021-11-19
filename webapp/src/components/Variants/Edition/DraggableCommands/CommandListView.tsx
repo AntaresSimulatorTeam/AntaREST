@@ -67,7 +67,7 @@ function CommandListView({ items, generationStatus, generationIndex, expandedInd
           <FixedSizeList
             height={500}
             itemCount={items.length}
-            itemSize={80}
+            itemSize={57}
             width={300}
             outerRef={provided.innerRef}
             ref={listRef}
