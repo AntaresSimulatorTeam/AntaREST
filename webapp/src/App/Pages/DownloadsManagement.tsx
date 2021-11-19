@@ -7,10 +7,10 @@ import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
 import { useNotif } from '../../services/utils';
 import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
-import { convertFileDownloadDTO, FileDownloadDTO, getDownloadsList } from '../../services/api/downloads';
+import { convertFileDownloadDTO, FileDownload, FileDownloadDTO, getDownloadsList } from '../../services/api/downloads';
 import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
 import DownloadsListing from '../../components/DownloadsListing';
-import { FileDownload, WSEvent, WSMessage } from '../../common/types';
+import { WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 
 const logError = debug('antares:studymanagement:error');

@@ -389,6 +389,28 @@ def create_study_routes(
         )
         return study_metadata
 
+    @bp.get(
+        "/studies/{study_id}/outputs/{output_id}/export",
+        tags=[APITag.study_outputs],
+        summary="Get outputs data",
+    )
+    def output_download(
+            study_id: str,
+            output_id: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        logger.info(
+            f"Fetching whole output of the simulation {output_id} for study {study_id}"
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.export_output(
+            study_uuid=study_id,
+            output_uuid=output_id,
+            params=params,
+        )
+
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/download",
         tags=[APITag.study_outputs],
@@ -398,42 +420,31 @@ def create_study_routes(
         study_id: str,
         output_id: str,
         request: Request,
-        data: Optional[StudyDownloadDTO] = Body(default=None),
+        data: StudyDownloadDTO,
         tmp_export_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_uuid(output_id)
-        if not data:
-            logger.info(
-                f"Fetching whole output of the simulation {output_id} for study {study_id}"
+        logger.info(
+            f"Fetching batch outputs of simulation {output_id} for study {study_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        content = study_service.download_outputs(
+            study_id, output_id, data, params
+        )
+        accept = request.headers.get("Accept")
+        if accept == "application/zip" or accept == "application/tar+gz":
+            StudyDownloader.export(content, accept, tmp_export_file)
+            return FileResponse(
+                tmp_export_file,
+                headers={
+                    "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
+                },
+                media_type=accept,
             )
-            params = RequestParameters(user=current_user)
-            return study_service.export_output(
-                study_uuid=study_id,
-                output_uuid=output_id,
-                params=params,
-            )
-        else:
-            logger.info(
-                f"Fetching batch outputs of simulation {output_id} for study {study_id}",
-                extra={"user": current_user.id},
-            )
-            params = RequestParameters(user=current_user)
-            content = study_service.download_outputs(
-                study_id, output_id, data, params
-            )
-            accept = request.headers.get("Accept")
-            if accept == "application/zip" or accept == "application/tar+gz":
-                StudyDownloader.export(content, accept, tmp_export_file)
-                return FileResponse(
-                    tmp_export_file,
-                    headers={
-                        "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
-                    },
-                    media_type=accept,
-                )
-            return content
+        return content
 
     @bp.get(
         "/studies/{study_id}/outputs",

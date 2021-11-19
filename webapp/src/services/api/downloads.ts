@@ -1,4 +1,3 @@
-import { FileDownload } from '../../common/types';
 import { getConfig } from '../config';
 import client from './client';
 
@@ -12,6 +11,21 @@ export interface FileDownloadDTO {
   failed: boolean;
   // eslint-disable-next-line camelcase
   error_message: string;
+}
+
+export interface FileDownload {
+  id: string;
+  name: string;
+  filename: string;
+  expirationDate: string;
+  ready: boolean;
+  failed: boolean;
+  errorMessage: string;
+}
+
+export interface FileDownloadTask {
+  file: FileDownloadDTO;
+  task: string;
 }
 
 export const convertFileDownloadDTO = (fileDownload: FileDownloadDTO): FileDownload => ({

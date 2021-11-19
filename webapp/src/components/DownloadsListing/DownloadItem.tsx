@@ -3,9 +3,8 @@ import { CircularProgress, createStyles, makeStyles, Paper, Theme } from '@mater
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useTranslation } from 'react-i18next';
 import InfoIcon from '@material-ui/icons/Info';
-import { getDownloadUrl } from '../../services/api/downloads';
+import { FileDownload, getDownloadUrl } from '../../services/api/downloads';
 import DownloadLink from '../ui/DownloadLink';
-import { FileDownload } from '../../common/types';
 import LogModal from '../ui/LogModal';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({

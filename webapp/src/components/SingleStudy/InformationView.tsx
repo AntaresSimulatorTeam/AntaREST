@@ -1,7 +1,7 @@
 import debug from 'debug';
 import moment from 'moment';
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
 import {
@@ -14,6 +14,8 @@ import {
   Chip,
   Tooltip,
   useTheme,
+  MenuItem,
+  Menu,
 } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +33,8 @@ import {
   unarchiveStudy as callUnarchiveStudy,
   renameStudy as callRenameStudy,
   exportStudy,
+  exportOuput as callExportOutput,
+  getStudyOutputs,
 } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
 import { hasAuthorization, getStudyExtendedName } from '../../services/utils';
@@ -237,6 +241,8 @@ const InformationView = (props: PropTypes) => {
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [openPermissionModal, setOpenPermissionModal] = useState<boolean>(false);
   const [openRenameModal, setOpenRenameModal] = useState<boolean>(false);
+  const [outputList, setOutputList] = useState<Array<string>>();
+  const [outputExportButtonAnchor, setOutputExportButtonAnchor] = React.useState<null | HTMLElement>(null);
 
   const launchStudy = async () => {
     if (study) {
@@ -295,6 +301,28 @@ const InformationView = (props: PropTypes) => {
       }
     }
   };
+
+  const exportOutput = async (output: string) => {
+    setOutputExportButtonAnchor(null);
+    if (study) {
+      try {
+        await callExportOutput(study.id, output);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
+      }
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getStudyOutputs(study.id);
+        setOutputList(res.map((o) => o.name));
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToListOutputs'), e as AxiosError);
+      }
+    })();
+  }, [study, t, enqueueSnackbar]);
 
   return study ? (
     <Paper className={classes.root}>
@@ -412,12 +440,31 @@ const InformationView = (props: PropTypes) => {
               <ButtonLoader className={classes.exportButton} onClick={() => exportStudy(study.id, false)}>
                 {t('main:export')}
               </ButtonLoader>
+              {!!outputList && (
+                <>
+                  <Button className={classes.exportButton} aria-haspopup="true" onClick={(event) => setOutputExportButtonAnchor(event.currentTarget)}>
+                    {t('singlestudy:exportOutput')}
+                  </Button>
+                  <Menu
+                    id="simple-menu"
+                    anchorEl={outputExportButtonAnchor}
+                    keepMounted
+                    open={Boolean(outputExportButtonAnchor)}
+                    onClose={() => setOutputExportButtonAnchor(null)}
+                  >
+                    {outputList.map((output) => (
+                      <MenuItem onClick={() => exportOutput(output)}>
+                        {output}
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                </>
+              )}
               {study.managed && (
               <ButtonLoader className={classes.archivingButton} onClick={archiveStudy}>
                 {t('studymanager:archive')}
               </ButtonLoader>
               )}
-
             </>
           )}
         </div>

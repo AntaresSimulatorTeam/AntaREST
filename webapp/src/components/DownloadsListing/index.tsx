@@ -2,7 +2,7 @@ import React from 'react';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import moment from 'moment';
 import DownloadItem from './DownloadItem';
-import { FileDownload } from '../../common/types';
+import { FileDownload } from '../../services/api/downloads';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
