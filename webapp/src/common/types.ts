@@ -55,6 +55,15 @@ export interface StudyMetadata {
   folder?: string;
 }
 
+export interface StudyOutput {
+  name: string;
+  type: string;
+  completionDate: string;
+  referenceStatus: boolean;
+  synchronized: boolean;
+  status: string;
+}
+
 export interface VariantTreeDTO {
   node: StudyMetadataDTO;
   children: Array<VariantTreeDTO>;

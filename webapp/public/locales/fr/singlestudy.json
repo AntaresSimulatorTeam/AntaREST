@@ -36,6 +36,7 @@
   "generalInfo": "Informations générales",
   "renamestudy": "Renommer l'étude",
   "killStudy": "Arrêter",
+  "exportOutput": "Exporter les sorties",
   "confirmKill" : "Êtes-vous sûr de vouloir arrêter la tâche de simulation ?",
   "notes": "Notes",
   "fetchCommentsError": "Echec lors de la récupération des commentaires",

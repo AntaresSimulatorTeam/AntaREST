@@ -36,6 +36,7 @@
   "generalInfo": "General informations",
   "renamestudy": "Rename study",
   "killStudy": "Cancel",
+  "exportOutput": "Export output",
   "confirmKill": "Are you sure you want to cancel the simulation job ?",
   "notes": "Notes",
   "fetchCommentsError": "Failed to fetch comments",

@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { LaunchJob, StudyMetadata, StudyMetadataDTO, StudyPublicMode } from '../../common/types';
+import { LaunchJob, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 
@@ -30,6 +30,11 @@ export const getComments = async (sid: string): Promise<any> => {
 export const getStudyMetadata = async (sid: string, summary = true): Promise<StudyMetadata> => {
   const res = await client.get(`/v1/studies/${sid}?summary=${summary}`);
   return convertStudyDtoToMetadata(sid, res.data);
+};
+
+export const getStudyOutputs = async (sid: string): Promise<Array<StudyOutput>> => {
+  const res = await client.get(`/v1/studies/${sid}/outputs`);
+  return res.data;
 };
 
 export const createStudy = async (name: string, version: number): Promise<string> => {
@@ -68,6 +73,16 @@ export const editComments = async (sid: string, newComments: string): Promise<an
 
 export const getExportUrl = (sid: string, skipOutputs = false): string =>
   `${getConfig().downloadHostUrl || (getConfig().baseUrl + getConfig().restEndpoint)}/v1/studies/${sid}/export?no_output=${skipOutputs}`;
+
+export const exportOuput = async (sid: string, output: string): Promise<void> => {
+  const res = await client.post(`/v1/studies/${sid}/outputs/${output}/download`, undefined, { responseType: 'blob' });
+  const url = window.URL.createObjectURL(new Blob([await res.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `${output}.zip`);
+  document.body.appendChild(link);
+  link.click();
+};
 
 export const importStudy = async (file: File, onProgress?: (progress: number) => void): Promise<string> => {
   const options: AxiosRequestConfig = {};
