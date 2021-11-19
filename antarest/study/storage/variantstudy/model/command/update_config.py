@@ -1,11 +1,10 @@
-from typing import Dict, Any, Union, List, Optional
+from typing import Any, Union, List, Optional
 
-from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
 )
-from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -14,6 +13,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
     MATCH_SIGNATURE_SEPARATOR,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class UpdateConfig(ICommand):
@@ -60,7 +60,7 @@ class UpdateConfig(ICommand):
         return simple_match and self.data == other.data
 
     def revert(
-        self, history: List["ICommand"], base: Optional[FileStudy] = None
+        self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
         for command in reversed(history):
             if (
@@ -68,18 +68,16 @@ class UpdateConfig(ICommand):
                 and command.target == self.target
             ):
                 return [command]
-        if base is not None:
-            from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-                CommandExtraction,
-            )
+        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+            CommandExtraction,
+        )
 
-            return [
-                (
-                    self.command_context.command_extractor
-                    or CommandExtraction(self.command_context.matrix_service)
-                ).generate_update_config(base.tree, self.target.split("/"))
-            ]
-        return []
+        return [
+            (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
+            ).generate_update_config(base.tree, self.target.split("/"))
+        ]
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]

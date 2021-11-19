@@ -2,7 +2,7 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Optional, List
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 
 
 class CacheConstants(Enum):
@@ -10,6 +10,8 @@ class CacheConstants(Enum):
     STUDY_FACTORY = "STUDY_FACTORY"
     STUDY_LISTING_SUMMARY = "STUDY_LISTING_SUMMARY"
     STUDY_LISTING = "STUDY_LISTING"
+    STUDY_LISTING_SUMMARY_MANAGED = "STUDY_LISTING_SUMMARY_MANAGED"
+    STUDY_LISTING_MANAGED = "STUDY_LISTING_MANAGED"
 
 
 class ICache:

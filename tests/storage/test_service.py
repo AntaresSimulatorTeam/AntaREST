@@ -1,11 +1,10 @@
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, seal
 from uuid import uuid4
 
 import pytest
 
-from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
@@ -31,9 +30,8 @@ from antarest.study.model import (
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService, UserHasNotPermissionError
-from antarest.study.storage.permissions import (
+from antarest.core.permissions import (
     StudyPermissionType,
-    assert_permission,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -44,6 +42,11 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.utils import assert_permission
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+from antarest.study.storage.variantstudy.variant_study_service import (
+    VariantStudyService,
+)
 
 
 def build_study_service(
@@ -52,10 +55,11 @@ def build_study_service(
     config: Config,
     user_service: LoginService = Mock(),
     cache_service: ICache = Mock(),
+    variant_study_service=Mock(),
 ) -> StudyService:
     return StudyService(
         raw_study_service=raw_study_service,
-        variant_study_service=Mock(),
+        variant_study_service=variant_study_service,
         user_service=user_service,
         repository=repository,
         event_bus=Mock(),
@@ -133,6 +137,7 @@ def test_study_listing() -> None:
         created_at=datetime.now(),
         updated_at=datetime.now(),
         path="",
+        workspace=DEFAULT_WORKSPACE_NAME,
     )
     b = RawStudy(
         id="B",
@@ -143,6 +148,7 @@ def test_study_listing() -> None:
         created_at=datetime.now(),
         updated_at=datetime.now(),
         path="",
+        workspace="other",
     )
     c = RawStudy(
         id="C",
@@ -153,6 +159,7 @@ def test_study_listing() -> None:
         created_at=datetime.now(),
         updated_at=datetime.now(),
         path="",
+        workspace="other2",
     )
 
     # Mock
@@ -176,6 +183,7 @@ def test_study_listing() -> None:
 
     studies = service.get_studies_information(
         True,
+        False,
         RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
     )
 
@@ -189,11 +197,24 @@ def test_study_listing() -> None:
 
     studies = service.get_studies_information(
         True,
+        False,
         RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
     )
 
     assert expected_result == studies
     cache.put.assert_called_once()
+
+    cache.get.return_value = None
+    studies = service.get_studies_information(
+        True,
+        True,
+        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
+    )
+
+    expected_result = {
+        e.id: e for e in map(lambda x: study_to_dto(x, True), [a])
+    }
+    assert expected_result == studies
 
 
 @pytest.mark.unit_test
@@ -268,6 +289,9 @@ def test_create_study() -> None:
         groups=[group],
     )
 
+    user_service = Mock()
+    user_service.get_user.return_value = user
+
     study_service = Mock()
     study_service.get_default_workspace_path.return_value = Path("")
     study_service.get_study_information.return_value = {
@@ -285,7 +309,9 @@ def test_create_study() -> None:
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
         )
     )
-    service = build_study_service(study_service, repository, config)
+    service = build_study_service(
+        study_service, repository, config, user_service=user_service
+    )
 
     with pytest.raises(UserHasNotPermissionError):
         service.create_study(
@@ -742,9 +768,23 @@ def test_assert_permission() -> None:
 
 
 @pytest.mark.unit_test
-def test_delete_study_calls_callback():
+def test_delete_study_calls_callback(tmp_path: Path):
     study_uuid = "my_study"
-    service = build_study_service(Mock(), Mock(), Mock())
+    repository_mock = Mock()
+    study_path = tmp_path / study_uuid
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+    repository_mock.get.return_value = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="my_study",
+        path=study_path,
+        groups=[],
+        owner=None,
+        public_mode=PublicMode.NONE,
+        workspace=DEFAULT_WORKSPACE_NAME,
+    )
+    service = build_study_service(Mock(), repository_mock, Mock())
     callback = Mock()
     service.add_on_deletion_callback(callback)
 
@@ -754,3 +794,83 @@ def test_delete_study_calls_callback():
     )
 
     callback.assert_called_once_with(study_uuid)
+
+
+@pytest.mark.unit_test
+def test_delete_with_prefetch(tmp_path: Path):
+    study_uuid = "my_study"
+
+    study_metadata_repository = Mock()
+    raw_study_service = RawStudyService(
+        Config(), Mock(), Mock(), Mock(), Mock()
+    )
+    variant_study_service = VariantStudyService(
+        Mock(),
+        Mock(),
+        raw_study_service,
+        Mock(),
+        Mock(),
+        Mock(),
+        Mock(),
+        Mock(),
+        Mock(),
+    )
+    service = build_study_service(
+        raw_study_service,
+        study_metadata_repository,
+        Mock(),
+        variant_study_service=variant_study_service,
+    )
+
+    study_path = tmp_path / study_uuid
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+    study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="my_study",
+        path=study_path,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace=DEFAULT_WORKSPACE_NAME,
+    )
+    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+
+    # it freezes the mock and raise Attribute error if anything else than defined is used
+    seal(study_mock)
+
+    study_metadata_repository.get.return_value = study_mock
+
+    # if this fails, it may means the study metadata mock is missing some attribute definition
+    # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)
+    # see the comment in the delete method for more information
+    service.delete_study(
+        study_uuid,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+    # test for variant studies
+    study_mock = Mock(
+        spec=VariantStudy,
+        archived=False,
+        id="my_study",
+        path=study_path,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+
+    # it freezes the mock and raise Attribute error if anything else than defined is used
+    seal(study_mock)
+
+    study_metadata_repository.get.return_value = study_mock
+
+    # if this fails, it may means the study metadata mock is missing some definition
+    # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)
+    # see the comment in the delete method for more information
+    service.delete_study(
+        study_uuid,
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )

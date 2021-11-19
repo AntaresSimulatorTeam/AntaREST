@@ -2,14 +2,13 @@ from typing import Dict, Union, List, Any, Optional, cast
 
 from pydantic import validator
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Cluster,
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -20,9 +19,9 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
 )
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
-    get_or_create_section,
     strip_matrix_protocol,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class CreateCluster(ICommand):
@@ -165,7 +164,7 @@ class CreateCluster(ICommand):
         )
 
     def revert(
-        self, history: List["ICommand"], base: Optional[FileStudy] = None
+        self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.remove_cluster import (
             RemoveCluster,

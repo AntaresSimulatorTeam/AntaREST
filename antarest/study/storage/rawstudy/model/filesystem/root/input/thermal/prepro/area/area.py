@@ -15,7 +15,10 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.
 
 class InputThermalPreproArea(FolderNode):
     def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig, area: str
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        area: str,
     ):
         FolderNode.__init__(self, context, config)
         self.area = area

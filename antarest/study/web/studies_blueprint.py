@@ -10,6 +10,7 @@ from starlette.responses import FileResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
+from antarest.core.model import PublicMode
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -18,7 +19,6 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import (
-    PublicMode,
     StudyMetadataPatchDTO,
     StudySimResultDTO,
     StudyMetadataDTO,
@@ -56,12 +56,13 @@ def create_study_routes(
     )
     def get_studies(
         summary: bool = False,
+        managed: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Fetching study list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         available_studies = study_service.get_studies_information(
-            summary, params
+            summary, managed, params
         )
         return available_studies
 

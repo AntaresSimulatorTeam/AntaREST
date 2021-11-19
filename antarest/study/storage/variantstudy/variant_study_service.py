@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from filelock import FileLock  # type: ignore
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON, SUB_JSON
+from antarest.core.model import JSON, SUB_JSON, StudyPermissionType
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -24,7 +24,12 @@ from antarest.core.exceptions import (
     CommandUpdateAuthorizationError,
 )
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.interfaces.eventbus import (
+    IEventBus,
+    Event,
+    EventType,
+    EventChannelDirectory,
+)
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import (
@@ -46,10 +51,6 @@ from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
 )
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.permissions import (
-    assert_permission,
-    StudyPermissionType,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
@@ -67,6 +68,8 @@ from antarest.study.storage.utils import (
     get_default_workspace_path,
     is_managed,
     remove_from_cache,
+    assert_permission,
+    create_permission_from_study,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -578,7 +581,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
         self.repository.save(variant_study)
         self.event_bus.push(
-            Event(EventType.STUDY_CREATED, variant_study.to_json_summary())
+            Event(
+                type=EventType.STUDY_CREATED,
+                payload=variant_study.to_json_summary(),
+                permissions=create_permission_from_study(variant_study),
+            )
         )
         logger.info(
             "variant study %s created by user %s",
@@ -747,11 +754,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     success=command_result,
                     message=command_message,
                 )
-                notifier(json.dumps(dataclasses.asdict(command_result_obj)))
+                notifier(command_result_obj.json())
                 self.event_bus.push(
                     Event(
-                        EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
-                        command_result_obj,
+                        type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
+                        payload=command_result_obj,
+                        channel=EventChannelDirectory.STUDY_GENERATION
+                        + variant_study.id,
                     )
                 )
             except Exception as e:

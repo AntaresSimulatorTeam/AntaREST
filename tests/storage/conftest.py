@@ -8,7 +8,7 @@ import pytest
 project_dir: Path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_dir))
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 
 
 @pytest.fixture

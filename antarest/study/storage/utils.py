@@ -2,14 +2,25 @@ import logging
 import os
 import shutil
 from pathlib import Path
+from typing import Optional, Union
 from uuid import uuid4
+from zipfile import ZipFile
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyValidationError
+from antarest.core.exceptions import (
+    StudyValidationError,
+    UnsupportedStudyVersion,
+)
 from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.jwt import JWTUser
+from antarest.core.model import PermissionInfo, StudyPermissionType, PublicMode
+from antarest.core.permissions import check_permission
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Study,
+    STUDY_REFERENCE_TEMPLATES,
+    StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
@@ -103,3 +114,68 @@ def remove_from_cache(cache: ICache, root_id: str) -> None:
             f"{CacheConstants.STUDY_FACTORY}/{root_id}",
         ]
     )
+
+
+def create_new_empty_study(
+    version: str, path_study: Path, path_resources: Path
+) -> None:
+    version_template: Optional[str] = STUDY_REFERENCE_TEMPLATES.get(
+        version, None
+    )
+    if version_template is None:
+        raise UnsupportedStudyVersion(version)
+
+    empty_study_zip = path_resources / version_template
+
+    with ZipFile(empty_study_zip) as zip_output:
+        zip_output.extractall(path=path_study)
+
+
+def create_permission_from_study(
+    study: Union[Study, StudyMetadataDTO]
+) -> PermissionInfo:
+    return PermissionInfo(
+        owner=study.owner.id if study.owner is not None else None,
+        groups=[g.id for g in study.groups if g.id is not None],
+        public_mode=PublicMode(study.public_mode)
+        if study.public_mode is not None
+        else PublicMode.NONE,
+    )
+
+
+def assert_permission(
+    user: Optional[JWTUser],
+    study: Optional[Union[Study, StudyMetadataDTO]],
+    permission_type: StudyPermissionType,
+    raising: bool = True,
+) -> bool:
+    """
+    Assert user has permission to edit or read study.
+    Args:
+        user: user logged
+        study: study asked
+        permission_type: level of permission
+        raising: raise error if permission not matched
+
+    Returns: true if permission match, false if not raising.
+
+    """
+    if not user:
+        logger.error("FAIL permission: user is not logged")
+        raise UserHasNotPermissionError()
+
+    if not study:
+        logger.error("FAIL permission: study not exist")
+        raise ValueError("Metadata is None")
+
+    permission_info = create_permission_from_study(study)
+    ok = check_permission(user, permission_info, permission_type)
+    if raising and not ok:
+        logger.error(
+            "FAIL permission: user %d has no permission on study %s",
+            user.id,
+            study.id,
+        )
+        raise UserHasNotPermissionError()
+
+    return ok

@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from markupsafe import escape
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON, PublicMode, StudyPermissionType
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -30,6 +30,7 @@ from antarest.core.roles import RoleType
 from antarest.core.tasks.service import ITaskService
 from antarest.login.model import Group
 from antarest.login.service import LoginService
+from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import (
     Study,
@@ -37,7 +38,6 @@ from antarest.study.model import (
     StudyFolder,
     DEFAULT_WORKSPACE_NAME,
     RawStudy,
-    PublicMode,
     StudyMetadataPatchDTO,
     StudyMetadataDTO,
     StudyDownloadDTO,
@@ -49,16 +49,12 @@ from antarest.study.model import (
     PatchStudy,
 )
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.area_management import (
+from antarest.study.business.area_management import (
     AreaManager,
     AreaType,
     AreaInfoDTO,
     AreaCreationDTO,
     AreaPatchUpdateDTO,
-)
-from antarest.study.storage.permissions import (
-    StudyPermissionType,
-    assert_permission,
 )
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
@@ -68,6 +64,8 @@ from antarest.study.storage.utils import (
     get_default_workspace_path,
     is_managed,
     remove_from_cache,
+    assert_permission,
+    create_permission_from_study,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (
@@ -100,6 +98,7 @@ class StudyService:
         self.event_bus = event_bus
         self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
+        self.links = LinkManager(self.raw_study_service)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
@@ -230,12 +229,13 @@ class StudyService:
         )
 
     def get_studies_information(
-        self, summary: bool, params: RequestParameters
+        self, summary: bool, managed: bool, params: RequestParameters
     ) -> Dict[str, StudyMetadataDTO]:
         """
         Get information for all studies.
         Args:
             summary: indicate if just basic information should be retrieved
+            managed: indicate if just managed studies should be retrieved
             params: request parameters
 
         Returns: List of study information
@@ -243,22 +243,25 @@ class StudyService:
         """
         logger.info("Fetching study listing")
         studies: Dict[str, StudyMetadataDTO] = {}
-        cache_key = (
-            CacheConstants.STUDY_LISTING_SUMMARY.value
-            if summary
-            else CacheConstants.STUDY_LISTING.value
-        )
+        cache_keys = {
+            (True, True): CacheConstants.STUDY_LISTING_SUMMARY_MANAGED.value,
+            (True, False): CacheConstants.STUDY_LISTING_SUMMARY.value,
+            (False, True): CacheConstants.STUDY_LISTING_MANAGED.value,
+            (False, False): CacheConstants.STUDY_LISTING.value,
+        }
+        cache_key = cache_keys[(summary, managed)]
         cached_studies = self.cache_service.get(cache_key)
         if cached_studies:
             for k in cached_studies:
                 studies[k] = StudyMetadataDTO.parse_obj(cached_studies[k])
         else:
             for study in self.repository.get_all():
-                study_metadata = self._try_get_studies_information(
-                    study, summary
-                )
-                if study_metadata is not None:
-                    studies[study_metadata.id] = study_metadata
+                if not managed or is_managed(study):
+                    study_metadata = self._try_get_studies_information(
+                        study, summary
+                    )
+                    if study_metadata is not None:
+                        studies[study_metadata.id] = study_metadata
             self.cache_service.put(cache_key, studies)
         return {
             s.id: s
@@ -346,7 +349,11 @@ class StudyService:
             study
         ).patch_update_study_metadata(study, metadata_patch)
         self.event_bus.push(
-            Event(EventType.STUDY_EDITED, study.to_json_summary())
+            Event(
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
         )
         return new_metadata
 
@@ -402,7 +409,11 @@ class StudyService:
         raw = self.raw_study_service.create(raw)
         self._save_study(raw, params.user, group_ids)
         self.event_bus.push(
-            Event(EventType.STUDY_CREATED, raw.to_json_summary())
+            Event(
+                type=EventType.STUDY_CREATED,
+                payload=raw.to_json_summary(),
+                permissions=create_permission_from_study(raw),
+            )
         )
 
         logger.info(
@@ -454,7 +465,11 @@ class StudyService:
                     study.id,
                 )
                 self.event_bus.push(
-                    Event(EventType.STUDY_DELETED, study.to_json_summary())
+                    Event(
+                        type=EventType.STUDY_DELETED,
+                        payload=study.to_json_summary(),
+                        permissions=create_permission_from_study(study),
+                    )
                 )
                 self.repository.delete(study.id)
 
@@ -496,7 +511,11 @@ class StudyService:
                         "Study=%s appears on disk and will be added", study.id
                     )
                     self.event_bus.push(
-                        Event(EventType.STUDY_CREATED, study.to_json_summary())
+                        Event(
+                            type=EventType.STUDY_CREATED,
+                            payload=study.to_json_summary(),
+                            permissions=create_permission_from_study(study),
+                        )
                     )
                     self.repository.save(study)
                 except Exception as e:
@@ -536,7 +555,11 @@ class StudyService:
         )
         self._save_study(study, params.user, group_ids)
         self.event_bus.push(
-            Event(EventType.STUDY_CREATED, study.to_json_summary())
+            Event(
+                type=EventType.STUDY_CREATED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
         )
 
         logger.info(
@@ -627,8 +650,20 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.DELETE)
 
         study_info = study.to_json_summary()
+
+        # this prefetch the workspace because it is lazy loaded and the object is deleted before using workspace attribute in raw study deletion
+        # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
+        if isinstance(study, RawStudy):
+            _ = study.workspace
         self.repository.delete(study.id)
-        self.event_bus.push(Event(EventType.STUDY_DELETED, study_info))
+
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DELETED,
+                payload=study_info,
+                permissions=create_permission_from_study(study),
+            )
+        )
 
         # delete the files afterward for
         # if the study cannot be deleted from database for foreign key reason
@@ -662,7 +697,11 @@ class StudyService:
             study, output_name
         )
         self.event_bus.push(
-            Event(EventType.STUDY_EDITED, study.to_json_summary())
+            Event(
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
         )
 
         logger.info(
@@ -799,7 +838,11 @@ class StudyService:
             #    content_status=status,
         )
         self.event_bus.push(
-            Event(EventType.STUDY_CREATED, study.to_json_summary())
+            Event(
+                type=EventType.STUDY_CREATED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
         )
 
         logger.info(
@@ -869,7 +912,11 @@ class StudyService:
         )
 
         self.event_bus.push(
-            Event(EventType.STUDY_EDITED, study.to_json_summary())
+            Event(
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
         )
         logger.info(
             "data %s on study %s updated by user %s",
@@ -901,7 +948,11 @@ class StudyService:
         study.owner = new_owner
         self.repository.save(study)
         self.event_bus.push(
-            Event(EventType.STUDY_EDITED, study.to_json_summary())
+            Event(
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
         )
 
         self._get_study_storage_service(study).edit_study(
@@ -936,12 +987,15 @@ class StudyService:
             params.user, study, StudyPermissionType.MANAGE_PERMISSIONS
         )
         group = self.user_service.get_group(group_id, params)
-        study.groups = study.groups + [
-            group if group not in study.groups else study.groups
-        ]
+        if group not in study.groups:
+            study.groups = study.groups + [group]
         self.repository.save(study)
         self.event_bus.push(
-            Event(EventType.STUDY_EDITED, study.to_json_summary())
+            Event(
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
         )
 
         logger.info(
@@ -973,7 +1027,11 @@ class StudyService:
         ]
         self.repository.save(study)
         self.event_bus.push(
-            Event(EventType.STUDY_EDITED, study.to_json_summary())
+            Event(
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
         )
 
         logger.info(
@@ -1003,7 +1061,11 @@ class StudyService:
         study.public_mode = mode
         self.repository.save(study)
         self.event_bus.push(
-            Event(EventType.STUDY_EDITED, study.to_json_summary())
+            Event(
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
         )
         logger.info(
             "updated public mode of study %s by user %s",
@@ -1026,6 +1088,16 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         return self.areas.get_all_areas(study, area_type)
+
+    def get_all_links(
+        self,
+        uuid: str,
+        params: RequestParameters,
+    ) -> List[LinkInfoDTO]:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.links.get_all_links(study)
 
     def create_area(
         self,
@@ -1073,9 +1145,12 @@ class StudyService:
         self.raw_study_service.archive(study)
         study.archived = True
         self.repository.save(study)
-        a = 7
         self.event_bus.push(
-            Event(EventType.STUDY_EDITED, study.to_json_summary())
+            Event(
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
         )
 
     def unarchive(self, uuid: str, params: RequestParameters) -> None:
@@ -1096,7 +1171,11 @@ class StudyService:
         os.unlink(self.raw_study_service.get_archive_path(study))
         self.repository.save(study)
         self.event_bus.push(
-            Event(EventType.STUDY_EDITED, study.to_json_summary())
+            Event(
+                type=EventType.STUDY_EDITED,
+                payload=study.to_json_summary(),
+                permissions=create_permission_from_study(study),
+            )
         )
 
     def _save_study(

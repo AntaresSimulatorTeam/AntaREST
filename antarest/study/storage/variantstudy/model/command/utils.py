@@ -1,6 +1,6 @@
 from typing import Union, List, Any
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     MATRIX_PROTOCOL_PREFIX,

@@ -4,7 +4,7 @@ from antarest.eventbus.business.local_eventbus import LocalEventBus
 
 def test_lifecycle():
     eventbus = LocalEventBus()
-    event = Event("test", "foo")
+    event = Event(type="test", payload="foo")
     eventbus.push_event(event)
     assert eventbus.get_events() == [event]
     eventbus.clear_events()

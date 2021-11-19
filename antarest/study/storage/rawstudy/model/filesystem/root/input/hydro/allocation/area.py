@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -24,7 +24,10 @@ class FixedAllocationKeyIniReader(IniReader):
 
 class InputHydroAllocationArea(IniFileNode):
     def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig, area: str
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        area: str,
     ):
         types = {"[allocation]": {area: int}}
         IniFileNode.__init__(

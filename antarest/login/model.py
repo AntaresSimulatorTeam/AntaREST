@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, Sequence, String, ForeignKey, Enum, Bool
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
 
@@ -215,7 +215,9 @@ class Bot(Identity):
         ForeignKey("identities.id"),
         primary_key=True,
     )
-    owner = Column(Integer, ForeignKey("users.id"))
+    owner = Column(
+        Integer, ForeignKey("identities.id", name="bots_owner_fkey")
+    )
     is_author = Column(Boolean(), default=True)
 
     def get_impersonator(self) -> int:
@@ -223,6 +225,7 @@ class Bot(Identity):
 
     __mapper_args__ = {
         "polymorphic_identity": "bots",
+        "inherit_condition": id == Identity.id,
     }
 
     def to_dto(self) -> BotDTO:

@@ -15,8 +15,8 @@ def test_lifecycle():
     eventbus = RedisEventBus(redis_client)
     pubsub_mock.subscribe.assert_called_once_with("events")
 
-    event = Event("test", "foo")
-    serialized = json.dumps(dataclasses.asdict(event))
+    event = Event(type="test", payload="foo")
+    serialized = event.json()
     pubsub_mock.get_message.return_value = {"data": serialized}
     eventbus.push_event(event)
     redis_client.publish.assert_called_once_with("events", serialized)

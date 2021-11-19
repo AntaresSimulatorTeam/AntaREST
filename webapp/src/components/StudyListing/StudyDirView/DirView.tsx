@@ -1,5 +1,7 @@
 /* eslint-disable react/no-array-index-key */
 import React from 'react';
+import clsx from 'clsx';
+import moment from 'moment';
 import { makeStyles, createStyles, Theme, Paper, Typography, Tooltip, Breadcrumbs, Grid } from '@material-ui/core';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import FolderIcon from '@material-ui/icons/Folder';
@@ -62,7 +64,7 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: 'flex-start',
       alignItems: 'center',
       boxSizing: 'border-box',
-      width: '120px',
+      width: '320px',
       backgrounCOlor: '#0000',
       padding: theme.spacing(2),
       margin: theme.spacing(3),
@@ -75,9 +77,6 @@ const useStyles = makeStyles((theme: Theme) =>
       width: '50px',
       height: '50px',
       color: theme.palette.primary.main,
-      '&:hover': {
-        color: theme.palette.secondary.main,
-      },
       boxSizing: 'border-box',
     },
     elementNameContainer: {
@@ -92,6 +91,13 @@ const useStyles = makeStyles((theme: Theme) =>
     elementName: {
       color: theme.palette.primary.main,
       fontSize: '1em',
+    },
+    elementDate: {
+      color: 'gray',
+      fontSize: '0.8em',
+    },
+    secondaryColor: {
+      color: theme.palette.secondary.main,
     },
     homeIcon: {
       color: theme.palette.primary.main,
@@ -108,7 +114,7 @@ interface Props {
     dirPath: Array<string>;
     node: StudyTreeNode;
     onClick: (element: StudyTreeNode | StudyMetadata) => void;
-    onDirClick: (element: string) => void;
+    onDirClick: (element: Array<string>) => void;
 }
 
 const DirView = (props: Props) => {
@@ -127,13 +133,13 @@ const DirView = (props: Props) => {
                   <HomeRoundedIcon
                     key={`${elm}-${index}`}
                     className={classes.homeIcon}
-                    onClick={() => onDirClick(elm)}
+                    onClick={() => onDirClick(dirPath.slice(0, index + 1))}
                   />
                 ) : (
                   <Typography
                     key={`${elm}-${index}`}
                     className={classes.pathElement}
-                    onClick={() => onDirClick(elm)}
+                    onClick={() => onDirClick(dirPath.slice(0, index + 1))}
                   >
                     {elm}
                   </Typography>
@@ -153,14 +159,20 @@ const DirView = (props: Props) => {
                     <div className={classes.elementNameContainer}>
                       <Typography noWrap className={classes.elementName}>{elm.name}</Typography>
                     </div>
+                    <div className={classes.elementNameContainer} style={{ justifyContent: 'center' }}>
+                      <Typography noWrap className={classes.elementDate}>{moment.unix(elm.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
+                    </div>
                   </Paper>
                 </Tooltip>
               ) : (
                 <Tooltip key={`${elm}-${index}`} title={elm.name}>
                   <Paper className={classes.element} onClick={() => onClick(elm)}>
-                    <DescriptionIcon className={classes.icon} />
+                    <DescriptionIcon className={(elm as StudyMetadata).managed ? clsx(classes.icon, classes.secondaryColor) : classes.icon} />
                     <div className={classes.elementNameContainer}>
                       <Typography noWrap className={classes.elementName}>{elm.name}</Typography>
+                    </div>
+                    <div className={classes.elementNameContainer} style={{ justifyContent: 'center' }}>
+                      <Typography noWrap className={classes.elementDate}>{moment.unix(elm.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
                     </div>
                   </Paper>
                 </Tooltip>

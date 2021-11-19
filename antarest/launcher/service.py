@@ -11,6 +11,7 @@ from antarest.core.interfaces.eventbus import (
     IEventBus,
     Event,
     EventType,
+    EventChannelDirectory,
 )
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
@@ -21,10 +22,13 @@ from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.model import JobResult, JobStatus, LogType
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
-from antarest.study.storage.permissions import (
-    check_permission,
+from antarest.core.model import (
     StudyPermissionType,
+    PermissionInfo,
+)
+from antarest.study.storage.utils import (
     assert_permission,
+    create_permission_from_study,
 )
 
 
@@ -85,10 +89,11 @@ class LauncherService:
             self.job_result_repository.save(job_result)
             self.event_bus.push(
                 Event(
-                    EventType.STUDY_JOB_COMPLETED
+                    type=EventType.STUDY_JOB_COMPLETED
                     if final_status
                     else EventType.STUDY_JOB_STATUS_UPDATE,
-                    job_result.to_dto().dict(),
+                    payload=job_result.to_dto().dict(),
+                    channel=EventChannelDirectory.JOB_STATUS + job_result.id,
                 )
             )
 
@@ -119,8 +124,9 @@ class LauncherService:
         self.job_result_repository.save(job_status)
         self.event_bus.push(
             Event(
-                EventType.STUDY_JOB_STARTED,
-                job_status.to_dto().dict(),
+                type=EventType.STUDY_JOB_STARTED,
+                payload=job_status.to_dto().dict(),
+                permissions=create_permission_from_study(study_info),
             )
         )
 
@@ -152,8 +158,9 @@ class LauncherService:
         self.job_result_repository.save(job_status)
         self.event_bus.push(
             Event(
-                EventType.STUDY_JOB_CANCELLED,
-                job_status.to_dto().dict(),
+                type=EventType.STUDY_JOB_CANCELLED,
+                payload=job_status.to_dto().dict(),
+                channel=EventChannelDirectory.JOB_STATUS + job_result.id,
             )
         )
 
@@ -168,10 +175,11 @@ class LauncherService:
         allowed_job_results = []
         for job_result in job_results:
             try:
-                if check_permission(
+                if assert_permission(
                     user,
                     self.study_service.get_study(job_result.study_id),
                     StudyPermissionType.RUN,
+                    raising=False,
                 ):
                     allowed_job_results.append(job_result)
             except StudyNotFoundError:

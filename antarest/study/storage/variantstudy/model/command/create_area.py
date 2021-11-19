@@ -1,9 +1,6 @@
-from typing import Dict, Any, Optional, List, cast
+from typing import Any, Optional, List
 
-from pydantic import validator
-
-from antarest.core.custom_types import JSON
-from antarest.study.model import PatchLeafDict
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     transform_name_to_id,
@@ -13,7 +10,6 @@ from antarest.study.storage.variantstudy.business.default_values import (
     NodalOptimization,
     FilteringOptions,
 )
-from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -25,6 +21,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
 from antarest.study.storage.variantstudy.model.command.utils import (
     get_or_create_section,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class CreateArea(ICommand):
@@ -267,7 +264,7 @@ class CreateArea(ICommand):
         return self.area_name == other.area_name
 
     def revert(
-        self, history: List["ICommand"], base: Optional[FileStudy] = None
+        self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.remove_area import (
             RemoveArea,

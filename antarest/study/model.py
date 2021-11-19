@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
+from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.login.model import Group, Identity, GroupDTO
 
@@ -33,21 +34,13 @@ STUDY_REFERENCE_TEMPLATES: Dict[str, str] = {
     "810": "empty_study_810.zip",
 }
 
-NEW_DEFAULT_STUDY_VERSION: str = "803"
+NEW_DEFAULT_STUDY_VERSION: str = "810"
 
 
 class StudyContentStatus(enum.Enum):
     VALID = "VALID"
     WARNING = "WARNING"
     ERROR = "ERROR"
-
-
-class PublicMode(enum.Enum):
-    NONE = "NONE"
-    READ = "READ"
-    EXECUTE = "EXECUTE"
-    EDIT = "EDIT"
-    FULL = "FULL"
 
 
 class CommentsDto(BaseModel):

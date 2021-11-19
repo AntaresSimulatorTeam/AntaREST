@@ -5,7 +5,7 @@ from typing import List, Optional, Dict
 import requests
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.login.model import UserLdap, Group, Role
 from antarest.login.repository import (
     UserLdapRepository,

@@ -25,6 +25,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
+from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+    CommandExtraction,
+)
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
@@ -53,14 +56,22 @@ def matrix_service() -> MatrixService:
 
 @pytest.fixture
 def command_context(matrix_service: MatrixService) -> CommandContext:
-    return CommandContext(
+    command_extractor = Mock(spec=CommandExtraction)
+    command_extractor.generate_update_comments.side_effect = (
+        lambda x: CommandExtraction.generate_update_comments(
+            command_extractor, x
+        )
+    )
+    command_context = CommandContext(
         generator_matrix_constants=GeneratorMatrixConstants(
             matrix_service=matrix_service
         ),
         matrix_service=matrix_service,
         patch_service=PatchService(),
-        command_extractor=Mock(spec=ICommandExtractor),
+        command_extractor=command_extractor,
     )
+    command_extractor.command_context = command_context
+    return command_context
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 
-from antarest.core.custom_types import SUB_JSON
+from antarest.core.model import SUB_JSON
 from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.requests import (
     RequestParameters,

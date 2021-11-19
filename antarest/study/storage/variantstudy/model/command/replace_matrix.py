@@ -2,7 +2,7 @@ from typing import Union, List, Any, Optional
 
 from pydantic import validator
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
@@ -93,7 +93,7 @@ class ReplaceMatrix(ICommand):
         return simple_match and self.matrix == other.matrix
 
     def revert(
-        self, history: List["ICommand"], base: Optional[FileStudy] = None
+        self, history: List["ICommand"], base: FileStudy
     ) -> List["ICommand"]:
         for command in reversed(history):
             if (
@@ -101,18 +101,21 @@ class ReplaceMatrix(ICommand):
                 and command.target == self.target
             ):
                 return [command]
-        if base is not None:
-            from antarest.study.storage.variantstudy.model.command.utils_extractor import (
-                CommandExtraction,
-            )
+        from antarest.study.storage.variantstudy.model.command.utils_extractor import (
+            CommandExtraction,
+        )
 
+        try:
             return [
                 (
                     self.command_context.command_extractor
                     or CommandExtraction(self.command_context.matrix_service)
                 ).generate_replace_matrix(base.tree, self.target.split("/"))
             ]
-        return []
+        except ChildNotFoundError:
+            return (
+                []
+            )  # if the matrix does not exist, there is nothing to revert
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]

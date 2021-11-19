@@ -9,8 +9,14 @@ from typing import Callable, Optional, List, Dict
 from fastapi import HTTPException
 
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
+from antarest.core.interfaces.eventbus import (
+    IEventBus,
+    Event,
+    EventType,
+    EventChannelDirectory,
+)
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.model import PermissionInfo
 from antarest.core.requests import (
     RequestParameters,
     MustBeAuthenticatedError,
@@ -107,12 +113,15 @@ class TaskJobService(ITaskService):
 
         self.event_bus.push(
             Event(
-                EventType.TASK_ADDED,
-                TaskEventPayload(
+                type=EventType.TASK_ADDED,
+                payload=TaskEventPayload(
                     id=task.id, message=custom_event_messages.start
                 ).dict()
                 if custom_event_messages is not None
                 else f"Task {task.id} added",
+                permissions=PermissionInfo(
+                    owner=request_params.user.impersonator
+                ),
             )
         )
         future = self.threadpool.submit(
@@ -186,12 +195,13 @@ class TaskJobService(ITaskService):
 
         self.event_bus.push(
             Event(
-                EventType.TASK_RUNNING,
-                TaskEventPayload(
+                type=EventType.TASK_RUNNING,
+                payload=TaskEventPayload(
                     id=task_id, message=custom_event_messages.running
                 ).dict()
                 if custom_event_messages is not None
                 else f"Task {task_id} is running",
+                channel=EventChannelDirectory.TASK + task_id,
             )
         )
 
@@ -212,14 +222,15 @@ class TaskJobService(ITaskService):
                 )
                 self.event_bus.push(
                     Event(
-                        EventType.TASK_COMPLETED
+                        type=EventType.TASK_COMPLETED
                         if result.success
                         else EventType.TASK_FAILED,
-                        TaskEventPayload(
+                        payload=TaskEventPayload(
                             id=task_id, message=custom_event_messages.end
                         ).dict()
                         if custom_event_messages is not None
                         else f'Task {task_id} {"completed" if result.success else "failed"}',
+                        channel=EventChannelDirectory.TASK + task_id,
                     )
                 )
             except Exception as e:
@@ -231,12 +242,13 @@ class TaskJobService(ITaskService):
                 )
                 self.event_bus.push(
                     Event(
-                        EventType.TASK_FAILED,
-                        TaskEventPayload(
+                        type=EventType.TASK_FAILED,
+                        payload=TaskEventPayload(
                             id=task_id, message=custom_event_messages.end
                         ).dict()
                         if custom_event_messages is not None
                         else f"Task {task_id} failed",
+                        channel=EventChannelDirectory.TASK + task_id,
                     )
                 )
 

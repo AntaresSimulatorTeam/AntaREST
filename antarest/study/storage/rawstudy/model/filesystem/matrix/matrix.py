@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -21,7 +21,10 @@ logger = logging.getLogger(__name__)
 
 class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
     def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig, freq: str
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        freq: str,
     ) -> None:
         LazyNode.__init__(self, context, config)
         self.freq = freq

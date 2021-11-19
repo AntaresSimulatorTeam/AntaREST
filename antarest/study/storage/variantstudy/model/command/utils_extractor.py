@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, List, Tuple, Union
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService

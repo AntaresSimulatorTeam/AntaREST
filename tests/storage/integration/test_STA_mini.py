@@ -9,12 +9,13 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.core.roles import RoleType
+from antarest.login.model import User
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService

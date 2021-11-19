@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
 
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.io.reader import (
     IniReader,
     MultipleSameKeysIniReader,

@@ -9,7 +9,7 @@ from typing import List, Union, Optional, IO
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.custom_types import JSON
+from antarest.core.model import JSON, PublicMode
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.utils.utils import extract_zip, StopWatch
@@ -20,7 +20,6 @@ from antarest.study.model import (
     StudySimResultDTO,
     StudySimSettingsDTO,
     PatchOutputs,
-    PublicMode,
     OwnerInfo,
     DEFAULT_WORKSPACE_NAME,
     PatchStudy,

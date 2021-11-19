@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import {
   makeStyles,
@@ -14,11 +14,13 @@ import {
 } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
+import { connect, ConnectedProps } from 'react-redux';
 import { getStudyJobLog, killStudy } from '../../services/api/study';
 import { LaunchJob } from '../../common/types';
 import LogModal from '../ui/LogModal';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import ConfirmationModal from '../ui/ConfirmationModal';
+import { subscribe, unsubscribe, WsChannel } from '../../ducks/websockets';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -110,12 +112,24 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   }));
 
-interface PropTypes {
+interface OwnTypes {
   jobs: LaunchJob[];
 }
 
+const mapState = () => ({
+});
+
+const mapDispatch = ({
+  subscribeChannel: subscribe,
+  unsubscribeChannel: unsubscribe,
+});
+
+const connector = connect(mapState, mapDispatch);
+type ReduxProps = ConnectedProps<typeof connector>;
+type PropTypes = ReduxProps & OwnTypes;
+
 const TaskView = (props: PropTypes) => {
-  const { jobs } = props;
+  const { jobs, subscribeChannel, unsubscribeChannel } = props;
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
@@ -149,6 +163,25 @@ const TaskView = (props: PropTypes) => {
       setOpenConfirmationModal(false);
     })();
   };
+
+  useEffect(() => {
+    jobs.forEach((job) => {
+      subscribeChannel(WsChannel.JOB_STATUS + job.id);
+    });
+    return () => {
+      jobs.forEach((job) => {
+        unsubscribeChannel(WsChannel.JOB_STATUS + job.id);
+      });
+    };
+  }, [jobs, subscribeChannel, unsubscribeChannel]);
+
+  useEffect(() => {
+    if (jobIdDetail) {
+      subscribeChannel(WsChannel.JOB_LOGS + jobIdDetail);
+      return () => unsubscribeChannel(WsChannel.JOB_LOGS + jobIdDetail);
+    }
+    return () => { /* noop */ };
+  }, [jobIdDetail, subscribeChannel, unsubscribeChannel]);
 
   return (
     <Paper className={classes.root}>
@@ -227,4 +260,4 @@ const TaskView = (props: PropTypes) => {
   );
 };
 
-export default TaskView;
+export default connector(TaskView);
