@@ -229,12 +229,13 @@ class StudyService:
         )
 
     def get_studies_information(
-        self, summary: bool, params: RequestParameters
+        self, summary: bool, managed: bool, params: RequestParameters
     ) -> Dict[str, StudyMetadataDTO]:
         """
         Get information for all studies.
         Args:
             summary: indicate if just basic information should be retrieved
+            managed: indicate if just managed studies should be retrieved
             params: request parameters
 
         Returns: List of study information
@@ -242,22 +243,25 @@ class StudyService:
         """
         logger.info("Fetching study listing")
         studies: Dict[str, StudyMetadataDTO] = {}
-        cache_key = (
-            CacheConstants.STUDY_LISTING_SUMMARY.value
-            if summary
-            else CacheConstants.STUDY_LISTING.value
-        )
+        cache_keys = {
+            (True, True): CacheConstants.STUDY_LISTING_SUMMARY_MANAGED.value,
+            (True, False): CacheConstants.STUDY_LISTING_SUMMARY.value,
+            (False, True): CacheConstants.STUDY_LISTING_MANAGED.value,
+            (False, False): CacheConstants.STUDY_LISTING.value,
+        }
+        cache_key = cache_keys[(summary, managed)]
         cached_studies = self.cache_service.get(cache_key)
         if cached_studies:
             for k in cached_studies:
                 studies[k] = StudyMetadataDTO.parse_obj(cached_studies[k])
         else:
             for study in self.repository.get_all():
-                study_metadata = self._try_get_studies_information(
-                    study, summary
-                )
-                if study_metadata is not None:
-                    studies[study_metadata.id] = study_metadata
+                if not managed or is_managed(study):
+                    study_metadata = self._try_get_studies_information(
+                        study, summary
+                    )
+                    if study_metadata is not None:
+                        studies[study_metadata.id] = study_metadata
             self.cache_service.put(cache_key, studies)
         return {
             s.id: s

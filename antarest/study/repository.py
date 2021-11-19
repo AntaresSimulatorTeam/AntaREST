@@ -57,3 +57,9 @@ class StudyMetadataRepository:
         self.cache_service.invalidate(
             CacheConstants.STUDY_LISTING_SUMMARY.value
         )
+        self.cache_service.invalidate(
+            CacheConstants.STUDY_LISTING_MANAGED.value
+        )
+        self.cache_service.invalidate(
+            CacheConstants.STUDY_LISTING_SUMMARY_MANAGED.value
+        )

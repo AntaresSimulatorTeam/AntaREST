@@ -137,6 +137,7 @@ def test_study_listing() -> None:
         created_at=datetime.now(),
         updated_at=datetime.now(),
         path="",
+        workspace=DEFAULT_WORKSPACE_NAME
     )
     b = RawStudy(
         id="B",
@@ -147,6 +148,7 @@ def test_study_listing() -> None:
         created_at=datetime.now(),
         updated_at=datetime.now(),
         path="",
+        workspace="other"
     )
     c = RawStudy(
         id="C",
@@ -157,6 +159,7 @@ def test_study_listing() -> None:
         created_at=datetime.now(),
         updated_at=datetime.now(),
         path="",
+        workspace="other2"
     )
 
     # Mock
@@ -180,6 +183,7 @@ def test_study_listing() -> None:
 
     studies = service.get_studies_information(
         True,
+        False,
         RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
     )
 
@@ -193,11 +197,24 @@ def test_study_listing() -> None:
 
     studies = service.get_studies_information(
         True,
+        False,
         RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
     )
 
     assert expected_result == studies
     cache.put.assert_called_once()
+
+    cache.get.return_value = None
+    studies = service.get_studies_information(
+        True,
+        True,
+        RequestParameters(user=JWTUser(id=1, impersonator=1, type="users")),
+    )
+
+    expected_result = {
+        e.id: e for e in map(lambda x: study_to_dto(x, True), [a])
+    }
+    assert expected_result == studies
 
 
 @pytest.mark.unit_test
