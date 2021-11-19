@@ -1,4 +1,3 @@
-import dataclasses
 import json
 import logging
 import shutil
@@ -12,7 +11,6 @@ from fastapi import HTTPException
 from filelock import FileLock  # type: ignore
 
 from antarest.core.config import Config
-from antarest.core.model import JSON, SUB_JSON, StudyPermissionType
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -31,6 +29,7 @@ from antarest.core.interfaces.eventbus import (
     EventChannelDirectory,
 )
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import (
     TaskResult,
@@ -55,15 +54,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
-    IniFileNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
-    InputSeriesMatrix,
-)
-from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
-    RawFileNode,
-)
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -76,18 +66,6 @@ from antarest.study.storage.utils import (
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.replace_matrix import (
-    ReplaceMatrix,
-)
-from antarest.study.storage.variantstudy.model.command.update_comments import (
-    UpdateComments,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
@@ -524,52 +502,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             formatted=formatted,
             use_cache=use_cache,
         )
-
-    def edit_study(
-        self,
-        metadata: VariantStudy,
-        url: str,
-        new: SUB_JSON,
-    ) -> SUB_JSON:
-        study = self.get_raw(metadata)
-        tree_node = study.tree.get_node(url.split("/"))
-        if isinstance(tree_node, IniFileNode):
-            self.append_command(
-                metadata.id,
-                UpdateConfig(
-                    target=url,
-                    data=new,
-                    command_context=self.command_factory.command_context,
-                ).to_dto(),
-                RequestParameters(user=DEFAULT_ADMIN_USER),
-            )
-        elif isinstance(tree_node, InputSeriesMatrix):
-            self.append_command(
-                metadata.id,
-                ReplaceMatrix(
-                    target=url,
-                    matrix=new,
-                    command_context=self.command_factory.command_context,
-                ).to_dto(),
-                RequestParameters(user=DEFAULT_ADMIN_USER),
-            )
-        elif (
-            isinstance(tree_node, RawFileNode)
-            and url.split("/")[-1] == "comments"
-        ):
-            self.append_command(
-                metadata.id,
-                UpdateComments(
-                    target=url,
-                    comments=new,
-                    command_context=self.command_factory.command_context,
-                ).to_dto(),
-                RequestParameters(user=DEFAULT_ADMIN_USER),
-            )
-        else:
-            raise NotImplementedError()
-        remove_from_cache(self.cache, metadata.id)
-        return new
 
     def create_variant_study(
         self, uuid: str, name: str, params: RequestParameters
