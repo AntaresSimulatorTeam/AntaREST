@@ -12,6 +12,8 @@ import MatrixView from '../../ui/MatrixView/index';
 import ImportForm from '../../ui/ImportForm';
 import { CommonStudyStyle } from './utils/utils';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
+import NoContentFound from '../../ui/NoContentFound';
+import SimpleLoader from '../../ui/loaders/SimpleLoader';
 
 const logErr = debug('antares:createimportform:error');
 
@@ -105,8 +107,13 @@ const StudyMatrixView = (props: PropTypes) => {
           </div>
           )}
         <Paper className={classes.content}>
-          {data && Object.keys(data).length > 0 && (
+          {!loaded && (
+            <SimpleLoader />
+          )}
+          {loaded && data && Object.keys(data).length > 0 ? (
             <MatrixView matrix={data} readOnly />
+          ) : (
+            <NoContentFound title="Matrice vide vous pouvez en importer une" image="test" />
           )}
         </Paper>
       </div>
