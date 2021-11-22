@@ -1,3 +1,5 @@
+import datetime
+import logging
 import tempfile
 import uuid
 from pathlib import Path
@@ -22,6 +24,9 @@ from antarest.core.requests import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 class FileTransferManager:
     _instance: Optional["FileTransferManager"] = None
 
@@ -35,6 +40,9 @@ class FileTransferManager:
         self.repository = repository
         self.event_bus = event_bus
         self.tmp_dir = config.storage.tmp_dir
+        self.download_default_expiration_timeout_minutes = (
+            config.storage.download_default_expiration_timeout_minutes
+        )
 
     @staticmethod
     def get_instance() -> "FileTransferManager":
@@ -60,6 +68,10 @@ class FileTransferManager:
             ready=False,
             path=str(tmpfile),
             owner=owner.impersonator if owner is not None else None,
+            expiration_date=datetime.datetime.utcnow()
+            + datetime.timedelta(
+                minutes=self.download_default_expiration_timeout_minutes
+            ),
         )
         self.repository.add(download)
         return download
@@ -92,12 +104,29 @@ class FileTransferManager:
     ) -> List[FileDownloadDTO]:
         if not params.user:
             raise MustBeAuthenticatedError()
-        if params.user.is_site_admin():
-            return [d.to_dto() for d in self.repository.get_all()]
-        return [
-            d.to_dto()
-            for d in self.repository.get_all(params.user.impersonator)
-        ]
+        downloads = (
+            self.repository.get_all()
+            if params.user.is_site_admin()
+            else self.repository.get_all(params.user.impersonator)
+        )
+        self._clean_up_expired_downloads(downloads)
+        return [d.to_dto() for d in downloads]
+
+    def _clean_up_expired_downloads(
+        self, file_downloads: List[FileDownload]
+    ) -> None:
+        now = datetime.datetime.utcnow()
+        to_remove = []
+        for file_download in file_downloads:
+            if (
+                file_download.expiration_date is not None
+                and file_download.expiration_date >= now
+            ):
+                to_remove.append(file_download)
+        for file_download in to_remove:
+            logger.info(f"Removing expired download {file_download}")
+            file_downloads.remove(file_download)
+            self.repository.delete(file_download.id)
 
     def fetch_download(
         self, download_id: str, params: RequestParameters

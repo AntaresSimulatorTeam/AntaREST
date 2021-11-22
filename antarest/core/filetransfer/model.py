@@ -62,3 +62,6 @@ class FileDownload(Base):  # type: ignore
             ready=self.ready,
             expiration_date=self.expiration_date,
         )
+
+    def __repr__(self) -> str:
+        return f"(id={self.id},name={self.name},filename={self.filename},path={self.path},ready={self.ready},expiration_date={self.expiration_date})"
