@@ -16,6 +16,7 @@ import JobManagement from './Pages/JobManagement';
 import UserSettings from './Pages/Settings';
 import Data from './Pages/Data';
 import { addWsListeners } from '../services/utils/globalWsListeners';
+import DownloadsManagement from './Pages/DownloadsManagement';
 
 const reduxStore = createStore();
 addWsListeners(reduxStore);
@@ -52,6 +53,9 @@ const App: React.FC<{}> = () => (
                   </Route>
                   <Route path="/data" key="data">
                     <Data />
+                  </Route>
+                  <Route path="/downloads" key="download">
+                    <DownloadsManagement />
                   </Route>
                   <Route path="/swagger">
                     <SwaggerDoc />
