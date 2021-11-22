@@ -7,6 +7,7 @@ import QueueIcon from '@material-ui/icons/Queue';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
 import { connect, ConnectedProps } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import LiveHelpRoundedIcon from '@material-ui/icons/LiveHelpRounded';
 import debug from 'debug';
 import { AxiosError } from 'axios';
 import HelpIcon from '@material-ui/icons/Help';
@@ -19,6 +20,7 @@ import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO, TaskEvent
 import CommandImportButton from './DraggableCommands/CommandImportButton';
 import { addListener, removeListener, subscribe, unsubscribe, WsChannel } from '../../../ducks/websockets';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
+import NoContentFound from '../../ui/NoContentFound';
 
 const logError = debug('antares:variantedition:error');
 
@@ -57,6 +59,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
     overflow: 'auto',
     boxSizing: 'border-box',
+    position: 'relative',
   },
   addButton: {
     color: theme.palette.primary.main,
@@ -106,6 +109,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     fontWeight: 'bold',
     color: theme.palette.primary.main,
     borderBottom: `4px solid ${theme.palette.primary.main}`,
+  },
+  liveHelpRoundedIcon: {
+    color: theme.palette.primary.main,
+    width: '100%',
+    height: '100px',
   },
 }));
 
@@ -409,7 +417,16 @@ const EditionView = (props: PropTypes) => {
           </div>
         )}
       <div className={classes.body}>
-        <CommandListView items={commands} generationStatus={generationStatus} expandedIndex={expandedIndex} generationIndex={currentCommandGenerationIndex} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} onExpanded={onExpanded} />
+        {commands.length > 0 ?
+          <CommandListView items={commands} generationStatus={generationStatus} expandedIndex={expandedIndex} generationIndex={currentCommandGenerationIndex} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} onExpanded={onExpanded} />
+          : (
+            <NoContentFound
+              title="Pas de commandes, vous pouvez en ajouter"
+              icon={<LiveHelpRoundedIcon className={classes.liveHelpRoundedIcon} />}
+              callToAction={<QueueIcon className={classes.headerIcon} onClick={() => setOpenAddCommandModal(true)} />}
+            />
+          )
+        }
       </div>
       {openAddCommandModal && (
         <AddCommandModal
