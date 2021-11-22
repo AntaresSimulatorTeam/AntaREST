@@ -5,23 +5,29 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 
 
 class FileDownloadRepository:
-    def add(self, download: FileDownload):
+    def add(self, download: FileDownload) -> None:
         db.session.add(download)
         db.session.commit()
 
     def get(self, download_id: str) -> Optional[FileDownload]:
-        return db.session.query(FileDownload).get(download_id)
+        file_download: Optional[FileDownload] = db.session.query(
+            FileDownload
+        ).get(download_id)
+        return file_download
 
-    def save(self, download: FileDownload):
+    def save(self, download: FileDownload) -> None:
         db.session.merge(download)
         db.session.add(download)
         db.session.commit()
 
     def get_all(self, owner: Optional[int] = None) -> List[FileDownload]:
+        file_download_list: List[FileDownload] = []
         if owner:
-            return (
+            file_download_list = (
                 db.session.query(FileDownload)
                 .filter(FileDownload.owner == owner)
                 .fetch_all()
             )
-        return db.session.query(FileDownload).all()
+        else:
+            file_download_list = db.session.query(FileDownload).all()
+        return file_download_list

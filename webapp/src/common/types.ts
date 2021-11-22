@@ -65,6 +65,19 @@ export interface VariantTree {
   children: Array<VariantTree>;
 }
 
+export interface FileDownload {
+  id: string;
+  name: string;
+  filename: string;
+  expirationDate: string;
+  ready: boolean;
+}
+
+export interface FileDownloadTask {
+  file: FileDownload;
+  task: string;
+}
+
 export type JobStatus =
   | 'running'
   | 'pending'

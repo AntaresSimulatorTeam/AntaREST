@@ -1,13 +1,6 @@
+import { FileDownload } from '../../common/types';
 import { getConfig } from '../config';
 import client from './client';
-
-export interface FileDownload {
-  id: string;
-  name: string;
-  filename: string;
-  expirationDate: string;
-  ready: boolean;
-}
 
 export const getDownloadsList = async (): Promise<Array<FileDownload>> => {
   const res = await client.get('/v1/downloads');

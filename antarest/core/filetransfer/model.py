@@ -1,15 +1,16 @@
 import uuid
 from http import HTTPStatus
 from http.client import HTTPException
+from typing import Optional
 
 from pydantic import BaseModel
-from sqlalchemy import Column, String, Integer, DateTime, Boolean
+from sqlalchemy import Column, String, Integer, DateTime, Boolean  # type: ignore
 
 from antarest.core.persistence import Base
 
 
 class FileDownloadNotFound(HTTPException):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             HTTPStatus.NOT_FOUND,
             f"Requested download file was not found. It must have expired",
@@ -17,7 +18,7 @@ class FileDownloadNotFound(HTTPException):
 
 
 class FileDownloadNotReady(HTTPException):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             HTTPStatus.NOT_ACCEPTABLE,
             f"Requested file is not ready for download.",
@@ -28,7 +29,7 @@ class FileDownloadDTO(BaseModel):
     id: str
     name: str
     filename: str
-    expiration_date: str
+    expiration_date: Optional[str]
     ready: bool
 
 
@@ -37,7 +38,7 @@ class FileDownloadTaskDTO(BaseModel):
     task: str
 
 
-class FileDownload(Base):
+class FileDownload(Base):  # type: ignore
     __tablename__ = "file_download"
 
     id = Column(
@@ -50,10 +51,10 @@ class FileDownload(Base):
     name = Column(String)
     filename = Column(String)
     path = Column(String)
-    ready = Column(Boolean, server_default=False)
+    ready = Column(Boolean, default=False)
     expiration_date = Column(DateTime)
 
-    def to_dto(self):
+    def to_dto(self) -> FileDownloadDTO:
         return FileDownloadDTO(
             id=self.id,
             name=self.name,

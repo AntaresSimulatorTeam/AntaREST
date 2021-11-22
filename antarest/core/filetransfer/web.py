@@ -1,8 +1,7 @@
 from pathlib import Path
 from typing import Any, List
 
-from fastapi import APIRouter
-from fastapi.params import Depends
+from fastapi import APIRouter, Depends
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
@@ -40,15 +39,16 @@ def create_file_transfer_api(
         response_class=FileResponse,
     )
     def fetch_download(
-        download_id: str, user: JWTUser = Depends(auth.get_current_user)
-    ):
+        download_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
         download = filetransfer_manager.fetch_download(
-            download_id, RequestParameters(user=user)
+            download_id, RequestParameters(user=current_user)
         )
         return FileResponse(
             Path(download.path),
             headers={
-                "Content-Disposition": f'attachment; filename="{download.name}"'
+                "Content-Disposition": f'attachment; filename="{download.filename}"'
             },
             media_type="application/zip",
         )

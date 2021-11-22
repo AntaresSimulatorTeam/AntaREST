@@ -619,7 +619,7 @@ class StudyService:
         logger.info("Exporting study %s", uuid)
         export_name = f"Study {uuid} export"
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{uuid}.zip", export_name
+            f"{study.name}-{uuid}.zip", export_name, params.user
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
@@ -635,10 +635,15 @@ class StudyService:
             )
 
         task_id = self.task_service.add_task(
-            export_task, export_name, request_params=params
+            export_task,
+            export_name,
+            custom_event_messages=None,
+            request_params=params,
         )
 
-        return FileDownloadTaskDTO(file=export_file_download, task=task_id)
+        return FileDownloadTaskDTO(
+            file=export_file_download.to_dto(), task=task_id
+        )
 
     def export_output(
         self,
@@ -660,7 +665,9 @@ class StudyService:
         logger.info(f"Exporting {output_uuid} from study {study_uuid}")
         export_name = f"Study output {study.name}/{output_uuid} export"
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{study_uuid}-{output_uuid}.zip", export_name
+            f"{study.name}-{study_uuid}-{output_uuid}.zip",
+            export_name,
+            params.user,
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
@@ -679,10 +686,15 @@ class StudyService:
             )
 
         task_id = self.task_service.add_task(
-            export_task, export_name, request_params=params
+            export_task,
+            export_name,
+            custom_event_messages=None,
+            request_params=params,
         )
 
-        return FileDownloadTaskDTO(file=export_file_download, task=task_id)
+        return FileDownloadTaskDTO(
+            file=export_file_download.to_dto(), task=task_id
+        )
 
     def export_study_flat(
         self,

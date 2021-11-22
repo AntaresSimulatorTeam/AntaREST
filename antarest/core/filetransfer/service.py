@@ -14,6 +14,7 @@ from antarest.core.filetransfer.model import (
 )
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
     MustBeAuthenticatedError,
@@ -46,20 +47,24 @@ class FileTransferManager:
         tmpfile.unlink(missing_ok=True)
 
     def request_download(
-        self, filename: str, name: Optional[str] = None
+        self,
+        filename: str,
+        name: Optional[str] = None,
+        owner: Optional[JWTUser] = None,
     ) -> FileDownload:
-        tmpfile = Path(tempfile.mktemp(dir=self.tmp_dir))
+        tmpfile = Path(tempfile.mktemp(dir=self.tmp_dir, suffix=filename))
         download = FileDownload(
             id=str(uuid.uuid4()),
             filename=filename,
             name=name or filename,
             ready=False,
             path=str(tmpfile),
+            owner=owner.impersonator if owner is not None else None,
         )
         self.repository.add(download)
         return download
 
-    def set_ready(self, download_id: str):
+    def set_ready(self, download_id: str) -> None:
         download = self.repository.get(download_id)
         if not download:
             raise FileDownloadNotFound()
@@ -101,9 +106,9 @@ class FileTransferManager:
         if not download:
             raise FileDownloadNotFound()
 
-        if (
-            not params.user.is_site_admin()
-            or download.owner != params.user.impersonator
+        if not params.user or not (
+            params.user.is_site_admin()
+            or download.owner == params.user.impersonator
         ):
             raise UserHasNotPermissionError()
 

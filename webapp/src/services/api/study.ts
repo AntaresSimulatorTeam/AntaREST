@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { LaunchJob, StudyMetadata, StudyMetadataDTO, StudyPublicMode } from '../../common/types';
+import { FileDownloadTask, LaunchJob, StudyMetadata, StudyMetadataDTO, StudyPublicMode } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 
@@ -63,6 +63,11 @@ export const deleteStudy = async (sid: string): Promise<any> => {
 export const editComments = async (sid: string, newComments: string): Promise<any> => {
   const data = { comments: newComments };
   const res = await client.put(`/v1/studies/${sid}/comments`, data);
+  return res.data;
+};
+
+export const exportStudy = async (sid: string, skipOutputs = false): Promise<FileDownloadTask> => {
+  const res = await client.get(`/v1/studies/${sid}/export?no_output=${skipOutputs}`);
   return res.data;
 };
 
