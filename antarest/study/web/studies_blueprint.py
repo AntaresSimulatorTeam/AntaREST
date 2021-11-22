@@ -393,16 +393,6 @@ def create_study_routes(
         "/studies/{study_id}/outputs/{output_id}/download",
         tags=[APITag.study_outputs],
         summary="Get outputs data",
-        responses={
-            200: {
-                "content": {
-                    "application/json": {},
-                    "application/zip": {},
-                    "application/tar+gz": {},
-                },
-            },
-        },
-        response_model=MatrixAggregationResult,
     )
     def output_download(
         study_id: str,

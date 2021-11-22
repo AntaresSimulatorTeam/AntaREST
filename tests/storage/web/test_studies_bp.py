@@ -18,6 +18,10 @@ from antarest.core.config import (
 from antarest.core.exceptions import (
     UrlNotMatchJsonDataError,
 )
+from antarest.core.filetransfer.model import (
+    FileDownloadTaskDTO,
+    FileDownloadDTO,
+)
 from antarest.core.jwt import JWTUser, JWTGroup
 from antarest.core.requests import (
     RequestParameters,
@@ -39,6 +43,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
     OwnerInfo,
 )
+from tests.storage.conftest import SimpleFileTransferManager
 
 ADMIN = JWTUser(
     id=1,
@@ -339,10 +344,17 @@ def test_study_metadata(tmp_path: str) -> None:
 @pytest.mark.unit_test
 def test_export_files(tmp_path: Path) -> None:
     mock_storage_service = Mock()
-    file_export = tmp_path / "export.zip"
-    with open(file_export, "w") as fh:
-        fh.write("Hello")
-    mock_storage_service.export_study.return_value = file_export
+    expected = FileDownloadTaskDTO(
+        file=FileDownloadDTO(
+            id="some id",
+            name="name",
+            filename="filename",
+            expiration_date=None,
+            ready=True,
+        ),
+        task="some-task",
+    )
+    mock_storage_service.export_study.return_value = expected
 
     app = FastAPI(title=__name__)
     build_study_service(
@@ -358,18 +370,28 @@ def test_export_files(tmp_path: Path) -> None:
     client = TestClient(app)
     result = client.get("/v1/studies/name/export", stream=True)
 
-    assert result.raw.data == b"Hello"
+    assert (
+        FileDownloadTaskDTO.parse_obj(result.json()).json() == expected.json()
+    )
     mock_storage_service.export_study.assert_called_once_with(
-        "name", ANY, PARAMS, True
+        "name", PARAMS, True
     )
 
 
 @pytest.mark.unit_test
 def test_export_params(tmp_path: Path) -> None:
     mock_storage_service = Mock()
-    export_file = tmp_path / "export.zip"
-    export_file.touch()
-    mock_storage_service.export_study.return_value = export_file
+    expected = FileDownloadTaskDTO(
+        file=FileDownloadDTO(
+            id="some id",
+            name="name",
+            filename="filename",
+            expiration_date=None,
+            ready=True,
+        ),
+        task="some-task",
+    )
+    mock_storage_service.export_study.return_value = expected
 
     app = FastAPI(title=__name__)
     build_study_service(
@@ -387,8 +409,8 @@ def test_export_params(tmp_path: Path) -> None:
     client.get("/v1/studies/name/export?no_output=false")
     mock_storage_service.export_study.assert_has_calls(
         [
-            call(Markup("name"), ANY, PARAMS, False),
-            call(Markup("name"), ANY, PARAMS, True),
+            call(Markup("name"), PARAMS, False),
+            call(Markup("name"), PARAMS, True),
         ]
     )
 
@@ -487,7 +509,7 @@ def test_validate() -> None:
 
 
 @pytest.mark.unit_test
-def test_output_download() -> None:
+def test_output_download(tmp_path: Path) -> None:
     mock_service = Mock()
 
     output_data = MatrixAggregationResult(
@@ -514,7 +536,9 @@ def test_output_download() -> None:
         app,
         cache=Mock(),
         task_service=Mock(),
-        file_transfer_manager=Mock(),
+        file_transfer_manager=SimpleFileTransferManager(
+            Config(storage=StorageConfig(tmp_dir=tmp_path))
+        ),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -531,19 +555,28 @@ def test_output_download() -> None:
 @pytest.mark.unit_test
 def test_output_whole_download(tmp_path: Path) -> None:
     mock_service = Mock()
-    file_export = tmp_path / "export"
     output_id = "my_output_id"
 
-    with open(file_export, "w") as fh:
-        fh.write("Hello")
-    mock_service.export_output.return_value = file_export
+    expected = FileDownloadTaskDTO(
+        file=FileDownloadDTO(
+            id="some id",
+            name="name",
+            filename="filename",
+            expiration_date=None,
+            ready=True,
+        ),
+        task="some-task",
+    )
+    mock_service.export_output.return_value = expected
 
     app = FastAPI(title=__name__)
     build_study_service(
         app,
         cache=Mock(),
         task_service=Mock(),
-        file_transfer_manager=Mock(),
+        file_transfer_manager=SimpleFileTransferManager(
+            Config(storage=StorageConfig(tmp_dir=tmp_path))
+        ),
         storage_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
