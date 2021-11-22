@@ -13,6 +13,7 @@ from antarest.core.filetransfer.model import (
     FileDownloadNotReady,
 )
 from antarest.core.filetransfer.repository import FileDownloadRepository
+from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.requests import (
     RequestParameters,
     MustBeAuthenticatedError,
@@ -23,9 +24,13 @@ from antarest.core.requests import (
 class FileTransferManager:
     _instance: Optional["FileTransferManager"] = None
 
-    def __init__(self, config: Config):
+    def __init__(self,
+                 repository: FileDownloadRepository,
+                 event_bus: IEventBus,
+                 config: Config):
         self.config = config
-        self.repository = FileDownloadRepository()
+        self.repository = repository
+        self.event_bus = event_bus
         self.tmp_dir = config.storage.tmp_dir
 
     @staticmethod

@@ -33,12 +33,13 @@ logger = logging.getLogger(__name__)
 
 
 def create_study_routes(
-    study_service: StudyService, config: Config
+    study_service: StudyService, ftm: FileTransferManager, config: Config
 ) -> APIRouter:
     """
     Endpoint implementation for studies management
     Args:
         study_service: study service facade to handle request
+        ftm: file transfer manager
         config: main server configuration
 
     Returns:
@@ -46,7 +47,6 @@ def create_study_routes(
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
-    ftm = FileTransferManager.get_instance()
 
     @bp.get(
         "/studies",

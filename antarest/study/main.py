@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import FastAPI
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.core.tasks.service import ITaskService
@@ -45,6 +46,7 @@ def build_study_service(
     user_service: LoginService,
     matrix_service: ISimpleMatrixService,
     cache: ICache,
+    file_transfer_manager: FileTransferManager,
     task_service: ITaskService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
     variant_repository: Optional[VariantStudyRepository] = None,
@@ -62,6 +64,7 @@ def build_study_service(
         user_service: user service facade
         matrix_service: matrix store service
         cache: cache service
+        file_transfer_manager: file transfer manager
         task_service: task job service
         metadata_repository: used by testing to inject mock. Let None to use true instantiation
         variant_repository: used by testing to inject mock. Let None to use true instantiation
@@ -127,7 +130,7 @@ def build_study_service(
     watcher = Watcher(config=config, service=storage_service)
     watcher.start()
 
-    application.include_router(create_study_routes(storage_service, config))
+    application.include_router(create_study_routes(storage_service, file_transfer_manager, config))
     application.include_router(
         create_raw_study_routes(storage_service, config)
     )
