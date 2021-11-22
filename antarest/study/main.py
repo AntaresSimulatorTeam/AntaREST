@@ -122,6 +122,7 @@ def build_study_service(
         user_service=user_service,
         repository=metadata_repository,
         event_bus=event_bus,
+        file_transfer_manager=file_transfer_manager,
         task_service=task_service,
         cache_service=cache,
         config=config,
@@ -130,7 +131,9 @@ def build_study_service(
     watcher = Watcher(config=config, service=storage_service)
     watcher.start()
 
-    application.include_router(create_study_routes(storage_service, file_transfer_manager, config))
+    application.include_router(
+        create_study_routes(storage_service, file_transfer_manager, config)
+    )
     application.include_router(
         create_raw_study_routes(storage_service, config)
     )

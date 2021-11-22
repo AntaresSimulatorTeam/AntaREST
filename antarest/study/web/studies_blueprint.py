@@ -9,6 +9,10 @@ from markupsafe import escape
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import (
+    FileDownloadDTO,
+    FileDownloadTaskDTO,
+)
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import (
@@ -194,35 +198,19 @@ def create_study_routes(
         "/studies/{uuid}/export",
         tags=[APITag.study_management],
         summary="Export Study",
-        response_class=FileResponse,
-        responses={
-            200: {
-                "content": {
-                    "application/zip": {},
-                },
-            },
-        },
+        response_model=FileDownloadTaskDTO,
     )
     def export_study(
         uuid: str,
         no_output: Optional[bool] = False,
-        request_tmp_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Exporting study {uuid}", extra={"user": current_user.id})
         uuid_sanitized = sanitize_uuid(uuid)
 
         params = RequestParameters(user=current_user)
-        export_path = study_service.export_study(
-            uuid_sanitized, request_tmp_file, params, not no_output
-        )
-
-        return FileResponse(
-            export_path,
-            headers={
-                "Content-Disposition": f'attachment; filename="{uuid_sanitized}.zip'
-            },
-            media_type="application/zip",
+        return study_service.export_study(
+            uuid_sanitized, params, not no_output
         )
 
     @bp.delete(
@@ -431,19 +419,10 @@ def create_study_routes(
                 f"Fetching whole output of the simulation {output_id} for study {study_id}"
             )
             params = RequestParameters(user=current_user)
-            export_path = study_service.export_output(
+            return study_service.export_output(
                 study_uuid=study_id,
                 output_uuid=output_id,
-                target=tmp_export_file,
                 params=params,
-            )
-
-            return FileResponse(
-                export_path,
-                headers={
-                    "Content-Disposition": f'attachment; filename="{output_id}.zip'
-                },
-                media_type="application/zip",
             )
         else:
             logger.info(

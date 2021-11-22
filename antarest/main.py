@@ -229,7 +229,9 @@ def fastapi_app(
     event_bus = build_eventbus(application, config, True, redis_client)
     cache = build_cache(config=config, redis_client=redis_client)
 
-    filetransfer_service = build_filetransfer_service(application, event_bus, config)
+    filetransfer_service = build_filetransfer_service(
+        application, event_bus, config
+    )
     task_service = build_taskjob_manager(application, config, event_bus)
 
     user_service = build_login(application, config, event_bus=event_bus)

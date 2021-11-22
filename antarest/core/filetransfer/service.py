@@ -24,10 +24,12 @@ from antarest.core.requests import (
 class FileTransferManager:
     _instance: Optional["FileTransferManager"] = None
 
-    def __init__(self,
-                 repository: FileDownloadRepository,
-                 event_bus: IEventBus,
-                 config: Config):
+    def __init__(
+        self,
+        repository: FileDownloadRepository,
+        event_bus: IEventBus,
+        config: Config,
+    ):
         self.config = config
         self.repository = repository
         self.event_bus = event_bus

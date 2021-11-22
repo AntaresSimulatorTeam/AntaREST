@@ -32,6 +32,11 @@ class FileDownloadDTO(BaseModel):
     ready: bool
 
 
+class FileDownloadTaskDTO(BaseModel):
+    file: FileDownloadDTO
+    task: str
+
+
 class FileDownload(Base):
     __tablename__ = "file_download"
 
