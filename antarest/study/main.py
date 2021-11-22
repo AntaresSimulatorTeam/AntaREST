@@ -7,7 +7,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.core.tasks.service import ITaskService
 from antarest.login.service import LoginService
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
 from antarest.study.common.uri_resolver_service import (
     UriResolverService,
 )
@@ -43,7 +43,7 @@ def build_study_service(
     application: FastAPI,
     config: Config,
     user_service: LoginService,
-    matrix_service: MatrixService,
+    matrix_service: ISimpleMatrixService,
     cache: ICache,
     task_service: ITaskService,
     metadata_repository: Optional[StudyMetadataRepository] = None,

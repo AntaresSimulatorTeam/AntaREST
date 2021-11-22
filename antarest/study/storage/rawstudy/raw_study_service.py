@@ -7,7 +7,6 @@ from typing import Optional, IO, List
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.model import SUB_JSON
 from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
 )
@@ -245,31 +244,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         metadata.path = str(path_study)
         return metadata
-
-    def edit_study(
-        self,
-        metadata: RawStudy,
-        url: str,
-        new: SUB_JSON,
-    ) -> SUB_JSON:
-        """
-        Replace data on disk with new
-        Args:
-            metadata: study
-            url: data path to reach
-            new: new data to replace
-
-        Returns: new data replaced
-
-        """
-        # Get data
-        self._check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
-        study.save(new, url.split("/"))  # type: ignore
-        del study
-        remove_from_cache(self.cache, metadata.id)
-        return new
 
     def export_study_flat(
         self, metadata: RawStudy, dest: Path, outputs: bool = True
