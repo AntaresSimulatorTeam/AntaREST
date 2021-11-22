@@ -13,7 +13,7 @@ import MatrixView from '../../ui/MatrixView/index';
 import ImportForm from '../../ui/ImportForm';
 import { CommonStudyStyle } from './utils/utils';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
-import NoContentFound from '../../ui/NoContentFound';
+import NoContent from '../../ui/NoContent';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
 
 const logErr = debug('antares:createimportform:error');
@@ -120,7 +120,7 @@ const StudyMatrixView = (props: PropTypes) => {
             <MatrixView matrix={data} readOnly />
           ) : (
             loaded && (
-            <NoContentFound
+            <NoContent
               title="Matrice vide, vous pouvez en importer une"
               icon={
                 <LiveHelpRoundedIcon className={classes.liveHelpRoundedIcon} />

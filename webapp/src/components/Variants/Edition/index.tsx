@@ -20,7 +20,7 @@ import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO, TaskEvent
 import CommandImportButton from './DraggableCommands/CommandImportButton';
 import { addListener, removeListener, subscribe, unsubscribe, WsChannel } from '../../../ducks/websockets';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
-import NoContentFound from '../../ui/NoContentFound';
+import NoContent from '../../ui/NoContent';
 
 const logError = debug('antares:variantedition:error');
 
@@ -420,7 +420,7 @@ const EditionView = (props: PropTypes) => {
         {commands.length > 0 ?
           <CommandListView items={commands} generationStatus={generationStatus} expandedIndex={expandedIndex} generationIndex={currentCommandGenerationIndex} onDragEnd={onDragEnd} onDelete={onDelete} onArgsUpdate={onArgsUpdate} onSave={onSave} onCommandImport={onCommandImport} onCommandExport={onCommandExport} onExpanded={onExpanded} />
           : (
-            <NoContentFound
+            <NoContent
               title="Pas de commandes, vous pouvez en ajouter"
               icon={<LiveHelpRoundedIcon className={classes.liveHelpRoundedIcon} />}
               callToAction={<QueueIcon className={classes.headerIcon} onClick={() => setOpenAddCommandModal(true)} />}

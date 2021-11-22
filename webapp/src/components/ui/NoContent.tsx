@@ -26,7 +26,7 @@ interface Props {
   icon: ReactNode;
   callToAction: ReactNode;
 }
-const NoContentFound = (props: Props) => {
+const NoContent = (props: Props) => {
   const { title, icon, callToAction } = props;
   const classes = useStyles();
 
@@ -45,4 +45,4 @@ const NoContentFound = (props: Props) => {
   );
 };
 
-export default NoContentFound;
+export default NoContent;
