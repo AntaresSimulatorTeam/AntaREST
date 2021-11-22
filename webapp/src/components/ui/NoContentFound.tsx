@@ -1,7 +1,7 @@
-import React from 'react';
-import { makeStyles, createStyles } from '@material-ui/core';
+import React, { ReactNode } from 'react';
+import { makeStyles, Theme, createStyles } from '@material-ui/core';
 
-const useStyles = makeStyles(() =>
+const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       flex: 1,
@@ -14,24 +14,32 @@ const useStyles = makeStyles(() =>
       overflowX: 'hidden',
       overflowY: 'auto',
       position: 'relative',
+      '&& div': {
+        paddingTop: theme.spacing(1),
+        paddingBottom: theme.spacing(1),
+      },
     },
   }));
 
 interface Props {
   title: string;
-  image: string;
+  icon: ReactNode;
+  callToAction: ReactNode;
 }
 const NoContentFound = (props: Props) => {
-  const { title, image } = props;
+  const { title, icon, callToAction } = props;
   const classes = useStyles();
 
   return (
     <div className={classes.root}>
       <div>
-        <img src={image} alt="no-content" />
+        { icon }
       </div>
       <div>
         { title }
+      </div>
+      <div>
+        { callToAction }
       </div>
     </div>
   );
