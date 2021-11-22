@@ -79,7 +79,12 @@ class Watcher:
             )
 
         while True:
-            self._scan()
+            try:
+                self._scan()
+            except Exception as e:
+                logger.error(
+                    "Unexpected error when scanning workspaces", exc_info=e
+                )
             sleep(2)
 
     def _scan(self) -> None:
