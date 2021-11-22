@@ -1,11 +1,13 @@
 import argparse
 import logging
 import sys
+from datetime import timezone, datetime
 from pathlib import Path
 from typing import Tuple, Any, Optional, Dict
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
+from dateutil import tz
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from sqlalchemy import create_engine
@@ -257,6 +259,35 @@ def fastapi_app(
     services["cache"] = cache
 
     customize_openapi(application)
+
+    print('----------------KAREMBAAAAAAAAAAAAAAAAAAAAAAAAA')
+    with engine.connect() as connection:
+        result = connection.execute("SELECT id, created_at, updated_at FROM study")
+        for row in result:
+            # PRINT LOCAL TIME
+            print("ID:", row['id'], "; CREATED_AT: ", row['created_at'], "; UPDATED_AT: ", row['updated_at'])
+
+            # CONVERT LOCAL TO UTC
+            dt_created_at = datetime.strptime(row['created_at'], '%Y-%m-%d %H:%M:%S.%f')
+            dt_created_at = dt_created_at.replace(tzinfo=timezone.utc)
+            created_at = dt_created_at.timestamp()
+
+            dt_updated_at = datetime.strptime(row['updated_at'], '%Y-%m-%d %H:%M:%S.%f')
+            dt_updated_at = dt_updated_at.replace(tzinfo=timezone.utc)
+            updated_at = dt_updated_at.timestamp()
+            print("ID:", row['id'], "; CREATED_AT: ", created_at, "; UPDATED_AT: ", updated_at)
+
+            # CONVERT UTC TO LOCAL
+            to_zone = tz.gettz()
+            created_local = dt_created_at.replace(tzinfo=to_zone)
+            created_local = created_local.strftime('%Y-%m-%d %H:%M:%S.%f')
+
+            updated_local = dt_updated_at.replace(tzinfo=to_zone)#datetime.fromtimestamp(utc_updated_timestamp)
+            updated_local = updated_local.strftime('%Y-%m-%d %H:%M:%S.%f')
+            print("ID:", row['id'], "; CREATED_AT: ", created_local, "; UPDATED_AT: ", updated_local)
+            print("-----------------------------------------------------")
+    print('----------------YEEEEEEEEEEEEESSSSSIIIIIIIIIIIIIIR')
+
     return application, services
 
 
