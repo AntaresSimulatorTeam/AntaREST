@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+from typing import Union
 from unittest.mock import Mock, seal
 from uuid import uuid4
 
@@ -8,6 +9,10 @@ import pytest
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
+from antarest.core.model import JSON, SUB_JSON
+from antarest.core.permissions import (
+    StudyPermissionType,
+)
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -31,9 +36,6 @@ from antarest.study.model import (
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService, UserHasNotPermissionError
-from antarest.core.permissions import (
-    StudyPermissionType,
-)
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -46,6 +48,13 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
 )
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+)
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
+    RawFileNode,
+)
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
@@ -55,9 +64,6 @@ from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.model.interfaces import (
-    ICommandExtractor,
-)
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -883,9 +889,71 @@ def test_delete_with_prefetch(tmp_path: Path):
 
 @pytest.mark.unit_test
 def test_edit_study_with_command():
-    pass  # TODO
+    study_id = "study_id"
+
+    service = build_study_service(
+        raw_study_service=Mock(),
+        repository=Mock(),
+        config=Mock(),
+    )
+    command = Mock()
+    service._create_edit_study_command = Mock(return_value=command)
+    file_study = Mock()
+    file_study.config.study_id = study_id
+    study_service = Mock(spec=RawStudyService)
+    study_service.get_raw.return_value = file_study
+    service._get_study_storage_service = Mock(return_value=study_service)
+
+    service._edit_study_using_command(study=Mock(), url="", data=[])
+    command.apply.assert_called_with(file_study)
+
+    study_service = Mock(spec=VariantStudyService)
+    study_service.get_raw.return_value = file_study
+    service._get_study_storage_service = Mock(return_value=study_service)
+    service._edit_study_using_command(study=Mock(), url="", data=[])
+
+    study_service.append_command.assert_called_once_with(
+        study_id=study_id,
+        command=command.to_dto(),
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
 
 
 @pytest.mark.unit_test
-def test_create_command():
-    pass  # TODO
+@pytest.mark.parametrize(
+    "tree_node,url,data,expected_name",
+    [
+        (Mock(spec=IniFileNode), "url", 0, "update_config"),
+        (Mock(spec=InputSeriesMatrix), "url", [[0]], "replace_matrix"),
+        (Mock(spec=RawFileNode), "comments", "0", "update_comments"),
+    ],
+)
+def test_create_command(
+    tree_node: INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON],
+    url: str,
+    data: SUB_JSON,
+    expected_name: str,
+):
+    service = build_study_service(
+        raw_study_service=Mock(),
+        repository=Mock(),
+        config=Mock(),
+    )
+
+    matrix_service = Mock(spec=MatrixService)
+    matrix_service.create.return_value = "matrix_id"
+    command_context = CommandContext(
+        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
+        matrix_service=matrix_service,
+        patch_service=Mock(spec=PatchService),
+    )
+
+    service.variant_study_service.command_factory.command_context = (
+        command_context
+    )
+
+    command = service._create_edit_study_command(
+        tree_node=tree_node, url=url, data=data
+    )
+
+    assert command.command_name.value == expected_name
