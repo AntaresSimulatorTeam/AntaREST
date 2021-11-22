@@ -263,17 +263,18 @@ def fastapi_app(
     print('----------------KAREMBAAAAAAAAAAAAAAAAAAAAAAAAA')
     with engine.connect() as connexion:
         def convertToUTC(table: str, completion_type: bool = False) -> None:
+                to_zone = tz.gettz()
                 results = connexion.execute(
                     f"SELECT id, creation_date, completion_date FROM {table}" if completion_type else f"SELECT id, created_at, updated_at FROM {table}")
                 for row in results:
                     row_id = row['id']
 
                     dt_1 = datetime.strptime(row['creation_date' if completion_type else 'created_at'], '%Y-%m-%d %H:%M:%S.%f')
-                    dt_1 = dt_1.replace(tzinfo=timezone.utc)
+                    dt_1 = dt_1.replace(tzinfo=to_zone)
                     d1 = dt_1.utcfromtimestamp(dt_1.timestamp()).strftime('%Y-%m-%d %H:%M:%S.%f')
 
                     dt_2 = datetime.strptime(row['completion_date' if completion_type else 'updated_at'], '%Y-%m-%d %H:%M:%S.%f')
-                    dt_2 = dt_2.replace(tzinfo=timezone.utc)
+                    dt_2 = dt_2.replace(tzinfo=to_zone)
                     d2 = dt_2.utcfromtimestamp(dt_2.timestamp()).strftime('%Y-%m-%d %H:%M:%S.%f')
 
                     print("CREATED BEFORE: ", row['creation_date' if completion_type else 'created_at'], "; CREATED: ", d1, ";")
@@ -290,19 +291,18 @@ def fastapi_app(
                             created_at=d1, updated_at=d2)
 
         def convertToLocal(table: str, completion_type: bool = False) -> None:
-                to_zone = tz.gettz()
                 results = connexion.execute(
                     f"SELECT id, creation_date, completion_date FROM {table}" if completion_type else f"SELECT id, created_at, updated_at FROM {table}")
                 for row in results:
                     row_id = row['id']
                     dt_1 = datetime.strptime(row['creation_date' if completion_type else 'created_at'], '%Y-%m-%d %H:%M:%S.%f')
-                    dt_1 = datetime.utcfromtimestamp(float(dt_1.timestamp()))
-                    dt_1 = dt_1.replace(tzinfo=to_zone)
+                    dt_1 = dt_1.replace(tzinfo=timezone.utc)
+                    dt_1 = datetime.fromtimestamp(dt_1.timestamp())
                     d1 = dt_1.strftime('%Y-%m-%d %H:%M:%S.%f')
 
                     dt_2 = datetime.strptime(row['completion_date' if completion_type else 'updated_at'], '%Y-%m-%d %H:%M:%S.%f')
-                    dt_2 = datetime.utcfromtimestamp(float(dt_2.timestamp()))
-                    dt_2 = dt_2.replace(tzinfo=to_zone)
+                    dt_2 = datetime.replace(tzinfo=timezone.utc)
+                    dt_2 = datetime.fromtimestamp(dt_2.timestamp())
                     d2 = dt_2.strftime('%Y-%m-%d %H:%M:%S.%f')
 
                     print("CREATED BEFORE: ", row['creation_date' if completion_type else 'created_at'], "; CREATED: ", d1, ";")
@@ -324,8 +324,9 @@ def fastapi_app(
                 print('ID: ', row['id'], "; CREATION: ", row['creation_date' if completion_type else 'created_at'], "; COMPLETION_UPDATED: ", row['completion_date' if completion_type else 'updated_at'])
 
         print("---- DATETIME: ", datetime.utcnow())
-        #printAll('study')
-        convertToLocal('study')
+        printAll('study')
+        convertToUTC('study')
+        #convertToLocal('study')
         #printAll('study')
     print('----------------YEEEEEEEEEEEEESSSSSIIIIIIIIIIIIIIR')
 
