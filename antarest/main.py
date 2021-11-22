@@ -10,7 +10,7 @@ import uvicorn  # type: ignore
 from dateutil import tz
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -261,31 +261,72 @@ def fastapi_app(
     customize_openapi(application)
 
     print('----------------KAREMBAAAAAAAAAAAAAAAAAAAAAAAAA')
-    with engine.connect() as connection:
-        result = connection.execute("SELECT id, created_at, updated_at FROM study")
-        for row in result:
-            # PRINT LOCAL TIME
-            print("ID:", row['id'], "; CREATED_AT: ", row['created_at'], "; UPDATED_AT: ", row['updated_at'])
+    with engine.connect() as connexion:
+        def convertToUTC(table: str, completion_type: bool = False) -> None:
+                results = connexion.execute(
+                    f"SELECT id, creation_date, completion_date FROM {table}" if completion_type else f"SELECT id, created_at, updated_at FROM {table}")
+                for row in results:
+                    row_id = row['id']
 
-            # CONVERT LOCAL TO UTC
-            dt_created_at = datetime.strptime(row['created_at'], '%Y-%m-%d %H:%M:%S.%f')
-            dt_created_at = dt_created_at.replace(tzinfo=timezone.utc)
-            created_at = dt_created_at.timestamp()
+                    dt_1 = datetime.strptime(row['creation_date' if completion_type else 'created_at'], '%Y-%m-%d %H:%M:%S.%f')
+                    dt_1 = dt_1.replace(tzinfo=timezone.utc)
+                    d1 = dt_1.utcfromtimestamp(dt_1.timestamp()).strftime('%Y-%m-%d %H:%M:%S.%f')
 
-            dt_updated_at = datetime.strptime(row['updated_at'], '%Y-%m-%d %H:%M:%S.%f')
-            dt_updated_at = dt_updated_at.replace(tzinfo=timezone.utc)
-            updated_at = dt_updated_at.timestamp()
-            print("ID:", row['id'], "; CREATED_AT: ", created_at, "; UPDATED_AT: ", updated_at)
+                    dt_2 = datetime.strptime(row['completion_date' if completion_type else 'updated_at'], '%Y-%m-%d %H:%M:%S.%f')
+                    dt_2 = dt_2.replace(tzinfo=timezone.utc)
+                    d2 = dt_2.utcfromtimestamp(dt_2.timestamp()).strftime('%Y-%m-%d %H:%M:%S.%f')
 
-            # CONVERT UTC TO LOCAL
-            to_zone = tz.gettz()
-            created_local = dt_created_at.replace(tzinfo=to_zone)
-            created_local = created_local.strftime('%Y-%m-%d %H:%M:%S.%f')
+                    print("CREATED BEFORE: ", row['creation_date' if completion_type else 'created_at'], "; CREATED: ", d1, ";")
+                    print("UPDATED BEFORE: ", row['completion_date' if completion_type else 'updated_at'], "; UPDATED: ", d2, ";")
+                    if completion_type:
+                        print("COMPLETION_TYPE: TRUE")
+                        connexion.execute(text(
+                            f"UPDATE {table} SET creation_date= :creation_date, completion_date= :completion_date WHERE id='{row_id}'"),
+                                          creation_date=d1, completion_date=d2)
+                    else:
+                        print("COMPLETION_TYPE: FALSE")
+                        connexion.execute(text(
+                            f"UPDATE {table} SET created_at= :created_at, updated_at= :updated_at WHERE id='{row_id}'"),
+                            created_at=d1, updated_at=d2)
 
-            updated_local = dt_updated_at.replace(tzinfo=to_zone)#datetime.fromtimestamp(utc_updated_timestamp)
-            updated_local = updated_local.strftime('%Y-%m-%d %H:%M:%S.%f')
-            print("ID:", row['id'], "; CREATED_AT: ", created_local, "; UPDATED_AT: ", updated_local)
-            print("-----------------------------------------------------")
+        def convertToLocal(table: str, completion_type: bool = False) -> None:
+                to_zone = tz.gettz()
+                results = connexion.execute(
+                    f"SELECT id, creation_date, completion_date FROM {table}" if completion_type else f"SELECT id, created_at, updated_at FROM {table}")
+                for row in results:
+                    row_id = row['id']
+                    dt_1 = datetime.strptime(row['creation_date' if completion_type else 'created_at'], '%Y-%m-%d %H:%M:%S.%f')
+                    dt_1 = datetime.utcfromtimestamp(float(dt_1.timestamp()))
+                    dt_1 = dt_1.replace(tzinfo=to_zone)
+                    d1 = dt_1.strftime('%Y-%m-%d %H:%M:%S.%f')
+
+                    dt_2 = datetime.strptime(row['completion_date' if completion_type else 'updated_at'], '%Y-%m-%d %H:%M:%S.%f')
+                    dt_2 = datetime.utcfromtimestamp(float(dt_2.timestamp()))
+                    dt_2 = dt_2.replace(tzinfo=to_zone)
+                    d2 = dt_2.strftime('%Y-%m-%d %H:%M:%S.%f')
+
+                    print("CREATED BEFORE: ", row['creation_date' if completion_type else 'created_at'], "; CREATED: ", d1, ";")
+                    print("UPDATED BEFORE: ", row['completion_date' if completion_type else 'updated_at'], "; UPDATED: ", d2, ";")
+
+                    if completion_type:
+                        connexion.execute(text(
+                            f"UPDATE {table} SET creation_date= :creation_date, completion_date= :completion_date WHERE id='{row_id}'"),
+                                          creation_date=d1, completion_date=d2)
+                    else:
+                        connexion.execute(text(
+                            f"UPDATE {table} SET created_at= :created_at, updated_at= :updated_at WHERE id='{row_id}'"),
+                            created_at=d1, updated_at=d2)
+
+        def printAll(table: str, completion_type: bool = False) -> None:
+            results = connexion.execute(
+                f"SELECT id, creation_date, completion_date FROM {table}" if completion_type else f"SELECT id, created_at, updated_at FROM {table}")
+            for row in results:
+                print('ID: ', row['id'], "; CREATION: ", row['creation_date' if completion_type else 'created_at'], "; COMPLETION_UPDATED: ", row['completion_date' if completion_type else 'updated_at'])
+
+        print("---- DATETIME: ", datetime.utcnow())
+        #printAll('study')
+        convertToLocal('study')
+        #printAll('study')
     print('----------------YEEEEEEEEEEEEESSSSSIIIIIIIIIIIIIIR')
 
     return application, services
