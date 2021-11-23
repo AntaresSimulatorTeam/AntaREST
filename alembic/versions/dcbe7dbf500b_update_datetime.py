@@ -14,123 +14,126 @@ from sqlalchemy import text
 from datetime import timezone, datetime, tzinfo
 
 # revision identifiers, used by Alembic.
-revision = 'dcbe7dbf500b'
-down_revision = '9846e90c2868'
+revision = "dcbe7dbf500b"
+down_revision = "9846e90c2868"
 branch_labels = None
 depends_on = None
 
 
 def convert_to_utc(data: str, to_zone: Optional[tzinfo]) -> str:
-    dt = datetime.strptime(data, '%Y-%m-%d %H:%M:%S.%f')
+    dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
     dt = dt.replace(tzinfo=to_zone)
-    d1 = dt.utcfromtimestamp(dt.timestamp()).strftime('%Y-%m-%d %H:%M:%S.%f')
+    d1 = dt.utcfromtimestamp(dt.timestamp()).strftime("%Y-%m-%d %H:%M:%S.%f")
     return d1
 
 
 def convert_to_local(data: str, to_zone: Optional[tzinfo]) -> str:
-    dt = datetime.strptime(data, '%Y-%m-%d %H:%M:%S.%f')
+    dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
     dt = dt.replace(tzinfo=to_zone)
     dt = datetime.fromtimestamp(dt.timestamp())
-    d1 = dt.strftime('%Y-%m-%d %H:%M:%S.%f')
+    d1 = dt.strftime("%Y-%m-%d %H:%M:%S.%f")
     return d1
 
 
-def time_convert(connexion: Connection, table: str, completion_type: bool = False, to_utc: bool = False) -> None:
+def time_convert(
+    connexion: Connection,
+    table: str,
+    completion_type: bool = False,
+    to_utc: bool = False,
+) -> None:
     if to_utc:
         to_zone = tz.gettz()
     else:
         to_zone = timezone.utc
 
     if completion_type:
-        column1 = 'creation_date'
-        column2 = 'completion_date'
+        column1 = "creation_date"
+        column2 = "completion_date"
     else:
-        column1 = 'created_at'
-        column2 = 'updated_at'
+        column1 = "created_at"
+        column2 = "updated_at"
 
     results = connexion.execute(
-        f"SELECT id, {column1}, {column2} FROM {table}")
+        f"SELECT id, {column1}, {column2} FROM {table}"
+    )
     for row in results:
-        row_id = row['id']
-        d1 = convert_to_utc(data=row[column1], to_zone=to_zone) if to_utc else convert_to_local(data=row[column1], to_zone=to_zone)
-        d2 = convert_to_utc(data=row[column2], to_zone=to_zone) if to_utc else convert_to_local(data=row[column2], to_zone=to_zone)
-        connexion.execute(text(
-            f"UPDATE {table} SET {column1}= :c1, {column2}= :c2 WHERE id='{row_id}'"),
-            c1=d1, c2=d2)
+        row_id = row["id"]
+        d1 = (
+            convert_to_utc(data=row[column1], to_zone=to_zone)
+            if to_utc
+            else convert_to_local(data=row[column1], to_zone=to_zone)
+        )
+        d2 = (
+            convert_to_utc(data=row[column2], to_zone=to_zone)
+            if to_utc
+            else convert_to_local(data=row[column2], to_zone=to_zone)
+        )
+        connexion.execute(
+            text(
+                f"UPDATE {table} SET {column1}= :c1, {column2}= :c2 WHERE id='{row_id}'"
+            ),
+            c1=d1,
+            c2=d2,
+        )
 
 
-def migrate_datetime(upgrade: bool = True) -> None:
+def migrate_datetime(upgrade_mode: bool = True) -> None:
     connexion: Connection = op.get_bind()
     # DATASET
-    time_convert(connexion=connexion, table='dataset', completion_type=False, to_utc=upgrade)
+    time_convert(
+        connexion=connexion,
+        table="dataset",
+        completion_type=False,
+        to_utc=upgrade_mode,
+    )
 
     # JOB RESULTS
-    time_convert(connexion=connexion, table='job_result', completion_type=True, to_utc=upgrade)
+    time_convert(
+        connexion=connexion,
+        table="job_result",
+        completion_type=True,
+        to_utc=upgrade_mode,
+    )
 
     # STUDIES
-    time_convert(connexion=connexion, table='study', completion_type=False, to_utc=upgrade)
+    time_convert(
+        connexion=connexion,
+        table="study",
+        completion_type=False,
+        to_utc=upgrade_mode,
+    )
 
     # TASKJOBS
-    time_convert(connexion=connexion, table='taskjob', completion_type=True, to_utc=upgrade)
+    time_convert(
+        connexion=connexion,
+        table="taskjob",
+        completion_type=True,
+        to_utc=upgrade_mode,
+    )
 
     # VARIANT STUDY SNAPSHOT
-    to_zone = tz.gettz() if upgrade else timezone.utc
+    to_zone = tz.gettz() if upgrade_mode else timezone.utc
     results = connexion.execute(
-        "SELECT id, created_at FROM variant_study_snapshot")
+        "SELECT id, created_at FROM variant_study_snapshot"
+    )
     for row in results:
-        row_id = row['id']
-        dt = convert_to_utc(data=row['created_at'], to_zone=to_zone) if upgrade else convert_to_local(data=row['created_at'], to_zone=to_zone)
-        connexion.execute(text(f"UPDATE variant_study_snapshot SET created_at= :created_at WHERE id='{row_id}'"), created_at=dt)
-
+        row_id = row["id"]
+        dt = (
+            convert_to_utc(data=row["created_at"], to_zone=to_zone)
+            if upgrade_mode
+            else convert_to_local(data=row["created_at"], to_zone=to_zone)
+        )
+        connexion.execute(
+            text(
+                f"UPDATE variant_study_snapshot SET created_at= :created_at WHERE id='{row_id}'"
+            ),
+            created_at=dt,
+        )
 
 
 def upgrade():
-    # ### commands auto generated by Alembic - please adjust! ###
-    connexion: Connection = op.get_bind()
-    # DATASET
-    time_convert(connexion=connexion, table='dataset', completion_type=False, to_utc=True)
-
-    # JOB RESULTS
-    time_convert(connexion=connexion, table='job_result', completion_type=True, to_utc=True)
-
-    # STUDIES
-    time_convert(connexion=connexion, table='study', completion_type=False, to_utc=True)
-
-    # TASKJOBS
-    time_convert(connexion=connexion, table='taskjob', completion_type=True, to_utc=True)
-
-    # VARIANT STUDY SNAPSHOT
-    to_zone = tz.gettz()
-    results = connexion.execute(
-        "SELECT id, created_at FROM variant_study_snapshot")
-    for row in results:
-        row_id = row['id']
-        dt = convert_to_utc(data=row['created_at'], to_zone=to_zone)
-        connexion.execute(text(f"UPDATE variant_study_snapshot SET created_at= :created_at WHERE id='{row_id}'"), created_at=dt)
-
+    migrate_datetime(upgrade_mode=True)
 
 
 def downgrade():
-    # ### commands auto generated by Alembic - please adjust! ###
-    connexion: Connection = op.get_bind()
-
-    # DATASET
-    time_convert(connexion=connexion, table='dataset', completion_type=False, to_utc=False)
-
-    # JOB RESULTS
-    time_convert(connexion=connexion, table='job_result', completion_type=True, to_utc=False)
-
-    # STUDIES
-    time_convert(connexion=connexion, table='study', completion_type=False, to_utc=False)
-
-    # TASKJOBS
-    time_convert(connexion=connexion, table='taskjob', completion_type=True, to_utc=False)
-
-    # VARIANT STUDY SNAPSHOT
-    to_zone = timezone.utc
-    results = connexion.execute(
-        "SELECT id, created_at FROM variant_study_snapshot")
-    for row in results:
-        row_id = row['id']
-        dt = convert_to_local(data=row['created_at'], to_zone=to_zone)
-        connexion.execute(text(f"UPDATE variant_study_snapshot SET created_at= :created_at WHERE id='{row_id}'"), created_at=dt)
+    migrate_datetime(upgrade_mode=False)

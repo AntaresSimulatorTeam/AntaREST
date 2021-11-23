@@ -1,12 +1,11 @@
 import React from 'react';
 import clsx from 'clsx';
-import moment from 'moment';
 import { makeStyles, Button, createStyles, Theme, Paper, Typography, Tooltip } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { getExportUrl } from '../../../services/api/study';
-import { getStudyExtendedName } from '../../../services/utils';
+import { convertUTCToLocalTime, getStudyExtendedName } from '../../../services/utils';
 import DownloadLink from '../../ui/DownloadLink';
 import { StudyListingItemPropTypes } from './types';
 import ButtonLoader from '../../ui/ButtonLoader';
@@ -114,7 +113,7 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
               {study.workspace}
             </div>
           </div>
-          <Typography className={classes.datetime}>{moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
+          <Typography className={classes.datetime}>{convertUTCToLocalTime(study.modificationDate)}</Typography>
         </div>
         <Typography color="textSecondary" className={classes.id}>
           {study.id}

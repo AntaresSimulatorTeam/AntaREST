@@ -1,7 +1,7 @@
-import moment from 'moment';
 import { RawNodeDatum } from 'react-d3-tree/lib/types/common';
 import { StudyMetadata, VariantTree } from '../../../common/types';
 import { getVariantChildren, getVariantParents } from '../../../services/api/variant';
+import { convertUTCToLocalTime } from '../../../services/utils';
 
 const buildNodeFromMetadata = (study: StudyMetadata): RawNodeDatum =>
   ({
@@ -10,8 +10,8 @@ const buildNodeFromMetadata = (study: StudyMetadata): RawNodeDatum =>
       id: study.id,
       owner: study.owner.name,
       version: study.version,
-      creationDate: moment.unix(study.creationDate).format('YYYY/MM/DD HH:mm'),
-      modificationDate: moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm'),
+      creationDate: convertUTCToLocalTime(study.creationDate),
+      modificationDate: convertUTCToLocalTime(study.modificationDate),
     },
     children: [],
   });

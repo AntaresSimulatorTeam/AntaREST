@@ -1,3 +1,4 @@
+import moment from 'moment';
 import { useSnackbar, OptionsObject } from 'notistack';
 import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType, VariantTreeDTO, VariantTree } from '../../common/types';
 
@@ -85,6 +86,11 @@ export const getStudyExtendedName = (study: StudyMetadata): string => {
     return `${study.name} (${study.folder})`;
   }
   return study.name;
+};
+
+export const convertUTCToLocalTime = (date: number): string => {
+  const stillUtc = moment.unix(date).utc().format();
+  return moment.utc(stillUtc).local().format('YYYY-MM-DD HH:mm:ss');
 };
 
 export default {};
