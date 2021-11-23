@@ -20,16 +20,16 @@ branch_labels = None
 depends_on = None
 
 
-def convert_to_utc(data: str, to_zone: Optional[tzinfo]) -> str:
+def convert_to_utc(data: str) -> str:
     dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
-    dt = dt.replace(tzinfo=to_zone)
+    dt = dt.replace(tzinfo=tz.gettz())
     d1 = dt.utcfromtimestamp(dt.timestamp()).strftime("%Y-%m-%d %H:%M:%S.%f")
     return d1
 
 
-def convert_to_local(data: str, to_zone: Optional[tzinfo]) -> str:
+def convert_to_local(data: str) -> str:
     dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
-    dt = dt.replace(tzinfo=to_zone)
+    dt = dt.replace(tzinfo=timezone.utc)
     dt = datetime.fromtimestamp(dt.timestamp())
     d1 = dt.strftime("%Y-%m-%d %H:%M:%S.%f")
     return d1
@@ -41,10 +41,6 @@ def time_convert(
     completion_type: bool = False,
     to_utc: bool = False,
 ) -> None:
-    if to_utc:
-        to_zone = tz.gettz()
-    else:
-        to_zone = timezone.utc
 
     if completion_type:
         column1 = "creation_date"
@@ -59,14 +55,14 @@ def time_convert(
     for row in results:
         row_id = row["id"]
         d1 = (
-            convert_to_utc(data=row[column1], to_zone=to_zone)
+            convert_to_utc(data=row[column1])
             if to_utc
-            else convert_to_local(data=row[column1], to_zone=to_zone)
+            else convert_to_local(data=row[column1])
         )
         d2 = (
-            convert_to_utc(data=row[column2], to_zone=to_zone)
+            convert_to_utc(data=row[column2])
             if to_utc
-            else convert_to_local(data=row[column2], to_zone=to_zone)
+            else convert_to_local(data=row[column2])
         )
         connexion.execute(
             text(
@@ -112,16 +108,15 @@ def migrate_datetime(upgrade_mode: bool = True) -> None:
     )
 
     # VARIANT STUDY SNAPSHOT
-    to_zone = tz.gettz() if upgrade_mode else timezone.utc
     results = connexion.execute(
         "SELECT id, created_at FROM variant_study_snapshot"
     )
     for row in results:
         row_id = row["id"]
         dt = (
-            convert_to_utc(data=row["created_at"], to_zone=to_zone)
+            convert_to_utc(data=row["created_at"])
             if upgrade_mode
-            else convert_to_local(data=row["created_at"], to_zone=to_zone)
+            else convert_to_local(data=row["created_at"])
         )
         connexion.execute(
             text(
