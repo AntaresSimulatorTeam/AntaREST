@@ -1,8 +1,8 @@
 import React from 'react';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import moment from 'moment';
-import { FileDownload } from '../../services/api/downloads';
 import DownloadItem from './DownloadItem';
+import { FileDownload } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Paper } from '@material-ui/core';
-import { FileDownload, getDownloadUrl } from '../../services/api/downloads';
+import { getDownloadUrl } from '../../services/api/downloads';
 import DownloadLink from '../ui/DownloadLink';
+import { FileDownload } from '../../common/types';
 
 interface PropTypes {
   download: FileDownload;

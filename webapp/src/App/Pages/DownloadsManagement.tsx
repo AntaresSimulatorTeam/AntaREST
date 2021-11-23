@@ -6,9 +6,10 @@ import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import { AxiosError } from 'axios';
 import { useNotif } from '../../services/utils';
 import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
-import { FileDownload, getDownloadsList } from '../../services/api/downloads';
+import { getDownloadsList } from '../../services/api/downloads';
 import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
 import DownloadsListing from '../../components/DownloadsListing';
+import { FileDownload } from '../../common/types';
 
 const logError = debug('antares:studymanagement:error');
 
