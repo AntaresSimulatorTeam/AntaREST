@@ -32,6 +32,7 @@
     "generationInProgress": "Generation in progress...",
     "taskCompleted": "Task completed successfully",
     "taskFailed": "Error: Task failed",
-    "nameEmptyError": "Invalid input, name is empty"
+    "nameEmptyError": "Invalid input, name is empty",
+    "noCommands": "Command list is empty"
 }
   
