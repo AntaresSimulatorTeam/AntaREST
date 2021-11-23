@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import ContentLoader from 'react-content-loader';
 import { AxiosError } from 'axios';
-import { makeStyles, createStyles } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { AppState } from '../../App/reducers';
 import GenericListingView from '../ui/NavComponents/GenericListingView';
 import DataView from './DataView';
+import DataViewLoader from './DataViewLoader';
 import { deleteDataSet, getMatrixList } from '../../services/api/matrix';
 import { MatrixDataSetDTO, IDType, MatrixInfoDTO } from '../../common/types';
 import DataModal from './DataModal';
@@ -16,25 +15,6 @@ import MatrixModal from './MatrixModal';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import NoContent from '../ui/NoContent';
 
-const useStyles = makeStyles(() =>
-  createStyles({
-    contentloader: {
-      width: '100%',
-      height: '100%',
-    },
-    contentloader1: {
-      width: '100%',
-      height: '100%',
-      zIndex: 0,
-      position: 'absolute',
-    },
-    contentloader2: {
-      width: '100%',
-      height: '100%',
-      zIndex: 10,
-      position: 'absolute',
-    },
-  }));
 const mapState = (state: AppState) => ({
   user: state.auth.user,
 });
@@ -46,7 +26,6 @@ type PropTypes = ReduxProps;
 const Data = (props: PropTypes) => {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const classes = useStyles();
   const [dataList, setDataList] = useState<Array<MatrixDataSetDTO>>([]);
   const [idForDeletion, setIdForDeletion] = useState<IDType>(-1);
   const [filter, setFilter] = useState<string>('');
@@ -145,65 +124,12 @@ const Data = (props: PropTypes) => {
           onUpdateClick={onUpdateClick}
           onMatrixClick={onMatrixClick}
         />
-      ) : (
+      ) : loaded && (
         <div style={{ height: '90%' }}>
           <NoContent />
         </div>
       )}
-      {!loaded && (
-      <div className={classes.contentloader}>
-        <ContentLoader
-          speed={2}
-          backgroundColor="#dedede"
-          foregroundColor="#ececec"
-          className={classes.contentloader1}
-        >
-          <rect x="8%" y="3%" rx="2" ry="2" width="64%" height="6%" />
-          <rect x="8%" y="9.4%" rx="2" ry="2" width="64%" height="6%" />
-          <rect x="8%" y="15.8%" rx="2" ry="2" width="64%" height="6%" />
-          <rect x="8%" y="22.2%" rx="2" ry="2" width="64%" height="6%" />
-          <rect x="8%" y="28.6%" rx="2" ry="2" width="64%" height="6%" />
-        </ContentLoader>
-        <ContentLoader
-          speed={2}
-          backgroundColor="#B9B9B9"
-          foregroundColor="#ececec"
-          className={classes.contentloader2}
-        >
-          <rect x="8%" y="3%" rx="4" ry="4" width=".5%" height="6%" />
-          <rect x="8%" y="9.4%" rx="4" ry="4" width=".5%" height="6%" />
-          <rect x="8%" y="15.8%" rx="4" ry="4" width=".5%" height="6%" />
-          <rect x="8%" y="22.2%" rx="4" ry="4" width=".5%" height="6%" />
-          <rect x="8%" y="28.6%" rx="4" ry="4" width=".5%" height="6%" />
-
-          <rect x="9.7%" y="4.5%" rx="4" ry="4" width="5%" height="3%" />
-          <rect x="9.7%" y="10.9%" rx="4" ry="4" width="7%" height="3%" />
-          <rect x="9.7%" y="17.3%" rx="4" ry="4" width="3%" height="3%" />
-          <rect x="9.7%" y="23.7%" rx="4" ry="4" width="10%" height="3%" />
-          <rect x="9.7%" y="30.1%" rx="4" ry="4" width="6%" height="3%" />
-
-          <rect x="65.4%" y="4.75%" rx="2" ry="2" width="1.5%" height="2.75%" />
-          <rect x="67.6%" y="4.75%" rx="2" ry="2" width="1.5%" height="2.75%" />
-          <rect x="69.8%" y="4.75%" rx="2" ry="2" width="1.5%" height="2.75%" />
-
-          <rect x="65.4%" y="11.15%" rx="2" ry="2" width="1.5%" height="2.75%" />
-          <rect x="67.6%" y="11.15%" rx="2" ry="2" width="1.5%" height="2.75%" />
-          <rect x="69.8%" y="11.15%" rx="2" ry="2" width="1.5%" height="2.75%" />
-
-          <rect x="65.4%" y="17.55%" rx="2" ry="2" width="1.5%" height="2.75%" />
-          <rect x="67.6%" y="17.55%" rx="2" ry="2" width="1.5%" height="2.75%" />
-          <rect x="69.8%" y="17.55%" rx="2" ry="2" width="1.5%" height="2.75%" />
-
-          <rect x="65.4%" y="23.95%" rx="2" ry="2" width="1.5%" height="2.75%" />
-          <rect x="67.6%" y="23.95%" rx="2" ry="2" width="1.5%" height="2.75%" />
-          <rect x="69.8%" y="23.95%" rx="2" ry="2" width="1.5%" height="2.75%" />
-
-          <rect x="65.4%" y="30.35%" rx="2" ry="2" width="1.5%" height="2.75%" />
-          <rect x="67.6%" y="30.35%" rx="2" ry="2" width="1.5%" height="2.75%" />
-          <rect x="69.8%" y="30.35%" rx="2" ry="2" width="1.5%" height="2.75%" />
-        </ContentLoader>
-      </div>
-      )}
+      {!loaded && <DataViewLoader />}
       {matrixModal && currentMatrix && (
         <MatrixModal
           open={matrixModal} // Why 'openModal &&' ? => Otherwise previous data are still present

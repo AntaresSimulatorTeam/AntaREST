@@ -114,10 +114,9 @@ const NoteView = (props: Props) => {
       setEditorState(EditorState.createWithContent(convertXMLToDraftJS(newContent)));
       setContent(newContent);
       enqueueSnackbar(t('singlestudy:commentsSaved'), { variant: 'success' });
+      setEditionMode(false);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:commentsNotSaved'), e as AxiosError);
-    } finally {
-      setEditionMode(false);
     }
   };
 
