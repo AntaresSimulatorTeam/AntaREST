@@ -5,7 +5,6 @@ import { makeStyles, Theme, createStyles, Paper } from '@material-ui/core';
 import debug from 'debug';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import LiveHelpRoundedIcon from '@material-ui/icons/LiveHelpRounded';
 import { getStudyData, importFile } from '../../../services/api/study';
 import MainContentLoader from '../../ui/loaders/MainContentLoader';
 import { MatrixType } from '../../../common/types';
@@ -32,11 +31,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   buttonElement: {
     margin: theme.spacing(0.2),
   },
-  liveHelpRoundedIcon: {
-    color: theme.palette.primary.main,
-    width: '100%',
-    height: '100px',
-  },
+
 }));
 
 interface PropTypes {
@@ -121,10 +116,7 @@ const StudyMatrixView = (props: PropTypes) => {
           ) : (
             loaded && (
             <NoContent
-              title="Matrice vide, vous pouvez en importer une"
-              icon={
-                <LiveHelpRoundedIcon className={classes.liveHelpRoundedIcon} />
-              }
+              title="data:matrixEmpty"
               callToAction={
                 <ImportForm text={t('main:import')} onImport={onImport} />
               }

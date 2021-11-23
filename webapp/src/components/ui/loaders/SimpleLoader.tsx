@@ -17,7 +17,6 @@ const useStyles = makeStyles(() =>
     shadow: {
       zIndex: 998,
       opacity: 0.9,
-      backgroundColor: '#fff',
     },
     loaderWheel: {
       width: '98px',
@@ -37,12 +36,13 @@ const useStyles = makeStyles(() =>
 interface PropTypes {
   progress?: number;
   message?: string;
+  color?: string;
 }
 
 const SimpleLoader = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { progress, message } = props;
+  const { progress, message, color } = props;
   return (
     <>
       <div className={classes.rootLoader}>
@@ -54,7 +54,7 @@ const SimpleLoader = (props: PropTypes) => {
           {message && <div className={classes.loaderMessage}>{t(message)}</div>}
         </div>
       </div>
-      <div className={clsx(classes.rootLoader, classes.shadow)} />
+      <div className={clsx(classes.rootLoader, classes.shadow)} style={{ backgroundColor: color }} />
     </>
   );
 };
@@ -62,6 +62,7 @@ const SimpleLoader = (props: PropTypes) => {
 SimpleLoader.defaultProps = {
   progress: undefined,
   message: undefined,
+  color: '#fff',
 };
 
 export default SimpleLoader;

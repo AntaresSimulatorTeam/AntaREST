@@ -1,5 +1,7 @@
 import React, { ReactNode } from 'react';
 import { makeStyles, Theme, createStyles } from '@material-ui/core';
+import { useTranslation } from 'react-i18next';
+import LiveHelpRoundedIcon from '@material-ui/icons/LiveHelpRounded';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -19,15 +21,22 @@ const useStyles = makeStyles((theme: Theme) =>
         paddingBottom: theme.spacing(1),
       },
     },
+    liveHelpRoundedIcon: {
+      color: theme.palette.primary.main,
+      width: '100%',
+      height: '100px',
+    },
   }));
 
 interface Props {
-  title: string;
-  icon: ReactNode;
-  callToAction: ReactNode;
+  title?: string;
+  icon?: ReactNode;
+  callToAction?: ReactNode;
 }
+
 const NoContent = (props: Props) => {
-  const { title, icon, callToAction } = props;
+  const { title = 'main:noContent', icon, callToAction } = props;
+  const [t] = useTranslation();
   const classes = useStyles();
 
   return (
@@ -36,13 +45,19 @@ const NoContent = (props: Props) => {
         { icon }
       </div>
       <div>
-        { title }
+        { t(title) }
       </div>
       <div>
         { callToAction }
       </div>
     </div>
   );
+};
+
+NoContent.defaultProps = {
+  title: 'main:noContent',
+  icon: <LiveHelpRoundedIcon color="primary" style={{ height: '100px', width: '100%' }} />,
+  callToAction: <div />,
 };
 
 export default NoContent;

@@ -14,6 +14,7 @@ import DataModal from './DataModal';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import MatrixModal from './MatrixModal';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import NoContent from '../ui/NoContent';
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -135,15 +136,19 @@ const Data = (props: PropTypes) => {
       buttonValue={t('data:createMatrix')}
       onButtonClick={() => createNewData()}
     >
-      {loaded && (
-      <DataView
-        data={dataList}
-        filter={filter}
-        user={user}
-        onDeleteClick={onDeleteClick}
-        onUpdateClick={onUpdateClick}
-        onMatrixClick={onMatrixClick}
-      />
+      {loaded && dataList.length > 0 ? (
+        <DataView
+          data={dataList}
+          filter={filter}
+          user={user}
+          onDeleteClick={onDeleteClick}
+          onUpdateClick={onUpdateClick}
+          onMatrixClick={onMatrixClick}
+        />
+      ) : (
+        <div style={{ height: '90%' }}>
+          <NoContent />
+        </div>
       )}
       {!loaded && (
       <div className={classes.contentloader}>
