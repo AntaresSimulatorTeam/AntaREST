@@ -88,9 +88,6 @@ export const getStudyExtendedName = (study: StudyMetadata): string => {
   return study.name;
 };
 
-export const convertUTCToLocalTime = (date: number): string => {
-  const stillUtc = moment.unix(date).utc().format();
-  return moment.utc(stillUtc).local().format('YYYY-MM-DD HH:mm:ss');
-};
+export const convertUTCToLocalTime = (date: string): string => moment.utc(date).local().format('YYYY-MM-DD HH:mm:ss');
 
 export default {};

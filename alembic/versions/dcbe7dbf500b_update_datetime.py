@@ -20,19 +20,25 @@ branch_labels = None
 depends_on = None
 
 
-def convert_to_utc(data: str) -> str:
-    dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
-    dt = dt.replace(tzinfo=tz.gettz())
-    d1 = dt.utcfromtimestamp(dt.timestamp()).strftime("%Y-%m-%d %H:%M:%S.%f")
-    return d1
+def convert_to_utc(data: str) -> Optional[str]:
+    if data is not None:
+        dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
+        dt = dt.replace(tzinfo=tz.gettz())
+        d1 = dt.utcfromtimestamp(dt.timestamp()).strftime(
+            "%Y-%m-%d %H:%M:%S.%f"
+        )
+        return d1
+    return None
 
 
-def convert_to_local(data: str) -> str:
-    dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
-    dt = dt.replace(tzinfo=timezone.utc)
-    dt = datetime.fromtimestamp(dt.timestamp())
-    d1 = dt.strftime("%Y-%m-%d %H:%M:%S.%f")
-    return d1
+def convert_to_local(data: str) -> Optional[str]:
+    if data is not None:
+        dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
+        dt = dt.replace(tzinfo=timezone.utc)
+        dt = datetime.fromtimestamp(dt.timestamp())
+        d1 = dt.strftime("%Y-%m-%d %H:%M:%S.%f")
+        return d1
+    return None
 
 
 def time_convert(
@@ -80,14 +86,6 @@ def migrate_datetime(upgrade_mode: bool = True) -> None:
         connexion=connexion,
         table="dataset",
         completion_type=False,
-        to_utc=upgrade_mode,
-    )
-
-    # JOB RESULTS
-    time_convert(
-        connexion=connexion,
-        table="job_result",
-        completion_type=True,
         to_utc=upgrade_mode,
     )
 

@@ -75,8 +75,12 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             raw_meta = study.get(["study", "antares"])
             metadata.name = raw_meta["caption"]
             metadata.version = raw_meta["version"]
-            metadata.created_at = datetime.fromtimestamp(raw_meta["created"])
-            metadata.updated_at = datetime.fromtimestamp(raw_meta["lastsave"])
+            metadata.created_at = datetime.utcfromtimestamp(
+                raw_meta["created"]
+            )
+            metadata.updated_at = datetime.utcfromtimestamp(
+                raw_meta["lastsave"]
+            )
         except Exception as e:
             logger.error(
                 "Failed to fetch study %s raw metadata!",
