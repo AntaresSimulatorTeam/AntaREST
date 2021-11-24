@@ -97,14 +97,6 @@ def migrate_datetime(upgrade_mode: bool = True) -> None:
         to_utc=upgrade_mode,
     )
 
-    # TASKJOBS
-    time_convert(
-        connexion=connexion,
-        table="taskjob",
-        completion_type=True,
-        to_utc=upgrade_mode,
-    )
-
     # VARIANT STUDY SNAPSHOT
     results = connexion.execute(
         "SELECT id, created_at FROM variant_study_snapshot"
