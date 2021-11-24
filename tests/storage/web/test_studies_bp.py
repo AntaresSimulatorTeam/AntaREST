@@ -583,8 +583,8 @@ def test_output_whole_download(tmp_path: Path) -> None:
         matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app, raise_server_exceptions=False)
-    res = client.post(
-        f"/v1/studies/my-uuid/outputs/{output_id}/download",
+    res = client.get(
+        f"/v1/studies/my-uuid/outputs/{output_id}/export",
     )
     assert res.status_code == 200
 
