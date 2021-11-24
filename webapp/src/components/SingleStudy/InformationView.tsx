@@ -39,6 +39,7 @@ import ConfirmationModal from '../ui/ConfirmationModal';
 import PermissionModal from './PermissionModal';
 import ButtonLoader from '../ui/ButtonLoader';
 import RenameModal from './RenameModal';
+import { CopyIcon } from '../Data/utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const logError = debug('antares:singlestudyview:error');
@@ -297,6 +298,15 @@ const InformationView = (props: PropTypes) => {
     }
   };
 
+  const copyId = (studyId: string): void => {
+    try {
+      navigator.clipboard.writeText(studyId);
+      enqueueSnackbar(t('singlestudy:onStudyIdCopySuccess'), { variant: 'success' });
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:onStudyIdCopyError'), e as AxiosError);
+    }
+  };
+
   return study ? (
     <Paper className={classes.root}>
       <div className={classes.header}>
@@ -326,6 +336,9 @@ const InformationView = (props: PropTypes) => {
           </div>
           <div className={classes.mainInfo}>
             <Typography style={{ fontSize: '0.9em', color: 'gray' }}>{study.id}</Typography>
+            <Tooltip title={t('singlestudy:copyId') as string} placement="top">
+              <CopyIcon style={{ marginLeft: '0.5em', cursor: 'pointer' }} onClick={() => copyId(study.id)} />
+            </Tooltip>
           </div>
         </div>
         <div className={classes.scrollInfoContainer}>

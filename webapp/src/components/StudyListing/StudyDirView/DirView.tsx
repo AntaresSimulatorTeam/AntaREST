@@ -1,8 +1,10 @@
 /* eslint-disable react/no-array-index-key */
 import React, { Fragment, useState } from 'react';
 import clsx from 'clsx';
+import { AxiosError } from 'axios';
 import moment from 'moment';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
 import { makeStyles, createStyles, Theme, Paper, Typography, Tooltip, Breadcrumbs, Grid, Menu, MenuItem, useTheme } from '@material-ui/core';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import FolderIcon from '@material-ui/icons/Folder';
@@ -13,6 +15,7 @@ import { StudyMetadata } from '../../../common/types';
 import DownloadLink from '../../ui/DownloadLink';
 import { getExportUrl } from '../../../services/api/study';
 import ConfirmationModal from '../../ui/ConfirmationModal';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -131,6 +134,7 @@ const DirView = (props: Props) => {
   const theme = useTheme();
   const { node, onClick, dirPath, onDirClick, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = props;
   const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [menuId, setMenuId] = useState<string>('');
   const [contextMenu, setContextMenu] = useState<{
@@ -178,6 +182,16 @@ const DirView = (props: Props) => {
     <MenuItem key={key} onClick={() => archiveStudy(study)} style={{ color: theme.palette.primary.main }}>{t('studymanager:archive')}</MenuItem>,
 
   ];
+
+  const copyId = (studyId: string): void => {
+    try {
+      navigator.clipboard.writeText(studyId);
+      enqueueSnackbar(t('singlestudy:onStudyIdCopySuccess'), { variant: 'success' });
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:onStudyIdCopyError'), e as AxiosError);
+    }
+  };
+
   return (
     <div className={classes.root}>
       <div className={classes.header}>
@@ -249,6 +263,7 @@ const DirView = (props: Props) => {
                         : undefined
                     }
                   >
+                    <MenuItem onClick={() => copyId((elm as StudyMetadata).id)} style={{ color: '#666' }}>{t('singlestudy:copyIdDir')}</MenuItem>
                     {
                         (elm as StudyMetadata).archived ?
                           <MenuItem onClick={() => unarchiveStudy(elm as StudyMetadata)}>{t('studymanager:unarchive')}</MenuItem> : (
