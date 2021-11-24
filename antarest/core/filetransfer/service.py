@@ -56,7 +56,7 @@ class FileTransferManager:
         name: Optional[str] = None,
         owner: Optional[JWTUser] = None,
     ) -> FileDownload:
-        _, path = tempfile.mktemp(dir=self.tmp_dir, suffix=filename)
+        _, path = tempfile.mkstemp(dir=self.tmp_dir, suffix=filename)
         tmpfile = Path(path)
         download = FileDownload(
             id=str(uuid.uuid4()),
