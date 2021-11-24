@@ -1,3 +1,4 @@
+import logging
 import re
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
@@ -16,6 +17,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
     Cluster,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigPathBuilder:
@@ -127,32 +130,39 @@ class ConfigPathBuilder:
             return {}
 
         files = sorted(output_path.iterdir())
-        return {
+        sims = {
             f.name: ConfigPathBuilder.parse_simulation(f)
             for i, f in enumerate(files)
             if (f / "about-the-study").exists()
         }
+        return {k: v for k, v in sims.items() if v}
 
     @staticmethod
-    def parse_simulation(path: Path) -> "Simulation":
+    def parse_simulation(path: Path) -> Optional["Simulation"]:
         modes = {"eco": "economy", "adq": "adequacy"}
         regex: Any = re.search(
             "^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)", path.name
         )
-        (
-            nbyears,
-            by_year,
-            synthesis,
-        ) = ConfigPathBuilder._parse_outputs_parameters(path)
-        return Simulation(
-            date=regex.group(1),
-            mode=modes[regex.group(2)],
-            name=regex.group(3),
-            nbyears=nbyears,
-            by_year=by_year,
-            synthesis=synthesis,
-            error=not (path / "checkIntegrity.txt").exists(),
-        )
+        try:
+            (
+                nbyears,
+                by_year,
+                synthesis,
+            ) = ConfigPathBuilder._parse_outputs_parameters(path)
+            return Simulation(
+                date=regex.group(1),
+                mode=modes[regex.group(2)],
+                name=regex.group(3),
+                nbyears=nbyears,
+                by_year=by_year,
+                synthesis=synthesis,
+                error=not (path / "checkIntegrity.txt").exists(),
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to parse simulation found at {path}", exc_info=e
+            )
+        return None
 
     @staticmethod
     def _parse_outputs_parameters(path: Path) -> Tuple[int, bool, bool]:
