@@ -395,9 +395,9 @@ def create_study_routes(
         summary="Get outputs data",
     )
     def output_download(
-            study_id: str,
-            output_id: str,
-            current_user: JWTUser = Depends(auth.get_current_user),
+        study_id: str,
+        output_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_uuid(output_id)
