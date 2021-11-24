@@ -25,5 +25,6 @@
   "edit": "Edit",
   "copy": "Copy",
   "data": "Data",
+  "expirationDate": "Expiration date",
   "websocketstatusmessage": "Websocket connection unavailable. Check your internet connection or try to refresh the page."
 }

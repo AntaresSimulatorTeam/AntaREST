@@ -10,9 +10,9 @@ import DescriptionIcon from '@material-ui/icons/Description';
 import HomeRoundedIcon from '@material-ui/icons/HomeRounded';
 import { isDir, StudyTreeNode } from '../utils';
 import { StudyMetadata } from '../../../common/types';
-import DownloadLink from '../../ui/DownloadLink';
-import { getExportUrl } from '../../../services/api/study';
+import { exportStudy } from '../../../services/api/study';
 import ConfirmationModal from '../../ui/ConfirmationModal';
+import ButtonLoader from '../../ui/ButtonLoader';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -168,9 +168,9 @@ const DirView = (props: Props) => {
     (key: string) => <MenuItem key={key} onClick={() => importStudy(study)} style={{ color: theme.palette.primary.main }}>{t('studymanager:importcopy')}</MenuItem>,
     (key: string) => (
       <MenuItem key={key}>
-        <DownloadLink url={getExportUrl(study.id, false)}>
-          <span style={{ color: theme.palette.primary.main }}>{t('main:export')}</span>
-        </DownloadLink>
+        <ButtonLoader style={{ color: theme.palette.primary.main }} onClick={() => exportStudy(study.id, false)}>
+          {t('main:export')}
+        </ButtonLoader>
       </MenuItem>
     ),
 

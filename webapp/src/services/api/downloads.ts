@@ -8,7 +8,7 @@ export const getDownloadsList = async (): Promise<Array<FileDownload>> => {
     id: d.id,
     name: d.name,
     filename: d.filename,
-    expirationData: d.expiration_date,
+    expirationDate: d.expiration_date,
     ready: d.ready,
   }));
 };

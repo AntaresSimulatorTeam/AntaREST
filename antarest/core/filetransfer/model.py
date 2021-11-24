@@ -31,6 +31,8 @@ class FileDownloadDTO(BaseModel):
     filename: str
     expiration_date: Optional[str]
     ready: bool
+    failed: bool = False
+    error_message: str = ""
 
 
 class FileDownloadTaskDTO(BaseModel):
@@ -53,6 +55,8 @@ class FileDownload(Base):  # type: ignore
     path = Column(String)
     ready = Column(Boolean, default=False)
     expiration_date = Column(DateTime)
+    failed = Column(Boolean, default=False)
+    error_message = Column(String)
 
     def to_dto(self) -> FileDownloadDTO:
         return FileDownloadDTO(
@@ -60,7 +64,9 @@ class FileDownload(Base):  # type: ignore
             name=self.name,
             filename=self.filename,
             ready=self.ready,
-            expiration_date=self.expiration_date,
+            expiration_date=str(self.expiration_date),
+            failed=self.failed,
+            error_message=self.error_message or ""
         )
 
     def __repr__(self) -> str:

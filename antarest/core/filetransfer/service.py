@@ -15,8 +15,9 @@ from antarest.core.filetransfer.model import (
     FileDownloadNotReady,
 )
 from antarest.core.filetransfer.repository import FileDownloadRepository
-from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import JWTUser
+from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import (
     RequestParameters,
     MustBeAuthenticatedError,
@@ -74,6 +75,7 @@ class FileTransferManager:
             ),
         )
         self.repository.add(download)
+        self.event_bus.push(Event(type=EventType.DOWNLOAD_CREATED, payload=download, permissions=PermissionInfo(owner=owner.impersonator) if owner else PermissionInfo(public_mode=PublicMode.READ)))
         return download
 
     def set_ready(self, download_id: str) -> None:
@@ -83,6 +85,31 @@ class FileTransferManager:
 
         download.ready = True
         self.repository.save(download)
+        self.event_bus.push(Event(type=EventType.DOWNLOAD_READY, payload=download,
+                                  permissions=PermissionInfo(owner=download.owner) if download.owner else PermissionInfo(
+                                      public_mode=PublicMode.READ)))
+
+    def fail(self, download_id: str, reason: str = "") -> None:
+        download = self.repository.get(download_id)
+        if not download:
+            raise FileDownloadNotFound()
+
+        download.failed = True
+        download.error_message = reason
+        self.repository.save(download)
+        self.event_bus.push(Event(type=EventType.DOWNLOAD_FAILED, payload=download,
+                                  permissions=PermissionInfo(
+                                      owner=download.owner) if download.owner else PermissionInfo(
+                                      public_mode=PublicMode.READ)))
+
+    def remove(self, download_id: str) -> None:
+        download = self.repository.get(download_id)
+        owner = download.owner
+        self.repository.delete(download_id)
+        self.event_bus.push(Event(type=EventType.DOWNLOAD_EXPIRED, payload=download_id,
+                                  permissions=PermissionInfo(
+                                      owner=owner) if owner else PermissionInfo(
+                                      public_mode=PublicMode.READ)))
 
     def request_tmp_file(self, background_tasks: BackgroundTasks) -> Path:
         """
@@ -120,13 +147,19 @@ class FileTransferManager:
         for file_download in file_downloads:
             if (
                 file_download.expiration_date is not None
-                and file_download.expiration_date >= now
+                and file_download.expiration_date <= now
             ):
                 to_remove.append(file_download)
         for file_download in to_remove:
             logger.info(f"Removing expired download {file_download}")
             file_downloads.remove(file_download)
+            download_id = file_download.id
+            download_owner = file_download.owner
             self.repository.delete(file_download.id)
+            self.event_bus.push(Event(type=EventType.DOWNLOAD_EXPIRED, payload=download_id,
+                                      permissions=PermissionInfo(
+                                          owner=download_owner) if download_owner else PermissionInfo(
+                                          public_mode=PublicMode.READ)))
 
     def fetch_download(
         self, download_id: str, params: RequestParameters

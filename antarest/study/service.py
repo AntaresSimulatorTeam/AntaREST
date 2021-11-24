@@ -617,7 +617,7 @@ class StudyService:
         self._assert_study_unarchived(study)
 
         logger.info("Exporting study %s", uuid)
-        export_name = f"Study {uuid} export"
+        export_name = f"Study {study.name} ({uuid}) export"
         export_file_download = self.file_transfer_manager.request_download(
             f"{study.name}-{uuid}.zip", export_name, params.user
         )
@@ -625,14 +625,18 @@ class StudyService:
         export_id = export_file_download.id
 
         def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
-            target_study = self.get_study(uuid)
-            self._get_study_storage_service(target_study).export_study(
-                target_study, export_path, outputs
-            )
-            self.file_transfer_manager.set_ready(export_id)
-            return TaskResult(
-                success=True, message=f"Study {uuid} successfully exported"
-            )
+            try:
+                target_study = self.get_study(uuid)
+                self._get_study_storage_service(target_study).export_study(
+                    target_study, export_path, outputs
+                )
+                self.file_transfer_manager.set_ready(export_id)
+                return TaskResult(
+                    success=True, message=f"Study {uuid} successfully exported"
+                )
+            except Exception as e:
+                self.file_transfer_manager.fail(export_id, str(e))
+                raise e
 
         task_id = self.task_service.add_task(
             export_task,
@@ -673,17 +677,21 @@ class StudyService:
         export_id = export_file_download.id
 
         def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
-            target_study = self.get_study(study_uuid)
-            self._get_study_storage_service(target_study).export_output(
-                metadata=target_study,
-                output_id=output_uuid,
-                target=export_path,
-            )
-            self.file_transfer_manager.set_ready(export_id)
-            return TaskResult(
-                success=True,
-                message=f"Study output {study_uuid}/{output_uuid} successfully exported",
-            )
+            try:
+                target_study = self.get_study(study_uuid)
+                self._get_study_storage_service(target_study).export_output(
+                    metadata=target_study,
+                    output_id=output_uuid,
+                    target=export_path,
+                )
+                self.file_transfer_manager.set_ready(export_id)
+                return TaskResult(
+                    success=True,
+                    message=f"Study output {study_uuid}/{output_uuid} successfully exported",
+                )
+            except Exception as e:
+                self.file_transfer_manager.fail(export_id, str(e))
+                raise e
 
         task_id = self.task_service.add_task(
             export_task,

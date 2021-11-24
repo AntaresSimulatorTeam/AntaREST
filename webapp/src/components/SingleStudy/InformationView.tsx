@@ -30,11 +30,10 @@ import {
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
   renameStudy as callRenameStudy,
-  getExportUrl,
+  exportStudy,
 } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
 import { hasAuthorization, getStudyExtendedName } from '../../services/utils';
-import DownloadLink from '../ui/DownloadLink';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import PermissionModal from './PermissionModal';
 import ButtonLoader from '../ui/ButtonLoader';
@@ -410,9 +409,9 @@ const InformationView = (props: PropTypes) => {
               <Button className={classes.launchButton} onClick={launchStudy}>
                 {t('main:launch')}
               </Button>
-              <DownloadLink url={getExportUrl(study.id, false)}>
-                <Button className={classes.exportButton}>{t('main:export')}</Button>
-              </DownloadLink>
+              <ButtonLoader className={classes.exportButton} onClick={() => exportStudy(study.id, false)}>
+                {t('main:export')}
+              </ButtonLoader>
               {study.managed && (
               <ButtonLoader className={classes.archivingButton} onClick={archiveStudy}>
                 {t('studymanager:archive')}

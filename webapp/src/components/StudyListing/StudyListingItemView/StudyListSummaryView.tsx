@@ -5,9 +5,8 @@ import { makeStyles, Button, createStyles, Theme, Paper, Typography, Tooltip } f
 import { useTheme } from '@material-ui/core/styles';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { getExportUrl } from '../../../services/api/study';
+import { exportStudy } from '../../../services/api/study';
 import { getStudyExtendedName } from '../../../services/utils';
-import DownloadLink from '../../ui/DownloadLink';
 import { StudyListingItemPropTypes } from './types';
 import ButtonLoader from '../../ui/ButtonLoader';
 
@@ -145,11 +144,9 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
             >
               {t('studymanager:importcopy')}
             </ButtonLoader>
-            <DownloadLink url={getExportUrl(study.id, false)}>
-              <Button size="small" style={{ color: theme.palette.primary.main }}>
-                {t('main:export')}
-              </Button>
-            </DownloadLink>
+            <ButtonLoader size="small" style={{ color: theme.palette.primary.main }} onClick={() => exportStudy(study.id, false)}>
+              {t('main:export')}
+            </ButtonLoader>
             {study.managed && (
             <ButtonLoader
               size="small"
