@@ -47,12 +47,6 @@ class FileTransferManager:
         )
 
     @staticmethod
-    def get_instance() -> "FileTransferManager":
-        if FileTransferManager._instance is None:
-            raise AssertionError("FileTransferManager not initiated")
-        return FileTransferManager._instance
-
-    @staticmethod
     def _cleanup_file(tmpfile: Path) -> None:
         tmpfile.unlink(missing_ok=True)
 
@@ -62,7 +56,8 @@ class FileTransferManager:
         name: Optional[str] = None,
         owner: Optional[JWTUser] = None,
     ) -> FileDownload:
-        tmpfile = Path(tempfile.mktemp(dir=self.tmp_dir, suffix=filename))
+        _, path = tempfile.mktemp(dir=self.tmp_dir, suffix=filename)
+        tmpfile = Path(path)
         download = FileDownload(
             id=str(uuid.uuid4()),
             filename=filename,
@@ -147,9 +142,10 @@ class FileTransferManager:
         Returns:
             a fresh tmp file path
         """
-        tmpfile = Path(tempfile.mktemp(dir=self.tmp_dir))
-        background_tasks.add_task(FileTransferManager._cleanup_file, tmpfile)
-        return tmpfile
+        _, path = tempfile.mkstemp(dir=self.tmp_dir)
+        tmppath = Path(path)
+        background_tasks.add_task(FileTransferManager._cleanup_file, tmppath)
+        return tmppath
 
     def list_downloads(
         self, params: RequestParameters
