@@ -32,7 +32,7 @@ class FileDownloadRepository:
             file_download_list = db.session.query(FileDownload).all()
         return file_download_list
 
-    def delete(self, download_id: str):
+    def delete(self, download_id: str) -> None:
         download = self.get(download_id)
         if download:
             db.session.delete(download)

@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 import tempfile
 import uuid
 from pathlib import Path
@@ -75,7 +76,15 @@ class FileTransferManager:
             ),
         )
         self.repository.add(download)
-        self.event_bus.push(Event(type=EventType.DOWNLOAD_CREATED, payload=download, permissions=PermissionInfo(owner=owner.impersonator) if owner else PermissionInfo(public_mode=PublicMode.READ)))
+        self.event_bus.push(
+            Event(
+                type=EventType.DOWNLOAD_CREATED,
+                payload=download.to_dto(),
+                permissions=PermissionInfo(owner=owner.impersonator)
+                if owner
+                else PermissionInfo(public_mode=PublicMode.READ),
+            )
+        )
         return download
 
     def set_ready(self, download_id: str) -> None:
@@ -85,9 +94,15 @@ class FileTransferManager:
 
         download.ready = True
         self.repository.save(download)
-        self.event_bus.push(Event(type=EventType.DOWNLOAD_READY, payload=download,
-                                  permissions=PermissionInfo(owner=download.owner) if download.owner else PermissionInfo(
-                                      public_mode=PublicMode.READ)))
+        self.event_bus.push(
+            Event(
+                type=EventType.DOWNLOAD_READY,
+                payload=download.to_dto(),
+                permissions=PermissionInfo(owner=download.owner)
+                if download.owner
+                else PermissionInfo(public_mode=PublicMode.READ),
+            )
+        )
 
     def fail(self, download_id: str, reason: str = "") -> None:
         download = self.repository.get(download_id)
@@ -97,19 +112,29 @@ class FileTransferManager:
         download.failed = True
         download.error_message = reason
         self.repository.save(download)
-        self.event_bus.push(Event(type=EventType.DOWNLOAD_FAILED, payload=download,
-                                  permissions=PermissionInfo(
-                                      owner=download.owner) if download.owner else PermissionInfo(
-                                      public_mode=PublicMode.READ)))
+        self.event_bus.push(
+            Event(
+                type=EventType.DOWNLOAD_FAILED,
+                payload=download.to_dto(),
+                permissions=PermissionInfo(owner=download.owner)
+                if download.owner
+                else PermissionInfo(public_mode=PublicMode.READ),
+            )
+        )
 
     def remove(self, download_id: str) -> None:
         download = self.repository.get(download_id)
-        owner = download.owner
+        owner = download.owner if download else None
         self.repository.delete(download_id)
-        self.event_bus.push(Event(type=EventType.DOWNLOAD_EXPIRED, payload=download_id,
-                                  permissions=PermissionInfo(
-                                      owner=owner) if owner else PermissionInfo(
-                                      public_mode=PublicMode.READ)))
+        self.event_bus.push(
+            Event(
+                type=EventType.DOWNLOAD_EXPIRED,
+                payload=download_id,
+                permissions=PermissionInfo(owner=owner)
+                if owner
+                else PermissionInfo(public_mode=PublicMode.READ),
+            )
+        )
 
     def request_tmp_file(self, background_tasks: BackgroundTasks) -> Path:
         """
@@ -155,11 +180,23 @@ class FileTransferManager:
             file_downloads.remove(file_download)
             download_id = file_download.id
             download_owner = file_download.owner
+            try:
+                os.unlink(file_download.path)
+            except Exception as e:
+                logger.error(
+                    f"Failed to remove file download {file_download.path}",
+                    exc_info=e,
+                )
             self.repository.delete(file_download.id)
-            self.event_bus.push(Event(type=EventType.DOWNLOAD_EXPIRED, payload=download_id,
-                                      permissions=PermissionInfo(
-                                          owner=download_owner) if download_owner else PermissionInfo(
-                                          public_mode=PublicMode.READ)))
+            self.event_bus.push(
+                Event(
+                    type=EventType.DOWNLOAD_EXPIRED,
+                    payload=download_id,
+                    permissions=PermissionInfo(owner=download_owner)
+                    if download_owner
+                    else PermissionInfo(public_mode=PublicMode.READ),
+                )
+            )
 
     def fetch_download(
         self, download_id: str, params: RequestParameters

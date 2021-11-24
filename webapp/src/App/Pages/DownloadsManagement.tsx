@@ -1,15 +1,17 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import debug from 'debug';
-import { Translation, useTranslation } from 'react-i18next';
+import { Translation } from 'react-i18next';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import { AxiosError } from 'axios';
+import { connect, ConnectedProps } from 'react-redux';
 import { useNotif } from '../../services/utils';
 import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
-import { getDownloadsList } from '../../services/api/downloads';
+import { convertFileDownloadDTO, FileDownloadDTO, getDownloadsList } from '../../services/api/downloads';
 import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
 import DownloadsListing from '../../components/DownloadsListing';
-import { FileDownload } from '../../common/types';
+import { FileDownload, WSEvent, WSMessage } from '../../common/types';
+import { addListener, removeListener } from '../../ducks/websockets';
 
 const logError = debug('antares:studymanagement:error');
 
@@ -28,8 +30,21 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
 }));
 
-const DownloadManagement = () => {
+const mapState = () => ({
+});
+
+const mapDispatch = ({
+  addWsListener: addListener,
+  removeWsListener: removeListener,
+});
+
+const connector = connect(mapState, mapDispatch);
+type ReduxProps = ConnectedProps<typeof connector>;
+type PropTypes = ReduxProps;
+
+const DownloadManagement = (props: PropTypes) => {
   const classes = useStyles();
+  const { addWsListener, removeWsListener } = props;
   const [downloads, setDownloads] = useState<FileDownload[]>();
   const createNotif = useNotif();
   const [loaded, setLoaded] = useState(true);
@@ -51,6 +66,37 @@ const DownloadManagement = () => {
     init();
   }, []);
 
+  useEffect(() => {
+    const listener = (ev: WSMessage) => {
+      if (ev.type === WSEvent.DOWNLOAD_CREATED) {
+        setDownloads((downloads || []).concat([convertFileDownloadDTO(ev.payload as FileDownloadDTO)]));
+      } else if (ev.type === WSEvent.DOWNLOAD_READY) {
+        setDownloads((downloads || []).map((d) => {
+          const fileDownload = (ev.payload as FileDownloadDTO);
+          if (d.id === fileDownload.id) {
+            return convertFileDownloadDTO(fileDownload);
+          }
+          return d;
+        }));
+      } else if (ev.type === WSEvent.DOWNLOAD_READY || ev.type === WSEvent.DOWNLOAD_FAILED) {
+        setDownloads((downloads || []).map((d) => {
+          const fileDownload = (ev.payload as FileDownloadDTO);
+          if (d.id === fileDownload.id) {
+            return convertFileDownloadDTO(fileDownload);
+          }
+          return d;
+        }));
+      } else if (ev.type === WSEvent.DOWNLOAD_EXPIRED) {
+        setDownloads((downloads || []).filter((d) => {
+          const fileDownload = (ev.payload as FileDownloadDTO);
+          return d.id !== fileDownload.id;
+        }));
+      }
+    };
+    addWsListener(listener);
+    return () => removeWsListener(listener);
+  }, [addWsListener, removeWsListener, downloads]);
+
   return (
     <div className={classes.root}>
       {!loaded && <MainContentLoader />}
@@ -59,4 +105,4 @@ const DownloadManagement = () => {
   );
 };
 
-export default DownloadManagement;
+export default connector(DownloadManagement);

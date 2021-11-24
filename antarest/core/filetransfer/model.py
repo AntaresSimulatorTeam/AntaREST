@@ -66,7 +66,7 @@ class FileDownload(Base):  # type: ignore
             ready=self.ready,
             expiration_date=str(self.expiration_date),
             failed=self.failed,
-            error_message=self.error_message or ""
+            error_message=self.error_message or "",
         )
 
     def __repr__(self) -> str:

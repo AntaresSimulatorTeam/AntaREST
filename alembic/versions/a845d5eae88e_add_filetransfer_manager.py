@@ -1,8 +1,8 @@
 """add_filetransfer_manager
 
-Revision ID: 415976c0a4d4
+Revision ID: a845d5eae88e
 Revises: 9846e90c2868
-Create Date: 2021-11-22 13:28:31.698683
+Create Date: 2021-11-24 14:42:12.269690
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '415976c0a4d4'
+revision = 'a845d5eae88e'
 down_revision = '9846e90c2868'
 branch_labels = None
 depends_on = None
@@ -26,6 +26,8 @@ def upgrade():
     sa.Column('path', sa.String(), nullable=True),
     sa.Column('ready', sa.Boolean(), nullable=True),
     sa.Column('expiration_date', sa.DateTime(), nullable=True),
+    sa.Column('failed', sa.Boolean(), nullable=True),
+    sa.Column('error_message', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id'),
     sa.UniqueConstraint('id')
