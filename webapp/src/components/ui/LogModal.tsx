@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { createStyles, makeStyles, Theme, Button, Paper, Typography } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import Modal from '@material-ui/core/Modal';
@@ -89,6 +89,8 @@ type PropTypes = ReduxProps & OwnTypes;
 const LogModal = (props: PropTypes) => {
   const { title, style, jobId, isOpen, content, close, addWsListener, removeWsListener } = props;
   const [logDetail, setLogDetail] = useState(content);
+  const divRef = useRef<HTMLDivElement | null>(null);
+  const logRef = useRef<HTMLDivElement | null>(null);
   const classes = useStyles();
   const [t] = useTranslation();
 
@@ -100,6 +102,20 @@ const LogModal = (props: PropTypes) => {
       }
     }
   }, [jobId, logDetail]);
+
+  const handleGlobalKeyDown = (keyboardEvent: React.KeyboardEvent<HTMLDivElement>) => {
+    if (keyboardEvent.key === 'a' && keyboardEvent.ctrlKey) {
+      if (divRef.current) {
+        const range = document.createRange();
+        range.selectNode(divRef.current);
+        const selection = window.getSelection();
+        if (selection !== null) {
+          selection.addRange(range);
+        }
+      }
+      keyboardEvent.preventDefault();
+    }
+  };
 
   useEffect(() => {
     setLogDetail(content);
@@ -123,12 +139,12 @@ const LogModal = (props: PropTypes) => {
       }}
     >
       <Fade in={isOpen}>
-        <Paper className={classes.main} style={style !== undefined ? style : {}}>
+        <Paper onKeyDown={handleGlobalKeyDown} className={classes.main} style={style !== undefined ? style : {}}>
           <div className={classes.titlebox}>
             <Typography className={classes.title}>{title}</Typography>
           </div>
-          <div className={classes.contentWrapper}>
-            <div className={classes.content}>
+          <div className={classes.contentWrapper} ref={logRef}>
+            <div className={classes.content} id="log-content" ref={divRef}>
               <code className={classes.code}>{logDetail}</code>
             </div>
           </div>
