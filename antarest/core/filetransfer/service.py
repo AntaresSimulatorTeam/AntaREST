@@ -56,7 +56,8 @@ class FileTransferManager:
         name: Optional[str] = None,
         owner: Optional[JWTUser] = None,
     ) -> FileDownload:
-        _, path = tempfile.mkstemp(dir=self.tmp_dir, suffix=filename)
+        fh, path = tempfile.mkstemp(dir=self.tmp_dir, suffix=filename)
+        os.close(fh)
         tmpfile = Path(path)
         download = FileDownload(
             id=str(uuid.uuid4()),
@@ -142,7 +143,8 @@ class FileTransferManager:
         Returns:
             a fresh tmp file path
         """
-        _, path = tempfile.mkstemp(dir=self.tmp_dir)
+        fh, path = tempfile.mkstemp(dir=self.tmp_dir)
+        os.close(fh)
         tmppath = Path(path)
         background_tasks.add_task(FileTransferManager._cleanup_file, tmppath)
         return tmppath
