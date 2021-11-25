@@ -7,6 +7,7 @@ import Button, { ButtonProps } from '@material-ui/core/Button';
 interface OwnProps {
   // eslint-disable-next-line react/no-unused-prop-types
   progressColor?: string;
+  fakeDelay?: number;
 }
 
 const useStyles = makeStyles<Theme, OwnProps>((theme: Theme) =>
@@ -32,17 +33,19 @@ const useStyles = makeStyles<Theme, OwnProps>((theme: Theme) =>
 
 const ButtonLoader = (props: ButtonProps & OwnProps) => {
   const classes = useStyles(props);
-  const { children, onClick } = props;
+  const { children, onClick, fakeDelay = 0 } = props;
   const [loading, setLoading] = React.useState(false);
 
   const handleButtonClick = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     if (!loading && !!onClick) {
       setLoading(true);
-      try {
-        await onClick(event);
-      } finally {
-        setLoading(false);
-      }
+      setTimeout(async () => {
+        try {
+          await onClick(event);
+        } finally {
+          setLoading(false);
+        }
+      }, fakeDelay);
     }
   };
 
@@ -67,6 +70,7 @@ const ButtonLoader = (props: ButtonProps & OwnProps) => {
 
 ButtonLoader.defaultProps = {
   progressColor: blue[400],
+  fakeDelay: 0,
 };
 
 export default ButtonLoader;
