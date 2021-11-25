@@ -305,6 +305,7 @@ class AbstractStorageService(IStudyStorageService[T]):
         with tempfile.TemporaryDirectory(
             dir=self.config.storage.tmp_dir
         ) as tmpdir:
+            assert target.name.endswith(".zip")
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()

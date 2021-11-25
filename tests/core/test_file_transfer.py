@@ -1,10 +1,11 @@
 from pathlib import Path
+from unittest.mock import Mock
 
 from fastapi import FastAPI, Depends
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config
-from antarest.core.utils.file_transfer import FileTransferManager
+from antarest.core.filetransfer.service import FileTransferManager
 
 
 def create_app() -> FastAPI:
@@ -14,7 +15,7 @@ def create_app() -> FastAPI:
 
 def test_file_request():
     app = create_app()
-    ftm = FileTransferManager.get_instance(Config())
+    ftm = FileTransferManager(Mock(), Mock(), Config())
 
     @app.get("/dummy")
     def dummy_endpoint(tmppath: Path = Depends(ftm.request_tmp_file)):

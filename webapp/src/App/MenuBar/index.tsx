@@ -11,6 +11,7 @@ import UserBadge from '../../components/UserBadge';
 import { getConfig } from '../../services/config';
 import { AppState } from '../reducers';
 import './style.css';
+import DownloadBadge from '../../components/DownloadsListing/DownloadBadge';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -80,6 +81,11 @@ const MenuBar = (props: PropTypes) => {
           <Typography className={classes.menuitem}>
             <Link to="/data">{t('main:data')}</Link>
           </Typography>
+          <DownloadBadge>
+            <Typography className={classes.menuitem}>
+              <Link to="/downloads">{t('main:exports')}</Link>
+            </Typography>
+          </DownloadBadge>
         </div>
         {!websocketConnected &&
           (

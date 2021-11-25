@@ -55,6 +55,15 @@ export interface StudyMetadata {
   folder?: string;
 }
 
+export interface StudyOutput {
+  name: string;
+  type: string;
+  completionDate: string;
+  referenceStatus: boolean;
+  synchronized: boolean;
+  status: string;
+}
+
 export interface VariantTreeDTO {
   node: StudyMetadataDTO;
   children: Array<VariantTreeDTO>;
@@ -244,6 +253,10 @@ export enum WSEvent {
   TASK_RUNNING = 'TASK_RUNNING',
   TASK_COMPLETED = 'TASK_COMPLETED',
   TASK_FAILED = 'TASK_FAILED',
+  DOWNLOAD_CREATED = 'DOWNLOAD_CREATED',
+  DOWNLOAD_READY = 'DOWNLOAD_READY',
+  DOWNLOAD_EXPIRED = 'DOWNLOAD_EXPIRED',
+  DOWNLOAD_FAILED = 'DOWNLOAD_FAILED'
 }
 
 export interface WSMessage {

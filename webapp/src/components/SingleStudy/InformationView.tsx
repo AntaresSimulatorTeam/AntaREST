@@ -1,6 +1,6 @@
 import debug from 'debug';
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
 import {
@@ -13,11 +13,14 @@ import {
   Chip,
   Tooltip,
   useTheme,
+  MenuItem,
+  Menu,
 } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import _ from 'lodash';
 import { AppState } from '../../App/reducers';
 import {
   RoleType,
@@ -29,11 +32,12 @@ import {
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
   renameStudy as callRenameStudy,
-  getExportUrl,
+  exportStudy,
+  exportOuput as callExportOutput,
+  getStudyOutputs,
 } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
 import { hasAuthorization, getStudyExtendedName, convertUTCToLocalTime } from '../../services/utils';
-import DownloadLink from '../ui/DownloadLink';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import PermissionModal from './PermissionModal';
 import ButtonLoader from '../ui/ButtonLoader';
@@ -238,6 +242,8 @@ const InformationView = (props: PropTypes) => {
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [openPermissionModal, setOpenPermissionModal] = useState<boolean>(false);
   const [openRenameModal, setOpenRenameModal] = useState<boolean>(false);
+  const [outputList, setOutputList] = useState<Array<string>>();
+  const [outputExportButtonAnchor, setOutputExportButtonAnchor] = React.useState<null | HTMLElement>(null);
 
   const launchStudy = async () => {
     if (study) {
@@ -296,6 +302,28 @@ const InformationView = (props: PropTypes) => {
       }
     }
   };
+
+  const exportOutput = _.debounce(async (output: string) => {
+    setOutputExportButtonAnchor(null);
+    if (study) {
+      try {
+        await callExportOutput(study.id, output);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
+      }
+    }
+  }, 2000, { leading: true, trailing: false });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getStudyOutputs(study.id);
+        setOutputList(res.map((o) => o.name));
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToListOutputs'), e as AxiosError);
+      }
+    })();
+  }, [study, t, enqueueSnackbar]);
 
   const copyId = (studyId: string): void => {
     try {
@@ -422,15 +450,34 @@ const InformationView = (props: PropTypes) => {
               <Button className={classes.launchButton} onClick={launchStudy}>
                 {t('main:launch')}
               </Button>
-              <DownloadLink url={getExportUrl(study.id, false)}>
-                <Button className={classes.exportButton}>{t('main:export')}</Button>
-              </DownloadLink>
+              <ButtonLoader className={classes.exportButton} onClick={() => exportStudy(study.id, false)} fakeDelay={500}>
+                {t('main:export')}
+              </ButtonLoader>
+              {!!outputList && (
+                <>
+                  <Button className={classes.exportButton} aria-haspopup="true" onClick={(event) => setOutputExportButtonAnchor(event.currentTarget)}>
+                    {t('singlestudy:exportOutput')}
+                  </Button>
+                  <Menu
+                    id="simple-menu"
+                    anchorEl={outputExportButtonAnchor}
+                    keepMounted
+                    open={Boolean(outputExportButtonAnchor)}
+                    onClose={() => setOutputExportButtonAnchor(null)}
+                  >
+                    {outputList.map((output) => (
+                      <MenuItem onClick={() => exportOutput(output)}>
+                        {output}
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                </>
+              )}
               {study.managed && (
               <ButtonLoader className={classes.archivingButton} onClick={archiveStudy}>
                 {t('studymanager:archive')}
               </ButtonLoader>
               )}
-
             </>
           )}
         </div>

@@ -88,6 +88,7 @@ class StorageConfig:
     allow_deletion: bool = False
     watcher_lock: bool = True
     watcher_lock_delay: int = 10
+    download_default_expiration_timeout_minutes: int = 1440
 
     @staticmethod
     def from_dict(data: JSON) -> "StorageConfig":
@@ -102,6 +103,9 @@ class StorageConfig:
             archive_dir=Path(data["archive_dir"]),
             watcher_lock=data.get("watcher_lock", True),
             watcher_lock_delay=data.get("watcher_lock_delay", 10),
+            download_default_expiration_timeout_minutes=data.get(
+                "download_default_expiration_timeout_minutes", 1440
+            ),
         )
 
 

@@ -14,6 +14,7 @@ from antarest.core.config import (
     WorkspaceConfig,
     CacheConfig,
 )
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
@@ -94,6 +95,7 @@ def storage_service(
     storage_service = build_study_service(
         application=Mock(),
         cache=LocalCache(config=config.cache),
+        file_transfer_manager=Mock(),
         task_service=task_service_mock,
         user_service=user_service,
         matrix_service=matrix_service,

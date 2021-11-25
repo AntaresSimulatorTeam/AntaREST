@@ -12,6 +12,10 @@ from fastapi import HTTPException
 from markupsafe import escape
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import (
+    FileDownloadTaskDTO,
+)
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -27,7 +31,8 @@ from antarest.core.requests import (
     UserHasNotPermissionError,
 )
 from antarest.core.roles import RoleType
-from antarest.core.tasks.service import ITaskService
+from antarest.core.tasks.model import TaskResult
+from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.study.business.area_management import (
@@ -107,6 +112,7 @@ class StudyService:
         user_service: LoginService,
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
+        file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
         cache_service: ICache,
         config: Config,
@@ -116,6 +122,7 @@ class StudyService:
         self.user_service = user_service
         self.repository = repository
         self.event_bus = event_bus
+        self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
         self.links = LinkManager(self.raw_study_service)
@@ -594,15 +601,13 @@ class StudyService:
     def export_study(
         self,
         uuid: str,
-        target: Path,
         params: RequestParameters,
         outputs: bool = True,
-    ) -> Path:
+    ) -> FileDownloadTaskDTO:
         """
         Export study to a zip file.
         Args:
             uuid: study id
-            target: export path
             params: request parameters
             outputs: integrate output folder in zip file
 
@@ -611,35 +616,92 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
 
-        logger.info("study %s exported by user %s", uuid, params.get_user_id())
-        return self._get_study_storage_service(study).export_study(
-            study, target, outputs
+        logger.info("Exporting study %s", uuid)
+        export_name = f"Study {study.name} ({uuid}) export"
+        export_file_download = self.file_transfer_manager.request_download(
+            f"{study.name}-{uuid}.zip", export_name, params.user
+        )
+        export_path = Path(export_file_download.path)
+        export_id = export_file_download.id
+
+        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            try:
+                target_study = self.get_study(uuid)
+                self._get_study_storage_service(target_study).export_study(
+                    target_study, export_path, outputs
+                )
+                self.file_transfer_manager.set_ready(export_id)
+                return TaskResult(
+                    success=True, message=f"Study {uuid} successfully exported"
+                )
+            except Exception as e:
+                self.file_transfer_manager.fail(export_id, str(e))
+                raise e
+
+        task_id = self.task_service.add_task(
+            export_task,
+            export_name,
+            custom_event_messages=None,
+            request_params=params,
+        )
+
+        return FileDownloadTaskDTO(
+            file=export_file_download.to_dto(), task=task_id
         )
 
     def export_output(
         self,
         study_uuid: str,
         output_uuid: str,
-        target: Path,
         params: RequestParameters,
-    ) -> Path:
+    ) -> FileDownloadTaskDTO:
         """
         Export study output to a zip file.
         Args:
             study_uuid: study id
             output_uuid: output id
-            target: export path
             params: request parameters
         """
         study = self.get_study(study_uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
 
-        logger.info(
-            f"Output {output_uuid} from study {study_uuid} exported by user {params.get_user_id()}"
+        logger.info(f"Exporting {output_uuid} from study {study_uuid}")
+        export_name = f"Study output {study.name}/{output_uuid} export"
+        export_file_download = self.file_transfer_manager.request_download(
+            f"{study.name}-{study_uuid}-{output_uuid}.zip",
+            export_name,
+            params.user,
         )
-        return self._get_study_storage_service(study).export_output(
-            metadata=study, output_id=output_uuid, target=target
+        export_path = Path(export_file_download.path)
+        export_id = export_file_download.id
+
+        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            try:
+                target_study = self.get_study(study_uuid)
+                self._get_study_storage_service(target_study).export_output(
+                    metadata=target_study,
+                    output_id=output_uuid,
+                    target=export_path,
+                )
+                self.file_transfer_manager.set_ready(export_id)
+                return TaskResult(
+                    success=True,
+                    message=f"Study output {study_uuid}/{output_uuid} successfully exported",
+                )
+            except Exception as e:
+                self.file_transfer_manager.fail(export_id, str(e))
+                raise e
+
+        task_id = self.task_service.add_task(
+            export_task,
+            export_name,
+            custom_event_messages=None,
+            request_params=params,
+        )
+
+        return FileDownloadTaskDTO(
+            file=export_file_download.to_dto(), task=task_id
         )
 
     def export_study_flat(

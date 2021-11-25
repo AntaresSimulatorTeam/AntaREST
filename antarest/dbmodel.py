@@ -7,5 +7,6 @@ from antarest.core.tasks import model as tasksmodel
 from antarest.study.storage.variantstudy.model import (
     dbmodel as variantmodel,
 )
+from antarest.core.filetransfer import model as filetransfermodel
 
 Base = PersistenceBase

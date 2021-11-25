@@ -9,12 +9,16 @@ from markupsafe import escape
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import (
+    FileDownloadDTO,
+    FileDownloadTaskDTO,
+)
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.core.utils.file_transfer import FileTransferManager
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -33,12 +37,13 @@ logger = logging.getLogger(__name__)
 
 
 def create_study_routes(
-    study_service: StudyService, config: Config
+    study_service: StudyService, ftm: FileTransferManager, config: Config
 ) -> APIRouter:
     """
     Endpoint implementation for studies management
     Args:
         study_service: study service facade to handle request
+        ftm: file transfer manager
         config: main server configuration
 
     Returns:
@@ -46,7 +51,6 @@ def create_study_routes(
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
-    ftm = FileTransferManager.get_instance(config)
 
     @bp.get(
         "/studies",
@@ -194,35 +198,19 @@ def create_study_routes(
         "/studies/{uuid}/export",
         tags=[APITag.study_management],
         summary="Export Study",
-        response_class=FileResponse,
-        responses={
-            200: {
-                "content": {
-                    "application/zip": {},
-                },
-            },
-        },
+        response_model=FileDownloadTaskDTO,
     )
     def export_study(
         uuid: str,
         no_output: Optional[bool] = False,
-        request_tmp_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Exporting study {uuid}", extra={"user": current_user.id})
         uuid_sanitized = sanitize_uuid(uuid)
 
         params = RequestParameters(user=current_user)
-        export_path = study_service.export_study(
-            uuid_sanitized, request_tmp_file, params, not no_output
-        )
-
-        return FileResponse(
-            export_path,
-            headers={
-                "Content-Disposition": f'attachment; filename="{uuid_sanitized}.zip'
-            },
-            media_type="application/zip",
+        return study_service.export_study(
+            uuid_sanitized, params, not no_output
         )
 
     @bp.delete(
@@ -401,70 +389,62 @@ def create_study_routes(
         )
         return study_metadata
 
+    @bp.get(
+        "/studies/{study_id}/outputs/{output_id}/export",
+        tags=[APITag.study_outputs],
+        summary="Get outputs data",
+    )
+    def output_download(
+        study_id: str,
+        output_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(study_id)
+        output_id = sanitize_uuid(output_id)
+        logger.info(
+            f"Fetching whole output of the simulation {output_id} for study {study_id}"
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.export_output(
+            study_uuid=study_id,
+            output_uuid=output_id,
+            params=params,
+        )
+
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/download",
         tags=[APITag.study_outputs],
         summary="Get outputs data",
-        responses={
-            200: {
-                "content": {
-                    "application/json": {},
-                    "application/zip": {},
-                    "application/tar+gz": {},
-                },
-            },
-        },
-        response_model=MatrixAggregationResult,
     )
     def output_download(
         study_id: str,
         output_id: str,
         request: Request,
-        data: Optional[StudyDownloadDTO] = Body(default=None),
+        data: StudyDownloadDTO,
         tmp_export_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_uuid(output_id)
-        if not data:
-            logger.info(
-                f"Fetching whole output of the simulation {output_id} for study {study_id}"
-            )
-            params = RequestParameters(user=current_user)
-            export_path = study_service.export_output(
-                study_uuid=study_id,
-                output_uuid=output_id,
-                target=tmp_export_file,
-                params=params,
-            )
-
+        logger.info(
+            f"Fetching batch outputs of simulation {output_id} for study {study_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        content = study_service.download_outputs(
+            study_id, output_id, data, params
+        )
+        accept = request.headers.get("Accept")
+        if accept == "application/zip" or accept == "application/tar+gz":
+            StudyDownloader.export(content, accept, tmp_export_file)
             return FileResponse(
-                export_path,
+                tmp_export_file,
                 headers={
-                    "Content-Disposition": f'attachment; filename="{output_id}.zip'
+                    "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
                 },
-                media_type="application/zip",
+                media_type=accept,
             )
-        else:
-            logger.info(
-                f"Fetching batch outputs of simulation {output_id} for study {study_id}",
-                extra={"user": current_user.id},
-            )
-            params = RequestParameters(user=current_user)
-            content = study_service.download_outputs(
-                study_id, output_id, data, params
-            )
-            accept = request.headers.get("Accept")
-            if accept == "application/zip" or accept == "application/tar+gz":
-                StudyDownloader.export(content, accept, tmp_export_file)
-                return FileResponse(
-                    tmp_export_file,
-                    headers={
-                        "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
-                    },
-                    media_type=accept,
-                )
-            return content
+        return content
 
     @bp.get(
         "/studies/{study_id}/outputs",

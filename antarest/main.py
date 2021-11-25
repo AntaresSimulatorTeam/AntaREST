@@ -21,6 +21,8 @@ from antarest import __version__
 from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
+from antarest.core.filetransfer.main import build_filetransfer_service
+from antarest.core.filetransfer.web import create_file_transfer_api
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.persistence import upgrade_db
 from antarest.core.swagger import customize_openapi
@@ -229,6 +231,10 @@ def fastapi_app(
     )
     event_bus = build_eventbus(application, config, True, redis_client)
     cache = build_cache(config=config, redis_client=redis_client)
+
+    filetransfer_service = build_filetransfer_service(
+        application, event_bus, config
+    )
     task_service = build_taskjob_manager(application, config, event_bus)
 
     user_service = build_login(application, config, event_bus=event_bus)
@@ -240,6 +246,7 @@ def fastapi_app(
         config,
         matrix_service=matrix_service,
         cache=cache,
+        file_transfer_manager=filetransfer_service,
         task_service=task_service,
         user_service=user_service,
         event_bus=event_bus,

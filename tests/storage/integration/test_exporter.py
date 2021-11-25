@@ -11,6 +11,9 @@ from antarest.core.config import (
     StorageConfig,
     WorkspaceConfig,
 )
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.requests import RequestParameters
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
@@ -18,23 +21,61 @@ from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
+from tests.storage.conftest import (
+    SimpleSyncTaskService,
+    SimpleFileTransferManager,
+)
 
 
-def assert_url_content(storage_service: StudyService, url: str) -> bytes:
+def assert_url_content(
+    url: str, tmp_dir: Path, sta_mini_zip_path: Path
+) -> bytes:
+    path_studies = tmp_dir / "studies"
+
+    with ZipFile(sta_mini_zip_path) as zip_output:
+        zip_output.extractall(path=path_studies)
+
+    config = Config(
+        resources_path=Path(),
+        security=SecurityConfig(disabled=True),
+        storage=StorageConfig(
+            workspaces={
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
+            }
+        ),
+    )
+
+    md = RawStudy(
+        id="STA-mini",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(path_studies / "STA-mini"),
+    )
+    repo = Mock()
+    repo.get.return_value = md
+
     app = FastAPI(title=__name__)
+    ftm = SimpleFileTransferManager(
+        Config(storage=StorageConfig(tmp_dir=tmp_dir))
+    )
     build_study_service(
         app,
         cache=Mock(),
         user_service=Mock(),
-        task_service=Mock(),
-        storage_service=storage_service,
+        task_service=SimpleSyncTaskService(),
+        file_transfer_manager=ftm,
         matrix_service=Mock(spec=MatrixService),
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-        config=storage_service.raw_study_service.config,
+        metadata_repository=repo,
+        config=config,
     )
     client = TestClient(app)
     res = client.get(url, stream=True)
-    return res.raw.data
+    download_filepath = ftm.fetch_download(
+        FileDownloadTaskDTO.parse_obj(res.json()).file.id,
+        RequestParameters(user=DEFAULT_ADMIN_USER),
+    ).path
+    with open(download_filepath, "rb") as fh:
+        return fh.read()
 
 
 def assert_data(data: bytes):
@@ -43,81 +84,19 @@ def assert_data(data: bytes):
 
 def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
 
-    path_studies = tmp_path / "studies"
-
-    with ZipFile(sta_mini_zip_path) as zip_output:
-        zip_output.extractall(path=path_studies)
-
-    config = Config(
-        resources_path=Path(),
-        security=SecurityConfig(disabled=True),
-        storage=StorageConfig(
-            workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
-            }
-        ),
+    data = assert_url_content(
+        url="/v1/studies/STA-mini/export",
+        tmp_dir=tmp_path,
+        sta_mini_zip_path=sta_mini_zip_path,
     )
-
-    md = RawStudy(
-        id="STA-mini",
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(path_studies / "STA-mini"),
-    )
-    repo = Mock()
-    repo.get.return_value = md
-
-    service = build_study_service(
-        application=Mock(),
-        config=config,
-        cache=Mock(),
-        task_service=Mock(),
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-        metadata_repository=repo,
-    )
-
-    data = assert_url_content(service, url="/studies/STA-mini/export")
     assert_data(data)
 
 
 def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
 
-    path_studies = tmp_path / "studies"
-
-    with ZipFile(sta_mini_zip_path) as zip_output:
-        zip_output.extractall(path=path_studies)
-
-    config = Config(
-        resources_path=Path(),
-        security=SecurityConfig(disabled=True),
-        storage=StorageConfig(
-            workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
-            }
-        ),
-    )
-
-    md = RawStudy(
-        id="STA-mini",
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(path_studies / "STA-mini"),
-    )
-    repo = Mock()
-    repo.get.return_value = md
-
-    service = build_study_service(
-        application=Mock(),
-        config=config,
-        cache=Mock(),
-        task_service=Mock(),
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-        metadata_repository=repo,
-    )
-
     data = assert_url_content(
-        service, url="/studies/STA-mini/export?no-output"
+        url="/v1/studies/STA-mini/export?no-output",
+        tmp_dir=tmp_path,
+        sta_mini_zip_path=sta_mini_zip_path,
     )
     assert_data(data)
