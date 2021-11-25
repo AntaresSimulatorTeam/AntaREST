@@ -68,9 +68,9 @@ const DownloadBadge = (props: PropTypes) => {
 
   useEffect(() => {
     if (notificationMessage) {
-      // setTimeout(() => {
-      //   setNotificationMessage(undefined);
-      // }, 2000);
+      setTimeout(() => {
+        setNotificationMessage(undefined);
+      }, 4000);
     }
   }, [notificationMessage]);
 
