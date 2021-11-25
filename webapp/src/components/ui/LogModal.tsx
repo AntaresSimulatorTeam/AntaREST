@@ -6,6 +6,7 @@ import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import { connect, ConnectedProps } from 'react-redux';
+import WrapTextIcon from '@material-ui/icons/WrapText';
 import { addListener, removeListener } from '../../ducks/websockets';
 import { WSEvent, WSLogMessage, WSMessage } from '../../common/types';
 
@@ -62,6 +63,16 @@ const useStyles = makeStyles((theme: Theme) =>
     button: {
       margin: theme.spacing(2),
     },
+    wrapTextIcon: {
+      width: '24px',
+      height: 'auto',
+      cursor: 'pointer',
+      color: 'white',
+      margin: theme.spacing(0, 3),
+      '&:hover': {
+        color: theme.palette.secondary.main,
+      },
+    },
   }));
 
 interface OwnTypes {
@@ -117,9 +128,20 @@ const LogModal = (props: PropTypes) => {
     }
   };
 
+  const scrollToEnd = () => {
+    if (logRef.current) {
+      const myDiv = logRef.current.scrollHeight;
+      logRef.current.scrollTo(0, myDiv);
+    }
+  };
+
   useEffect(() => {
     setLogDetail(content);
   }, [content]);
+
+  useEffect(() => {
+    scrollToEnd();
+  }, [logDetail]);
 
   useEffect(() => {
     addWsListener(updateLog);
@@ -142,6 +164,7 @@ const LogModal = (props: PropTypes) => {
         <Paper onKeyDown={handleGlobalKeyDown} className={classes.main} style={style !== undefined ? style : {}}>
           <div className={classes.titlebox}>
             <Typography className={classes.title}>{title}</Typography>
+            <WrapTextIcon className={classes.wrapTextIcon} onClick={scrollToEnd} />
           </div>
           <div className={classes.contentWrapper} ref={logRef}>
             <div className={classes.content} id="log-content" ref={divRef}>

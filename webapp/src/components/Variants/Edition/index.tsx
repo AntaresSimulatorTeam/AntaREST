@@ -446,7 +446,7 @@ const EditionView = (props: PropTypes) => {
           <div style={{ height: '85%' }}>
             <NoContent
               title="variants:noCommands"
-              callToAction={<Button className={classes.newCommand} color="primary" variant="outlined" onClick={() => setOpenAddCommandModal(true)}>Nouvelle commande</Button>}
+              callToAction={<Button className={classes.newCommand} color="primary" variant="outlined" onClick={() => setOpenAddCommandModal(true)}>{t('variants:newCommandButton')}</Button>}
             />
           </div>
         </div>
