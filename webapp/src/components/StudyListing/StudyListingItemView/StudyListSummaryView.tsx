@@ -1,7 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
 import { AxiosError } from 'axios';
-import moment from 'moment';
 import { makeStyles, Button, createStyles, Theme, Paper, Typography, Tooltip } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { useTranslation } from 'react-i18next';
