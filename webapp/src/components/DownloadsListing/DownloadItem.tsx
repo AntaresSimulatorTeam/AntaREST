@@ -6,6 +6,7 @@ import InfoIcon from '@material-ui/icons/Info';
 import { FileDownload, getDownloadUrl } from '../../services/api/downloads';
 import DownloadLink from '../ui/DownloadLink';
 import LogModal from '../ui/LogModal';
+import { convertUTCToLocalTime } from '../../services/utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -71,7 +72,7 @@ export default (props: PropTypes) => {
           {download.name}
         </div>
         <div className={classes.expirationInfo}>
-          {`(${t('downloads:expirationDate')} : ${download.expirationDate})`}
+          {`(${t('downloads:expirationDate')} : ${convertUTCToLocalTime(download.expirationDate)})`}
         </div>
       </div>
       <div className={classes.actions}>

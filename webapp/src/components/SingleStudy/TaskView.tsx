@@ -21,6 +21,7 @@ import LogModal from '../ui/LogModal';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import { subscribe, unsubscribe, WsChannel } from '../../ducks/websockets';
+import { convertUTCToLocalTime } from '../../services/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -227,13 +228,13 @@ const TaskView = (props: PropTypes) => {
                     <Typography className={classes.label}>
                       {t('singlestudy:taskCreationDate')}
                     </Typography>
-                    <Typography>{item.creationDate}</Typography>
+                    <Typography>{convertUTCToLocalTime(item.creationDate)}</Typography>
                   </GridListTile>
                   <GridListTile className={classes.gridTile}>
                     <Typography className={classes.label}>
                       {t('singlestudy:taskCompletionDate')}
                     </Typography>
-                    <Typography>{item.completionDate}</Typography>
+                    <Typography>{convertUTCToLocalTime(item.completionDate)}</Typography>
                   </GridListTile>
                   <GridListTile className={classes.gridTile}>
                     <Typography className={classes.label}>
