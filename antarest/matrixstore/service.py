@@ -219,8 +219,8 @@ class MatrixService(ISimpleMatrixService):
             public=dataset_info.public,
             owner_id=params.user.impersonator,
             groups=groups,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
         )
         for matrix in matrices:
             matrix_relation = MatrixDataSetRelation(name=matrix.name)
@@ -252,7 +252,7 @@ class MatrixService(ISimpleMatrixService):
             name=dataset_info.name,
             public=dataset_info.public,
             groups=groups,
-            updated_at=datetime.now(),
+            updated_at=datetime.utcnow(),
         )
         return self.repo_dataset.save(updated_dataset)
 

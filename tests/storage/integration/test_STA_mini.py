@@ -1,5 +1,6 @@
 import io
 import shutil
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from typing import Union
@@ -453,8 +454,8 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "id": "STA-mini",
             "name": "STA-mini",
             "version": 700,
-            "created": 1480683452,
-            "updated": 1602678639,
+            "created": str(datetime.fromtimestamp(1480683452)),
+            "updated": str(datetime.fromtimestamp(1602678639)),
             "type": "rawstudy",
             "owner": {"id": None, "name": "Andrea SGATTONI"},
             "groups": [],

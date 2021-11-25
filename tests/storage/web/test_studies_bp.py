@@ -1,5 +1,6 @@
 import io
 import shutil
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import Mock, call, ANY
@@ -247,8 +248,8 @@ def test_list_studies(tmp_path: str) -> None:
             id="a",
             name="study1",
             version=700,
-            created=0,
-            updated=0,
+            created=str(datetime.utcfromtimestamp(0)),
+            updated=str(datetime.utcfromtimestamp(0)),
             type="RawStudy",
             owner=OwnerInfo(name="foo"),
             groups=[],
@@ -261,8 +262,8 @@ def test_list_studies(tmp_path: str) -> None:
             id="b",
             name="study2",
             version=700,
-            created=0,
-            updated=0,
+            created=str(datetime.utcfromtimestamp(0)),
+            updated=str(datetime.utcfromtimestamp(0)),
             type="RawStudy",
             owner=OwnerInfo(name="foo"),
             groups=[],
@@ -299,8 +300,8 @@ def test_study_metadata(tmp_path: str) -> None:
         id="a",
         name="b",
         version=700,
-        created=0,
-        updated=0,
+        created=str(datetime.utcfromtimestamp(0)),
+        updated=str(datetime.utcfromtimestamp(0)),
         type="RawStudy",
         owner=OwnerInfo(name="foo"),
         groups=[],

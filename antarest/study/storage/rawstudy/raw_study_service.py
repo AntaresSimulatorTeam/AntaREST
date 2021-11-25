@@ -75,8 +75,12 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             raw_meta = study.get(["study", "antares"])
             metadata.name = raw_meta["caption"]
             metadata.version = raw_meta["version"]
-            metadata.created_at = datetime.fromtimestamp(raw_meta["created"])
-            metadata.updated_at = datetime.fromtimestamp(raw_meta["lastsave"])
+            metadata.created_at = datetime.utcfromtimestamp(
+                raw_meta["created"]
+            )
+            metadata.updated_at = datetime.utcfromtimestamp(
+                raw_meta["lastsave"]
+            )
         except Exception as e:
             logger.error(
                 "Failed to fetch study %s raw metadata!",
@@ -86,8 +90,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             if fallback_on_default is not None:
                 metadata.name = metadata.name or "unnamed"
                 metadata.version = metadata.version or 0
-                metadata.created_at = metadata.created_at or datetime.now()
-                metadata.updated_at = metadata.updated_at or datetime.now()
+                metadata.created_at = metadata.created_at or datetime.utcnow()
+                metadata.updated_at = metadata.updated_at or datetime.utcnow()
             else:
                 raise e
 
@@ -166,8 +170,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             name=dest_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(get_default_workspace_path(self.config) / dest_id),
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
             version=src_meta.version,
         )
 

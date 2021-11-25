@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import cast
 from unittest.mock import Mock
 from zipfile import ZipFile
 
@@ -12,6 +13,7 @@ from sqlalchemy import create_engine
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.dbmodel import Base
 from antarest.main import fastapi_app
+from antarest.study.storage.rawstudy.watcher import Watcher
 from tests.conftest import project_dir
 
 
@@ -74,7 +76,8 @@ def app(tmp_path: str, sta_mini_zip_path: Path, project_path: Path):
     alembic_cfg.set_main_option("sqlalchemy.url", db_url)
     command.upgrade(alembic_cfg, "head")
 
-    app, _ = fastapi_app(
+    app, services = fastapi_app(
         config_path, project_path / "resources", mount_front=False
     )
-    return app
+    yield app
+    cast(Watcher, services["watcher"]).stop()
