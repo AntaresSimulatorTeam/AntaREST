@@ -25,6 +25,7 @@ from antarest.study.service import StudyService
 from antarest.core.model import (
     StudyPermissionType,
     PermissionInfo,
+    JSON,
 )
 from antarest.study.storage.utils import (
     assert_permission,
@@ -102,7 +103,11 @@ class LauncherService:
             raise LauncherServiceNotAvailableException(launcher)
 
     def run_study(
-        self, study_uuid: str, params: RequestParameters, launcher: str
+        self,
+        study_uuid: str,
+        launcher: str,
+        launcher_parameters: Optional[JSON],
+        params: RequestParameters,
     ) -> UUID:
         study_info = self.study_service.get_study_information(
             uuid=study_uuid, params=params
@@ -112,7 +117,7 @@ class LauncherService:
         self._assert_launcher_is_initialized(launcher)
 
         job_uuid: UUID = self.launchers[launcher].run_study(
-            study_uuid, str(study_version), params
+            study_uuid, str(study_version), launcher_parameters, params
         )
 
         job_status = JobResult(

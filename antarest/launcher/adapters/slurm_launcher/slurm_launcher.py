@@ -24,6 +24,7 @@ from antarest.core.interfaces.eventbus import (
     EventChannelDirectory,
 )
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.adapters.abstractlauncher import (
@@ -155,8 +156,11 @@ class SlurmLauncher(AbstractLauncher):
             if study_path.exists():
                 shutil.rmtree(study_path)
 
-    def _import_study_output(self, job_id: str) -> Optional[str]:
+    def _import_study_output(self, job_id: str, xpansion_mode: bool = False) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
+        if xpansion_mode:
+            study_id = self.storage_service.variant_study_service.create_variant_study(study_id, "xpansion result", params=RequestParameters(user=DEFAULT_ADMIN_USER))
+
         return self.storage_service.import_output(
             study_id,
             self.slurm_config.local_workspace / "OUTPUT" / job_id / "output",
@@ -283,7 +287,11 @@ class SlurmLauncher(AbstractLauncher):
         del self.job_id_to_study_id[launch_id]
 
     def _run_study(
-        self, study_uuid: str, launch_uuid: str, params: RequestParameters
+        self,
+        study_uuid: str,
+        launch_uuid: str,
+        launcher_params: Optional[JSON],
+        params: RequestParameters,
     ) -> None:
         with db():
             study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
@@ -323,12 +331,17 @@ class SlurmLauncher(AbstractLauncher):
             self._delete_study(study_path)
 
     def run_study(
-        self, study_uuid: str, version: str, params: RequestParameters
+        self,
+        study_uuid: str,
+        version: str,
+        launcher_parameters: Optional[JSON],
+        params: RequestParameters,
     ) -> UUID:  # TODO: version ?
         launch_uuid = uuid4()
 
         thread = threading.Thread(
-            target=self._run_study, args=(study_uuid, launch_uuid, params)
+            target=self._run_study,
+            args=(study_uuid, launch_uuid, launcher_parameters, params),
         )
         thread.start()
 

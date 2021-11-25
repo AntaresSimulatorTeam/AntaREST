@@ -69,6 +69,8 @@ def test_service_run_study(get_current_user_mock):
 
     job_id = launcher_service.run_study(
         "study_uuid",
+        "local",
+        None,
         RequestParameters(
             user=JWTUser(
                 id=0,
@@ -76,7 +78,6 @@ def test_service_run_study(get_current_user_mock):
                 type="users",
             )
         ),
-        "local",
     )
 
     assert job_id == uuid

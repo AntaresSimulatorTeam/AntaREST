@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
+from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.launcher.model import (
@@ -35,6 +36,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     def run(
         study_id: str,
         engine: Optional[str] = None,
+        engine_parameters: Optional[JSON] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -46,7 +48,11 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
         params = RequestParameters(user=current_user)
         return JobCreationDTO(
-            job_id=str(service.run_study(study_id, params, selected_engine))
+            job_id=str(
+                service.run_study(
+                    study_id, selected_engine, engine_parameters, params
+                )
+            )
         )
 
     @bp.get(

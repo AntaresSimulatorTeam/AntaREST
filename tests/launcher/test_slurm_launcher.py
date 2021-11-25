@@ -198,7 +198,9 @@ def test_run_study(
     slurm_launcher.start = Mock()
     slurm_launcher._delete_study = Mock()
 
-    slurm_launcher._run_study(study_uuid, str(uuid.uuid4()), params=params)
+    slurm_launcher._run_study(
+        study_uuid, str(uuid.uuid4()), None, params=params
+    )
 
     slurm_launcher._clean_local_workspace.assert_called_once()
     storage_service.export_study_flat.assert_called_once()

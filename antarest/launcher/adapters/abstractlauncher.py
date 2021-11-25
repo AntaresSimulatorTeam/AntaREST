@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Callable, NamedTuple, Optional
+from typing import Callable, NamedTuple, Optional, Any
 from uuid import UUID
 
 from antarest.core.config import Config
+from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobStatus, LogType
 from antarest.study.service import StudyService
@@ -31,7 +32,11 @@ class AbstractLauncher(ABC):
 
     @abstractmethod
     def run_study(
-        self, study_uuid: str, version: str, params: RequestParameters
+        self,
+        study_uuid: str,
+        version: str,
+        launcher_parameters: Optional[JSON],
+        params: RequestParameters,
     ) -> UUID:
         raise NotImplementedError()
 
