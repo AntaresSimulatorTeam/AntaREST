@@ -43,5 +43,9 @@
   "notes": "Notes",
   "fetchCommentsError": "Failed to fetch comments",
   "commentsSaved": "Comments saved successfully",
-  "commentsNotSaved": "Comments not saved"
+  "commentsNotSaved": "Comments not saved",
+  "onStudyIdCopySucces": "Study id copied !",
+  "onStudyIdCopyError": "Failed to copy study id",
+  "copyId": "Copy the study id",
+  "copyIdDir": "Copy id"
 }
