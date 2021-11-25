@@ -11,6 +11,7 @@ import {
 import clsx from 'clsx';
 import CreateIcon from '@material-ui/icons/Create';
 import DeleteIcon from '@material-ui/icons/HighlightOff';
+import CloseRoundedIcon from '@material-ui/icons/CloseRounded';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import { useTranslation } from 'react-i18next';
@@ -78,13 +79,13 @@ const useStyles = makeStyles((theme: Theme) =>
     role: {
       backgroundColor: theme.palette.primary.main,
       color: 'white',
+      marginRight: theme.spacing(2),
       paddingLeft: theme.spacing(1),
       paddingRight: theme.spacing(1),
       borderRadius: theme.shape.borderRadius,
     },
     deleteIcon: {
       color: theme.palette.error.light,
-      marginLeft: theme.spacing(2),
       marginRight: theme.spacing(2),
       '&:hover': {
         color: theme.palette.error.main,
@@ -92,16 +93,25 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     createIcon: {
       color: theme.palette.primary.main,
+      marginRight: theme.spacing(2),
       '&:hover': {
         color: theme.palette.primary.light,
       },
+    },
+    endItem: {
+      display: 'flex',
+      padding: theme.spacing(0),
+      flexFlow: 'row nowrap',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
   }));
 
 interface PropTypes {
   data: Array<UserGroup>;
   filter: string;
-  onDeleteClick: (groupId: string) => void;
+  onDeleteGroupClick?: (groupId: string) => void;
+  onDeleteUserClick: (groupId: string, userId: number) => void;
   onUpdateClick: (groupId: string) => void;
   onItemClick: (groupId: string) => void;
 }
@@ -109,7 +119,7 @@ interface PropTypes {
 const UserGroupView = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { data, filter, onDeleteClick, onUpdateClick, onItemClick } = props;
+  const { data, filter, onDeleteGroupClick, onDeleteUserClick, onUpdateClick, onItemClick } = props;
   const [toogleList, setToogleList] = useState<Array<boolean>>([]);
 
   const onButtonChange = (index: number, id: string) => {
@@ -148,7 +158,7 @@ const UserGroupView = (props: PropTypes) => {
                 <Typography className={clsx(classes.text, classes.title)}>{groupItem.group.name}</Typography>
                 <div className={classes.iconsContainer}>
                   <CreateIcon className={classes.createIcon} onClick={() => onUpdateClick(groupItem.group.id)} />
-                  <DeleteIcon className={classes.deleteIcon} onClick={() => onDeleteClick(groupItem.group.id)} />
+                  {onDeleteGroupClick !== undefined && <DeleteIcon className={classes.deleteIcon} onClick={() => onDeleteGroupClick(groupItem.group.id)} />}
                 </div>
                 {toogleList[index] ? <ExpandLess /> : <ExpandMore />}
               </ListItem>
@@ -157,7 +167,10 @@ const UserGroupView = (props: PropTypes) => {
                   {groupItem.users.map((userItem) => (
                     <ListItem key={userItem.id} className={classes.userItem}>
                       <Typography className={classes.text}>{userItem.name}</Typography>
-                      <Typography className={classes.role}>{t(roleToString(userItem.role))}</Typography>
+                      <div className={classes.endItem}>
+                        <Typography className={classes.role}>{t(roleToString(userItem.role))}</Typography>
+                        <CloseRoundedIcon className={classes.deleteIcon} style={{ cursor: 'pointer' }} onClick={() => onDeleteUserClick(groupItem.group.id, userItem.id)} />
+                      </div>
                     </ListItem>
                   ))}
                 </List>
@@ -167,6 +180,10 @@ const UserGroupView = (props: PropTypes) => {
       )}
     </List>
   );
+};
+
+UserGroupView.defaultProps = {
+  onDeleteGroupClick: undefined,
 };
 
 export default UserGroupView;

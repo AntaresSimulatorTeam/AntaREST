@@ -7,10 +7,11 @@ import { AppState } from '../../../App/reducers';
 import GenericListingView from '../../ui/NavComponents/GenericListingView';
 import GroupModal from './GroupModal';
 import { getGroups, createGroup, updateGroup, deleteGroup, getGroupInfos } from '../../../services/api/user';
-import { GroupDTO, UserGroup } from '../../../common/types';
+import { GroupDTO, RoleType, UserGroup } from '../../../common/types';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import UserGroupView from '../UserGroupView';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
+import { isUserAdmin } from '../../../services/utils';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -19,6 +20,16 @@ const mapState = (state: AppState) => ({
 const connector = connect(mapState);
 type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
+
+interface UserDeletion {
+  groupId: string;
+  userId: number;
+}
+
+interface DeletionInfo {
+  type: 'user' | 'group';
+  data: string | UserDeletion;
+}
 
 const GroupsSettings = (props: PropTypes) => {
   const [t] = useTranslation();
@@ -29,7 +40,7 @@ const GroupsSettings = (props: PropTypes) => {
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [groupList, setGroupList] = useState<Array<UserGroup>>([]);
   const [selectedGroup, setActiveGroup] = useState<GroupDTO>();
-  const [idForDeletion, setIdForDeletion] = useState<string>('');
+  const [deletionInfo, setDeletionInfo] = useState<DeletionInfo>({ type: 'group', data: '' });
   const [filter, setFilter] = useState<string>('');
   const { user } = props;
 
@@ -47,22 +58,42 @@ const GroupsSettings = (props: PropTypes) => {
     }
   };
 
-  const onDeleteClick = (id: string) => {
-    setIdForDeletion(id);
+  const onDeleteGroupClick = (id: string) => {
+    setDeletionInfo({ type: 'group', data: id });
     setOpenConfirmationModal(true);
+  };
+
+  const onDeleteUserClick = (groupId: string, userId: number) => {
+    setDeletionInfo({ type: 'user', data: { groupId, userId } });
+    setOpenConfirmationModal(true);
+    // setIdForDeletion(-1);
+    // setOpenConfirmationModal(false);
+  };
+
+  const manageUserDeletion = async () => {
+    try {
+      // setUserList(userList.filter((item) => item.id !== idForDeletion));
+      const data: UserDeletion = deletionInfo.data as UserDeletion;
+      console.log('DELETE USER ', data.userId, ' FROM GROUP ', data.groupId);
+      enqueueSnackbar(t('settings:onUserDeleteSuccess'), { variant: 'success' });
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('settings:onUserDeleteError'), e as AxiosError);
+    }
+    setDeletionInfo({ type: 'group', data: '' });
+    setOpenConfirmationModal(false);
   };
 
   const manageGroupDeletion = async () => {
     try {
       // 1) Call backend (Delete)
-      const deletedGroupId = await deleteGroup(idForDeletion as string);
+      const deletedGroupId = await deleteGroup(deletionInfo.data as string);
       // 2) Delete group locally from groupList
       setGroupList(groupList.filter((item) => item.group.id !== deletedGroupId));
       enqueueSnackbar(t('settings:onGroupDeleteSuccess'), { variant: 'success' });
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('settings:onGroupDeleteError'), e as AxiosError);
     }
-    setIdForDeletion('');
+    setDeletionInfo({ type: 'group', data: '' });
     setOpenConfirmationModal(false);
   };
 
@@ -72,7 +103,7 @@ const GroupsSettings = (props: PropTypes) => {
       const groupInfos = await getGroupInfos(groupId);
       const index = tmpList.findIndex((item) => item.group.id === groupInfos.group.id);
       if (index >= 0) {
-        tmpList[index] = groupInfos;
+        tmpList[index] = { group: groupInfos.group, users: groupInfos.users.filter((elm) => elm.id !== user?.id) };
         setGroupList(tmpList);
       } else {
         enqueueSnackbar(t('settings:groupInfosError'), { variant: 'error' });
@@ -117,14 +148,23 @@ const GroupsSettings = (props: PropTypes) => {
 
   useEffect(() => {
     const init = async () => {
-      try {
-        const res = await getGroups();
-        const groups = res
-          .filter((item) => item.id !== 'admin')
-          .map((group) => ({ group, users: [] }));
+      if (user !== undefined) {
+        let groups: Array<UserGroup> = [];
+        if (isUserAdmin(user)) {
+          try {
+            const res = await getGroups();
+            groups = res
+              .filter((item) => item.id !== 'admin')
+              .map((group) => ({ group, users: [] }));
+          } catch (e) {
+            enqueueErrorSnackbar(enqueueSnackbar, t('settings:groupsError'), e as AxiosError);
+          }
+        } else {
+          groups = user.groups
+            .filter((item) => item.role === RoleType.ADMIN)
+            .map((group) => ({ group: { id: group.id, name: group.name }, users: [] }));
+        }
         setGroupList(groups);
-      } catch (e) {
-        enqueueErrorSnackbar(enqueueSnackbar, t('settings:groupsError'), e as AxiosError);
       }
     };
     init();
@@ -140,7 +180,8 @@ const GroupsSettings = (props: PropTypes) => {
       <UserGroupView
         data={groupList}
         filter={filter}
-        onDeleteClick={onDeleteClick}
+        onDeleteGroupClick={user !== undefined && isUserAdmin(user) ? onDeleteGroupClick : undefined}
+        onDeleteUserClick={onDeleteUserClick}
         onUpdateClick={onUpdateClick}
         onItemClick={onItemClick}
       />
@@ -156,8 +197,8 @@ const GroupsSettings = (props: PropTypes) => {
         <ConfirmationModal
           open={openConfirmationModal}
           title={t('main:confirmationModalTitle')}
-          message={t('settings:deleteGroupConfirmation')}
-          handleYes={manageGroupDeletion}
+          message={deletionInfo.type === 'group' ? t('settings:deleteGroupConfirmation') : t('settings:deleteUserConfirmation')}
+          handleYes={deletionInfo.type === 'group' ? manageGroupDeletion : manageUserDeletion}
           handleNo={() => setOpenConfirmationModal(false)}
         />
       )}

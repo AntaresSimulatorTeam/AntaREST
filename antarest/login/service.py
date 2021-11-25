@@ -309,10 +309,7 @@ class LoginService:
             user_list = []
             roles = self.get_all_roles_in_group(group.id, params)
             for role in roles:
-                user = self.get_user(
-                    role.identity_id,
-                    RequestParameters(user=DEFAULT_ADMIN_USER),
-                )
+                user = self.get_identity(role.identity_id)
                 if user:
                     user_list.append(
                         UserRoleDTO(id=user.id, name=user.name, role=role.type)
@@ -361,6 +358,25 @@ class LoginService:
                 "user %d not found by user %s", id, params.get_user_id()
             )
             raise UserNotFoundError()
+
+    def get_identity(
+        self, id: int, include_token: bool = False
+    ) -> Optional[Identity]:
+        """
+        Get user
+        Permission: SADMIN, GADMIN (own group), USER (own user)
+
+        Args:
+            id: user id
+            params: request parameters
+
+        Returns: user
+
+        """
+        user = self.ldap.get(id) or self.users.get(id)
+        if include_token:
+            return user or self.bots.get(id)
+        return user
 
     def get_user_info(
         self, id: int, params: RequestParameters
