@@ -1,14 +1,18 @@
 import React from 'react';
 import clsx from 'clsx';
+import { AxiosError } from 'axios';
 import { makeStyles, Button, createStyles, Theme, Paper, Typography, Tooltip } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
 import { getExportUrl } from '../../../services/api/study';
 import { convertUTCToLocalTime, getStudyExtendedName } from '../../../services/utils';
 import DownloadLink from '../../ui/DownloadLink';
 import { StudyListingItemPropTypes } from './types';
+import { CopyIcon } from '../../Data/utils';
 import ButtonLoader from '../../ui/ButtonLoader';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -61,13 +65,6 @@ const useStyles = makeStyles((theme: Theme) =>
       padding: '0 4px',
       fontSize: '0.8em',
     },
-    id: {
-      fontFamily: "'Courier', sans-serif",
-      fontSize: 'small',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-    },
     info: {
       flex: 1,
       display: 'flex',
@@ -82,12 +79,21 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: 'flex-end',
       alignItems: 'center',
     },
+    idInfo: {
+      display: 'flex',
+      fontFamily: "'Courier', sans-serif",
+      fontSize: 'small',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
   }));
 
 const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
   const classes = useStyles();
   const theme = useTheme();
   const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const {
     study,
     launchStudy,
@@ -96,6 +102,15 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
     archiveStudy,
     unarchiveStudy,
   } = props;
+
+  const copyId = (studyId: string): void => {
+    try {
+      navigator.clipboard.writeText(studyId);
+      enqueueSnackbar(t('singlestudy:onStudyIdCopySuccess'), { variant: 'success' });
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:onStudyIdCopyError'), e as AxiosError);
+    }
+  };
 
   return (
     <Paper className={classes.root}>
@@ -115,9 +130,14 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
           </div>
           <Typography className={classes.datetime}>{convertUTCToLocalTime(study.modificationDate)}</Typography>
         </div>
-        <Typography color="textSecondary" className={classes.id}>
-          {study.id}
-        </Typography>
+        <div className={classes.idInfo}>
+          <Typography color="textSecondary" className={classes.idInfo}>
+            {study.id}
+          </Typography>
+          <Tooltip title={t('singlestudy:copyId') as string} placement="top">
+            <CopyIcon style={{ marginLeft: '0.5em', cursor: 'pointer', color: 'grey' }} onClick={() => copyId(study.id)} />
+          </Tooltip>
+        </div>
       </div>
       <div className={classes.buttons}>
         {study.archived ? (

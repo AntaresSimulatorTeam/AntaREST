@@ -40,5 +40,9 @@
   "notes": "Notes",
   "fetchCommentsError": "Echec lors de la récupération des commentaires",
   "commentsSaved": "Commentaires enregistrés avec succès",
-  "commentsNotSaved": "Erreur lors de l'enregistrement des commentaires"
+  "commentsNotSaved": "Erreur lors de l'enregistrement des commentaires",
+  "onStudyIdCopySuccess": "Identifiant de l'étude copié",
+  "onStudyIdCopyError": "Erreur lors de la copie de l'identifiant de l'étude",
+  "copyId": "Copie l'identifiant de l'étude",
+  "copyIdDir": "Copier l'ID"
 }
