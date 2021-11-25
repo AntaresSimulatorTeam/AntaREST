@@ -130,13 +130,14 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
           </ButtonLoader>
         ) : (
           <>
-            <Button
+            <ButtonLoader
               size="small"
               style={{ color: theme.palette.secondary.main }}
               onClick={() => launchStudy(study)}
+              fakeDelay={1000}
             >
               {t('main:launch')}
-            </Button>
+            </ButtonLoader>
             <ButtonLoader
               size="small"
               style={{ color: theme.palette.primary.main }}
