@@ -16,6 +16,7 @@ import DownloadLink from '../../ui/DownloadLink';
 import { getExportUrl } from '../../../services/api/study';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
+import { convertUTCToLocalTime } from '../../../services/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -229,7 +230,7 @@ const DirView = (props: Props) => {
                       <Typography noWrap className={classes.elementName}>{elm.name}</Typography>
                     </div>
                     <div className={classes.elementNameContainer} style={{ justifyContent: 'center' }}>
-                      <Typography noWrap className={classes.elementDate}>{moment.unix(elm.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
+                      <Typography noWrap className={classes.elementDate}>{convertUTCToLocalTime(elm.modificationDate)}</Typography>
                     </div>
                   </Paper>
                 </Tooltip>
@@ -249,7 +250,7 @@ const DirView = (props: Props) => {
                         <Typography noWrap className={classes.elementName}>{elm.name}</Typography>
                       </div>
                       <div className={classes.elementNameContainer} style={{ justifyContent: 'center' }}>
-                        <Typography noWrap className={classes.elementDate}>{moment.unix(elm.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
+                        <Typography noWrap className={classes.elementDate}>{convertUTCToLocalTime(elm.modificationDate)}</Typography>
                       </div>
                     </Paper>
                   </Tooltip>

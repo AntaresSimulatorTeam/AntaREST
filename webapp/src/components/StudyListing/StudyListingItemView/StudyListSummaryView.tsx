@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import { getExportUrl } from '../../../services/api/study';
-import { getStudyExtendedName } from '../../../services/utils';
+import { convertUTCToLocalTime, getStudyExtendedName } from '../../../services/utils';
 import DownloadLink from '../../ui/DownloadLink';
 import { StudyListingItemPropTypes } from './types';
 import { CopyIcon } from '../../Data/utils';
@@ -129,7 +129,7 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
               {study.workspace}
             </div>
           </div>
-          <Typography className={classes.datetime}>{moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm')}</Typography>
+          <Typography className={classes.datetime}>{convertUTCToLocalTime(study.modificationDate)}</Typography>
         </div>
         <div className={classes.idInfo}>
           <Typography color="textSecondary" className={classes.idInfo}>

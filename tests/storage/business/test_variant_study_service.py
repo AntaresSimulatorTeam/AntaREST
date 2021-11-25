@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -86,7 +87,7 @@ def test_get(tmp_path: str, project_path) -> None:
                 name="generation task",
                 owner=None,
                 status=TaskStatus.RUNNING,
-                creation_date_utc=time.time(),
+                creation_date_utc="",
                 completion_date_utc=None,
                 result=None,
             ),
@@ -95,7 +96,7 @@ def test_get(tmp_path: str, project_path) -> None:
                 name="generation task",
                 owner=None,
                 status=TaskStatus.COMPLETED,
-                creation_date_utc=time.time(),
+                creation_date_utc="",
                 completion_date_utc=None,
                 result=TaskResult(success=False, message=""),
             ),

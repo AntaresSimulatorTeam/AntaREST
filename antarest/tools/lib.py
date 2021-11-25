@@ -253,8 +253,8 @@ def generate_diff(
     #     workspace=DEFAULT_WORKSPACE_NAME,
     #     path=path_study,
     #     version=version or NEW_DEFAULT_STUDY_VERSION,
-    #     created_at=datetime.now(),
-    #     updated_at=datetime.now(),
+    #     created_at=datetime.utcnow(),
+    #     updated_at=datetime.utcnow(),
     # )
 
     local_matrix_service = SimpleMatrixService(matrices_dir)

@@ -6,14 +6,13 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import debug from 'debug';
-import moment from 'moment';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import { AppState } from '../../App/reducers';
 import { LaunchJob } from '../../common/types';
 import { getStudyJobLog, killStudy } from '../../services/api/study';
-import { useNotif } from '../../services/utils';
+import { convertUTCToLocalTime, useNotif } from '../../services/utils';
 import SimpleLoader from '../ui/loaders/SimpleLoader';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import ConfirmationModal from '../ui/ConfirmationModal';
@@ -192,13 +191,13 @@ const JobView = (props: PropTypes) => {
           <div className={classes.dateblock}>
             <div>
               <FontAwesomeIcon className={classes.dateicon} icon="calendar" />
-              {moment(job.creationDate).format('DD/MM/YY - HH:mm')}
+              {convertUTCToLocalTime(job.creationDate)}
             </div>
             <div>
               {job.completionDate && (
                 <>
                   <FontAwesomeIcon className={classes.dateicon} icon="calendar-check" />
-                  {moment(job.completionDate).format('DD/MM/YY - HH:mm')}
+                  {convertUTCToLocalTime(job.completionDate)}
                 </>
               )}
             </div>

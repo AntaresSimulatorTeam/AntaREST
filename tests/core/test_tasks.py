@@ -56,7 +56,7 @@ def test_service() -> TaskJobService:
     )
     assert len(tasks) == 1
     assert tasks[0].status == TaskStatus.FAILED
-    assert tasks[0].creation_date_utc == creation_date.timestamp()
+    assert tasks[0].creation_date_utc == str(creation_date)
 
     start = datetime.datetime.utcnow()
     end = datetime.datetime.utcnow() + datetime.timedelta(seconds=1)
@@ -75,8 +75,8 @@ def test_service() -> TaskJobService:
     assert res is not None
     assert res == TaskDTO(
         id="a",
-        completion_date_utc=end.timestamp(),
-        creation_date_utc=start.timestamp(),
+        completion_date_utc=str(end),
+        creation_date_utc=str(start),
         owner=1,
         name="Unnamed",
         result=TaskResult(success=True, message="OK"),
