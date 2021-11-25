@@ -232,8 +232,8 @@ def test_dataset_lifecycle():
         public=True,
         owner=UserInfo(id=userA.user.id, name="userA"),
         groups=[GroupDTO(id="groupA", name="groupA")],
-        created_at=somedate,
-        updated_at=somedate,
+        created_at=str(somedate),
+        updated_at=str(somedate),
         matrices=[
             MatrixInfoDTO(name="A", id="m1"),
             MatrixInfoDTO(name="B", id="m2"),

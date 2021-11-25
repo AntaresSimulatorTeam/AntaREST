@@ -26,5 +26,6 @@
   "edit": "Editer",
   "copy": "Copie",
   "data": "Données",
-  "websocketstatusmessage": "Connexion websocket non disponible. Vérifier la connexion internet ou tentez de rafraichir la page."
+  "websocketstatusmessage": "Connexion websocket non disponible. Vérifier la connexion internet ou tentez de rafraichir la page.",
+  "noContent": "Pas de contenu"
 }

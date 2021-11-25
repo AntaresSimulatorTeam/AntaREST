@@ -18,6 +18,7 @@ import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import TextEditorModal from './TextEditorModal';
 import { editComments, getComments } from '../../../services/api/study';
 import { convertXMLToDraftJS } from './utils';
+import SimpleLoader from '../../ui/loaders/SimpleLoader';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -56,6 +57,7 @@ const useStyles = makeStyles((theme: Theme) =>
       flexFlow: 'column nowrap',
       justifyContent: 'flex-start',
       alignItems: 'center',
+      position: 'relative',
     },
     headerButton: {
       width: '100%',
@@ -104,14 +106,15 @@ const NoteView = (props: Props) => {
   );
   const [editionMode, setEditionMode] = useState<boolean>(false);
   const [content, setContent] = useState<string>('');
+  const [loaded, setLoaded] = useState(false);
 
   const onSave = async (newContent: string) => {
     try {
       await editComments(studyId, newContent);
       setEditorState(EditorState.createWithContent(convertXMLToDraftJS(newContent)));
       setContent(newContent);
-      setEditionMode(false);
       enqueueSnackbar(t('singlestudy:commentsSaved'), { variant: 'success' });
+      setEditionMode(false);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:commentsNotSaved'), e as AxiosError);
     }
@@ -125,6 +128,8 @@ const NoteView = (props: Props) => {
         setContent(data);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:fetchCommentsError'), e as AxiosError);
+      } finally {
+        setLoaded(true);
       }
     };
     init();
@@ -137,17 +142,22 @@ const NoteView = (props: Props) => {
         <Typography className={classes.title}>{t('singlestudy:notes')}</Typography>
       </div>
       <div className={classes.main}>
-        <div className={classes.headerButton}>
-          <CreateIcon className={classes.editButton} onClick={() => setEditionMode(true)} />
-        </div>
-        <div className={classes.content}>
-          <Editor
-            readOnly={!editionMode}
-            editorState={editorState}
-            onChange={setEditorState}
-            textAlignment="left"
-          />
-        </div>
+        {!loaded && <SimpleLoader />}
+        {loaded && (
+        <>
+          <div className={classes.headerButton}>
+            <CreateIcon className={classes.editButton} onClick={() => setEditionMode(true)} />
+          </div>
+          <div className={classes.content}>
+            <Editor
+              readOnly={!editionMode}
+              editorState={editorState}
+              onChange={setEditorState}
+              textAlignment="left"
+            />
+          </div>
+        </>
+        )}
       </div>
       {
        editionMode && (

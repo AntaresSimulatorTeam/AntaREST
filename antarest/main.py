@@ -1,14 +1,16 @@
 import argparse
 import logging
 import sys
+from datetime import timezone, datetime
 from pathlib import Path
 from typing import Tuple, Any, Optional, Dict
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
+from dateutil import tz
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -38,6 +40,7 @@ from antarest.login.auth import Auth, JwtSettings
 from antarest.login.main import build_login
 from antarest.matrixstore.main import build_matrixstore
 from antarest.study.main import build_study_service
+from antarest.study.storage.rawstudy.watcher import Watcher
 
 logger = logging.getLogger(__name__)
 
@@ -248,6 +251,8 @@ def fastapi_app(
         user_service=user_service,
         event_bus=event_bus,
     )
+    watcher = Watcher(config=config, service=study_service)
+    watcher.start()
 
     launcher = build_launcher(
         application,
@@ -262,6 +267,7 @@ def fastapi_app(
     services["matrix"] = matrix_service
     services["user"] = user_service
     services["cache"] = cache
+    services["watcher"] = watcher
 
     customize_openapi(application)
     return application, services

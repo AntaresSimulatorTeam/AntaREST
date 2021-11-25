@@ -1,5 +1,4 @@
 import debug from 'debug';
-import moment from 'moment';
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
@@ -37,7 +36,7 @@ import {
   getStudyOutputs,
 } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
-import { hasAuthorization, getStudyExtendedName } from '../../services/utils';
+import { hasAuthorization, getStudyExtendedName, convertUTCToLocalTime } from '../../services/utils';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import PermissionModal from './PermissionModal';
 import ButtonLoader from '../ui/ButtonLoader';
@@ -366,7 +365,7 @@ const InformationView = (props: PropTypes) => {
             <div className={clsx(classes.info, classes.alignBaseline)}>
               <Typography className={classes.infoLabel}>{t('singlestudy:creationDate')}</Typography>
               <Typography variant="body2">
-                {moment.unix(study.creationDate).format('YYYY/MM/DD HH:mm')}
+                {convertUTCToLocalTime(study.creationDate)}
               </Typography>
             </div>
             <div className={clsx(classes.info, classes.alignBaseline)}>
@@ -374,7 +373,7 @@ const InformationView = (props: PropTypes) => {
                 {t('singlestudy:modificationDate')}
               </Typography>
               <Typography variant="body2">
-                {moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm')}
+                {convertUTCToLocalTime(study.modificationDate)}
               </Typography>
             </div>
             <div className={clsx(classes.info, classes.alignBaseline)}>

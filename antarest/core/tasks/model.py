@@ -56,8 +56,8 @@ class TaskDTO(BaseModel):
     name: str
     owner: Optional[int]
     status: TaskStatus
-    creation_date_utc: float
-    completion_date_utc: Optional[float]
+    creation_date_utc: str
+    completion_date_utc: Optional[str]
     result: Optional[TaskResult]
     logs: Optional[List[TaskLogDTO]]
 
@@ -118,8 +118,8 @@ class TaskJob(Base):  # type: ignore
         return TaskDTO(
             id=self.id,
             owner=self.owner_id,
-            creation_date_utc=self.creation_date.timestamp(),
-            completion_date_utc=self.completion_date.timestamp()
+            creation_date_utc=str(self.creation_date),
+            completion_date_utc=str(self.completion_date)
             if self.completion_date
             else None,
             name=self.name,

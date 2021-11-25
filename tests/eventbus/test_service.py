@@ -9,8 +9,8 @@ from antarest.eventbus.main import build_eventbus
 
 
 def autoretry(func: Callable[..., bool], timeout: int) -> None:
-    threshold = datetime.now() + timedelta(seconds=timeout)
-    while datetime.now() < threshold:
+    threshold = datetime.utcnow() + timedelta(seconds=timeout)
+    while datetime.utcnow() < threshold:
         if func():
             return
         time.sleep(0.2)

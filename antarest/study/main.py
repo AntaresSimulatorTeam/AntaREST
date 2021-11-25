@@ -128,9 +128,6 @@ def build_study_service(
         config=config,
     )
 
-    watcher = Watcher(config=config, service=storage_service)
-    watcher.start()
-
     application.include_router(
         create_study_routes(storage_service, file_transfer_manager, config)
     )

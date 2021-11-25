@@ -4,15 +4,15 @@ import { StudyMetadata } from '../../common/types';
 
 export interface StudyTreeNode {
     name: string;
-    modificationDate: number;
+    modificationDate: string;
     children: Array<StudyTreeNode | StudyMetadata>;
   }
 
 export const isDir = (element: StudyTreeNode | StudyMetadata): boolean => (element as StudyMetadata).id === undefined;
 
-const nodeProcess = (tree: StudyTreeNode, path: Array<string>, study: StudyMetadata): number => {
+const nodeProcess = (tree: StudyTreeNode, path: Array<string>, study: StudyMetadata): string => {
   const { children } = tree;
-  let newModificationDate = 0;
+  let newModificationDate = '';
   if (path.length === 1) {
     children.push(study);
     newModificationDate = moment(tree.modificationDate).isAfter(moment(study.modificationDate)) ? tree.modificationDate : study.modificationDate;
@@ -23,7 +23,7 @@ const nodeProcess = (tree: StudyTreeNode, path: Array<string>, study: StudyMetad
   const element = path.pop() || '';
   const index = children.findIndex((elm: StudyTreeNode | StudyMetadata) => isDir(elm) && elm.name === element);
   if (index < 0) {
-    children.push({ name: element, modificationDate: 0, children: [] });
+    children.push({ name: element, modificationDate: '', children: [] });
     newModificationDate = nodeProcess(children[children.length - 1] as StudyTreeNode, path, study);
   } else {
     newModificationDate = nodeProcess(children[index] as StudyTreeNode, path, study);
@@ -34,7 +34,7 @@ const nodeProcess = (tree: StudyTreeNode, path: Array<string>, study: StudyMetad
 };
 
 export const buildStudyTree = (studies: Array<StudyMetadata>): StudyTreeNode => {
-  const tree: StudyTreeNode = { name: 'root', modificationDate: 0, children: [] };
+  const tree: StudyTreeNode = { name: 'root', modificationDate: '', children: [] };
   let path: Array<string> = [];
   for (let i = 0; i < studies.length; i++) {
     if (studies[i].folder !== undefined && studies[i].folder !== null) {

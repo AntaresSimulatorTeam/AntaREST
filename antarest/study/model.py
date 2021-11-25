@@ -217,8 +217,8 @@ class StudyMetadataDTO(BaseModel):
     id: str
     name: str
     version: int
-    created: int
-    updated: int
+    created: str
+    updated: str
     type: str
     owner: OwnerInfo
     groups: List[GroupDTO]

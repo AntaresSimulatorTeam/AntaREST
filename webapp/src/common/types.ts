@@ -28,8 +28,8 @@ export interface StudyMetadataDTO {
   owner: StudyMetadataOwner;
   name: string;
   type: StudyType;
-  created: number;
-  updated: number;
+  created: string;
+  updated: string;
   version: number;
   workspace: string;
   managed: boolean;
@@ -42,8 +42,8 @@ export interface StudyMetadataDTO {
 export interface StudyMetadata {
   id: string;
   name: string;
-  creationDate: number;
-  modificationDate: number;
+  creationDate: string;
+  modificationDate: string;
   owner: StudyMetadataOwner;
   type: StudyType;
   version: string;
@@ -84,8 +84,8 @@ export interface LaunchJob {
   id: string;
   studyId: string;
   status: JobStatus;
-  creationDate: number;
-  completionDate: number;
+  creationDate: string;
+  completionDate: string;
   msg: string;
   outputId: string;
   exitCode: number;
@@ -306,8 +306,8 @@ export interface TaskDTO {
   name: string;
   owner?: number;
   status: TaskStatus;
-  creation_date_utc: number;
-  completion_date_utc?: number;
+  creation_date_utc: string;
+  completion_date_utc?: string;
   result?: TaskResult;
   logs?: Array<TaskLogDTO>;
 }
