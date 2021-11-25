@@ -9,11 +9,11 @@ import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import FolderIcon from '@material-ui/icons/Folder';
 import DescriptionIcon from '@material-ui/icons/Description';
 import HomeRoundedIcon from '@material-ui/icons/HomeRounded';
+import _ from 'lodash';
 import { isDir, StudyTreeNode } from '../utils';
 import { StudyMetadata } from '../../../common/types';
 import { exportStudy } from '../../../services/api/study';
 import ConfirmationModal from '../../ui/ConfirmationModal';
-import ButtonLoader from '../../ui/ButtonLoader';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { convertUTCToLocalTime } from '../../../services/utils';
 
@@ -171,10 +171,8 @@ const DirView = (props: Props) => {
     (key: string) => <MenuItem key={key} onClick={() => launchStudy(study)} style={{ color: theme.palette.secondary.main }}>{t('main:launch')}</MenuItem>,
     (key: string) => <MenuItem key={key} onClick={() => importStudy(study)} style={{ color: theme.palette.primary.main }}>{t('studymanager:importcopy')}</MenuItem>,
     (key: string) => (
-      <MenuItem key={key}>
-        <ButtonLoader style={{ color: theme.palette.primary.main }} onClick={() => exportStudy(study.id, false)}>
-          {t('main:export')}
-        </ButtonLoader>
+      <MenuItem key={key} style={{ color: theme.palette.primary.main }} onClick={_.debounce(() => exportStudy(study.id, false), 5000, { leading: true, trailing: false })}>
+        {t('main:export')}
       </MenuItem>
     ),
 

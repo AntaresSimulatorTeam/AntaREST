@@ -20,6 +20,7 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import _ from 'lodash';
 import { AppState } from '../../App/reducers';
 import {
   RoleType,
@@ -302,7 +303,7 @@ const InformationView = (props: PropTypes) => {
     }
   };
 
-  const exportOutput = async (output: string) => {
+  const exportOutput = _.debounce(async (output: string) => {
     setOutputExportButtonAnchor(null);
     if (study) {
       try {
@@ -311,7 +312,7 @@ const InformationView = (props: PropTypes) => {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
       }
     }
-  };
+  }, 2000, { leading: true, trailing: false });
 
   useEffect(() => {
     (async () => {
@@ -449,7 +450,7 @@ const InformationView = (props: PropTypes) => {
               <Button className={classes.launchButton} onClick={launchStudy}>
                 {t('main:launch')}
               </Button>
-              <ButtonLoader className={classes.exportButton} onClick={() => exportStudy(study.id, false)}>
+              <ButtonLoader className={classes.exportButton} onClick={() => exportStudy(study.id, false)} fakeDelay={500}>
                 {t('main:export')}
               </ButtonLoader>
               {!!outputList && (

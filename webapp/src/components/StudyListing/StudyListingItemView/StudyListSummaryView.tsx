@@ -164,7 +164,7 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
             >
               {t('studymanager:importcopy')}
             </ButtonLoader>
-            <ButtonLoader size="small" style={{ color: theme.palette.primary.main }} onClick={() => exportStudy(study.id, false)}>
+            <ButtonLoader size="small" style={{ color: theme.palette.primary.main }} onClick={() => exportStudy(study.id, false)} fakeDelay={500}>
               {t('main:export')}
             </ButtonLoader>
             {study.managed && (
