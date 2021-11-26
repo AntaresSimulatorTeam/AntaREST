@@ -394,7 +394,7 @@ def create_study_routes(
         tags=[APITag.study_outputs],
         summary="Get outputs data",
     )
-    def output_download(
+    def output_export(
         study_id: str,
         output_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),

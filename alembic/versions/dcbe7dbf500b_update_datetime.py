@@ -5,7 +5,7 @@ Revises: 63ed81e5ce6f
 Create Date: 2021-11-17 16:10:35.914371
 
 """
-from typing import Optional
+from typing import Optional, Union
 
 from alembic import op
 from dateutil import tz
@@ -20,9 +20,11 @@ branch_labels = None
 depends_on = None
 
 
-def convert_to_utc(data: str) -> Optional[str]:
+def convert_to_utc(data: Union[str, datetime]) -> Optional[str]:
     if data is not None:
-        dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
+        dt = data
+        if isinstance(data, str):
+            dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
         dt = dt.replace(tzinfo=tz.gettz())
         d1 = dt.utcfromtimestamp(dt.timestamp()).strftime(
             "%Y-%m-%d %H:%M:%S.%f"
@@ -33,7 +35,9 @@ def convert_to_utc(data: str) -> Optional[str]:
 
 def convert_to_local(data: str) -> Optional[str]:
     if data is not None:
-        dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
+        dt = data
+        if isinstance(data, str):
+            dt = datetime.strptime(data, "%Y-%m-%d %H:%M:%S.%f")
         dt = dt.replace(tzinfo=timezone.utc)
         dt = datetime.fromtimestamp(dt.timestamp())
         d1 = dt.strftime("%Y-%m-%d %H:%M:%S.%f")

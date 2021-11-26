@@ -45,7 +45,7 @@ class Watcher:
         if self.thread and not self.thread.is_alive():
             self.thread.start()
 
-    def stop(self):
+    def stop(self) -> None:
         self.should_stop = True
 
     @staticmethod
