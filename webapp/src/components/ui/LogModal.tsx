@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { createStyles, makeStyles, Theme, Button, Paper, Typography } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import { connect, ConnectedProps } from 'react-redux';
 import WrapTextIcon from '@material-ui/icons/WrapText';
+import { exportText } from '../../services/utils/index';
 import { addListener, removeListener } from '../../ducks/websockets';
 import { WSEvent, WSLogMessage, WSMessage } from '../../common/types';
 
@@ -73,6 +75,13 @@ const useStyles = makeStyles((theme: Theme) =>
         color: theme.palette.secondary.main,
       },
     },
+    downloadIcon: {
+      color: 'white',
+      cursor: 'pointer',
+      '&:hover': {
+        color: theme.palette.secondary.main,
+      },
+    },
   }));
 
 interface OwnTypes {
@@ -97,11 +106,15 @@ const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps & OwnTypes;
 
+let myFakeContent = 'There should be an option (a button) so that when new data comes in, the scroll bar go to the end and we can see new data coming in. \n';
+
 const LogModal = (props: PropTypes) => {
   const { title, style, jobId, isOpen, content, close, addWsListener, removeWsListener } = props;
   const [logDetail, setLogDetail] = useState(content);
   const divRef = useRef<HTMLDivElement | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
+  const [scrollPosition, setScrollPosition] = useState<number>(0);
+  const [scrolling, setScrolling] = useState<boolean>(true);
   const classes = useStyles();
   const [t] = useTranslation();
 
@@ -135,13 +148,37 @@ const LogModal = (props: PropTypes) => {
     }
   };
 
+  const onDownload = () => {
+    if (logDetail !== undefined) {
+      exportText(logDetail, 'log_detail.txt');
+    }
+  };
+
   useEffect(() => {
     setLogDetail(content);
   }, [content]);
 
+  /*useEffect(() => {
+    setTimeout(() => {
+      myFakeContent = 'There should be an option (a button) so that when new data comes in, the scroll bar go to the end and we can see new data coming in. \n';
+      setLogDetail(myFakeContent);
+    }, 1000);
+  }, [logDetail]);*/
+
   useEffect(() => {
-    scrollToEnd();
-  }, [logDetail]);
+    if (logRef.current) {
+      setScrollPosition(logRef.current.scrollHeight);
+      if (scrolling) {
+        scrollToEnd();
+      }
+      console.log(scrolling);
+      if (scrollPosition + 40 < logRef.current.scrollHeight) {
+        setScrolling(false);
+      } else if (logRef.current.scrollHeight - logRef.current.scrollTop < 700) {
+        setScrolling(true);
+      }
+    }
+  }, [logDetail, scrollPosition, scrolling]);
 
   useEffect(() => {
     addWsListener(updateLog);
@@ -165,6 +202,7 @@ const LogModal = (props: PropTypes) => {
           <div className={classes.titlebox}>
             <Typography className={classes.title}>{title}</Typography>
             <WrapTextIcon className={classes.wrapTextIcon} onClick={scrollToEnd} />
+            <FontAwesomeIcon className={classes.downloadIcon} icon="download" onClick={onDownload} />
           </div>
           <div className={classes.contentWrapper} ref={logRef}>
             <div className={classes.content} id="log-content" ref={divRef}>
