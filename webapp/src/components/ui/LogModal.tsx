@@ -109,9 +109,6 @@ const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps & OwnTypes;
 
-let myFakeContent = 'Fake content ';
-let index = 0;
-
 const LogModal = (props: PropTypes) => {
   const { title, style, jobId, isOpen, content, close, addWsListener, removeWsListener } = props;
   const [logDetail, setLogDetail] = useState(content);
@@ -156,14 +153,6 @@ const LogModal = (props: PropTypes) => {
       exportText(logDetail, 'log_detail.txt');
     }
   };
-
-  useEffect(() => {
-    setTimeout(() => {
-      myFakeContent += `Fake Content. ${index} \n`;
-      index += 1;
-      setLogDetail(myFakeContent);
-    }, 1000);
-  }, [logDetail]);
 
   const onScroll = (ev: UIEvent<HTMLDivElement>) => {
     const element = ev.target as HTMLDivElement;
