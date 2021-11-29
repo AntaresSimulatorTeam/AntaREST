@@ -76,7 +76,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    width: '190px',
+    width: '200px',
   },
   killButtonHide: {
     display: 'none',

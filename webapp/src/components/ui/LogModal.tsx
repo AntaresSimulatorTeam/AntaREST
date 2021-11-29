@@ -110,7 +110,7 @@ const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps & OwnTypes;
 
-let myFakeContent = 'There should be an option (a button) so that when new data comes in, the scroll bar go to the end and we can see new data coming in. \n';
+let myFakeContent = 'Fake content. \n';
 
 const LogModal = (props: PropTypes) => {
   const { title, style, jobId, isOpen, content, close, addWsListener, removeWsListener } = props;
@@ -164,7 +164,7 @@ const LogModal = (props: PropTypes) => {
 
   useEffect(() => {
     setTimeout(() => {
-      myFakeContent += 'There should be an option (a button) so that when new data comes in, the scroll bar go to the end and we can see new data coming in. \n';
+      myFakeContent += 'Fake Content. \n';
       setLogDetail(myFakeContent);
     }, 1000);
   }, [logDetail]);
