@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef, UIEvent } from 'react';
 import { createStyles, makeStyles, Theme, Button, Paper, Typography } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -7,7 +7,6 @@ import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import { connect, ConnectedProps } from 'react-redux';
-import WrapTextIcon from '@material-ui/icons/WrapText';
 import { exportText } from '../../services/utils/index';
 import { addListener, removeListener } from '../../ducks/websockets';
 import { WSEvent, WSLogMessage, WSMessage } from '../../common/types';
@@ -110,15 +109,15 @@ const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps & OwnTypes;
 
-let myFakeContent = 'Fake content. \n';
+let myFakeContent = 'Fake content ';
+let index = 0;
 
 const LogModal = (props: PropTypes) => {
   const { title, style, jobId, isOpen, content, close, addWsListener, removeWsListener } = props;
   const [logDetail, setLogDetail] = useState(content);
   const divRef = useRef<HTMLDivElement | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
-  const [scrollPosition, setScrollPosition] = useState<number>(0);
-  const [scrolling, setScrolling] = useState<boolean>(true);
+  const [autoscroll, setAutoScroll] = useState<boolean>(true);
   const classes = useStyles();
   const [t] = useTranslation();
 
@@ -148,7 +147,7 @@ const LogModal = (props: PropTypes) => {
   const scrollToEnd = () => {
     if (logRef.current) {
       const myDiv = logRef.current.scrollHeight;
-      logRef.current.scrollTo(0, myDiv);
+      logRef.current.scrollTo(0, myDiv - 10);
     }
   };
 
@@ -159,31 +158,33 @@ const LogModal = (props: PropTypes) => {
   };
 
   useEffect(() => {
-    setLogDetail(content);
-  }, [content]);
-
-  useEffect(() => {
     setTimeout(() => {
-      myFakeContent += 'Fake Content. \n';
+      myFakeContent += `Fake Content. ${index} \n`;
+      index += 1;
       setLogDetail(myFakeContent);
     }, 1000);
   }, [logDetail]);
 
+  const onScroll = (ev: UIEvent<HTMLDivElement>) => {
+    const element = ev.target as HTMLDivElement;
+    if (element.scrollHeight - element.scrollTop <= element.clientHeight + 20) {
+      setAutoScroll(true);
+    } else {
+      setAutoScroll(false);
+    }
+  };
+
+  useEffect(() => {
+    setLogDetail(content);
+  }, [content]);
+
   useEffect(() => {
     if (logRef.current) {
-      setScrollPosition(logRef.current.scrollTop);
-      if (scrolling) {
-        setTimeout(() => {
-          scrollToEnd();
-        }, 500);
-      }
-      if (logRef.current.scrollTop > scrollPosition) {
-        setScrolling(true);
-      } else {
-        setScrolling(false);
+      if (autoscroll) {
+        scrollToEnd();
       }
     }
-  }, [logDetail, scrollPosition, scrolling]);
+  }, [logDetail, autoscroll]);
 
   useEffect(() => {
     addWsListener(updateLog);
@@ -208,7 +209,7 @@ const LogModal = (props: PropTypes) => {
             <Typography className={classes.title}>{title}</Typography>
             <FontAwesomeIcon className={classes.downloadIcon} icon="download" onClick={onDownload} />
           </div>
-          <div className={classes.contentWrapper} ref={logRef}>
+          <div className={classes.contentWrapper} ref={logRef} onScroll={onScroll}>
             <div className={classes.content} id="log-content" ref={divRef}>
               <code className={classes.code}>{logDetail}</code>
             </div>
@@ -217,7 +218,6 @@ const LogModal = (props: PropTypes) => {
             <Button variant="contained" className={classes.button} onClick={close}>
               {t('main:closeButton')}
             </Button>
-            <WrapTextIcon className={classes.wrapTextIcon} onClick={scrollToEnd} />
           </div>
         </Paper>
       </Fade>
