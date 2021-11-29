@@ -15,8 +15,9 @@ import CloseRoundedIcon from '@material-ui/icons/CloseRounded';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import { useTranslation } from 'react-i18next';
-import { UserGroup } from '../../common/types';
+import { GroupDTO, RoleType, UserGroup, UserRoleDTO } from '../../common/types';
 import { roleToString } from '../../services/utils';
+import RoleModal from './Groups/RoleModal';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -114,13 +115,20 @@ interface PropTypes {
   onDeleteUserClick: (groupId: string, userId: number) => void;
   onUpdateClick: (groupId: string) => void;
   onItemClick: (groupId: string) => void;
+  onUpdateRole: (groupId: string, userId: number, role: RoleType) => void;
+}
+
+interface UserSelection {
+  group: GroupDTO | undefined;
+  user: UserRoleDTO | undefined;
 }
 
 const UserGroupView = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { data, filter, onDeleteGroupClick, onDeleteUserClick, onUpdateClick, onItemClick } = props;
+  const { data, filter, onDeleteGroupClick, onDeleteUserClick, onUpdateClick, onItemClick, onUpdateRole } = props;
   const [toogleList, setToogleList] = useState<Array<boolean>>([]);
+  const [userRoleModal, setUserRoleModal] = useState<UserSelection>({ group: undefined, user: undefined });
 
   const onButtonChange = (index: number, id: string) => {
     if (index >= 0 && index < toogleList.length) {
@@ -130,6 +138,11 @@ const UserGroupView = (props: PropTypes) => {
       tmpList[index] = !tmpList[index];
       setToogleList(tmpList);
     }
+  };
+
+  const onUserUpdateRole = (groupId: string, userId: number, role: RoleType): void => {
+    onUpdateRole(groupId, userId, role);
+    setUserRoleModal({ group: undefined, user: undefined });
   };
 
   const matchFilter = (input: string): boolean =>
@@ -169,12 +182,20 @@ const UserGroupView = (props: PropTypes) => {
                       <Typography className={classes.text}>{userItem.name}</Typography>
                       <div className={classes.endItem}>
                         <Typography className={classes.role}>{t(roleToString(userItem.role))}</Typography>
+                        <CreateIcon className={classes.createIcon} style={{ cursor: 'pointer' }} onClick={() => setUserRoleModal({ group: groupItem.group, user: userItem })} />
                         <CloseRoundedIcon className={classes.deleteIcon} style={{ cursor: 'pointer' }} onClick={() => onDeleteUserClick(groupItem.group.id, userItem.id)} />
                       </div>
                     </ListItem>
                   ))}
                 </List>
               </Collapse>
+              <RoleModal
+                open={userRoleModal.user !== undefined}
+                onClose={() => setUserRoleModal({ group: undefined, user: undefined })}
+                onSave={onUserUpdateRole}
+                group={userRoleModal.group}
+                user={userRoleModal.user as UserRoleDTO}
+              />
             </Fragment>
           ),
       )}

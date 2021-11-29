@@ -143,6 +143,37 @@ def test_save_user():
     )
 
 
+def test_get_identity():
+    user = User(id=1)
+    ldap = UserLdap(id=2, name="Jane")
+    bot = Bot(id=3, name="bot", owner=3, is_author=False)
+    user_repo = Mock()
+    ldap_repo = Mock(spec=LdapService)
+    bot_repo = Mock()
+    service = LoginService(
+        user_repo=user_repo,
+        bot_repo=bot_repo,
+        group_repo=Mock(),
+        role_repo=Mock(),
+        ldap=ldap_repo,
+        event_bus=Mock(),
+    )
+    user_repo.get.return_value = user
+    ldap_repo.get.return_value = None
+    bot_repo.get.return_value = None
+    assert service.get_identity(1) == user
+
+    user_repo.get.return_value = None
+    ldap_repo.get.return_value = ldap
+    assert service.get_identity(2) == ldap
+
+    ldap_repo.get.return_value = None
+    assert service.get_identity(3) is None
+
+    bot_repo.get.return_value = bot
+    assert service.get_identity(3, True) == bot
+
+
 def test_save_bot():
     bot_create = BotCreateDTO(
         name="bot",
@@ -252,7 +283,6 @@ def test_get_group():
 
 
 def test_get_group_info():
-
     groups = Mock()
     group = Group(id="group", name="group")
     groups.get.return_value = group

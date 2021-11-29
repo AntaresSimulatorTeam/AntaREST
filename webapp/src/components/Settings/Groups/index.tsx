@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import React, { useState, useEffect } from 'react';
 import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
@@ -6,8 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { AppState } from '../../../App/reducers';
 import GenericListingView from '../../ui/NavComponents/GenericListingView';
 import GroupModal from './GroupModal';
-import { getGroups, createGroup, updateGroup, deleteGroup, getGroupInfos } from '../../../services/api/user';
-import { GroupDTO, RoleType, UserGroup } from '../../../common/types';
+import { getGroups, createGroup, updateGroup, deleteGroup, getGroupInfos, deleteUserRole, createRole } from '../../../services/api/user';
+import { RoleCreationDTO, RoleType, UserGroup, UserRoleDTO } from '../../../common/types';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import UserGroupView from '../UserGroupView';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
@@ -39,7 +40,7 @@ const GroupsSettings = (props: PropTypes) => {
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [groupList, setGroupList] = useState<Array<UserGroup>>([]);
-  const [selectedGroup, setActiveGroup] = useState<GroupDTO>();
+  const [selectedGroup, setActiveGroup] = useState<UserGroup>();
   const [deletionInfo, setDeletionInfo] = useState<DeletionInfo>({ type: 'group', data: '' });
   const [filter, setFilter] = useState<string>('');
   const { user } = props;
@@ -47,15 +48,6 @@ const GroupsSettings = (props: PropTypes) => {
   const createNewGroup = () => {
     setOpenModal(true);
     setActiveGroup(undefined);
-  };
-
-  const onUpdateClick = (groupId: string) => {
-    const groupFound = groupList.find((item) => item.group.id === groupId);
-
-    if (groupFound) {
-      setActiveGroup(groupFound.group);
-      setOpenModal(true);
-    }
   };
 
   const onDeleteGroupClick = (id: string) => {
@@ -66,16 +58,19 @@ const GroupsSettings = (props: PropTypes) => {
   const onDeleteUserClick = (groupId: string, userId: number) => {
     setDeletionInfo({ type: 'user', data: { groupId, userId } });
     setOpenConfirmationModal(true);
-    // setIdForDeletion(-1);
-    // setOpenConfirmationModal(false);
   };
 
   const manageUserDeletion = async () => {
     try {
-      // setUserList(userList.filter((item) => item.id !== idForDeletion));
       const data: UserDeletion = deletionInfo.data as UserDeletion;
-      console.log('DELETE USER ', data.userId, ' FROM GROUP ', data.groupId);
-      enqueueSnackbar(t('settings:onUserDeleteSuccess'), { variant: 'success' });
+      await deleteUserRole(data.groupId, data.userId);
+      const tmpList = ([] as Array<UserGroup>).concat(groupList);
+      const groupIndex = tmpList.findIndex((item) => item.group.id === data.groupId);
+      if (groupIndex >= 0) {
+        tmpList[groupIndex].users = tmpList[groupIndex].users.filter((item) => item.id !== data.userId);
+        setGroupList(tmpList);
+        enqueueSnackbar(t('settings:onUserDeleteSuccess'), { variant: 'success' });
+      }
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('settings:onUserDeleteError'), e as AxiosError);
     }
@@ -97,7 +92,31 @@ const GroupsSettings = (props: PropTypes) => {
     setOpenConfirmationModal(false);
   };
 
-  const onItemClick = async (groupId: string) => {
+  const onUpdateRole = async (groupId: string, userId: number, role: RoleType) => {
+    try {
+      const roleCreation: RoleCreationDTO = {
+        group_id: groupId,
+        identity_id: userId,
+        type: role,
+      };
+      const tmpList = ([] as Array<UserGroup>).concat(groupList);
+      const groupIndex = tmpList.findIndex((item) => item.group.id === groupId);
+      if (groupIndex >= 0) {
+        const userIndex = tmpList[groupIndex].users.findIndex((item) => item.id === userId);
+        if (userIndex >= 0) {
+          await deleteUserRole(groupId, userId);
+          await createRole(roleCreation);
+          tmpList[groupIndex].users[userIndex].role = role;
+          setGroupList(tmpList);
+          enqueueSnackbar(t('settings:onUserUpdate'), { variant: 'success' });
+        }
+      }
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('settings:onUserSaveError'), e as AxiosError);
+    }
+  };
+
+  const getGroupUsers = async (groupId: string): Promise<UserGroup | undefined> => {
     try {
       const tmpList = ([] as Array<UserGroup>).concat(groupList);
       const groupInfos = await getGroupInfos(groupId);
@@ -105,11 +124,25 @@ const GroupsSettings = (props: PropTypes) => {
       if (index >= 0) {
         tmpList[index] = { group: groupInfos.group, users: groupInfos.users.filter((elm) => elm.id !== user?.id) };
         setGroupList(tmpList);
-      } else {
-        enqueueSnackbar(t('settings:groupInfosError'), { variant: 'error' });
+        return tmpList[index];
       }
+      enqueueSnackbar(t('settings:groupInfosError'), { variant: 'error' });
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('settings:groupInfosError'), e as AxiosError);
+    }
+    return undefined;
+  };
+
+  const onItemClick = async (groupId: string) => {
+    await getGroupUsers(groupId);
+  };
+
+  const onUpdateClick = async (groupId: string) => {
+    const groupFound = await getGroupUsers(groupId);
+
+    if (groupFound) {
+      setActiveGroup(groupFound);
+      setOpenModal(true);
     }
   };
 
@@ -117,19 +150,29 @@ const GroupsSettings = (props: PropTypes) => {
     setOpenModal(false);
   };
 
-  const onModalSave = async (name: string) => {
+  const onModalSave = async (name: string, userList: Array<UserRoleDTO>) => {
     try {
       if (selectedGroup) {
-        if (selectedGroup.name === name) return;
-
-        const updatedGroup = await updateGroup(selectedGroup.id, name);
-        const tmpList = ([] as Array<UserGroup>).concat(groupList);
-        const index = tmpList.findIndex((item) => item.group.id === selectedGroup.id);
-        if (index >= 0) {
+        if (selectedGroup.group.name !== name) {
+          const updatedGroup = await updateGroup(selectedGroup.group.id, name);
+          const tmpList = ([] as Array<UserGroup>).concat(groupList);
+          const index = tmpList.findIndex((item) => item.group.id === selectedGroup.group.id);
+          if (index < 0) return;
           tmpList[index].group.name = updatedGroup.name;
           setGroupList(tmpList);
-          enqueueSnackbar(t('settings:onGroupUpdate'), { variant: 'success' });
         }
+
+        Promise.all(
+          userList.map(async (item) => {
+            const role: RoleCreationDTO = {
+              group_id: selectedGroup.group.id,
+              identity_id: item.id,
+              type: item.role,
+            };
+            await createRole(role);
+          }),
+        );
+        enqueueSnackbar(t('settings:onGroupUpdate'), { variant: 'success' });
       } else {
         const newGroup = await createGroup(name);
         const newGroupItem: UserGroup = {
@@ -137,7 +180,17 @@ const GroupsSettings = (props: PropTypes) => {
           users: [],
         };
         setGroupList(groupList.concat(newGroupItem));
-        setActiveGroup(newGroup);
+        setActiveGroup(newGroupItem);
+        Promise.all(
+          userList.map(async (item) => {
+            const role: RoleCreationDTO = {
+              group_id: newGroup.id,
+              identity_id: item.id,
+              type: item.role,
+            };
+            await createRole(role);
+          }),
+        );
         enqueueSnackbar(t('settings:onGroupCreation'), { variant: 'success' });
       }
     } catch (e) {
@@ -184,6 +237,7 @@ const GroupsSettings = (props: PropTypes) => {
         onDeleteUserClick={onDeleteUserClick}
         onUpdateClick={onUpdateClick}
         onItemClick={onItemClick}
+        onUpdateRole={onUpdateRole}
       />
       {openModal && (
         <GroupModal
@@ -191,6 +245,7 @@ const GroupsSettings = (props: PropTypes) => {
           onClose={onModalClose}
           onSave={onModalSave}
           group={selectedGroup}
+          userId={user?.id}
         />
       )}
       {openConfirmationModal && (
