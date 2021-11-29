@@ -61,6 +61,7 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: 'center',
       alignItems: 'center',
       overflow: 'hidden',
+      position: 'relative',
     },
     button: {
       margin: theme.spacing(2),
@@ -69,15 +70,18 @@ const useStyles = makeStyles((theme: Theme) =>
       width: '24px',
       height: 'auto',
       cursor: 'pointer',
-      color: 'white',
+      color: theme.palette.primary.main,
       margin: theme.spacing(0, 3),
       '&:hover': {
         color: theme.palette.secondary.main,
       },
+      position: 'absolute',
+      right: theme.spacing(1),
     },
     downloadIcon: {
       color: 'white',
       cursor: 'pointer',
+      margin: theme.spacing(0, 3),
       '&:hover': {
         color: theme.palette.secondary.main,
       },
@@ -158,24 +162,25 @@ const LogModal = (props: PropTypes) => {
     setLogDetail(content);
   }, [content]);
 
-  /*useEffect(() => {
+  useEffect(() => {
     setTimeout(() => {
-      myFakeContent = 'There should be an option (a button) so that when new data comes in, the scroll bar go to the end and we can see new data coming in. \n';
+      myFakeContent += 'There should be an option (a button) so that when new data comes in, the scroll bar go to the end and we can see new data coming in. \n';
       setLogDetail(myFakeContent);
     }, 1000);
-  }, [logDetail]);*/
+  }, [logDetail]);
 
   useEffect(() => {
     if (logRef.current) {
-      setScrollPosition(logRef.current.scrollHeight);
+      setScrollPosition(logRef.current.scrollTop);
       if (scrolling) {
-        scrollToEnd();
+        setTimeout(() => {
+          scrollToEnd();
+        }, 500);
       }
-      console.log(scrolling);
-      if (scrollPosition + 40 < logRef.current.scrollHeight) {
-        setScrolling(false);
-      } else if (logRef.current.scrollHeight - logRef.current.scrollTop < 700) {
+      if (logRef.current.scrollTop > scrollPosition) {
         setScrolling(true);
+      } else {
+        setScrolling(false);
       }
     }
   }, [logDetail, scrollPosition, scrolling]);
@@ -201,7 +206,6 @@ const LogModal = (props: PropTypes) => {
         <Paper onKeyDown={handleGlobalKeyDown} className={classes.main} style={style !== undefined ? style : {}}>
           <div className={classes.titlebox}>
             <Typography className={classes.title}>{title}</Typography>
-            <WrapTextIcon className={classes.wrapTextIcon} onClick={scrollToEnd} />
             <FontAwesomeIcon className={classes.downloadIcon} icon="download" onClick={onDownload} />
           </div>
           <div className={classes.contentWrapper} ref={logRef}>
@@ -213,6 +217,7 @@ const LogModal = (props: PropTypes) => {
             <Button variant="contained" className={classes.button} onClick={close}>
               {t('main:closeButton')}
             </Button>
+            <WrapTextIcon className={classes.wrapTextIcon} onClick={scrollToEnd} />
           </div>
         </Paper>
       </Fade>
