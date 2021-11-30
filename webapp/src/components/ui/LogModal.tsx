@@ -65,18 +65,6 @@ const useStyles = makeStyles((theme: Theme) =>
     button: {
       margin: theme.spacing(2),
     },
-    wrapTextIcon: {
-      width: '24px',
-      height: 'auto',
-      cursor: 'pointer',
-      color: theme.palette.primary.main,
-      margin: theme.spacing(0, 3),
-      '&:hover': {
-        color: theme.palette.secondary.main,
-      },
-      position: 'absolute',
-      right: theme.spacing(1),
-    },
     downloadIcon: {
       color: 'white',
       cursor: 'pointer',
