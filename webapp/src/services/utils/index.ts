@@ -90,4 +90,14 @@ export const getStudyExtendedName = (study: StudyMetadata): string => {
 
 export const convertUTCToLocalTime = (date: string): string => moment.utc(date).local().format('YYYY-MM-DD HH:mm:ss');
 
+export const exportText = (fileData: string, filename: string): void => {
+  const blob = new Blob([fileData], { type: 'application/txt' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = url;
+  link.click();
+  link.remove();
+};
+
 export default {};
