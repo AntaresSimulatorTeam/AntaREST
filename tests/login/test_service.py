@@ -555,11 +555,20 @@ def test_get_all_users():
     ldap = Mock()
     ldap.get_all.return_value = []
 
+    user = User(id=3, name="user")
+    role_gadmin_ok = Role(
+        group=Group(id="group"), type=RoleType.ADMIN, identity=user
+    )
+
+    role_repo = Mock()
+    role_repo.get_all_by_user.return_value = [role_gadmin_ok]
+    role_repo.get_all_by_group.return_value = [role_gadmin_ok]
+
     service = LoginService(
         user_repo=users,
         bot_repo=Mock(),
         group_repo=Mock(),
-        role_repo=Mock(),
+        role_repo=role_repo,
         ldap=ldap,
         event_bus=Mock(),
     )

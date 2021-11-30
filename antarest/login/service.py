@@ -591,6 +591,15 @@ class LoginService:
                     groups.append(tmp)
             return groups
 
+    def _get_user_by_group(self, group: str) -> List[Identity]:
+        roles = self.roles.get_all_by_group(group)
+        user_list = []
+        for role in roles:
+            user = self.get_identity(role.identity_id)
+            if user:
+                user_list.append(user)
+        return user_list
+
     def get_all_users(self, params: RequestParameters) -> List[Identity]:
         """
         Get all users.
@@ -602,7 +611,26 @@ class LoginService:
 
         """
         if params.user:
-            return self.ldap.get_all() + self.users.get_all()
+            roles = self.roles.get_all_by_user(params.user.id)
+            groups = [r.group for r in roles]
+            if any(
+                (
+                    params.user.is_site_admin(),
+                    params.user.is_group_admin(groups),
+                )
+            ):
+                return self.ldap.get_all() + self.users.get_all()
+
+            user_list = []
+            for group in groups:
+                user_list.extend(
+                    [
+                        usr
+                        for usr in self._get_user_by_group(group.id)
+                        if usr not in user_list
+                    ]
+                )
+            return user_list
         else:
             logger.error(
                 "user %s has not permission to get all users",
