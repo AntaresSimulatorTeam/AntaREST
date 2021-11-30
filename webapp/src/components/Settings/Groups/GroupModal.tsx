@@ -26,17 +26,11 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     boxSizing: 'border-box',
     margin: theme.spacing(2),
   },
-  roleList: {
-    width: '100%',
-    height: '60px',
-    flexFlow: 'row nowrap',
-    justifyContent: 'flex-start',
-    display: 'flex',
-    alignItems: 'center',
-    margin: theme.spacing(1),
-  },
   select: {
-    margin: theme.spacing(2),
+    maxWidth: '400px',
+    width: '100%',
+  },
+  roleSelect: {
     maxWidth: '400px',
   },
   addInfo: {
@@ -46,12 +40,14 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
     width: '70%',
     height: '50px',
-    marginBottom: theme.spacing(1),
+    marginBottom: theme.spacing(2),
   },
   addText: {
     color: theme.palette.primary.main,
-    fontWeight: 'bold',
     textAlign: 'justify',
+    fontSize: '1em',
+    margin: 0,
+    padding: 0,
   },
   userList: {
     display: 'flex',
@@ -59,6 +55,14 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'flex-start',
     alignItems: 'center',
     width: '70%',
+    marginBottom: theme.spacing(2),
+  },
+  userSelect: {
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    marginRight: theme.spacing(3),
   },
   user: {
     display: 'flex',
@@ -150,8 +154,8 @@ const GroupModal = (props: PropTypes) => {
         />
       </div>
       <div className={classes.addInfo}>
-        <Typography className={classes.addText}>Add user:</Typography>
-        <div className={classes.roleList}>
+        <div className={classes.userSelect}>
+          <Typography variant="h6" component="div" className={classes.addText}>{t('settings:users')}</Typography>
           <Select
             value={userSelection}
             onChange={(event: React.ChangeEvent<{ value: unknown }>) =>
@@ -166,10 +170,10 @@ const GroupModal = (props: PropTypes) => {
               </MenuItem>
             ))}
           </Select>
-          <Button variant="contained" color="primary" onClick={addUserInList}>
-            {t('settings:addButton')}
-          </Button>
         </div>
+        <Button variant="contained" color="primary" onClick={addUserInList}>
+          {t('settings:addButton')}
+        </Button>
       </div>
       <div className={classes.userList}>
         {
@@ -182,7 +186,7 @@ const GroupModal = (props: PropTypes) => {
                     onUpdateRole(item.id, event.target.value as RoleType)
                   }
                   label={t('settings:groupNameLabel')}
-                  className={classes.select}
+                  className={classes.roleSelect}
                 >
                   {menuItems.map((elm) => (
                     <MenuItem key={elm.role} value={elm.role}>
