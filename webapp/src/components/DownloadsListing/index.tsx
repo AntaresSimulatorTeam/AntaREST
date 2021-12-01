@@ -3,11 +3,13 @@ import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import moment from 'moment';
 import DownloadItem from './DownloadItem';
 import { FileDownload } from '../../services/api/downloads';
+import NoContent from '../ui/NoContent';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
     flexGrow: 1,
     overflow: 'auto',
+    position: 'relative',
   },
   container: {
     display: 'flex',
@@ -35,14 +37,15 @@ const DownloadsListing = (props: PropTypes) => {
 
   return (
     <div className={classes.root}>
-      <div className={classes.container}>
-        {
-          downloads
+      {downloads.length > 0 ? (
+        <div className={classes.container}>
+          {downloads
             .sort((a, b) => (moment(a.expirationDate).isAfter(moment(b.expirationDate)) ? -1 : 1))
             .map((download) => (
               <DownloadItem download={download} />
             ))}
-      </div>
+        </div>
+      ) : <NoContent />}
     </div>
   );
 };

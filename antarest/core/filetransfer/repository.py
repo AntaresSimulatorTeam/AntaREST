@@ -26,7 +26,7 @@ class FileDownloadRepository:
             file_download_list = (
                 db.session.query(FileDownload)
                 .filter(FileDownload.owner == owner)
-                .fetch_all()
+                .all()
             )
         else:
             file_download_list = db.session.query(FileDownload).all()
