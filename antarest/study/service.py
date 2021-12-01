@@ -35,6 +35,7 @@ from antarest.core.tasks.model import TaskResult
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.login.model import Group
 from antarest.login.service import LoginService
+from antarest.matrixstore.utils import parse_tsv_matrix
 from antarest.study.business.area_management import (
     AreaManager,
     AreaType,
@@ -989,7 +990,9 @@ class StudyService:
         elif isinstance(tree_node, InputSeriesMatrix):
             return ReplaceMatrix(
                 target=url,
-                matrix=data,
+                matrix=parse_tsv_matrix(data)
+                if isinstance(data, bytes)
+                else data,
                 command_context=self.variant_study_service.command_factory.command_context,
             )
         elif (
@@ -1023,6 +1026,8 @@ class StudyService:
         )
         if isinstance(study_service, RawStudyService):
             command.apply(study_data=file_study)
+            if not is_managed(study):
+                tree_node.denormalize()
 
             lastsave_url = "study/antares/lastsave"
             lastsave_node = file_study.tree.get_node(lastsave_url.split("/"))

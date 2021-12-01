@@ -34,6 +34,7 @@ from antarest.matrixstore.repository import (
     MatrixContentRepository,
     MatrixDataSetRepository,
 )
+from antarest.matrixstore.utils import parse_tsv_matrix
 
 
 class ISimpleMatrixService(ABC):
@@ -169,20 +170,10 @@ class MatrixService(ISimpleMatrixService):
                 return [MatrixInfoDTO(id=id, name=file.filename)]
 
     def file_importation(self, file: bytes, is_json: bool = False) -> str:
-        str_file = str(file, "UTF-8")
         if is_json:
             return self.create(MatrixContent.parse_raw(file).data)
         else:
-            data: List[List[MatrixData]] = []
-            reader = csv.reader(str_file.split("\n"), delimiter="\t")
-
-            columns: List[int] = []
-            for row in reader:
-                if row:
-                    data.append([MatrixData(elm) for elm in row])
-                if len(columns) == 0:
-                    columns = list(range(0, len(row)))
-
+            data = parse_tsv_matrix(file)
             return self.create(data)
 
     def get_dataset(
