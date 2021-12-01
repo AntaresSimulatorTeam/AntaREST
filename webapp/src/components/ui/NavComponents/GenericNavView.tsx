@@ -33,7 +33,6 @@ const GenericNavView = (props: PropTypes) => {
 
   useEffect(() => {
     const list = Object.keys(items);
-    console.log(list);
     setNavList(list);
 
     if (list.find((item) => item === initialValue)) setNavState(initialValue);

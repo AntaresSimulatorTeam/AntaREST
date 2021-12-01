@@ -25,6 +25,7 @@ import { AppState } from '../../App/reducers';
 import {
   RoleType,
   StudyMetadata,
+  StudyOutput,
 } from '../../common/types';
 import {
   deleteStudy as callDeleteStudy,
@@ -318,7 +319,7 @@ const InformationView = (props: PropTypes) => {
     (async () => {
       try {
         const res = await getStudyOutputs(study.id);
-        setOutputList(res.map((o) => o.name));
+        setOutputList(res.map((o: StudyOutput) => o.name));
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToListOutputs'), e as AxiosError);
       }

@@ -786,7 +786,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         dest_meta = VariantStudy(
             id=new_id,
             name=dest_name,
-            parent_id=src_meta.id,
+            parent_id=src_meta.parent_id,
             path=study_path,
             public_mode=src_meta.public_mode,
             created_at=datetime.utcnow(),

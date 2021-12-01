@@ -50,7 +50,7 @@ const ButtonLoader = (props: ButtonProps & OwnProps) => {
   };
 
   const forwardedProps = { ...props };
-  // eslint-disable-next-line react/destructuring-assignment
+  delete forwardedProps.fakeDelay;
   delete forwardedProps.progressColor;
 
   return (
