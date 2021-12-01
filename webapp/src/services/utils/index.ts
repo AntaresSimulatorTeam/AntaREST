@@ -36,6 +36,14 @@ export const isUserAdmin = (user: UserInfo): boolean => {
   return false;
 };
 
+export const isGroupAdmin = (user: UserInfo): boolean => {
+  if (user) {
+    const adminElm = user.groups.find((elm: JWTGroup) => elm.role === RoleType.ADMIN);
+    return !!adminElm;
+  }
+  return false;
+};
+
 export const roleToString = (role: RoleType): string => {
   switch (role) {
     case RoleType.ADMIN:

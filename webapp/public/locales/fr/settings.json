@@ -47,5 +47,6 @@
   "deleteGroupConfirmation": "Êtes-vous sûr de vouloir supprimer ce groupe ?",
   "deleteUserConfirmation": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
   "deleteTokenConfirmation": "Êtes-vous sûr de vouloir supprimer ce token ?",
-  "printTokenMessage": "Veuillez noter et enregistrer le token qui s'affiche ci-dessous en lieu sûr"        
+  "printTokenMessage": "Veuillez noter et enregistrer le token qui s'affiche ci-dessous en lieu sûr",
+  "removeUserFromGroup": "Êtes vous sûr de vouloir supprimer cet utilisateur du groupe ?"            
 }

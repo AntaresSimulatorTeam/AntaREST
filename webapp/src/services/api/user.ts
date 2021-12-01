@@ -89,6 +89,11 @@ export const createRole = async (role: RoleCreationDTO): Promise<any> => {
   return res.data;
 };
 
+export const deleteUserRole = async (groupId: string, userId: number): Promise<any> => {
+  const res = await client.delete(`/v1/roles/${groupId}/${userId}`);
+  return res.data;
+};
+
 export const deleteAllRoles = async (id: number): Promise<any> => {
   const res = await client.delete(`/v1/users/roles/${id}`);
   return res.data;
