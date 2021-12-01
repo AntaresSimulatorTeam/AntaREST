@@ -42,6 +42,7 @@ const GroupsSettings = (props: PropTypes) => {
   const [groupList, setGroupList] = useState<Array<UserGroup>>([]);
   const [selectedGroup, setActiveGroup] = useState<UserGroup>();
   const [deletionInfo, setDeletionInfo] = useState<DeletionInfo>({ type: 'group', data: '' });
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [filter, setFilter] = useState<string>('');
   const { user } = props;
 
@@ -200,10 +201,12 @@ const GroupsSettings = (props: PropTypes) => {
   };
 
   useEffect(() => {
+    let tmpIsAdmin = false;
+    if (user !== undefined) tmpIsAdmin = isUserAdmin(user);
     const init = async () => {
       if (user !== undefined) {
         let groups: Array<UserGroup> = [];
-        if (isUserAdmin(user)) {
+        if (tmpIsAdmin) {
           try {
             const res = await getGroups();
             groups = res
@@ -221,6 +224,7 @@ const GroupsSettings = (props: PropTypes) => {
       }
     };
     init();
+    setIsAdmin(tmpIsAdmin);
   }, [user, t, enqueueSnackbar]);
 
   return (
@@ -228,12 +232,12 @@ const GroupsSettings = (props: PropTypes) => {
       searchFilter={(input: string) => setFilter(input)}
       placeholder={t('settings:groupsSearchbarPlaceholder')}
       buttonValue={t('settings:createGroup')}
-      onButtonClick={createNewGroup}
+      onButtonClick={isAdmin ? createNewGroup : undefined}
     >
       <UserGroupView
         data={groupList}
         filter={filter}
-        onDeleteGroupClick={user !== undefined && isUserAdmin(user) ? onDeleteGroupClick : undefined}
+        onDeleteGroupClick={isAdmin ? onDeleteGroupClick : undefined}
         onDeleteUserClick={onDeleteUserClick}
         onUpdateClick={onUpdateClick}
         onItemClick={onItemClick}
@@ -242,6 +246,7 @@ const GroupsSettings = (props: PropTypes) => {
       {openModal && (
         <GroupModal
           open={openModal}
+          isAdmin={isAdmin}
           onClose={onModalClose}
           onSave={onModalSave}
           group={selectedGroup}
@@ -252,7 +257,7 @@ const GroupsSettings = (props: PropTypes) => {
         <ConfirmationModal
           open={openConfirmationModal}
           title={t('main:confirmationModalTitle')}
-          message={deletionInfo.type === 'group' ? t('settings:deleteGroupConfirmation') : t('settings:deleteUserConfirmation')}
+          message={deletionInfo.type === 'group' ? t('settings:deleteGroupConfirmation') : t('settings:removeUserFromGroup')}
           handleYes={deletionInfo.type === 'group' ? manageGroupDeletion : manageUserDeletion}
           handleNo={() => setOpenConfirmationModal(false)}
         />

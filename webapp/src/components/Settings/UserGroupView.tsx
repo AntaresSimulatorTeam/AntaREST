@@ -189,16 +189,16 @@ const UserGroupView = (props: PropTypes) => {
                   ))}
                 </List>
               </Collapse>
-              <RoleModal
-                open={userRoleModal.user !== undefined}
-                onClose={() => setUserRoleModal({ group: undefined, user: undefined })}
-                onSave={onUserUpdateRole}
-                group={userRoleModal.group}
-                user={userRoleModal.user as UserRoleDTO}
-              />
             </Fragment>
           ),
       )}
+      <RoleModal
+        open={userRoleModal.user !== undefined}
+        onClose={() => setUserRoleModal({ group: undefined, user: undefined })}
+        onSave={onUserUpdateRole}
+        group={userRoleModal.group}
+        user={userRoleModal.user as UserRoleDTO}
+      />
     </List>
   );
 };

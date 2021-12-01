@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createStyles, makeStyles, Theme, Select, MenuItem } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, Select, MenuItem, Typography } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import GenericModal from '../../ui/GenericModal';
 import { GroupDTO, RoleType, UserRoleDTO } from '../../../common/types';
@@ -26,8 +26,18 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     margin: theme.spacing(1),
   },
   select: {
-    margin: theme.spacing(2),
     maxWidth: '400px',
+  },
+  permission: {
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    margin: theme.spacing(2),
+  },
+  permissionLabel: {
+    color: theme.palette.primary.main,
+    fontSize: '1em',
   },
 }));
 
@@ -58,20 +68,23 @@ const RoleModal = (props: PropTypes) => {
       title={`${user?.name} in "${group?.name}"`}
     >
       <div className={classes.roleList}>
-        <Select
-          value={selection}
-          onChange={(event: React.ChangeEvent<{ value: unknown }>) =>
-            setSelection(event.target.value as RoleType)
+        <div className={classes.permission}>
+          <Typography className={classes.permissionLabel}>{t('settings:permissionsLabel')}</Typography>
+          <Select
+            value={selection}
+            onChange={(event: React.ChangeEvent<{ value: unknown }>) =>
+              setSelection(event.target.value as RoleType)
           }
-          label={t('settings:groupNameLabel')}
-          className={classes.select}
-        >
-          {menuItems.map((item) => (
-            <MenuItem key={item.role} value={item.role}>
-              {t(item.tr)}
-            </MenuItem>
-          ))}
-        </Select>
+            label={t('settings:groupNameLabel')}
+            className={classes.select}
+          >
+            {menuItems.map((item) => (
+              <MenuItem key={item.role} value={item.role}>
+                {t(item.tr)}
+              </MenuItem>
+            ))}
+          </Select>
+        </div>
       </div>
     </GenericModal>
   );

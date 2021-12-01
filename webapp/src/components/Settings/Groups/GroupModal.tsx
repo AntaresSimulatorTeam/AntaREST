@@ -18,7 +18,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'center',
     alignItems: 'center',
     padding: theme.spacing(3),
-    marginBottom: theme.spacing(2),
+    marginBottom: theme.spacing(0),
   },
   idFields: {
     width: '70%',
@@ -40,7 +40,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
     width: '70%',
     height: '50px',
-    marginBottom: theme.spacing(2),
+    margin: theme.spacing(2, 0),
   },
   addText: {
     color: theme.palette.primary.main,
@@ -75,6 +75,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 }));
 
 interface PropTypes {
+    isAdmin: boolean;
     open: boolean;
     onClose: () => void;
     onSave: (name: string, userList: Array<UserRoleDTO>) => void;
@@ -86,7 +87,7 @@ const GroupModal = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { open, group, userId, onClose, onSave } = props;
+  const { open, group, userId, isAdmin, onClose, onSave } = props;
   const [text, setText] = useState<string>('');
   const [userList, setUserList] = useState<Array<UserDTO>>([]);
   const [addedUser, setAddedUser] = useState<Array<UserRoleDTO>>([]);
@@ -144,6 +145,7 @@ const GroupModal = (props: PropTypes) => {
       handleSave={() => onSave(text, addedUser)}
       title={group ? `${t('settings:group')} - ${group.group.name}` : t('settings:newGroupTitle')}
     >
+      {(isAdmin || group === undefined) && (
       <div className={classes.infos}>
         <TextField
           className={classes.idFields}
@@ -153,6 +155,7 @@ const GroupModal = (props: PropTypes) => {
           value={text}
         />
       </div>
+      )}
       <div className={classes.addInfo}>
         <div className={classes.userSelect}>
           <Typography variant="h6" component="div" className={classes.addText}>{t('settings:users')}</Typography>
