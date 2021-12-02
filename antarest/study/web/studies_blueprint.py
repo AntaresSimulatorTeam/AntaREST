@@ -198,21 +198,25 @@ def create_study_routes(
 
         return uuid
 
-    @bp.post(
+    @bp.get(
         "/studies/{uuid}/synthesis",
-        status_code=HTTPStatus.CREATED,
         tags=[APITag.study_management],
         summary="Return study synthesis",
-        response_model=str,
+        response_model=FileStudyTreeConfigDTO,
     )
     def get_study_synthesis(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> FileStudyTreeConfigDTO:
+    ) -> Any:
         study_id = sanitize_uuid(uuid)
         logger.info(
             f"Return a synthesis for study '{study_id}'",
             extra={"user": current_user.id},
+        )
+        print(
+            "----------------- STUDY ID: ",
+            study_id,
+            " -------------------------",
         )
         params = RequestParameters(user=current_user)
         return study_service.get_study_synthesis(study_id, params)
