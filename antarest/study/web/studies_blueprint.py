@@ -32,6 +32,9 @@ from antarest.study.model import (
     StudyDownloadDTO,
 )
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfigDTO,
+)
 from antarest.study.storage.study_download_utils import StudyDownloader
 
 logger = logging.getLogger(__name__)
@@ -194,6 +197,25 @@ def create_study_routes(
         )
 
         return uuid
+
+    @bp.post(
+        "/studies/{uuid}/synthesis",
+        status_code=HTTPStatus.CREATED,
+        tags=[APITag.study_management],
+        summary="Return study synthesis",
+        response_model=str,
+    )
+    def get_study_synthesis(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> FileStudyTreeConfigDTO:
+        study_id = sanitize_uuid(uuid)
+        logger.info(
+            f"Return a synthesis for study '{study_id}'",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.get_study_synthesis(study_id, params)
 
     @bp.get(
         "/studies/{uuid}/export",

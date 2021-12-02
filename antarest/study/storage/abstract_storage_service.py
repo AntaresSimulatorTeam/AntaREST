@@ -30,6 +30,7 @@ from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
     FileStudyTreeConfig,
+    FileStudyTreeConfigDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
@@ -449,6 +450,17 @@ class AbstractStorageService(IStudyStorageService[T]):
             output_id: output simulation
 
         Returns:
+
+        """
+        raise NotImplementedError()
+
+    def get_synthesis(self, metadata: T) -> FileStudyTreeConfigDTO:
+        """
+        Return study synthesis
+        Args:
+            metadata: study
+
+        Returns: FileStudyTreeConfigDTO
 
         """
         raise NotImplementedError()

@@ -10,6 +10,9 @@ from antarest.study.model import (
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfigDTO,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 T = TypeVar("T", bound=Study)
@@ -244,6 +247,18 @@ class IStudyStorageService(ABC, Generic[T]):
             dest: destination path
             outputs: keep outputs or not
         Returns: None
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_synthesis(self, metadata: T) -> FileStudyTreeConfigDTO:
+        """
+        Return study synthesis
+        Args:
+            metadata: study
+
+        Returns: FileStudyTreeConfigDTO
 
         """
         raise NotImplementedError()

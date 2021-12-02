@@ -50,6 +50,9 @@ from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
 )
 from antarest.study.storage.patch_service import PatchService
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfigDTO,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
