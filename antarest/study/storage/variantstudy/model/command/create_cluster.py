@@ -72,6 +72,29 @@ class CreateCluster(ICommand):
         else:
             return validate_matrix(v, values)
 
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+        if self.area_id not in study_data.config.areas:
+            return CommandOutput(
+                status=False,
+                message=f"Area '{self.area_id}' does not exist",
+            )
+
+        cluster_id = transform_name_to_id(self.cluster_name)
+        for cluster in study_data.config.areas[self.area_id].thermals:
+            if cluster.id == cluster_id:
+                return CommandOutput(
+                    status=False,
+                    message=f"Cluster '{self.cluster_name}' already exist",
+                )
+
+        study_data.config.areas[self.area_id].thermals.append(
+            Cluster(id=cluster_id, name=self.cluster_name)
+        )
+        return CommandOutput(
+            status=True,
+            message=f"Cluster '{self.cluster_name}' added to area '{self.area_id}'",
+        )
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.area_id not in study_data.config.areas:
             return CommandOutput(
