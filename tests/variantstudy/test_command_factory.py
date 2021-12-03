@@ -215,7 +215,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
             action=CommandName.UPDATE_FILE.value,
             args={
                 "target": "settings/resources/study",
-                "base64Data": "",
+                "b64Data": "",
             },
         ),
     ],

@@ -22,6 +22,7 @@ from antarest.core.exceptions import (
     StudyTypeUnsupported,
     UnsupportedOperationOnArchivedStudy,
     NotAManagedStudyException,
+    CommandApplicationError,
 )
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
@@ -1033,7 +1034,7 @@ class StudyService:
             elif isinstance(data, bytes):
                 return UpdateRawFile(
                     target=url,
-                    b64Data=base64.b64encode(data),
+                    b64Data=base64.b64encode(data).decode("utf-8"),
                     command_context=self.variant_study_service.command_factory.command_context,
                 )
         raise NotImplementedError()
@@ -1057,9 +1058,11 @@ class StudyService:
             tree_node=tree_node, url=url, data=data
         )
         if isinstance(study_service, RawStudyService):
-            command.apply(study_data=file_study)
+            res = command.apply(study_data=file_study)
             if not is_managed(study):
                 tree_node.denormalize()
+            if not res.status:
+                raise CommandApplicationError(res.message)
 
             lastsave_url = "study/antares/lastsave"
             lastsave_node = file_study.tree.get_node(lastsave_url.split("/"))

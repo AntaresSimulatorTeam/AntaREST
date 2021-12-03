@@ -160,15 +160,15 @@ class SlurmLauncher(AbstractLauncher):
         self, job_id: str, xpansion_mode: bool = False
     ) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
-        if xpansion_mode:
-            study_id = (
-                self.storage_service.variant_study_service.create_variant_study(
-                    study_id,
-                    "xpansion result",
-                    params=RequestParameters(user=DEFAULT_ADMIN_USER),
-                )
-                or study_id
-            )
+        # if xpansion_mode:
+        #     study_id = (
+        #         self.storage_service.variant_study_service.create_variant_study(
+        #             study_id,
+        #             "xpansion result",
+        #             params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        #         )
+        #         or study_id
+        #     )
 
         return self.storage_service.import_output(
             study_id,
@@ -318,8 +318,11 @@ class SlurmLauncher(AbstractLauncher):
 
                 self._assert_study_version_is_supported(study_uuid, params)
 
+                launcher_args = deepcopy(self.launcher_args)
+                if launcher_params and launcher_params.get("xpansion", False):
+                    launcher_args.xpansion_mode = True
                 run_with(
-                    self.launcher_args, self.launcher_params, show_banner=False
+                    launcher_args, self.launcher_params, show_banner=False
                 )
                 self.callbacks.update_status(
                     str(launch_uuid), JobStatus.RUNNING, None, None
