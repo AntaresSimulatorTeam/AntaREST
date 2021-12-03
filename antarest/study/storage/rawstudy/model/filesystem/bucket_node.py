@@ -36,7 +36,9 @@ class BucketNode(FolderNode):
             else:
                 self._save(data, key)
 
-    def _save(self, data: Union[str, int, bool, float, bytes, JSON], key: str) -> None:
+    def _save(
+            self, data: Union[str, int, bool, float, bytes, JSON], key: str
+    ) -> None:
         if isinstance(data, (str, bytes)):
             RawFileNode(self.context, self.config.next_file(key)).save(data)
         elif isinstance(data, dict):
