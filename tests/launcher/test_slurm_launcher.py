@@ -203,7 +203,7 @@ def test_run_study(
     slurm_launcher._clean_local_workspace.assert_called_once()
     storage_service.export_study_flat.assert_called_once()
     slurm_launcher.callbacks.update_status.assert_called_once_with(
-        ANY, job_status, None, None
+        ANY, job_status, ANY, None
     )
     slurm_launcher.start.assert_called_once()
     if job_status == JobStatus.RUNNING:
