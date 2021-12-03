@@ -32,5 +32,6 @@
     "onMatrixIdCopySuccess": "Matrix id copied !",
     "jsonFormat": "JSON Format",
     "graphSelector":  "Columns",
-    "monotonicView": "Monotonic"
+    "monotonicView": "Monotonic",
+    "matrixEmpty": "No data"
   }

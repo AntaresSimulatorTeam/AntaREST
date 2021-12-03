@@ -34,6 +34,7 @@ i18n
       'settings',
       'data',
       'variants',
+      'downloads',
     ],
     defaultNS: 'main',
   });

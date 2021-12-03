@@ -1,14 +1,16 @@
 import argparse
 import logging
 import sys
+from datetime import timezone, datetime
 from pathlib import Path
 from typing import Tuple, Any, Optional, Dict
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
+from dateutil import tz
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -19,6 +21,8 @@ from antarest import __version__
 from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
+from antarest.core.filetransfer.main import build_filetransfer_service
+from antarest.core.filetransfer.web import create_file_transfer_api
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.persistence import upgrade_db
 from antarest.core.swagger import customize_openapi
@@ -36,6 +40,7 @@ from antarest.login.auth import Auth, JwtSettings
 from antarest.login.main import build_login
 from antarest.matrixstore.main import build_matrixstore
 from antarest.study.main import build_study_service
+from antarest.study.storage.rawstudy.watcher import Watcher
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +231,10 @@ def fastapi_app(
     )
     event_bus = build_eventbus(application, config, True, redis_client)
     cache = build_cache(config=config, redis_client=redis_client)
+
+    filetransfer_service = build_filetransfer_service(
+        application, event_bus, config
+    )
     task_service = build_taskjob_manager(application, config, event_bus)
 
     user_service = build_login(application, config, event_bus=event_bus)
@@ -237,10 +246,13 @@ def fastapi_app(
         config,
         matrix_service=matrix_service,
         cache=cache,
+        file_transfer_manager=filetransfer_service,
         task_service=task_service,
         user_service=user_service,
         event_bus=event_bus,
     )
+    watcher = Watcher(config=config, service=study_service)
+    watcher.start()
 
     launcher = build_launcher(
         application,
@@ -255,6 +267,7 @@ def fastapi_app(
     services["matrix"] = matrix_service
     services["user"] = user_service
     services["cache"] = cache
+    services["watcher"] = watcher
 
     customize_openapi(application)
     return application, services

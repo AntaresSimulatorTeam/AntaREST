@@ -1,5 +1,6 @@
 import io
 import shutil
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from typing import Union
@@ -42,6 +43,7 @@ def assert_url_content(
         cache=Mock(),
         user_service=Mock(),
         task_service=Mock(),
+        file_transfer_manager=Mock(),
         storage_service=storage_service,
         matrix_service=Mock(spec=MatrixService),
         config=storage_service.raw_study_service.config,
@@ -406,6 +408,7 @@ def test_sta_mini_copy(storage_service) -> None:
         cache=Mock(),
         user_service=Mock(),
         task_service=Mock(),
+        file_transfer_manager=Mock(),
         storage_service=storage_service,
         matrix_service=Mock(spec=MatrixService),
         config=storage_service.raw_study_service.config,
@@ -453,8 +456,8 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "id": "STA-mini",
             "name": "STA-mini",
             "version": 700,
-            "created": 1480683452,
-            "updated": 1602678639,
+            "created": str(datetime.fromtimestamp(1480683452)),
+            "updated": str(datetime.fromtimestamp(1602678639)),
             "type": "rawstudy",
             "owner": {"id": None, "name": "Andrea SGATTONI"},
             "groups": [],
@@ -507,6 +510,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         app,
         cache=Mock(),
         task_service=Mock(),
+        file_transfer_manager=Mock(),
         storage_service=storage_service,
         user_service=Mock(),
         matrix_service=Mock(spec=MatrixService),
@@ -542,6 +546,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         app,
         cache=Mock(),
         task_service=Mock(),
+        file_transfer_manager=Mock(),
         storage_service=storage_service,
         user_service=Mock(),
         matrix_service=Mock(spec=MatrixService),

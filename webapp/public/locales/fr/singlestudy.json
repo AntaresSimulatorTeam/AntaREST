@@ -36,9 +36,16 @@
   "generalInfo": "Informations générales",
   "renamestudy": "Renommer l'étude",
   "killStudy": "Arrêter",
+  "exportOutput": "Exporter les sorties",
   "confirmKill" : "Êtes-vous sûr de vouloir arrêter la tâche de simulation ?",
+  "failedToExportOutput": "Echec lors de l'export de la sortie",
+  "failedToListOutputs": "Echec de la récupération des sorties",
   "notes": "Notes",
   "fetchCommentsError": "Echec lors de la récupération des commentaires",
   "commentsSaved": "Commentaires enregistrés avec succès",
-  "commentsNotSaved": "Erreur lors de l'enregistrement des commentaires"
+  "commentsNotSaved": "Erreur lors de l'enregistrement des commentaires",
+  "onStudyIdCopySuccess": "Identifiant de l'étude copié",
+  "onStudyIdCopyError": "Erreur lors de la copie de l'identifiant de l'étude",
+  "copyId": "Copie l'identifiant de l'étude",
+  "copyIdDir": "Copier l'ID"
 }

@@ -36,9 +36,16 @@
   "generalInfo": "General informations",
   "renamestudy": "Rename study",
   "killStudy": "Cancel",
+  "exportOutput": "Export output",
   "confirmKill": "Are you sure you want to cancel the simulation job ?",
+  "failedToExportOutput": "Failed to export the output",
+  "failedToListOutputs": "Failed to retrieve output list",
   "notes": "Notes",
   "fetchCommentsError": "Failed to fetch comments",
   "commentsSaved": "Comments saved successfully",
-  "commentsNotSaved": "Comments not saved"
+  "commentsNotSaved": "Comments not saved",
+  "onStudyIdCopySucces": "Study id copied !",
+  "onStudyIdCopyError": "Failed to copy study id",
+  "copyId": "Copy the study id",
+  "copyIdDir": "Copy id"
 }

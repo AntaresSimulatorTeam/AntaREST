@@ -7,7 +7,6 @@ from typing import Optional, IO, List
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.model import SUB_JSON
 from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
 )
@@ -76,8 +75,12 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             raw_meta = study.get(["study", "antares"])
             metadata.name = raw_meta["caption"]
             metadata.version = raw_meta["version"]
-            metadata.created_at = datetime.fromtimestamp(raw_meta["created"])
-            metadata.updated_at = datetime.fromtimestamp(raw_meta["lastsave"])
+            metadata.created_at = datetime.utcfromtimestamp(
+                raw_meta["created"]
+            )
+            metadata.updated_at = datetime.utcfromtimestamp(
+                raw_meta["lastsave"]
+            )
         except Exception as e:
             logger.error(
                 "Failed to fetch study %s raw metadata!",
@@ -87,8 +90,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             if fallback_on_default is not None:
                 metadata.name = metadata.name or "unnamed"
                 metadata.version = metadata.version or 0
-                metadata.created_at = metadata.created_at or datetime.now()
-                metadata.updated_at = metadata.updated_at or datetime.now()
+                metadata.created_at = metadata.created_at or datetime.utcnow()
+                metadata.updated_at = metadata.updated_at or datetime.utcnow()
             else:
                 raise e
 
@@ -167,8 +170,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             name=dest_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(get_default_workspace_path(self.config) / dest_id),
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
             version=src_meta.version,
         )
 
@@ -245,31 +248,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         metadata.path = str(path_study)
         return metadata
-
-    def edit_study(
-        self,
-        metadata: RawStudy,
-        url: str,
-        new: SUB_JSON,
-    ) -> SUB_JSON:
-        """
-        Replace data on disk with new
-        Args:
-            metadata: study
-            url: data path to reach
-            new: new data to replace
-
-        Returns: new data replaced
-
-        """
-        # Get data
-        self._check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-        _, study = self.study_factory.create_from_fs(study_path, metadata.id)
-        study.save(new, url.split("/"))  # type: ignore
-        del study
-        remove_from_cache(self.cache, metadata.id)
-        return new
 
     def export_study_flat(
         self, metadata: RawStudy, dest: Path, outputs: bool = True

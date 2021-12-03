@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+from typing import Union
 from unittest.mock import Mock, seal
 from uuid import uuid4
 
@@ -8,12 +9,17 @@ import pytest
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
+from antarest.core.model import JSON, SUB_JSON
+from antarest.core.permissions import (
+    StudyPermissionType,
+)
 from antarest.core.requests import (
     RequestParameters,
 )
 from antarest.core.roles import RoleType
 from antarest.login.model import User, Group, GroupDTO
 from antarest.login.service import LoginService
+from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -30,9 +36,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService, UserHasNotPermissionError
-from antarest.core.permissions import (
-    StudyPermissionType,
-)
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     FileStudyTreeConfig,
@@ -41,8 +45,24 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Set,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
+    IniFileNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+)
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
+    RawFileNode,
+)
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
+from antarest.study.storage.variantstudy.model.command_context import (
+    CommandContext,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
@@ -64,6 +84,7 @@ def build_study_service(
         repository=repository,
         event_bus=Mock(),
         task_service=Mock(),
+        file_transfer_manager=Mock(),
         cache_service=cache_service,
         config=config,
     )
@@ -102,8 +123,8 @@ def study_to_dto(study: Study, summary: bool) -> StudyMetadataDTO:
         id=study.id,
         name=study.name,
         version=int(study.version),
-        created=study.created_at.timestamp(),
-        updated=study.updated_at.timestamp(),
+        created=str(study.created_at),
+        updated=str(study.updated_at),
         workspace=DEFAULT_WORKSPACE_NAME,
         managed=True,
         type=study.type,
@@ -134,8 +155,8 @@ def test_study_listing() -> None:
         type="rawstudy",
         name="A",
         version=810,
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
         path="",
         workspace=DEFAULT_WORKSPACE_NAME,
     )
@@ -145,8 +166,8 @@ def test_study_listing() -> None:
         type="rawstudy",
         name="B",
         version=810,
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
         path="",
         workspace="other",
     )
@@ -156,8 +177,8 @@ def test_study_listing() -> None:
         type="rawstudy",
         name="C",
         version=810,
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
         path="",
         workspace="other2",
     )
@@ -281,8 +302,8 @@ def test_create_study() -> None:
         name="new-study",
         version="VERSION",
         author="AUTHOR",
-        created_at=datetime.fromtimestamp(1234),
-        updated_at=datetime.fromtimestamp(9876),
+        created_at=datetime.utcfromtimestamp(1234),
+        updated_at=datetime.utcfromtimestamp(9876),
         content_status=StudyContentStatus.VALID,
         workspace=DEFAULT_WORKSPACE_NAME,
         owner=user,
@@ -375,8 +396,8 @@ def test_save_metadata() -> None:
         name="CAPTION",
         version="VERSION",
         author="AUTHOR",
-        created_at=datetime.fromtimestamp(1234),
-        updated_at=datetime.fromtimestamp(9876),
+        created_at=datetime.utcfromtimestamp(1234),
+        updated_at=datetime.utcfromtimestamp(9876),
         content_status=StudyContentStatus.VALID,
         workspace=DEFAULT_WORKSPACE_NAME,
         owner=user,
@@ -519,9 +540,13 @@ def test_change_owner() -> None:
     alice = User(id=1)
     bob = User(id=2, name="Bob")
 
+    mock_file_study = Mock()
+    mock_file_study.tree.get_node.return_value = Mock(spec=IniFileNode)
+
     repository = Mock()
     user_service = Mock()
-    study_service = Mock()
+    study_service = Mock(spec=RawStudyService)
+    study_service.get_raw.return_value = mock_file_study
     config = Config(
         storage=StorageConfig(
             workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
@@ -530,10 +555,14 @@ def test_change_owner() -> None:
     service = build_study_service(
         study_service, repository, config, user_service=user_service
     )
+    service.variant_study_service.command_factory.command_context = Mock(
+        spec=CommandContext
+    )
 
     study = RawStudy(id=uuid, owner=alice)
     repository.get.return_value = study
     user_service.get_user.return_value = bob
+    service._edit_study_using_command = Mock()
 
     service.change_owner(
         uuid, 2, RequestParameters(JWTUser(id=1, impersonator=1, type="users"))
@@ -543,8 +572,8 @@ def test_change_owner() -> None:
     )
     repository.save.assert_called_once_with(RawStudy(id=uuid, owner=bob))
 
-    study_service.edit_study.assert_called_once_with(
-        study, url="study/antares/author", new="Bob"
+    service._edit_study_using_command.assert_called_once_with(
+        study=study, url="study/antares/author", data="Bob"
     )
 
     with pytest.raises(UserHasNotPermissionError):
@@ -874,3 +903,75 @@ def test_delete_with_prefetch(tmp_path: Path):
         study_uuid,
         params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
+
+
+@pytest.mark.unit_test
+def test_edit_study_with_command():
+    study_id = "study_id"
+
+    service = build_study_service(
+        raw_study_service=Mock(),
+        repository=Mock(),
+        config=Mock(),
+    )
+    command = Mock()
+    service._create_edit_study_command = Mock(return_value=command)
+    file_study = Mock()
+    file_study.config.study_id = study_id
+    study_service = Mock(spec=RawStudyService)
+    study_service.get_raw.return_value = file_study
+    service._get_study_storage_service = Mock(return_value=study_service)
+
+    service._edit_study_using_command(study=Mock(), url="", data=[])
+    command.apply.assert_called_with(file_study)
+
+    study_service = Mock(spec=VariantStudyService)
+    study_service.get_raw.return_value = file_study
+    service._get_study_storage_service = Mock(return_value=study_service)
+    service._edit_study_using_command(study=Mock(), url="", data=[])
+
+    study_service.append_command.assert_called_once_with(
+        study_id=study_id,
+        command=command.to_dto(),
+        params=RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+
+
+@pytest.mark.unit_test
+@pytest.mark.parametrize(
+    "tree_node,url,data,expected_name",
+    [
+        (Mock(spec=IniFileNode), "url", 0, "update_config"),
+        (Mock(spec=InputSeriesMatrix), "url", [[0]], "replace_matrix"),
+        (Mock(spec=RawFileNode), "comments", "0", "update_comments"),
+    ],
+)
+def test_create_command(
+    tree_node: INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON],
+    url: str,
+    data: SUB_JSON,
+    expected_name: str,
+):
+    service = build_study_service(
+        raw_study_service=Mock(),
+        repository=Mock(),
+        config=Mock(),
+    )
+
+    matrix_service = Mock(spec=MatrixService)
+    matrix_service.create.return_value = "matrix_id"
+    command_context = CommandContext(
+        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
+        matrix_service=matrix_service,
+        patch_service=Mock(spec=PatchService),
+    )
+
+    service.variant_study_service.command_factory.command_context = (
+        command_context
+    )
+
+    command = service._create_edit_study_command(
+        tree_node=tree_node, url=url, data=data
+    )
+
+    assert command.command_name.value == expected_name

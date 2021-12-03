@@ -12,6 +12,8 @@ import MatrixView from '../../ui/MatrixView/index';
 import ImportForm from '../../ui/ImportForm';
 import { CommonStudyStyle } from './utils/utils';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
+import NoContent from '../../ui/NoContent';
+import SimpleLoader from '../../ui/loaders/SimpleLoader';
 
 const logErr = debug('antares:createimportform:error');
 
@@ -29,6 +31,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   buttonElement: {
     margin: theme.spacing(0.2),
   },
+
 }));
 
 interface PropTypes {
@@ -105,8 +108,20 @@ const StudyMatrixView = (props: PropTypes) => {
           </div>
           )}
         <Paper className={classes.content}>
-          {data && Object.keys(data).length > 0 && (
+          {!loaded && (
+            <SimpleLoader />
+          )}
+          {loaded && data && Object.keys(data).length > 0 ? (
             <MatrixView matrix={data} readOnly />
+          ) : (
+            loaded && (
+            <NoContent
+              title="data:matrixEmpty"
+              callToAction={
+                <ImportForm text={t('main:import')} onImport={onImport} />
+              }
+            />
+            )
           )}
         </Paper>
       </div>

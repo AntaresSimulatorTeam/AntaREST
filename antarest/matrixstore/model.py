@@ -44,8 +44,8 @@ class MatrixDataSetDTO(BaseModel):
     owner: UserInfo
     groups: List[GroupDTO]
     public: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: str
+    updated_at: str
 
 
 groups_dataset_relation = Table(
@@ -126,8 +126,8 @@ class MatrixDataSet(Base):  # type: ignore
                 GroupDTO(id=group.id, name=group.name) for group in self.groups
             ],
             public=self.public,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
+            created_at=str(self.created_at),
+            updated_at=str(self.updated_at),
         )
 
     def __eq__(self, other: Any) -> bool:

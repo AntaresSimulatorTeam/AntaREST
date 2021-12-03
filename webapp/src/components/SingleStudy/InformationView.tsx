@@ -1,7 +1,6 @@
 import debug from 'debug';
-import moment from 'moment';
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
 import {
@@ -14,15 +13,19 @@ import {
   Chip,
   Tooltip,
   useTheme,
+  MenuItem,
+  Menu,
 } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import _ from 'lodash';
 import { AppState } from '../../App/reducers';
 import {
   RoleType,
   StudyMetadata,
+  StudyOutput,
 } from '../../common/types';
 import {
   deleteStudy as callDeleteStudy,
@@ -30,15 +33,17 @@ import {
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
   renameStudy as callRenameStudy,
-  getExportUrl,
+  exportStudy,
+  exportOuput as callExportOutput,
+  getStudyOutputs,
 } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
-import { hasAuthorization, getStudyExtendedName } from '../../services/utils';
-import DownloadLink from '../ui/DownloadLink';
+import { hasAuthorization, getStudyExtendedName, convertUTCToLocalTime } from '../../services/utils';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import PermissionModal from './PermissionModal';
 import ButtonLoader from '../ui/ButtonLoader';
 import RenameModal from './RenameModal';
+import { CopyIcon } from '../Data/utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const logError = debug('antares:singlestudyview:error');
@@ -238,6 +243,8 @@ const InformationView = (props: PropTypes) => {
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [openPermissionModal, setOpenPermissionModal] = useState<boolean>(false);
   const [openRenameModal, setOpenRenameModal] = useState<boolean>(false);
+  const [outputList, setOutputList] = useState<Array<string>>();
+  const [outputExportButtonAnchor, setOutputExportButtonAnchor] = React.useState<null | HTMLElement>(null);
 
   const launchStudy = async () => {
     if (study) {
@@ -297,6 +304,37 @@ const InformationView = (props: PropTypes) => {
     }
   };
 
+  const exportOutput = _.debounce(async (output: string) => {
+    setOutputExportButtonAnchor(null);
+    if (study) {
+      try {
+        await callExportOutput(study.id, output);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
+      }
+    }
+  }, 2000, { leading: true, trailing: false });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getStudyOutputs(study.id);
+        setOutputList(res.map((o: StudyOutput) => o.name));
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToListOutputs'), e as AxiosError);
+      }
+    })();
+  }, [study, t, enqueueSnackbar]);
+
+  const copyId = (studyId: string): void => {
+    try {
+      navigator.clipboard.writeText(studyId);
+      enqueueSnackbar(t('singlestudy:onStudyIdCopySuccess'), { variant: 'success' });
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:onStudyIdCopyError'), e as AxiosError);
+    }
+  };
+
   return study ? (
     <Paper className={classes.root}>
       <div className={classes.header}>
@@ -326,6 +364,9 @@ const InformationView = (props: PropTypes) => {
           </div>
           <div className={classes.mainInfo}>
             <Typography style={{ fontSize: '0.9em', color: 'gray' }}>{study.id}</Typography>
+            <Tooltip title={t('singlestudy:copyId') as string} placement="top">
+              <CopyIcon style={{ marginLeft: '0.5em', cursor: 'pointer' }} onClick={() => copyId(study.id)} />
+            </Tooltip>
           </div>
         </div>
         <div className={classes.scrollInfoContainer}>
@@ -339,7 +380,7 @@ const InformationView = (props: PropTypes) => {
             <div className={clsx(classes.info, classes.alignBaseline)}>
               <Typography className={classes.infoLabel}>{t('singlestudy:creationDate')}</Typography>
               <Typography variant="body2">
-                {moment.unix(study.creationDate).format('YYYY/MM/DD HH:mm')}
+                {convertUTCToLocalTime(study.creationDate)}
               </Typography>
             </div>
             <div className={clsx(classes.info, classes.alignBaseline)}>
@@ -347,7 +388,7 @@ const InformationView = (props: PropTypes) => {
                 {t('singlestudy:modificationDate')}
               </Typography>
               <Typography variant="body2">
-                {moment.unix(study.modificationDate).format('YYYY/MM/DD HH:mm')}
+                {convertUTCToLocalTime(study.modificationDate)}
               </Typography>
             </div>
             <div className={clsx(classes.info, classes.alignBaseline)}>
@@ -410,15 +451,34 @@ const InformationView = (props: PropTypes) => {
               <Button className={classes.launchButton} onClick={launchStudy}>
                 {t('main:launch')}
               </Button>
-              <DownloadLink url={getExportUrl(study.id, false)}>
-                <Button className={classes.exportButton}>{t('main:export')}</Button>
-              </DownloadLink>
+              <ButtonLoader className={classes.exportButton} onClick={() => exportStudy(study.id, false)} fakeDelay={500}>
+                {t('main:export')}
+              </ButtonLoader>
+              {!!outputList && (
+                <>
+                  <Button className={classes.exportButton} aria-haspopup="true" onClick={(event) => setOutputExportButtonAnchor(event.currentTarget)}>
+                    {t('singlestudy:exportOutput')}
+                  </Button>
+                  <Menu
+                    id="simple-menu"
+                    anchorEl={outputExportButtonAnchor}
+                    keepMounted
+                    open={Boolean(outputExportButtonAnchor)}
+                    onClose={() => setOutputExportButtonAnchor(null)}
+                  >
+                    {outputList.map((output) => (
+                      <MenuItem onClick={() => exportOutput(output)}>
+                        {output}
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                </>
+              )}
               {study.managed && (
               <ButtonLoader className={classes.archivingButton} onClick={archiveStudy}>
                 {t('studymanager:archive')}
               </ButtonLoader>
               )}
-
             </>
           )}
         </div>

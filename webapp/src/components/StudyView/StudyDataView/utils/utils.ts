@@ -38,5 +38,6 @@ export const CommonStudyStyle = (theme: Theme): StyleRules<'content' | 'root' | 
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
     overflow: 'auto',
+    position: 'relative',
   },
 });

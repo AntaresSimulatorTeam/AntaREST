@@ -6,12 +6,14 @@ import { useTranslation } from 'react-i18next';
 import { AppState } from '../../App/reducers';
 import GenericListingView from '../ui/NavComponents/GenericListingView';
 import DataView from './DataView';
+import DataViewLoader from './DataViewLoader';
 import { deleteDataSet, getMatrixList } from '../../services/api/matrix';
 import { MatrixDataSetDTO, IDType, MatrixInfoDTO } from '../../common/types';
 import DataModal from './DataModal';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import MatrixModal from './MatrixModal';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import NoContent from '../ui/NoContent';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -28,6 +30,7 @@ const Data = (props: PropTypes) => {
   const [idForDeletion, setIdForDeletion] = useState<IDType>(-1);
   const [filter, setFilter] = useState<string>('');
   const { user } = props;
+  const [loaded, setLoaded] = useState(false);
 
   // User modal
   const [openModal, setOpenModal] = useState<boolean>(false);
@@ -95,6 +98,8 @@ const Data = (props: PropTypes) => {
         setDataList(matrix);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('data:matrixError'), e as AxiosError);
+      } finally {
+        setLoaded(true);
       }
     };
     init();
@@ -110,15 +115,21 @@ const Data = (props: PropTypes) => {
       buttonValue={t('data:createMatrix')}
       onButtonClick={() => createNewData()}
     >
-
-      <DataView
-        data={dataList}
-        filter={filter}
-        user={user}
-        onDeleteClick={onDeleteClick}
-        onUpdateClick={onUpdateClick}
-        onMatrixClick={onMatrixClick}
-      />
+      {loaded && dataList.length > 0 ? (
+        <DataView
+          data={dataList}
+          filter={filter}
+          user={user}
+          onDeleteClick={onDeleteClick}
+          onUpdateClick={onUpdateClick}
+          onMatrixClick={onMatrixClick}
+        />
+      ) : loaded && (
+        <div style={{ height: '90%' }}>
+          <NoContent />
+        </div>
+      )}
+      {!loaded && <DataViewLoader />}
       {matrixModal && currentMatrix && (
         <MatrixModal
           open={matrixModal} // Why 'openModal &&' ? => Otherwise previous data are still present

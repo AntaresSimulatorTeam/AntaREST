@@ -35,7 +35,7 @@ const DownloadLink = (props: PropTypes) => {
     location.href = url;
   };
 
-  return <span onClick={handleClick}>{children}</span>;
+  return <span style={{ cursor: 'pointer' }} onClick={handleClick}>{children}</span>;
 };
 
 DownloadLink.defaultProps = {

@@ -12,6 +12,7 @@ import PulsingDot from '../../components/ui/PulsingDot';
 import GenericTabView from '../../components/ui/NavComponents/GenericTabView';
 import Informations from '../../components/SingleStudy/Informations';
 import VariantView from '../../components/Variants/VariantView';
+import StudyViewLoader from '../../components/SingleStudy/StudyViewLoader';
 import { LaunchJob, StudyMetadata, WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
@@ -157,30 +158,27 @@ const SingleStudyView = (props: PropTypes) => {
 
   const navData: { [key: string]: () => JSX.Element } = {
     informations: () =>
-      (study ? <Informations study={study} jobs={studyJobs || []} /> : <div />),
+      (study ? <Informations study={study} jobs={studyJobs || []} /> : <StudyViewLoader />),
   };
-  if (study && study.managed) {
-    navData.variants = () => <VariantView study={study} option={option} />;
+  if (study?.managed) {
+    navData.variants = () => (study ? <VariantView study={study} option={option} /> : <div />);
   }
-  if (study && !study.archived) {
-    navData.treeView = () => <StudyView study={study} />;
+  if (!study?.archived) {
+    navData.treeView = () => (study ? <StudyView study={study} /> : <div />);
   }
+
   return (
     <div className={classes.root}>
-      {study && (
-        <>
-          <Breadcrumbs aria-label="breadcrumb" className={classes.breadcrumbs}>
-            <Link to="/" className={classes.breadcrumbsfirstelement}>
-              {t('main:allStudies')}
-            </Link>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {renderStatus()}
-              {study.name}
-            </div>
-          </Breadcrumbs>
-          <GenericTabView items={navData} studyId={studyId} initialValue={initTab} />
-        </>
-      )}
+      <Breadcrumbs aria-label="breadcrumb" className={classes.breadcrumbs}>
+        <Link to="/" className={classes.breadcrumbsfirstelement}>
+          {t('main:allStudies')}
+        </Link>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {renderStatus()}
+          {study?.name || '...'}
+        </div>
+      </Breadcrumbs>
+      <GenericTabView items={navData} studyId={studyId} initialValue={initTab} />
     </div>
   );
 };

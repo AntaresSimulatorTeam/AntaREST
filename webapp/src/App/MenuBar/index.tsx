@@ -11,6 +11,7 @@ import UserBadge from '../../components/UserBadge';
 import { getConfig } from '../../services/config';
 import { AppState } from '../reducers';
 import './style.css';
+import DownloadBadge from '../../components/DownloadsListing/DownloadBadge';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -59,6 +60,7 @@ const MenuBar = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { websocketConnected } = props;
+  const versionInfo = getConfig().version;
 
   return (
     <AppBar position="static">
@@ -68,7 +70,11 @@ const MenuBar = (props: PropTypes) => {
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <img src={logo} alt="logo" className={classes.logo} />
               <Link to="/">AntaREST</Link>
-              <div className={classes.version}>{getConfig().version.version}</div>
+              <Tooltip title={versionInfo.gitcommit}>
+                <div className={classes.version}>
+                  {versionInfo.version}
+                </div>
+              </Tooltip>
             </div>
           </div>
           <Typography className={classes.menuitem}>
@@ -80,6 +86,11 @@ const MenuBar = (props: PropTypes) => {
           <Typography className={classes.menuitem}>
             <Link to="/data">{t('main:data')}</Link>
           </Typography>
+          <DownloadBadge>
+            <Typography className={classes.menuitem}>
+              <Link to="/downloads">{t('main:exports')}</Link>
+            </Typography>
+          </DownloadBadge>
         </div>
         {!websocketConnected &&
           (

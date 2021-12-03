@@ -27,6 +27,7 @@ class Watcher:
     def __init__(self, config: Config, service: StudyService):
         self.service = service
         self.config = config
+        self.should_stop = False
         self.thread = (
             threading.Thread(target=self._loop, daemon=True)
             if not config.storage.watcher_lock
@@ -40,8 +41,12 @@ class Watcher:
         Returns:
 
         """
-        if self.thread:
+        self.should_stop = False
+        if self.thread and not self.thread.is_alive():
             self.thread.start()
+
+    def stop(self) -> None:
+        self.should_stop = True
 
     @staticmethod
     def _get_lock(lock_delay: int) -> bool:
@@ -79,7 +84,13 @@ class Watcher:
             )
 
         while True:
-            self._scan()
+            try:
+                if not self.should_stop:
+                    self._scan()
+            except Exception as e:
+                logger.error(
+                    "Unexpected error when scanning workspaces", exc_info=e
+                )
             sleep(2)
 
     def _scan(self) -> None:

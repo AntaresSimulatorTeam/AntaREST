@@ -1,19 +1,14 @@
 from unittest.mock import Mock
 
-from antarest.matrixstore.service import MatrixService
+import pytest
+
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.create_cluster import (
-    CreateCluster,
 )
 from antarest.study.storage.variantstudy.model.command.remove_area import (
     RemoveArea,
@@ -26,6 +21,7 @@ from antarest.study.storage.variantstudy.model.command_context import (
 )
 
 
+@pytest.mark.unit_test
 def test_update_config(
     empty_study: FileStudy, command_context: CommandContext
 ):

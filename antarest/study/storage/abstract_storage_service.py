@@ -117,8 +117,8 @@ class AbstractStorageService(IStudyStorageService[T]):
             id=study.id,
             name=study.name,
             version=int(study.version),
-            created=study.created_at.timestamp(),
-            updated=study.updated_at.timestamp(),
+            created=str(study.created_at),
+            updated=str(study.updated_at),
             workspace=study_workspace,
             managed=study_workspace == DEFAULT_WORKSPACE_NAME,
             type=study.type,
@@ -305,6 +305,7 @@ class AbstractStorageService(IStudyStorageService[T]):
         with tempfile.TemporaryDirectory(
             dir=self.config.storage.tmp_dir
         ) as tmpdir:
+            assert target.name.endswith(".zip")
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()

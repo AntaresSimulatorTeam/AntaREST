@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TypeVar, Generic, List, Union, Optional, IO
 
-from antarest.core.model import JSON, SUB_JSON
 from antarest.core.exceptions import StudyNotFoundError
+from antarest.core.model import JSON
 from antarest.study.model import (
     Study,
     StudySimResultDTO,
@@ -73,20 +73,6 @@ class IStudyStorageService(ABC, Generic[T]):
             with_outputs: indicate either to copy the output or not
 
         Returns: destination study
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def edit_study(self, metadata: T, url: str, new: SUB_JSON) -> SUB_JSON:
-        """
-        Replace data on disk with new
-        Args:
-            metadata: study
-            url: data path to reach
-            new: new data to replace
-
-        Returns: new data replaced
 
         """
         raise NotImplementedError()

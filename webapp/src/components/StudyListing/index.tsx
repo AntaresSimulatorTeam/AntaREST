@@ -1,6 +1,7 @@
 import React, { forwardRef, useEffect } from 'react';
 import { AxiosError } from 'axios';
 import debug from 'debug';
+import _ from 'lodash';
 import { connect, ConnectedProps } from 'react-redux';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
@@ -85,6 +86,7 @@ const StudyListing = (props: PropTypes) => {
   const { studies, removeStudy, isList, scrollPosition, updateScroll } = props;
   const { enqueueSnackbar } = useSnackbar();
   const [t] = useTranslation();
+
   const launchStudy = async (study: StudyMetadata) => {
     try {
       await callLaunchStudy(study.id);
@@ -94,6 +96,8 @@ const StudyListing = (props: PropTypes) => {
       logError('Failed to launch study', study, e);
     }
   };
+
+  const debouncedLaunchStudy = _.debounce(launchStudy, 5000, { leading: true, trailing: false });
 
   const importStudy = async (study: StudyMetadata, withOutputs = false) => {
     try {
@@ -170,14 +174,14 @@ const StudyListing = (props: PropTypes) => {
                 innerElementType={innerElementType}
                 itemCount={studies.length}
                 itemSize={66}
-                itemData={{ studies, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy }}
+                itemData={{ studies, importStudy, launchStudy: debouncedLaunchStudy, deleteStudy, archiveStudy, unarchiveStudy }}
               >
                 {Row}
               </FixedSizeList>
             )
         }
           </AutoSizer>
-        ) : <StudyDirView tree={buildStudyTree(studies)} />
+        ) : <StudyDirView tree={buildStudyTree(studies)} importStudy={importStudy} launchStudy={debouncedLaunchStudy} deleteStudy={deleteStudy} archiveStudy={archiveStudy} unarchiveStudy={unarchiveStudy} />
       }
     </div>
   );

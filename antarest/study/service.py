@@ -12,7 +12,10 @@ from fastapi import HTTPException
 from markupsafe import escape
 
 from antarest.core.config import Config
-from antarest.core.model import JSON, PublicMode, StudyPermissionType
+from antarest.core.filetransfer.model import (
+    FileDownloadTaskDTO,
+)
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -21,15 +24,25 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
-from antarest.core.jwt import JWTUser
+from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+from antarest.core.model import JSON, PublicMode, StudyPermissionType, SUB_JSON
 from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
 from antarest.core.roles import RoleType
-from antarest.core.tasks.service import ITaskService
+from antarest.core.tasks.model import TaskResult
+from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.login.model import Group
 from antarest.login.service import LoginService
+from antarest.matrixstore.utils import parse_tsv_matrix
+from antarest.study.business.area_management import (
+    AreaManager,
+    AreaType,
+    AreaInfoDTO,
+    AreaCreationDTO,
+    AreaPatchUpdateDTO,
+)
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import (
@@ -49,12 +62,15 @@ from antarest.study.model import (
     PatchStudy,
 )
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.business.area_management import (
-    AreaManager,
-    AreaType,
-    AreaInfoDTO,
-    AreaCreationDTO,
-    AreaPatchUpdateDTO,
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
+    IniFileNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+)
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
+    RawFileNode,
 )
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
@@ -66,6 +82,16 @@ from antarest.study.storage.utils import (
     remove_from_cache,
     assert_permission,
     create_permission_from_study,
+)
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.replace_matrix import (
+    ReplaceMatrix,
+)
+from antarest.study.storage.variantstudy.model.command.update_comments import (
+    UpdateComments,
+)
+from antarest.study.storage.variantstudy.model.command.update_config import (
+    UpdateConfig,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (
@@ -87,6 +113,7 @@ class StudyService:
         user_service: LoginService,
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
+        file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
         cache_service: ICache,
         config: Config,
@@ -96,6 +123,7 @@ class StudyService:
         self.user_service = user_service
         self.repository = repository
         self.event_bus = event_bus
+        self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.areas = AreaManager(self.raw_study_service)
         self.links = LinkManager(self.raw_study_service)
@@ -341,8 +369,9 @@ class StudyService:
                 study, study_settings_url
             )
             study_settings["horizon"] = metadata_patch.horizon
-            self._get_study_storage_service(study).edit_study(
-                study, study_settings_url, study_settings
+
+            self._edit_study_using_command(
+                study=study, url=study_settings_url, data=study_settings
             )
 
         new_metadata = self._get_study_storage_service(
@@ -401,8 +430,8 @@ class StudyService:
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=study_path,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
         )
 
@@ -573,15 +602,13 @@ class StudyService:
     def export_study(
         self,
         uuid: str,
-        target: Path,
         params: RequestParameters,
         outputs: bool = True,
-    ) -> Path:
+    ) -> FileDownloadTaskDTO:
         """
         Export study to a zip file.
         Args:
             uuid: study id
-            target: export path
             params: request parameters
             outputs: integrate output folder in zip file
 
@@ -590,35 +617,92 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
 
-        logger.info("study %s exported by user %s", uuid, params.get_user_id())
-        return self._get_study_storage_service(study).export_study(
-            study, target, outputs
+        logger.info("Exporting study %s", uuid)
+        export_name = f"Study {study.name} ({uuid}) export"
+        export_file_download = self.file_transfer_manager.request_download(
+            f"{study.name}-{uuid}.zip", export_name, params.user
+        )
+        export_path = Path(export_file_download.path)
+        export_id = export_file_download.id
+
+        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            try:
+                target_study = self.get_study(uuid)
+                self._get_study_storage_service(target_study).export_study(
+                    target_study, export_path, outputs
+                )
+                self.file_transfer_manager.set_ready(export_id)
+                return TaskResult(
+                    success=True, message=f"Study {uuid} successfully exported"
+                )
+            except Exception as e:
+                self.file_transfer_manager.fail(export_id, str(e))
+                raise e
+
+        task_id = self.task_service.add_task(
+            export_task,
+            export_name,
+            custom_event_messages=None,
+            request_params=params,
+        )
+
+        return FileDownloadTaskDTO(
+            file=export_file_download.to_dto(), task=task_id
         )
 
     def export_output(
         self,
         study_uuid: str,
         output_uuid: str,
-        target: Path,
         params: RequestParameters,
-    ) -> Path:
+    ) -> FileDownloadTaskDTO:
         """
         Export study output to a zip file.
         Args:
             study_uuid: study id
             output_uuid: output id
-            target: export path
             params: request parameters
         """
         study = self.get_study(study_uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
 
-        logger.info(
-            f"Output {output_uuid} from study {study_uuid} exported by user {params.get_user_id()}"
+        logger.info(f"Exporting {output_uuid} from study {study_uuid}")
+        export_name = f"Study output {study.name}/{output_uuid} export"
+        export_file_download = self.file_transfer_manager.request_download(
+            f"{study.name}-{study_uuid}-{output_uuid}.zip",
+            export_name,
+            params.user,
         )
-        return self._get_study_storage_service(study).export_output(
-            metadata=study, output_id=output_uuid, target=target
+        export_path = Path(export_file_download.path)
+        export_id = export_file_download.id
+
+        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            try:
+                target_study = self.get_study(study_uuid)
+                self._get_study_storage_service(target_study).export_output(
+                    metadata=target_study,
+                    output_id=output_uuid,
+                    target=export_path,
+                )
+                self.file_transfer_manager.set_ready(export_id)
+                return TaskResult(
+                    success=True,
+                    message=f"Study output {study_uuid}/{output_uuid} successfully exported",
+                )
+            except Exception as e:
+                self.file_transfer_manager.fail(export_id, str(e))
+                raise e
+
+        task_id = self.task_service.add_task(
+            export_task,
+            export_name,
+            custom_event_messages=None,
+            request_params=params,
+        )
+
+        return FileDownloadTaskDTO(
+            file=export_file_download.to_dto(), task=task_id
         )
 
     def export_study_flat(
@@ -879,6 +963,89 @@ class StudyService:
         )
         return res
 
+    def _create_edit_study_command(
+        self,
+        tree_node: INode[
+            JSON, Union[str, int, bool, float, bytes, JSON], JSON
+        ],
+        url: str,
+        data: SUB_JSON,
+    ) -> ICommand:
+        """
+        Create correct command to edit study
+        Args:
+            tree_node: target node of the command
+            url: data path to reach
+            data: new data to replace
+
+        Returns: ICommand that replaces the data
+
+        """
+        if isinstance(tree_node, IniFileNode):
+            return UpdateConfig(
+                target=url,
+                data=data,
+                command_context=self.variant_study_service.command_factory.command_context,
+            )
+        elif isinstance(tree_node, InputSeriesMatrix):
+            return ReplaceMatrix(
+                target=url,
+                matrix=parse_tsv_matrix(data)
+                if isinstance(data, bytes)
+                else data,
+                command_context=self.variant_study_service.command_factory.command_context,
+            )
+        elif (
+            isinstance(tree_node, RawFileNode)
+            and url.split("/")[-1] == "comments"
+        ):
+            return UpdateComments(
+                target=url,
+                comments=data,
+                command_context=self.variant_study_service.command_factory.command_context,
+            )
+        raise NotImplementedError()
+
+    def _edit_study_using_command(
+        self, study: Study, url: str, data: SUB_JSON
+    ) -> ICommand:
+        """
+        Replace data on disk with new, using ICommand
+        Args:
+            study: study
+            url: data path to reach
+            data: new data to replace
+        """
+
+        study_service = self._get_study_storage_service(study)
+        file_study = study_service.get_raw(metadata=study)
+        tree_node = file_study.tree.get_node(url.split("/"))
+
+        command = self._create_edit_study_command(
+            tree_node=tree_node, url=url, data=data
+        )
+        if isinstance(study_service, RawStudyService):
+            command.apply(study_data=file_study)
+            if not is_managed(study):
+                tree_node.denormalize()
+
+            lastsave_url = "study/antares/lastsave"
+            lastsave_node = file_study.tree.get_node(lastsave_url.split("/"))
+            self._create_edit_study_command(
+                tree_node=lastsave_node, url=lastsave_url, data=int(time())
+            ).apply(file_study)
+            remove_from_cache(self.variant_study_service.cache, study.id)
+
+        elif isinstance(study_service, VariantStudyService):
+            study_service.append_command(
+                study_id=file_study.config.study_id,
+                command=command.to_dto(),
+                params=RequestParameters(user=DEFAULT_ADMIN_USER),
+            )
+        else:
+            raise NotImplementedError()
+        return command  # for testing purpose
+
     def edit_study(
         self,
         uuid: str,
@@ -902,14 +1069,7 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(study.id, study.type)
-
-        updated = self.raw_study_service.edit_study(study, url, new)
-
-        self.raw_study_service.edit_study(
-            study, url="study/antares/lastsave", new=int(time())
-        )
+        self._edit_study_using_command(study=study, url=url, data=new)
 
         self.event_bus.push(
             Event(
@@ -924,7 +1084,7 @@ class StudyService:
             uuid,
             params.get_user_id(),
         )
-        return cast(JSON, updated)
+        return cast(JSON, new)
 
     def change_owner(
         self, study_id: str, owner_id: int, params: RequestParameters
@@ -955,10 +1115,10 @@ class StudyService:
             )
         )
 
-        self._get_study_storage_service(study).edit_study(
-            study,
+        self._edit_study_using_command(
+            study=study,
             url="study/antares/author",
-            new=new_owner.name if new_owner is not None else None,
+            data=new_owner.name if new_owner is not None else None,
         )
 
         logger.info(

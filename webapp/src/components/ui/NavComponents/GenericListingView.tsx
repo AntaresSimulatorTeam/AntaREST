@@ -47,7 +47,7 @@ interface PropTypes {
     searchFilter: (input: string) => void;
     buttonValue: string;
     placeholder: string;
-    onButtonClick: () => void;
+    onButtonClick?: () => void;
 }
 
 const GenericListingView = (props: PropsWithChildren<PropTypes>) => {
@@ -67,19 +67,26 @@ const GenericListingView = (props: PropsWithChildren<PropTypes>) => {
             </InputAdornment>
             )}
         />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={onButtonClick}
-        >
-          {buttonValue}
-        </Button>
+        {
+          onButtonClick !== undefined && (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={onButtonClick}
+          >
+            {buttonValue}
+          </Button>
+          )}
       </div>
       <div className={classes.main}>
         {children}
       </div>
     </div>
   );
+};
+
+GenericListingView.defaultProps = {
+  onButtonClick: undefined,
 };
 
 export default GenericListingView;

@@ -31,5 +31,7 @@
     "generationInProgress": "Generation de l'étude en cours...",
     "taskCompleted": "Tâche terminée avec succès",
     "taskFailed": "Erreur: l'exécution de la tâche a échoué",
-    "nameEmptyError": "Entrée invalide, le nom est vide"
+    "nameEmptyError": "Entrée invalide, le nom est vide",
+    "noCommands": "Liste de commandes vide",
+    "newCommandButton": "Nouvelle commande"
   }

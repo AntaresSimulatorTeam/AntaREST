@@ -1,3 +1,4 @@
+import moment from 'moment';
 import { useSnackbar, OptionsObject } from 'notistack';
 import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType, VariantTreeDTO, VariantTree } from '../../common/types';
 
@@ -30,6 +31,14 @@ export const useNotif = (): (message: React.ReactNode, options?: OptionsObject |
 export const isUserAdmin = (user: UserInfo): boolean => {
   if (user) {
     const adminElm = user.groups.find((elm: JWTGroup) => elm.id === 'admin' && elm.role === RoleType.ADMIN);
+    return !!adminElm;
+  }
+  return false;
+};
+
+export const isGroupAdmin = (user: UserInfo): boolean => {
+  if (user) {
+    const adminElm = user.groups.find((elm: JWTGroup) => elm.role === RoleType.ADMIN);
     return !!adminElm;
   }
   return false;
@@ -85,6 +94,18 @@ export const getStudyExtendedName = (study: StudyMetadata): string => {
     return `${study.name} (${study.folder})`;
   }
   return study.name;
+};
+
+export const convertUTCToLocalTime = (date: string): string => moment.utc(date).local().format('YYYY-MM-DD HH:mm:ss');
+
+export const exportText = (fileData: string, filename: string): void => {
+  const blob = new Blob([fileData], { type: 'application/txt' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = url;
+  link.click();
+  link.remove();
 };
 
 export default {};

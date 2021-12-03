@@ -215,7 +215,7 @@ interface SubscribeAction extends Action {
 
 export const subscribe = (channel: string): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch, getState): void => {
   const { websockets } = getState();
-  if (websockets.socket) {
+  if (websockets.socket && websockets.socket.readyState === WebSocket.OPEN) {
     websockets.socket.send(JSON.stringify({
       action: 'SUBSCRIBE',
       payload: channel,
@@ -234,7 +234,7 @@ interface UnSubscribeAction extends Action {
 
 export const unsubscribe = (channel: string): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch, getState): void => {
   const { websockets } = getState();
-  if (websockets.socket) {
+  if (websockets.socket && websockets.socket.readyState === WebSocket.OPEN) {
     websockets.socket.send(JSON.stringify({
       action: 'UNSUBSCRIBE',
       payload: channel,

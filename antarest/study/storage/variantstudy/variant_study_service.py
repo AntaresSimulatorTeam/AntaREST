@@ -7,12 +7,10 @@ from pathlib import Path
 from typing import List, Optional, cast
 from uuid import uuid4
 
-import dataclasses
 from fastapi import HTTPException
 from filelock import FileLock  # type: ignore
 
 from antarest.core.config import Config
-from antarest.core.model import JSON, SUB_JSON, StudyPermissionType
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -31,6 +29,7 @@ from antarest.core.interfaces.eventbus import (
     EventChannelDirectory,
 )
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import (
     TaskResult,
@@ -55,12 +54,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
 )
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
-    IniFileNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
-    InputSeriesMatrix,
-)
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
@@ -73,12 +66,6 @@ from antarest.study.storage.utils import (
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.replace_matrix import (
-    ReplaceMatrix,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
@@ -516,30 +503,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             use_cache=use_cache,
         )
 
-    def edit_study(
-        self,
-        metadata: VariantStudy,
-        url: str,
-        new: SUB_JSON,
-    ) -> SUB_JSON:
-        study = self.get_raw(metadata)
-        tree_node = study.tree.get_node(url.split("/"))
-        if isinstance(tree_node, IniFileNode):
-            self.append_command(
-                metadata.id,
-                UpdateConfig(target=url, data=new).to_dto(),
-                RequestParameters(user=DEFAULT_ADMIN_USER),
-            )
-        elif isinstance(tree_node, InputSeriesMatrix):
-            self.append_command(
-                metadata.id,
-                ReplaceMatrix(target=url, matrix=SUB_JSON).to_dto(),
-                RequestParameters(user=DEFAULT_ADMIN_USER),
-            )
-        else:
-            raise NotImplementedError()
-        return new
-
     def create_variant_study(
         self, uuid: str, name: str, params: RequestParameters
     ) -> Optional[str]:
@@ -572,8 +535,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             parent_id=uuid,
             path=study_path,
             public_mode=study.public_mode,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
             version=study.version,
             groups=study.groups,  # Create inherit_group boolean
             owner_id=params.user.impersonator if params.user else None,
@@ -715,7 +678,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if results.success:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
-                created_at=datetime.now(),
+                created_at=datetime.utcnow(),
             )
             self.repository.save(variant_study)
             logger.info(f"Saving new snapshot for study {variant_study.id}")
@@ -823,11 +786,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         dest_meta = VariantStudy(
             id=new_id,
             name=dest_name,
-            parent_id=src_meta.id,
+            parent_id=src_meta.parent_id,
             path=study_path,
             public_mode=src_meta.public_mode,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
             version=src_meta.version,
             groups=src_meta.groups,  # Create inherit_group boolean
             snapshot=None,
