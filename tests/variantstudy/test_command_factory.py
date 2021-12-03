@@ -211,6 +211,13 @@ from antarest.study.storage.variantstudy.model.command.common import (
             action=CommandName.UPDATE_COMMENTS.value,
             args=[{"comments": "comments"}],
         ),
+        CommandDTO(
+            action=CommandName.UPDATE_FILE.value,
+            args={
+                "target": "settings/resources/study",
+                "base64Data": "",
+            },
+        ),
     ],
 )
 @pytest.mark.unit_test

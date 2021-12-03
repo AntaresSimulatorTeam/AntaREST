@@ -1,3 +1,4 @@
+import base64
 import io
 import logging
 import os
@@ -95,6 +96,9 @@ from antarest.study.storage.variantstudy.model.command.update_comments import (
 )
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
+)
+from antarest.study.storage.variantstudy.model.command.update_raw_file import (
+    UpdateRawFile,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (
@@ -1019,15 +1023,19 @@ class StudyService:
                 else data,
                 command_context=self.variant_study_service.command_factory.command_context,
             )
-        elif (
-            isinstance(tree_node, RawFileNode)
-            and url.split("/")[-1] == "comments"
-        ):
-            return UpdateComments(
-                target=url,
-                comments=data,
-                command_context=self.variant_study_service.command_factory.command_context,
-            )
+        elif isinstance(tree_node, RawFileNode):
+            if url.split("/")[-1] == "comments":
+                return UpdateComments(
+                    target=url,
+                    comments=data,
+                    command_context=self.variant_study_service.command_factory.command_context,
+                )
+            elif isinstance(data, bytes):
+                return UpdateRawFile(
+                    target=url,
+                    b64Data=base64.b64encode(data),
+                    command_context=self.variant_study_service.command_factory.command_context,
+                )
         raise NotImplementedError()
 
     def _edit_study_using_command(

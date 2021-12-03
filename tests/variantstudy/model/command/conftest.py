@@ -62,6 +62,11 @@ def command_context(matrix_service: MatrixService) -> CommandContext:
             command_extractor, x
         )
     )
+    command_extractor.generate_update_rawfile.side_effect = (
+        lambda x, u: CommandExtraction.generate_update_rawfile(
+            command_extractor, x, u
+        )
+    )
     command_context = CommandContext(
         generator_matrix_constants=GeneratorMatrixConstants(
             matrix_service=matrix_service

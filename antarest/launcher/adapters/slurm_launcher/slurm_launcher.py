@@ -156,10 +156,19 @@ class SlurmLauncher(AbstractLauncher):
             if study_path.exists():
                 shutil.rmtree(study_path)
 
-    def _import_study_output(self, job_id: str, xpansion_mode: bool = False) -> Optional[str]:
+    def _import_study_output(
+        self, job_id: str, xpansion_mode: bool = False
+    ) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
         if xpansion_mode:
-            study_id = self.storage_service.variant_study_service.create_variant_study(study_id, "xpansion result", params=RequestParameters(user=DEFAULT_ADMIN_USER))
+            study_id = (
+                self.storage_service.variant_study_service.create_variant_study(
+                    study_id,
+                    "xpansion result",
+                    params=RequestParameters(user=DEFAULT_ADMIN_USER),
+                )
+                or study_id
+            )
 
         return self.storage_service.import_output(
             study_id,
