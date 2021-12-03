@@ -76,27 +76,11 @@ class CreateArea(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        if self.command_context.generator_matrix_constants is None:
-            raise ValueError()
-
+        res = self.apply_config(study_data)
+        if not res.status:
+            return res
         area_id = transform_name_to_id(self.area_name)
-
-        if area_id in study_data.config.areas.keys():
-            return CommandOutput(
-                status=False,
-                message=f"Area '{self.area_name}' already exists and could not be created",
-            )
-
         version = study_data.config.version
-
-        study_data.config.areas[area_id] = Area(
-            name=self.area_name,
-            links={},
-            thermals=[],
-            renewables=[],
-            filters_synthesis=[],
-            filters_year=[],
-        )
 
         hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
         get_or_create_section(hydro_config, "inter-daily-breakdown")[

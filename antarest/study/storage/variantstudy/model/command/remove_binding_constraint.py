@@ -26,6 +26,14 @@ class RemoveBindingConstraint(ICommand):
             **data,
         )
 
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+        if self.id not in study_data.config.bindings:
+            return CommandOutput(
+                status=False, message="Binding constraint not found"
+            )
+        study_data.config.bindings.remove(self.id)
+        return CommandOutput(status=True)
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.id not in study_data.config.bindings:
             return CommandOutput(

@@ -24,7 +24,7 @@ class RemoveCluster(ICommand):
             command_name=CommandName.REMOVE_CLUSTER, version=1, **data
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
         if self.area_id not in study_data.config.areas:
             return CommandOutput(
                 status=False,
@@ -47,6 +47,23 @@ class RemoveCluster(ICommand):
                 status=False,
                 message=f"Cluster '{self.cluster_id}' does not exist",
             )
+        study_data.config.areas[self.area_id].thermals = [
+            cluster
+            for cluster in study_data.config.areas[self.area_id].thermals
+            if cluster.id != self.cluster_id.lower()
+        ]
+        # todo remove binding constraint using this cluster ?
+
+        return CommandOutput(
+            status=True,
+            message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
+        )
+
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
+        res = self.apply_config(study_data)
+        if not res.status:
+            return res
+
         study_data.tree.delete(
             [
                 "input",
@@ -76,17 +93,7 @@ class RemoveCluster(ICommand):
             ]
         )
 
-        study_data.config.areas[self.area_id].thermals = [
-            cluster
-            for cluster in study_data.config.areas[self.area_id].thermals
-            if cluster.id != self.cluster_id.lower()
-        ]
-        # todo remove binding constraint using this cluster ?
-
-        return CommandOutput(
-            status=True,
-            message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
-        )
+        return res
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

@@ -23,6 +23,10 @@ class RemoveDistrict(ICommand):
             command_name=CommandName.REMOVE_DISTRICT, version=1, **data
         )
 
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+        del study_data.config.sets[self.id]
+        return CommandOutput(status=True, message=self.id)
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         del study_data.config.sets[self.id]
         study_data.tree.delete(["input", "areas", "sets", self.id])

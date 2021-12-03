@@ -39,6 +39,12 @@ class ReplaceMatrix(ICommand):
             command_name=CommandName.REPLACE_MATRIX, version=1, **data
         )
 
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+        return CommandOutput(
+            status=True,
+            message=f"Matrix '{self.target}' has been successfully replaced.",
+        )
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         replace_matrix_data: JSON = {}
         target_matrix = replace_matrix_data

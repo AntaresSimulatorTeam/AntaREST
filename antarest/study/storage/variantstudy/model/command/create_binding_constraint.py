@@ -55,6 +55,12 @@ class CreateBindingConstraint(ICommand):
         else:
             return validate_matrix(v, values)
 
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+        assert isinstance(self.values, str)
+        bd_id = transform_name_to_id(self.name)
+        study_data.config.bindings.append(bd_id)
+        return CommandOutput(status=True)
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         assert isinstance(self.values, str)
         binding_constraints = study_data.tree.get(

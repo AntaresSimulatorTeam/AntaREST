@@ -45,6 +45,24 @@ class CreateDistrict(ICommand):
             )
         return val
 
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+        district_id = transform_name_to_id(self.name)
+        if district_id in study_data.config.sets:
+            return CommandOutput(
+                status=False,
+                message=f"District '{self.name}' already exists and could not be created",
+            )
+
+        base_filter = self.base_filter or DistrictBaseFilter.remove_all
+        inverted_set = base_filter == DistrictBaseFilter.add_all
+        study_data.config.sets[district_id] = Set(
+            name=self.name,
+            areas=self.filter_items or [],
+            output=self.output if self.output is not None else True,
+            inverted_set=inverted_set,
+        )
+        return CommandOutput(status=True, message=district_id)
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         district_id = transform_name_to_id(self.name)
         if district_id in study_data.config.sets:

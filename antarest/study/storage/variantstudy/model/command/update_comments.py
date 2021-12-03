@@ -25,6 +25,12 @@ class UpdateComments(ICommand):
             command_name=CommandName.UPDATE_COMMENTS, version=1, **data
         )
 
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+        return CommandOutput(
+            status=True,
+            message=f"Comment '{self.comments}' has been successfully replaced.",
+        )
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         replace_comment_data: JSON = {
             "settings": {"comments": self.comments.encode("utf-8")}

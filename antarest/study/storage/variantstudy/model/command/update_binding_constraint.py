@@ -52,6 +52,10 @@ class UpdateBindingConstraint(ICommand):
             return validate_matrix(v, values)
         return None
 
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+        del study_data.config.areas[self.id]
+        return CommandOutput(status=True)
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         binding_constraints = study_data.tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]

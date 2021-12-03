@@ -29,6 +29,9 @@ class UpdateConfig(ICommand):
             command_name=CommandName.UPDATE_CONFIG, version=1, **data
         )
 
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+        return CommandOutput(status=True, message="ok")
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         url = self.target.split("/")
         tree_node = study_data.tree.get_node(url)

@@ -24,6 +24,10 @@ class RemoveArea(ICommand):
             command_name=CommandName.REMOVE_AREA, version=1, **data
         )
 
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+        del study_data.config.areas[self.id]
+        return CommandOutput(status=True, message=f"Area '{self.id}' deleted")
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
 
         study_data.tree.delete(["input", "areas", self.id])

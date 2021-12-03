@@ -21,7 +21,7 @@ class RemoveLink(ICommand):
             command_name=CommandName.REMOVE_LINK, version=1, **data
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
         if self.area1 not in study_data.config.areas:
             return CommandOutput(
                 status=False,
@@ -40,15 +40,21 @@ class RemoveLink(ICommand):
                 status=False,
                 message=f"The link between {self.area1} and {self.area2} does not exist.",
             )
-
-        study_data.tree.delete(["input", "links", area_from, area_to])
-        study_data.tree.delete(
-            ["input", "links", area_from, "properties", area_to]
-        )
         return CommandOutput(
             status=True,
             message=f"Link between {self.area1} and {self.area2} removed",
         )
+
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
+        res = self.apply_config(study_data)
+        if not res.status:
+            return res
+        area_from, area_to = sorted([self.area1, self.area2])
+        study_data.tree.delete(["input", "links", area_from, area_to])
+        study_data.tree.delete(
+            ["input", "links", area_from, "properties", area_to]
+        )
+        return res
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

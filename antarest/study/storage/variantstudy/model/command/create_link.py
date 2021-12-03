@@ -118,7 +118,7 @@ class CreateLink(ICommand):
             ),
         }
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
         if self.area1 not in study_data.config.areas:
             return CommandOutput(
                 status=False, message=f"The area '{self.area1}' does not exist"
@@ -148,6 +148,17 @@ class CreateLink(ICommand):
                 status=False,
                 message=f"The link between {self.area1} and {self.area2} already exist",
             )
+
+        return CommandOutput(
+            status=True,
+            message=f"Link between '{self.area1}' and '{self.area2}' created",
+        )
+
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
+        res = self.apply_config(study_data)
+        if not res.status:
+            return res
+        area_from, area_to = sorted([self.area1, self.area2])
 
         self.parameters = self.parameters or {}
         link_property = CreateLink.generate_link_properties(self.parameters)
