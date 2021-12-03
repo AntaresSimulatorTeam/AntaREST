@@ -312,7 +312,7 @@ class SlurmLauncher(AbstractLauncher):
                     f"Failed to launch study {study_uuid}", exc_info=e
                 )
                 self.callbacks.update_status(
-                    str(launch_uuid), JobStatus.FAILED, None, None
+                    str(launch_uuid), JobStatus.FAILED, str(e), None
                 )
                 self._delete_study(study_path)
                 self._clean_up_study(str(launch_uuid))
