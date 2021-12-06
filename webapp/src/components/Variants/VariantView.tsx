@@ -40,7 +40,6 @@ const VariantView = (props: PropTypes) => {
   };
 
   useEffect(() => {
-    console.log('ALORS: POUR ', study?.name, ', EDITION : ', option === 'edition' && study?.type === 'variantstudy');
     setItems(study?.type === 'variantstudy' ? {
       'variants:variantDependencies': () => <VariantTreeView study={study} />,
       'variants:editionMode': () => <EditionView studyId={study !== undefined ? study.id : ''} />,
