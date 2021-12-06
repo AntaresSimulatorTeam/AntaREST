@@ -63,6 +63,11 @@ const useQuery = () => {
   return React.useMemo(() => new URLSearchParams(search), [search]);
 };
 
+interface MenuTab {
+  [key: string]:
+    () => JSX.Element;
+}
+
 const SingleStudyView = (props: PropTypes) => {
   const { studyId, tab, option } = useParams();
   const query = useQuery();
@@ -72,8 +77,7 @@ const SingleStudyView = (props: PropTypes) => {
   const [t] = useTranslation();
   const [study, setStudy] = useState<StudyMetadata>();
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
-  // const [initTab, setInitTab] = useState<string>('informations');
-  const [navData, setNavData] = useState<{[key: string]: () => JSX.Element}>({});
+  const [navData, setNavData] = useState<MenuTab>({});
   const { enqueueSnackbar } = useSnackbar();
 
   const paramList = ['treeView', 'informations', 'variants'];
@@ -149,18 +153,6 @@ const SingleStudyView = (props: PropTypes) => {
     } else {
       history.replace({ pathname: `/study/${studyId}/informations` });
     }
-    /* if (tab === 'informations' || tab === 'treeView') setInitTab(tab);
-    else if (tab === 'variants') {
-      //setInitTab('variants');
-      if (study?.type === 'variantstudy') {
-        if (query.get('create') !== 'true' && option !== 'edition') history.replace({ pathname: `/study/${studyId}/variants/edition` });
-      } else {
-        history.replace({ pathname: `/study/${studyId}/variants` });
-      }
-    } else {
-      //setInitTab('informations');
-      history.replace({ pathname: `/study/${studyId}/informations` });
-    } */
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studyId, history, tab, query]);
 
