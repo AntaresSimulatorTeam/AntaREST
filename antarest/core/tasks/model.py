@@ -131,7 +131,11 @@ class TaskJob(Base):  # type: ignore
             )
             if self.completion_date
             else None,
-            logs=[log.to_dto() for log in self.logs] if with_logs else None,
+            logs=sorted(
+                [log.to_dto() for log in self.logs], key=lambda l: l.id
+            )
+            if with_logs
+            else None,
         )
 
     def __eq__(self, other: Any) -> bool:
