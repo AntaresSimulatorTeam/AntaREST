@@ -60,7 +60,6 @@ export const exportJson = (json: object, filename: string): void => {
 export const isTaskFinal = (task: TaskDTO): boolean => !(task.status === TaskStatus.PENDING || task.status === TaskStatus.RUNNING);
 
 export const updateCommandResults = (studyId: string, generationCommands: Array<CommandItem>, commandResults: Array<CommandResultDTO>): {commands: Array<CommandItem>; index: number} => {
-  console.log('Updating commands', commandResults);
   const tmpCommands: Array<CommandItem> = generationCommands.concat([]);
   // eslint-disable-next-line no-plusplus
   for (let i = 0; i < commandResults.length; i++) {
