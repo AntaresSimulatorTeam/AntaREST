@@ -37,7 +37,6 @@ class StudyDownloader:
     @staticmethod
     def read_columns(
         matrix: MatrixAggregationResult,
-        prefix: str,
         year: int,
         area_name: str,
         study: FileStudyTree,
@@ -52,11 +51,10 @@ class StudyDownloader:
 
             for index, column in enumerate(columns):
                 column_name = "|".join([c for c in column if c.strip()])
-                filter_column_name = prefix + "|" + column_name
                 if (
                     data.columns
                     and len(data.columns) > 0
-                    and not (filter_column_name in data.columns)
+                    and not (column_name in data.columns)
                 ):
                     continue
 
@@ -80,7 +78,6 @@ class StudyDownloader:
     @staticmethod
     def level_output_filter(
         matrix: MatrixAggregationResult,
-        prefix: str,
         year: int,
         area_name: str,
         study: FileStudyTree,
@@ -96,7 +93,7 @@ class StudyDownloader:
         for elm in files_matcher:
             tmp_url = f"{url}/{elm}"
             StudyDownloader.read_columns(
-                matrix, prefix, year, area_name, study, tmp_url, data
+                matrix, year, area_name, study, tmp_url, data
             )
 
     @staticmethod
@@ -120,11 +117,9 @@ class StudyDownloader:
                 if type_elm[elm].links:
                     for out_link in type_elm[elm].links.keys():
                         if second_element_type_condition(out_link):
-                            tmp_prefix = f"{prefix}|{elm}^{out_link}"
                             link_url = f"{url}/{out_link}"
                             StudyDownloader.level_output_filter(
                                 matrix,
-                                tmp_prefix,
                                 year,
                                 f"{elm}^{out_link}",
                                 study,
@@ -132,9 +127,8 @@ class StudyDownloader:
                                 data,
                             )
             else:
-                tmp_prefix = f"{prefix}|{elm}"
                 StudyDownloader.level_output_filter(
-                    matrix, tmp_prefix, year, elm, study, url, data
+                    matrix, year, elm, study, url, data
                 )
 
     @staticmethod
