@@ -53,7 +53,7 @@ class UpdateBindingConstraint(ICommand):
         return None
 
     def apply_config(self, study_data: FileStudy) -> CommandOutput:
-        del study_data.config.areas[self.id]
+        study_data.config.bindings.append(self.id)
         return CommandOutput(status=True)
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
