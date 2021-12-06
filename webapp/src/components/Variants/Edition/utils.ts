@@ -70,12 +70,16 @@ export const updateCommandResults = (studyId: string, generationCommands: Array<
     }
   }
   let commandGenerationIndex = -1;
-  // eslint-disable-next-line no-plusplus
-  for (let i = 0; i < tmpCommands.length; i++) {
-    const command = tmpCommands[i];
-    if (!command.results) {
-      commandGenerationIndex = i;
-      break;
+  if (tmpCommands.length > 0) {
+    // eslint-disable-next-line no-plusplus
+    for (let i = tmpCommands.length - 1; i >= 0; i--) {
+      const command = tmpCommands[i];
+      if (command.results) {
+        if (i !== tmpCommands.length - 1) {
+          commandGenerationIndex = i + 1;
+        }
+        break;
+      }
     }
   }
   return {
