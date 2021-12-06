@@ -72,8 +72,8 @@ export const getStudyTask = async (studyId: string): Promise<TaskDTO> => {
   return res.data;
 };
 
-export const getTask = async (id: string): Promise<TaskDTO> => {
-  const res = await client.get(`/v1/tasks/${id}`);
+export const getTask = async (id: string, withLogs = false): Promise<TaskDTO> => {
+  const res = await client.get(`/v1/tasks/${id}?with_logs=${withLogs}`);
   return res.data;
 };
 

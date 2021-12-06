@@ -1,4 +1,4 @@
-import { CommandDTO, TaskDTO, TaskStatus } from '../../../common/types';
+import { CommandDTO, CommandResultDTO, TaskDTO, TaskStatus } from '../../../common/types';
 import { CommandEnum, CommandItem, JsonCommandItem } from './CommandTypes';
 
 export const CommandList = [
@@ -58,5 +58,31 @@ export const exportJson = (json: object, filename: string): void => {
 };
 
 export const isTaskFinal = (task: TaskDTO): boolean => !(task.status === TaskStatus.PENDING || task.status === TaskStatus.RUNNING);
+
+export const updateCommandResults = (studyId: string, generationCommands: Array<CommandItem>, commandResults: Array<CommandResultDTO>): {commands: Array<CommandItem>; index: number} => {
+  console.log('Updating commands', commandResults);
+  const tmpCommands: Array<CommandItem> = generationCommands.concat([]);
+  // eslint-disable-next-line no-plusplus
+  for (let i = 0; i < commandResults.length; i++) {
+    const commandResult = commandResults[i];
+    if (studyId === commandResult.study_id) {
+      const index = tmpCommands.findIndex((item) => item.id === commandResult.id);
+      tmpCommands[index] = { ...tmpCommands[index], results: commandResult };
+    }
+  }
+  let commandGenerationIndex = -1;
+  // eslint-disable-next-line no-plusplus
+  for (let i = 0; i < tmpCommands.length; i++) {
+    const command = tmpCommands[i];
+    if (!command.results) {
+      commandGenerationIndex = i;
+      break;
+    }
+  }
+  return {
+    commands: tmpCommands,
+    index: commandGenerationIndex,
+  };
+};
 
 export default {};

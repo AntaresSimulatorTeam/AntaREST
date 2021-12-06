@@ -13,10 +13,10 @@ import { AxiosError } from 'axios';
 import HelpIcon from '@material-ui/icons/Help';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
-import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal } from './utils';
+import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal, updateCommandResults } from './utils';
 import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getTask, getStudyTask } from '../../../services/api/variant';
 import AddCommandModal from './AddCommandModal';
-import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO, TaskEventPayload } from '../../../common/types';
+import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskEventPayload } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
 import { addListener, removeListener, subscribe, unsubscribe, WsChannel } from '../../../ducks/websockets';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
@@ -162,7 +162,7 @@ const EditionView = (props: PropTypes) => {
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
   const [commands, setCommands] = useState<Array<CommandItem>>([]);
   const [loaded, setLoaded] = useState(false);
-  const taskFetchPeriod = 5000;
+  const taskFetchPeriod = 3000;
   const taskTimeoutId = useRef<NodeJS.Timeout>();
 
   const onDragEnd = async ({ destination, source }: DropResult) => {
@@ -301,22 +301,13 @@ const EditionView = (props: PropTypes) => {
     }
   };
 
-  const listen = useCallback((ev: WSMessage) => {
-    const manageCommandResults = (commandResult: CommandResultDTO) => {
-      if (studyId === commandResult.study_id) {
-        let tmpCommand: Array<CommandItem> = [];
-        tmpCommand = tmpCommand.concat(commands);
-        const index = tmpCommand.findIndex((item) => item.id === commandResult.id);
-        tmpCommand[index] = { ...tmpCommand[index], results: commandResult };
-        if (currentCommandGenerationIndex === commands.length - 1) {
-          setCurrentCommandGenerationIndex(-1);
-        } else {
-          setCurrentCommandGenerationIndex(currentCommandGenerationIndex + 1);
-        }
-        setCommands(tmpCommand);
-      }
-    };
+  const doUpdateCommandResults = useCallback((commandResults: Array<CommandResultDTO>) => {
+    const res = updateCommandResults(studyId, commands, commandResults);
+    setCurrentCommandGenerationIndex(res.index);
+    setCommands(res.commands);
+  }, [studyId, commands]);
 
+  const listen = useCallback((ev: WSMessage) => {
     const taskStart = (taskPayload: TaskEventPayload) => {
       if (taskPayload.message === studyId) {
         if (commands.length > 0) setCurrentCommandGenerationIndex(0);
@@ -331,13 +322,12 @@ const EditionView = (props: PropTypes) => {
         else enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
         setGenerationStatus(false);
         setGenerationTaskId(undefined);
-        if (taskTimeoutId.current) clearTimeout(taskTimeoutId.current);
       }
     };
 
     switch (ev.type) {
       case WSEvent.STUDY_VARIANT_GENERATION_COMMAND_RESULT:
-        manageCommandResults(ev.payload as CommandResultDTO);
+        doUpdateCommandResults([ev.payload as CommandResultDTO]);
         break;
       case WSEvent.TASK_ADDED:
         taskStart(ev.payload as TaskEventPayload);
@@ -349,7 +339,7 @@ const EditionView = (props: PropTypes) => {
       default:
         break;
     }
-  }, [commands, currentCommandGenerationIndex, enqueueSnackbar, taskTimeoutId, studyId, t]);
+  }, [commands.length, doUpdateCommandResults, enqueueSnackbar, studyId, t]);
 
   const fetchTask = useCallback(async () => {
     if (generationStatus && generationTaskId) {
@@ -357,7 +347,6 @@ const EditionView = (props: PropTypes) => {
       if (isTaskFinal(tmpTask)) {
         setGenerationStatus(false);
         setGenerationTaskId(undefined);
-        setCurrentCommandGenerationIndex(-1);
       }
     }
   }, [generationStatus, generationTaskId]);
@@ -391,20 +380,15 @@ const EditionView = (props: PropTypes) => {
             debouncedNotification();
           }
         } else {
-          task.logs.forEach((elm: TaskLogDTO, i: number) => {
-            const results: CommandResultDTO = (JSON.parse(elm.message) as CommandResultDTO);
-            if (i < items.length && items[i].id === results.id) items[i] = { ...items[i], results };
-          });
-          if (!isFinal) {
-            currentIndex = (commands.length > task.logs.length) ? task.logs.length : -1;
-          }
+          const res = updateCommandResults(studyId, items, task.logs.map((elm) => (JSON.parse(elm.message) as CommandResultDTO)));
+          items = res.commands;
+          currentIndex = res.index;
         }
         if (!isFinal) {
           setGenerationTaskId(task.id);
         }
         setCurrentCommandGenerationIndex(currentIndex);
         setGenerationStatus(!isFinal);
-
         setCommands(items);
       } catch (error) {
         logError('Error: ', error);
@@ -412,7 +396,6 @@ const EditionView = (props: PropTypes) => {
       setCommands(items);
       setLoaded(true);
     };
-    console.log('DORA LEX: ', commands.length);
     init();
     return () => unsubscribeChannel(commandGenerationChannel);
   }, [commands.length, enqueueSnackbar, studyId, t, subscribeChannel, unsubscribeChannel, debouncedNotification]);
@@ -426,11 +409,13 @@ const EditionView = (props: PropTypes) => {
     if (generationTaskId) {
       const taskChannel = WsChannel.TASK + generationTaskId;
       subscribeChannel(taskChannel);
-      if (taskTimeoutId.current) clearTimeout(taskTimeoutId.current);
+      if (taskTimeoutId.current) {
+        clearTimeout(taskTimeoutId.current);
+      }
       taskTimeoutId.current = setTimeout(fetchTask, taskFetchPeriod);
       return () => unsubscribeChannel(taskChannel);
     }
-    return () => { if (taskTimeoutId.current) clearTimeout(taskTimeoutId.current); };
+    return () => { if (taskTimeoutId.current) { clearTimeout(taskTimeoutId.current); } };
   }, [fetchTask, generationTaskId, subscribeChannel, unsubscribeChannel]);
 
   return (
