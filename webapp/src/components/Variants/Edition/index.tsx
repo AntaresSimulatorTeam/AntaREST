@@ -3,6 +3,7 @@ import { makeStyles, createStyles, Theme, Typography, Button } from '@material-u
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { DropResult } from 'react-beautiful-dnd';
+import _ from 'lodash';
 import QueueIcon from '@material-ui/icons/Queue';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
 import { connect, ConnectedProps } from 'react-redux';
@@ -361,6 +362,10 @@ const EditionView = (props: PropTypes) => {
     }
   }, [generationStatus, generationTaskId]);
 
+  const debouncedNotification = useCallback(_.debounce(() => {
+    enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
+  }, 1000, { trailing: false, leading: true }), [enqueueSnackbar, t]);
+
   useEffect(() => {
     const commandGenerationChannel = WsChannel.STUDY_GENERATION + studyId;
     subscribeChannel(commandGenerationChannel);
@@ -383,7 +388,7 @@ const EditionView = (props: PropTypes) => {
 
         if (task.logs === undefined || task.logs.length === 0) {
           if (!isFinal) { currentIndex = 0; } else {
-            enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
+            debouncedNotification();
           }
         } else {
           task.logs.forEach((elm: TaskLogDTO, i: number) => {
@@ -407,9 +412,10 @@ const EditionView = (props: PropTypes) => {
       setCommands(items);
       setLoaded(true);
     };
+    console.log('DORA LEX: ', commands.length);
     init();
     return () => unsubscribeChannel(commandGenerationChannel);
-  }, [commands.length, enqueueSnackbar, studyId, t, subscribeChannel, unsubscribeChannel]);
+  }, [commands.length, enqueueSnackbar, studyId, t, subscribeChannel, unsubscribeChannel, debouncedNotification]);
 
   useEffect(() => {
     addWsListener(listen);
