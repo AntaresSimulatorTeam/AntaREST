@@ -102,7 +102,7 @@ const StudyView = (props: PropTypes) => {
         )
       }
       {
-        !loaded && <MainContentLoader />
+        !loaded && studyData === undefined && <MainContentLoader />
       }
     </div>
   );

@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Card, Grid, Theme } from '@material-ui/core';
+import { Card, Grid, Theme, Typography } from '@material-ui/core';
 import React, { CSSProperties } from 'react';
 import { CustomNodeElementProps } from 'react-d3-tree/lib/types/common';
 
@@ -15,13 +15,14 @@ const style = {
     border: `1px solid ${isCurrentNode ? theme.palette.secondary.main : theme.palette.primary.main}`,
     borderRadius: theme.shape.borderRadius,
     backgroundColor: 'white',
-    width: '250px',
-    height: '150px',
+    width: '270px',
+    height: '170px',
     boxSizing: 'border-box',
     display: 'flex',
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
+    padding: theme.spacing(0.5, 0),
   }),
   header: (): CSSProperties => ({
     width: '90%',
@@ -51,10 +52,10 @@ const VariantCard = (props: PropsType) => {
 
   return (
     <g>
-      <foreignObject width={250} height={150} x={-125} y={-75}>
+      <foreignObject width={270} height={170} x={-125} y={-75}>
         <Card onClick={() => history.push(`/study/${id}`)} style={style.root(theme, studyId === id)}>
           <div style={style.header()}>
-            <h3 style={{ fontSize: '0.8em', color: theme.palette.primary.main, marginBottom: '2px' }}>{name}</h3>
+            <Typography noWrap style={{ width: '100%', marginTop: '5px', fontWeight: 'bold', fontSize: '0.8em', color: theme.palette.primary.main, marginBottom: '2px' }}>{name}</Typography>
             <h3 style={{ fontSize: '0.7em', color: 'gray', marginTop: '0px' }}>{id}</h3>
           </div>
           <Grid container spacing={2} style={style.grid(theme)}>

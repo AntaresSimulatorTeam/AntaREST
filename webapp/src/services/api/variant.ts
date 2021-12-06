@@ -67,8 +67,13 @@ export const applyCommands = async (studyId: string, denormalize = false): Promi
   return res.data;
 };
 
-export const getTask = async (studyId: string): Promise<TaskDTO> => {
+export const getStudyTask = async (studyId: string): Promise<TaskDTO> => {
   const res = await client.get(`/v1/studies/${studyId}/task`);
+  return res.data;
+};
+
+export const getTask = async (id: string, withLogs = false): Promise<TaskDTO> => {
+  const res = await client.get(`/v1/tasks/${id}?with_logs=${withLogs}`);
   return res.data;
 };
 

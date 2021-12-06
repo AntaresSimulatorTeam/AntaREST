@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
-import { Editor, EditorState } from 'draft-js';
+import { ContentState, Editor, EditorState } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import {
   makeStyles,
@@ -127,7 +127,7 @@ const NoteView = (props: Props) => {
         setEditorState(EditorState.createWithContent(convertXMLToDraftJS(data)));
         setContent(data);
       } catch (e) {
-        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:fetchCommentsError'), e as AxiosError);
+        setEditorState(EditorState.createWithContent(ContentState.createFromText(t('singlestudy:fetchCommentsError'))));
       } finally {
         setLoaded(true);
       }

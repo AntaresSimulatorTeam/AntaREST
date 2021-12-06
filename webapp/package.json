@@ -1,6 +1,6 @@
 {
   "name": "antares-web",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "private": true,
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.36",
