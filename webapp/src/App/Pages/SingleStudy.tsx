@@ -72,7 +72,7 @@ const SingleStudyView = (props: PropTypes) => {
   const [t] = useTranslation();
   const [study, setStudy] = useState<StudyMetadata>();
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
-  // const [initTab, setInitTab] = useState<string>('informations');
+  const [initTab, setInitTab] = useState<string>('informations');
   const { enqueueSnackbar } = useSnackbar();
 
   const paramList = ['treeView', 'informations', 'variants'];
@@ -139,20 +139,7 @@ const SingleStudyView = (props: PropTypes) => {
     [studyId, studyJobs, fetchStudyInfo],
   );
   useEffect(() => {
-    console.log('COMBIEN: BEAUCOUP => TAB=', tab, ', OPTION=', option);
-    if (paramList.includes(tab)) {
-      if (tab === 'variants') {
-        if (study?.type === 'variantstudy') {
-          if (query.get('create') !== 'true') history.replace({ pathname: `/study/${studyId}/variants/edition` });
-        } else {
-          history.replace({ pathname: `/study/${studyId}/variants` });
-        }
-      }
-      console.log('YESSIR: ', tab);
-    } else {
-      history.replace({ pathname: `/study/${studyId}/informations` });
-    }
-    /* if (tab === 'informations' || tab === 'treeView') setInitTab(tab);
+    if (tab === 'informations' || tab === 'treeView') setInitTab(tab);
     else if (tab === 'variants') {
       setInitTab('variants');
       if (study?.type === 'variantstudy') {
@@ -163,8 +150,8 @@ const SingleStudyView = (props: PropTypes) => {
     } else {
       setInitTab('informations');
       history.replace({ pathname: `/study/${studyId}/informations` });
-    } */
-  }, [studyId, history, study]);
+    }
+  }, [studyId, history, study, tab, query]);
 
   useEffect(() => {
     if (studyId) {
@@ -200,7 +187,7 @@ const SingleStudyView = (props: PropTypes) => {
           {study?.name || '...'}
         </div>
       </Breadcrumbs>
-      <GenericTabView items={navData} studyId={studyId} initialValue={paramList.includes(tab) ? tab : 'informations'} />
+      <GenericTabView items={navData} studyId={studyId} initialValue={initTab} />
     </div>
   );
 };
