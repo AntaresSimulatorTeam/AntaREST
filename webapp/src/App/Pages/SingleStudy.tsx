@@ -1,7 +1,7 @@
 import debug from 'debug';
 import React, { useCallback, useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
-import { useParams, Link, useHistory } from 'react-router-dom';
+import { useParams, Link, useHistory, useLocation } from 'react-router-dom';
 import { Breadcrumbs, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
@@ -57,16 +57,25 @@ const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
+const useQuery = () => {
+  const { search } = useLocation();
+
+  return React.useMemo(() => new URLSearchParams(search), [search]);
+};
+
 const SingleStudyView = (props: PropTypes) => {
-  const { studyId, tab = 'informations', option } = useParams();
+  const { studyId, tab, option } = useParams();
+  const query = useQuery();
   const { addWsListener, removeWsListener } = props;
   const classes = useStyles();
   const history = useHistory();
   const [t] = useTranslation();
   const [study, setStudy] = useState<StudyMetadata>();
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
-  const [initTab, setInitTab] = useState<string>('informations');
+  // const [initTab, setInitTab] = useState<string>('informations');
   const { enqueueSnackbar } = useSnackbar();
+
+  const paramList = ['treeView', 'informations', 'variants'];
 
   const fetchStudyInfo = useCallback(async () => {
     try {
@@ -130,19 +139,32 @@ const SingleStudyView = (props: PropTypes) => {
     [studyId, studyJobs, fetchStudyInfo],
   );
   useEffect(() => {
-    if (tab === 'informations' || tab === 'treeView') setInitTab(tab);
+    console.log('COMBIEN: BEAUCOUP => TAB=', tab, ', OPTION=', option);
+    if (paramList.includes(tab)) {
+      if (tab === 'variants') {
+        if (study?.type === 'variantstudy') {
+          if (query.get('create') !== 'true') history.replace({ pathname: `/study/${studyId}/variants/edition` });
+        } else {
+          history.replace({ pathname: `/study/${studyId}/variants` });
+        }
+      }
+      console.log('YESSIR: ', tab);
+    } else {
+      history.replace({ pathname: `/study/${studyId}/informations` });
+    }
+    /* if (tab === 'informations' || tab === 'treeView') setInitTab(tab);
     else if (tab === 'variants') {
       setInitTab('variants');
       if (study?.type === 'variantstudy') {
-        history.replace({ pathname: `/study/${studyId}/variants/edition` });
+        if (query.get('create') !== 'true') history.replace({ pathname: `/study/${studyId}/variants/edition` });
       } else {
         history.replace({ pathname: `/study/${studyId}/variants` });
       }
     } else {
       setInitTab('informations');
       history.replace({ pathname: `/study/${studyId}/informations` });
-    }
-  }, [studyId, history, tab, study]);
+    } */
+  }, [studyId, history, study]);
 
   useEffect(() => {
     if (studyId) {
@@ -178,7 +200,7 @@ const SingleStudyView = (props: PropTypes) => {
           {study?.name || '...'}
         </div>
       </Breadcrumbs>
-      <GenericTabView items={navData} studyId={studyId} initialValue={initTab} />
+      <GenericTabView items={navData} studyId={studyId} initialValue={paramList.includes(tab) ? tab : 'informations'} />
     </div>
   );
 };

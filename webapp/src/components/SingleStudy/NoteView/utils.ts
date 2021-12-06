@@ -418,7 +418,7 @@ const convertHTMLToXML = (data: string): string => {
   return res;
 };
 
-const addXMLHeader = (xmlData: string): string => {
+export const addXMLHeader = (xmlData: string): string => {
   let res = '<?xml version="1.0" encoding="UTF-8"?>';
   res += '<richtext version="1.0.0.0" xmlns="http://www.wxwidgets.org">';
   res += '<paragraphlayout textcolor="#000000" fontpointsize="9" fontfamily="70" fontstyle="90" fontweight="90" fontunderlined="0" fontface="Segoe UI" alignment="1" parspacingafter="10" parspacingbefore="0" linespacing="10">';
