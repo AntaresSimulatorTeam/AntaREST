@@ -50,7 +50,7 @@ const CreateVariantModal = (props: PropTypes) => {
       const newId = await createVariant(parentId, name);
       setName('');
       onClose();
-      history.push(`/study/${newId}`);
+      history.push(`/study/${newId}/variants?create=true`);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('variants:onVariantCreationError'), e as AxiosError);
     }

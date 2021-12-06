@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { makeStyles, createStyles, Theme, Typography, Button } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { DropResult } from 'react-beautiful-dnd';
+import _ from 'lodash';
 import QueueIcon from '@material-ui/icons/Queue';
 import CloudDownloadOutlinedIcon from '@material-ui/icons/CloudDownloadOutlined';
 import { connect, ConnectedProps } from 'react-redux';
@@ -13,7 +14,7 @@ import HelpIcon from '@material-ui/icons/Help';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
 import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal } from './utils';
-import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getTask } from '../../../services/api/variant';
+import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getTask, getStudyTask } from '../../../services/api/variant';
 import AddCommandModal from './AddCommandModal';
 import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO, TaskEventPayload } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
@@ -161,6 +162,8 @@ const EditionView = (props: PropTypes) => {
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
   const [commands, setCommands] = useState<Array<CommandItem>>([]);
   const [loaded, setLoaded] = useState(false);
+  const taskFetchPeriod = 5000;
+  const taskTimeoutId = useRef<NodeJS.Timeout>();
 
   const onDragEnd = async ({ destination, source }: DropResult) => {
     // dropped outside the list
@@ -328,6 +331,7 @@ const EditionView = (props: PropTypes) => {
         else enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
         setGenerationStatus(false);
         setGenerationTaskId(undefined);
+        if (taskTimeoutId.current) clearTimeout(taskTimeoutId.current);
       }
     };
 
@@ -345,7 +349,22 @@ const EditionView = (props: PropTypes) => {
       default:
         break;
     }
-  }, [commands, currentCommandGenerationIndex, enqueueSnackbar, studyId, t]);
+  }, [commands, currentCommandGenerationIndex, enqueueSnackbar, taskTimeoutId, studyId, t]);
+
+  const fetchTask = useCallback(async () => {
+    if (generationStatus && generationTaskId) {
+      const tmpTask = await getTask(generationTaskId);
+      if (isTaskFinal(tmpTask)) {
+        setGenerationStatus(false);
+        setGenerationTaskId(undefined);
+        setCurrentCommandGenerationIndex(-1);
+      }
+    }
+  }, [generationStatus, generationTaskId]);
+
+  const debouncedNotification = useCallback(_.debounce(() => {
+    enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
+  }, 1000, { trailing: false, leading: true }), [enqueueSnackbar, t]);
 
   useEffect(() => {
     const commandGenerationChannel = WsChannel.STUDY_GENERATION + studyId;
@@ -359,18 +378,18 @@ const EditionView = (props: PropTypes) => {
       } catch (e) {
         logError('Error: ', e);
         enqueueErrorSnackbar(enqueueSnackbar, t('variants:fetchCommandError'), e as AxiosError);
-      } finally {
-        setLoaded(true);
       }
 
       try {
-        const task = await getTask(studyId);
+        const task = await getStudyTask(studyId);
 
         let currentIndex = -1;
         const isFinal = isTaskFinal(task);
 
         if (task.logs === undefined || task.logs.length === 0) {
-          if (!isFinal) { currentIndex = 0; }
+          if (!isFinal) { currentIndex = 0; } else {
+            debouncedNotification();
+          }
         } else {
           task.logs.forEach((elm: TaskLogDTO, i: number) => {
             const results: CommandResultDTO = (JSON.parse(elm.message) as CommandResultDTO);
@@ -391,10 +410,12 @@ const EditionView = (props: PropTypes) => {
         logError('Error: ', error);
       }
       setCommands(items);
+      setLoaded(true);
     };
+    console.log('DORA LEX: ', commands.length);
     init();
     return () => unsubscribeChannel(commandGenerationChannel);
-  }, [commands.length, enqueueSnackbar, studyId, t, subscribeChannel, unsubscribeChannel]);
+  }, [commands.length, enqueueSnackbar, studyId, t, subscribeChannel, unsubscribeChannel, debouncedNotification]);
 
   useEffect(() => {
     addWsListener(listen);
@@ -405,10 +426,12 @@ const EditionView = (props: PropTypes) => {
     if (generationTaskId) {
       const taskChannel = WsChannel.TASK + generationTaskId;
       subscribeChannel(taskChannel);
+      if (taskTimeoutId.current) clearTimeout(taskTimeoutId.current);
+      taskTimeoutId.current = setTimeout(fetchTask, taskFetchPeriod);
       return () => unsubscribeChannel(taskChannel);
     }
-    return () => { /* noop */ };
-  }, [generationTaskId, subscribeChannel, unsubscribeChannel]);
+    return () => { if (taskTimeoutId.current) clearTimeout(taskTimeoutId.current); };
+  }, [fetchTask, generationTaskId, subscribeChannel, unsubscribeChannel]);
 
   return (
     <div className={classes.root}>

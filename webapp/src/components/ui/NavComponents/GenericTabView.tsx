@@ -82,8 +82,8 @@ export default function NavTabView(props: PropTypes) {
         </Tabs>
       </AppBar>
       {
-            items[navState]()
-        }
+        items[navState] && items[navState]()
+      }
     </div>
   );
 }

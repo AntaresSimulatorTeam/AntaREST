@@ -27,7 +27,6 @@ const VariantView = (props: PropTypes) => {
   const history = useHistory();
 
   const classes = useStyles();
-  const [editionMode, setEditionMode] = useState<boolean>(false);
   const [items, setItems] = useState<Components>({
     'variants:variantDependencies': () => <VariantTreeView study={study} />,
   });
@@ -41,8 +40,6 @@ const VariantView = (props: PropTypes) => {
   };
 
   useEffect(() => {
-    const edition = option === 'edition' && study?.type === 'variantstudy';
-    setEditionMode(edition);
     setItems(study?.type === 'variantstudy' ? {
       'variants:variantDependencies': () => <VariantTreeView study={study} />,
       'variants:editionMode': () => <EditionView studyId={study !== undefined ? study.id : ''} />,
@@ -54,13 +51,13 @@ const VariantView = (props: PropTypes) => {
         'variants:variantDependencies': () => <VariantTreeView study={study} />,
       });
     };
-  }, [study, option, editionMode]);
+  }, [study, option]);
 
   return (
     <div className={classes.root}>
       <GenericNavView
         items={items}
-        initialValue={editionMode ? 'variants:editionMode' : 'variants:variantDependencies'}
+        initialValue={option === 'edition' && study?.type === 'variantstudy' ? 'variants:editionMode' : 'variants:variantDependencies'}
         onClick={onEditModeChange}
       />
     </div>

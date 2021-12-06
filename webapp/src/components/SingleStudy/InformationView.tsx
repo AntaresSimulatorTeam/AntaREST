@@ -321,7 +321,7 @@ const InformationView = (props: PropTypes) => {
         const res = await getStudyOutputs(study.id);
         setOutputList(res.map((o: StudyOutput) => o.name));
       } catch (e) {
-        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToListOutputs'), e as AxiosError);
+        logError(t('singlestudy:failedToListOutputs'), study, e);
       }
     })();
   }, [study, t, enqueueSnackbar]);
