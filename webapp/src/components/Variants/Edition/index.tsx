@@ -16,7 +16,7 @@ import CommandListView from './DraggableCommands/CommandListView';
 import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal, updateCommandResults } from './utils';
 import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getTask, getStudyTask } from '../../../services/api/variant';
 import AddCommandModal from './AddCommandModal';
-import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskEventPayload } from '../../../common/types';
+import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskEventPayload, TaskStatus } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
 import { addListener, removeListener, subscribe, unsubscribe, WsChannel } from '../../../ducks/websockets';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
@@ -351,7 +351,7 @@ const EditionView = (props: PropTypes) => {
     }
   }, [generationStatus, generationTaskId]);
 
-  const debouncedNotification = useCallback(_.debounce(() => {
+  const debouncedFailureNotification = useCallback(_.debounce(() => {
     enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
   }, 1000, { trailing: false, leading: true }), [enqueueSnackbar, t]);
 
@@ -376,8 +376,8 @@ const EditionView = (props: PropTypes) => {
         const isFinal = isTaskFinal(task);
 
         if (task.logs === undefined || task.logs.length === 0) {
-          if (!isFinal) { currentIndex = 0; } else {
-            debouncedNotification();
+          if (!isFinal) { currentIndex = 0; } else if (task.status !== TaskStatus.COMPLETED) {
+            debouncedFailureNotification();
           }
         } else {
           const res = updateCommandResults(studyId, items, task.logs.map((elm) => (JSON.parse(elm.message) as CommandResultDTO)));
@@ -398,7 +398,7 @@ const EditionView = (props: PropTypes) => {
     };
     init();
     return () => unsubscribeChannel(commandGenerationChannel);
-  }, [commands.length, enqueueSnackbar, studyId, t, subscribeChannel, unsubscribeChannel, debouncedNotification]);
+  }, [commands.length, enqueueSnackbar, studyId, t, subscribeChannel, unsubscribeChannel, debouncedFailureNotification]);
 
   useEffect(() => {
     addWsListener(listen);
