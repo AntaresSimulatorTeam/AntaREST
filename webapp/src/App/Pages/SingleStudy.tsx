@@ -72,7 +72,7 @@ const SingleStudyView = (props: PropTypes) => {
   const [t] = useTranslation();
   const [study, setStudy] = useState<StudyMetadata>();
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
-  const [initTab, setInitTab] = useState<string>('informations');
+  // const [initTab, setInitTab] = useState<string>('informations');
   const [navData, setNavData] = useState<{[key: string]: () => JSX.Element}>({});
   const { enqueueSnackbar } = useSnackbar();
 
@@ -140,19 +140,29 @@ const SingleStudyView = (props: PropTypes) => {
     [studyId, studyJobs, fetchStudyInfo],
   );
   useEffect(() => {
-    if (tab === 'informations' || tab === 'treeView') setInitTab(tab);
+    if (paramList.includes(tab)) {
+      if (tab === 'variants') {
+        if (study?.type === 'variantstudy') {
+          if (query.get('create') !== 'true' && option !== 'edition') history.replace({ pathname: `/study/${studyId}/variants/edition` });
+        }
+      }
+    } else {
+      history.replace({ pathname: `/study/${studyId}/informations` });
+    }
+    /* if (tab === 'informations' || tab === 'treeView') setInitTab(tab);
     else if (tab === 'variants') {
-      setInitTab('variants');
+      //setInitTab('variants');
       if (study?.type === 'variantstudy') {
-        if (query.get('create') !== 'true') history.replace({ pathname: `/study/${studyId}/variants/edition` });
+        if (query.get('create') !== 'true' && option !== 'edition') history.replace({ pathname: `/study/${studyId}/variants/edition` });
       } else {
         history.replace({ pathname: `/study/${studyId}/variants` });
       }
     } else {
-      setInitTab('informations');
+      //setInitTab('informations');
       history.replace({ pathname: `/study/${studyId}/informations` });
-    }
-  }, [studyId, history, study, tab, query]);
+    } */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studyId, history, tab, query]);
 
   useEffect(() => {
     if (studyId) {
@@ -191,7 +201,7 @@ const SingleStudyView = (props: PropTypes) => {
           {study?.name || '...'}
         </div>
       </Breadcrumbs>
-      <GenericTabView items={navData} studyId={studyId} initialValue={initTab} />
+      <GenericTabView items={navData} studyId={studyId} initialValue={paramList.includes(tab) ? tab : 'informations'} />
     </div>
   );
 };

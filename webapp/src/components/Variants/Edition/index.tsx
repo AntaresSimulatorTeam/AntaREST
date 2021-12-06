@@ -13,7 +13,7 @@ import HelpIcon from '@material-ui/icons/Help';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
 import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal } from './utils';
-import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getTask } from '../../../services/api/variant';
+import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getTask, getStudyTask } from '../../../services/api/variant';
 import AddCommandModal from './AddCommandModal';
 import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskLogDTO, TaskEventPayload } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
@@ -160,7 +160,9 @@ const EditionView = (props: PropTypes) => {
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(-1);
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
   const [commands, setCommands] = useState<Array<CommandItem>>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(true);
+  const taskFetchPeriod = 5000;
+  const [taskTimeoutId, setTaskTimeoutId] = useState<number>();
 
   const onDragEnd = async ({ destination, source }: DropResult) => {
     // dropped outside the list
@@ -328,6 +330,7 @@ const EditionView = (props: PropTypes) => {
         else enqueueSnackbar(t('variants:taskFailed'), { variant: 'error' });
         setGenerationStatus(false);
         setGenerationTaskId(undefined);
+        if (taskTimeoutId) clearTimeout(taskTimeoutId);
       }
     };
 
@@ -345,7 +348,14 @@ const EditionView = (props: PropTypes) => {
       default:
         break;
     }
-  }, [commands, currentCommandGenerationIndex, enqueueSnackbar, studyId, t]);
+  }, [commands, currentCommandGenerationIndex, enqueueSnackbar, taskTimeoutId, studyId, t]);
+
+  const fetchTask = useCallback(async () => {
+    console.log("YES SIR FETCH");
+    if (generationStatus && generationTaskId) {
+      const tmpTask = await getTask(generationTaskId);
+    }
+  }, [generationStatus, generationTaskId]);
 
   useEffect(() => {
     const commandGenerationChannel = WsChannel.STUDY_GENERATION + studyId;
@@ -364,7 +374,7 @@ const EditionView = (props: PropTypes) => {
       }
 
       try {
-        const task = await getTask(studyId);
+        const task = await getStudyTask(studyId);
 
         let currentIndex = -1;
         const isFinal = isTaskFinal(task);
@@ -393,6 +403,7 @@ const EditionView = (props: PropTypes) => {
       setCommands(items);
     };
     init();
+    console.log('GET MONEY');
     return () => unsubscribeChannel(commandGenerationChannel);
   }, [commands.length, enqueueSnackbar, studyId, t, subscribeChannel, unsubscribeChannel]);
 
@@ -402,13 +413,17 @@ const EditionView = (props: PropTypes) => {
   }, [addWsListener, listen, removeWsListener]);
 
   useEffect(() => {
+    let taskTimerId: any;
     if (generationTaskId) {
+      console.log('GENERATION TASK ?');
       const taskChannel = WsChannel.TASK + generationTaskId;
       subscribeChannel(taskChannel);
+      taskTimerId = setTimeout(fetchTask, taskFetchPeriod);
+      setTaskTimeoutId(taskTimerId);
       return () => unsubscribeChannel(taskChannel);
     }
-    return () => { /* noop */ };
-  }, [generationTaskId, subscribeChannel, unsubscribeChannel]);
+    return () => { if (taskTimerId) clearTimeout(taskTimerId); };
+  }, [fetchTask, generationTaskId, subscribeChannel, unsubscribeChannel]);
 
   return (
     <div className={classes.root}>
