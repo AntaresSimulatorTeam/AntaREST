@@ -57,6 +57,9 @@ export default function NavTabView(props: PropTypes) {
     };
   }, [items, initialValue]);
 
+  console.log(items);
+  console.log(`Rendering ${navState}`);
+
   return (
     <div className={classes.root}>
       <AppBar position="static">
@@ -82,8 +85,8 @@ export default function NavTabView(props: PropTypes) {
         </Tabs>
       </AppBar>
       {
-            items[navState]()
-        }
+        items[navState] && items[navState]()
+      }
     </div>
   );
 }

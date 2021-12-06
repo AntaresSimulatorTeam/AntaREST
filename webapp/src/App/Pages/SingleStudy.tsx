@@ -73,6 +73,7 @@ const SingleStudyView = (props: PropTypes) => {
   const [study, setStudy] = useState<StudyMetadata>();
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>();
   const [initTab, setInitTab] = useState<string>('informations');
+  const [navData, setNavData] = useState<{[key: string]: () => JSX.Element}>({});
   const { enqueueSnackbar } = useSnackbar();
 
   const paramList = ['treeView', 'informations', 'variants'];
@@ -165,16 +166,19 @@ const SingleStudyView = (props: PropTypes) => {
     return () => removeWsListener(handleEvents);
   }, [addWsListener, removeWsListener, handleEvents]);
 
-  const navData: { [key: string]: () => JSX.Element } = {
-    informations: () =>
-      (study ? <Informations study={study} jobs={studyJobs || []} /> : <StudyViewLoader />),
-  };
-  if (study?.managed) {
-    navData.variants = () => (study ? <VariantView study={study} option={option} /> : <div />);
-  }
-  if (!study?.archived) {
-    navData.treeView = () => (study ? <StudyView study={study} /> : <div />);
-  }
+  useEffect(() => {
+    const newNavData: {[key: string]: () => JSX.Element} = {
+      informations: () =>
+        (study ? <Informations study={study} jobs={studyJobs || []} /> : <StudyViewLoader />),
+    };
+    if (study?.managed) {
+      newNavData.variants = () => (study ? <VariantView study={study} option={option} /> : <div />);
+    }
+    if (!study?.archived) {
+      newNavData.treeView = () => (study ? <StudyView study={study} /> : <div />);
+    }
+    setNavData(newNavData);
+  }, [study, studyJobs, option]);
 
   return (
     <div className={classes.root}>
