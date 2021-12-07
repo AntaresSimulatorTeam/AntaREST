@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import sys
 from datetime import timezone, datetime
 from pathlib import Path
@@ -179,6 +180,14 @@ def fastapi_app(
             return templates.TemplateResponse(
                 "index.html", {"request": request}
             )
+
+    @application.on_event("startup")
+    def set_default_executor():
+        from concurrent.futures import ThreadPoolExecutor
+        import asyncio
+
+        loop = asyncio.get_running_loop()
+        loop.set_default_executor(ThreadPoolExecutor())
 
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
