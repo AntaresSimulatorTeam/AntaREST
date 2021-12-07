@@ -101,7 +101,9 @@ class StopWatch:
 T = TypeVar("T")
 
 
-def retry(func: Callable[[], T], attempts=10, interval=0.5) -> T:
+def retry(
+    func: Callable[[], T], attempts: int = 10, interval: float = 0.5
+) -> T:
     attempt = 0
     catched_exception: Optional[Exception] = None
     while attempt < attempts:

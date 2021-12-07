@@ -324,9 +324,7 @@ class SimpleSyncTaskService(ITaskService):
     ) -> List[TaskDTO]:
         return []
 
-    def await_task(
-        self, task_id: str, timeout_sec: Optional[int] = None
-    ) -> None:
+    def await_task(self, task_id: str, timeout_sec: int = 3600) -> None:
         pass
 
 

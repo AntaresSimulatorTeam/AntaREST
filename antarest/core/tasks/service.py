@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 import time
@@ -68,9 +69,7 @@ class ITaskService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def await_task(
-        self, task_id: str, timeout_sec: Optional[int] = None
-    ) -> None:
+    def await_task(self, task_id: str, timeout_sec: int = 3600) -> None:
         raise NotImplementedError()
 
 
@@ -168,24 +167,16 @@ class TaskJobService(ITaskService):
             else None,
         )
 
-    def await_task(
-        self, task_id: str, timeout_sec: Optional[int] = None
-    ) -> None:
-        if task_id in self.tasks:
-            self.tasks[task_id].result(timeout_sec)
-        else:
-            logger.warning(
-                f"Task {task_id} not handled by this worker, will poll for task completion from db"
-            )
-            end = time.time() + (timeout_sec or 1)
-            while timeout_sec is None or time.time() < end:
-                task = self.repo.get(task_id)
-                if not task:
-                    logger.error(f"Awaited task {task_id} was not found")
-                    break
-                if TaskStatus(task.status).is_final():
-                    break
-                time.sleep(2)
+    def await_task(self, task_id: str, timeout_sec: int = 3600) -> None:
+        end = time.time() + timeout_sec
+        while time.time() < end:
+            task = self.repo.get(task_id)
+            if not task:
+                logger.error(f"Awaited task {task_id} was not found")
+                break
+            if TaskStatus(task.status).is_final():
+                break
+            time.sleep(2)
 
     def _run_task(
         self,
