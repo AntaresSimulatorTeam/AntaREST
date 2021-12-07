@@ -493,7 +493,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: study data formatted in json
 
         """
-        self._safe_generation(metadata)
+        self._safe_generation(metadata, timeout=30)
         self.repository.refresh(metadata)
         return super().get(
             metadata=metadata,
@@ -809,18 +809,22 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return dest_meta
 
-    def _wait_for_generation(self, metadata: VariantStudy) -> bool:
+    def _wait_for_generation(
+        self, metadata: VariantStudy, timeout: Optional[int] = None
+    ) -> bool:
         task_id = self.generate_task(metadata)
-        self.task_service.await_task(task_id)
+        self.task_service.await_task(task_id, timeout)
         result = self.task_service.status_task(
             task_id, RequestParameters(DEFAULT_ADMIN_USER)
         )
         return (result.result is not None) and result.result.success
 
-    def _safe_generation(self, metadata: VariantStudy) -> None:
+    def _safe_generation(
+        self, metadata: VariantStudy, timeout: Optional[int] = None
+    ) -> None:
         try:
             if not self.exists(metadata):
-                if not self._wait_for_generation(metadata):
+                if not self._wait_for_generation(metadata, timeout):
                     raise ValueError()
         except Exception as e:
             logger.error(
@@ -859,7 +863,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study: study
         Returns: study output data
         """
-        self._safe_generation(study)
+        self._safe_generation(study, timeout=30)
         return super().get_study_sim_result(study=study)
 
     def set_reference_output(

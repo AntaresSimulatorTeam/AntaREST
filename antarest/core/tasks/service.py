@@ -69,12 +69,17 @@ class ITaskService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def await_task(self, task_id: str, timeout_sec: int = 3600) -> None:
+    def await_task(
+        self, task_id: str, timeout_sec: Optional[int] = None
+    ) -> None:
         raise NotImplementedError()
 
 
 def noop_notifier(message: str) -> None:
     pass
+
+
+DEFAULT_AWAIT_MAX_TIMEOUT = 172800
 
 
 class TaskJobService(ITaskService):
@@ -167,8 +172,10 @@ class TaskJobService(ITaskService):
             else None,
         )
 
-    def await_task(self, task_id: str, timeout_sec: int = 3600) -> None:
-        end = time.time() + timeout_sec
+    def await_task(
+        self, task_id: str, timeout_sec: Optional[int] = None
+    ) -> None:
+        end = time.time() + (timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT)
         while time.time() < end:
             task = self.repo.get(task_id)
             if not task:

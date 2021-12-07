@@ -62,6 +62,9 @@ root_path: ""
 #tasks:
 #  max_workers: 5
 
+server:
+  worker_threadpool_size: 12
+
 logging:
   level: INFO
 #  logfile: /tmp/antarest.log

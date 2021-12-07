@@ -182,12 +182,16 @@ def fastapi_app(
             )
 
     @application.on_event("startup")
-    def set_default_executor():
+    def set_default_executor() -> None:
         from concurrent.futures import ThreadPoolExecutor
         import asyncio
 
         loop = asyncio.get_running_loop()
-        loop.set_default_executor(ThreadPoolExecutor())
+        loop.set_default_executor(
+            ThreadPoolExecutor(
+                max_workers=config.server.worker_threadpool_size
+            )
+        )
 
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
