@@ -33,6 +33,7 @@ from antarest.core.tasks.model import (
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -206,7 +207,7 @@ class TaskJobService(ITaskService):
         )
 
         with db():
-            task = self.repo.get_or_raise(task_id)
+            task = retry(lambda: self.repo.get_or_raise(task_id))
             task.status = TaskStatus.RUNNING.value
             self.repo.save(task)
             try:
