@@ -268,11 +268,29 @@ class TaskConfig:
 
 
 @dataclass(frozen=True)
+class ServerConfig:
+    """
+    Sub config object dedicated to the server
+    """
+
+    worker_threadpool_size: int = 5
+
+    @staticmethod
+    def from_dict(data: JSON) -> "ServerConfig":
+        return ServerConfig(
+            worker_threadpool_size=int(data["worker_threadpool_size"])
+            if "worker_threadpool_size" in data
+            else 5
+        )
+
+
+@dataclass(frozen=True)
 class Config:
     """
     Root server config
     """
 
+    server: ServerConfig = ServerConfig()
     security: SecurityConfig = SecurityConfig()
     storage: StorageConfig = StorageConfig()
     launcher: LauncherConfig = LauncherConfig()

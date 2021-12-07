@@ -1,13 +1,13 @@
 import time
 from glob import escape
 from pathlib import Path
-from typing import IO, Any, Optional, Callable
+from typing import IO, Any, Optional, Callable, TypeVar
 from zipfile import ZipFile, BadZipFile
 
 import redis
 
 from antarest.core.config import RedisConfig
-from antarest.core.exceptions import BadZipBinary
+from antarest.core.exceptions import BadZipBinary, ShouldNotHappenException
 
 
 class DTO:
@@ -96,3 +96,21 @@ class StopWatch:
             - (self.start_time if since_start else self.current_time)
         )
         self.current_time = time.time()
+
+
+T = TypeVar("T")
+
+
+def retry(
+    func: Callable[[], T], attempts: int = 10, interval: float = 0.5
+) -> T:
+    attempt = 0
+    catched_exception: Optional[Exception] = None
+    while attempt < attempts:
+        try:
+            attempt += 1
+            return func()
+        except Exception as e:
+            time.sleep(interval)
+            catched_exception = e
+    raise catched_exception or ShouldNotHappenException()

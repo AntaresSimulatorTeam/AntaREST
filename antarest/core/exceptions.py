@@ -3,6 +3,10 @@ from http import HTTPStatus
 from fastapi import HTTPException
 
 
+class ShouldNotHappenException(Exception):
+    pass
+
+
 class StudyNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)

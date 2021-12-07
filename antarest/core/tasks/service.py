@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 import time
@@ -33,6 +34,7 @@ from antarest.core.tasks.model import (
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +77,9 @@ class ITaskService(ABC):
 
 def noop_notifier(message: str) -> None:
     pass
+
+
+DEFAULT_AWAIT_MAX_TIMEOUT = 172800
 
 
 class TaskJobService(ITaskService):
@@ -176,8 +181,8 @@ class TaskJobService(ITaskService):
             logger.warning(
                 f"Task {task_id} not handled by this worker, will poll for task completion from db"
             )
-            end = time.time() + (timeout_sec or 1)
-            while timeout_sec is None or time.time() < end:
+            end = time.time() + (timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT)
+            while time.time() < end:
                 task = self.repo.get(task_id)
                 if not task:
                     logger.error(f"Awaited task {task_id} was not found")
@@ -206,7 +211,7 @@ class TaskJobService(ITaskService):
         )
 
         with db():
-            task = self.repo.get_or_raise(task_id)
+            task = retry(lambda: self.repo.get_or_raise(task_id))
             task.status = TaskStatus.RUNNING.value
             self.repo.save(task)
             try:
