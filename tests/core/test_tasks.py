@@ -244,6 +244,11 @@ def test_service() -> TaskJobService:
         ]
     )
 
+    repo_mock.get.reset_mock()
+    repo_mock.get.side_effect = [None]
+    service.await_task("elsewhere")
+    repo_mock.get.assert_called_with("elsewhere")
+
     return service
 
 
