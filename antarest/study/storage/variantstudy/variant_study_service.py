@@ -4,7 +4,7 @@ import shutil
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, cast
+from typing import List, Optional, cast, Union, Tuple
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -52,6 +52,7 @@ from antarest.study.storage.abstract_storage_service import (
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
@@ -544,7 +545,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return str(variant_study.id)
 
     def generate_task(
-        self, metadata: VariantStudy, denormalize: bool = False
+        self,
+        metadata: VariantStudy,
+        denormalize: bool = False,
+        light: bool = False,
     ) -> str:
         with FileLock(
             str(
@@ -578,6 +582,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 generate_result = self._generate(
                     study_id,
                     denormalize,
+                    light,
                     RequestParameters(DEFAULT_ADMIN_USER),
                     notifier,
                 )
@@ -605,6 +610,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         variant_study_id: str,
         denormalize: bool,
         params: RequestParameters,
+        light: bool = False,
     ) -> str:
         # Get variant study
         variant_study = self._get_variant_study(variant_study_id, params)
@@ -613,15 +619,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if variant_study.parent_id is None:
             raise NoParentStudyError(variant_study_id)
 
-        return self.generate_task(variant_study, denormalize)
+        return self.generate_task(variant_study, denormalize, light)
 
     def _generate(
         self,
         variant_study_id: str,
         denormalize: bool,
+        light: bool,
         params: RequestParameters,
         notifier: TaskUpdateNotifier = noop_notifier,
-    ) -> GenerationResultInfoDTO:
+    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         logger.info(f"Generating variant study {variant_study_id}")
 
         # Get variant study
@@ -637,6 +644,24 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         # Check parent study permission
         assert_permission(params.user, parent_study, StudyPermissionType.READ)
+
+        return (
+            self._hard_generation(
+                denormalize, parent_study, variant_study, notifier
+            )
+            if light
+            else self._light_generation(
+                denormalize, parent_study, variant_study, notifier
+            )
+        )
+
+    def _hard_generation(
+        self,
+        denormalize: bool,
+        parent_study: Study,
+        variant_study: VariantStudy,
+        notifier: TaskUpdateNotifier = noop_notifier,
+    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
 
         # Remove from cache
         remove_from_cache(self.cache, variant_study.id)
@@ -663,7 +688,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 denormalize=False,
             )
 
-        results = self._generate_snapshot(variant_study, notifier)
+        # Copy parent study to dest
+        dest_path = Path(variant_study.path) / SNAPSHOT_RELATIVE_PATH
+        results = self._generate_snapshot(
+            variant_study=variant_study, dest_path=dest_path, notifier=notifier
+        )
 
         if results.success:
             variant_study.snapshot = VariantStudySnapshot(
@@ -681,21 +710,45 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 study_tree.denormalize()
         return results
 
-    def _generate_snapshot(
+    def light_generation(
         self,
+        parent_study: Study,
         variant_study: VariantStudy,
         notifier: TaskUpdateNotifier = noop_notifier,
-    ) -> GenerationResultInfoDTO:
+    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
 
-        # Copy parent study to dest
-        dest_path = Path(variant_study.path) / SNAPSHOT_RELATIVE_PATH
+        study_path = ""
+        if isinstance(parent_study, VariantStudy):
+            self._safe_generation(metadata=parent_study, light=True)
+            study_path = self.get_study_path(parent_study)
+        else:
+            study_path = self.raw_study_service.get_study_path(parent_study)
 
-        # Generate
+        return self._generate_snapshot(
+            variant_study=variant_study,
+            dest_path=study_path,
+            notifier=notifier,
+            light=True,
+        )
+
+    def _to_icommand(self, metadata: VariantStudy) -> List[List[ICommand]]:
         commands: List[List[ICommand]] = []
-        for command_block in variant_study.commands:
+        for command_block in metadata.commands:
             commands.append(
                 self.command_factory.to_icommand(command_block.to_dto())
             )
+        return commands
+
+    def _generate_snapshot(
+        self,
+        variant_study: VariantStudy,
+        dest_path: Path,
+        notifier: TaskUpdateNotifier = noop_notifier,
+        light: bool = False,
+    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
+
+        # Generate
+        commands: List[List[ICommand]] = self._to_icommand(variant_study)
 
         def notify(
             command_index: int, command_result: bool, command_message: str
@@ -723,7 +776,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 )
 
         return self.generator.generate(
-            commands, dest_path, variant_study, notifier=notify
+            commands, dest_path, variant_study, notifier=notify, light=light
         )
 
     def get_study_task(
@@ -936,3 +989,4 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.denormalize()
             duration = "{:.3f}".format(time.time() - stop_time)
             logger.info(f"Study {path_study} denormalized in {duration}s")
+

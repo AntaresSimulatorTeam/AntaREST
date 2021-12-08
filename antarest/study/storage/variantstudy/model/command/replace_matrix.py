@@ -1,4 +1,4 @@
-from typing import Union, List, Any, Optional
+from typing import Union, List, Any, Optional, Tuple, Dict
 
 from pydantic import validator
 
@@ -39,10 +39,15 @@ class ReplaceMatrix(ICommand):
             command_name=CommandName.REPLACE_MATRIX, version=1, **data
         )
 
-    def apply_config(self, study_data: FileStudy) -> CommandOutput:
-        return CommandOutput(
-            status=True,
-            message=f"Matrix '{self.target}' has been successfully replaced.",
+    def _apply_config(
+        self, study_data: FileStudy
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        return (
+            CommandOutput(
+                status=True,
+                message=f"Matrix '{self.target}' has been successfully replaced.",
+            ),
+            dict(),
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -70,11 +75,8 @@ class ReplaceMatrix(ICommand):
             )
 
         study_data.tree.save(replace_matrix_data)
-
-        return CommandOutput(
-            status=True,
-            message=f"Matrix '{self.target}' has been successfully replaced.",
-        )
+        output, _ = self._apply_config(study_data)
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

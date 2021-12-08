@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Union, List, Optional
+from typing import Any, Union, List, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -29,8 +29,10 @@ class UpdateConfig(ICommand):
             command_name=CommandName.UPDATE_CONFIG, version=1, **data
         )
 
-    def apply_config(self, study_data: FileStudy) -> CommandOutput:
-        return CommandOutput(status=True, message="ok")
+    def _apply_config(
+        self, study_data: FileStudy
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        return CommandOutput(status=True, message="ok"), dict()
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         url = self.target.split("/")
@@ -42,7 +44,8 @@ class UpdateConfig(ICommand):
             )
 
         study_data.tree.save(self.data, url)
-        return CommandOutput(status=True, message="ok")
+        output, _ = self._apply_config(study_data)
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

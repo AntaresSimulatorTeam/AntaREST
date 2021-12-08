@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -25,10 +25,15 @@ class UpdateComments(ICommand):
             command_name=CommandName.UPDATE_COMMENTS, version=1, **data
         )
 
-    def apply_config(self, study_data: FileStudy) -> CommandOutput:
-        return CommandOutput(
-            status=True,
-            message=f"Comment '{self.comments}' has been successfully replaced.",
+    def _apply_config(
+        self, study_data: FileStudy
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        return (
+            CommandOutput(
+                status=True,
+                message=f"Comment '{self.comments}' has been successfully replaced.",
+            ),
+            dict(),
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -38,10 +43,8 @@ class UpdateComments(ICommand):
 
         study_data.tree.save(replace_comment_data)
 
-        return CommandOutput(
-            status=True,
-            message=f"Comment '{self.comments}' has been successfully replaced.",
-        )
+        output, _ = self._apply_config(study_data)
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

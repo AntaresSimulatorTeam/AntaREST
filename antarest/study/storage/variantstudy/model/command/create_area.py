@@ -1,4 +1,4 @@
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -51,16 +51,21 @@ class CreateArea(ICommand):
 
         return new_areas
 
-    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+    def _apply_config(
+        self, study_data: FileStudy
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.command_context.generator_matrix_constants is None:
             raise ValueError()
 
         area_id = transform_name_to_id(self.area_name)
 
         if area_id in study_data.config.areas.keys():
-            return CommandOutput(
-                status=False,
-                message=f"Area '{self.area_name}' already exists and could not be created",
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Area '{self.area_name}' already exists and could not be created",
+                ),
+                dict(),
             )
 
         study_data.config.areas[area_id] = Area(
@@ -73,13 +78,13 @@ class CreateArea(ICommand):
         )
         return CommandOutput(
             status=True, message=f"Area '{self.area_name}' created"
-        )
+        ), {"area_id": area_id}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        res = self.apply_config(study_data)
-        if not res.status:
-            return res
-        area_id = transform_name_to_id(self.area_name)
+        output, data = self._apply_config(study_data)
+        if not output.status:
+            return output
+        area_id = data["area_id"]
         version = study_data.config.version
 
         hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
@@ -249,9 +254,7 @@ class CreateArea(ICommand):
 
         study_data.tree.save(new_area_data)
 
-        return CommandOutput(
-            status=True, message=f"Area '{self.area_name}' created"
-        )
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Tuple, Dict, Any
 
 from pydantic import BaseModel
 
@@ -27,8 +27,14 @@ class ICommand(ABC, BaseModel):
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()
 
-    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+    def _apply_config(
+        self, study_data: FileStudy
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
         raise NotImplementedError()
+
+    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+        output, _ = self._apply_config(study_data)
+        return output
 
     def apply(self, study_data: FileStudy) -> CommandOutput:
         try:

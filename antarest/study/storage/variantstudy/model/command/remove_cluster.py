@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
@@ -24,11 +24,16 @@ class RemoveCluster(ICommand):
             command_name=CommandName.REMOVE_CLUSTER, version=1, **data
         )
 
-    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+    def _apply_config(
+        self, study_data: FileStudy
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.area_id not in study_data.config.areas:
-            return CommandOutput(
-                status=False,
-                message=f"Area '{self.area_id}' does not exist",
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Area '{self.area_id}' does not exist",
+                ),
+                dict(),
             )
 
         if (
@@ -43,9 +48,12 @@ class RemoveCluster(ICommand):
             )
             == 0
         ):
-            return CommandOutput(
-                status=False,
-                message=f"Cluster '{self.cluster_id}' does not exist",
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Cluster '{self.cluster_id}' does not exist",
+                ),
+                dict(),
             )
         study_data.config.areas[self.area_id].thermals = [
             cluster
@@ -54,15 +62,18 @@ class RemoveCluster(ICommand):
         ]
         # todo remove binding constraint using this cluster ?
 
-        return CommandOutput(
-            status=True,
-            message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
+        return (
+            CommandOutput(
+                status=True,
+                message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
+            ),
+            dict(),
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        res = self.apply_config(study_data)
-        if not res.status:
-            return res
+        output, _ = self.apply_config(study_data)
+        if not output.status:
+            return output
 
         study_data.tree.delete(
             [
@@ -93,7 +104,7 @@ class RemoveCluster(ICommand):
             ]
         )
 
-        return res
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

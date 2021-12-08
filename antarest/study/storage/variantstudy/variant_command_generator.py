@@ -1,9 +1,12 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import List, Optional, Callable
+from typing import List, Optional, Callable, Tuple
 
 from antarest.core.utils.utils import StopWatch
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     FileStudy,
     StudyFactory,
@@ -29,15 +32,20 @@ class VariantCommandGenerator:
         metadata: Optional[VariantStudy] = None,
         delete_on_failure: bool = True,
         notifier: Optional[Callable[[int, bool, str], None]] = None,
-    ) -> GenerationResultInfoDTO:
+        light: bool = False,
+    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         stopwatch = StopWatch()
 
         # Build file study
-        logger.info("Building study tree")
+        logger.info(
+            "Building config (light generation)"
+            if light
+            else "Building study tree"
+        )
         study_config, study_tree = self.study_factory.create_from_fs(
             dest_path, "", use_cache=False
         )
-        if metadata:
+        if metadata and not light:
             update_antares_info(metadata, study_tree)
         file_study = FileStudy(config=study_config, tree=study_tree)
 
@@ -63,7 +71,11 @@ class VariantCommandGenerator:
                 command_index += 1
                 command_output_messages: List[str] = []
                 for command in command_batch:
-                    output = command.apply(file_study)
+                    output = (
+                        command.apply_config(file_study)
+                        if light
+                        else command.apply(file_study)
+                    )
                     command_output_messages.append(output.message)
                     command_output_status = (
                         command_output_status and output.status
@@ -102,10 +114,12 @@ class VariantCommandGenerator:
             if not results.success:
                 break
 
-        if not results.success and delete_on_failure:
+        if not results.success and delete_on_failure and not light:
             shutil.rmtree(dest_path)
         stopwatch.log_elapsed(
-            lambda x: logger.info(f"Variant generation done in {x}s"),
+            lambda x: logger.info(
+                f"Variant{' light ' if light else ' '}generation done in {x}s"
+            ),
             since_start=True,
         )
-        return results
+        return results, study_config

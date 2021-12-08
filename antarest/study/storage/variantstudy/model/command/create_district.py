@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional, List, cast
+from typing import Any, Optional, List, cast, Tuple, Dict
 
 from pydantic import validator
 
@@ -45,12 +45,17 @@ class CreateDistrict(ICommand):
             )
         return val
 
-    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+    def _apply_config(
+        self, study_data: FileStudy
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
         district_id = transform_name_to_id(self.name)
         if district_id in study_data.config.sets:
-            return CommandOutput(
-                status=False,
-                message=f"District '{self.name}' already exists and could not be created",
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"District '{self.name}' already exists and could not be created",
+                ),
+                dict(),
             )
 
         base_filter = self.base_filter or DistrictBaseFilter.remove_all
@@ -61,26 +66,18 @@ class CreateDistrict(ICommand):
             output=self.output if self.output is not None else True,
             inverted_set=inverted_set,
         )
-        return CommandOutput(status=True, message=district_id)
+        item_key = "-" if inverted_set else "+"
+        return CommandOutput(status=True, message=district_id), {
+            "district_id": district_id,
+            item_key: "item_key",
+        }
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        district_id = transform_name_to_id(self.name)
-        if district_id in study_data.config.sets:
-            return CommandOutput(
-                status=False,
-                message=f"District '{self.name}' already exists and could not be created",
-            )
-
-        base_filter = self.base_filter or DistrictBaseFilter.remove_all
-        inverted_set = base_filter == DistrictBaseFilter.add_all
-        study_data.config.sets[district_id] = Set(
-            name=self.name,
-            areas=self.filter_items or [],
-            output=self.output if self.output is not None else True,
-            inverted_set=inverted_set,
-        )
-
-        item_key = "-" if inverted_set else "+"
+        output, data = self._apply_config(study_data)
+        if not output.status:
+            return output
+        district_id = data["district_id"]
+        item_key = data["item_key"]
         study_data.tree.save(
             {
                 "caption": self.name,
@@ -94,7 +91,7 @@ class CreateDistrict(ICommand):
             ["input", "areas", "sets", district_id],
         )
 
-        return CommandOutput(status=True, message=district_id)
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
