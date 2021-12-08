@@ -1,7 +1,11 @@
+import logging
 from typing import Any, Union, List, Optional
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
 )
@@ -72,12 +76,19 @@ class UpdateConfig(ICommand):
             CommandExtraction,
         )
 
-        return [
-            (
-                self.command_context.command_extractor
-                or CommandExtraction(self.command_context.matrix_service)
-            ).generate_update_config(base.tree, self.target.split("/"))
-        ]
+        try:
+            return [
+                (
+                    self.command_context.command_extractor
+                    or CommandExtraction(self.command_context.matrix_service)
+                ).generate_update_config(base.tree, self.target.split("/"))
+            ]
+        except ChildNotFoundError as e:
+            logging.getLogger(__name__).warning(
+                f"Failed to extract revert command for update_config {self.target}",
+                exc_info=e,
+            )
+            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]
