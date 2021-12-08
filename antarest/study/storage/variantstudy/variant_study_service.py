@@ -30,7 +30,7 @@ from antarest.core.interfaces.eventbus import (
 )
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, StudyPermissionType
-from antarest.core.requests import RequestParameters
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
     TaskResult,
     TaskDTO,
@@ -548,7 +548,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         metadata: VariantStudy,
         denormalize: bool = False,
-        light: bool = False,
     ) -> str:
         with FileLock(
             str(
@@ -580,11 +579,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
             def callback(notifier: TaskUpdateNotifier) -> TaskResult:
                 generate_result = self._generate(
-                    study_id,
-                    denormalize,
-                    light,
-                    RequestParameters(DEFAULT_ADMIN_USER),
-                    notifier,
+                    variant_study_id=study_id,
+                    denormalize=denormalize,
+                    params=RequestParameters(DEFAULT_ADMIN_USER),
+                    notifier=notifier,
                 )
                 return TaskResult(
                     success=generate_result.success,
@@ -610,7 +608,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         variant_study_id: str,
         denormalize: bool,
         params: RequestParameters,
-        light: bool = False,
     ) -> str:
         # Get variant study
         variant_study = self._get_variant_study(variant_study_id, params)
@@ -619,14 +616,32 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if variant_study.parent_id is None:
             raise NoParentStudyError(variant_study_id)
 
-        return self.generate_task(variant_study, denormalize, light)
+        return self.generate_task(variant_study, denormalize)
+
+    def light_generation(
+        self,
+        variant_study_id: str,
+        params: RequestParameters,
+    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
+        # Get variant study
+        variant_study = self._get_variant_study(variant_study_id, params)
+
+        # Get parent study
+        if variant_study.parent_id is None:
+            raise NoParentStudyError(variant_study_id)
+
+        return self._generate(
+            variant_study_id=variant_study_id,
+            params=RequestParameters(DEFAULT_ADMIN_USER),
+            light=True,
+        )
 
     def _generate(
         self,
         variant_study_id: str,
-        denormalize: bool,
-        light: bool,
         params: RequestParameters,
+        denormalize: bool = True,
+        light: bool = False,
         notifier: TaskUpdateNotifier = noop_notifier,
     ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         logger.info(f"Generating variant study {variant_study_id}")
@@ -646,11 +661,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, parent_study, StudyPermissionType.READ)
 
         return (
-            self._hard_generation(
-                denormalize, parent_study, variant_study, notifier
-            )
+            self._light_generation(parent_study, variant_study, notifier)
             if light
-            else self._light_generation(
+            else self._hard_generation(
                 denormalize, parent_study, variant_study, notifier
             )
         )
@@ -689,8 +702,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
 
         # Copy parent study to dest
-        dest_path = Path(variant_study.path) / SNAPSHOT_RELATIVE_PATH
-        results = self._generate_snapshot(
+        results, config = self._generate_snapshot(
             variant_study=variant_study, dest_path=dest_path, notifier=notifier
         )
 
@@ -708,9 +720,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 )
                 logger.info(f"Denormalizing variant study {variant_study.id}")
                 study_tree.denormalize()
-        return results
+        return results, config
 
-    def light_generation(
+    def _light_generation(
         self,
         parent_study: Study,
         variant_study: VariantStudy,
@@ -719,7 +731,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         study_path = ""
         if isinstance(parent_study, VariantStudy):
-            self._safe_generation(metadata=parent_study, light=True)
+            self.light_generation(variant_study_id=parent_study.id, light=True)
             study_path = self.get_study_path(parent_study)
         else:
             study_path = self.raw_study_service.get_study_path(parent_study)
@@ -990,3 +1002,26 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             duration = "{:.3f}".format(time.time() - stop_time)
             logger.info(f"Study {path_study} denormalized in {duration}s")
 
+    def get_synthesis(
+        self,
+        metadata: VariantStudy,
+        params: Optional[RequestParameters] = None,
+    ) -> FileStudyTreeConfigDTO:
+        """
+        Return study synthesis
+        Args:
+            metadata: study
+            params: RequestParameters
+        Returns: FileStudyTreeConfigDTO
+
+        """
+        if params is None:
+            raise UserHasNotPermissionError()
+
+        results, config = self.light_generation(metadata.id, params)
+        if results.success:
+            return FileStudyTreeConfigDTO.from_build_config(config)
+
+        raise VariantGenerationError(
+            f"Error during light generation of {metadata.id}"
+        )

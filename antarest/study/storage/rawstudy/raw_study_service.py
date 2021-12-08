@@ -12,6 +12,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import JSON
+from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import extract_zip
 from antarest.study.model import (
     RawStudy,
@@ -126,7 +127,9 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         )
         return FileStudy(config=study_config, tree=study_tree)
 
-    def get_synthesis(self, metadata: RawStudy) -> FileStudyTreeConfigDTO:
+    def get_synthesis(
+        self, metadata: RawStudy, params: Optional[RequestParameters] = None
+    ) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study_config, _ = self.study_factory.create_from_fs(

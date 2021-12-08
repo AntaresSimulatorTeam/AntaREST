@@ -12,6 +12,7 @@ from antarest.core.config import Config
 from antarest.core.model import JSON, PublicMode
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import extract_zip, StopWatch
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
@@ -454,12 +455,14 @@ class AbstractStorageService(IStudyStorageService[T]):
         """
         raise NotImplementedError()
 
-    def get_synthesis(self, metadata: T) -> FileStudyTreeConfigDTO:
+    def get_synthesis(
+        self, metadata: T, params: Optional[RequestParameters] = None
+    ) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:
             metadata: study
-
+            params: RequestParameters
         Returns: FileStudyTreeConfigDTO
 
         """

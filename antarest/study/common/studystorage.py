@@ -4,6 +4,7 @@ from typing import TypeVar, Generic, List, Union, Optional, IO
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
+from antarest.core.requests import RequestParameters
 from antarest.study.model import (
     Study,
     StudySimResultDTO,
@@ -252,12 +253,14 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_synthesis(self, metadata: T) -> FileStudyTreeConfigDTO:
+    def get_synthesis(
+        self, metadata: T, params: Optional[RequestParameters] = None
+    ) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:
             metadata: study
-
+            params: RequestParameters
         Returns: FileStudyTreeConfigDTO
 
         """
