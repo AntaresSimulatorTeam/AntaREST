@@ -7,6 +7,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.variantstudy.model.command.create_area import (
     CreateArea,
 )
@@ -84,10 +87,15 @@ def test_revert(command_context: CommandContext):
         target="foo", data="bar", command_context=command_context
     )
     study = FileStudy(config=Mock(), tree=Mock())
-    base.revert([], study)
+    base.command_context.command_extractor.generate_update_config.side_effect = (
+        ChildNotFoundError()
+    )
+    res = base.revert([], study)
     base.command_context.command_extractor.generate_update_config.assert_called_with(
         study.tree, ["foo"]
     )
+    assert res == []
+
     assert base.revert(
         [
             UpdateConfig(

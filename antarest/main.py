@@ -181,6 +181,23 @@ def fastapi_app(
                 "index.html", {"request": request}
             )
 
+    else:
+
+        @application.get("/", include_in_schema=False)
+        def home(request: Request) -> Any:
+            """
+            Home ui
+            ---
+            responses:
+                '200':
+                  content:
+                     application/html: {}
+                  description: html home page
+            tags:
+              - UI
+            """
+            return ""
+
     @application.on_event("startup")
     def set_default_executor() -> None:
         from concurrent.futures import ThreadPoolExecutor
