@@ -9,6 +9,7 @@ import MatrixView from '../ui/MatrixView/index';
 import { getMatrix } from '../../services/api/matrix';
 import { CopyIcon } from './utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import NoContent from '../ui/NoContent';
 import SimpleLoader from '../ui/loaders/SimpleLoader';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -18,6 +19,11 @@ const useStyles = makeStyles((theme: Theme) =>
       height: '100%',
       padding: theme.spacing(2),
       position: 'relative',
+    },
+    matrixEmpty: {
+      width: '100%',
+      height: '100%',
+      paddingTop: '3%',
     },
   }));
 
@@ -91,10 +97,17 @@ const MatrixModal = (props: PropTypes) => {
         {
           loading && <SimpleLoader />
         }
-        <MatrixView
-          readOnly={false}
-          matrix={matrix}
-        />
+        {matrix.columns.length > 0 ? (
+          <MatrixView
+            readOnly={false}
+            matrix={matrix}
+          />
+        ) : !loading && (
+          <div className={classes.matrixEmpty}>
+            <NoContent title="data:matrixEmpty" />
+          </div>
+        )}
+
       </div>
     </InformationModal>
   );
