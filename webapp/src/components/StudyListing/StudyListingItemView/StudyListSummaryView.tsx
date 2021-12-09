@@ -129,14 +129,16 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
           </div>
           <Typography className={classes.datetime}>{convertUTCToLocalTime(study.modificationDate)}</Typography>
         </div>
-        <div className={classes.idInfo}>
-          <Typography color="textSecondary" className={classes.idInfo}>
-            {study.id}
-          </Typography>
-          <Tooltip title={t('singlestudy:copyId') as string} placement="top">
-            <CopyIcon style={{ marginLeft: '0.5em', cursor: 'pointer', color: 'grey' }} onClick={() => copyId(study.id)} />
-          </Tooltip>
-        </div>
+        {study.managed && (
+          <div className={classes.idInfo}>
+            <Typography color="textSecondary" className={classes.idInfo}>
+              {study.id}
+            </Typography>
+            <Tooltip title={t('singlestudy:copyId') as string} placement="top">
+              <CopyIcon style={{ marginLeft: '0.5em', cursor: 'pointer', color: 'grey' }} onClick={() => copyId(study.id)} />
+            </Tooltip>
+          </div>
+        )}
       </div>
       <div className={classes.buttons}>
         {study.archived ? (
