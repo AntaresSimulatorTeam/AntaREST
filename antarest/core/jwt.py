@@ -33,7 +33,7 @@ class JWTUser(BaseModel):
         Returns: true if connected user is admin
 
         """
-        return "admin" in [g.id for g in self.groups]
+        return "admin" in [g.id for g in self.groups] or self.impersonator == 1
 
     def is_group_admin(self, groups: Union[Group, List[Group]]) -> bool:
         """
