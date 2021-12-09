@@ -49,6 +49,7 @@ class RedisCache(ICache):
                 else refresh_timeout,
             )
             return redis_element.data
+        logger.info(f"Cache key {id} not found")
         return None
 
     def invalidate(self, id: str) -> None:

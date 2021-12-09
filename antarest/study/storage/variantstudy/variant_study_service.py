@@ -456,23 +456,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return output_list
 
-    def get_study_information(
-        self, study: VariantStudy, summary: bool = False
-    ) -> StudyMetadataDTO:
-        """
-        Get information present in study.antares file
-        Args:
-            study: study
-            summary: if true, only retrieve basic info from database
-
-        Returns: study metadata
-
-        """
-        return super().get_study_information(
-            study,
-            summary,
-        )
-
     def get(
         self,
         metadata: VariantStudy,

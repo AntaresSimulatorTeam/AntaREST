@@ -207,6 +207,7 @@ class TaskJobService(ITaskService):
     def await_task(
         self, task_id: str, timeout_sec: Optional[int] = None
     ) -> None:
+        logger.info(f"Awaiting task {task_id}")
         if task_id in self.tasks:
             self.tasks[task_id].result(
                 timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT
@@ -245,11 +246,14 @@ class TaskJobService(ITaskService):
         )
 
         with db():
+            logger.info(f"Starting task {task_id}")
             task = retry(lambda: self.repo.get_or_raise(task_id))
             task.status = TaskStatus.RUNNING.value
             self.repo.save(task)
+            logger.info(f"Task {task_id} set to RUNNING")
             try:
                 result = callback(self._task_logger(task_id))
+                logger.info(f"Task {task_id} ended")
                 self._update_task_status(
                     task_id,
                     TaskStatus.COMPLETED
