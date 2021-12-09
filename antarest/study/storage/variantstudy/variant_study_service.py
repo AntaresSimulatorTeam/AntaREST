@@ -550,6 +550,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
         ):
             logger.info(f"Starting variant study {metadata.id} generation")
+            self.repository.refresh(metadata)
             if metadata.generation_task:
                 try:
                     previous_task = self.task_service.status_task(
