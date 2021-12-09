@@ -476,7 +476,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: study data formatted in json
 
         """
-        self._safe_generation(metadata, timeout=30)
+        self._safe_generation(metadata, timeout=60)
         self.repository.refresh(metadata)
         return super().get(
             metadata=metadata,
@@ -654,7 +654,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
         else:
             self.raw_study_service.export_study_flat(
-                metadata=parent_study, dest=dest_path, outputs=False
+                metadata=parent_study,
+                dest=dest_path,
+                outputs=False,
+                denormalize=False,
             )
 
         results = self._generate_snapshot(variant_study, notifier)
@@ -847,7 +850,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study: study
         Returns: study output data
         """
-        self._safe_generation(study, timeout=30)
+        self._safe_generation(study, timeout=60)
         return super().get_study_sim_result(study=study)
 
     def set_reference_output(
@@ -901,7 +904,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
 
     def export_study_flat(
-        self, metadata: VariantStudy, dest: Path, outputs: bool = True
+        self,
+        metadata: VariantStudy,
+        dest: Path,
+        outputs: bool = True,
+        denormalize: bool = True,
     ) -> None:
 
         self._safe_generation(metadata)
@@ -922,6 +929,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         duration = "{:.3f}".format(stop_time - start_time)
         logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
         _, study = self.study_factory.create_from_fs(dest, "", use_cache=False)
-        study.denormalize()
-        duration = "{:.3f}".format(time.time() - stop_time)
-        logger.info(f"Study {path_study} denormalized in {duration}s")
+        if denormalize:
+            study.denormalize()
+            duration = "{:.3f}".format(time.time() - stop_time)
+            logger.info(f"Study {path_study} denormalized in {duration}s")

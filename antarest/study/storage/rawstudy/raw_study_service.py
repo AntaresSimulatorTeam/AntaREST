@@ -250,7 +250,11 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         return metadata
 
     def export_study_flat(
-        self, metadata: RawStudy, dest: Path, outputs: bool = True
+        self,
+        metadata: RawStudy,
+        dest: Path,
+        outputs: bool = True,
+        denormalize: bool = True,
     ) -> None:
         path_study = Path(metadata.path)
         start_time = time.time()
