@@ -42,9 +42,7 @@ class StudyMetadataRepository:
         return metadata
 
     def get_all(self) -> List[Study]:
-        logger.info("Retrieving all studies")
         metadatas: List[Study] = db.session.query(Study).all()
-        logger.info("Studies retrieved")
         return metadatas
 
     def delete(self, id: str) -> None:

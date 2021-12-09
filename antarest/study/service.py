@@ -283,7 +283,10 @@ class StudyService:
             for k in cached_studies:
                 studies[k] = StudyMetadataDTO.parse_obj(cached_studies[k])
         else:
-            for study in self.repository.get_all():
+            logger.info("Retrieving all studies")
+            all_studies = self.repository.get_all()
+            logger.info("Studies retrieved")
+            for study in all_studies:
                 if not managed or is_managed(study):
                     study_metadata = self._try_get_studies_information(
                         study, summary
