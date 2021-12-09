@@ -208,7 +208,9 @@ class TaskJobService(ITaskService):
         self, task_id: str, timeout_sec: Optional[int] = None
     ) -> None:
         if task_id in self.tasks:
-            self.tasks[task_id].result(timeout_sec)
+            self.tasks[task_id].result(
+                timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT
+            )
         else:
             logger.warning(
                 f"Task {task_id} not handled by this worker, will poll for task completion from db"

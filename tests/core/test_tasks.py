@@ -2,12 +2,14 @@ import datetime
 from typing import Callable
 from unittest.mock import Mock, ANY, call
 
+import pytest
 from sqlalchemy import create_engine
 
 from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import EventType, Event
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.persistence import Base
-from antarest.core.requests import RequestParameters
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
     TaskJob,
     TaskStatus,
@@ -344,3 +346,40 @@ def test_repository():
             == 0
         )
         assert task_repository.get(new_task.id) is None
+
+
+def test_cancel():
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+
+    repo_mock = Mock(spec=TaskJobRepository)
+    repo_mock.list.return_value = []
+    service = TaskJobService(
+        config=Config(), repository=repo_mock, event_bus=Mock()
+    )
+
+    with pytest.raises(UserHasNotPermissionError):
+        service.cancel_task("a", RequestParameters())
+
+    service.cancel_task(
+        "b", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True
+    )
+    service.event_bus.push.assert_called_with(
+        Event(type=EventType.TASK_CANCEL_REQUEST, payload="b")
+    )
+
+    creation_date = datetime.datetime.utcnow()
+    task = TaskJob(id="a", name="b", status=2, creation_date=creation_date)
+    repo_mock.list.return_value = [task]
+    repo_mock.get_or_raise.return_value = task
+    service.tasks["a"] = Mock()
+    service.cancel_task(
+        "a", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True
+    )
+    task.status = TaskStatus.CANCELLED.value
+    repo_mock.save.assert_called_with(task)
