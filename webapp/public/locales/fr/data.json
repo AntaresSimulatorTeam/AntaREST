@@ -33,5 +33,5 @@
   "jsonFormat": "Format JSON",
   "graphSelector": "Colonnes",
   "monotonicView": "Monotone",
-  "matrixEmpty": "Pas de données"
+  "matrixEmpty": "Matrice vide"
 }

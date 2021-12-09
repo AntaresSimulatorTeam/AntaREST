@@ -351,7 +351,11 @@ class AbstractStorageService(IStudyStorageService[T]):
 
     @abstractmethod
     def export_study_flat(
-        self, metadata: T, dest: Path, outputs: bool = True
+        self,
+        metadata: T,
+        dest: Path,
+        outputs: bool = True,
+        denormalize: bool = True,
     ) -> None:
         raise NotImplementedError()
 

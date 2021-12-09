@@ -8,7 +8,6 @@ from typing import Tuple, Any, Optional, Dict
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
-from dateutil import tz
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from sqlalchemy import create_engine, text
@@ -23,7 +22,6 @@ from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.filetransfer.main import build_filetransfer_service
-from antarest.core.filetransfer.web import create_file_transfer_api
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.persistence import upgrade_db
 from antarest.core.swagger import customize_openapi
