@@ -5,7 +5,7 @@ import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, Future
 from http import HTTPStatus
-from typing import Callable, Optional, List, Dict
+from typing import Callable, Optional, List, Dict, Awaitable
 
 from fastapi import HTTPException
 
@@ -21,6 +21,7 @@ from antarest.core.model import PermissionInfo
 from antarest.core.requests import (
     RequestParameters,
     MustBeAuthenticatedError,
+    UserHasNotPermissionError,
 )
 from antarest.core.tasks.model import (
     TaskDTO,
@@ -96,6 +97,7 @@ class TaskJobService(ITaskService):
         self.threadpool = ThreadPoolExecutor(
             max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_"
         )
+        self.event_bus.add_listener(self.create_task_event_callback())
         # set the status of previously running job to FAILED due to server restart
         self._fix_running_status()
 
@@ -134,6 +136,36 @@ class TaskJobService(ITaskService):
         )
         self.tasks[task.id] = future
         return str(task.id)
+
+    def create_task_event_callback(self) -> Callable[[Event], Awaitable[None]]:
+        async def task_event_callback(event: Event) -> None:
+            if event.type == EventType.TASK_CANCEL_REQUEST:
+                self._cancel_task(str(event.payload), dispatch=False)
+
+        return task_event_callback
+
+    def cancel_task(
+        self, task_id: str, params: RequestParameters, dispatch: bool = False
+    ) -> None:
+        task = self.repo.get_or_raise(task_id)
+        if params.user and (
+            params.user.is_site_admin()
+            or task.owner_id == params.user.impersonator
+        ):
+            self._cancel_task(task_id, dispatch)
+        else:
+            raise UserHasNotPermissionError()
+
+    def _cancel_task(self, task_id: str, dispatch: bool = False) -> None:
+        task = self.repo.get_or_raise(task_id)
+        if task_id in self.tasks:
+            self.tasks[task_id].cancel()
+            task.status = TaskStatus.CANCELLED
+            self.repo.save(task)
+        elif dispatch:
+            self.event_bus.push(
+                Event(type=EventType.TASK_CANCEL_REQUEST, payload=task_id)
+            )
 
     def status_task(
         self,

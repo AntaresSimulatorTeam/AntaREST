@@ -48,4 +48,12 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
             service.await_task(task_id)
         return service.status_task(task_id, request_params, with_logs)
 
+    @bp.put("/tasks/{task_id}/cancel")
+    def cancel_task(
+        task_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        request_params = RequestParameters(user=current_user)
+        return service.cancel_task(task_id, request_params, dispatch=True)
+
     return bp
