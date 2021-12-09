@@ -14,7 +14,7 @@ import HelpIcon from '@material-ui/icons/Help';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
 import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal, updateCommandResults } from './utils';
-import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getTask, getStudyTask } from '../../../services/api/variant';
+import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getTask, getStudyTask, getStudySynthesis } from '../../../services/api/variant';
 import AddCommandModal from './AddCommandModal';
 import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskEventPayload, TaskStatus } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
@@ -399,6 +399,19 @@ const EditionView = (props: PropTypes) => {
     init();
     return () => unsubscribeChannel(commandGenerationChannel);
   }, [commands.length, enqueueSnackbar, studyId, t, subscribeChannel, unsubscribeChannel, debouncedFailureNotification]);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const synthesis = await getStudySynthesis(studyId);
+        console.log('SYNTHESIS: ', synthesis);
+      } catch (e) {
+        logError('Error: ', e);
+        enqueueErrorSnackbar(enqueueSnackbar, t('variants:fetchSynthesisError'), e as AxiosError);
+      }
+    };
+    init();
+  }, [enqueueSnackbar, studyId, t]);
 
   useEffect(() => {
     addWsListener(listen);

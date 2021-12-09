@@ -1,8 +1,9 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -26,20 +27,24 @@ class RemoveBindingConstraint(ICommand):
             **data,
         )
 
-    def apply_config(self, study_data: FileStudy) -> CommandOutput:
-        if self.id not in study_data.config.bindings:
-            return CommandOutput(
-                status=False, message="Binding constraint not found"
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        if self.id not in study_data.bindings:
+            return (
+                CommandOutput(
+                    status=False, message="Binding constraint not found"
+                ),
+                dict(),
             )
-        study_data.config.bindings.remove(self.id)
-        return CommandOutput(status=True)
+        study_data.bindings.remove(self.id)
+        return CommandOutput(status=True), dict()
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        if self.id not in study_data.config.bindings:
-            return CommandOutput(
-                status=False, message="Binding constraint not found"
-            )
-
+        output, data = self._apply_config(study_data.config)
+        if not output.status:
+            study_data.config.bindings.push(self.id)
+            return output
         binding_constraints = study_data.tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]
         )
@@ -56,7 +61,6 @@ class RemoveBindingConstraint(ICommand):
             ["input", "bindingconstraints", "bindingconstraints"],
         )
         study_data.tree.delete(["input", "bindingconstraints", self.id])
-        study_data.config.bindings.remove(self.id)
         return CommandOutput(status=True)
 
     def to_dto(self) -> CommandDTO:

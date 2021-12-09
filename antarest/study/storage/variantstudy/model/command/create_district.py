@@ -6,6 +6,7 @@ from pydantic import validator
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
     Set,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -46,10 +47,10 @@ class CreateDistrict(ICommand):
         return val
 
     def _apply_config(
-        self, study_data: FileStudy
+        self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
         district_id = transform_name_to_id(self.name)
-        if district_id in study_data.config.sets:
+        if district_id in study_data.sets:
             return (
                 CommandOutput(
                     status=False,
@@ -60,7 +61,7 @@ class CreateDistrict(ICommand):
 
         base_filter = self.base_filter or DistrictBaseFilter.remove_all
         inverted_set = base_filter == DistrictBaseFilter.add_all
-        study_data.config.sets[district_id] = Set(
+        study_data.sets[district_id] = Set(
             name=self.name,
             areas=self.filter_items or [],
             output=self.output if self.output is not None else True,
@@ -73,7 +74,7 @@ class CreateDistrict(ICommand):
         }
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, data = self._apply_config(study_data)
+        output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
         district_id = data["district_id"]

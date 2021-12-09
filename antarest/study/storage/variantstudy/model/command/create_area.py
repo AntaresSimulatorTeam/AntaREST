@@ -4,6 +4,7 @@ from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.default_values import (
@@ -52,14 +53,14 @@ class CreateArea(ICommand):
         return new_areas
 
     def _apply_config(
-        self, study_data: FileStudy
+        self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.command_context.generator_matrix_constants is None:
             raise ValueError()
 
         area_id = transform_name_to_id(self.area_name)
 
-        if area_id in study_data.config.areas.keys():
+        if area_id in study_data.areas.keys():
             return (
                 CommandOutput(
                     status=False,
@@ -68,7 +69,7 @@ class CreateArea(ICommand):
                 dict(),
             )
 
-        study_data.config.areas[area_id] = Area(
+        study_data.areas[area_id] = Area(
             name=self.area_name,
             links={},
             thermals=[],
@@ -81,7 +82,7 @@ class CreateArea(ICommand):
         ), {"area_id": area_id}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, data = self._apply_config(study_data)
+        output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
         area_id = data["area_id"]

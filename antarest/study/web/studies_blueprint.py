@@ -213,11 +213,6 @@ def create_study_routes(
             f"Return a synthesis for study '{study_id}'",
             extra={"user": current_user.id},
         )
-        print(
-            "----------------- STUDY ID: ",
-            study_id,
-            " -------------------------",
-        )
         params = RequestParameters(user=current_user)
         return study_service.get_study_synthesis(study_id, params)
 

@@ -1,5 +1,8 @@
 from typing import Any, List, Optional, Tuple, Dict
 
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -22,9 +25,9 @@ class RemoveLink(ICommand):
         )
 
     def _apply_config(
-        self, study_data: FileStudy
+        self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
-        if self.area1 not in study_data.config.areas:
+        if self.area1 not in study_data.areas:
             return (
                 CommandOutput(
                     status=False,
@@ -32,7 +35,7 @@ class RemoveLink(ICommand):
                 ),
                 dict(),
             )
-        if self.area2 not in study_data.config.areas:
+        if self.area2 not in study_data.areas:
             return (
                 CommandOutput(
                     status=False,
@@ -43,7 +46,7 @@ class RemoveLink(ICommand):
 
         area_from, area_to = sorted([self.area1, self.area2])
 
-        if area_to not in study_data.config.areas[area_from].links:
+        if area_to not in study_data.areas[area_from].links:
             return (
                 CommandOutput(
                     status=False,
@@ -60,7 +63,7 @@ class RemoveLink(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, data = self._apply_config(study_data)
+        output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
         area_from = data["area_from"]

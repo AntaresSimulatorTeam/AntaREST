@@ -3,6 +3,7 @@ from typing import Any, List, Optional, Tuple, Dict
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -25,9 +26,9 @@ class RemoveArea(ICommand):
         )
 
     def _apply_config(
-        self, study_data: FileStudy
+        self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
-        del study_data.config.areas[self.id]
+        del study_data.areas[self.id]
         return (
             CommandOutput(status=True, message=f"Area '{self.id}' deleted"),
             dict(),
@@ -139,7 +140,7 @@ class RemoveArea(ICommand):
                 ]
             )
 
-        output, _ = self._apply_config(study_data)
+        output, _ = self._apply_config(study_data.config)
         for area_name, area in study_data.config.areas.items():
             for link in area.links.keys():
                 if link == self.id:

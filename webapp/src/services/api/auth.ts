@@ -19,7 +19,7 @@ export const needAuth = async (): Promise<boolean> => {
     await client.get('/v1/auth');
     return Promise.resolve(false);
   } catch (e) {
-    const { status } = e.response;
+    const { status } = (e as any).response;
     if (status === 401) {
       return Promise.resolve(true);
     }

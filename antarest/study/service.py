@@ -470,7 +470,10 @@ class StudyService:
         """
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self._get_study_storage_service(study).get_synthesis(study)
+        print("---------- YES SIR -------------------")
+        return self._get_study_storage_service(study).get_synthesis(
+            study, params
+        )
 
     def remove_duplicates(self) -> None:
         study_paths: Dict[str, List[str]] = {}

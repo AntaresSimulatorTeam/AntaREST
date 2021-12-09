@@ -4,7 +4,7 @@ import shutil
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, cast, Union, Tuple
+from typing import List, Optional, cast, Tuple
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -45,6 +45,7 @@ from antarest.study.model import (
     Study,
     StudyMetadataDTO,
     StudySimResultDTO,
+    RawStudy,
 )
 from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
@@ -618,7 +619,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return self.generate_task(variant_study, denormalize)
 
-    def light_generation(
+    def generate_study_config(
         self,
         variant_study_id: str,
         params: RequestParameters,
@@ -630,20 +631,15 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if variant_study.parent_id is None:
             raise NoParentStudyError(variant_study_id)
 
-        return self._generate(
-            variant_study_id=variant_study_id,
-            params=RequestParameters(DEFAULT_ADMIN_USER),
-            light=True,
-        )
+        return self._generate_study_config(variant_study, None)
 
     def _generate(
         self,
         variant_study_id: str,
         params: RequestParameters,
         denormalize: bool = True,
-        light: bool = False,
         notifier: TaskUpdateNotifier = noop_notifier,
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
+    ) -> GenerationResultInfoDTO:
         logger.info(f"Generating variant study {variant_study_id}")
 
         # Get variant study
@@ -659,22 +655,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         # Check parent study permission
         assert_permission(params.user, parent_study, StudyPermissionType.READ)
-
-        return (
-            self._light_generation(parent_study, variant_study, notifier)
-            if light
-            else self._hard_generation(
-                denormalize, parent_study, variant_study, notifier
-            )
-        )
-
-    def _hard_generation(
-        self,
-        denormalize: bool,
-        parent_study: Study,
-        variant_study: VariantStudy,
-        notifier: TaskUpdateNotifier = noop_notifier,
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
 
         # Remove from cache
         remove_from_cache(self.cache, variant_study.id)
@@ -702,10 +682,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
 
         # Copy parent study to dest
-        results, config = self._generate_snapshot(
+        results = self._generate_snapshot(
             variant_study=variant_study, dest_path=dest_path, notifier=notifier
         )
-
         if results.success:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
@@ -720,43 +699,37 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 )
                 logger.info(f"Denormalizing variant study {variant_study.id}")
                 study_tree.denormalize()
-        return results, config
+        return results
 
-    def _light_generation(
-        self,
-        parent_study: Study,
-        variant_study: VariantStudy,
-        notifier: TaskUpdateNotifier = noop_notifier,
+    def _generate_study_config(
+        self, metadata: VariantStudy, config: Optional[FileStudyTreeConfig]
     ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
+        parent_study = self.repository.get(metadata.parent_id)
+        if parent_study is None:
+            raise StudyNotFoundError(metadata.parent_id)
 
-        study_path = ""
-        if isinstance(parent_study, VariantStudy):
-            self.light_generation(variant_study_id=parent_study.id, light=True)
-            study_path = self.get_study_path(parent_study)
-        else:
-            study_path = self.raw_study_service.get_study_path(parent_study)
-
-        return self._generate_snapshot(
-            variant_study=variant_study,
-            dest_path=study_path,
-            notifier=notifier,
-            light=True,
-        )
-
-    def _to_icommand(self, metadata: VariantStudy) -> List[List[ICommand]]:
-        commands: List[List[ICommand]] = []
-        for command_block in metadata.commands:
-            commands.append(
-                self.command_factory.to_icommand(command_block.to_dto())
+        if isinstance(parent_study, RawStudy):
+            parent_config, _ = self.study_factory.create_from_fs(
+                Path(parent_study.path),
+                parent_study.id,
+                Path(parent_study.path) / "output",
+                use_cache=True,
             )
-        return commands
+        else:
+            res, parent_config = self._generate_study_config(
+                parent_study, config
+            )
+            if res is not None and not res.success:
+                return res, parent_config
 
-    def _generate_snapshot(
+        # Generate
+        return self._generate_config(metadata, parent_config)
+
+    def _generate_config(
         self,
         variant_study: VariantStudy,
-        dest_path: Path,
+        config: FileStudyTreeConfig,
         notifier: TaskUpdateNotifier = noop_notifier,
-        light: bool = False,
     ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
 
         # Generate
@@ -787,8 +760,55 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     exc_info=e,
                 )
 
+        return self.generator.generate_config(
+            commands, config, variant_study, notifier=notify
+        )
+
+    def _to_icommand(self, metadata: VariantStudy) -> List[List[ICommand]]:
+        commands: List[List[ICommand]] = []
+        for command_block in metadata.commands:
+            commands.append(
+                self.command_factory.to_icommand(command_block.to_dto())
+            )
+        return commands
+
+    def _generate_snapshot(
+        self,
+        variant_study: VariantStudy,
+        dest_path: Path,
+        notifier: TaskUpdateNotifier = noop_notifier,
+    ) -> GenerationResultInfoDTO:
+
+        # Generate
+        commands: List[List[ICommand]] = self._to_icommand(variant_study)
+
+        def notify(
+            command_index: int, command_result: bool, command_message: str
+        ) -> None:
+            try:
+                command_result_obj = CommandResultDTO(
+                    study_id=variant_study.id,
+                    id=variant_study.commands[command_index].id,
+                    success=command_result,
+                    message=command_message,
+                )
+                notifier(command_result_obj.json())
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
+                        payload=command_result_obj,
+                        channel=EventChannelDirectory.STUDY_GENERATION
+                        + variant_study.id,
+                    )
+                )
+            except Exception as e:
+                logger.error(
+                    f"Fail to notify command result n°{command_index} for study {variant_study.id}",
+                    exc_info=e,
+                )
+
         return self.generator.generate(
-            commands, dest_path, variant_study, notifier=notify, light=light
+            commands, dest_path, variant_study, notifier=notify
         )
 
     def get_study_task(
@@ -832,7 +852,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Copy study to a new destination
         Args:
             src_meta: source study
-            dest_meta: destination study
+            dest_name: destination study
             with_outputs: indicate either to copy the output or not
         Returns: destination study
         """
@@ -1018,7 +1038,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if params is None:
             raise UserHasNotPermissionError()
 
-        results, config = self.light_generation(metadata.id, params)
+        results, config = self.generate_study_config(metadata.id, params)
         if results.success:
             return FileStudyTreeConfigDTO.from_build_config(config)
 

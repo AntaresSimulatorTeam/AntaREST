@@ -4,7 +4,10 @@ from pydantic import validator
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Link
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    Link,
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.default_values import (
     LinkProperties,
@@ -51,10 +54,10 @@ class CreateLink(ICommand):
             return validate_matrix(v, values)
 
     def _create_link_in_config(
-        self, area_from: str, area_to: str, study_data: FileStudy
+        self, area_from: str, area_to: str, study_data: FileStudyTreeConfig
     ) -> None:
         self.parameters = self.parameters or {}
-        study_data.config.areas[area_from].links[area_to] = Link(
+        study_data.areas[area_from].links[area_to] = Link(
             filters_synthesis=[
                 step.strip()
                 for step in self.parameters.get(
@@ -119,9 +122,9 @@ class CreateLink(ICommand):
         }
 
     def _apply_config(
-        self, study_data: FileStudy
+        self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
-        if self.area1 not in study_data.config.areas:
+        if self.area1 not in study_data.areas:
             return (
                 CommandOutput(
                     status=False,
@@ -129,7 +132,7 @@ class CreateLink(ICommand):
                 ),
                 dict(),
             )
-        if self.area2 not in study_data.config.areas:
+        if self.area2 not in study_data.areas:
             return (
                 CommandOutput(
                     status=False,
@@ -139,7 +142,7 @@ class CreateLink(ICommand):
             )
 
         area_from, area_to = sorted([self.area1, self.area2])
-        if area_to in study_data.config.areas[area_from].links:
+        if area_to in study_data.areas[area_from].links:
             return (
                 CommandOutput(
                     status=False,
@@ -151,11 +154,7 @@ class CreateLink(ICommand):
         self._create_link_in_config(area_from, area_to, study_data)
 
         if (
-            study_data.config.path
-            / "input"
-            / "links"
-            / area_from
-            / f"{area_to}.txt"
+            study_data.path / "input" / "links" / area_from / f"{area_to}.txt"
         ).exists():
             return (
                 CommandOutput(
@@ -174,7 +173,7 @@ class CreateLink(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, data = self.apply_config(study_data)
+        output, data = self.apply_config(study_data.config)
         if not output.status:
             return output
         area_from = data["area_from"]

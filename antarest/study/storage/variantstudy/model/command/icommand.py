@@ -4,6 +4,9 @@ from typing import List, Tuple, Dict, Any
 
 from pydantic import BaseModel
 
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -28,11 +31,11 @@ class ICommand(ABC, BaseModel):
         raise NotImplementedError()
 
     def _apply_config(
-        self, study_data: FileStudy
+        self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
         raise NotImplementedError()
 
-    def apply_config(self, study_data: FileStudy) -> CommandOutput:
+    def apply_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         output, _ = self._apply_config(study_data)
         return output
 

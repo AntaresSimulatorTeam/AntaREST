@@ -2,6 +2,7 @@ from typing import Any, List, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -25,9 +26,9 @@ class RemoveCluster(ICommand):
         )
 
     def _apply_config(
-        self, study_data: FileStudy
+        self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
-        if self.area_id not in study_data.config.areas:
+        if self.area_id not in study_data.areas:
             return (
                 CommandOutput(
                     status=False,
@@ -40,9 +41,7 @@ class RemoveCluster(ICommand):
             len(
                 [
                     cluster
-                    for cluster in study_data.config.areas[
-                        self.area_id
-                    ].thermals
+                    for cluster in study_data.areas[self.area_id].thermals
                     if cluster.id == self.cluster_id
                 ]
             )
@@ -55,9 +54,9 @@ class RemoveCluster(ICommand):
                 ),
                 dict(),
             )
-        study_data.config.areas[self.area_id].thermals = [
+        study_data.areas[self.area_id].thermals = [
             cluster
-            for cluster in study_data.config.areas[self.area_id].thermals
+            for cluster in study_data.areas[self.area_id].thermals
             if cluster.id != self.cluster_id.lower()
         ]
         # todo remove binding constraint using this cluster ?
@@ -71,7 +70,7 @@ class RemoveCluster(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, _ = self.apply_config(study_data)
+        output, _ = self.apply_config(study_data.config)
         if not output.status:
             return output
 

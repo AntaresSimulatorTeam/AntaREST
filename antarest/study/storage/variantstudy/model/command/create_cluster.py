@@ -7,6 +7,7 @@ from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Cluster,
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -73,9 +74,9 @@ class CreateCluster(ICommand):
             return validate_matrix(v, values)
 
     def _apply_config(
-        self, study_data: FileStudy
+        self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
-        if self.area_id not in study_data.config.areas:
+        if self.area_id not in study_data.areas:
             return (
                 CommandOutput(
                     status=False,
@@ -85,7 +86,7 @@ class CreateCluster(ICommand):
             )
 
         cluster_id = transform_name_to_id(self.cluster_name)
-        for cluster in study_data.config.areas[self.area_id].thermals:
+        for cluster in study_data.areas[self.area_id].thermals:
             if cluster.id == cluster_id:
                 return (
                     CommandOutput(
@@ -95,7 +96,7 @@ class CreateCluster(ICommand):
                     dict(),
                 )
 
-        study_data.config.areas[self.area_id].thermals.append(
+        study_data.areas[self.area_id].thermals.append(
             Cluster(id=cluster_id, name=self.cluster_name)
         )
         return (
@@ -107,7 +108,7 @@ class CreateCluster(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, data = self.apply_config(study_data)
+        output, data = self.apply_config(study_data.config)
         if not output.status:
             return output
 
