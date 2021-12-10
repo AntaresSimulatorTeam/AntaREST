@@ -173,7 +173,7 @@ class CreateLink(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, data = self.apply_config(study_data.config)
+        output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
         area_from = data["area_from"]

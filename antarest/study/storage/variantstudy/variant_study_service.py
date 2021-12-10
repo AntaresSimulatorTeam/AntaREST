@@ -4,7 +4,7 @@ import shutil
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, cast, Tuple
+from typing import List, Optional, cast, Tuple, Callable
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -725,13 +725,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         # Generate
         return self._generate_config(metadata, parent_config)
 
-    def _generate_config(
-        self,
-        variant_study: VariantStudy,
-        config: FileStudyTreeConfig,
-        notifier: TaskUpdateNotifier = noop_notifier,
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
-
+    def _get_commands_and_notifier(
+        self, variant_study: VariantStudy, notifier: TaskUpdateNotifier
+    ) -> Tuple[List[List[ICommand]], Callable[[int, bool, str], None]]:
         # Generate
         commands: List[List[ICommand]] = self._to_icommand(variant_study)
 
@@ -760,9 +756,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     exc_info=e,
                 )
 
-        return self.generator.generate_config(
-            commands, config, variant_study, notifier=notify
-        )
+        return commands, notify
 
     def _to_icommand(self, metadata: VariantStudy) -> List[List[ICommand]]:
         commands: List[List[ICommand]] = []
@@ -772,6 +766,20 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
         return commands
 
+    def _generate_config(
+        self,
+        variant_study: VariantStudy,
+        config: FileStudyTreeConfig,
+        notifier: TaskUpdateNotifier = noop_notifier,
+    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
+
+        commands, notify = self._get_commands_and_notifier(
+            variant_study=variant_study, notifier=notifier
+        )
+        return self.generator.generate_config(
+            commands, config, variant_study, notifier=notify
+        )
+
     def _generate_snapshot(
         self,
         variant_study: VariantStudy,
@@ -779,34 +787,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         notifier: TaskUpdateNotifier = noop_notifier,
     ) -> GenerationResultInfoDTO:
 
-        # Generate
-        commands: List[List[ICommand]] = self._to_icommand(variant_study)
-
-        def notify(
-            command_index: int, command_result: bool, command_message: str
-        ) -> None:
-            try:
-                command_result_obj = CommandResultDTO(
-                    study_id=variant_study.id,
-                    id=variant_study.commands[command_index].id,
-                    success=command_result,
-                    message=command_message,
-                )
-                notifier(command_result_obj.json())
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
-                        payload=command_result_obj,
-                        channel=EventChannelDirectory.STUDY_GENERATION
-                        + variant_study.id,
-                    )
-                )
-            except Exception as e:
-                logger.error(
-                    f"Fail to notify command result n°{command_index} for study {variant_study.id}",
-                    exc_info=e,
-                )
-
+        commands, notify = self._get_commands_and_notifier(
+            variant_study=variant_study, notifier=notifier
+        )
         return self.generator.generate(
             commands, dest_path, variant_study, notifier=notify
         )

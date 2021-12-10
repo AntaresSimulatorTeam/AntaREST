@@ -41,10 +41,10 @@ class RemoveBindingConstraint(ICommand):
         return CommandOutput(status=True), dict()
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, data = self._apply_config(study_data.config)
-        if not output.status:
-            study_data.config.bindings.push(self.id)
-            return output
+        if self.id not in study_data.config.bindings:
+            return CommandOutput(
+                status=False, message="Binding constraint not found"
+            )
         binding_constraints = study_data.tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]
         )
@@ -55,13 +55,13 @@ class RemoveBindingConstraint(ICommand):
                 continue
             new_binding_constraints[str(index)] = binding_constraints[bd]
             index += 1
-
         study_data.tree.save(
             new_binding_constraints,
             ["input", "bindingconstraints", "bindingconstraints"],
         )
         study_data.tree.delete(["input", "bindingconstraints", self.id])
-        return CommandOutput(status=True)
+        output, _ = self._apply_config(study_data.config)
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

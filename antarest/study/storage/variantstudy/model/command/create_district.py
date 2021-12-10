@@ -70,7 +70,7 @@ class CreateDistrict(ICommand):
         item_key = "-" if inverted_set else "+"
         return CommandOutput(status=True, message=district_id), {
             "district_id": district_id,
-            item_key: "item_key",
+            "item_key": item_key,
         }
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:

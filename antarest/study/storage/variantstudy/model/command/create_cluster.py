@@ -84,7 +84,6 @@ class CreateCluster(ICommand):
                 ),
                 dict(),
             )
-
         cluster_id = transform_name_to_id(self.cluster_name)
         for cluster in study_data.areas[self.area_id].thermals:
             if cluster.id == cluster_id:
@@ -95,7 +94,6 @@ class CreateCluster(ICommand):
                     ),
                     dict(),
                 )
-
         study_data.areas[self.area_id].thermals.append(
             Cluster(id=cluster_id, name=self.cluster_name)
         )
@@ -108,7 +106,7 @@ class CreateCluster(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, data = self.apply_config(study_data.config)
+        output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
 

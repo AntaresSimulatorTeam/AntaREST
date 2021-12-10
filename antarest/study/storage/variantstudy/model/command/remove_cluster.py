@@ -25,6 +25,13 @@ class RemoveCluster(ICommand):
             command_name=CommandName.REMOVE_CLUSTER, version=1, **data
         )
 
+    def _remove_constraints(self, study_data: FileStudyTreeConfig):
+        study_data.areas[self.area_id].thermals = [
+            cluster
+            for cluster in study_data.areas[self.area_id].thermals
+            if cluster.id != self.cluster_id.lower()
+        ]
+
     def _apply_config(
         self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
@@ -54,11 +61,7 @@ class RemoveCluster(ICommand):
                 ),
                 dict(),
             )
-        study_data.areas[self.area_id].thermals = [
-            cluster
-            for cluster in study_data.areas[self.area_id].thermals
-            if cluster.id != self.cluster_id.lower()
-        ]
+        self._remove_constraints(study_data)
         # todo remove binding constraint using this cluster ?
 
         return (
@@ -70,9 +73,28 @@ class RemoveCluster(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, _ = self.apply_config(study_data.config)
-        if not output.status:
-            return output
+        if self.area_id not in study_data.config.areas:
+            return CommandOutput(
+                status=False,
+                message=f"Area '{self.area_id}' does not exist",
+            )
+
+        if (
+            len(
+                [
+                    cluster
+                    for cluster in study_data.config.areas[
+                        self.area_id
+                    ].thermals
+                    if cluster.id == self.cluster_id
+                ]
+            )
+            == 0
+        ):
+            return CommandOutput(
+                status=False,
+                message=f"Cluster '{self.cluster_id}' does not exist",
+            )
 
         study_data.tree.delete(
             [
@@ -103,7 +125,12 @@ class RemoveCluster(ICommand):
             ]
         )
 
-        return output
+        self._remove_constraints(study_data.config)
+
+        return CommandOutput(
+            status=True,
+            message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
+        )
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
