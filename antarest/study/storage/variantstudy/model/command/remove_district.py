@@ -1,7 +1,8 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -23,10 +24,16 @@ class RemoveDistrict(ICommand):
             command_name=CommandName.REMOVE_DISTRICT, version=1, **data
         )
 
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        del study_data.sets[self.id]
+        return CommandOutput(status=True, message=self.id), dict()
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        del study_data.config.sets[self.id]
+        output, _ = self._apply_config(study_data.config)
         study_data.tree.delete(["input", "areas", "sets", self.id])
-        return CommandOutput(status=True, message=self.id)
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

@@ -11,6 +11,8 @@ from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
 )
 from antarest.core.interfaces.cache import ICache
+from antarest.core.model import JSON
+from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import extract_zip
 from antarest.study.model import (
     RawStudy,
@@ -21,6 +23,9 @@ from antarest.study.storage.abstract_storage_service import (
     AbstractStorageService,
 )
 from antarest.study.storage.patch_service import PatchService
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfigDTO,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
     FileStudy,
@@ -111,7 +116,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Fetch a study object and its config
         Args:
             metadata: study
-
+            use_cache: use cache
         Returns: the config and study tree object
 
         """
@@ -121,6 +126,16 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             study_path, metadata.id, use_cache=use_cache
         )
         return FileStudy(config=study_config, tree=study_tree)
+
+    def get_synthesis(
+        self, metadata: RawStudy, params: Optional[RequestParameters] = None
+    ) -> FileStudyTreeConfigDTO:
+        self._check_study_exists(metadata)
+        study_path = self.get_study_path(metadata)
+        study_config, _ = self.study_factory.create_from_fs(
+            study_path, metadata.id
+        )
+        return FileStudyTreeConfigDTO.from_build_config(study_config)
 
     def create(self, metadata: RawStudy) -> RawStudy:
         """

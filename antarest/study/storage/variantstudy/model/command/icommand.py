@@ -1,11 +1,13 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List, Tuple, Dict, Any
 
 from pydantic import BaseModel
 
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -13,6 +15,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
@@ -26,6 +29,16 @@ class ICommand(ABC, BaseModel):
     @abstractmethod
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()
+
+    @abstractmethod
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        raise NotImplementedError()
+
+    def apply_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
+        output, _ = self._apply_config(study_data)
+        return output
 
     def apply(self, study_data: FileStudy) -> CommandOutput:
         try:

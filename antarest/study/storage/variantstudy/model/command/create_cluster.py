@@ -1,4 +1,4 @@
-from typing import Dict, Union, List, Any, Optional, cast
+from typing import Dict, Union, List, Any, Optional, cast, Tuple
 
 from pydantic import validator
 
@@ -7,6 +7,7 @@ from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Cluster,
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -72,24 +73,44 @@ class CreateCluster(ICommand):
         else:
             return validate_matrix(v, values)
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
-        if self.area_id not in study_data.config.areas:
-            return CommandOutput(
-                status=False,
-                message=f"Area '{self.area_id}' does not exist",
-            )
-
-        cluster_id = transform_name_to_id(self.cluster_name)
-        for cluster in study_data.config.areas[self.area_id].thermals:
-            if cluster.id == cluster_id:
-                return CommandOutput(
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        if self.area_id not in study_data.areas:
+            return (
+                CommandOutput(
                     status=False,
-                    message=f"Cluster '{self.cluster_name}' already exist",
+                    message=f"Area '{self.area_id}' does not exist",
+                ),
+                dict(),
+            )
+        cluster_id = transform_name_to_id(self.cluster_name)
+        for cluster in study_data.areas[self.area_id].thermals:
+            if cluster.id == cluster_id:
+                return (
+                    CommandOutput(
+                        status=False,
+                        message=f"Cluster '{self.cluster_name}' already exist",
+                    ),
+                    dict(),
                 )
-
-        study_data.config.areas[self.area_id].thermals.append(
+        study_data.areas[self.area_id].thermals.append(
             Cluster(id=cluster_id, name=self.cluster_name)
         )
+        return (
+            CommandOutput(
+                status=True,
+                message=f"Cluster '{self.cluster_name}' added to area '{self.area_id}'",
+            ),
+            {"cluster_id": cluster_id},
+        )
+
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
+        output, data = self._apply_config(study_data.config)
+        if not output.status:
+            return output
+
+        cluster_id = data["cluster_id"]
 
         cluster_list_config = study_data.tree.get(
             ["input", "thermal", "clusters", self.area_id, "list"]
@@ -121,10 +142,7 @@ class CreateCluster(ICommand):
         }
         study_data.tree.save(new_cluster_data)
 
-        return CommandOutput(
-            status=True,
-            message=f"Cluster '{self.cluster_name}' added to area '{self.area_id}'",
-        )
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

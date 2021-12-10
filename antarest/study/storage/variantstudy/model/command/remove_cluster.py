@@ -1,7 +1,8 @@
-from typing import Any, List
+from typing import Any, List, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -22,6 +23,53 @@ class RemoveCluster(ICommand):
     def __init__(self, **data: Any) -> None:
         super().__init__(
             command_name=CommandName.REMOVE_CLUSTER, version=1, **data
+        )
+
+    def _remove_cluster(self, study_data: FileStudyTreeConfig):
+        study_data.areas[self.area_id].thermals = [
+            cluster
+            for cluster in study_data.areas[self.area_id].thermals
+            if cluster.id != self.cluster_id.lower()
+        ]
+
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        if self.area_id not in study_data.areas:
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Area '{self.area_id}' does not exist",
+                ),
+                dict(),
+            )
+
+        if (
+            len(
+                [
+                    cluster
+                    for cluster in study_data.areas[self.area_id].thermals
+                    if cluster.id == self.cluster_id
+                ]
+            )
+            == 0
+        ):
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Cluster '{self.cluster_id}' does not exist",
+                ),
+                dict(),
+            )
+        self._remove_cluster(study_data)
+        # todo remove binding constraint using this cluster ?
+
+        return (
+            CommandOutput(
+                status=True,
+                message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
+            ),
+            dict(),
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -47,6 +95,7 @@ class RemoveCluster(ICommand):
                 status=False,
                 message=f"Cluster '{self.cluster_id}' does not exist",
             )
+
         study_data.tree.delete(
             [
                 "input",
@@ -76,12 +125,7 @@ class RemoveCluster(ICommand):
             ]
         )
 
-        study_data.config.areas[self.area_id].thermals = [
-            cluster
-            for cluster in study_data.config.areas[self.area_id].thermals
-            if cluster.id != self.cluster_id.lower()
-        ]
-        # todo remove binding constraint using this cluster ?
+        self._remove_cluster(study_data.config)
 
         return CommandOutput(
             status=True,

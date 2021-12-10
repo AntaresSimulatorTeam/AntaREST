@@ -1,5 +1,8 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple, Dict
 
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
@@ -21,34 +24,55 @@ class RemoveLink(ICommand):
             command_name=CommandName.REMOVE_LINK, version=1, **data
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
-        if self.area1 not in study_data.config.areas:
-            return CommandOutput(
-                status=False,
-                message=f"The area '{self.area1}' does not exist.",
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        if self.area1 not in study_data.areas:
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"The area '{self.area1}' does not exist.",
+                ),
+                dict(),
             )
-        if self.area2 not in study_data.config.areas:
-            return CommandOutput(
-                status=False,
-                message=f"The area '{self.area2}' does not exist.",
+        if self.area2 not in study_data.areas:
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"The area '{self.area2}' does not exist.",
+                ),
+                dict(),
             )
 
         area_from, area_to = sorted([self.area1, self.area2])
 
-        if area_to not in study_data.config.areas[area_from].links:
-            return CommandOutput(
-                status=False,
-                message=f"The link between {self.area1} and {self.area2} does not exist.",
+        if area_to not in study_data.areas[area_from].links:
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"The link between {self.area1} and {self.area2} does not exist.",
+                ),
+                dict(),
             )
+        return (
+            CommandOutput(
+                status=True,
+                message=f"Link between {self.area1} and {self.area2} removed",
+            ),
+            {"area_from": area_from, "area_to": area_to},
+        )
 
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
+        output, data = self._apply_config(study_data.config)
+        if not output.status:
+            return output
+        area_from = data["area_from"]
+        area_to = data["area_to"]
         study_data.tree.delete(["input", "links", area_from, area_to])
         study_data.tree.delete(
             ["input", "links", area_from, "properties", area_to]
         )
-        return CommandOutput(
-            status=True,
-            message=f"Link between {self.area1} and {self.area2} removed",
-        )
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

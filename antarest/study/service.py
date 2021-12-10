@@ -62,6 +62,9 @@ from antarest.study.model import (
     PatchStudy,
 )
 from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfigDTO,
+)
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
 )
@@ -452,6 +455,24 @@ class StudyService:
             "study %s created by user %s", raw.id, params.get_user_id()
         )
         return str(raw.id)
+
+    def get_study_synthesis(
+        self, study_id: str, params: RequestParameters
+    ) -> FileStudyTreeConfigDTO:
+        """
+        Return study synthesis
+        Args:
+            study_id: study id
+            params: request parameters
+
+        Returns: study synthesis
+
+        """
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        return self._get_study_storage_service(study).get_synthesis(
+            study, params
+        )
 
     def remove_duplicates(self) -> None:
         study_paths: Dict[str, List[str]] = {}

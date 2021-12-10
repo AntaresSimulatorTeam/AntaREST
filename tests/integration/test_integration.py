@@ -131,6 +131,15 @@ def test_main(app: FastAPI):
     )
     assert res.json() == comments
 
+    # study synthesis
+    res = client.get(
+        f"/v1/studies/{study_id}/synthesis",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
     # study creation
     created = client.post(
         "/v1/studies?name=foo",

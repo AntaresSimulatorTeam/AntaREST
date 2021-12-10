@@ -1,8 +1,9 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -22,6 +23,15 @@ class RemoveArea(ICommand):
     def __init__(self, **data: Any) -> None:
         super().__init__(
             command_name=CommandName.REMOVE_AREA, version=1, **data
+        )
+
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        del study_data.areas[self.id]
+        return (
+            CommandOutput(status=True, message=f"Area '{self.id}' deleted"),
+            dict(),
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -130,7 +140,7 @@ class RemoveArea(ICommand):
                 ]
             )
 
-        del study_data.config.areas[self.id]
+        output, _ = self._apply_config(study_data.config)
         for area_name, area in study_data.config.areas.items():
             for link in area.links.keys():
                 if link == self.id:
@@ -151,7 +161,7 @@ class RemoveArea(ICommand):
 
         # todo remove bindinconstraint using this area ?
         # todo remove area from districts
-        return CommandOutput(status=True, message=f"Area '{self.id}' deleted")
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

@@ -317,4 +317,57 @@ export interface TaskEventPayload {
   message: string;
 }
 
+export interface Cluster {
+  id: string;
+  name: string;
+  enabled: boolean;
+}
+
+export interface Link{
+  filters_synthesis: Array<string>;
+  filters_year: Array<string>;
+}
+
+export interface Area {
+  name: string;
+  links: {[elm: string]: Link};
+  thermals: Array<Cluster>;
+  renewables: Array<Cluster>;
+  filters_synthesis: Array<string>;
+  filters_year: Array<string>;
+}
+export interface Set {
+  name?: string;
+  inverted_set: boolean;
+  areas?: Array<string>;
+  output: boolean;
+  filters_synthesis: Array<string>;
+  filters_year: Array<string>;
+}
+
+export interface Simulation {
+  name: string;
+  date: string;
+  mode: string;
+  nbyears: number;
+  synthesis: boolean;
+  by_year: boolean;
+  error: boolean;
+}
+
+export interface FileStudyTreeConfigDTO {
+  study_path: string;
+  path: string;
+  study_id: string;
+  version: number;
+  output_path?: string;
+  areas: {[elm: string]: Area};
+  sets: {[elm: string]: Set};
+  outputs: {[elm: string]: Simulation};
+  bindings: Array<string>;
+  store_new_set: boolean;
+  archive_input_series: Array<string>;
+  enr_modelling: string;
+}
+
 export default {};

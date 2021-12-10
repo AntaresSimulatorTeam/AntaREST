@@ -1,5 +1,5 @@
 import client from './client';
-import { CommandDTO, StudyMetadata, StudyMetadataDTO, TaskDTO, VariantTree } from '../../common/types';
+import { CommandDTO, FileStudyTreeConfigDTO, StudyMetadata, StudyMetadataDTO, TaskDTO, VariantTree } from '../../common/types';
 import { convertStudyDtoToMetadata, convertVariantTreeDTO } from '../utils';
 
 export const getVariantChildren = async (id: string): Promise<VariantTree> => {
@@ -74,6 +74,11 @@ export const getStudyTask = async (studyId: string): Promise<TaskDTO> => {
 
 export const getTask = async (id: string, withLogs = false): Promise<TaskDTO> => {
   const res = await client.get(`/v1/tasks/${id}?with_logs=${withLogs}`);
+  return res.data;
+};
+
+export const getStudySynthesis = async (studyId: string): Promise<FileStudyTreeConfigDTO> => {
+  const res = await client.get(`/v1/studies/${studyId}/synthesis`);
   return res.data;
 };
 

@@ -1,7 +1,10 @@
 import logging
-from typing import Any, Union, List, Optional
+from typing import Any, Union, List, Tuple, Dict
 
 from antarest.core.model import JSON
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
@@ -29,6 +32,11 @@ class UpdateConfig(ICommand):
             command_name=CommandName.UPDATE_CONFIG, version=1, **data
         )
 
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        return CommandOutput(status=True, message="ok"), dict()
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         url = self.target.split("/")
         tree_node = study_data.tree.get_node(url)
@@ -39,7 +47,8 @@ class UpdateConfig(ICommand):
             )
 
         study_data.tree.save(self.data, url)
-        return CommandOutput(status=True, message="ok")
+        output, _ = self._apply_config(study_data.config)
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
