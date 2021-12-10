@@ -119,7 +119,6 @@ def configure_websockets(
                     raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED)
                 user = Auth.get_user_from_token(token, jwt_manager)
                 if user is None:
-                    # TODO check auth and subscribe to rooms
                     raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED)
             except Exception as e:
                 logger.error(

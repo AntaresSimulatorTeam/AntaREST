@@ -1,3 +1,4 @@
+import logging
 from typing import Any, List, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -5,6 +6,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -175,11 +177,18 @@ class RemoveCluster(ICommand):
                 # todo revert binding constraints that has the cluster in constraint and also search in base for one
                 return [command]
 
-        return (
-            self.command_context.command_extractor
-            or CommandExtraction(self.command_context.matrix_service)
-        ).extract_cluster(base, self.area_id, self.cluster_id)
-        # todo revert binding constraints that has the cluster in constraint
+        try:
+            return (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
+            ).extract_cluster(base, self.area_id, self.cluster_id)
+            # todo revert binding constraints that has the cluster in constraint
+        except ChildNotFoundError as e:
+            logging.getLogger(__name__).warning(
+                f"Failed to extract revert command for remove_cluster {self.area_id}#{self.cluster_id}",
+                exc_info=e,
+            )
+            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []
