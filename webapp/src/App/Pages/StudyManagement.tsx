@@ -13,7 +13,7 @@ import { AxiosError } from 'axios';
 import { AppState } from '../reducers';
 import StudyCreationTools from '../../components/StudyCreationTools';
 import StudyListing from '../../components/StudyListing';
-import { initStudies } from '../../ducks/study';
+import { initStudies, initStudiesVersion } from '../../ducks/study';
 import { getStudies } from '../../services/api/study';
 import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
 import SortView from '../../components/ui/SortView';
@@ -25,6 +25,7 @@ import theme from '../theme';
 import { getGroups, getUsers } from '../../services/api/user';
 import { loadState, saveState } from '../../services/utils/localStorage';
 import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
+import { convertVersions } from '../../services/utils';
 
 const DEFAULT_LIST_MODE_KEY = 'studylisting.listmode';
 const DEFAULT_FILTER_USER = 'studylisting.filter.user';
@@ -63,10 +64,12 @@ const useStyles = makeStyles(() => createStyles({
 
 const mapState = (state: AppState) => ({
   studies: state.study.studies,
+  versions: state.study.versionList,
 });
 
 const mapDispatch = ({
   loadStudies: initStudies,
+  loadVersions: initStudiesVersion,
 });
 
 const connector = connect(mapState, mapDispatch);
@@ -74,7 +77,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const StudyManagement = (props: PropTypes) => {
-  const { studies, loadStudies } = props;
+  const { studies, loadStudies, loadVersions, versions } = props;
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
@@ -107,11 +110,7 @@ const StudyManagement = (props: PropTypes) => {
   const [currentGroup, setCurrentGroup] = useState<GroupDTO|undefined>(loadState<GroupDTO>(DEFAULT_FILTER_GROUP));
   const [currentVersion, setCurrentVersion] = useState<GenericInfo|undefined>(loadState<GenericInfo>(DEFAULT_FILTER_VERSION));
 
-  const versionList = [{ id: '640', name: '6.4.0' },
-    { id: '700', name: '7.0.0' },
-    { id: '710', name: '7.1.0' },
-    { id: '720', name: '7.2.0' },
-    { id: '800', name: '8.0.0' }];
+  const versionList = convertVersions(versions || []);
 
   const init = async () => {
     try {
@@ -128,6 +127,9 @@ const StudyManagement = (props: PropTypes) => {
   useEffect(() => {
     init();
     getAllStudies(false);
+    if (!versions) {
+      loadVersions();
+    }
   }, []);
 
   useEffect(() => {

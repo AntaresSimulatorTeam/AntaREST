@@ -1,6 +1,6 @@
 import moment from 'moment';
 import { useSnackbar, OptionsObject } from 'notistack';
-import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType, VariantTreeDTO, VariantTree } from '../../common/types';
+import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType, VariantTreeDTO, VariantTree, GenericInfo } from '../../common/types';
 
 export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDTO): StudyMetadata => ({
   id: sid,
@@ -107,5 +107,13 @@ export const exportText = (fileData: string, filename: string): void => {
   link.click();
   link.remove();
 };
+
+export const displayVersionName = (version: string): string => version.split('').join('.');
+
+export const convertVersions = (versions: Array<string>): Array<GenericInfo> => versions.map((version) => (
+  {
+    id: version,
+    name: displayVersionName(version),
+  }));
 
 export default {};
