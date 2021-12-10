@@ -470,7 +470,6 @@ class StudyService:
         """
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        print("---------- YES SIR -------------------")
         return self._get_study_storage_service(study).get_synthesis(
             study, params
         )

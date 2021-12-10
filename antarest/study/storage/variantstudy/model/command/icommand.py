@@ -36,7 +36,6 @@ class ICommand(ABC, BaseModel):
         raise NotImplementedError()
 
     def apply_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
-        print(f"-------- CONFIG YES: {study_data} -------------")
         output, _ = self._apply_config(study_data)
         return output
 
