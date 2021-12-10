@@ -26,5 +26,9 @@
   "managedStudiesFilter": "Managed studies",
   "userFilter": "Filter by user",
   "groupFilter": "Filter by group",
-  "versionFilter": "Filter by version"
+  "versionFilter": "Filter by version",
+  "copyWith": "Copy with outputs",
+  "copyWithout": "Copy without outputs",
+  "exportWith": "Export with outputs",
+  "exportWithout": "Export without outputs"
 }

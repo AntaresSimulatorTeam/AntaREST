@@ -246,6 +246,7 @@ const InformationView = (props: PropTypes) => {
   const [openRenameModal, setOpenRenameModal] = useState<boolean>(false);
   const [outputList, setOutputList] = useState<Array<string>>();
   const [outputExportButtonAnchor, setOutputExportButtonAnchor] = React.useState<null | HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const openStudyLauncher = (): void => {
     if (study) {
@@ -307,6 +308,14 @@ const InformationView = (props: PropTypes) => {
       }
     }
   }, 2000, { leading: true, trailing: false });
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
   useEffect(() => {
     (async () => {
@@ -444,9 +453,24 @@ const InformationView = (props: PropTypes) => {
               <Button className={classes.launchButton} onClick={openStudyLauncher}>
                 {t('main:launch')}
               </Button>
-              <ButtonLoader className={classes.exportButton} onClick={() => exportStudy(study.id, false)} fakeDelay={500}>
+              <Button
+                aria-controls="export-menu"
+                aria-haspopup="true"
+                className={classes.exportButton}
+                onClick={handleClick}
+              >
                 {t('main:export')}
-              </ButtonLoader>
+              </Button>
+              <Menu
+                id="export-menu"
+                anchorEl={anchorEl}
+                keepMounted
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+              >
+                <MenuItem onClick={() => { exportStudy(study.id, false); handleClose(); }}>{t('studymanager:exportWith')}</MenuItem>
+                <MenuItem onClick={() => { exportStudy(study.id, true); handleClose(); }}>{t('studymanager:exportWithout')}</MenuItem>
+              </Menu>
               {!!outputList && (
                 <>
                   <Button className={classes.exportButton} aria-haspopup="true" onClick={(event) => setOutputExportButtonAnchor(event.currentTarget)}>
