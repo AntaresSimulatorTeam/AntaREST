@@ -47,7 +47,7 @@ const SimpleLoader = (props: PropTypes) => {
     <>
       <div className={classes.rootLoader}>
         <div className={classes.loaderContainer}>
-          {!progress || progress < 100 ?
+          {progress === undefined ?
             <CircularProgress className={classes.loaderWheel} /> :
             <CircularProgress variant="determinate" className={classes.loaderWheel} value={progress} />
           }
