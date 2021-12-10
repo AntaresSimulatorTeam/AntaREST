@@ -57,7 +57,6 @@ class CreateBindingConstraint(ICommand):
             return validate_matrix(v, values)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
-        assert isinstance(self.values, str)
         bd_id = transform_name_to_id(self.name)
         if bd_id not in study_data.bindings:
             study_data.bindings.append(bd_id)

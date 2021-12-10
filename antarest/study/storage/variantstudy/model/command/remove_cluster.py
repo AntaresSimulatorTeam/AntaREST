@@ -25,7 +25,7 @@ class RemoveCluster(ICommand):
             command_name=CommandName.REMOVE_CLUSTER, version=1, **data
         )
 
-    def _remove_constraints(self, study_data: FileStudyTreeConfig):
+    def _remove_cluster(self, study_data: FileStudyTreeConfig):
         study_data.areas[self.area_id].thermals = [
             cluster
             for cluster in study_data.areas[self.area_id].thermals
@@ -61,7 +61,7 @@ class RemoveCluster(ICommand):
                 ),
                 dict(),
             )
-        self._remove_constraints(study_data)
+        self._remove_cluster(study_data)
         # todo remove binding constraint using this cluster ?
 
         return (
@@ -125,7 +125,7 @@ class RemoveCluster(ICommand):
             ]
         )
 
-        self._remove_constraints(study_data.config)
+        self._remove_cluster(study_data.config)
 
         return CommandOutput(
             status=True,

@@ -54,9 +54,6 @@ class UpdateBindingConstraint(ICommand):
         return None
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
-        bd_id = self.id
-        if bd_id not in study_data.bindings:
-            study_data.bindings.append(bd_id)
         return CommandOutput(status=True)
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:

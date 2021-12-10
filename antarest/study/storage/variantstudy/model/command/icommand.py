@@ -30,6 +30,7 @@ class ICommand(ABC, BaseModel):
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         raise NotImplementedError()
 
+    @abstractmethod
     def _apply_config(
         self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
