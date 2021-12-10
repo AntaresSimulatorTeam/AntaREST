@@ -899,6 +899,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Fetch a study raw tree object and its config
         Args:
             metadata: study
+            use_cache: use cache
         Returns: the config and study tree object
         """
         self._safe_generation(metadata)

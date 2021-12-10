@@ -116,12 +116,12 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_raw(self, metadata: T) -> FileStudy:
+    def get_raw(self, metadata: T, use_cache: bool = True) -> FileStudy:
         """
         Fetch a study raw tree object and its config
         Args:
             metadata: study
-
+            use_cache: use cache
         Returns: the config and study tree object
 
         """
