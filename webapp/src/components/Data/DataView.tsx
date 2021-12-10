@@ -136,7 +136,7 @@ const DataView = (props: PropTypes) => {
     }
   };
 
-  const matchFilter = (input: MatrixDataSetDTO): boolean => input.name.search(filter) >= 0;
+  const matchFilter = (input: MatrixDataSetDTO): boolean => input.name.search(filter) >= 0 || !!input.matrices.find((matrix: MatrixInfoDTO) => matrix.id.search(filter) >= 0);
 
   useEffect(() => {
     const initToogleList: Array<boolean> = [];

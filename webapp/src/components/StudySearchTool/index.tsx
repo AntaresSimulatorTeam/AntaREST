@@ -113,7 +113,7 @@ const StudySearchTool = (props: PropTypes) => {
   };
 
   const filter = (currentName: string): StudyMetadata[] => sortStudies()
-    .filter((s) => !currentName || (s.name.search(new RegExp(currentName, 'i')) !== -1) || (s.id.search(new RegExp(currentName, 'i')) !== -1) || (s.folder?.search(new RegExp(currentName, 'i')) !== -1))
+    .filter((s) => !currentName || (s.name.search(new RegExp(currentName, 'i')) !== -1) || (s.id.search(new RegExp(currentName, 'i')) !== -1))
     .filter((s) => !versionFilter || versionFilter.id === s.version)
     .filter((s) => (userFilter ? (s.owner.id && userFilter.id === s.owner.id) : true))
     .filter((s) => (groupFilter ? s.groups.findIndex((elm) => elm.id === groupFilter.id) >= 0 : true))
