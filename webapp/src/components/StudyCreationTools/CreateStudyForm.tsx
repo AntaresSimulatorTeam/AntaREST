@@ -1,33 +1,29 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Button, Input, MenuItem, Select } from '@material-ui/core';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
 import { createStudy, getStudyMetadata } from '../../services/api/study';
-import { addStudies } from '../../ducks/study';
+import { addStudies, initStudiesVersion } from '../../ducks/study';
 import { StudyMetadata } from '../../common/types';
+import { AppState } from '../../App/reducers';
+import { displayVersionName } from '../../services/utils';
 
 const logErr = debug('antares:createstudyform:error');
-
-const AVAILABLE_VERSIONS: Record<string, number> = {
-  '8.0.3': 803,
-  '7.2.0': 720,
-  '7.1.0': 710,
-  '7.0.0': 700,
-  '6.1.3': 613,
-};
-const DEFAULT_VERSION = 803;
 
 interface Inputs {
   studyname: string;
   version: number;
 }
 
-const mapState = () => ({ /* noop */ });
+const mapState = (state: AppState) => ({
+  versions: state.study.versionList,
+});
 
 const mapDispatch = ({
   addStudy: (study: StudyMetadata) => addStudies([study]),
+  loadVersions: initStudiesVersion,
 });
 
 const connector = connect(mapState, mapDispatch);
@@ -39,7 +35,7 @@ type PropTypes = PropsFromRedux & OwnProps;
 
 const CreateStudyForm = (props: PropTypes) => {
   const [t] = useTranslation();
-  const { useStyles, addStudy } = props;
+  const { useStyles, addStudy, loadVersions, versions } = props;
   const classes = useStyles();
   const { control, register, handleSubmit } = useForm<Inputs>();
 
@@ -55,30 +51,40 @@ const CreateStudyForm = (props: PropTypes) => {
     }
   };
 
+  const defaultVersion = versions && versions[versions.length - 1];
+
+  useEffect(() => {
+    if (!versions) {
+      loadVersions();
+    }
+  });
+
   return (
     <form className={classes.root} onSubmit={handleSubmit(onSubmit)}>
       <Button className={classes.button} type="submit" variant="contained" color="primary">{t('main:create')}</Button>
       <Input className={classes.input} placeholder={t('studymanager:nameofstudy')} inputProps={{ id: 'studyname', name: 'studyname', ref: register({ required: true }) }} />
-      <Controller
-        name="version"
-        control={control}
-        defaultValue={DEFAULT_VERSION}
-        rules={{ required: true }}
-        render={(field) => (
-          <Select
-            labelId="select-study-version-label"
-            id="select-study-version"
-            value={field.value}
-            onChange={field.onChange}
-          >
-            {
-            Object.keys(AVAILABLE_VERSIONS).map((versionName) => (
-              <MenuItem value={AVAILABLE_VERSIONS[versionName]} key={versionName}>{versionName}</MenuItem>
-            ))
-          }
-          </Select>
-        )}
-      />
+      { defaultVersion && (
+        <Controller
+          name="version"
+          control={control}
+          defaultValue={defaultVersion}
+          rules={{ required: true }}
+          render={(field) => (
+            <Select
+              labelId="select-study-version-label"
+              id="select-study-version"
+              value={field.value}
+              onChange={field.onChange}
+            >
+              { versions &&
+              versions.map((versionName) => (
+                <MenuItem value={versionName} key={versionName}>{displayVersionName(versionName)}</MenuItem>
+              ))
+            }
+            </Select>
+          )}
+        />
+      )}
     </form>
   );
 };

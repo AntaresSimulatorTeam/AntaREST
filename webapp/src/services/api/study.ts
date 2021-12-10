@@ -18,6 +18,11 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
   });
 };
 
+export const getStudyVersions = async (): Promise<Array<string>> => {
+  const res = await client.get('/v1/studies/_versions');
+  return res.data;
+};
+
 export const getStudyData = async (sid: string, path = '', depth = 1): Promise<any> => {
   const res = await client.get(`/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`);
   return res.data;
