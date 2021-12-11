@@ -77,9 +77,12 @@ class CreateArea(ICommand):
             filters_synthesis=[],
             filters_year=[],
         )
-        return CommandOutput(
-            status=True, message=f"Area '{self.area_name}' created"
-        ), {"area_id": area_id}
+        return (
+            CommandOutput(
+                status=True, message=f"Area '{self.area_name}' created"
+            ),
+            {"area_id": area_id},
+        )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
