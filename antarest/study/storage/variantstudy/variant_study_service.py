@@ -396,23 +396,24 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study = self._get_variant_study(
             parent_id, params, raw_study_accepted=True
         )
+
         children_tree = VariantTreeDTO(
             node=self.get_study_information(study, summary=True), children=[]
         )
-        children = self._get_variants_children(parent_id, params)
+        children = self._get_variants_children(parent_id)
         for child in children:
-            children_tree.children.append(
-                self.get_all_variants_children(child.id, params)
-            )
+            try:
+                children_tree.children.append(
+                    self.get_all_variants_children(child.id, params)
+                )
+            except UserHasNotPermissionError:
+                logger.info(
+                    f"Filtering children {child.id} in variant tree since user has not permission on this study"
+                )
 
         return children_tree
 
-    def _get_variants_children(
-        self, parent_id: str, params: RequestParameters
-    ) -> List[StudyMetadataDTO]:
-        self._get_variant_study(
-            parent_id, params, raw_study_accepted=True
-        )  # check permissions
+    def _get_variants_children(self, parent_id: str) -> List[StudyMetadataDTO]:
         children = self.repository.get_children(parent_id=parent_id)
         output_list: List[StudyMetadataDTO] = []
         for child in children:
@@ -671,7 +672,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if isinstance(parent_study, VariantStudy):
             self._safe_generation(parent_study)
             self.export_study_flat(
-                metadata=parent_study, dest=dest_path, outputs=False
+                metadata=parent_study,
+                dest=dest_path,
+                outputs=False,
+                denormalize=False,
             )
         else:
             self.raw_study_service.export_study_flat(
