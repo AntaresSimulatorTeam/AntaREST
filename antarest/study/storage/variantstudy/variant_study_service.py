@@ -671,7 +671,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if isinstance(parent_study, VariantStudy):
             self._safe_generation(parent_study)
             self.export_study_flat(
-                metadata=parent_study, dest=dest_path, outputs=False
+                metadata=parent_study, dest=dest_path, outputs=False, denormalize=False,
             )
         else:
             self.raw_study_service.export_study_flat(
