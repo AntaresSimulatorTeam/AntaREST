@@ -21,16 +21,72 @@ export interface WebsocketState {
   socket?: WebSocket;
   listeners: Array<(msg: WSMessage) => void>;
   connected: boolean;
+  channels: Array<string>;
 }
 
 const initialState: WebsocketState = {
   listeners: [],
   connected: false,
+  channels: [],
 };
 
 /** ******************************************* */
 /* Actions                                      */
 /** ******************************************* */
+
+interface SubscribeAction extends Action {
+  type: 'WS/SUBSCRIBE';
+  payload: string;
+}
+
+export const sendSubscribeMessage = (channels: string | Array<string>, websocket?: WebSocket): void => {
+  if (websocket && websocket.readyState === WebSocket.OPEN) {
+    if (Array.isArray(channels)) {
+      // TODO: Allow multi subscription
+      channels.forEach((elm) => {
+        if (websocket !== undefined) {
+          websocket.send(JSON.stringify({
+            action: 'SUBSCRIBE',
+            payload: elm,
+          }));
+        }
+      });
+    } else {
+      websocket.send(JSON.stringify({
+        action: 'SUBSCRIBE',
+        payload: channels,
+      }));
+    }
+  }
+};
+
+export const subscribe = (channel: string): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch, getState): void => {
+  const { websockets } = getState();
+  sendSubscribeMessage(channel, websockets.socket);
+  dispatch({
+    type: 'WS/SUBSCRIBE',
+    payload: channel,
+  });
+};
+
+interface UnSubscribeAction extends Action {
+  type: 'WS/UNSUBSCRIBE';
+  payload: string;
+}
+
+export const unsubscribe = (channel: string): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch, getState): void => {
+  const { websockets } = getState();
+  if (websockets.socket && websockets.socket.readyState === WebSocket.OPEN) {
+    websockets.socket.send(JSON.stringify({
+      action: 'UNSUBSCRIBE',
+      payload: channel,
+    }));
+    dispatch({
+      type: 'WS/UNSUBSCRIBE',
+      payload: channel,
+    });
+  }
+};
 
 export interface DisconnectAction extends Action {
   type: 'WS/DISCONNECT';
@@ -113,6 +169,8 @@ export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, u
           clearTimeout(reconnectionTimer);
           reconnectionTimer = null;
         }
+        const { channels } = websockets;
+        sendSubscribeMessage(channels, websockets.socket);
       };
       socket.onclose = (): void => {
         logInfo('Websocket connexion is closed');
@@ -208,44 +266,6 @@ export const WsChannel = {
   STUDY_GENERATION: 'GENERATION_TASK/',
 };
 
-interface SubscribeAction extends Action {
-  type: 'WS/SUBSCRIBE';
-  payload: string;
-}
-
-export const subscribe = (channel: string): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch, getState): void => {
-  const { websockets } = getState();
-  if (websockets.socket && websockets.socket.readyState === WebSocket.OPEN) {
-    websockets.socket.send(JSON.stringify({
-      action: 'SUBSCRIBE',
-      payload: channel,
-    }));
-    dispatch({
-      type: 'WS/SUBSCRIBE',
-      payload: channel,
-    });
-  }
-};
-
-interface UnSubscribeAction extends Action {
-  type: 'WS/UNSUBSCRIBE';
-  payload: string;
-}
-
-export const unsubscribe = (channel: string): ThunkAction<void, AppState, unknown, WebsocketAction> => (dispatch, getState): void => {
-  const { websockets } = getState();
-  if (websockets.socket && websockets.socket.readyState === WebSocket.OPEN) {
-    websockets.socket.send(JSON.stringify({
-      action: 'UNSUBSCRIBE',
-      payload: channel,
-    }));
-    dispatch({
-      type: 'WS/UNSUBSCRIBE',
-      payload: channel,
-    });
-  }
-};
-
 type WebsocketAction = ConnectAction
   | DisconnectAction
   | AddListenerAction
@@ -299,7 +319,15 @@ export default (state = initialState, action: WebsocketAction): WebsocketState =
         ...state,
       };
     case 'WS/SUBSCRIBE':
+      return {
+        ...state,
+        channels: state.channels.concat(action.payload),
+      };
     case 'WS/UNSUBSCRIBE':
+      return {
+        ...state,
+        channels: state.channels.filter((l) => l !== action.payload),
+      };
     default:
       return state;
   }
