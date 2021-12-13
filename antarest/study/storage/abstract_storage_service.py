@@ -42,7 +42,7 @@ from antarest.study.storage.utils import fix_study_root, remove_from_cache
 logger = logging.getLogger(__name__)
 
 
-class AbstractStorageService(IStudyStorageService[T]):
+class AbstractStorageService(IStudyStorageService[T], ABC):
     def __init__(
         self,
         config: Config,
@@ -98,6 +98,14 @@ class AbstractStorageService(IStudyStorageService[T]):
                     )
                     raw_study = self.study_factory.create_from_config(config)
                     file_metadata = raw_study.get(url=["study", "antares"])
+                    study_version = str(
+                        file_metadata.get("version", study.version)
+                    )
+                    if study_version != study.version:
+                        logger.warning(
+                            f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
+                        )
+                        study.version = study_version
                     file_settings = raw_study.get(
                         url=["settings", "generaldata", "general"]
                     )
