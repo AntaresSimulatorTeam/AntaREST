@@ -81,11 +81,11 @@ export const unsubscribe = (channel: string): ThunkAction<void, AppState, unknow
       action: 'UNSUBSCRIBE',
       payload: channel,
     }));
-    dispatch({
-      type: 'WS/UNSUBSCRIBE',
-      payload: channel,
-    });
   }
+  dispatch({
+    type: 'WS/UNSUBSCRIBE',
+    payload: channel,
+  });
 };
 
 export interface DisconnectAction extends Action {
