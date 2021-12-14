@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def build_cache(
-    config: Config, redis_client: Optional[Redis] = None
+    config: Config, redis_client: Optional[Redis] = None  # type: ignore
 ) -> ICache:
     cache = (
         RedisCache(redis_client)

@@ -8,7 +8,7 @@ from typing import List, Optional, cast, Tuple, Callable
 from uuid import uuid4
 
 from fastapi import HTTPException
-from filelock import FileLock  # type: ignore
+from filelock import FileLock
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (

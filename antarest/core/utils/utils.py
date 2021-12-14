@@ -76,7 +76,7 @@ def get_local_path() -> Path:
     return filepath
 
 
-def new_redis_instance(config: RedisConfig) -> redis.Redis:
+def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
     return redis.Redis(host=config.host, port=config.port, db=0)
 
 

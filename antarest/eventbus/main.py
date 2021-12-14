@@ -15,7 +15,7 @@ def build_eventbus(
     application: FastAPI,
     config: Config,
     autostart: bool = True,
-    redis_client: Optional[Redis] = None,
+    redis_client: Optional[Redis] = None,  # type: ignore
 ) -> IEventBus:
 
     eventbus = EventBusService(

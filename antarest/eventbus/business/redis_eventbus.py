@@ -14,7 +14,7 @@ REDIS_STORE_KEY = "events"
 
 
 class RedisEventBus(IEventBusBackend):
-    def __init__(self, redis_client: Redis) -> None:
+    def __init__(self, redis_client: Redis) -> None:  # type: ignore
         self.redis = redis_client
         self.pubsub = self.redis.pubsub()
         self.pubsub.subscribe(REDIS_STORE_KEY)

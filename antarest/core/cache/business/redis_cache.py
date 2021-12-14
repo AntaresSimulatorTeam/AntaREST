@@ -17,7 +17,7 @@ class RedisCacheElement(BaseModel):
 
 
 class RedisCache(ICache):
-    def __init__(self, redis_client: Redis):
+    def __init__(self, redis_client: Redis):  # type: ignore
         self.redis = redis_client
 
     def start(self) -> None:
