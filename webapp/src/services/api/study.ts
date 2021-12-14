@@ -134,6 +134,12 @@ export const importFile = async (file: File, study: string, path: string, onProg
 
 export interface LaunchOptions {
   xpansion?: boolean;
+  // eslint-disable-next-line camelcase
+  nb_cpu?: number;
+  // eslint-disable-next-line camelcase
+  time_limit?: number;
+  // eslint-disable-next-line camelcase
+  post_processing?: boolean;
 }
 
 export const launchStudy = async (sid: string, options: LaunchOptions = {}): Promise<string> => {

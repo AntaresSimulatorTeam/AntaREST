@@ -160,15 +160,15 @@ class SlurmLauncher(AbstractLauncher):
         self, job_id: str, xpansion_mode: bool = False
     ) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
-        # if xpansion_mode:
-        #     study_id = (
-        #         self.storage_service.variant_study_service.create_variant_study(
-        #             study_id,
-        #             "xpansion result",
-        #             params=RequestParameters(user=DEFAULT_ADMIN_USER),
-        #         )
-        #         or study_id
-        #     )
+        if xpansion_mode:
+            study_id = (
+                self.storage_service.variant_study_service.create_variant_study(
+                    study_id,
+                    "xpansion result",
+                    params=RequestParameters(user=DEFAULT_ADMIN_USER),
+                )
+                or study_id
+            )
 
         return self.storage_service.import_output(
             study_id,
@@ -208,7 +208,7 @@ class SlurmLauncher(AbstractLauncher):
                         self.callbacks.update_status(
                             study.name,
                             JobStatus.FAILED
-                            if study.with_error
+                            if study.with_error or output_id is None
                             else JobStatus.SUCCESS,
                             None,
                             output_id,
@@ -318,9 +318,9 @@ class SlurmLauncher(AbstractLauncher):
 
                 self._assert_study_version_is_supported(study_uuid, params)
 
-                launcher_args = deepcopy(self.launcher_args)
-                if launcher_params and launcher_params.get("xpansion", False):
-                    launcher_args.xpansion_mode = True
+                launcher_args = self._check_and_apply_launcher_params(
+                    launcher_params
+                )
                 run_with(
                     launcher_args, self.launcher_params, show_banner=False
                 )
@@ -341,6 +341,35 @@ class SlurmLauncher(AbstractLauncher):
                 self.start()
 
             self._delete_study(study_path)
+
+    def _check_and_apply_launcher_params(
+        self, launcher_params: Optional[JSON]
+    ) -> argparse.Namespace:
+        if launcher_params:
+            launcher_args = deepcopy(self.launcher_args)
+            if launcher_params.get("xpansion", False):
+                launcher_args.xpansion_mode = True
+            time_limit = launcher_params.get("time_limit", None)
+            if time_limit and isinstance(time_limit, int):
+                if 3600 < time_limit < 604800:
+                    launcher_args.time_limit = time_limit
+                else:
+                    logger.warning(
+                        f"Invalid slurm launcher time limit ({time_limit}), should be between 3600 and 604800"
+                    )
+            post_processing = launcher_params.get("post_processing", False)
+            if isinstance(post_processing, bool):
+                launcher_args.post_processing = post_processing
+            nb_cpu = launcher_params.get("nb_cpu", 12)
+            if isinstance(nb_cpu, int):
+                if 0 < nb_cpu <= 24:
+                    launcher_args.n_cpu = nb_cpu
+                else:
+                    logger.warning(
+                        f"Invalid slurm launcher nb_cpu ({nb_cpu}), should be between 1 and 24"
+                    )
+            return launcher_args
+        return self.launcher_args
 
     def run_study(
         self,

@@ -1,6 +1,9 @@
 import base64
-from typing import List, Any
+from typing import List, Any, Tuple, Dict
 
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
@@ -24,6 +27,11 @@ class UpdateRawFile(ICommand):
         super().__init__(
             command_name=CommandName.UPDATE_FILE, version=1, **data
         )
+
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        return CommandOutput(status=True, message="ok"), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         url = self.target.split("/")

@@ -40,7 +40,8 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Launching study {study_id}", extra={"user": current_user.id}
+            f"Launching study {study_id} with options {engine_parameters}",
+            extra={"user": current_user.id},
         )
         selected_engine = (
             engine if engine is not None else config.launcher.default
