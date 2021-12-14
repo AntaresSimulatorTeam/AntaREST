@@ -274,11 +274,12 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
         )
         return study_service.create(metadata)
 
-    md613 = create_study("613")
+    md613 = create_study("610")
     md700 = create_study("700")
     md710 = create_study("710")
     md720 = create_study("720")
-    md803 = create_study("803")
+    md803 = create_study("800")
+    md810 = create_study("810")
 
     path_study = path_studies / md613.id
     general_data_file = path_study / "settings" / "generaldata.ini"
@@ -360,6 +361,18 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
             flags=re.MULTILINE,
         )
         is not None
+    )
+
+    path_study = path_studies / md810.id
+    general_data_file = path_study / "settings" / "generaldata.ini"
+    general_data = general_data_file.read_text()
+    assert (
+        re.search(
+            "^renewable-generation-modelling = false",
+            general_data,
+            flags=re.MULTILINE,
+        )
+        is None
     )
 
 
