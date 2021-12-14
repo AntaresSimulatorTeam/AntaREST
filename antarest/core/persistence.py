@@ -3,9 +3,9 @@ import os
 from io import StringIO
 from pathlib import Path
 
-from alembic import command  # type: ignore
-from alembic.config import Config  # type: ignore
-from alembic.util import CommandError  # type: ignore
+from alembic import command
+from alembic.config import Config
+from alembic.util import CommandError
 from sqlalchemy.ext.declarative import declarative_base  # type: ignore
 
 from antarest.core.utils.utils import get_local_path
@@ -35,7 +35,7 @@ def upgrade_db(config_file: Path) -> None:
         raise e
 
     alembic_cfg.stdout = StringIO()
-    command.heads(alembic_cfg)
+    command.heads(alembic_cfg)  # type: ignore
     head_output = alembic_cfg.stdout.getvalue()
     head = head_output.split(" ")[0].strip()
     if current_version != head:

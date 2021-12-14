@@ -143,20 +143,20 @@ const LauncherModal = (props: PropTypes) => {
             <Typography className={classes.optionTitle}>
               Options
             </Typography>
-            <Typography>
+            {/* <Typography>
               {`${t('singlestudy:nbCpu')} : ${options.nb_cpu || 12}`}
             </Typography>
             <FormControl className={clsx(classes.fieldSection)}>
               <Slider
                 id="launcher-option-nb-cpu-slider"
                 min={1}
-                max={24}
-                value={options.nb_cpu || 12}
+                max={12}
+                value={options.nb_cpu || 8}
                 onChange={(e, value) => handleChange('nb_cpu', value as number)}
                 valueLabelDisplay="auto"
                 aria-labelledby="continuous-slider"
               />
-            </FormControl>
+            </FormControl> */}
             <FormControl className={clsx(classes.fieldSection)}>
               <TextField
                 id="launcher-option-time-limit"
@@ -170,9 +170,9 @@ const LauncherModal = (props: PropTypes) => {
                 helperText={t('singlestudy:timeLimitHelper')}
               />
             </FormControl>
-            <FormGroup className={clsx(classes.fieldSection)}>
+            {/* <FormGroup className={clsx(classes.fieldSection)}>
               <FormControlLabel control={<Checkbox checked={!!options.post_processing} onChange={(e, checked) => handleChange('post_processing', checked)} />} label={t('singlestudy:postProcessing')} />
-            </FormGroup>
+            </FormGroup> */}
             <FormGroup className={clsx(classes.fieldSection)}>
               <FormControlLabel control={<Checkbox checked={!!options.xpansion} onChange={(e, checked) => handleChange('xpansion', checked)} />} label={t('singlestudy:xpansionMode')} />
             </FormGroup>
