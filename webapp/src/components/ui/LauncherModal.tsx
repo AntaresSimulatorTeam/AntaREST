@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createStyles, makeStyles, Theme, Button, Paper, FormGroup, FormControlLabel, Checkbox, Typography, FormControl, Slider, TextField } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, Button, Paper, FormGroup, FormControlLabel, Checkbox, Typography, FormControl, TextField } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
 import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
