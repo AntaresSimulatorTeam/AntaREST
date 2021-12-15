@@ -6,7 +6,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -82,7 +84,6 @@ class RemoveDistrict(ICommand):
                 exc_info=e,
             )
             return []
-
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []
