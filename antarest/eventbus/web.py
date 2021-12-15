@@ -13,7 +13,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus, Event
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
-from antarest.core.model import PermissionInfo, StudyPermissionType
+from antarest.core.model import PermissionInfo, StudyPermissionType, PublicMode
 from antarest.core.permissions import check_permission
 from antarest.login.auth import Auth
 
@@ -82,7 +82,7 @@ class ConnectionManager:
         self, message: str, permissions: PermissionInfo, channel: Optional[str]
     ) -> None:
         for connection in self.active_connections:
-            if check_permission(
+            if channel is not None or check_permission(
                 connection.user, permissions, StudyPermissionType.READ
             ):
                 if (
