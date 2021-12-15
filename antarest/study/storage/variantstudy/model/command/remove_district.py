@@ -1,3 +1,4 @@
+import logging
 from typing import Any, List, Optional, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -5,6 +6,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -69,10 +73,17 @@ class RemoveDistrict(ICommand):
                 and transform_name_to_id(command.name) == self.id
             ):
                 return [command]
-        return (
-            self.command_context.command_extractor
-            or CommandExtraction(self.command_context.matrix_service)
-        ).extract_district(base, self.id)
+        try:
+            return (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
+            ).extract_district(base, self.id)
+        except Exception as e:
+            logging.getLogger(__name__).warning(
+                f"Failed to extract revert command for remove_district {self.id}",
+                exc_info=e,
+            )
+            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

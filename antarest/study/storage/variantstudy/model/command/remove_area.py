@@ -1,3 +1,4 @@
+import logging
 from typing import Any, List, Optional, Tuple, Dict
 
 from antarest.core.model import JSON
@@ -6,6 +7,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -199,12 +203,19 @@ class RemoveArea(ICommand):
                 # todo revert binding constraints that has the area in constraint and also search in base for one
                 return [command]
 
-        area_commands, links_commands = (
-            self.command_context.command_extractor
-            or CommandExtraction(self.command_context.matrix_service)
-        ).extract_area(base, self.id)
-        return area_commands + links_commands
-        # todo revert binding constraints that has the area in constraint
+        try:
+            area_commands, links_commands = (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
+            ).extract_area(base, self.id)
+            # todo revert binding constraints that has the area in constraint
+            return area_commands + links_commands
+        except ChildNotFoundError as e:
+            logging.getLogger(__name__).warning(
+                f"Failed to extract revert command for remove_area {self.id}",
+                exc_info=e,
+            )
+            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

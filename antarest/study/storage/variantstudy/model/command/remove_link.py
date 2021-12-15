@@ -1,9 +1,13 @@
+import logging
 from typing import Any, List, Optional, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -115,10 +119,17 @@ class RemoveLink(ICommand):
             ):
                 return [command]
         area_from, area_to = sorted([self.area1, self.area2])
-        return (
-            self.command_context.command_extractor
-            or CommandExtraction(self.command_context.matrix_service)
-        ).extract_link(base, area_from, area_to)
+        try:
+            return (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
+            ).extract_link(base, area_from, area_to)
+        except ChildNotFoundError as e:
+            logging.getLogger(__name__).warning(
+                f"Failed to extract revert command for remove_link {self.area1}/{self.area2}",
+                exc_info=e,
+            )
+            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

@@ -50,12 +50,6 @@ class VariantCommandsExtractor:
                 study_tree, ["layers", "layers"]
             )
         )
-        # todo create something out of variant manager commands to replace single rawnode files ?
-        # study_commands.append(
-        #     self._generate_update_config(
-        #         study_tree, ["settings", "comments"]
-        #     )
-        # )
         stopwatch.log_elapsed(
             lambda x: logger.info(f"General command extraction done in {x}s")
         )

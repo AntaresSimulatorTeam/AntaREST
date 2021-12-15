@@ -9,6 +9,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -193,6 +196,9 @@ def test_revert(command_context: CommandContext):
 
     base = RemoveDistrict(id="id", command_context=command_context)
     study = FileStudy(config=Mock(), tree=Mock())
+    base.command_context.command_extractor.extract_district.side_effect = (
+        ChildNotFoundError()
+    )
     base.revert([], study)
     base.command_context.command_extractor.extract_district.assert_called_with(
         study, "id"

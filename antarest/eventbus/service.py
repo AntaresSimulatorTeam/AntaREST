@@ -22,7 +22,6 @@ class EventBusService(IEventBus):
             self.start()
 
     def push(self, event: Event) -> None:
-        # TODO add arg permissions with group/role, user, public
         self.backend.push_event(event)
 
     def add_listener(
