@@ -158,6 +158,50 @@ def test_slurm_launcher_delete_function(tmp_path: str):
     assert not directory_path.exists()
 
 
+def test_extra_parameters(launcher_config: Config):
+    slurm_launcher = SlurmLauncher(
+        config=launcher_config,
+        study_service=Mock(),
+        callbacks=Mock(),
+        event_bus=Mock(),
+    )
+    launcher_params = slurm_launcher._check_and_apply_launcher_params({})
+    assert launcher_params.n_cpu == 1
+    assert launcher_params.time_limit == 0
+    assert not launcher_params.xpansion_mode
+    assert not launcher_params.post_processing
+
+    launcher_params = slurm_launcher._check_and_apply_launcher_params(
+        {"nb_cpu": 12}
+    )
+    assert launcher_params.n_cpu == 12
+
+    launcher_params = slurm_launcher._check_and_apply_launcher_params(
+        {"nb_cpu": 48}
+    )
+    assert launcher_params.n_cpu == 1
+
+    launcher_params = slurm_launcher._check_and_apply_launcher_params(
+        {"time_limit": 999999999}
+    )
+    assert launcher_params.time_limit == 0
+
+    launcher_params = slurm_launcher._check_and_apply_launcher_params(
+        {"time_limit": 99999}
+    )
+    assert launcher_params.time_limit == 99999
+
+    launcher_params = slurm_launcher._check_and_apply_launcher_params(
+        {"xpansion": True}
+    )
+    assert launcher_params.xpansion_mode
+
+    launcher_params = slurm_launcher._check_and_apply_launcher_params(
+        {"post_processing": True}
+    )
+    assert launcher_params.post_processing
+
+
 @pytest.mark.parametrize(
     "version,job_status", [(42, JobStatus.RUNNING), (99, JobStatus.FAILED)]
 )
@@ -342,7 +386,7 @@ def test_kill_job(
         job_id_to_kill=42,
         json_ssh_config=None,
         log_dir=str(tmp_path / "LOGS"),
-        n_cpu=0,
+        n_cpu=1,
         output_dir=str(tmp_path / "OUTPUT"),
         post_processing=False,
         studies_in=str(tmp_path / "STUDIES_IN"),

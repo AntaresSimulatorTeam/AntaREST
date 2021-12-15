@@ -40,6 +40,11 @@ logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
 
+MAX_NB_CPU = 24
+MAX_TIME_LIMIT = 604800
+MIN_TIME_LIMIT = 3600
+
+
 class VersionNotSupportedError(Exception):
     pass
 
@@ -351,18 +356,18 @@ class SlurmLauncher(AbstractLauncher):
                 launcher_args.xpansion_mode = True
             time_limit = launcher_params.get("time_limit", None)
             if time_limit and isinstance(time_limit, int):
-                if 3600 < time_limit < 604800:
+                if MIN_TIME_LIMIT < time_limit < MAX_TIME_LIMIT:
                     launcher_args.time_limit = time_limit
                 else:
                     logger.warning(
-                        f"Invalid slurm launcher time limit ({time_limit}), should be between 3600 and 604800"
+                        f"Invalid slurm launcher time limit ({time_limit}), should be between {MIN_TIME_LIMIT} and {MAX_TIME_LIMIT}"
                     )
             post_processing = launcher_params.get("post_processing", False)
             if isinstance(post_processing, bool):
                 launcher_args.post_processing = post_processing
-            nb_cpu = launcher_params.get("nb_cpu", 12)
-            if isinstance(nb_cpu, int):
-                if 0 < nb_cpu <= 24:
+            nb_cpu = launcher_params.get("nb_cpu", None)
+            if nb_cpu and isinstance(nb_cpu, int):
+                if 0 < nb_cpu <= MAX_NB_CPU:
                     launcher_args.n_cpu = nb_cpu
                 else:
                     logger.warning(
