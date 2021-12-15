@@ -1,4 +1,5 @@
 import os
+import shutil
 import uuid
 from argparse import Namespace
 from pathlib import Path
@@ -16,7 +17,7 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
 )
 from antarest.launcher.model import JobStatus
-from antarest.study.model import StudyMetadataDTO
+from antarest.study.model import StudyMetadataDTO, RawStudy
 
 
 @pytest.fixture
@@ -354,6 +355,50 @@ def test_import_study_output(launcher_config):
         params=ANY,
     )
     assert res == "output"
+
+    link_dir = (
+        launcher_config.launcher.slurm.local_workspace
+        / "OUTPUT"
+        / "1"
+        / "input"
+        / "links"
+    )
+    link_dir.mkdir(parents=True)
+    link_file = link_dir / "something"
+    link_file.write_text("hello")
+    xpansion_dir = Path(
+        launcher_config.launcher.slurm.local_workspace
+        / "OUTPUT"
+        / "1"
+        / "user"
+        / "expansion"
+    )
+    xpansion_dir.mkdir(parents=True)
+    xpansion_test_file = xpansion_dir / "something_else"
+    xpansion_test_file.write_text("world")
+    output_dir = (
+        launcher_config.launcher.slurm.local_workspace
+        / "OUTPUT"
+        / "1"
+        / "output"
+        / "output_name"
+    )
+    output_dir.mkdir(parents=True)
+    slurm_launcher.storage_service.get_study.side_effect = [
+        Mock(spec=RawStudy, version="800"),
+        Mock(spec=RawStudy, version="700"),
+    ]
+    assert not (output_dir / "updated_links" / "something").exists()
+    assert not (output_dir / "updated_links" / "something").exists()
+
+    slurm_launcher._import_study_output("1", True)
+    assert (output_dir / "updated_links" / "something").exists()
+    assert (output_dir / "updated_links" / "something").read_text() == "hello"
+    shutil.rmtree(output_dir / "updated_links")
+
+    slurm_launcher._import_study_output("1", True)
+    assert (output_dir / "results" / "something_else").exists()
+    assert (output_dir / "results" / "something_else").read_text() == "world"
 
 
 @patch("antarest.launcher.adapters.slurm_launcher.slurm_launcher.run_with")

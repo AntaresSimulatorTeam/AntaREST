@@ -173,7 +173,7 @@ class SlurmLauncher(AbstractLauncher):
             params=RequestParameters(DEFAULT_ADMIN_USER),
         )
 
-    def _import_xpansion_result(self, job_id: str, study_id: str):
+    def _import_xpansion_result(self, job_id: str, study_id: str) -> None:
         output_path = (
             self.slurm_config.local_workspace / "OUTPUT" / job_id / "output"
         )
