@@ -165,21 +165,40 @@ class SlurmLauncher(AbstractLauncher):
         self, job_id: str, xpansion_mode: bool = False
     ) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
-        # if xpansion_mode:
-        #     study_id = (
-        #         self.storage_service.variant_study_service.create_variant_study(
-        #             study_id,
-        #             "xpansion result",
-        #             params=RequestParameters(user=DEFAULT_ADMIN_USER),
-        #         )
-        #         or study_id
-        #     )
-
+        if xpansion_mode:
+            self._import_xpansion_result(job_id, study_id)
         return self.storage_service.import_output(
             study_id,
             self.slurm_config.local_workspace / "OUTPUT" / job_id / "output",
             params=RequestParameters(DEFAULT_ADMIN_USER),
         )
+
+    def _import_xpansion_result(self, job_id: str, study_id: str):
+        output_path = (
+            self.slurm_config.local_workspace / "OUTPUT" / job_id / "output"
+        )
+        if output_path.exists() and len(os.listdir(output_path)) == 1:
+            output_path = output_path / os.listdir(output_path)[0]
+            shutil.copytree(
+                self.slurm_config.local_workspace
+                / "OUTPUT"
+                / job_id
+                / "input"
+                / "links",
+                output_path / "updated_links",
+            )
+            study = self.storage_service.get_study(study_id)
+            if int(study.version) < 800:
+                shutil.copytree(
+                    self.slurm_config.local_workspace
+                    / "OUTPUT"
+                    / job_id
+                    / "user"
+                    / "expansion",
+                    output_path / "results",
+                )
+        else:
+            logger.warning("Output path in xpansion result not found")
 
     def _check_studies_state(self) -> None:
         try:
@@ -209,7 +228,9 @@ class SlurmLauncher(AbstractLauncher):
                     with db():
                         output_id: Optional[str] = None
                         if not study.with_error:
-                            output_id = self._import_study_output(study.name)
+                            output_id = self._import_study_output(
+                                study.name, study.xpansion_study
+                            )
                         self.callbacks.update_status(
                             study.name,
                             JobStatus.FAILED
@@ -410,5 +431,12 @@ class SlurmLauncher(AbstractLauncher):
                     launcher_args, self.launcher_params, show_banner=False
                 )
                 return
-
-        raise JobIdNotFound()
+        logger.warning(
+            "Failed to retrieve job id in antares launcher database"
+        )
+        self.callbacks.update_status(
+            job_id,
+            JobStatus.FAILED,
+            None,
+            None,
+        )

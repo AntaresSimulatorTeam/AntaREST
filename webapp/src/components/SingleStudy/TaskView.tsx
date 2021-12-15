@@ -151,11 +151,11 @@ const TaskView = (props: PropTypes) => {
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
   const openLogView = (jobId: string) => {
+    setJobIdDetail(jobId);
     (async () => {
       try {
         const logData = await getStudyJobLog(jobId);
         setLogModalContent(logData);
-        setJobIdDetail(jobId);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failtofetchlogs'), e as AxiosError);
       }
