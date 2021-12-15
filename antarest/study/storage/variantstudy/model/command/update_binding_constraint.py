@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Union, Any
+from typing import List, Optional, Dict, Union, Any, Tuple
 
 from pydantic import validator
 
@@ -53,8 +53,10 @@ class UpdateBindingConstraint(ICommand):
             return validate_matrix(v, values)
         return None
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
-        return CommandOutput(status=True)
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         binding_constraints = study_data.tree.get(

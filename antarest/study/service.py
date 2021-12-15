@@ -1,3 +1,4 @@
+import base64
 import io
 import logging
 import os
@@ -9,7 +10,7 @@ from typing import List, IO, Optional, cast, Union, Dict, Callable
 from uuid import uuid4
 
 from fastapi import HTTPException
-from markupsafe import escape
+from markupsafe import escape  # type: ignore
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import (
@@ -21,6 +22,7 @@ from antarest.core.exceptions import (
     StudyTypeUnsupported,
     UnsupportedOperationOnArchivedStudy,
     NotAManagedStudyException,
+    CommandApplicationError,
 )
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
@@ -95,6 +97,9 @@ from antarest.study.storage.variantstudy.model.command.update_comments import (
 )
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
+)
+from antarest.study.storage.variantstudy.model.command.update_raw_file import (
+    UpdateRawFile,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import (
@@ -1019,15 +1024,19 @@ class StudyService:
                 else data,
                 command_context=self.variant_study_service.command_factory.command_context,
             )
-        elif (
-            isinstance(tree_node, RawFileNode)
-            and url.split("/")[-1] == "comments"
-        ):
-            return UpdateComments(
-                target=url,
-                comments=data,
-                command_context=self.variant_study_service.command_factory.command_context,
-            )
+        elif isinstance(tree_node, RawFileNode):
+            if url.split("/")[-1] == "comments":
+                return UpdateComments(
+                    target=url,
+                    comments=data,
+                    command_context=self.variant_study_service.command_factory.command_context,
+                )
+            elif isinstance(data, bytes):
+                return UpdateRawFile(
+                    target=url,
+                    b64Data=base64.b64encode(data).decode("utf-8"),
+                    command_context=self.variant_study_service.command_factory.command_context,
+                )
         raise NotImplementedError()
 
     def _edit_study_using_command(
@@ -1049,9 +1058,11 @@ class StudyService:
             tree_node=tree_node, url=url, data=data
         )
         if isinstance(study_service, RawStudyService):
-            command.apply(study_data=file_study)
+            res = command.apply(study_data=file_study)
             if not is_managed(study):
                 tree_node.denormalize()
+            if not res.status:
+                raise CommandApplicationError(res.message)
 
             lastsave_url = "study/antares/lastsave"
             lastsave_node = file_study.tree.get_node(lastsave_url.split("/"))

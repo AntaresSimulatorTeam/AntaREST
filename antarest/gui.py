@@ -64,11 +64,11 @@ if __name__ == "__main__":
     menu = QMenu()
     openapp = QAction("Open application")
     menu.addAction(openapp)
-    openapp.triggered.connect(open_app)
+    openapp.triggered.connect(open_app)  # type: ignore
 
     # To quit the app
     quit = QAction("Quit")
-    quit.triggered.connect(app.quit)
+    quit.triggered.connect(app.quit)  # type: ignore
     menu.addAction(quit)
 
     # Adding options to the System Tray

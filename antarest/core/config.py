@@ -131,7 +131,7 @@ class SlurmConfig:
     password: str = ""
     default_wait_time: int = 0
     default_time_limit: int = 0
-    default_n_cpu: int = 0
+    default_n_cpu: int = 1
     default_json_db_name: str = ""
     slurm_script_path: str = ""
     antares_versions_on_remote_server: List[str] = field(

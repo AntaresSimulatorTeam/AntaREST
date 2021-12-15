@@ -25,7 +25,7 @@ class RemoveCluster(ICommand):
             command_name=CommandName.REMOVE_CLUSTER, version=1, **data
         )
 
-    def _remove_cluster(self, study_data: FileStudyTreeConfig):
+    def _remove_cluster(self, study_data: FileStudyTreeConfig) -> None:
         study_data.areas[self.area_id].thermals = [
             cluster
             for cluster in study_data.areas[self.area_id].thermals

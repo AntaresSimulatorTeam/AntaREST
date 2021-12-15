@@ -66,6 +66,14 @@ class ICommandExtractor(abc.ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def generate_update_rawfile(
+        self,
+        study_tree: FileStudyTree,
+        url: List[str],
+    ) -> "ICommand":  # type: ignore
+        raise NotImplementedError()
+
+    @abstractmethod
     def generate_update_comments(
         self,
         study_tree: FileStudyTree,

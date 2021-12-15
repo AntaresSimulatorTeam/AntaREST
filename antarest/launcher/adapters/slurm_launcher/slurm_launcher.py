@@ -24,6 +24,7 @@ from antarest.core.interfaces.eventbus import (
     EventChannelDirectory,
 )
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.adapters.abstractlauncher import (
@@ -37,6 +38,11 @@ from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
+
+
+MAX_NB_CPU = 24
+MAX_TIME_LIMIT = 604800
+MIN_TIME_LIMIT = 3600
 
 
 class VersionNotSupportedError(Exception):
@@ -155,13 +161,44 @@ class SlurmLauncher(AbstractLauncher):
             if study_path.exists():
                 shutil.rmtree(study_path)
 
-    def _import_study_output(self, job_id: str) -> Optional[str]:
+    def _import_study_output(
+        self, job_id: str, xpansion_mode: bool = False
+    ) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
+        if xpansion_mode:
+            self._import_xpansion_result(job_id, study_id)
         return self.storage_service.import_output(
             study_id,
             self.slurm_config.local_workspace / "OUTPUT" / job_id / "output",
             params=RequestParameters(DEFAULT_ADMIN_USER),
         )
+
+    def _import_xpansion_result(self, job_id: str, study_id: str) -> None:
+        output_path = (
+            self.slurm_config.local_workspace / "OUTPUT" / job_id / "output"
+        )
+        if output_path.exists() and len(os.listdir(output_path)) == 1:
+            output_path = output_path / os.listdir(output_path)[0]
+            shutil.copytree(
+                self.slurm_config.local_workspace
+                / "OUTPUT"
+                / job_id
+                / "input"
+                / "links",
+                output_path / "updated_links",
+            )
+            study = self.storage_service.get_study(study_id)
+            if int(study.version) < 800:
+                shutil.copytree(
+                    self.slurm_config.local_workspace
+                    / "OUTPUT"
+                    / job_id
+                    / "user"
+                    / "expansion",
+                    output_path / "results",
+                )
+        else:
+            logger.warning("Output path in xpansion result not found")
 
     def _check_studies_state(self) -> None:
         try:
@@ -191,11 +228,13 @@ class SlurmLauncher(AbstractLauncher):
                     with db():
                         output_id: Optional[str] = None
                         if not study.with_error:
-                            output_id = self._import_study_output(study.name)
+                            output_id = self._import_study_output(
+                                study.name, study.xpansion_study
+                            )
                         self.callbacks.update_status(
                             study.name,
                             JobStatus.FAILED
-                            if study.with_error
+                            if study.with_error or output_id is None
                             else JobStatus.SUCCESS,
                             None,
                             output_id,
@@ -283,7 +322,11 @@ class SlurmLauncher(AbstractLauncher):
         del self.job_id_to_study_id[launch_id]
 
     def _run_study(
-        self, study_uuid: str, launch_uuid: str, params: RequestParameters
+        self,
+        study_uuid: str,
+        launch_uuid: str,
+        launcher_params: Optional[JSON],
+        params: RequestParameters,
     ) -> None:
         with db():
             study_path = Path(self.launcher_args.studies_in) / str(launch_uuid)
@@ -301,8 +344,11 @@ class SlurmLauncher(AbstractLauncher):
 
                 self._assert_study_version_is_supported(study_uuid, params)
 
+                launcher_args = self._check_and_apply_launcher_params(
+                    launcher_params
+                )
                 run_with(
-                    self.launcher_args, self.launcher_params, show_banner=False
+                    launcher_args, self.launcher_params, show_banner=False
                 )
                 self.callbacks.update_status(
                     str(launch_uuid), JobStatus.RUNNING, None, None
@@ -322,13 +368,47 @@ class SlurmLauncher(AbstractLauncher):
 
             self._delete_study(study_path)
 
+    def _check_and_apply_launcher_params(
+        self, launcher_params: Optional[JSON]
+    ) -> argparse.Namespace:
+        if launcher_params:
+            launcher_args = deepcopy(self.launcher_args)
+            if launcher_params.get("xpansion", False):
+                launcher_args.xpansion_mode = True
+            time_limit = launcher_params.get("time_limit", None)
+            if time_limit and isinstance(time_limit, int):
+                if MIN_TIME_LIMIT < time_limit < MAX_TIME_LIMIT:
+                    launcher_args.time_limit = time_limit
+                else:
+                    logger.warning(
+                        f"Invalid slurm launcher time limit ({time_limit}), should be between {MIN_TIME_LIMIT} and {MAX_TIME_LIMIT}"
+                    )
+            post_processing = launcher_params.get("post_processing", False)
+            if isinstance(post_processing, bool):
+                launcher_args.post_processing = post_processing
+            nb_cpu = launcher_params.get("nb_cpu", None)
+            if nb_cpu and isinstance(nb_cpu, int):
+                if 0 < nb_cpu <= MAX_NB_CPU:
+                    launcher_args.n_cpu = nb_cpu
+                else:
+                    logger.warning(
+                        f"Invalid slurm launcher nb_cpu ({nb_cpu}), should be between 1 and 24"
+                    )
+            return launcher_args
+        return self.launcher_args
+
     def run_study(
-        self, study_uuid: str, version: str, params: RequestParameters
+        self,
+        study_uuid: str,
+        version: str,
+        launcher_parameters: Optional[JSON],
+        params: RequestParameters,
     ) -> UUID:  # TODO: version ?
         launch_uuid = uuid4()
 
         thread = threading.Thread(
-            target=self._run_study, args=(study_uuid, launch_uuid, params)
+            target=self._run_study,
+            args=(study_uuid, launch_uuid, launcher_parameters, params),
         )
         thread.start()
 
@@ -351,5 +431,12 @@ class SlurmLauncher(AbstractLauncher):
                     launcher_args, self.launcher_params, show_banner=False
                 )
                 return
-
-        raise JobIdNotFound()
+        logger.warning(
+            "Failed to retrieve job id in antares launcher database"
+        )
+        self.callbacks.update_status(
+            job_id,
+            JobStatus.FAILED,
+            None,
+            None,
+        )

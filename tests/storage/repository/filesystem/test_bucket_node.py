@@ -61,3 +61,9 @@ def test_save_bucket(tmp_path: Path):
     node.save(data={"fileA.txt": b"Hello, World"})
 
     assert (file / "fileA.txt").read_text() == "Hello, World"
+
+    node.save(data={"fileC.txt": b"test"}, url=["folder"])
+    assert (file / "folder" / "fileC.txt").read_text() == "test"
+
+    node.save(data=b"test2", url=["folder", "fileC.txt"])
+    assert (file / "folder" / "fileC.txt").read_text() == "test2"

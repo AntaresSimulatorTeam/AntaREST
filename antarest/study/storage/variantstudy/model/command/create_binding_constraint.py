@@ -1,4 +1,4 @@
-from typing import Dict, List, Union, Any, Optional, cast
+from typing import Dict, List, Union, Any, Optional, cast, Tuple
 
 from pydantic import validator
 
@@ -56,11 +56,13 @@ class CreateBindingConstraint(ICommand):
         else:
             return validate_matrix(v, values)
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
         bd_id = transform_name_to_id(self.name)
         if bd_id not in study_data.bindings:
             study_data.bindings.append(bd_id)
-        return CommandOutput(status=True)
+        return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         assert isinstance(self.values, str)

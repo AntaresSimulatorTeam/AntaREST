@@ -132,8 +132,18 @@ export const importFile = async (file: File, study: string, path: string, onProg
   return res.data;
 };
 
-export const launchStudy = async (sid: string): Promise<string> => {
-  const res = await client.post(`/v1/launcher/run/${sid}`);
+export interface LaunchOptions {
+  xpansion?: boolean;
+  // eslint-disable-next-line camelcase
+  nb_cpu?: number;
+  // eslint-disable-next-line camelcase
+  time_limit?: number;
+  // eslint-disable-next-line camelcase
+  post_processing?: boolean;
+}
+
+export const launchStudy = async (sid: string, options: LaunchOptions = {}): Promise<string> => {
+  const res = await client.post(`/v1/launcher/run/${sid}`, options);
   return res.data;
 };
 

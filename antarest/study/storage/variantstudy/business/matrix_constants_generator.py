@@ -1,6 +1,6 @@
 from typing import Dict
 
-from filelock import FileLock  # type: ignore
+from filelock import FileLock
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business import matrix_constants

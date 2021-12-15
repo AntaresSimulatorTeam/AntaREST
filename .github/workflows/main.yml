@@ -25,7 +25,7 @@ jobs:
         with:
           options: --check --diff
       - name: Check Typing (mypy)
-        continue-on-error: true
+        #continue-on-error: true
         run: |
           mypy --install-types --non-interactive
           mypy

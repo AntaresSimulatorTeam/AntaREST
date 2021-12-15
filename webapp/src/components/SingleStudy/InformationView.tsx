@@ -29,7 +29,6 @@ import {
 } from '../../common/types';
 import {
   deleteStudy as callDeleteStudy,
-  launchStudy as callLaunchStudy,
   archiveStudy as callArchiveStudy,
   unarchiveStudy as callUnarchiveStudy,
   renameStudy as callRenameStudy,
@@ -45,6 +44,7 @@ import ButtonLoader from '../ui/ButtonLoader';
 import RenameModal from './RenameModal';
 import { CopyIcon } from '../Data/utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import LauncherModal from '../ui/LauncherModal';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -240,23 +240,16 @@ const InformationView = (props: PropTypes) => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const history = useHistory();
+  const [studyToLaunch, setStudyToLaunch] = useState<StudyMetadata|undefined>();
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [openPermissionModal, setOpenPermissionModal] = useState<boolean>(false);
   const [openRenameModal, setOpenRenameModal] = useState<boolean>(false);
   const [outputList, setOutputList] = useState<Array<string>>();
   const [outputExportButtonAnchor, setOutputExportButtonAnchor] = React.useState<null | HTMLElement>(null);
 
-  const launchStudy = async () => {
+  const openStudyLauncher = (): void => {
     if (study) {
-      try {
-        await callLaunchStudy(study.id);
-        enqueueSnackbar(t('studymanager:studylaunched', { studyname: study.name }), {
-          variant: 'success',
-        });
-      } catch (e) {
-        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtorunstudy'), e as AxiosError);
-        logError('Failed to launch study', study, e);
-      }
+      setStudyToLaunch(study);
     }
   };
 
@@ -448,7 +441,7 @@ const InformationView = (props: PropTypes) => {
             </ButtonLoader>
           ) : (
             <>
-              <Button className={classes.launchButton} onClick={launchStudy}>
+              <Button className={classes.launchButton} onClick={openStudyLauncher}>
                 {t('main:launch')}
               </Button>
               <ButtonLoader className={classes.exportButton} onClick={() => exportStudy(study.id, false)} fakeDelay={500}>
@@ -518,6 +511,7 @@ const InformationView = (props: PropTypes) => {
           onClose={() => setOpenRenameModal(false)}
         />
       )}
+      <LauncherModal open={!!studyToLaunch} study={studyToLaunch} close={() => { setStudyToLaunch(undefined); }} />
     </Paper>
   ) : null;
 };

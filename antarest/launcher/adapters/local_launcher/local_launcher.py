@@ -5,6 +5,7 @@ from typing import Dict, Optional
 from uuid import UUID, uuid4
 
 from antarest.core.config import Config
+from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.adapters.abstractlauncher import (
@@ -31,7 +32,11 @@ class LocalLauncher(AbstractLauncher):
         self.job_id_to_study_id: Dict[str, str] = {}
 
     def run_study(
-        self, study_uuid: str, version: str, params: RequestParameters
+        self,
+        study_uuid: str,
+        version: str,
+        launcher_parameters: Optional[JSON],
+        params: RequestParameters,
     ) -> UUID:
         if self.config.launcher.local is None:
             raise LauncherInitException()
