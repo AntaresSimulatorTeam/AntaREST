@@ -1,9 +1,14 @@
-from typing import Any, List
+import logging
+from typing import Any, List, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -22,6 +27,53 @@ class RemoveCluster(ICommand):
     def __init__(self, **data: Any) -> None:
         super().__init__(
             command_name=CommandName.REMOVE_CLUSTER, version=1, **data
+        )
+
+    def _remove_cluster(self, study_data: FileStudyTreeConfig) -> None:
+        study_data.areas[self.area_id].thermals = [
+            cluster
+            for cluster in study_data.areas[self.area_id].thermals
+            if cluster.id != self.cluster_id.lower()
+        ]
+
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        if self.area_id not in study_data.areas:
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Area '{self.area_id}' does not exist",
+                ),
+                dict(),
+            )
+
+        if (
+            len(
+                [
+                    cluster
+                    for cluster in study_data.areas[self.area_id].thermals
+                    if cluster.id == self.cluster_id
+                ]
+            )
+            == 0
+        ):
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Cluster '{self.cluster_id}' does not exist",
+                ),
+                dict(),
+            )
+        self._remove_cluster(study_data)
+        # todo remove binding constraint using this cluster ?
+
+        return (
+            CommandOutput(
+                status=True,
+                message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
+            ),
+            dict(),
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -47,6 +99,7 @@ class RemoveCluster(ICommand):
                 status=False,
                 message=f"Cluster '{self.cluster_id}' does not exist",
             )
+
         study_data.tree.delete(
             [
                 "input",
@@ -76,12 +129,7 @@ class RemoveCluster(ICommand):
             ]
         )
 
-        study_data.config.areas[self.area_id].thermals = [
-            cluster
-            for cluster in study_data.config.areas[self.area_id].thermals
-            if cluster.id != self.cluster_id.lower()
-        ]
-        # todo remove binding constraint using this cluster ?
+        self._remove_cluster(study_data.config)
 
         return CommandOutput(
             status=True,
@@ -131,11 +179,18 @@ class RemoveCluster(ICommand):
                 # todo revert binding constraints that has the cluster in constraint and also search in base for one
                 return [command]
 
-        return (
-            self.command_context.command_extractor
-            or CommandExtraction(self.command_context.matrix_service)
-        ).extract_cluster(base, self.area_id, self.cluster_id)
-        # todo revert binding constraints that has the cluster in constraint
+        try:
+            return (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
+            ).extract_cluster(base, self.area_id, self.cluster_id)
+            # todo revert binding constraints that has the cluster in constraint
+        except ChildNotFoundError as e:
+            logging.getLogger(__name__).warning(
+                f"Failed to extract revert command for remove_cluster {self.area_id}#{self.cluster_id}",
+                exc_info=e,
+            )
+            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

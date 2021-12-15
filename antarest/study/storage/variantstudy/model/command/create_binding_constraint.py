@@ -1,10 +1,11 @@
-from typing import Dict, List, Union, Any, Optional, cast
+from typing import Dict, List, Union, Any, Optional, cast, Tuple
 
 from pydantic import validator
 
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -55,12 +56,19 @@ class CreateBindingConstraint(ICommand):
         else:
             return validate_matrix(v, values)
 
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        bd_id = transform_name_to_id(self.name)
+        if bd_id not in study_data.bindings:
+            study_data.bindings.append(bd_id)
+        return CommandOutput(status=True), {}
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         assert isinstance(self.values, str)
         binding_constraints = study_data.tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]
         )
-
         new_key = len(binding_constraints.keys())
         bd_id = transform_name_to_id(self.name)
         return apply_binding_constraint(

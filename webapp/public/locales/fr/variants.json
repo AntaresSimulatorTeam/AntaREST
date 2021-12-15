@@ -22,6 +22,7 @@
     "addError": "Erreur lors de l'ajout de votre commande",
     "moveError": "Erreur lors du changement de position",
     "fetchCommandError": "Erreur lors de la récupération des commandes",
+    "fetchSynthesisError": "Erreur lors de la récupération de la synthèse de l'étude",
     "importSuccess": "Fichier importé avec succès",
     "importError": "Erreur lors de l'importation du fichier",
     "jsonParsingError": "Erreur lors de la lecture du fichier de commande",

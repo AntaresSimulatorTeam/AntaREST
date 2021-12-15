@@ -23,16 +23,26 @@ class BucketNode(FolderNode):
         data: Union[str, int, bool, float, bytes, JSON],
         url: Optional[List[str]] = None,
     ) -> None:
-        assert isinstance(data, Dict)
-        for key, value in data.items():
-            if isinstance(value, (str, bytes)):
-                RawFileNode(self.context, self.config.next_file(key)).save(
-                    value
-                )
-            elif isinstance(value, dict):
+        if url is None or len(url) == 0:
+            assert isinstance(data, Dict)
+            for key, value in data.items():
+                self._save(value, key)
+        else:
+            key = url[0]
+            if len(url) > 1:
                 BucketNode(self.context, self.config.next_file(key)).save(
-                    value
+                    data, url[1:]
                 )
+            else:
+                self._save(data, key)
+
+    def _save(
+        self, data: Union[str, int, bool, float, bytes, JSON], key: str
+    ) -> None:
+        if isinstance(data, (str, bytes)):
+            RawFileNode(self.context, self.config.next_file(key)).save(data)
+        elif isinstance(data, dict):
+            BucketNode(self.context, self.config.next_file(key)).save(data)
 
     def build(self) -> TREE:
         if not self.config.path.exists():

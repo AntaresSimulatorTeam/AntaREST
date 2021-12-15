@@ -2,7 +2,7 @@ import logging
 import os
 import shutil
 import tempfile
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from datetime import datetime
 from pathlib import Path
 from typing import List, Union, Optional, IO
@@ -12,6 +12,7 @@ from antarest.core.config import Config
 from antarest.core.model import JSON, PublicMode
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import extract_zip, StopWatch
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
@@ -30,6 +31,7 @@ from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
     FileStudyTreeConfig,
+    FileStudyTreeConfigDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
@@ -40,7 +42,7 @@ from antarest.study.storage.utils import fix_study_root, remove_from_cache
 logger = logging.getLogger(__name__)
 
 
-class AbstractStorageService(IStudyStorageService[T]):
+class AbstractStorageService(IStudyStorageService[T], ABC):
     def __init__(
         self,
         config: Config,
@@ -96,6 +98,14 @@ class AbstractStorageService(IStudyStorageService[T]):
                     )
                     raw_study = self.study_factory.create_from_config(config)
                     file_metadata = raw_study.get(url=["study", "antares"])
+                    study_version = str(
+                        file_metadata.get("version", study.version)
+                    )
+                    if study_version != study.version:
+                        logger.warning(
+                            f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
+                        )
+                        study.version = study_version
                     file_settings = raw_study.get(
                         url=["settings", "generaldata", "general"]
                     )
@@ -348,107 +358,3 @@ class AbstractStorageService(IStudyStorageService[T]):
             )
         )
         return target.parent / filename
-
-    @abstractmethod
-    def export_study_flat(
-        self,
-        metadata: T,
-        dest: Path,
-        outputs: bool = True,
-        denormalize: bool = True,
-    ) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def create(self, metadata: T) -> T:
-        """
-        Create empty new study
-        Args:
-            metadata: study information
-
-        Returns: new study information
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def exists(self, metadata: T) -> bool:
-        """
-        Check study exist.
-        Args:
-            metadata: study
-
-        Returns: true if study presents in disk, false else.
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def copy(
-        self, src_meta: T, dest_name: str, with_outputs: bool = False
-    ) -> T:
-        """
-        Copy study to a new destination
-        Args:
-            src_meta: source study
-            dest_meta: destination study
-            with_outputs: indicate either to copy the output or not
-
-        Returns: destination study
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_raw(self, metadata: T, use_cache: bool = True) -> FileStudy:
-        """
-        Fetch a study raw tree object and its config
-        Args:
-            metadata: study
-            use_cache: indicate if the cache should be used
-
-        Returns: the config and study tree object
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def set_reference_output(
-        self, metadata: T, output_id: str, status: bool
-    ) -> None:
-        """
-        Set an output to the reference output of a study
-        Args:
-            metadata: study
-            output_id: the id of output to set the reference status
-            status: true to set it as reference, false to unset it
-
-        Returns:
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def delete(self, metadata: T) -> None:
-        """
-        Delete study
-        Args:
-            metadata: study
-
-        Returns:
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def delete_output(self, metadata: T, output_id: str) -> None:
-        """
-        Delete a simulation output
-        Args:
-            metadata: study
-            output_id: output simulation
-
-        Returns:
-
-        """
-        raise NotImplementedError()

@@ -1,6 +1,8 @@
 import { Action } from 'redux';
+import { ThunkAction } from 'redux-thunk';
 import { AppState } from '../App/reducers';
 import { StudyMetadata } from '../common/types';
+import { getStudyVersions } from '../services/api/study';
 
 /** ******************************************* */
 /* State                                        */
@@ -11,6 +13,7 @@ export interface StudyState {
   studies: StudyMetadata[];
   scrollPosition: number;
   directory: string;
+  versionList?: Array<string>;
 }
 
 const initialState: StudyState = {
@@ -53,6 +56,19 @@ export const initStudies = (studies: StudyMetadata[]): InitStudyListAction => ({
   payload: studies,
 });
 
+interface InitStudiesVersionAction extends Action {
+  type: 'STUDY/INIT_STUDIES_VERSION';
+  payload: Array<string>;
+}
+
+export const initStudiesVersion = (): ThunkAction<void, AppState, unknown, InitStudiesVersionAction> => async (dispatch): Promise<void> => {
+  const versions = await getStudyVersions();
+  dispatch({
+    type: 'STUDY/INIT_STUDIES_VERSION',
+    payload: versions,
+  });
+};
+
 interface ViewStudyAction extends Action {
   type: 'STUDY/VIEW_STUDY';
   payload: string;
@@ -83,7 +99,7 @@ export const addStudies = (studies: StudyMetadata[]): AddStudyAction => ({
   payload: studies,
 });
 
-type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | AddStudyAction | UpdateScrollPositionAction | FolderPositionAction;
+type StudyAction = ViewStudyAction | InitStudyListAction | RemoveStudyAction | AddStudyAction | UpdateScrollPositionAction | FolderPositionAction | InitStudiesVersionAction;
 
 /** ******************************************* */
 /* Selectors                                    */
@@ -133,6 +149,11 @@ export default (state = initialState, action: StudyAction): StudyState => {
         };
       }
       return state;
+    case 'STUDY/INIT_STUDIES_VERSION':
+      return {
+        ...state,
+        versionList: action.payload,
+      };
     default:
       return state;
   }

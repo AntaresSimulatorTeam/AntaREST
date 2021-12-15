@@ -4,11 +4,15 @@ from typing import TypeVar, Generic, List, Union, Optional, IO
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
+from antarest.core.requests import RequestParameters
 from antarest.study.model import (
     Study,
     StudySimResultDTO,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfigDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -112,12 +116,12 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_raw(self, metadata: T) -> FileStudy:
+    def get_raw(self, metadata: T, use_cache: bool = True) -> FileStudy:
         """
         Fetch a study raw tree object and its config
         Args:
             metadata: study
-
+            use_cache: use cache
         Returns: the config and study tree object
 
         """
@@ -244,6 +248,20 @@ class IStudyStorageService(ABC, Generic[T]):
             dest: destination path
             outputs: keep outputs or not
         Returns: None
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_synthesis(
+        self, metadata: T, params: Optional[RequestParameters] = None
+    ) -> FileStudyTreeConfigDTO:
+        """
+        Return study synthesis
+        Args:
+            metadata: study
+            params: RequestParameters
+        Returns: FileStudyTreeConfigDTO
 
         """
         raise NotImplementedError()

@@ -1,6 +1,9 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple, Dict
 
 from antarest.core.model import JSON
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
@@ -25,6 +28,17 @@ class UpdateComments(ICommand):
             command_name=CommandName.UPDATE_COMMENTS, version=1, **data
         )
 
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        return (
+            CommandOutput(
+                status=True,
+                message=f"Comment '{self.comments}' has been successfully replaced.",
+            ),
+            dict(),
+        )
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         replace_comment_data: JSON = {
             "settings": {"comments": self.comments.encode("utf-8")}
@@ -32,10 +46,8 @@ class UpdateComments(ICommand):
 
         study_data.tree.save(replace_comment_data)
 
-        return CommandOutput(
-            status=True,
-            message=f"Comment '{self.comments}' has been successfully replaced.",
-        )
+        output, _ = self._apply_config(study_data.config)
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

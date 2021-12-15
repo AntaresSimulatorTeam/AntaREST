@@ -18,6 +18,11 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
   });
 };
 
+export const getStudyVersions = async (): Promise<Array<string>> => {
+  const res = await client.get('/v1/studies/_versions');
+  return res.data;
+};
+
 export const getStudyData = async (sid: string, path = '', depth = 1): Promise<any> => {
   const res = await client.get(`/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`);
   return res.data;
@@ -127,8 +132,18 @@ export const importFile = async (file: File, study: string, path: string, onProg
   return res.data;
 };
 
-export const launchStudy = async (sid: string): Promise<string> => {
-  const res = await client.post(`/v1/launcher/run/${sid}`);
+export interface LaunchOptions {
+  xpansion?: boolean;
+  // eslint-disable-next-line camelcase
+  nb_cpu?: number;
+  // eslint-disable-next-line camelcase
+  time_limit?: number;
+  // eslint-disable-next-line camelcase
+  post_processing?: boolean;
+}
+
+export const launchStudy = async (sid: string, options: LaunchOptions = {}): Promise<string> => {
+  const res = await client.post(`/v1/launcher/run/${sid}`, options);
   return res.data;
 };
 

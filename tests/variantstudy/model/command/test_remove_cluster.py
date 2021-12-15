@@ -7,6 +7,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -135,6 +138,9 @@ def test_revert(command_context: CommandContext):
         )
     ]
     study = FileStudy(config=Mock(), tree=Mock())
+    base.command_context.command_extractor.extract_cluster.side_effect = (
+        ChildNotFoundError()
+    )
     base.revert([], study)
     base.command_context.command_extractor.extract_cluster.assert_called_with(
         study, "foo", "bar"

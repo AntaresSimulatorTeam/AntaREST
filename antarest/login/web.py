@@ -5,9 +5,8 @@ from typing import Any, Optional, List, Union, Tuple
 
 from fastapi import Depends, APIRouter, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
-from markupsafe import escape
+from markupsafe import escape  # type: ignore
 from pydantic import BaseModel
-from starlette.responses import JSONResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser, JWTGroup

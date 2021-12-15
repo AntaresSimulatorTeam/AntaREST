@@ -136,7 +136,7 @@ const DataView = (props: PropTypes) => {
     }
   };
 
-  const matchFilter = (input: string): boolean => input.search(filter) >= 0;
+  const matchFilter = (input: MatrixDataSetDTO): boolean => input.name.search(filter) >= 0 || !!input.matrices.find((matrix: MatrixInfoDTO) => matrix.id.search(filter) >= 0);
 
   useEffect(() => {
     const initToogleList: Array<boolean> = [];
@@ -150,7 +150,7 @@ const DataView = (props: PropTypes) => {
     <List component="nav" aria-labelledby="nested-list-subheader" className={classes.root}>
       {data.map(
         (dataset, index) =>
-          matchFilter(dataset.name) && (
+          matchFilter(dataset) && (
             <Fragment key={dataset.id}>
               <ListItem
                 className={classes.datasetItem}

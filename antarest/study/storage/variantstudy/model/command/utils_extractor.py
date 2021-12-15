@@ -1,5 +1,6 @@
+import base64
 import logging
-from typing import Optional, List, Tuple, Union
+from typing import Optional, List, Tuple, Union, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
@@ -42,6 +43,9 @@ from antarest.study.storage.variantstudy.model.command.update_comments import (
 )
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
+)
+from antarest.study.storage.variantstudy.model.command.update_raw_file import (
+    UpdateRawFile,
 )
 from antarest.study.storage.variantstudy.model.command.utils import (
     strip_matrix_protocol,
@@ -457,6 +461,16 @@ class CommandExtraction(ICommandExtractor):
         return UpdateConfig(
             target="/".join(url),
             data=data,
+            command_context=self.command_context,
+        )
+
+    def generate_update_rawfile(
+        self, study_tree: FileStudyTree, url: List[str]
+    ) -> ICommand:
+        data = study_tree.get(url)
+        return UpdateRawFile(
+            target="/".join(url),
+            b64Data=base64.b64encode(cast(bytes, data)).decode("utf-8"),
             command_context=self.command_context,
         )
 

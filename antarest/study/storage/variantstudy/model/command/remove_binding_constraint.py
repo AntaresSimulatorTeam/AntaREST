@@ -1,8 +1,10 @@
-from typing import Any, List, Optional
+import logging
+from typing import Any, List, Optional, Tuple, Dict
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -26,12 +28,24 @@ class RemoveBindingConstraint(ICommand):
             **data,
         )
 
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        if self.id not in study_data.bindings:
+            return (
+                CommandOutput(
+                    status=False, message="Binding constraint not found"
+                ),
+                dict(),
+            )
+        study_data.bindings.remove(self.id)
+        return CommandOutput(status=True), dict()
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.id not in study_data.config.bindings:
             return CommandOutput(
                 status=False, message="Binding constraint not found"
             )
-
         binding_constraints = study_data.tree.get(
             ["input", "bindingconstraints", "bindingconstraints"]
         )
@@ -42,14 +56,13 @@ class RemoveBindingConstraint(ICommand):
                 continue
             new_binding_constraints[str(index)] = binding_constraints[bd]
             index += 1
-
         study_data.tree.save(
             new_binding_constraints,
             ["input", "bindingconstraints", "bindingconstraints"],
         )
         study_data.tree.delete(["input", "bindingconstraints", self.id])
-        study_data.config.bindings.remove(self.id)
-        return CommandOutput(status=True)
+        output, _ = self._apply_config(study_data.config)
+        return output
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
@@ -86,10 +99,17 @@ class RemoveBindingConstraint(ICommand):
             ):
                 return [command]
 
-        return (
-            self.command_context.command_extractor
-            or CommandExtraction(self.command_context.matrix_service)
-        ).extract_binding_constraint(base, self.id)
+        try:
+            return (
+                self.command_context.command_extractor
+                or CommandExtraction(self.command_context.matrix_service)
+            ).extract_binding_constraint(base, self.id)
+        except Exception as e:
+            logging.getLogger(__name__).warning(
+                f"Failed to extract revert command for remove_binding_constraint {self.id}",
+                exc_info=e,
+            )
+            return []
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

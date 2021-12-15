@@ -63,7 +63,8 @@ def apply_binding_constraint(
             [str(coeff_val) for coeff_val in coeffs[link_or_thermal]]
         )
 
-    study_data.config.bindings.append(bd_id)
+    if bd_id not in study_data.config.bindings:
+        study_data.config.bindings.append(bd_id)
     study_data.tree.save(
         binding_constraints,
         ["input", "bindingconstraints", "bindingconstraints"],

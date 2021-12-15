@@ -2,26 +2,25 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-import click
+import click  # type: ignore
 
 from antarest.study.model import NEW_DEFAULT_STUDY_VERSION
 from antarest.tools.lib import (
     generate_diff,
     extract_commands,
-    apply_commands_from_dir,
     generate_study,
 )
 
 logging.basicConfig(level=logging.INFO)
 
 
-@click.group()
+@click.group()  # type: ignore
 def commands() -> None:
     pass
 
 
-@commands.command()
-@click.option(
+@commands.command()  # type: ignore
+@click.option(  # type: ignore
     "--host",
     "-h",
     nargs=1,
@@ -29,7 +28,7 @@ def commands() -> None:
     type=str,
     help="Host URL of the antares web instance",
 )
-@click.option(
+@click.option(  # type: ignore
     "--auth_token",
     nargs=1,
     required=False,
@@ -37,7 +36,7 @@ def commands() -> None:
     type=str,
     help="Authentication token if server needs one",
 )
-@click.option(
+@click.option(  # type: ignore
     "--output",
     "-o",
     nargs=1,
@@ -45,7 +44,7 @@ def commands() -> None:
     type=str,
     help="Output study path",
 )
-@click.option(
+@click.option(  # type: ignore
     "--input",
     "-i",
     nargs=1,
@@ -53,7 +52,7 @@ def commands() -> None:
     type=click.Path(exists=True),
     help="Variant script source path",
 )
-@click.option(
+@click.option(  # type: ignore
     "--study_id",
     "-s",
     nargs=1,
@@ -83,8 +82,8 @@ def apply_script(
     print(res)
 
 
-@commands.command()
-@click.option(
+@commands.command()  # type: ignore
+@click.option(  # type: ignore
     "--input",
     "-i",
     nargs=1,
@@ -92,7 +91,7 @@ def apply_script(
     type=click.Path(exists=True),
     help="Study path",
 )
-@click.option(
+@click.option(  # type: ignore
     "--output",
     "-o",
     nargs=1,
@@ -105,22 +104,22 @@ def generate_script(input: str, output: str) -> None:
     extract_commands(Path(input), Path(output))
 
 
-@commands.command()
-@click.option(
+@commands.command()  # type: ignore
+@click.option(  # type: ignore
     "--base",
     nargs=1,
     required=True,
     type=click.Path(exists=True),
     help="Base study path",
 )
-@click.option(
+@click.option(  # type: ignore
     "--variant",
     nargs=1,
     required=True,
     type=click.Path(exists=True),
     help="Variant study path",
 )
-@click.option(
+@click.option(  # type: ignore
     "--output",
     "-o",
     nargs=1,
@@ -128,7 +127,7 @@ def generate_script(input: str, output: str) -> None:
     type=click.Path(exists=False),
     help="Script output path",
 )
-@click.option(
+@click.option(  # type: ignore
     "--version",
     "-v",
     nargs=1,

@@ -41,3 +41,4 @@ class CommandName(Enum):
     REPLACE_MATRIX = "replace_matrix"
     UPDATE_CONFIG = "update_config"
     UPDATE_COMMENTS = "update_comments"
+    UPDATE_FILE = "update_file"

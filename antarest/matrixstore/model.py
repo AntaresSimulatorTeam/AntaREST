@@ -150,7 +150,7 @@ class MatrixDataSet(Base):  # type: ignore
 # https://github.com/samuelcolvin/pydantic/issues/1423
 # https://github.com/samuelcolvin/pydantic/issues/1599
 # https://github.com/samuelcolvin/pydantic/issues/1930
-# TODO maybe we should reverting to only float because Any cause problem retrieving data from a node will have pandas forcing all to float anyway...
+# Reverting to only float because Any cause problem retrieving data from a node will have pandas forcing all to float anyway...
 # this cause matrix dump on disk (and then hash id) to be different for basically the same matrices
 MatrixData = float
 

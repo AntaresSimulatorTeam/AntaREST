@@ -1,7 +1,6 @@
-import React, { forwardRef, useEffect } from 'react';
+import React, { forwardRef, useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import debug from 'debug';
-import _ from 'lodash';
 import { connect, ConnectedProps } from 'react-redux';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
@@ -10,12 +9,13 @@ import { areEqual, FixedSizeList, ListChildComponentProps } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { StudyMetadata } from '../../common/types';
 import { removeStudies, updateScrollPosition } from '../../ducks/study';
-import { deleteStudy as callDeleteStudy, launchStudy as callLaunchStudy, copyStudy as callCopyStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy } from '../../services/api/study';
+import { deleteStudy as callDeleteStudy, copyStudy as callCopyStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy } from '../../services/api/study';
 import StudyListElementView from './StudyListingItemView';
 import StudyDirView from './StudyDirView';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import { AppState } from '../../App/reducers';
 import { buildStudyTree } from './utils';
+import LauncherModal from '../ui/LauncherModal';
 
 const logError = debug('antares:studyblockview:error');
 
@@ -85,19 +85,12 @@ const StudyListing = (props: PropTypes) => {
   const classes = useStyles();
   const { studies, removeStudy, isList, scrollPosition, updateScroll } = props;
   const { enqueueSnackbar } = useSnackbar();
+  const [studyToLaunch, setStudyToLaunch] = useState<StudyMetadata|undefined>();
   const [t] = useTranslation();
 
-  const launchStudy = async (study: StudyMetadata) => {
-    try {
-      await callLaunchStudy(study.id);
-      enqueueSnackbar(t('studymanager:studylaunched', { studyname: study.name }), { variant: 'success' });
-    } catch (e) {
-      enqueueSnackbar(t('studymanager:failtorunstudy'), { variant: 'error' });
-      logError('Failed to launch study', study, e);
-    }
+  const openStudyLauncher = (study: StudyMetadata): void => {
+    setStudyToLaunch(study);
   };
-
-  const debouncedLaunchStudy = _.debounce(launchStudy, 5000, { leading: true, trailing: false });
 
   const importStudy = async (study: StudyMetadata, withOutputs = false) => {
     try {
@@ -174,15 +167,16 @@ const StudyListing = (props: PropTypes) => {
                 innerElementType={innerElementType}
                 itemCount={studies.length}
                 itemSize={66}
-                itemData={{ studies, importStudy, launchStudy: debouncedLaunchStudy, deleteStudy, archiveStudy, unarchiveStudy }}
+                itemData={{ studies, importStudy, launchStudy: openStudyLauncher, deleteStudy, archiveStudy, unarchiveStudy }}
               >
                 {Row}
               </FixedSizeList>
             )
         }
           </AutoSizer>
-        ) : <StudyDirView tree={buildStudyTree(studies)} importStudy={importStudy} launchStudy={debouncedLaunchStudy} deleteStudy={deleteStudy} archiveStudy={archiveStudy} unarchiveStudy={unarchiveStudy} />
+        ) : <StudyDirView tree={buildStudyTree(studies)} importStudy={importStudy} launchStudy={openStudyLauncher} deleteStudy={deleteStudy} archiveStudy={archiveStudy} unarchiveStudy={unarchiveStudy} />
       }
+      <LauncherModal open={!!studyToLaunch} study={studyToLaunch} close={() => { setStudyToLaunch(undefined); }} />
     </div>
   );
 };

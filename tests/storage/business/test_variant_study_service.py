@@ -11,11 +11,18 @@ from antarest.core.exceptions import (
     VariantGenerationError,
 )
 from antarest.core.interfaces.cache import CacheConstants
+from antarest.core.jwt import JWTUser
+from antarest.core.model import PublicMode
+from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskResult
+from antarest.login.model import User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudy,
     CommandBlock,
+)
+from antarest.study.storage.variantstudy.repository import (
+    VariantStudyRepository,
 )
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
@@ -297,3 +304,69 @@ def test_delete_study(tmp_path: Path) -> None:
         ]
     )
     assert not study_path.exists()
+
+
+@pytest.mark.unit_test
+def test_get_variant_children(tmp_path: Path) -> None:
+    name = "my-study"
+    study_path = tmp_path / name
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+
+    cache = Mock()
+    repo_mock = Mock(spec=VariantStudyRepository)
+    study_service = VariantStudyService(
+        raw_study_service=Mock(),
+        cache=cache,
+        task_service=Mock(),
+        command_factory=Mock(),
+        study_factory=Mock(),
+        config=build_config(tmp_path),
+        repository=repo_mock,
+        event_bus=Mock(),
+        patch_service=Mock(),
+    )
+
+    parent = VariantStudy(
+        id="parent",
+        name="parent",
+        type="variant",
+        archived=False,
+        path=str(study_path),
+        version="700",
+        owner=User(id=2, name="me"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+    children = [
+        VariantStudy(
+            id="child1",
+            name="child1",
+            type="variant",
+            archived=False,
+            path=str(study_path),
+            version="700",
+            owner=User(id=2, name="me"),
+            groups=[],
+            public_mode=PublicMode.NONE,
+        ),
+        VariantStudy(
+            id="child2",
+            name="child2",
+            type="variant",
+            archived=False,
+            path=str(study_path),
+            version="700",
+            owner=User(id=3, name="not me"),
+            groups=[],
+            public_mode=PublicMode.NONE,
+        ),
+    ]
+    repo_mock.get.side_effect = [parent] + children
+    repo_mock.get_children.side_effect = [children, [], []]
+
+    tree = study_service.get_all_variants_children(
+        "parent",
+        RequestParameters(user=JWTUser(id=2, type="user", impersonator=2)),
+    )
+    assert len(tree.children) == 1

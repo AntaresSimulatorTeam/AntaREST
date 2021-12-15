@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Union, Any
+from typing import List, Optional, Dict, Union, Any, Tuple
 
 from pydantic import validator
 
@@ -6,6 +6,7 @@ from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -51,6 +52,11 @@ class UpdateBindingConstraint(ICommand):
         if v is not None:
             return validate_matrix(v, values)
         return None
+
+    def _apply_config(
+        self, study_data: FileStudyTreeConfig
+    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+        return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         binding_constraints = study_data.tree.get(
