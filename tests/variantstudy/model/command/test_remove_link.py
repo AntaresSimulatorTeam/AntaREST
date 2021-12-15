@@ -8,6 +8,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.variantstudy.business.default_values import (
     FilteringOptions,
     LinkProperties,
@@ -104,6 +107,9 @@ def test_revert(command_context: CommandContext):
         area1="foo", area2="bar", command_context=command_context
     )
     study = FileStudy(config=Mock(), tree=Mock())
+    base.command_context.command_extractor.extract_link.side_effect = (
+        ChildNotFoundError()
+    )
     base.revert([], study)
     base.command_context.command_extractor.extract_link.assert_called_with(
         study, "bar", "foo"

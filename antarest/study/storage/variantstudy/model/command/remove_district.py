@@ -78,7 +78,7 @@ class RemoveDistrict(ICommand):
                 self.command_context.command_extractor
                 or CommandExtraction(self.command_context.matrix_service)
             ).extract_district(base, self.id)
-        except ChildNotFoundError as e:
+        except Exception as e:
             logging.getLogger(__name__).warning(
                 f"Failed to extract revert command for remove_district {self.id}",
                 exc_info=e,
