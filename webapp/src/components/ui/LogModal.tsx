@@ -10,6 +10,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import { exportText } from '../../services/utils/index';
 import { addListener, removeListener } from '../../ducks/websockets';
 import { WSEvent, WSLogMessage, WSMessage } from '../../common/types';
+import SimpleLoader from './loaders/SimpleLoader';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -45,6 +46,7 @@ const useStyles = makeStyles((theme: Theme) =>
       flex: '1',
       width: '100%',
       overflow: 'auto',
+      position: 'relative',
     },
     content: {
       padding: theme.spacing(3),
@@ -83,6 +85,7 @@ interface OwnTypes {
   close: () => void;
   // eslint-disable-next-line react/require-default-props
   style?: CSSProperties;
+  loading?: boolean;
 }
 
 const mapState = () => ({
@@ -98,7 +101,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps & OwnTypes;
 
 const LogModal = (props: PropTypes) => {
-  const { title, style, jobId, isOpen, content, close, addWsListener, removeWsListener } = props;
+  const { title, style, jobId, loading, isOpen, content, close, addWsListener, removeWsListener } = props;
   const [logDetail, setLogDetail] = useState(content);
   const divRef = useRef<HTMLDivElement | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
@@ -187,9 +190,12 @@ const LogModal = (props: PropTypes) => {
             <FontAwesomeIcon className={classes.downloadIcon} icon="download" onClick={onDownload} />
           </div>
           <div className={classes.contentWrapper} ref={logRef} onScroll={onScroll}>
-            <div className={classes.content} id="log-content" ref={divRef}>
-              <code className={classes.code}>{logDetail}</code>
-            </div>
+            {loading ? <SimpleLoader /> :
+              (
+                <div className={classes.content} id="log-content" ref={divRef}>
+                  <code className={classes.code}>{logDetail}</code>
+                </div>
+              )}
           </div>
           <div className={classes.footer}>
             <Button variant="contained" className={classes.button} onClick={close}>
@@ -205,6 +211,7 @@ const LogModal = (props: PropTypes) => {
 LogModal.defaultProps = {
   content: undefined,
   jobId: undefined,
+  loading: false,
 };
 
 export default connector(LogModal);

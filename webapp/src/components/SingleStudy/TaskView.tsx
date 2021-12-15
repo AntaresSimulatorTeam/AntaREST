@@ -148,16 +148,20 @@ const TaskView = (props: PropTypes) => {
   const [jobIdDetail, setJobIdDetail] = useState<string>();
   const [jobIdKill, setJobIdKill] = useState<string>();
   const [logModalContent, setLogModalContent] = useState<string | undefined>();
+  const [logModalContentLoading, setLogModalContentLoading] = useState(false);
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
   const openLogView = (jobId: string) => {
     setJobIdDetail(jobId);
+    setLogModalContentLoading(true);
     (async () => {
       try {
         const logData = await getStudyJobLog(jobId);
         setLogModalContent(logData);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failtofetchlogs'), e as AxiosError);
+      } finally {
+        setLogModalContentLoading(false);
       }
     })();
   };
@@ -202,6 +206,7 @@ const TaskView = (props: PropTypes) => {
         title={t('singlestudy:taskLog')}
         jobId={jobIdDetail}
         content={logModalContent}
+        loading={logModalContentLoading}
         close={() => setJobIdDetail(undefined)}
       />
       <div className={classes.header}>
