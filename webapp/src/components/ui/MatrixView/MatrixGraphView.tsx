@@ -5,6 +5,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { useTranslation } from 'react-i18next';
 import { MatrixType } from '../../../common/types';
 import 'handsontable/dist/handsontable.min.css';
+import { createDatesFromIndex } from './utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -129,7 +130,7 @@ export default function MatrixGraphView(props: PropTypes) {
               <Plot
                 data={selectedColumns.map((val) => (
                   {
-                    x: monotonic ? unitChange(index as Array<number>) : index,
+                    x: monotonic ? unitChange(index as Array<number>) : createDatesFromIndex(index),
                     y: monotonic ? data.map((a) => a[val]).sort((b, c) => c - b) : data.map((a) => a[val]),
                     mode: 'lines',
                     name: `${columns[val]}`,
