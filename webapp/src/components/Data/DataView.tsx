@@ -17,9 +17,12 @@ import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
+import GetAppIcon from '@material-ui/icons/GetApp';
 import { MatrixDataSetDTO, MatrixInfoDTO, UserInfo } from '../../common/types';
 import { CopyIcon } from './utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import DownloadLink from '../ui/DownloadLink';
+import { getExportMatrixUrl } from '../../services/api/matrix';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -89,7 +92,6 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     deleteIcon: {
       color: theme.palette.error.light,
-      marginLeft: theme.spacing(2),
       marginRight: theme.spacing(2),
       '&:hover': {
         color: theme.palette.error.main,
@@ -97,6 +99,14 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     createIcon: {
       color: theme.palette.primary.main,
+      '&:hover': {
+        color: theme.palette.primary.light,
+      },
+    },
+    downloadIcon: {
+      color: theme.palette.primary.main,
+      marginLeft: theme.spacing(2),
+      marginRight: theme.spacing(2),
       '&:hover': {
         color: theme.palette.primary.light,
       },
@@ -110,11 +120,12 @@ interface PropTypes {
   onDeleteClick: (datasetId: string) => void;
   onUpdateClick: (datasetId: string) => void;
   onMatrixClick: (matrixInfo: MatrixInfoDTO) => void;
+  onDownloadDataset: (datasetId: string) => void;
 }
 
 const DataView = (props: PropTypes) => {
   const classes = useStyles();
-  const { data, user, filter, onDeleteClick, onUpdateClick, onMatrixClick } = props;
+  const { data, user, filter, onDeleteClick, onUpdateClick, onMatrixClick, onDownloadDataset } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [toogleList, setToogleList] = useState<Array<boolean>>([]);
@@ -163,6 +174,7 @@ const DataView = (props: PropTypes) => {
                         user && user.id === dataset.owner.id && (
                         <>
                           <CreateIcon className={classes.createIcon} onClick={() => onUpdateClick(dataset.id)} />
+                          <GetAppIcon className={classes.downloadIcon} onClick={() => onDownloadDataset(dataset.id)} />
                           <DeleteIcon className={classes.deleteIcon} onClick={() => onDeleteClick(dataset.id)} />
                         </>
                         )}
@@ -182,6 +194,11 @@ const DataView = (props: PropTypes) => {
                       <Tooltip title={matrixItem.id} placement="top">
                         <Typography onClick={() => onMatrixClick(matrixItem)} className={classes.text}>{matrixItem.name}</Typography>
                       </Tooltip>
+                      <div style={{ flex: 1, display: 'flex', flexFlow: 'row nowrap', justifyContent: 'flex-end' }}>
+                        <DownloadLink url={getExportMatrixUrl(matrixItem.id)}>
+                          <GetAppIcon className={classes.downloadIcon} />
+                        </DownloadLink>
+                      </div>
                     </ListItem>
                   ))}
                 </List>

@@ -7,7 +7,7 @@ import { AppState } from '../../App/reducers';
 import GenericListingView from '../ui/NavComponents/GenericListingView';
 import DataView from './DataView';
 import DataViewLoader from './DataViewLoader';
-import { deleteDataSet, getMatrixList } from '../../services/api/matrix';
+import { deleteDataSet, exportMatrixDataset, getMatrixList } from '../../services/api/matrix';
 import { MatrixDataSetDTO, IDType, MatrixInfoDTO } from '../../common/types';
 import DataModal from './DataModal';
 import ConfirmationModal from '../ui/ConfirmationModal';
@@ -91,13 +91,23 @@ const Data = (props: PropTypes) => {
     setMatrixModal(true);
   };
 
+  const onDownloadDataset = async (datasetId: string) => {
+    try {
+      console.log('DOWNLOAD DATASET: ', datasetId);
+      const data = await exportMatrixDataset(datasetId);
+      console.log('SINGLE MATRIX DATA: ', data);
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('data:matrixError'), e as AxiosError);
+    }
+  };
+
   useEffect(() => {
     const init = async () => {
       try {
         const matrix = await getMatrixList();
         setDataList(matrix);
       } catch (e) {
-        enqueueErrorSnackbar(enqueueSnackbar, t('data:matrixError'), e as AxiosError);
+        enqueueErrorSnackbar(enqueueSnackbar, t('data:matrixListError'), e as AxiosError);
       } finally {
         setLoaded(true);
       }
@@ -121,6 +131,7 @@ const Data = (props: PropTypes) => {
           filter={filter}
           user={user}
           onDeleteClick={onDeleteClick}
+          onDownloadDataset={onDownloadDataset}
           onUpdateClick={onUpdateClick}
           onMatrixClick={onMatrixClick}
         />

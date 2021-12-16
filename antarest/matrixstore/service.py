@@ -1,21 +1,29 @@
-import csv
+import logging
+import os
+import shutil
+import tempfile
 import time
 from abc import abstractmethod, ABC
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, Tuple, cast
+from typing import List, Optional, Tuple
 from zipfile import ZipFile
 
 from fastapi import UploadFile
 
 from antarest.core.config import StorageConfig, Config
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
+from antarest.core.tasks.model import TaskResult
+from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
@@ -34,7 +42,13 @@ from antarest.matrixstore.repository import (
     MatrixContentRepository,
     MatrixDataSetRepository,
 )
-from antarest.matrixstore.utils import parse_tsv_matrix
+from antarest.matrixstore.utils import (
+    parse_tsv_matrix,
+    write_tsv_matrix,
+    write_tsv_matrix_to_file,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class ISimpleMatrixService(ABC):
@@ -95,12 +109,18 @@ class MatrixService(ISimpleMatrixService):
         repo: MatrixRepository,
         repo_dataset: MatrixDataSetRepository,
         matrix_content_repository: MatrixContentRepository,
+        file_transfer_manager: FileTransferManager,
+        task_service: ITaskService,
+        config: Config,
         user_service: LoginService,
     ):
         self.repo = repo
         self.repo_dataset = repo_dataset
         self.matrix_content_repository = matrix_content_repository
         self.user_service = user_service
+        self.file_transfer_manager = file_transfer_manager
+        self.task_service = task_service
+        self.config = config
 
     @staticmethod
     def _to_dto(matrix: Matrix, content: MatrixContent) -> MatrixDTO:
@@ -339,3 +359,107 @@ class MatrixService(ISimpleMatrixService):
         if not access and raise_error:
             raise UserHasNotPermissionError()
         return access
+
+    def create_matrix_files(
+        self, dataset: MatrixDataSet, export_path: Path
+    ) -> str:
+        assert export_path.name.endswith(".zip")
+        with tempfile.TemporaryDirectory(
+            dir=self.config.storage.tmp_dir
+        ) as tmpdir:
+            stopwatch = StopWatch()
+            basename_dir = os.path.splitext(export_path)[0]
+            if not os.path.isdir(basename_dir):
+                os.makedirs(basename_dir, exist_ok=False)
+            for mtx_info in dataset.matrices:
+                mtx = self.get(mtx_info.matrix.id)
+                if not mtx:
+                    continue
+                # Create a text file
+                write_tsv_matrix(mtx, basename_dir)
+            filename = shutil.make_archive(
+                base_name=basename_dir,
+                format="zip",
+                root_dir=basename_dir,
+            )
+            stopwatch.log_elapsed(
+                lambda x: logger.info(
+                    f"Matrix dataset {dataset.id} exported (zipped mode) in {x}s"
+                )
+            )
+        return filename if filename else ""
+
+    def download_dataset(
+        self,
+        dataset_id: str,
+        params: RequestParameters,
+    ) -> FileDownloadTaskDTO:
+        """
+        Export study output to a zip file.
+        Args:
+            dataset_id: matrix dataset id
+            params: request parameters
+        """
+        if not params.user:
+            raise UserHasNotPermissionError()
+        dataset = self.repo_dataset.get(dataset_id)
+        if dataset is None:
+            raise MatrixDataSetNotFound()
+        MatrixService.check_access_permission(
+            dataset, params.user, raise_error=True
+        )
+
+        logger.info(f"Exporting matrix dataset {dataset_id}")
+        export_name = f"Exporting matrix dataset {dataset_id}"
+        export_file_download = self.file_transfer_manager.request_download(
+            f"matrixdataset-{dataset_id}.zip",
+            export_name,
+            params.user,
+        )
+        export_path = Path(export_file_download.path)
+        export_id = export_file_download.id
+
+        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            try:
+                matrix_dataset = self.repo_dataset.get(dataset_id)
+                self.create_matrix_files(
+                    dataset=matrix_dataset, export_path=export_path
+                )
+                self.file_transfer_manager.set_ready(export_id)
+                return TaskResult(
+                    success=True,
+                    message=f"Matrix dataset {dataset_id} successfully exported",
+                )
+            except Exception as e:
+                self.file_transfer_manager.fail(export_id, str(e))
+                raise e
+
+        task_id = self.task_service.add_task(
+            export_task,
+            export_name,
+            custom_event_messages=None,
+            request_params=params,
+        )
+
+        return FileDownloadTaskDTO(
+            file=export_file_download.to_dto(), task=task_id
+        )
+
+    def download_matrix(
+        self,
+        matrix_id: str,
+        tmp_file: Path,
+        params: RequestParameters,
+    ) -> None:
+        """
+        Export study output to a zip file.
+        Args:
+            matrix_id: matrix id
+            tmp_file: temporary file
+            params: request parameters
+        """
+        if not params.user:
+            raise UserHasNotPermissionError()
+        matrix = self.get(matrix_id)
+        if matrix:
+            write_tsv_matrix_to_file(matrix, tmp_file)

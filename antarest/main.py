@@ -267,7 +267,14 @@ def fastapi_app(
 
     user_service = build_login(application, config, event_bus=event_bus)
 
-    matrix_service = build_matrixstore(application, config, user_service)
+    matrix_service = build_matrixstore(
+        application,
+        config=config,
+        file_transfer_manager=filetransfer_service,
+        task_service=task_service,
+        user_service=user_service,
+        service=None,
+    )
 
     study_service = build_study_service(
         application,

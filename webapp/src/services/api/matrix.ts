@@ -1,6 +1,8 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
 import { MatrixDTO, MatrixDataSetDTO, MatrixInfoDTO, MatrixDataSetUpdateDTO } from '../../common/types';
+import { FileDownloadTask } from './downloads';
+import { getConfig } from '../config';
 
 export const getMatrixList = async (name = '', filterOwn = false): Promise<Array<MatrixDataSetDTO>> => {
   const res = await client.get(`/v1/matrixdataset/_search?name=${encodeURI(name)}&filter_own=${filterOwn}`);
@@ -9,6 +11,19 @@ export const getMatrixList = async (name = '', filterOwn = false): Promise<Array
 
 export const getMatrix = async (id: string): Promise<MatrixDTO> => {
   const res = await client.get(`/v1/matrix/${id}`);
+  return res.data;
+};
+
+export const exportMatrix = async (id: string): Promise<any> => {
+  const res = await client.get(`/v1/matrix/${id}/download`);
+  return res.data;
+};
+
+export const getExportMatrixUrl = (matrixId: string): string =>
+  `${getConfig().downloadHostUrl || (getConfig().baseUrl + getConfig().restEndpoint)}/v1/matrix/${matrixId}/download`;
+
+export const exportMatrixDataset = async (datasetId: string): Promise<FileDownloadTask> => {
+  const res = await client.get(`/v1/matrixdataset/${datasetId}/download`);
   return res.data;
 };
 
