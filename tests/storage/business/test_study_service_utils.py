@@ -1,8 +1,14 @@
+import datetime
 from hashlib import md5
 from pathlib import Path
+from typing import Any, Dict
+from unittest.mock import Mock
 from zipfile import ZipFile
 
-from antarest.study.model import MatrixAggregationResult, MatrixIndex
+import pytest
+
+from antarest.core.model import JSON
+from antarest.study.model import MatrixAggregationResult, MatrixIndex, StudyDownloadLevelDTO
 from antarest.study.storage.study_download_utils import StudyDownloader
 
 
@@ -38,10 +44,36 @@ def test_output_downloads_export(tmp_path: Path):
     with ZipFile(zip_file) as zip_input:
         assert zip_input.namelist() == ["a1.csv", "a2.csv"]
         assert (
-            md5(zip_input.read("a1.csv")).hexdigest()
-            == "eec20effc24b12284991f039f146fc9b"
+                md5(zip_input.read("a1.csv")).hexdigest()
+                == "eec20effc24b12284991f039f146fc9b"
         )
         assert (
-            md5(zip_input.read("a2.csv")).hexdigest()
-            == "f914fc39e32c3d02f491fed302513961"
+                md5(zip_input.read("a2.csv")).hexdigest()
+                == "f914fc39e32c3d02f491fed302513961"
         )
+
+
+@pytest.mark.parametrize("config,level,expected", [
+    ({
+         "first-month-in-year": "january",
+         "january.1st": "Monday",
+         "leapyear": True,
+         "first.weekday": "Monday",
+         "simulation.start": 1,
+         "simulation.end": 354,
+     }, StudyDownloadLevelDTO.WEEKLY,
+     MatrixIndex(start_date=str(datetime.datetime(2024, 1, 1)), steps=51, first_week_size=7)),
+    ({
+         "first-month-in-year": "january",
+         "january.1st": "Monday",
+         "leapyear": False,
+         "first.weekday": "Monday",
+         "simulation.start": 1,
+         "simulation.end": 354,
+     }, StudyDownloadLevelDTO.WEEKLY,
+     MatrixIndex(start_date=str(datetime.datetime(2001, 1, 1)), steps=51, first_week_size=7)),
+])
+def test_create_matrix_index(config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex):
+    file_study = Mock()
+    file_study.tree.get.return_value = config
+    assert StudyDownloader.get_start_date(file_study, "some output", level) == expected

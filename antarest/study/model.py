@@ -291,8 +291,9 @@ class StudyDownloadDTO(BaseModel):
 
 
 class MatrixIndex(BaseModel):
-    startDate: str = ""
-    step: int = 3600000
+    start_date: str = ""
+    steps: int = 3600000
+    first_week_size: int = 7
 
 
 class MatrixAggregationResult(BaseModel):
