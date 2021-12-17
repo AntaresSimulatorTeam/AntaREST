@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 from datetime import timezone, datetime
+from enum import Enum
 from pathlib import Path
 from typing import Tuple, Any, Optional, Dict
 
@@ -45,6 +46,12 @@ from antarest.study.storage.rawstudy.watcher import Watcher
 logger = logging.getLogger(__name__)
 
 
+class Module(str, Enum):
+    APP = 'app'
+    WATCHER = 'watcher'
+    MATRIX_GC = 'matrix_gc'
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -73,6 +80,16 @@ def parse_arguments() -> argparse.Namespace:
         dest="auto_upgrade_db",
         help="Automatically upgrade db",
         action="store_true",
+        required=False,
+    )
+    parser.add_argument(
+        "--module",
+        dest="module",
+        help="Select a module to run (default is the application server)",
+        nargs=1,
+        choices=[Module.APP.value, Module.WATCHER.value, Module.MATRIX_GC.value],
+        action="store",
+        default=Module.APP.value,
         required=False,
     )
     return parser.parse_args()
