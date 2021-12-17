@@ -375,7 +375,6 @@ class MatrixService(ISimpleMatrixService):
                 mtx = self.get(mtx_info.matrix.id)
                 if not mtx:
                     continue
-                # Create a text file
                 write_tsv_matrix(mtx, basename_dir)
             filename = shutil.make_archive(
                 base_name=basename_dir,

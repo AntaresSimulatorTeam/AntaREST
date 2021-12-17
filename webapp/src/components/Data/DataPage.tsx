@@ -93,9 +93,7 @@ const Data = (props: PropTypes) => {
 
   const onDownloadDataset = async (datasetId: string) => {
     try {
-      console.log('DOWNLOAD DATASET: ', datasetId);
-      const data = await exportMatrixDataset(datasetId);
-      console.log('SINGLE MATRIX DATA: ', data);
+      await exportMatrixDataset(datasetId);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('data:matrixError'), e as AxiosError);
     }
