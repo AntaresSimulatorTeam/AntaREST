@@ -173,9 +173,9 @@ const DataView = (props: PropTypes) => {
                   {
                         user && user.id === dataset.owner.id && (
                         <>
-                          <CreateIcon className={classes.createIcon} onClick={() => onUpdateClick(dataset.id)} />
-                          <GetAppIcon className={classes.downloadIcon} onClick={() => onDownloadDataset(dataset.id)} />
-                          <DeleteIcon className={classes.deleteIcon} onClick={() => onDeleteClick(dataset.id)} />
+                          <CreateIcon className={classes.createIcon} onClick={(e) => { e.stopPropagation(); onUpdateClick(dataset.id); }} />
+                          <GetAppIcon className={classes.downloadIcon} onClick={(e) => { e.stopPropagation(); onDownloadDataset(dataset.id); }} />
+                          <DeleteIcon className={classes.deleteIcon} onClick={(e) => { e.stopPropagation(); onDeleteClick(dataset.id); }} />
                         </>
                         )}
                 </div>
