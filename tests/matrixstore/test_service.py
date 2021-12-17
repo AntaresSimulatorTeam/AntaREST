@@ -108,7 +108,9 @@ def test_get():
     )
 
     # Test
-    service = MatrixService(repo, repo_meta, content, Mock(), Mock(), Mock(), Mock())
+    service = MatrixService(
+        repo, repo_meta, content, Mock(), Mock(), Mock(), Mock()
+    )
     res = service.get("my-id")
     assert exp == res
 
@@ -118,7 +120,9 @@ def test_delete():
     repo = Mock()
     repo_meta = Mock()
 
-    service = MatrixService(repo, repo_meta, content, Mock(), Mock(), Mock(), Mock())
+    service = MatrixService(
+        repo, repo_meta, content, Mock(), Mock(), Mock(), Mock()
+    )
     service.delete("my-id")
     content.delete.assert_called_once_with("my-id")
     repo.delete.assert_called_once_with("my-id")
@@ -130,7 +134,9 @@ def test_dataset_lifecycle():
     dataset_repo = Mock()
     user_service = Mock()
 
-    service = MatrixService(repo, dataset_repo, content, Mock(), Mock(), Mock(), user_service)
+    service = MatrixService(
+        repo, dataset_repo, content, Mock(), Mock(), Mock(), user_service
+    )
 
     userA = RequestParameters(
         user=JWTUser(
