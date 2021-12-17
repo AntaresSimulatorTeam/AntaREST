@@ -303,7 +303,6 @@ class StudyDownloader:
         first_week_day = cast(str, config.get("first.weekday"))
         start_offset = cast(int, config.get("simulation.start"))
         end = cast(int, config.get("simulation.end"))
-        assert isinstance(leapyear, bool)
 
         starting_month_index = strptime(starting_month, "%B").tm_mon
         target_year = 2000
