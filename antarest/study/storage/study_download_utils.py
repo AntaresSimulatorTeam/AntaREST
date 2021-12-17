@@ -316,6 +316,7 @@ class StudyDownloader:
         start_date = datetime(
             target_year, starting_month_index, 1
         ) + timedelta(days=start_offset - 1)
+        # base case is DAILY
         steps = end - start_offset
         if level == StudyDownloadLevelDTO.HOURLY:
             steps = steps * 3600 * 24
@@ -323,8 +324,6 @@ class StudyDownloader:
             steps = 1
         elif level == StudyDownloadLevelDTO.WEEKLY:
             steps = ceil(steps / 7)
-        elif level == StudyDownloadLevelDTO.DAILY:
-            steps = steps
         elif level == StudyDownloadLevelDTO.MONTHLY:
             end_date = start_date + timedelta(days=steps)
             same_year = end_date.year == start_date.year

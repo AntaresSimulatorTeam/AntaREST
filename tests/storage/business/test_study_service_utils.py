@@ -126,6 +126,22 @@ def test_output_downloads_export(tmp_path: Path):
         ),
         (
             {
+                "first-month-in-year": "july",
+                "january.1st": "Monday",
+                "leapyear": False,
+                "first.weekday": "Monday",
+                "simulation.start": 1,
+                "simulation.end": 100,
+            },
+            StudyDownloadLevelDTO.MONTHLY,
+            MatrixIndex(
+                start_date=str(datetime.datetime(2002, 7, 1)),
+                steps=4,
+                first_week_size=7,
+            ),
+        ),
+        (
+            {
                 "first-month-in-year": "march",
                 "january.1st": "Monday",
                 "leapyear": False,
