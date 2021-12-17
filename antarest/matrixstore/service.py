@@ -368,18 +368,15 @@ class MatrixService(ISimpleMatrixService):
             dir=self.config.storage.tmp_dir
         ) as tmpdir:
             stopwatch = StopWatch()
-            basename_dir = os.path.splitext(export_path)[0]
-            if not os.path.isdir(basename_dir):
-                os.makedirs(basename_dir, exist_ok=False)
             for mtx_info in dataset.matrices:
                 mtx = self.get(mtx_info.matrix.id)
                 if not mtx:
                     continue
-                write_tsv_matrix(mtx, basename_dir)
+                write_tsv_matrix(mtx, tmpdir)
             filename = shutil.make_archive(
-                base_name=basename_dir,
+                base_name=os.path.splitext(export_path)[0],
                 format="zip",
-                root_dir=basename_dir,
+                root_dir=tmpdir,
             )
             stopwatch.log_elapsed(
                 lambda x: logger.info(
