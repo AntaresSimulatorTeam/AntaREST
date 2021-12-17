@@ -422,6 +422,11 @@ class MatrixService(ISimpleMatrixService):
         def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
             try:
                 matrix_dataset = self.repo_dataset.get(dataset_id)
+                if matrix_dataset is None:
+                    return TaskResult(
+                        success=False,
+                        message=f"Matrix dataset {dataset_id} not found",
+                    )
                 self.create_matrix_files(
                     dataset=matrix_dataset, export_path=export_path
                 )
@@ -462,4 +467,4 @@ class MatrixService(ISimpleMatrixService):
             raise UserHasNotPermissionError()
         matrix = self.get(matrix_id)
         if matrix:
-            write_tsv_matrix_to_file(matrix, tmp_file)
+            write_tsv_matrix_to_file(matrix, str(tmp_file))

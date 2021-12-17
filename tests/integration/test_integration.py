@@ -337,6 +337,14 @@ def test_matrix(app: FastAPI):
 
     matrix_id = stored["id"]
 
+    res = client.get(
+        f"/v1/matrix/{matrix_id}/download",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
     res = client.post(
         f"/v1/matrixdataset",
         json={
@@ -365,6 +373,14 @@ def test_matrix(app: FastAPI):
     assert results[0]["matrices"][0]["id"] == matrix_id
 
     dataset_id = results[0]["id"]
+    res = client.get(
+        f"/v1/matrixdataset/{dataset_id}/download",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
     res = client.delete(
         f"/v1/matrixdataset/{dataset_id}",
         headers={
