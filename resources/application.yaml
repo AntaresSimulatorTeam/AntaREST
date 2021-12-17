@@ -70,6 +70,8 @@ root_path: ""
 
 server:
   worker_threadpool_size: 12
+  services:
+    - watcher
 
 logging:
   level: INFO

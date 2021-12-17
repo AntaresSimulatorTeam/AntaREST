@@ -278,13 +278,15 @@ class ServerConfig:
     """
 
     worker_threadpool_size: int = 5
+    services: List[str] = field(default_factory=list)
 
     @staticmethod
     def from_dict(data: JSON) -> "ServerConfig":
         return ServerConfig(
             worker_threadpool_size=int(data["worker_threadpool_size"])
             if "worker_threadpool_size" in data
-            else 5
+            else 5,
+            services=data.get("services", []),
         )
 
 
@@ -322,6 +324,7 @@ class Config:
 
         """
         return Config(
+            server=ServerConfig.from_dict(data.get("server", {})),
             security=SecurityConfig.from_dict(data["security"]),
             storage=StorageConfig.from_dict(data["storage"]),
             launcher=LauncherConfig.from_dict(data["launcher"]),
