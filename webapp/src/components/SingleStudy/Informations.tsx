@@ -3,6 +3,7 @@ import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import InformationView from './InformationView';
 import TaskView from './TaskView';
 import NoteView from './NoteView';
+import MapView from './MapView';
 import { LaunchJob, StudyMetadata } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
@@ -43,8 +44,9 @@ const Informations = (props: PropTypes) => {
     <div className={classes.root}>
       <InformationView study={study} />
       <div className={classes.otherInfo}>
-        <NoteView studyId={study.id} />
-        <TaskView jobs={jobs} />
+{/*       <NoteView studyId={study.id} />
+        <TaskView jobs={jobs} />*/}
+        <MapView studyId={study.id} />
       </div>
     </div>
   );
