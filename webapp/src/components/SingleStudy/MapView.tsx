@@ -11,7 +11,7 @@ import {
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
-import { getSynthesis } from '../../services/api/study';
+import { getAreaPositions, getSynthesis } from '../../services/api/study';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -55,6 +55,21 @@ interface Props {
     studyId: string;
 }
 
+interface TestStudyConfig {
+  archiveInputSeries: Array<string>;
+  areas: object;
+  bindings: Array<string>;
+  enrModelling: string;
+  outputPath: string;
+  outputs: object;
+  path: string;
+  sets: object;
+  storeNewSet: boolean;
+  studyId: string;
+  studyPath: string;
+  version: number;
+}
+
 const fakeData = {
   nodes: [{ id: 'Harry' }, { id: 'Sally' }, { id: 'Alice' }],
   links: [
@@ -63,27 +78,13 @@ const fakeData = {
   ],
 };
 
-const myConfig = {
-  initialZoom: 5,
-  height: 700,
-  width: 1000,
-  d3: {
-    linkLength: 100,
-  },
-  node: {
-    color: '#d3d3d3',
-    size: 200,
-  },
-  link: {
-    color: '#d3d3d3',
-  },
-};
-
 const NoteView = (props: Props) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { studyId } = props;
-  const [content, setContent] = useState<string>('');
+  const [studyConfig, setStudyConfig] = useState<TestStudyConfig>();
+  const [areasList, setAreasList] = useState<string>();
+  const [areas, setAreas] = useState<string>();
   const [loaded, setLoaded] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
 
@@ -99,7 +100,7 @@ const NoteView = (props: Props) => {
     const init = async () => {
       try {
         const data = await getSynthesis(studyId);
-        setContent(data);
+        setStudyConfig(data as TestStudyConfig);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
       } finally {
@@ -107,10 +108,38 @@ const NoteView = (props: Props) => {
       }
     };
     init();
-    return () => setContent('');
   }, [enqueueSnackbar, studyId, t]);
 
-  console.log(content);
+  useEffect(() => {
+    if (loaded) {
+      const test = studyConfig;
+      let areaList = '';
+      if (test) {
+        Object.keys(test.areas).map((key) => {
+          areaList += `${key}, `;
+          return areaList;
+        });
+      }
+      setAreasList(areaList);
+    }
+  }, [loaded, studyConfig, enqueueSnackbar, t]);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        if (areasList) {
+          console.log(areasList);
+          const data = await getAreaPositions(areasList);
+          setAreas(data);
+        }
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
+      }
+    };
+    init();
+  }, [areasList, enqueueSnackbar, t]);
+
+  console.log(areas);
 
   return (
     <Paper className={classes.root}>
@@ -128,11 +157,12 @@ const NoteView = (props: Props) => {
                   height,
                   width,
                   d3: {
-                    linkLength: 100,
+                    linkLength: 500,
                   },
                   node: {
                     color: '#d3d3d3',
-                    size: 200,
+                    size: 500,
+                    fontSize: 15,
                   },
                   link: {
                     color: '#d3d3d3',

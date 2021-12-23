@@ -38,6 +38,11 @@ export const getSynthesis = async (uuid: string): Promise<any> => {
   return res.data;
 };
 
+export const getAreaPositions = async (areaList: string): Promise<any> => {
+  const res = await client.get(`/input/areas/${areaList}/ui`);
+  return res.data;
+};
+
 export const getStudyMetadata = async (sid: string, summary = true): Promise<StudyMetadata> => {
   const res = await client.get(`/v1/studies/${sid}?summary=${summary}`);
   return convertStudyDtoToMetadata(sid, res.data);
