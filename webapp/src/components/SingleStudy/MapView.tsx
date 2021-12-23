@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Graph } from 'react-d3-graph';
+import { AxiosError } from 'axios';
 import {
   makeStyles,
   createStyles,
@@ -8,6 +9,9 @@ import {
   Typography,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
+import { getSynthesis } from '../../services/api/study';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -54,7 +58,7 @@ interface Props {
     studyId: string;
 }
 
-const data = {
+const fakeData = {
   nodes: [{ id: 'Harry' }, { id: 'Sally' }, { id: 'Alice' }],
   links: [
     { source: 'Harry', target: 'Sally' },
@@ -82,6 +86,9 @@ const NoteView = (props: Props) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { studyId } = props;
+  const [content, setContent] = useState<string>('');
+  const [loaded, setLoaded] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   const onClickNode = (nodeId: string) => {
     console.log(`Clicked node ${nodeId}`);
@@ -91,6 +98,23 @@ const NoteView = (props: Props) => {
     console.log(`Clicked link between ${source} and ${target}`);
   };
 
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const data = await getSynthesis(studyId);
+        setContent(data);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
+      } finally {
+        setLoaded(true);
+      }
+    };
+    init();
+    return () => setContent('');
+  }, [enqueueSnackbar, studyId, t]);
+
+  console.log(content);
+
   return (
     <Paper className={classes.root}>
       <div className={classes.header}>
@@ -99,7 +123,7 @@ const NoteView = (props: Props) => {
       <div className={classes.main}>
         <Graph
           id="graph-id" // id is mandatory
-          data={data}
+          data={fakeData}
           config={myConfig}
           onClickNode={onClickNode}
           onClickLink={onClickLink}
