@@ -8,6 +8,7 @@ import {
   Paper,
   Typography,
 } from '@material-ui/core';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { getSynthesis } from '../../services/api/study';
@@ -43,14 +44,10 @@ const useStyles = makeStyles((theme: Theme) =>
       fontWeight: 'bold',
       color: 'white',
     },
-    main: {
-      flex: 1,
+    autosizer: {
+      display: 'block',
       width: '100%',
-      display: 'flex',
-      flexFlow: 'column nowrap',
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      position: 'relative',
+      height: '100%',
     },
   }));
 
@@ -120,14 +117,33 @@ const NoteView = (props: Props) => {
       <div className={classes.header}>
         <Typography className={classes.title}>Map</Typography>
       </div>
-      <div className={classes.main}>
-        <Graph
-          id="graph-id" // id is mandatory
-          data={fakeData}
-          config={myConfig}
-          onClickNode={onClickNode}
-          onClickLink={onClickLink}
-        />
+      <div className={classes.autosizer}>
+        <AutoSizer>
+          {
+            ({ height, width }) => (
+              <Graph
+                id="graph-id" // id is mandatory
+                data={fakeData}
+                config={{
+                  height,
+                  width,
+                  d3: {
+                    linkLength: 100,
+                  },
+                  node: {
+                    color: '#d3d3d3',
+                    size: 200,
+                  },
+                  link: {
+                    color: '#d3d3d3',
+                  },
+                }}
+                onClickNode={onClickNode}
+                onClickLink={onClickLink}
+              />
+            )
+          }
+        </AutoSizer>
       </div>
     </Paper>
   );
