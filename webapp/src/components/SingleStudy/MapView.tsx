@@ -116,11 +116,11 @@ const NoteView = (props: Props) => {
       let areaList = '';
       if (test) {
         Object.keys(test.areas).map((key) => {
-          areaList += `${key}, `;
+          areaList += `${key},`;
           return areaList;
         });
       }
-      setAreasList(areaList);
+      setAreasList(areaList.replace(/&/g, '%26').substring(0, areaList.length - 2));
     }
   }, [loaded, studyConfig, enqueueSnackbar, t]);
 
@@ -129,7 +129,7 @@ const NoteView = (props: Props) => {
       try {
         if (areasList) {
           console.log(areasList);
-          const data = await getAreaPositions(areasList);
+          const data = await getAreaPositions(studyId, areasList);
           setAreas(data);
         }
       } catch (e) {
@@ -137,7 +137,7 @@ const NoteView = (props: Props) => {
       }
     };
     init();
-  }, [areasList, enqueueSnackbar, t]);
+  }, [studyId, areasList, enqueueSnackbar, t]);
 
   console.log(areas);
 
