@@ -7,6 +7,10 @@ import {
   Theme,
   Paper,
   Typography,
+  Card,
+  CardContent,
+  CardActions,
+  Button,
 } from '@material-ui/core';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useTranslation } from 'react-i18next';
@@ -48,6 +52,13 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'block',
       width: '100%',
       height: '100%',
+      position: 'relative',
+    },
+    popup: {
+      position: 'absolute',
+      right: '30px',
+      top: '100px',
+      width: '200px',
     },
   }));
 
@@ -70,13 +81,76 @@ interface TestStudyConfig {
   version: number;
 }
 
+interface NodeClickConfig {
+  id: string;
+  x: number;
+  y: number;
+  color: string;
+}
+
 const fakeData = {
-  nodes: [{ id: 'Harry' }, { id: 'Sally' }, { id: 'Alice' }],
+  nodes: [
+    {
+      id: 'aa',
+      x: 252 + 300,
+      y: 290,
+      color: 'rgb(230, 108, 44)',
+    },
+    {
+      id: 'bb',
+      x: 415 + 300,
+      y: 290,
+      color: 'rgb(230, 108, 44)',
+    },
+    {
+      id: 'cc',
+      x: 113 + 300,
+      y: 199,
+      color: 'rgb(230, 108, 44)',
+    },
+    {
+      id: 'dd',
+      x: 265 + 300,
+      y: 199,
+      color: 'rgb(230, 108, 44)',
+    }],
   links: [
-    { source: 'Harry', target: 'Sally' },
-    { source: 'Harry', target: 'Alice' },
+    { source: 'aa', target: 'bb' },
+    { source: 'aa', target: 'cc' },
+    { source: 'aa', target: 'dd' },
   ],
 };
+
+/*
+
+& psp x1,& psp x2,& psp y,& psp-hub,& psp-in,& psp-out,aa,bb,cc,dd,east,ee,ff,gg,hh,hydro node 1,hydro node-2,hydro node-3,ii,jj,kk,ll,mm,nn,north,oo,pp,qq,rr,solar gen node,south,ss,tt,thermal,uu,vv,west,wind power 1,wind power-2,wind power-3,ww,wind 6000,wind 9000,xx,yy,z MapView.tsx:143
+aa {
+
+ee {
+  "x": 265,
+  "y": 199,
+  "color_r": 230,
+  "color_g": 108,
+  "color_b": 44,
+  "layers": "0 8"
+}
+xx {
+  "x": 397,
+  "y": -275,
+  "color_r": 230,
+  "color_g": 108,
+  "color_b": 44,
+  "layers": "0 8"
+}
+yy {
+  "x": 319,
+  "y": -351,
+  "color_r": 230,
+  "color_g": 108,
+  "color_b": 44,
+  "layers": "0 8"
+}
+*/
 
 const NoteView = (props: Props) => {
   const classes = useStyles();
@@ -86,10 +160,12 @@ const NoteView = (props: Props) => {
   const [areasList, setAreasList] = useState<string>();
   const [areas, setAreas] = useState<string>();
   const [loaded, setLoaded] = useState(false);
+  const [nodeClick, setNodeClick] = useState<NodeClickConfig>();
   const { enqueueSnackbar } = useSnackbar();
 
   const onClickNode = (nodeId: string) => {
-    console.log(`Clicked node ${nodeId}`);
+    const obj = fakeData.nodes.find((o) => o.id === nodeId);
+    setNodeClick(obj);
   };
 
   const onClickLink = (source: string, target: string) => {
@@ -113,6 +189,7 @@ const NoteView = (props: Props) => {
   useEffect(() => {
     if (loaded) {
       const test = studyConfig;
+      console.log(studyConfig);
       let areaList = '';
       if (test) {
         Object.keys(test.areas).map((key) => {
@@ -120,7 +197,7 @@ const NoteView = (props: Props) => {
           return areaList;
         });
       }
-      setAreasList(areaList.replace(/&/g, '%26').substring(0, areaList.length - 2));
+      setAreasList(areaList.substring(0, areaList.length - 2));
     }
   }, [loaded, studyConfig, enqueueSnackbar, t]);
 
@@ -128,7 +205,6 @@ const NoteView = (props: Props) => {
     const init = async () => {
       try {
         if (areasList) {
-          console.log(areasList);
           const data = await getAreaPositions(studyId, areasList);
           setAreas(data);
         }
@@ -156,16 +232,17 @@ const NoteView = (props: Props) => {
                 config={{
                   height,
                   width,
+                  staticGraph: true,
                   d3: {
-                    linkLength: 500,
                   },
                   node: {
                     color: '#d3d3d3',
-                    size: 500,
+                    size: 600,
                     fontSize: 15,
                   },
                   link: {
                     color: '#d3d3d3',
+                    strokeWidth: 4,
                   },
                 }}
                 onClickNode={onClickNode}
@@ -174,6 +251,29 @@ const NoteView = (props: Props) => {
             )
           }
         </AutoSizer>
+        {nodeClick && (
+        <Card className={classes.popup}>
+          <CardContent>
+            <Typography gutterBottom>
+              Area
+            </Typography>
+            <Typography variant="h5" component="h2">
+              {nodeClick.id}
+            </Typography>
+            <Typography variant="body2" component="p">
+              {nodeClick.x}
+              <br />
+              {nodeClick.y}
+              <br />
+              {nodeClick.color}
+            </Typography>
+          </CardContent>
+          <CardActions>
+            <Button size="small">More</Button>
+            <Button onClick={() => setNodeClick(undefined)} size="small">Close</Button>
+          </CardActions>
+        </Card>
+        )}
       </div>
     </Paper>
   );
