@@ -88,6 +88,11 @@ interface NodeClickConfig {
   color: string;
 }
 
+interface LinkClickConfig {
+  source: string;
+  target: string;
+}
+
 const fakeData = {
   nodes: [
     {
@@ -161,15 +166,22 @@ const NoteView = (props: Props) => {
   const [areas, setAreas] = useState<string>();
   const [loaded, setLoaded] = useState(false);
   const [nodeClick, setNodeClick] = useState<NodeClickConfig>();
+  const [linkClick, setLinkClick] = useState<LinkClickConfig>();
   const { enqueueSnackbar } = useSnackbar();
 
   const onClickNode = (nodeId: string) => {
     const obj = fakeData.nodes.find((o) => o.id === nodeId);
     setNodeClick(obj);
+    setLinkClick(undefined);
   };
 
   const onClickLink = (source: string, target: string) => {
-    console.log(`Clicked link between ${source} and ${target}`);
+    const obj = {
+      source,
+      target,
+    };
+    setLinkClick(obj);
+    setNodeClick(undefined);
   };
 
   useEffect(() => {
@@ -242,7 +254,7 @@ const NoteView = (props: Props) => {
                   },
                   link: {
                     color: '#d3d3d3',
-                    strokeWidth: 4,
+                    strokeWidth: 2,
                   },
                 }}
                 onClickNode={onClickNode}
@@ -253,10 +265,10 @@ const NoteView = (props: Props) => {
         </AutoSizer>
         {nodeClick && (
         <Card className={classes.popup}>
+          <Typography className={`${classes.header} ${classes.title}`} gutterBottom>
+            Area
+          </Typography>
           <CardContent>
-            <Typography gutterBottom>
-              Area
-            </Typography>
             <Typography variant="h5" component="h2">
               {nodeClick.id}
             </Typography>
@@ -271,6 +283,24 @@ const NoteView = (props: Props) => {
           <CardActions>
             <Button size="small">More</Button>
             <Button onClick={() => setNodeClick(undefined)} size="small">Close</Button>
+          </CardActions>
+        </Card>
+        )}
+        {linkClick && (
+        <Card className={classes.popup}>
+          <Typography className={`${classes.header} ${classes.title}`} gutterBottom>
+            Link
+          </Typography>
+          <CardContent>
+            <Typography variant="body2" component="p">
+              {linkClick.source}
+              <br />
+              {linkClick.target}
+            </Typography>
+          </CardContent>
+          <CardActions>
+            <Button size="small">More</Button>
+            <Button onClick={() => setLinkClick(undefined)} size="small">Close</Button>
           </CardActions>
         </Card>
         )}
