@@ -32,22 +32,22 @@ const useStyles = makeStyles((theme: Theme) =>
 interface PropType {
     open: boolean;
     onClose: () => void;
-    onSave: () => void;
+    onSave: (name: string, posX: number, posY: number, color: string) => void;
 }
 
 const CreateAreaModal = (props: PropType) => {
   const classes = useStyles();
   const { open, onClose, onSave } = props;
   const [name, setName] = useState<string>('');
-  const [posX, setPosX] = useState<number>();
-  const [posY, setPosY] = useState<number>();
+  const [posX, setPosX] = useState<number>(0);
+  const [posY, setPosY] = useState<number>(0);
   const [color, setColor] = useState<string>('rgb(0, 0, 0)');
 
   return (
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={onSave}
+      handleSave={() => onSave(name, posX, posY, color)}
       title="New area"
     >
       <div className={classes.name}>

@@ -15,7 +15,7 @@ import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import PanelCardView from './PanelCardView';
-import { NodeClickConfig, LinkClickConfig, TestStudyConfig } from './utils';
+import { NodeClickConfig, LinkClickConfig, TestStudyConfig } from './types';
 import CreateAreaModal from './CreateAreaModal';
 
 const buttonStyle = (theme: Theme, color: string) => ({
@@ -184,8 +184,14 @@ const MapView = (props: Props) => {
     setOpenModal(false);
   };
 
-  const onSave = () => {
+  const onSave = (name: string, posX: number, posY: number, color: string) => {
     setOpenModal(false);
+    fakeData.nodes.push({
+      id: name,
+      x: posX,
+      y: posY,
+      color,
+    });
   };
 
   useEffect(() => {

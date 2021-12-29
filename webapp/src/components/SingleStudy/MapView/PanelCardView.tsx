@@ -9,7 +9,7 @@ import {
   CardActions,
   Button,
 } from '@material-ui/core';
-import { NodeClickConfig, LinkClickConfig } from './utils';
+import { NodeClickConfig, LinkClickConfig } from './types';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
