@@ -11,12 +11,25 @@ import {
   CardContent,
   CardActions,
   Button,
+  TextField,
 } from '@material-ui/core';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../services/api/study';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import GenericModal from '../ui/GenericModal';
+
+const buttonStyle = (theme: Theme, color: string) => ({
+  width: '120px',
+  border: `2px solid ${color}`,
+  color,
+  margin: theme.spacing(0.5),
+  '&:hover': {
+    color: 'white',
+    backgroundColor: color,
+  },
+});
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -60,6 +73,31 @@ const useStyles = makeStyles((theme: Theme) =>
       top: '100px',
       width: '200px',
     },
+    button: {
+      position: 'absolute',
+      left: '10px',
+      bottom: '10px',
+      ...buttonStyle(theme, theme.palette.primary.main),
+      boxSizing: 'border-box',
+    },
+    name: {
+      margin: theme.spacing(2),
+    },
+    positions: {
+      margin: theme.spacing(2),
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    posX: {
+      width: '130px',
+    },
+    posY: {
+      width: '130px',
+    },
+    color: {
+      margin: theme.spacing(2),
+    },
   }));
 
 interface Props {
@@ -97,25 +135,25 @@ const fakeData = {
   nodes: [
     {
       id: 'aa',
-      x: 252 + 300,
+      x: 252,
       y: 290,
       color: 'rgb(230, 108, 44)',
     },
     {
       id: 'bb',
-      x: 415 + 300,
+      x: 415,
       y: 290,
       color: 'rgb(230, 108, 44)',
     },
     {
       id: 'cc',
-      x: 113 + 300,
+      x: 113,
       y: 199,
       color: 'rgb(230, 108, 44)',
     },
     {
       id: 'dd',
-      x: 265 + 300,
+      x: 265,
       y: 199,
       color: 'rgb(230, 108, 44)',
     }],
@@ -168,6 +206,11 @@ const NoteView = (props: Props) => {
   const [nodeClick, setNodeClick] = useState<NodeClickConfig>();
   const [linkClick, setLinkClick] = useState<LinkClickConfig>();
   const { enqueueSnackbar } = useSnackbar();
+  const [openModal, setOpenModal] = useState<boolean>(false);
+  const [name, setName] = useState<string>('');
+  const [posX, setPosX] = useState<number>();
+  const [posY, setPosY] = useState<number>();
+  const [color, setColor] = useState<string>('rgb(0, 0, 0)');
 
   const onClickNode = (nodeId: string) => {
     const obj = fakeData.nodes.find((o) => o.id === nodeId);
@@ -182,6 +225,19 @@ const NoteView = (props: Props) => {
     };
     setLinkClick(obj);
     setNodeClick(undefined);
+  };
+
+  const createArea = () => {
+    setOpenModal(true);
+  };
+
+  const onClose = () => {
+    setOpenModal(false);
+  };
+
+  const onSave = () => {
+    console.log('save');
+    setOpenModal(false);
   };
 
   useEffect(() => {
@@ -245,6 +301,7 @@ const NoteView = (props: Props) => {
                   height,
                   width,
                   staticGraph: true,
+                  initialZoom: 1.5,
                   d3: {
                   },
                   node: {
@@ -263,6 +320,11 @@ const NoteView = (props: Props) => {
             )
           }
         </AutoSizer>
+
+        <Button className={classes.button} onClick={createArea}>
+          New Area
+        </Button>
+
         {nodeClick && (
         <Card className={classes.popup}>
           <Typography className={`${classes.header} ${classes.title}`} gutterBottom>
@@ -305,6 +367,51 @@ const NoteView = (props: Props) => {
         </Card>
         )}
       </div>
+      <GenericModal
+        open={openModal}
+        handleClose={onClose}
+        handleSave={onSave}
+        title="New area"
+      >
+        <div className={classes.name}>
+          <TextField
+            label="Nom"
+            variant="outlined"
+            onChange={(event) => setName(event.target.value as string)}
+            value={name}
+            size="small"
+          />
+        </div>
+        <div className={classes.positions}>
+          <TextField
+            className={classes.posX}
+            label="Position X"
+            type="number"
+            variant="outlined"
+            size="small"
+            onChange={(event) => setPosX(parseInt(event.target.value, 10) as number)}
+            value={posX}
+          />
+          <TextField
+            className={classes.posY}
+            label="Position Y"
+            type="number"
+            variant="outlined"
+            size="small"
+            onChange={(event) => setPosY(parseInt(event.target.value, 10) as number)}
+            value={posY}
+          />
+        </div>
+        <div className={classes.color}>
+          <TextField
+            label="Couleur"
+            variant="outlined"
+            onChange={(event) => setColor(event.target.value as string)}
+            value={color}
+            size="small"
+          />
+        </div>
+      </GenericModal>
     </Paper>
   );
 };
