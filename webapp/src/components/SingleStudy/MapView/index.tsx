@@ -16,9 +16,9 @@ import {
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
-import { getAreaPositions, getSynthesis } from '../../services/api/study';
-import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
-import GenericModal from '../ui/GenericModal';
+import { getAreaPositions, getSynthesis } from '../../../services/api/study';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
+import GenericModal from '../../ui/GenericModal';
 
 const buttonStyle = (theme: Theme, color: string) => ({
   width: '120px',
@@ -195,7 +195,7 @@ yy {
 }
 */
 
-const NoteView = (props: Props) => {
+const MapView = (props: Props) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { studyId } = props;
@@ -416,4 +416,4 @@ const NoteView = (props: Props) => {
   );
 };
 
-export default NoteView;
+export default MapView;
