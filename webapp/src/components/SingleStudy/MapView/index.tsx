@@ -8,16 +8,15 @@ import {
   Paper,
   Typography,
   Button,
-  TextField,
 } from '@material-ui/core';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
-import GenericModal from '../../ui/GenericModal';
 import PanelCardView from './PanelCardView';
 import { NodeClickConfig, LinkClickConfig, TestStudyConfig } from './utils';
+import CreateAreaModal from './CreateAreaModal';
 
 const buttonStyle = (theme: Theme, color: string) => ({
   width: '120px',
@@ -78,24 +77,6 @@ const useStyles = makeStyles((theme: Theme) =>
       bottom: '10px',
       ...buttonStyle(theme, theme.palette.primary.main),
       boxSizing: 'border-box',
-    },
-    name: {
-      margin: theme.spacing(2),
-    },
-    positions: {
-      margin: theme.spacing(2),
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    posX: {
-      width: '130px',
-    },
-    posY: {
-      width: '130px',
-    },
-    color: {
-      margin: theme.spacing(2),
     },
   }));
 
@@ -179,10 +160,6 @@ const MapView = (props: Props) => {
   const [linkClick, setLinkClick] = useState<LinkClickConfig>();
   const { enqueueSnackbar } = useSnackbar();
   const [openModal, setOpenModal] = useState<boolean>(false);
-  const [name, setName] = useState<string>('');
-  const [posX, setPosX] = useState<number>();
-  const [posY, setPosY] = useState<number>();
-  const [color, setColor] = useState<string>('rgb(0, 0, 0)');
 
   const onClickNode = (nodeId: string) => {
     const obj = fakeData.nodes.find((o) => o.id === nodeId);
@@ -208,7 +185,6 @@ const MapView = (props: Props) => {
   };
 
   const onSave = () => {
-    console.log('save');
     setOpenModal(false);
   };
 
@@ -306,51 +282,11 @@ const MapView = (props: Props) => {
         )}
       </div>
 
-      <GenericModal
+      <CreateAreaModal
         open={openModal}
-        handleClose={onClose}
-        handleSave={onSave}
-        title="New area"
-      >
-        <div className={classes.name}>
-          <TextField
-            label="Nom"
-            variant="outlined"
-            onChange={(event) => setName(event.target.value as string)}
-            value={name}
-            size="small"
-          />
-        </div>
-        <div className={classes.positions}>
-          <TextField
-            className={classes.posX}
-            label="Position X"
-            type="number"
-            variant="outlined"
-            size="small"
-            onChange={(event) => setPosX(parseInt(event.target.value, 10) as number)}
-            value={posX}
-          />
-          <TextField
-            className={classes.posY}
-            label="Position Y"
-            type="number"
-            variant="outlined"
-            size="small"
-            onChange={(event) => setPosY(parseInt(event.target.value, 10) as number)}
-            value={posY}
-          />
-        </div>
-        <div className={classes.color}>
-          <TextField
-            label="Couleur"
-            variant="outlined"
-            onChange={(event) => setColor(event.target.value as string)}
-            value={color}
-            size="small"
-          />
-        </div>
-      </GenericModal>
+        onClose={onClose}
+        onSave={onSave}
+      />
     </Paper>
   );
 };
