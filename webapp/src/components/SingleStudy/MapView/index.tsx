@@ -7,9 +7,6 @@ import {
   Theme,
   Paper,
   Typography,
-  Card,
-  CardContent,
-  CardActions,
   Button,
   TextField,
 } from '@material-ui/core';
@@ -19,6 +16,8 @@ import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import GenericModal from '../../ui/GenericModal';
+import PanelCardView from './PanelCardView';
+import { NodeClickConfig, LinkClickConfig, TestStudyConfig } from './utils';
 
 const buttonStyle = (theme: Theme, color: string) => ({
   width: '120px',
@@ -102,33 +101,6 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface Props {
     studyId: string;
-}
-
-interface TestStudyConfig {
-  archiveInputSeries: Array<string>;
-  areas: object;
-  bindings: Array<string>;
-  enrModelling: string;
-  outputPath: string;
-  outputs: object;
-  path: string;
-  sets: object;
-  storeNewSet: boolean;
-  studyId: string;
-  studyPath: string;
-  version: number;
-}
-
-interface NodeClickConfig {
-  id: string;
-  x: number;
-  y: number;
-  color: string;
-}
-
-interface LinkClickConfig {
-  source: string;
-  target: string;
 }
 
 const fakeData = {
@@ -326,47 +298,14 @@ const MapView = (props: Props) => {
         </Button>
 
         {nodeClick && (
-        <Card className={classes.popup}>
-          <Typography className={`${classes.header} ${classes.title}`} gutterBottom>
-            Area
-          </Typography>
-          <CardContent>
-            <Typography variant="h5" component="h2">
-              {nodeClick.id}
-            </Typography>
-            <Typography variant="body2" component="p">
-              {nodeClick.x}
-              <br />
-              {nodeClick.y}
-              <br />
-              {nodeClick.color}
-            </Typography>
-          </CardContent>
-          <CardActions>
-            <Button size="small">More</Button>
-            <Button onClick={() => setNodeClick(undefined)} size="small">Close</Button>
-          </CardActions>
-        </Card>
+          <PanelCardView name="Area" node={nodeClick} onClose={() => setNodeClick(undefined)} />
         )}
+
         {linkClick && (
-        <Card className={classes.popup}>
-          <Typography className={`${classes.header} ${classes.title}`} gutterBottom>
-            Link
-          </Typography>
-          <CardContent>
-            <Typography variant="body2" component="p">
-              {linkClick.source}
-              <br />
-              {linkClick.target}
-            </Typography>
-          </CardContent>
-          <CardActions>
-            <Button size="small">More</Button>
-            <Button onClick={() => setLinkClick(undefined)} size="small">Close</Button>
-          </CardActions>
-        </Card>
+          <PanelCardView name="Link" link={linkClick} onClose={() => setLinkClick(undefined)} />
         )}
       </div>
+
       <GenericModal
         open={openModal}
         handleClose={onClose}
