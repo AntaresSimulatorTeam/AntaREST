@@ -5,6 +5,7 @@ import {
   Theme,
   TextField,
 } from '@material-ui/core';
+import { useTranslation } from 'react-i18next';
 import GenericModal from '../../ui/GenericModal';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -37,6 +38,7 @@ interface PropType {
 
 const CreateAreaModal = (props: PropType) => {
   const classes = useStyles();
+  const [t] = useTranslation();
   const { open, onClose, onSave } = props;
   const [name, setName] = useState<string>('');
   const [posX, setPosX] = useState<number>(0);
@@ -48,11 +50,11 @@ const CreateAreaModal = (props: PropType) => {
       open={open}
       handleClose={onClose}
       handleSave={() => onSave(name, posX, posY, color)}
-      title="New area"
+      title={t('singlestudy:newArea')}
     >
       <div className={classes.name}>
         <TextField
-          label="Nom"
+          label={t('main:name')}
           variant="outlined"
           onChange={(event) => setName(event.target.value as string)}
           value={name}
@@ -62,7 +64,7 @@ const CreateAreaModal = (props: PropType) => {
       <div className={classes.positions}>
         <TextField
           className={classes.posX}
-          label="Position X"
+          label={t('singlestudy:posX')}
           type="number"
           variant="outlined"
           size="small"
@@ -71,7 +73,7 @@ const CreateAreaModal = (props: PropType) => {
         />
         <TextField
           className={classes.posY}
-          label="Position Y"
+          label={t('singlestudy:posY')}
           type="number"
           variant="outlined"
           size="small"
@@ -81,7 +83,7 @@ const CreateAreaModal = (props: PropType) => {
       </div>
       <div className={classes.color}>
         <TextField
-          label="Couleur"
+          label={t('singlestudy:color')}
           variant="outlined"
           onChange={(event) => setColor(event.target.value as string)}
           value={color}

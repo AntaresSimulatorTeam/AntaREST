@@ -54,5 +54,14 @@
   "onStudyIdCopySucces": "Study id copied !",
   "onStudyIdCopyError": "Failed to copy study id",
   "copyId": "Copy the study id",
-  "copyIdDir": "Copy id"
+  "copyIdDir": "Copy id",
+  "newArea": "New Area",
+  "newLink": "New Link",
+  "area": "Area",
+  "link": "Link",
+  "map": "Map",
+  "posX": "Position X",
+  "posY": "Position Y",
+  "color": "Color",
+  "more": "More"
 }

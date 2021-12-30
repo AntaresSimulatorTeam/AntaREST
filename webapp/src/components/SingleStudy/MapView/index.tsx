@@ -195,6 +195,8 @@ const MapView = (props: Props) => {
   const createLink = () => {
     if (createLinkMode) {
       setCreateLinkMode(false);
+      setFirstNode(undefined);
+      setSecondNode(undefined);
     } else {
       setCreateLinkMode(true);
     }
@@ -242,11 +244,9 @@ const MapView = (props: Props) => {
 
   useEffect(() => {
     if (loaded) {
-      const test = studyConfig;
-      console.log(studyConfig);
       let areaList = '';
-      if (test) {
-        Object.keys(test.areas).map((key) => {
+      if (studyConfig) {
+        Object.keys(studyConfig.areas).map((key) => {
           areaList += `${key},`;
           return areaList;
         });
@@ -274,7 +274,7 @@ const MapView = (props: Props) => {
   return (
     <Paper className={classes.root}>
       <div className={classes.header}>
-        <Typography className={classes.title}>Map</Typography>
+        <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
       </div>
       <div className={classes.autosizer}>
         <AutoSizer>
@@ -286,7 +286,7 @@ const MapView = (props: Props) => {
                 config={{
                   height,
                   width,
-                  staticGraph: true,
+                  staticGraphWithDragAndDrop: true,
                   initialZoom: 1.5,
                   d3: {
                   },
@@ -308,18 +308,18 @@ const MapView = (props: Props) => {
         </AutoSizer>
 
         <Button className={classes.button} onClick={() => setOpenModal(true)}>
-          New Area
+          {t('singlestudy:newArea')}
         </Button>
         <Button className={classes.button2} onClick={createLink}>
-          New Link
+          {t('singlestudy:newLink')}
         </Button>
 
         {nodeClick && (
-          <PanelCardView name="Area" node={nodeClick} onClose={() => setNodeClick(undefined)} />
+          <PanelCardView name={t('singlestudy:area')} node={nodeClick} onClose={() => setNodeClick(undefined)} />
         )}
 
         {linkClick && (
-          <PanelCardView name="Link" link={linkClick} onClose={() => setLinkClick(undefined)} />
+          <PanelCardView name={t('singlestudy:link')} link={linkClick} onClose={() => setLinkClick(undefined)} />
         )}
       </div>
 

@@ -9,6 +9,7 @@ import {
   CardActions,
   Button,
 } from '@material-ui/core';
+import { useTranslation } from 'react-i18next';
 import { NodeClickConfig, LinkClickConfig } from './types';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -47,6 +48,7 @@ interface PropType {
 
 const PanelCardView = (props: PropType) => {
   const classes = useStyles();
+  const [t] = useTranslation();
   const { name, node, link, onClose } = props;
 
   return (
@@ -78,8 +80,9 @@ const PanelCardView = (props: PropType) => {
         )}
       </CardContent>
       <CardActions>
-        <Button size="small">More</Button>
-        <Button onClick={onClose} size="small">Close</Button>
+        <Button size="small">{t('singlestudy:more')}</Button>
+        <Button onClick={onClose} size="small">{t('main:closeButton')}</Button>
+        <Button onClick={() => console.log('delete')} size="small">{t('main:delete')}</Button>
       </CardActions>
     </Card>
   );

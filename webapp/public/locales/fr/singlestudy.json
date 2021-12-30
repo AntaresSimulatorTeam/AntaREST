@@ -54,5 +54,14 @@
   "onStudyIdCopySuccess": "Identifiant de l'étude copié",
   "onStudyIdCopyError": "Erreur lors de la copie de l'identifiant de l'étude",
   "copyId": "Copie l'identifiant de l'étude",
-  "copyIdDir": "Copier l'ID"
+  "copyIdDir": "Copier l'ID",
+  "newArea": "Nouvelle zone",
+  "newLink": "Nouveau lien",
+  "area": "Zone",
+  "link": "Lien",
+  "map": "Map",
+  "posX": "Position X",
+  "posY": "Position Y",
+  "color": "Couleur",
+  "more": "Plus"
 }
