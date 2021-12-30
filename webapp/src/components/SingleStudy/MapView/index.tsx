@@ -78,6 +78,13 @@ const useStyles = makeStyles((theme: Theme) =>
       ...buttonStyle(theme, theme.palette.primary.main),
       boxSizing: 'border-box',
     },
+    button2: {
+      position: 'absolute',
+      left: '150px',
+      bottom: '10px',
+      ...buttonStyle(theme, theme.palette.primary.main),
+      boxSizing: 'border-box',
+    },
   }));
 
 interface Props {
@@ -160,11 +167,20 @@ const MapView = (props: Props) => {
   const [linkClick, setLinkClick] = useState<LinkClickConfig>();
   const { enqueueSnackbar } = useSnackbar();
   const [openModal, setOpenModal] = useState<boolean>(false);
+  const [createLinkMode, setCreateLinkMode] = useState<boolean>(false);
+  const [firstNode, setFirstNode] = useState<string>();
+  const [secondNode, setSecondNode] = useState<string>();
 
   const onClickNode = (nodeId: string) => {
-    const obj = fakeData.nodes.find((o) => o.id === nodeId);
-    setNodeClick(obj);
-    setLinkClick(undefined);
+    if (!createLinkMode) {
+      const obj = fakeData.nodes.find((o) => o.id === nodeId);
+      setNodeClick(obj);
+      setLinkClick(undefined);
+    } else if (!firstNode) {
+      setFirstNode(nodeId);
+    } else if (firstNode) {
+      setSecondNode(nodeId);
+    }
   };
 
   const onClickLink = (source: string, target: string) => {
@@ -176,8 +192,12 @@ const MapView = (props: Props) => {
     setNodeClick(undefined);
   };
 
-  const createArea = () => {
-    setOpenModal(true);
+  const createLink = () => {
+    if (createLinkMode) {
+      setCreateLinkMode(false);
+    } else {
+      setCreateLinkMode(true);
+    }
   };
 
   const onClose = () => {
@@ -193,6 +213,18 @@ const MapView = (props: Props) => {
       color,
     });
   };
+
+  useEffect(() => {
+    if (firstNode && secondNode) {
+      fakeData.links.push({
+        source: firstNode,
+        target: secondNode,
+      });
+      setCreateLinkMode(false);
+      setFirstNode(undefined);
+      setSecondNode(undefined);
+    }
+  }, [setCreateLinkMode, firstNode, secondNode]);
 
   useEffect(() => {
     const init = async () => {
@@ -275,8 +307,11 @@ const MapView = (props: Props) => {
           }
         </AutoSizer>
 
-        <Button className={classes.button} onClick={createArea}>
+        <Button className={classes.button} onClick={() => setOpenModal(true)}>
           New Area
+        </Button>
+        <Button className={classes.button2} onClick={createLink}>
+          New Link
         </Button>
 
         {nodeClick && (
