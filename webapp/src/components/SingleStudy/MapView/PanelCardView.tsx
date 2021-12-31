@@ -10,6 +10,7 @@ import {
   Button,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
+import CloseIcon from '@material-ui/icons/Close';
 import { NodeClickConfig, LinkClickConfig } from './types';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -20,7 +21,7 @@ const useStyles = makeStyles((theme: Theme) =>
       boxSizing: 'border-box',
       display: 'flex',
       flexFlow: 'row nowrap',
-      justifyContent: 'flex-start',
+      justifyContent: 'space-between',
       alignItems: 'center',
       backgroundColor: theme.palette.primary.main,
       borderTopLeftRadius: theme.shape.borderRadius,
@@ -36,6 +37,12 @@ const useStyles = makeStyles((theme: Theme) =>
       right: '30px',
       top: '100px',
       width: '200px',
+    },
+    closeIcon: {
+      color: 'white',
+      marginLeft: theme.spacing(1),
+      marginRight: theme.spacing(1),
+      cursor: 'pointer',
     },
   }));
 
@@ -55,6 +62,7 @@ const PanelCardView = (props: PropType) => {
     <Card className={classes.popup}>
       <Typography className={`${classes.header} ${classes.title}`} gutterBottom>
         {name}
+        <CloseIcon className={classes.closeIcon} onClick={onClose} />
       </Typography>
       <CardContent>
         {node && (
@@ -81,7 +89,6 @@ const PanelCardView = (props: PropType) => {
       </CardContent>
       <CardActions>
         <Button size="small">{t('singlestudy:more')}</Button>
-        <Button onClick={onClose} size="small">{t('main:closeButton')}</Button>
         <Button onClick={() => console.log('delete')} size="small">{t('main:delete')}</Button>
       </CardActions>
     </Card>
