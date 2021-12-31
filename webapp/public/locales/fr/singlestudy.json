@@ -63,5 +63,7 @@
   "posX": "Position X",
   "posY": "Position Y",
   "color": "Couleur",
-  "more": "Plus"
+  "more": "Plus",
+  "confirmDeleteLink": "Êtes-vous sûr de vouloir supprimer ce lien ?",
+  "confirmDeleteArea": "Êtes-vous sûr de vouloir supprimer cette zone ?"
 }

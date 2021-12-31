@@ -216,6 +216,28 @@ const MapView = (props: Props) => {
     });
   };
 
+  const onDelete = (id: string, target?: string) => {
+    if (target) {
+      const obj = fakeData.links.find((o) => o.source === id && o.target === target);
+      if (obj) {
+        const i = fakeData.links.indexOf(obj);
+        if (i !== -1) {
+          fakeData.links.splice(i, 1);
+          setLinkClick(undefined);
+        }
+      }
+    } else {
+      const obj = fakeData.nodes.find((o) => o.id === id);
+      if (obj) {
+        const i = fakeData.nodes.indexOf(obj);
+        if (i !== -1) {
+          fakeData.nodes.splice(i, 1);
+          setNodeClick(undefined);
+        }
+      }
+    }
+  };
+
   useEffect(() => {
     if (firstNode && secondNode) {
       fakeData.links.push({
@@ -315,19 +337,20 @@ const MapView = (props: Props) => {
         </Button>
 
         {nodeClick && (
-          <PanelCardView name={t('singlestudy:area')} node={nodeClick} onClose={() => setNodeClick(undefined)} />
+          <PanelCardView name={t('singlestudy:area')} node={nodeClick} onClose={() => setNodeClick(undefined)} onDelete={onDelete} />
         )}
 
         {linkClick && (
-          <PanelCardView name={t('singlestudy:link')} link={linkClick} onClose={() => setLinkClick(undefined)} />
+          <PanelCardView name={t('singlestudy:link')} link={linkClick} onClose={() => setLinkClick(undefined)} onDelete={onDelete} />
         )}
       </div>
-
-      <CreateAreaModal
-        open={openModal}
-        onClose={onClose}
-        onSave={onSave}
-      />
+      {openModal && (
+        <CreateAreaModal
+          open={openModal}
+          onClose={onClose}
+          onSave={onSave}
+        />
+      )}
     </Paper>
   );
 };

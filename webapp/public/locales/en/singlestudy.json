@@ -63,5 +63,7 @@
   "posX": "Position X",
   "posY": "Position Y",
   "color": "Color",
-  "more": "More"
+  "more": "More",
+  "confirmDeleteLink": "Are you sure you want to delete this link ?",
+  "confirmDeleteArea": "Are you sure you want to delete this area ?"
 }
