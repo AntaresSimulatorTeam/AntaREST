@@ -228,11 +228,21 @@ const MapView = (props: Props) => {
       }
     } else {
       const obj = fakeData.nodes.find((o) => o.id === id);
+      const links = fakeData.links.filter((o) => o.source === id || o.target === id);
       if (obj) {
         const i = fakeData.nodes.indexOf(obj);
         if (i !== -1) {
           fakeData.nodes.splice(i, 1);
           setNodeClick(undefined);
+        }
+      }
+      if (links) {
+        // eslint-disable-next-line array-callback-return
+        for (let i = 0; i < links.length; i += 1) {
+          const index = fakeData.links.indexOf(links[i]);
+          if (index !== -1) {
+            fakeData.links.splice(index, 1);
+          }
         }
       }
     }
