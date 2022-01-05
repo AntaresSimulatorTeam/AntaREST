@@ -69,4 +69,11 @@ export const findNode = (elements: Array<StudyTreeNode | StudyMetadata>, path: A
   return findNode(tmpElm, path);
 };
 
+export const countAllStudies = (node: StudyTreeNode): number => node.children.reduce((count, curNode) => {
+  if (isDir(curNode)) {
+    return count + countAllStudies(curNode as StudyTreeNode);
+  }
+  return count + 1;
+}, 0);
+
 export default {};

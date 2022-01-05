@@ -81,6 +81,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 interface OwnProps {
   setLoading: (isLoading: boolean) => void;
   setFiltered: (studies: Array<StudyMetadata>) => void;
+  dirViewStudiesNb: number;
   sortItem: SortItem | undefined;
   sortList: Array<SortElement>;
   versionFilter: GenericInfo | undefined;
@@ -91,7 +92,7 @@ interface OwnProps {
 type PropTypes = ReduxProps & OwnProps;
 
 const StudySearchTool = (props: PropTypes) => {
-  const { filterManaged, setLoading, setFiltered, versionFilter, sortItem, sortList, studies, userFilter, groupFilter } = props;
+  const { filterManaged, setLoading, setFiltered, dirViewStudiesNb, versionFilter, sortItem, sortList, studies, userFilter, groupFilter } = props;
   const classes = useStyles();
   const [t] = useTranslation();
   const [resultCount, setResultCount] = useState(studies.length);
@@ -146,7 +147,7 @@ const StudySearchTool = (props: PropTypes) => {
         }}
       />
       <Typography className={classes.counter}>
-        {`(${resultCount})`}
+        {`(${dirViewStudiesNb >= 0 ? dirViewStudiesNb : resultCount})`}
       </Typography>
     </div>
   );
