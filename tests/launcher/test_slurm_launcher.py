@@ -247,7 +247,7 @@ def test_run_study(
         study_uuid, str(uuid.uuid4()), None, params=params
     )
 
-    slurm_launcher._clean_local_workspace.assert_called_once()
+    #    slurm_launcher._clean_local_workspace.assert_called_once()
     storage_service.export_study_flat.assert_called_once()
     slurm_launcher.callbacks.update_status.assert_called_once_with(
         ANY, job_status, ANY, None
