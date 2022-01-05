@@ -134,7 +134,10 @@ def get_arguments() -> Tuple[Path, bool, bool, bool, Module]:
 
 
 def init_db(
-    config_file: Path, auto_upgrade_db: bool, application: Optional[FastAPI]
+    config_file: Path,
+    config: Config,
+    auto_upgrade_db: bool,
+    application: Optional[FastAPI],
 ) -> None:
     if auto_upgrade_db:
         upgrade_db(config_file)
@@ -249,7 +252,7 @@ def fastapi_app(
     )
 
     # Database
-    init_db(config_file, auto_upgrade_db, application)
+    init_db(config_file, config, auto_upgrade_db, application)
 
     application.add_middleware(LoggingMiddleware)
 
@@ -385,7 +388,7 @@ if __name__ == "__main__":
             res = get_local_path() / "resources"
             config = Config.from_yaml_file(res=res, file=config_file)
             configure_logger(config)
-            init_db(config_file, False, None)
+            init_db(config_file, config, False, None)
             services = create_services(config, None, True)
             cast(Watcher, services["watcher"]).start(threaded=False)
         else:
