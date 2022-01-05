@@ -4,7 +4,7 @@ import {createDatesFromIndex} from './utils';
 
 test('Date from weekly input', () => {
   const weeks = Array(52).fill(0).map((e,i)=>1 + ((i+26) % 52));
-  const startDate = moment("2005/07/05 00:00", "yyyy/MM/DD HH:mm");
+  const startDate = moment("2005/07/04 00:00", "yyyy/MM/DD HH:mm");
   const weeksDate = Array(52).fill(0).map((e,i) => moment(startDate).add(i, 'w').format("yyyy/MM/DD HH:mm"));
   expect(createDatesFromIndex(weeks)).toStrictEqual(weeksDate);
 });
