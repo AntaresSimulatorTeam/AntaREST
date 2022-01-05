@@ -19,6 +19,7 @@ const connector = connect(mapState, mapDispatch);
 type PropsFromRedux = ConnectedProps<typeof connector>;
 interface OwnProps {
   tree: StudyTreeNode;
+  setCurrentStudiesLength: (length: number) => void;
   launchStudy: (study: StudyMetadata) => void;
   deleteStudy: (study: StudyMetadata) => void;
   importStudy: (study: StudyMetadata, withOutputs?: boolean) => void;
@@ -29,13 +30,14 @@ type PropTypes = PropsFromRedux & OwnProps;
 
 const StudyDirView = (props: PropTypes) => {
   const history = useHistory();
-  const { tree, updateFolderPos, directory, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = props;
+  const { tree, updateFolderPos, directory, setCurrentStudiesLength, importStudy, launchStudy, deleteStudy, archiveStudy, unarchiveStudy } = props;
   const [dirPath, setDirPath] = useState<Array<string>>([tree.name]);
   const [currentNode, setCurrentNode] = useState<StudyTreeNode>(tree);
 
   const onClick = (element: StudyTreeNode | StudyMetadata): void => {
     if (isDir(element)) {
       setCurrentNode(element as StudyTreeNode);
+      setCurrentStudiesLength((element as StudyTreeNode).children.length);
       const newPath: Array<string> = dirPath.concat([element.name]);
       setDirPath(newPath);
       updateFolderPos(newPath.join('/'));
@@ -47,6 +49,7 @@ const StudyDirView = (props: PropTypes) => {
   const onDirClick = (elements: Array<string>): void => {
     const node = findNode([tree], elements);
     setCurrentNode(node as StudyTreeNode);
+    setCurrentStudiesLength((node as StudyTreeNode).children.length);
     setDirPath(elements);
     updateFolderPos(elements.join('/'));
   };
@@ -55,12 +58,14 @@ const StudyDirView = (props: PropTypes) => {
     const node = findNode([treeElement], element);
     if (node !== undefined) {
       setCurrentNode(node);
+      setCurrentStudiesLength((node as StudyTreeNode).children.length);
       setDirPath(element);
     } else {
       setCurrentNode(treeElement);
+      setCurrentStudiesLength(treeElement.children.length);
       setDirPath([treeElement.name]);
     }
-  }, []);
+  }, [setCurrentStudiesLength]);
 
   useEffect(() => {
     updateTree(dirPath, tree);

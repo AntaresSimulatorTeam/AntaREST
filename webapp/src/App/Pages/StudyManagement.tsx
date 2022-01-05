@@ -82,6 +82,7 @@ const StudyManagement = (props: PropTypes) => {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [filteredStudies, setFilteredStudies] = useState<Array<StudyMetadata>>(studies);
+  const [dirViewStudiesNb, setDirViewStudiesNb] = useState<number>(-1);
   const [loaded, setLoaded] = useState(true);
   const [isList, setViewState] = useState(loadState<boolean>(DEFAULT_LIST_MODE_KEY, true));
   const [managedFilter, setManageFilter] = useState(loadState<boolean>(DEFAULT_FILTER_MANAGED, false));
@@ -145,7 +146,7 @@ const StudyManagement = (props: PropTypes) => {
     <div className={classes.root}>
       <div className={classes.header}>
         <StudyCreationTools />
-        <StudySearchTool filterManaged={!!managedFilter} versionFilter={currentVersion} userFilter={currentUser} groupFilter={currentGroup} sortList={sortList} sortItem={currentSortItem} setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
+        <StudySearchTool filterManaged={!!managedFilter} dirViewStudiesNb={dirViewStudiesNb} versionFilter={currentVersion} userFilter={currentUser} groupFilter={currentGroup} sortList={sortList} sortItem={currentSortItem} setFiltered={setFilteredStudies} setLoading={(isLoading) => setLoaded(!isLoading)} />
         <div className={classes.view}>
           <div className={classes.view} style={{ marginBottom: 0 }}>
             <Checkbox
@@ -173,6 +174,7 @@ const StudyManagement = (props: PropTypes) => {
             color="primary"
             onClick={() => {
               setViewState(!isList);
+              setDirViewStudiesNb(-1);
             }}
           >
             {isList ? <ViewCompactIcon /> : <ListIcon />}
@@ -180,7 +182,7 @@ const StudyManagement = (props: PropTypes) => {
         </div>
       </div>
       {!loaded && <MainContentLoader />}
-      {loaded && studies && <StudyListing studies={filteredStudies} isList={!!isList} />}
+      {loaded && studies && <StudyListing studies={filteredStudies} setCurrentStudiesLength={setDirViewStudiesNb} isList={!!isList} />}
     </div>
   );
 };
