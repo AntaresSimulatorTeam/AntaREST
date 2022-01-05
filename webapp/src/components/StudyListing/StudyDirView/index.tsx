@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { connect, ConnectedProps } from 'react-redux';
-import { findNode, isDir, StudyTreeNode } from '../utils';
+import { countAllStudies, findNode, isDir, StudyTreeNode } from '../utils';
 import DirView from './DirView';
 import { StudyMetadata } from '../../../common/types';
 import { AppState } from '../../../App/reducers';
@@ -37,7 +37,7 @@ const StudyDirView = (props: PropTypes) => {
   const onClick = (element: StudyTreeNode | StudyMetadata): void => {
     if (isDir(element)) {
       setCurrentNode(element as StudyTreeNode);
-      setCurrentStudiesLength((element as StudyTreeNode).children.length);
+      setCurrentStudiesLength(countAllStudies(element as StudyTreeNode));
       const newPath: Array<string> = dirPath.concat([element.name]);
       setDirPath(newPath);
       updateFolderPos(newPath.join('/'));
@@ -49,7 +49,7 @@ const StudyDirView = (props: PropTypes) => {
   const onDirClick = (elements: Array<string>): void => {
     const node = findNode([tree], elements);
     setCurrentNode(node as StudyTreeNode);
-    setCurrentStudiesLength((node as StudyTreeNode).children.length);
+    setCurrentStudiesLength(countAllStudies(node as StudyTreeNode));
     setDirPath(elements);
     updateFolderPos(elements.join('/'));
   };
@@ -58,11 +58,11 @@ const StudyDirView = (props: PropTypes) => {
     const node = findNode([treeElement], element);
     if (node !== undefined) {
       setCurrentNode(node);
-      setCurrentStudiesLength((node as StudyTreeNode).children.length);
+      setCurrentStudiesLength(countAllStudies(node as StudyTreeNode));
       setDirPath(element);
     } else {
       setCurrentNode(treeElement);
-      setCurrentStudiesLength(treeElement.children.length);
+      setCurrentStudiesLength(-1);
       setDirPath([treeElement.name]);
     }
   }, [setCurrentStudiesLength]);
