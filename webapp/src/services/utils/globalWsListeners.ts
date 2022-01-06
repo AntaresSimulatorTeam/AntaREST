@@ -23,7 +23,7 @@ const studyListener = (reduxStore: Store<AppState>) => async (ev: WSMessage) => 
   }
 };
 
-export const addWsListeners = (reduxStore: Store<AppState>) => {
+export const addWsListeners = (reduxStore: Store<AppState>): void => {
   /* ADD LISTENERS HERE */
   reduxStore.dispatch(addListenerAction(studyListener(reduxStore)));
   reduxStore.dispatch(refreshHandlerAction());

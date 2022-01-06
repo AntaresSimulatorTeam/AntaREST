@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Action } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import { AppState } from '../App/reducers';
+import { MaintenanceDTO, MaintenanceMode } from '../common/types';
 
 const logError = debug('antares:global:error');
 
@@ -12,10 +13,12 @@ const logError = debug('antares:global:error');
 
 export interface GlobalState {
   onCloseListeners: {[id: string]: (event: Event) => void};
+  maintenanceMode: MaintenanceDTO;
 }
 
 const initialState: GlobalState = {
   onCloseListeners: {},
+  maintenanceMode: { mode: MaintenanceMode.NORMAL },
 };
 
 /** ******************************************* */
@@ -66,8 +69,18 @@ export const removeOnCloseListener = (id: string): RemoveOnCloseListenerAction =
   payload: id,
 });
 
+export interface SetMaintenanceModeAction extends Action {
+  type: 'GLOBAL/SET_MAINTENANCE_MODE';
+  payload: MaintenanceDTO;
+}
+
+export const setMaintenanceMode = (data: MaintenanceDTO): SetMaintenanceModeAction => ({
+  type: 'GLOBAL/SET_MAINTENANCE_MODE',
+  payload: data,
+});
+
 type GlobalAction = AddOnCloseListenerAction
-  | RemoveOnCloseListenerAction;
+  | RemoveOnCloseListenerAction | SetMaintenanceModeAction;
 
 /** ******************************************* */
 /* Selectors / Misc                             */
@@ -98,6 +111,12 @@ export default (state = initialState, action: GlobalAction): GlobalState => {
       return {
         ...state,
         onCloseListeners: newOnCloseListeners,
+      };
+    }
+    case 'GLOBAL/SET_MAINTENANCE_MODE': {
+      return {
+        ...state,
+        maintenanceMode: action.payload,
       };
     }
     default:

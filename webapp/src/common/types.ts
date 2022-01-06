@@ -370,4 +370,15 @@ export interface FileStudyTreeConfigDTO {
   enr_modelling: string;
 }
 
+export enum MaintenanceMode {
+  NORMAL = 'normal_mode',
+  MAINTENANCE_MODE = 'maintenance_mode',
+  MESSAGE_MODE = 'message_mode',
+}
+
+export interface MaintenanceDTO {
+  mode: MaintenanceMode;
+  message?: string;
+}
+
 export default {};
