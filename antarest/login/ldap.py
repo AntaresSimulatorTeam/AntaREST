@@ -146,6 +146,9 @@ class LdapService:
             for group in mapped_groups
             if group.id not in [role.group_id for role in existing_roles]
         ]
+        logger.info(
+            f"Saving new groups from external user {grouprole_to_add} from received {user.groups}"
+        )
         for group_id, group_name in grouprole_to_add:
             logger.info(
                 "Adding user %s role %s to group %s (%s) following ldap sync",

@@ -267,6 +267,9 @@ class Group(Base):  # type: ignore
 
         return bool(self.id == other.id and self.name == other.name)
 
+    def __repr__(self) -> str:
+        return f"Group(id={self.id}, name={self.name})"
+
 
 @dataclass
 class Role(Base):  # type: ignore
