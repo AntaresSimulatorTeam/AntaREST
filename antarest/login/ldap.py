@@ -134,7 +134,7 @@ class LdapService:
         existing_roles = self.roles.get_all_by_user(existing_user.id)
 
         mapped_groups = [
-            GroupDTO(
+            Group(
                 id=self.group_mapping.get(group_id, group_id),
                 name=user.groups[group_id],
             )
