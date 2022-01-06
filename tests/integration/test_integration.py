@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+from antarest.study.model import MatrixIndex
 
 
 def init_test(app: FastAPI):
@@ -139,6 +140,21 @@ def test_main(app: FastAPI):
         },
     )
     assert res.status_code == 200
+
+    # study matrix index
+    res = client.get(
+        f"/v1/studies/{study_id}/matrixindex",
+        headers={
+            "Authorization": f'Bearer {george_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    assert (
+        res.json()
+        == MatrixIndex(
+            first_week_size=7, start_date="2001-01-01 00:00:00", steps=144
+        ).dict()
+    )
 
     # study creation
     created = client.post(

@@ -62,6 +62,7 @@ from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     NEW_DEFAULT_STUDY_VERSION,
     PatchStudy,
+    MatrixIndex,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -477,6 +478,15 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self._get_study_storage_service(study).get_synthesis(
             study, params
+        )
+
+    def get_input_matrix_startdate(
+        self, study_id: str, params: RequestParameters
+    ) -> MatrixIndex:
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        return StudyDownloader.get_start_date(
+            self._get_study_storage_service(study).get_raw(study)
         )
 
     def remove_duplicates(self) -> None:

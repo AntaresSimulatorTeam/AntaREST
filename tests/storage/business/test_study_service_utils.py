@@ -152,7 +152,7 @@ def test_output_downloads_export(tmp_path: Path):
             StudyDownloadLevelDTO.HOURLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2010, 3, 5)),
-                steps=8208000,
+                steps=2280,
                 first_week_size=3,
             ),
         ),

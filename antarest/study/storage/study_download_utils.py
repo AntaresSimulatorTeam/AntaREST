@@ -292,10 +292,22 @@ class StudyDownloader:
 
     @staticmethod
     def get_start_date(
-        file_study: FileStudy, output_id: str, level: StudyDownloadLevelDTO
+        file_study: FileStudy,
+        output_id: Optional[str] = None,
+        level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY,
     ) -> MatrixIndex:
-        config = file_study.tree.get(
-            ["output", output_id, "about-the-study", "parameters", "general"]
+        config = (
+            file_study.tree.get(
+                [
+                    "output",
+                    output_id,
+                    "about-the-study",
+                    "parameters",
+                    "general",
+                ]
+            )
+            if output_id is not None
+            else file_study.tree.get(["settings", "generaldata", "general"])
         )
         starting_month = cast(str, config.get("first-month-in-year"))
         starting_day = cast(str, config.get("january.1st"))
@@ -319,7 +331,7 @@ class StudyDownloader:
         # base case is DAILY
         steps = end - start_offset
         if level == StudyDownloadLevelDTO.HOURLY:
-            steps = steps * 3600 * 24
+            steps = steps * 24
         elif level == StudyDownloadLevelDTO.ANNUAL:
             steps = 1
         elif level == StudyDownloadLevelDTO.WEEKLY:

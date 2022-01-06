@@ -28,6 +28,7 @@ from antarest.study.model import (
     MatrixAggregationResult,
     CommentsDto,
     StudyDownloadDTO,
+    MatrixIndex,
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -213,6 +214,24 @@ def create_study_routes(
         )
         params = RequestParameters(user=current_user)
         return study_service.get_study_synthesis(study_id, params)
+
+    @bp.get(
+        "/studies/{uuid}/matrixindex",
+        tags=[APITag.study_management],
+        summary="Return study input matrix start date index",
+        response_model=MatrixIndex,
+    )
+    def get_study_matrix_index(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        study_id = sanitize_uuid(uuid)
+        logger.info(
+            f"Return the start date for input matrix '{study_id}'",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.get_input_matrix_startdate(study_id, params)
 
     @bp.get(
         "/studies/{uuid}/export",
