@@ -295,7 +295,7 @@ class StudyDownloader:
         file_study: FileStudy, output_id: str, level: StudyDownloadLevelDTO
     ) -> MatrixIndex:
         config = file_study.tree.get(
-            ["output", output_id, "about-the-study", "parameters"]
+            ["output", output_id, "about-the-study", "parameters", "general"]
         )
         starting_month = cast(str, config.get("first-month-in-year"))
         starting_day = cast(str, config.get("january.1st"))
