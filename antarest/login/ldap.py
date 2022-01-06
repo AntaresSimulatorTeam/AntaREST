@@ -6,7 +6,7 @@ import requests
 
 from antarest.core.config import Config
 from antarest.core.model import JSON
-from antarest.login.model import UserLdap, Group, Role
+from antarest.login.model import UserLdap, Group, Role, GroupDTO
 from antarest.login.repository import (
     UserLdapRepository,
     RoleRepository,
@@ -134,14 +134,17 @@ class LdapService:
         existing_roles = self.roles.get_all_by_user(existing_user.id)
 
         mapped_groups = [
-            self.group_mapping.get(group_id, group_id)
+            GroupDTO(
+                id=self.group_mapping.get(group_id, group_id),
+                name=user.groups[group_id],
+            )
             for group_id in user.groups
             if self.add_ext_groups or group_id in self.group_mapping.keys()
         ]
         grouprole_to_add = [
-            (group_id, user.groups[group_id])
-            for group_id in mapped_groups
-            if group_id not in [role.group_id for role in existing_roles]
+            (group.id, (self.groups.get(group.id) or group).name)
+            for group in mapped_groups
+            if group.id not in [role.group_id for role in existing_roles]
         ]
         for group_id, group_name in grouprole_to_add:
             logger.info(
