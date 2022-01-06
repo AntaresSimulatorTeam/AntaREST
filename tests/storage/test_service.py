@@ -484,11 +484,31 @@ def test_download_output() -> None:
     study_service.get_raw.return_value = FileStudy(
         config=file_config, tree=study
     )
-    study.get.return_value = res_study
+    output_config = {
+        "first-month-in-year": "january",
+        "january.1st": "Monday",
+        "leapyear": False,
+        "first.weekday": "Monday",
+        "simulation.start": 1,
+        "simulation.end": 354,
+    }
+    study.get.side_effect = [
+        output_config,
+        res_study,
+        res_study,
+        output_config,
+        res_study,
+        res_study,
+        output_config,
+        res_study,
+        res_study,
+    ]
 
     # AREA TYPE
     res_matrix = MatrixAggregationResult(
-        index=MatrixIndex(),
+        index=MatrixIndex(
+            start_date="2001-01-01 00:00:00", steps=1, first_week_size=7
+        ),
         data={"east": {1: {"H. VAL|Euro/MWh": [0.5]}}},
         warnings=[],
     )
@@ -504,7 +524,9 @@ def test_download_output() -> None:
     input_data.type = StudyDownloadType.LINK
     input_data.filter = ["east>west"]
     res_matrix = MatrixAggregationResult(
-        index=MatrixIndex(),
+        index=MatrixIndex(
+            start_date="2001-01-01 00:00:00", steps=1, first_week_size=7
+        ),
         data={"east^west": {1: {"H. VAL|Euro/MWh": [0.5]}}},
         warnings=[],
     )
@@ -521,7 +543,9 @@ def test_download_output() -> None:
     input_data.filter = []
     input_data.filterIn = "n"
     res_matrix = MatrixAggregationResult(
-        index=MatrixIndex(),
+        index=MatrixIndex(
+            start_date="2001-01-01 00:00:00", steps=1, first_week_size=7
+        ),
         data={"north": {1: {"H. VAL|Euro/MWh": [0.5]}}},
         warnings=[],
     )

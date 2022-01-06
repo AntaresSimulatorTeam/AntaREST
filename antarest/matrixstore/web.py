@@ -1,9 +1,13 @@
 import logging
+from pathlib import Path
 from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, Body, File, UploadFile
+from starlette.requests import Request
+from starlette.responses import FileResponse
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     UserHasNotPermissionError,
@@ -23,13 +27,15 @@ from antarest.matrixstore.service import MatrixService
 logger = logging.getLogger(__name__)
 
 
-def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
+def create_matrix_api(
+    service: MatrixService, ftm: FileTransferManager, config: Config
+) -> APIRouter:
     """
     Endpoints login implementation
     Args:
         service: login facade service
+        ftm: file transfer manager
         config: server config
-        jwt: jwt manager
 
     Returns:
 
@@ -125,6 +131,46 @@ def create_matrix_api(service: MatrixService, config: Config) -> APIRouter:
         )
         request_params = RequestParameters(user=user)
         return service.list(name, filter_own, request_params)
+
+    @bp.get(
+        "/matrixdataset/{dataset_id}/download",
+        tags=[APITag.study_outputs],
+        summary="Get outputs data",
+    )
+    def download_dataset(
+        dataset_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Download {dataset_id} matrix dataset",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return service.download_dataset(dataset_id, params)
+
+    @bp.get(
+        "/matrix/{matrix_id}/download",
+        tags=[APITag.study_outputs],
+        summary="Get outputs data",
+    )
+    def download_matrix(
+        matrix_id: str,
+        tmp_export_file: Path = Depends(ftm.request_tmp_file),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Download {matrix_id} matrix",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        service.download_matrix(matrix_id, tmp_export_file, params)
+        return FileResponse(
+            tmp_export_file,
+            headers={
+                "Content-Disposition": f'attachment; filename="matrix-{matrix_id}.txt'
+            },
+            media_type="text/plain",
+        )
 
     @bp.delete("/matrixdataset/{id}", tags=[APITag.matrix])
     def delete_datasets(

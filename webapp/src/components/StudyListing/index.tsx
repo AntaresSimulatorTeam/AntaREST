@@ -77,13 +77,14 @@ const connector = connect(mapState, mapDispatch);
 type PropsFromRedux = ConnectedProps<typeof connector>;
 interface OwnProps {
   studies: StudyMetadata[];
+  setCurrentStudiesLength: (length: number) => void;
   isList: boolean;
 }
 type PropTypes = PropsFromRedux & OwnProps;
 
 const StudyListing = (props: PropTypes) => {
   const classes = useStyles();
-  const { studies, removeStudy, isList, scrollPosition, updateScroll } = props;
+  const { studies, setCurrentStudiesLength, removeStudy, isList, scrollPosition, updateScroll } = props;
   const { enqueueSnackbar } = useSnackbar();
   const [studyToLaunch, setStudyToLaunch] = useState<StudyMetadata|undefined>();
   const [t] = useTranslation();
@@ -174,7 +175,7 @@ const StudyListing = (props: PropTypes) => {
             )
         }
           </AutoSizer>
-        ) : <StudyDirView tree={buildStudyTree(studies)} importStudy={importStudy} launchStudy={openStudyLauncher} deleteStudy={deleteStudy} archiveStudy={archiveStudy} unarchiveStudy={unarchiveStudy} />
+        ) : <StudyDirView tree={buildStudyTree(studies)} setCurrentStudiesLength={setCurrentStudiesLength} importStudy={importStudy} launchStudy={openStudyLauncher} deleteStudy={deleteStudy} archiveStudy={archiveStudy} unarchiveStudy={unarchiveStudy} />
       }
       <LauncherModal open={!!studyToLaunch} study={studyToLaunch} close={() => { setStudyToLaunch(undefined); }} />
     </div>

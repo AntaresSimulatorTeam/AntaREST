@@ -27,6 +27,8 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
     build_matrixstore(
         app,
         user_service=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
         service=service,
         config=Config(
             resources_path=Path(),

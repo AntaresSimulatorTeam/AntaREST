@@ -333,9 +333,6 @@ class SlurmLauncher(AbstractLauncher):
 
             self.job_id_to_study_id[str(launch_uuid)] = study_uuid
 
-            if not self.thread:
-                self._clean_local_workspace()
-
             try:
                 # export study
                 self.storage_service.export_study_flat(
@@ -360,7 +357,6 @@ class SlurmLauncher(AbstractLauncher):
                 self.callbacks.update_status(
                     str(launch_uuid), JobStatus.FAILED, str(e), None
                 )
-                self._delete_study(study_path)
                 self._clean_up_study(str(launch_uuid))
 
             if not self.thread:
