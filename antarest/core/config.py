@@ -20,6 +20,8 @@ class ExternalAuthConfig:
 
     url: Optional[str] = None
     default_group_role: RoleType = RoleType.READER
+    add_ext_groups: bool = False
+    group_mapping: Dict[str, str] = field(default_factory=dict)
 
     @staticmethod
     def from_dict(data: JSON) -> "ExternalAuthConfig":
@@ -28,6 +30,8 @@ class ExternalAuthConfig:
             default_group_role=RoleType(
                 data.get("default_group_role", RoleType.READER.value)
             ),
+            add_ext_groups=data.get("add_ext_groups", False),
+            group_mapping=data.get("group_mapping", {}),
         )
 
 

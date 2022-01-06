@@ -75,6 +75,8 @@ class LdapService:
         roles: RoleRepository,
     ):
         self.url = config.security.external_auth.url
+        self.group_mapping = config.security.external_auth.group_mapping
+        self.add_ext_groups = config.security.external_auth.add_ext_groups
         self.users = users
         self.groups = groups
         self.roles = roles
@@ -131,9 +133,14 @@ class LdapService:
 
         existing_roles = self.roles.get_all_by_user(existing_user.id)
 
+        mapped_groups = [
+            self.group_mapping.get(group_id, group_id)
+            for group_id in user.groups
+            if self.add_ext_groups or group_id in self.group_mapping.keys()
+        ]
         grouprole_to_add = [
             (group_id, user.groups[group_id])
-            for group_id in user.groups
+            for group_id in mapped_groups
             if group_id not in [role.group_id for role in existing_roles]
         ]
         for group_id, group_name in grouprole_to_add:

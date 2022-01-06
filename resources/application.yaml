@@ -8,6 +8,12 @@ security:
   external_auth:
     url: ""
     default_group_role: 10
+#    group_mapping:
+#      id_ext: id_int
+#      ...
+    add_ext_groups: false
+
+
 
 db:
   url: "sqlite:///database.db"
