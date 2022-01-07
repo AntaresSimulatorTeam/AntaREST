@@ -152,7 +152,7 @@ def test_main(app: FastAPI):
     assert (
         res.json()
         == MatrixIndex(
-            first_week_size=7, start_date="2001-01-01 00:00:00", steps=144
+            first_week_size=7, start_date="2001-01-01 00:00:00", steps=8760
         ).dict()
     )
 

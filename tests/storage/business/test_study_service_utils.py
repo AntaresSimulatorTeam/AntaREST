@@ -14,6 +14,7 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
 )
 from antarest.study.storage.study_download_utils import StudyDownloader
+from antarest.study.storage.utils import get_start_date
 
 
 def test_output_downloads_export(tmp_path: Path):
@@ -195,7 +196,4 @@ def test_create_matrix_index(
 ):
     file_study = Mock()
     file_study.tree.get.return_value = config
-    assert (
-        StudyDownloader.get_start_date(file_study, "some output", level)
-        == expected
-    )
+    assert get_start_date(file_study, "some output", level) == expected
