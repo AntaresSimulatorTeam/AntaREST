@@ -10,7 +10,7 @@ import { setMaintenanceMode } from '../../ducks/global';
 import { isUserAdmin } from '../../services/utils';
 import { getMaintenanceMode } from '../../services/api/maintenance';
 
-const logError = debug('antares:loginwrapper:error');
+const logError = debug('antares:maintenancewrapper:error');
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -47,7 +47,7 @@ const MaintenanceWrapper = (props: PropsWithChildren<PropTypes>) => {
         const tmpMaintenance = await getMaintenanceMode();
         setMaintenance(tmpMaintenance);
       } catch (e) {
-        console.log(e);
+        logError(e);
       }
     };
     init();

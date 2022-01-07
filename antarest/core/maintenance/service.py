@@ -1,37 +1,23 @@
-import asyncio
-import datetime
 import logging
-import time
-from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor, Future
-from http import HTTPStatus
-from typing import Callable, Optional, List, Dict, Awaitable
 
 from fastapi import HTTPException
 
 from antarest.core.config import Config
+from antarest.core.configdata.model import ConfigData
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import (
     IEventBus,
-    Event,
-    EventType,
-    EventChannelDirectory,
 )
-from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import PermissionInfo
+from antarest.core.maintenance.model import (
+    MaintenanceDTO,
+    MaintenanceMode,
+)
+from antarest.core.maintenance.repository import MaintenanceRepository
 from antarest.core.requests import (
     RequestParameters,
     MustBeAuthenticatedError,
     UserHasNotPermissionError,
 )
-from antarest.core.maintenance.model import (
-    MaintenanceDTO,
-    Maintenance,
-    MaintenanceMode,
-)
-from antarest.core.maintenance.repository import MaintenanceRepository
-from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -66,12 +52,7 @@ class MaintenanceService:
         # Update cache
 
         # Update database
-        maintenance = self.repo.save(
-            Maintenance(
-                mode=data.mode,
-                message=data.message if data.message is not None else "",
-            )
-        )
+        self.repo.save_maintenance_status(data)
 
         # Send event
         # self.event_bus.push(
@@ -90,5 +71,10 @@ class MaintenanceService:
 
         # If element in cache get else get from database and update cache
         print("----------------------------- OK MAN")
-        # return MaintenanceDTO(mode=MaintenanceMode.MAINTENANCE_MODE, message="Hey je m'appelle Paul !")
-        return MaintenanceDTO(mode=MaintenanceMode.NORMAL, message="Yo gotti")
+        maintenance = self.repo.get_maintenance_status()
+        if not maintenance:
+            raise HTTPException(
+                status_code=400, detail="Maintenance status not found"
+            )
+        return maintenance
+        # return MaintenanceDTO(mode=MaintenanceMode.NORMAL, message="Yo gotti")
