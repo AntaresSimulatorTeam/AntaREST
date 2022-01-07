@@ -72,7 +72,7 @@ def test_output_downloads_export(tmp_path: Path):
             StudyDownloadLevelDTO.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2024, 1, 1)),
-                steps=51,
+                steps=50,
                 first_week_size=7,
             ),
         ),
@@ -88,7 +88,7 @@ def test_output_downloads_export(tmp_path: Path):
             StudyDownloadLevelDTO.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2001, 1, 1)),
-                steps=51,
+                steps=50,
                 first_week_size=7,
             ),
         ),
@@ -104,7 +104,7 @@ def test_output_downloads_export(tmp_path: Path):
             StudyDownloadLevelDTO.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2002, 7, 5)),
-                steps=48,
+                steps=47,
                 first_week_size=5,
             ),
         ),
@@ -152,7 +152,7 @@ def test_output_downloads_export(tmp_path: Path):
             StudyDownloadLevelDTO.HOURLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2010, 3, 5)),
-                steps=2280,
+                steps=2184,
                 first_week_size=3,
             ),
         ),
@@ -184,7 +184,7 @@ def test_output_downloads_export(tmp_path: Path):
             StudyDownloadLevelDTO.DAILY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2009, 3, 3)),
-                steps=97,
+                steps=91,
                 first_week_size=3,
             ),
         ),

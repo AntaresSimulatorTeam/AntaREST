@@ -329,7 +329,7 @@ class StudyDownloader:
             target_year, starting_month_index, 1
         ) + timedelta(days=start_offset - 1)
         # base case is DAILY
-        steps = end - start_offset
+        steps = int((end - start_offset) / 7) * 7
         if level == StudyDownloadLevelDTO.HOURLY:
             steps = steps * 24
         elif level == StudyDownloadLevelDTO.ANNUAL:
