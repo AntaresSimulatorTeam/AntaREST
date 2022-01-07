@@ -274,4 +274,5 @@ def get_start_date(
         start_date=str(start_date),
         steps=steps,
         first_week_size=first_week_size,
+        level=level,
     )

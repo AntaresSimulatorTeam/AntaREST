@@ -385,14 +385,29 @@ class StudyDownloader:
                         f"Outputs export:  No rows for  {area_name} csv"
                     )
                 writer.writerow(csv_titles)
+                row_date = datetime.strptime(
+                    matrix.index.start_date, "%Y-%m-%d %H:%M:%S"
+                )
                 for year in matrix.data[area_name].keys():
                     for i in range(0, nb_rows):
                         columns = matrix.data[area_name][year]
-                        csv_row: List[Optional[float]] = [0.0, float(year)]
+                        csv_row: List[Optional[float]] = [
+                            str(row_date),
+                            float(year),
+                        ]
                         csv_row.extend(
                             [columns[name][i] for name in columns.keys()]
                         )
                         writer.writerow(csv_row)
+                        if (
+                            matrix.index.level == StudyDownloadLevelDTO.WEEKLY
+                            and i == 0
+                        ):
+                            row_date = row_date + timedelta(
+                                days=matrix.index.first_week_size
+                            )
+                        else:
+                            row_date = matrix.index.level.inc_date(row_date)
 
                 bytes_data = str.encode(output.getvalue(), "utf-8")
                 if isinstance(output_data, ZipFile):
