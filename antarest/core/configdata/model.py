@@ -16,23 +16,27 @@ class ConfigDataDTO(BaseModel):
 
 class ConfigData(Base):  # type: ignore
     __tablename__ = "configdata"
-
-    key = Column(String(), default=lambda: str(uuid.uuid4()), primary_key=True)
-    value = Column(String, nullable=True)
+    owner = Column(Integer(), primary_key=True)
+    key = Column(String(), primary_key=True)
+    value = Column(String(), nullable=True)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, ConfigData):
             return False
-        return bool(other.key == self.key and other.value == self.value)
+        return bool(
+            other.key == self.key
+            and other.value == self.value
+            and other.owner == self.owner
+        )
 
     def __repr__(self) -> str:
-        return f"key={self.key}, value={self.value}"
+        return f"key={self.key}, value={self.value}, , owner={self.owner}"
 
     def to_dto(self) -> ConfigDataDTO:
         return ConfigDataDTO(key=self.key, value=self.value)
 
 
 # APP MAIN CONFIG KEYS
-class ConfigDataAppKeys(Enum):
+class ConfigDataAppKeys(str, Enum):
     MAINTENANCE_MODE = "maintenance_mode"
-    MAINTENANCE_MESSAGE = "maintenance_message"
+    MESSAGE_INFO = "message_info"

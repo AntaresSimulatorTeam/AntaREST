@@ -35,24 +35,19 @@ class MaintenanceService:
         self.event_bus = event_bus
         self.cache = cache
 
-    def set_maintenance_status(
+    def set_maintenance_mode(
         self,
-        data: MaintenanceDTO,
+        data: MaintenanceMode,
         request_params: RequestParameters,
     ) -> None:
 
         if not request_params.user or not request_params.user.is_site_admin():
             raise UserHasNotPermissionError()
 
-        if data.mode != MaintenanceMode.NORMAL and not data.message:
-            raise HTTPException(
-                status_code=400, detail="Maintenance message needed"
-            )
-
         # Update cache
 
         # Update database
-        self.repo.save_maintenance_status(data)
+        self.repo.save_maintenance_mode(data)
 
         # Send event
         # self.event_bus.push(
@@ -62,19 +57,54 @@ class MaintenanceService:
         #            id=task.id, message=custom_event_messages.start
         #        ).dict()
 
-    def get_maintenance_status(
+    def get_maintenance_mode(
         self, request_params: RequestParameters
-    ) -> MaintenanceDTO:
+    ) -> MaintenanceMode:
 
         if not request_params.user:
             raise MustBeAuthenticatedError()
 
         # If element in cache get else get from database and update cache
         print("----------------------------- OK MAN")
-        maintenance = self.repo.get_maintenance_status()
+        maintenance = self.repo.get_maintenance_mode()
         if not maintenance:
             raise HTTPException(
                 status_code=400, detail="Maintenance status not found"
             )
-        return maintenance
-        # return MaintenanceDTO(mode=MaintenanceMode.NORMAL, message="Yo gotti")
+        return MaintenanceMode.from_str(maintenance)
+
+    def set_message_info(
+        self,
+        data: str,
+        request_params: RequestParameters,
+    ) -> None:
+
+        if not request_params.user or not request_params.user.is_site_admin():
+            raise UserHasNotPermissionError()
+
+        # Update cache
+
+        # Update database
+        self.repo.save_message_info(data) # owner ?
+
+        # Send event
+        # self.event_bus.push(
+        #    Event(
+        #        type=EventType.TASK_ADDED,
+        #        payload=TaskEventPayload(
+        #            id=task.id, message=custom_event_messages.start
+        #        ).dict()
+
+    def get_message_info(self, request_params: RequestParameters) -> str:
+
+        if not request_params.user:
+            raise MustBeAuthenticatedError()
+
+        # If element in cache get else get from database and update cache
+        print("----------------------------- OK MAN")
+        message_info = self.repo.get_message_info()
+        if not message_info:
+            raise HTTPException(
+                status_code=400, detail="Message info not found"
+            )
+        return message_info

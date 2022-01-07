@@ -6,12 +6,15 @@ from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, S
 from sqlalchemy.orm import relationship  # type: ignore
 
 
-class MaintenanceMode(Enum):
-    NORMAL = "normal_mode"
+class MaintenanceMode(str, Enum):
+    NORMAL_MODE = "normal_mode"
     MAINTENANCE_MODE = "maintenance_mode"
-    MESSAGE_MODE = "message_mode"
 
-
-class MaintenanceDTO(BaseModel):
-    mode: MaintenanceMode
-    message: Optional[str]
+    @staticmethod
+    def from_str(element):
+        if element == "normal_mode":
+            return MaintenanceMode.NORMAL_MODE
+        elif element == "maintenance_mode":
+            return MaintenanceMode.MAINTENANCE_MODE
+        else:
+            raise NotImplementedError

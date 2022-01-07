@@ -8,5 +8,6 @@ from antarest.study.storage.variantstudy.model import (
     dbmodel as variantmodel,
 )
 from antarest.core.filetransfer import model as filetransfermodel
+from antarest.core.configdata import model as configdatamodel
 
 Base = PersistenceBase
