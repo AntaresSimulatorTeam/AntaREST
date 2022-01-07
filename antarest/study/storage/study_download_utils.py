@@ -10,7 +10,7 @@ from io import BytesIO, StringIO
 from math import ceil
 from pathlib import Path
 from time import strptime
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast, Union
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.study.model import (
@@ -391,9 +391,9 @@ class StudyDownloader:
                 for year in matrix.data[area_name].keys():
                     for i in range(0, nb_rows):
                         columns = matrix.data[area_name][year]
-                        csv_row: List[Optional[float]] = [
+                        csv_row: List[Optional[Union[int, float, str]]] = [
                             str(row_date),
-                            float(year),
+                            int(year),
                         ]
                         csv_row.extend(
                             [columns[name][i] for name in columns.keys()]

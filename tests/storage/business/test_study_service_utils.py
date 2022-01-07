@@ -19,7 +19,7 @@ from antarest.study.storage.utils import get_start_date
 
 def test_output_downloads_export(tmp_path: Path):
     matrix = MatrixAggregationResult(
-        index=MatrixIndex(),
+        index=MatrixIndex(start_date="2000-01-01 00:00:00"),
         data={
             "a1": {
                 "1": {
@@ -50,11 +50,11 @@ def test_output_downloads_export(tmp_path: Path):
         assert zip_input.namelist() == ["a1.csv", "a2.csv"]
         assert (
             md5(zip_input.read("a1.csv")).hexdigest()
-            == "eec20effc24b12284991f039f146fc9b"
+            == "e183e79f2184d6f6dacb8ad215cb056c"
         )
         assert (
             md5(zip_input.read("a2.csv")).hexdigest()
-            == "f914fc39e32c3d02f491fed302513961"
+            == "c007db83f2769e6128e0f8c6b04d43eb"
         )
 
 
@@ -75,6 +75,7 @@ def test_output_downloads_export(tmp_path: Path):
                 start_date=str(datetime.datetime(2024, 1, 1)),
                 steps=50,
                 first_week_size=7,
+                level=StudyDownloadLevelDTO.WEEKLY,
             ),
         ),
         (
@@ -91,6 +92,7 @@ def test_output_downloads_export(tmp_path: Path):
                 start_date=str(datetime.datetime(2001, 1, 1)),
                 steps=50,
                 first_week_size=7,
+                level=StudyDownloadLevelDTO.WEEKLY,
             ),
         ),
         (
@@ -107,6 +109,7 @@ def test_output_downloads_export(tmp_path: Path):
                 start_date=str(datetime.datetime(2002, 7, 5)),
                 steps=47,
                 first_week_size=5,
+                level=StudyDownloadLevelDTO.WEEKLY,
             ),
         ),
         (
@@ -123,6 +126,7 @@ def test_output_downloads_export(tmp_path: Path):
                 start_date=str(datetime.datetime(2002, 7, 1)),
                 steps=7,
                 first_week_size=7,
+                level=StudyDownloadLevelDTO.MONTHLY,
             ),
         ),
         (
@@ -139,6 +143,7 @@ def test_output_downloads_export(tmp_path: Path):
                 start_date=str(datetime.datetime(2002, 7, 1)),
                 steps=4,
                 first_week_size=7,
+                level=StudyDownloadLevelDTO.MONTHLY,
             ),
         ),
         (
@@ -155,6 +160,7 @@ def test_output_downloads_export(tmp_path: Path):
                 start_date=str(datetime.datetime(2010, 3, 5)),
                 steps=2184,
                 first_week_size=3,
+                level=StudyDownloadLevelDTO.HOURLY,
             ),
         ),
         (
@@ -171,6 +177,7 @@ def test_output_downloads_export(tmp_path: Path):
                 start_date=str(datetime.datetime(2010, 3, 5)),
                 steps=1,
                 first_week_size=3,
+                level=StudyDownloadLevelDTO.ANNUAL,
             ),
         ),
         (
@@ -187,6 +194,7 @@ def test_output_downloads_export(tmp_path: Path):
                 start_date=str(datetime.datetime(2009, 3, 3)),
                 steps=91,
                 first_week_size=3,
+                level=StudyDownloadLevelDTO.DAILY,
             ),
         ),
     ],

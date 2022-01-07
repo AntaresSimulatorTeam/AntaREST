@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
-from antarest.study.model import MatrixIndex
+from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
 
 
 def init_test(app: FastAPI):
@@ -152,7 +152,10 @@ def test_main(app: FastAPI):
     assert (
         res.json()
         == MatrixIndex(
-            first_week_size=7, start_date="2001-01-01 00:00:00", steps=8760
+            first_week_size=7,
+            start_date="2001-01-01 00:00:00",
+            steps=8760,
+            level=StudyDownloadLevelDTO.HOURLY,
         ).dict()
     )
 
