@@ -39,7 +39,7 @@ export const getSynthesis = async (uuid: string): Promise<any> => {
 };
 
 export const getAreaPositions = async (uuid: string, path: string, depth = -1): Promise<any> => {
-  const res = await client.get(`v1/studies/${uuid}/raw?path=//input/areas/${path}/ui&depth=${depth}`);
+  const res = await client.get(`v1/studies/${uuid}/raw?path=/input/areas/${encodeURIComponent(path)}/ui&depth=${depth}`);
   return res.data;
 };
 

@@ -264,6 +264,7 @@ const MapView = (props: Props) => {
     const init = async () => {
       try {
         const data = await getSynthesis(studyId);
+        console.log(data);
         setStudyConfig(data as TestStudyConfig);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
@@ -276,14 +277,9 @@ const MapView = (props: Props) => {
 
   useEffect(() => {
     if (loaded) {
-      let areaList = '';
       if (studyConfig) {
-        Object.keys(studyConfig.areas).map((key) => {
-          areaList += `${key},`;
-          return areaList;
-        });
+        setAreasList(Object.keys(studyConfig.areas).join(','));
       }
-      setAreasList(areaList.substring(0, areaList.length - 2));
     }
   }, [loaded, studyConfig, enqueueSnackbar, t]);
 
@@ -302,6 +298,7 @@ const MapView = (props: Props) => {
   }, [studyId, areasList, enqueueSnackbar, t]);
 
   console.log(areas);
+  console.log(fakeData);
 
   return (
     <Paper className={classes.root}>
