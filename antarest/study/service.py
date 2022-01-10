@@ -88,6 +88,7 @@ from antarest.study.storage.utils import (
     remove_from_cache,
     assert_permission,
     create_permission_from_study,
+    get_start_date,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
@@ -485,7 +486,7 @@ class StudyService:
     ) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return StudyDownloader.get_start_date(
+        return get_start_date(
             self._get_study_storage_service(study).get_raw(study)
         )
 

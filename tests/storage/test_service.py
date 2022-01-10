@@ -33,6 +33,7 @@ from antarest.study.model import (
     StudyDownloadType,
     StudyMetadataDTO,
     OwnerInfo,
+    StudyDownloadLevelDTO,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService, UserHasNotPermissionError
@@ -507,7 +508,10 @@ def test_download_output() -> None:
     # AREA TYPE
     res_matrix = MatrixAggregationResult(
         index=MatrixIndex(
-            start_date="2001-01-01 00:00:00", steps=1, first_week_size=7
+            start_date="2001-01-01 00:00:00",
+            steps=1,
+            first_week_size=7,
+            level=StudyDownloadLevelDTO.ANNUAL,
         ),
         data={"east": {1: {"H. VAL|Euro/MWh": [0.5]}}},
         warnings=[],
@@ -525,7 +529,10 @@ def test_download_output() -> None:
     input_data.filter = ["east>west"]
     res_matrix = MatrixAggregationResult(
         index=MatrixIndex(
-            start_date="2001-01-01 00:00:00", steps=1, first_week_size=7
+            start_date="2001-01-01 00:00:00",
+            steps=1,
+            first_week_size=7,
+            level=StudyDownloadLevelDTO.ANNUAL,
         ),
         data={"east^west": {1: {"H. VAL|Euro/MWh": [0.5]}}},
         warnings=[],
@@ -544,7 +551,10 @@ def test_download_output() -> None:
     input_data.filterIn = "n"
     res_matrix = MatrixAggregationResult(
         index=MatrixIndex(
-            start_date="2001-01-01 00:00:00", steps=1, first_week_size=7
+            start_date="2001-01-01 00:00:00",
+            steps=1,
+            first_week_size=7,
+            level=StudyDownloadLevelDTO.ANNUAL,
         ),
         data={"north": {1: {"H. VAL|Euro/MWh": [0.5]}}},
         warnings=[],

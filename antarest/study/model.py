@@ -1,6 +1,7 @@
 import enum
 import uuid
 from copy import deepcopy
+from datetime import timedelta, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TypeVar
 
@@ -9,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
+from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.login.model import Group, Identity, GroupDTO
@@ -273,6 +275,23 @@ class StudyDownloadLevelDTO(str, enum.Enum):
     DAILY = "daily"
     HOURLY = "hourly"
 
+    def inc_date(self, date: datetime) -> datetime:
+        if self.value == StudyDownloadLevelDTO.ANNUAL:
+            return date.replace(year=date.year + 1)
+        elif self.value == StudyDownloadLevelDTO.MONTHLY:
+            if date.month == 12:
+                return date.replace(year=date.year + 1, month=1)
+            else:
+                return date.replace(month=date.month + 1)
+        elif self.value == StudyDownloadLevelDTO.WEEKLY:
+            return date + timedelta(days=7)
+        elif self.value == StudyDownloadLevelDTO.DAILY:
+            return date + timedelta(days=1)
+        elif self.value == StudyDownloadLevelDTO.HOURLY:
+            return date + timedelta(hours=1)
+        else:
+            raise ShouldNotHappenException()
+
 
 class StudyDownloadDTO(BaseModel):
     """
@@ -294,6 +313,7 @@ class MatrixIndex(BaseModel):
     start_date: str = ""
     steps: int = 8760
     first_week_size: int = 7
+    level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY
 
 
 class MatrixAggregationResult(BaseModel):
