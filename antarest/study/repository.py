@@ -2,9 +2,12 @@ import logging
 from datetime import datetime
 from typing import Optional, List
 
+from sqlalchemy.orm import with_polymorphic
+
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.model import Study
+from antarest.study.model import Study, RawStudy
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +45,9 @@ class StudyMetadataRepository:
         return metadata
 
     def get_all(self) -> List[Study]:
-        metadatas: List[Study] = db.session.query(Study).all()
+        metadatas: List[Study] = db.session.query(
+            with_polymorphic(Study, "*")
+        ).all()
         return metadatas
 
     def delete(self, id: str) -> None:
