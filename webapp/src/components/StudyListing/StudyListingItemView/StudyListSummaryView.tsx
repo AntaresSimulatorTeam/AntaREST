@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import clsx from 'clsx';
 import { AxiosError } from 'axios';
-import { makeStyles, Button, createStyles, Theme, Paper, Typography, Tooltip } from '@material-ui/core';
+import { makeStyles, Button, createStyles, Theme, Paper, Typography, Tooltip, Menu, MenuItem } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -101,6 +101,8 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
     archiveStudy,
     unarchiveStudy,
   } = props;
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [openMenu, setOpenMenu] = useState<string>('');
 
   const copyId = (studyId: string): void => {
     try {
@@ -109,6 +111,16 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:onStudyIdCopyError'), e as AxiosError);
     }
+  };
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+    setOpenMenu(event.currentTarget.id);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+    setOpenMenu('');
   };
 
   return (
@@ -158,16 +170,46 @@ const StudyListSummaryView = (props: StudyListingItemPropTypes) => {
             >
               {t('main:launch')}
             </Button>
-            <ButtonLoader
+            <Button
+              aria-controls="import-menu"
+              aria-haspopup="true"
               size="small"
+              id="import"
               style={{ color: theme.palette.primary.main }}
-              onClick={() => importStudy(study)}
+              onClick={handleClick}
             >
               {t('studymanager:importcopy')}
-            </ButtonLoader>
-            <ButtonLoader size="small" style={{ color: theme.palette.primary.main }} onClick={() => exportStudy(study.id, false)} fakeDelay={500}>
+            </Button>
+            <Menu
+              id="import-menu"
+              anchorEl={anchorEl}
+              keepMounted
+              open={openMenu === 'import'}
+              onClose={handleClose}
+            >
+              <MenuItem onClick={() => { importStudy(study, true); handleClose(); }}>{t('studymanager:copyWith')}</MenuItem>
+              <MenuItem onClick={() => { importStudy(study, false); handleClose(); }}>{t('studymanager:copyWithout')}</MenuItem>
+            </Menu>
+            <Button
+              aria-controls="export-menu"
+              aria-haspopup="true"
+              size="small"
+              id="export"
+              style={{ color: theme.palette.primary.main }}
+              onClick={handleClick}
+            >
               {t('main:export')}
-            </ButtonLoader>
+            </Button>
+            <Menu
+              id="export-menu"
+              anchorEl={anchorEl}
+              keepMounted
+              open={openMenu === 'export'}
+              onClose={handleClose}
+            >
+              <MenuItem onClick={() => { exportStudy(study.id, false); handleClose(); }}>{t('studymanager:exportWith')}</MenuItem>
+              <MenuItem onClick={() => { exportStudy(study.id, true); handleClose(); }}>{t('studymanager:exportWithout')}</MenuItem>
+            </Menu>
             {study.managed && (
             <ButtonLoader
               size="small"

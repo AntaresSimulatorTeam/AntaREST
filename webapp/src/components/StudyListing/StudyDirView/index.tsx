@@ -22,7 +22,7 @@ interface OwnProps {
   setCurrentStudiesLength: (length: number) => void;
   launchStudy: (study: StudyMetadata) => void;
   deleteStudy: (study: StudyMetadata) => void;
-  importStudy: (study: StudyMetadata, withOutputs?: boolean) => void;
+  importStudy: (study: StudyMetadata, withOutputs: boolean) => void;
   archiveStudy: (study: StudyMetadata) => void;
   unarchiveStudy: (study: StudyMetadata) => void;
 }

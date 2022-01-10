@@ -124,7 +124,7 @@ interface Props {
     onDirClick: (element: Array<string>) => void;
     launchStudy: (study: StudyMetadata) => void;
     deleteStudy: (study: StudyMetadata) => void;
-    importStudy: (study: StudyMetadata, withOutputs?: boolean) => void;
+    importStudy: (study: StudyMetadata, withOutputs: boolean) => void;
     archiveStudy: (study: StudyMetadata) => void;
     unarchiveStudy: (study: StudyMetadata) => void;
 }
@@ -169,7 +169,7 @@ const DirView = (props: Props) => {
   const getMenuUnarchived = (study: StudyMetadata) => [
 
     (key: string) => <MenuItem key={key} onClick={() => launchStudy(study)} style={{ color: theme.palette.secondary.main }}>{t('main:launch')}</MenuItem>,
-    (key: string) => <MenuItem key={key} onClick={() => importStudy(study)} style={{ color: theme.palette.primary.main }}>{t('studymanager:importcopy')}</MenuItem>,
+    (key: string) => <MenuItem key={key} onClick={() => importStudy(study, false)} style={{ color: theme.palette.primary.main }}>{t('studymanager:importcopy')}</MenuItem>,
     (key: string) => (
       <MenuItem key={key} style={{ color: theme.palette.primary.main }} onClick={_.debounce(() => exportStudy(study.id, false), 5000, { leading: true, trailing: false })}>
         {t('main:export')}
