@@ -61,6 +61,7 @@ class SlurmLauncher(AbstractLauncher):
         study_service: StudyService,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
+        use_private_workspace: bool = True,
     ) -> None:
         super().__init__(config, study_service, callbacks)
         if config.launcher.slurm is None:
@@ -73,8 +74,10 @@ class SlurmLauncher(AbstractLauncher):
         self.job_id_to_study_id: Dict[str, str] = {}
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
-        self.local_workspace = Path(
-            tempfile.mkdtemp(dir=str(self.slurm_config.local_workspace))
+        self.local_workspace = (
+            Path(tempfile.mkdtemp(dir=str(self.slurm_config.local_workspace)))
+            if use_private_workspace
+            else Path(self.slurm_config.local_workspace)
         )
 
         self.log_tail_manager = LogTailManager(self.local_workspace)

@@ -228,6 +228,7 @@ const TaskView = (props: PropTypes) => {
                       <Typography>{item.status}</Typography>
                     </div>
                     {/* item.status === 'running' ? <Button variant="contained" color="primary" onClick={() => openConfirmModal(item.id)}>{t('singlestudy:killStudy')}</Button> : <Button color="primary" variant="contained" className={classes.killButtonHide}>{t('singlestudy:killStudy')}</Button> */}
+                    <Button color="primary" variant="contained" className={classes.killButtonHide} onClick={() => openConfirmModal(item.id)}>{t('singlestudy:killStudy')}</Button>
                   </GridListTile>
                   <GridListTile className={classes.gridTile}>
                     <Typography className={classes.label}>
