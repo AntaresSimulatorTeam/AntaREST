@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import shutil
+import tempfile
 import threading
 import time
 from copy import deepcopy
@@ -60,6 +61,7 @@ class SlurmLauncher(AbstractLauncher):
         study_service: StudyService,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
+        use_private_workspace: bool = True,
     ) -> None:
         super().__init__(config, study_service, callbacks)
         if config.launcher.slurm is None:
@@ -71,11 +73,20 @@ class SlurmLauncher(AbstractLauncher):
         self.thread: Optional[threading.Thread] = None
         self.job_id_to_study_id: Dict[str, str] = {}
         self._check_config()
-        self.log_tail_manager = LogTailManager(
-            self.slurm_config.local_workspace
+        self.antares_launcher_lock = threading.Lock()
+        self.local_workspace = (
+            Path(tempfile.mkdtemp(dir=str(self.slurm_config.local_workspace)))
+            if use_private_workspace
+            else Path(self.slurm_config.local_workspace)
         )
-        self.launcher_args = self._init_launcher_arguments()
-        self.launcher_params = self._init_launcher_parameters()
+
+        self.log_tail_manager = LogTailManager(self.local_workspace)
+        self.launcher_args = self._init_launcher_arguments(
+            self.local_workspace
+        )
+        self.launcher_params = self._init_launcher_parameters(
+            self.local_workspace
+        )
         self.data_repo_tinydb = DataRepoTinydb(
             database_file_path=(
                 self.launcher_params.json_dir
@@ -104,17 +115,30 @@ class SlurmLauncher(AbstractLauncher):
         self.check_state = False
         self.thread = None
 
-    def _init_launcher_arguments(self) -> argparse.Namespace:
+    def _init_launcher_arguments(
+        self, local_workspace: Optional[Path] = None
+    ) -> argparse.Namespace:
         main_options_parameters = ParserParameters(
             default_wait_time=self.slurm_config.default_wait_time,
             default_time_limit=self.slurm_config.default_time_limit,
             default_n_cpu=self.slurm_config.default_n_cpu,
             studies_in_dir=str(
-                (Path(self.slurm_config.local_workspace) / "STUDIES_IN")
+                (
+                    Path(local_workspace or self.slurm_config.local_workspace)
+                    / "STUDIES_IN"
+                )
             ),
-            log_dir=str((Path(self.slurm_config.local_workspace) / "LOGS")),
+            log_dir=str(
+                (
+                    Path(local_workspace or self.slurm_config.local_workspace)
+                    / "LOGS"
+                )
+            ),
             finished_dir=str(
-                (Path(self.slurm_config.local_workspace) / "OUTPUT")
+                (
+                    Path(local_workspace or self.slurm_config.local_workspace)
+                    / "OUTPUT"
+                )
             ),
             ssh_config_file_is_required=False,
             ssh_configfile_path_alternate1=None,
@@ -135,9 +159,11 @@ class SlurmLauncher(AbstractLauncher):
         arguments.post_processing = False
         return arguments
 
-    def _init_launcher_parameters(self) -> MainParameters:
+    def _init_launcher_parameters(
+        self, local_workspace: Optional[Path] = None
+    ) -> MainParameters:
         main_parameters = MainParameters(
-            json_dir=self.slurm_config.local_workspace,
+            json_dir=local_workspace or self.slurm_config.local_workspace,
             default_json_db_name=self.slurm_config.default_json_db_name,
             slurm_script_path=self.slurm_config.slurm_script_path,
             antares_versions_on_remote_server=self.slurm_config.antares_versions_on_remote_server,
@@ -154,10 +180,8 @@ class SlurmLauncher(AbstractLauncher):
         return main_parameters
 
     def _delete_study(self, study_path: Path) -> None:
-        if (
-            self.slurm_config.local_workspace.absolute()
-            in study_path.absolute().parents
-        ):
+        logger.info(f"Deleting study export at {study_path}")
+        if self.local_workspace.absolute() in study_path.absolute().parents:
             if study_path.exists():
                 shutil.rmtree(study_path)
 
@@ -169,28 +193,22 @@ class SlurmLauncher(AbstractLauncher):
             self._import_xpansion_result(job_id, study_id)
         return self.storage_service.import_output(
             study_id,
-            self.slurm_config.local_workspace / "OUTPUT" / job_id / "output",
+            self.local_workspace / "OUTPUT" / job_id / "output",
             params=RequestParameters(DEFAULT_ADMIN_USER),
         )
 
     def _import_xpansion_result(self, job_id: str, study_id: str) -> None:
-        output_path = (
-            self.slurm_config.local_workspace / "OUTPUT" / job_id / "output"
-        )
+        output_path = self.local_workspace / "OUTPUT" / job_id / "output"
         if output_path.exists() and len(os.listdir(output_path)) == 1:
             output_path = output_path / os.listdir(output_path)[0]
             shutil.copytree(
-                self.slurm_config.local_workspace
-                / "OUTPUT"
-                / job_id
-                / "input"
-                / "links",
+                self.local_workspace / "OUTPUT" / job_id / "input" / "links",
                 output_path / "updated_links",
             )
             study = self.storage_service.get_study(study_id)
             if int(study.version) < 800:
                 shutil.copytree(
-                    self.slurm_config.local_workspace
+                    self.local_workspace
                     / "OUTPUT"
                     / job_id
                     / "user"
@@ -202,11 +220,12 @@ class SlurmLauncher(AbstractLauncher):
 
     def _check_studies_state(self) -> None:
         try:
-            run_with(
-                arguments=self.launcher_args,
-                parameters=self.launcher_params,
-                show_banner=False,
-            )
+            with self.antares_launcher_lock:
+                run_with(
+                    arguments=self.launcher_args,
+                    parameters=self.launcher_params,
+                    show_banner=False,
+                )
         except Exception as e:
             logger.info("Could not get data on remote server", exc_info=e)
 
@@ -291,7 +310,7 @@ class SlurmLauncher(AbstractLauncher):
 
     def _clean_local_workspace(self) -> None:
         logger.info("Cleaning up slurm workspace")
-        local_workspace = self.slurm_config.local_workspace
+        local_workspace = self.local_workspace
         for filename in os.listdir(local_workspace):
             file_path = os.path.join(local_workspace, filename)
             if os.path.isfile(file_path) or os.path.islink(file_path):
@@ -315,10 +334,9 @@ class SlurmLauncher(AbstractLauncher):
             )
 
     def _clean_up_study(self, launch_id: str) -> None:
+        logger.info(f"Cleaning up study with launch_id {launch_id}")
         self.data_repo_tinydb.remove_study(launch_id)
-        self._delete_study(
-            self.slurm_config.local_workspace / "OUTPUT" / launch_id
-        )
+        self._delete_study(self.local_workspace / "OUTPUT" / launch_id)
         del self.job_id_to_study_id[launch_id]
 
     def _run_study(
@@ -335,18 +353,21 @@ class SlurmLauncher(AbstractLauncher):
 
             try:
                 # export study
-                self.storage_service.export_study_flat(
-                    study_uuid, params, study_path, outputs=False
-                )
+                with self.antares_launcher_lock:
+                    self.storage_service.export_study_flat(
+                        study_uuid, params, study_path, outputs=False
+                    )
 
-                self._assert_study_version_is_supported(study_uuid, params)
+                    self._assert_study_version_is_supported(study_uuid, params)
 
-                launcher_args = self._check_and_apply_launcher_params(
-                    launcher_params
-                )
-                run_with(
-                    launcher_args, self.launcher_params, show_banner=False
-                )
+                    launcher_args = self._check_and_apply_launcher_params(
+                        launcher_params
+                    )
+                    run_with(
+                        launcher_args, self.launcher_params, show_banner=False
+                    )
+                    logger.info("Study exported and run with launcher")
+
                 self.callbacks.update_status(
                     str(launch_uuid), JobStatus.RUNNING, None, None
                 )
@@ -423,10 +444,12 @@ class SlurmLauncher(AbstractLauncher):
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
                 launcher_args.job_id_to_kill = study.job_id
-                run_with(
-                    launcher_args, self.launcher_params, show_banner=False
-                )
+                with self.antares_launcher_lock:
+                    run_with(
+                        launcher_args, self.launcher_params, show_banner=False
+                    )
                 return
+        # todo kill job should be sent to other slurm launcher so that is correctly killed
         logger.warning(
             "Failed to retrieve job id in antares launcher database"
         )

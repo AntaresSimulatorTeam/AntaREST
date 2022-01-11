@@ -1,8 +1,12 @@
 import logging
 import os
 import shutil
+import calendar
+from datetime import timedelta, datetime
+from math import ceil
 from pathlib import Path
-from typing import Optional, Union
+from time import strptime
+from typing import Optional, Union, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -21,7 +25,10 @@ from antarest.study.model import (
     Study,
     STUDY_REFERENCE_TEMPLATES,
     StudyMetadataDTO,
+    MatrixIndex,
+    StudyDownloadLevelDTO,
 )
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
@@ -179,3 +186,93 @@ def assert_permission(
         raise UserHasNotPermissionError()
 
     return ok
+
+
+MATRIX_INPUT_DAYS_COUNT = 365
+
+
+def get_start_date(
+    file_study: FileStudy,
+    output_id: Optional[str] = None,
+    level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY,
+) -> MatrixIndex:
+    """
+    Retrieve the index (start date and step count) for output or input matrices
+    Args:
+        file_study: Study data
+        output_id: id of the output, if None, then it's the start date of the input matrices
+        level: granularity of the steps
+
+    """
+    config = (
+        file_study.tree.get(
+            [
+                "output",
+                output_id,
+                "about-the-study",
+                "parameters",
+                "general",
+            ]
+        )
+        if output_id is not None
+        else file_study.tree.get(["settings", "generaldata", "general"])
+    )
+    starting_month = cast(str, config.get("first-month-in-year"))
+    starting_day = cast(str, config.get("january.1st"))
+    leapyear = cast(bool, config.get("leapyear"))
+    first_week_day = cast(str, config.get("first.weekday"))
+    start_offset = cast(int, config.get("simulation.start"))
+    end = cast(int, config.get("simulation.end"))
+
+    starting_month_index = strptime(starting_month, "%B").tm_mon
+    target_year = 2000
+    while True:
+        if leapyear == calendar.isleap(target_year):
+            first_day = datetime(target_year, starting_month_index, 1)
+            if first_day.strftime("%A") == starting_day:
+                break
+        target_year += 1
+
+    start_offset_days = (
+        timedelta(days=start_offset - 1)
+        if output_id is not None
+        else timedelta(days=0)
+    )
+    start_date = (
+        datetime(target_year, starting_month_index, 1) + start_offset_days
+    )
+    # base case is DAILY
+    steps = (
+        int((end - start_offset) / 7) * 7
+        if output_id is not None
+        else MATRIX_INPUT_DAYS_COUNT
+    )
+    if level == StudyDownloadLevelDTO.HOURLY:
+        steps = steps * 24
+    elif level == StudyDownloadLevelDTO.ANNUAL:
+        steps = 1
+    elif level == StudyDownloadLevelDTO.WEEKLY:
+        steps = ceil(steps / 7)
+    elif level == StudyDownloadLevelDTO.MONTHLY:
+        end_date = start_date + timedelta(days=steps)
+        same_year = end_date.year == start_date.year
+        if same_year:
+            steps = 1 + end_date.month - start_date.month
+        else:
+            steps = (13 - start_date.month) + end_date.month
+
+    first_week_offset = 0
+    while True:
+        if (start_date + timedelta(days=first_week_offset)).strftime(
+            "%A"
+        ) == first_week_day:
+            break
+        first_week_offset += 1
+    first_week_size = first_week_offset if first_week_offset != 0 else 7
+
+    return MatrixIndex(
+        start_date=str(start_date),
+        steps=steps,
+        first_week_size=first_week_size,
+        level=level,
+    )

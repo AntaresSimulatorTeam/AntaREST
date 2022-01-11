@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from http import HTTPStatus
 from typing import List, Optional, cast, Dict
@@ -31,6 +32,8 @@ from antarest.study.storage.utils import (
     assert_permission,
     create_permission_from_study,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class JobNotFound(HTTPException):
@@ -79,6 +82,7 @@ class LauncherService:
         msg: Optional[str],
         output_id: Optional[str],
     ) -> None:
+        logger.info(f"Setting study with job id {job_uuid} status to {status}")
         job_result = self.job_result_repository.get(job_uuid)
         if job_result is not None:
             job_result.job_status = status
@@ -97,6 +101,7 @@ class LauncherService:
                     channel=EventChannelDirectory.JOB_STATUS + job_result.id,
                 )
             )
+        logger.info(f"Study status set")
 
     def _assert_launcher_is_initialized(self, launcher: str) -> None:
         if launcher not in self.launchers:

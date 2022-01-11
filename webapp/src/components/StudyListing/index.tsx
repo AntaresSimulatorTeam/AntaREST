@@ -93,7 +93,7 @@ const StudyListing = (props: PropTypes) => {
     setStudyToLaunch(study);
   };
 
-  const importStudy = async (study: StudyMetadata, withOutputs = false) => {
+  const importStudy = async (study: StudyMetadata, withOutputs: boolean) => {
     try {
       await callCopyStudy(study.id, `${study.name} (${t('main:copy')})`, withOutputs);
       enqueueSnackbar(t('studymanager:studycopiedsuccess', { studyname: study.name }), { variant: 'success' });

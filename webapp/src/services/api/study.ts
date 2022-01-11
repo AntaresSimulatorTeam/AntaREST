@@ -53,7 +53,7 @@ export const editStudy = async (data: object, sid: string, path = '', depth = 1)
   return res.data;
 };
 
-export const copyStudy = async (sid: string, name: string, withOutputs = false): Promise<any> => {
+export const copyStudy = async (sid: string, name: string, withOutputs: boolean): Promise<any> => {
   const res = await client.post(`/v1/studies/${sid}/copy?dest=${encodeURIComponent(name)}&with_outputs=${withOutputs}`);
   return res.data;
 };
@@ -77,7 +77,7 @@ export const editComments = async (sid: string, newComments: string): Promise<an
   return res.data;
 };
 
-export const exportStudy = async (sid: string, skipOutputs = false): Promise<FileDownloadTask> => {
+export const exportStudy = async (sid: string, skipOutputs: boolean): Promise<FileDownloadTask> => {
   const res = await client.get(`/v1/studies/${sid}/export?no_output=${skipOutputs}`);
   return res.data;
 };

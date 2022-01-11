@@ -160,7 +160,7 @@ class TaskJobService(ITaskService):
         task = self.repo.get_or_raise(task_id)
         if task_id in self.tasks:
             self.tasks[task_id].cancel()
-            task.status = TaskStatus.CANCELLED
+            task.status = TaskStatus.CANCELLED.value
             self.repo.save(task)
         elif dispatch:
             self.event_bus.push(

@@ -1,7 +1,7 @@
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 from antarest.core.config import Config, SecurityConfig, ExternalAuthConfig
 from antarest.core.roles import RoleType
@@ -22,6 +22,7 @@ class MockServerHandler(BaseHTTPRequestHandler):
                 groups={
                     "groupA": "some group name",
                     "groupB": "some other group name",
+                    "groupC": "isGroupD",
                 },
             )
             res = json.dumps(antares.to_json())
@@ -36,7 +37,10 @@ def test_ldap():
     config = Config(
         security=SecurityConfig(
             external_auth=ExternalAuthConfig(
-                url="http://localhost:8869", default_group_role=RoleType.WRITER
+                url="http://localhost:8869",
+                default_group_role=RoleType.WRITER,
+                add_ext_groups=True,
+                group_mapping={"groupC": "D"},
             )
         )
     )
@@ -56,6 +60,9 @@ def test_ldap():
 
     role_repo.get_all_by_user.return_value = [Role(group_id="groupA")]
     group_repo.save.side_effect = lambda x: x
+    group_repo.get.side_effect = (
+        lambda x: Group(id="D", name="groupD") if x == "D" else None
+    )
     role_repo.save.side_effect = lambda x: x
 
     res = ldap.login(name="extid", password="pwd")
@@ -71,18 +78,37 @@ def test_ldap():
             lastname="Smith",
         )
     )
-    group_repo.save.assert_called_once_with(
-        Group(id="groupB", name="some other group name")
+    group_repo.save.assert_has_calls(
+        [
+            call(Group(id="groupB", name="some other group name")),
+            call(Group(id="D", name="groupD")),
+        ]
     )
-    role_repo.save.assert_called_once_with(
-        Role(
-            identity=UserLdap(
-                name="John Smith",
-                external_id="extid",
-                firstname="John",
-                lastname="Smith",
+    role_repo.save.assert_has_calls(
+        [
+            call(
+                Role(
+                    identity=UserLdap(
+                        name="John Smith",
+                        external_id="extid",
+                        firstname="John",
+                        lastname="Smith",
+                    ),
+                    group=Group(id="groupB", name="some other group name"),
+                    type=RoleType.WRITER,
+                )
             ),
-            group=Group(id="groupB", name="some other group name"),
-            type=RoleType.WRITER,
-        )
+            call(
+                Role(
+                    identity=UserLdap(
+                        name="John Smith",
+                        external_id="extid",
+                        firstname="John",
+                        lastname="Smith",
+                    ),
+                    group=Group(id="D", name="groupD"),
+                    type=RoleType.WRITER,
+                )
+            ),
+        ]
     )

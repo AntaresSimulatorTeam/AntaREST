@@ -149,6 +149,7 @@ def test_slurm_launcher_delete_function(tmp_path: str):
         study_service=Mock(),
         callbacks=Mock(),
         event_bus=Mock(),
+        use_private_workspace=False,
     )
     directory_path = Path(tmp_path) / "directory"
     directory_path.mkdir()
@@ -325,6 +326,7 @@ def test_clean_local_workspace(tmp_path: Path, launcher_config: Config):
         study_service=storage_service,
         callbacks=Mock(),
         event_bus=Mock(),
+        use_private_workspace=False,
     )
 
     (launcher_config.launcher.slurm.local_workspace / "machin.txt").touch()
@@ -341,6 +343,7 @@ def test_import_study_output(launcher_config):
         study_service=Mock(),
         callbacks=Mock(),
         event_bus=Mock(),
+        use_private_workspace=False,
     )
     slurm_launcher.job_id_to_study_id["1"] = "2"
     slurm_launcher.storage_service.import_output.return_value = "output"
@@ -421,6 +424,7 @@ def test_kill_job(
         study_service=Mock(),
         callbacks=Mock(),
         event_bus=Mock(),
+        use_private_workspace=False,
     )
     slurm_launcher.data_repo_tinydb = data_repo_tinydb_mock
 
