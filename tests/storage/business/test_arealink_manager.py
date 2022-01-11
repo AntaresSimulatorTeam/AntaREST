@@ -2,7 +2,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.study.business.link_management import LinkManager
-from antarest.study.model import RawStudy, Patch, PatchLeafDict, PatchArea
+from antarest.study.model import RawStudy, Patch, PatchArea
 from antarest.study.business.area_management import (
     AreaManager,
     AreaType,
@@ -21,18 +21,25 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
+from antarest.study.storage.storage_service import StudyStorageService
 
 
 def test_create_area():
     raw_study_service = Mock(spec=RawStudyService)
-    area_manager = AreaManager(raw_study_service=raw_study_service)
+    area_manager = AreaManager(
+        storage_service=StudyStorageService(raw_study_service, Mock())
+    )
     pass
 
 
 def test_get_all_area():
     raw_study_service = Mock(spec=RawStudyService)
-    area_manager = AreaManager(raw_study_service=raw_study_service)
-    link_manager = LinkManager(raw_study_service=raw_study_service)
+    area_manager = AreaManager(
+        storage_service=StudyStorageService(raw_study_service, Mock())
+    )
+    link_manager = LinkManager(
+        storage_service=StudyStorageService(raw_study_service, Mock())
+    )
 
     study = RawStudy()
     config = FileStudyTreeConfig(
@@ -75,9 +82,9 @@ def test_get_all_area():
         config=config, tree=FileStudyTree(context=Mock(), config=config)
     )
 
-    raw_study_service.patch_service = Mock()
-    raw_study_service.patch_service.get.return_value = Patch(
-        areas=PatchLeafDict(a1=PatchArea(country="fr"))
+    area_manager.patch_service = Mock()
+    area_manager.patch_service.get.return_value = Patch(
+        areas={"a1": PatchArea(country="fr")}
     )
 
     expected_areas = [
@@ -109,13 +116,13 @@ def test_get_all_area():
     expected_clusters = [
         {
             "name": "s1",
-            "type": AreaType.CLUSTER,
+            "type": AreaType.DISTRICT,
             "metadata": {"country": None},
             "set": ["a1"],
             "id": "s1",
         }
     ]
-    clusters = area_manager.get_all_areas(study, AreaType.CLUSTER)
+    clusters = area_manager.get_all_areas(study, AreaType.DISTRICT)
     assert expected_clusters == [area.dict() for area in clusters]
 
     expected_all = [
@@ -142,7 +149,7 @@ def test_get_all_area():
         },
         {
             "name": "s1",
-            "type": AreaType.CLUSTER,
+            "type": AreaType.DISTRICT,
             "metadata": {"country": None},
             "set": ["a1"],
             "id": "s1",
@@ -172,13 +179,17 @@ def test_get_all_area():
 
 def test_delete_area():
     raw_study_service = Mock(spec=RawStudyService)
-    area_manager = AreaManager(raw_study_service=raw_study_service)
+    area_manager = AreaManager(
+        storage_service=StudyStorageService(raw_study_service, Mock())
+    )
     pass
 
 
 def test_update_area():
     raw_study_service = Mock(spec=RawStudyService)
-    area_manager = AreaManager(raw_study_service=raw_study_service)
+    area_manager = AreaManager(
+        storage_service=StudyStorageService(raw_study_service, Mock())
+    )
 
     study = RawStudy()
     config = FileStudyTreeConfig(
@@ -210,12 +221,12 @@ def test_update_area():
         config=config, tree=FileStudyTree(context=Mock(), config=config)
     )
 
-    raw_study_service.patch_service = Mock()
-    raw_study_service.patch_service.get.return_value = Patch(
-        areas=PatchLeafDict(a1=PatchArea(country="fr"))
+    area_manager.patch_service = Mock()
+    area_manager.patch_service.get.return_value = Patch(
+        areas={"a1": PatchArea(country="fr")}
     )
 
-    raw_study_service.patch_service.patch.side_effect = lambda x, y: y
+    area_manager.patch_service.patch.side_effect = lambda x, y: y
 
     new_area_info = area_manager.update_area(
         study,

@@ -589,7 +589,7 @@ def test_change_owner() -> None:
     service = build_study_service(
         study_service, repository, config, user_service=user_service
     )
-    service.variant_study_service.command_factory.command_context = Mock(
+    service.storage_service.variant_study_service.command_factory.command_context = Mock(
         spec=CommandContext
     )
 
@@ -954,14 +954,14 @@ def test_edit_study_with_command():
     file_study.config.study_id = study_id
     study_service = Mock(spec=RawStudyService)
     study_service.get_raw.return_value = file_study
-    service._get_study_storage_service = Mock(return_value=study_service)
+    service.storage_service.get_storage = Mock(return_value=study_service)
 
     service._edit_study_using_command(study=Mock(), url="", data=[])
     command.apply.assert_called_with(file_study)
 
     study_service = Mock(spec=VariantStudyService)
     study_service.get_raw.return_value = file_study
-    service._get_study_storage_service = Mock(return_value=study_service)
+    service.storage_service.get_storage = Mock(return_value=study_service)
     service._edit_study_using_command(study=Mock(), url="", data=[])
 
     study_service.append_command.assert_called_once_with(
@@ -1000,7 +1000,7 @@ def test_create_command(
         patch_service=Mock(spec=PatchService),
     )
 
-    service.variant_study_service.command_factory.command_context = (
+    service.storage_service.variant_study_service.command_factory.command_context = (
         command_context
     )
 

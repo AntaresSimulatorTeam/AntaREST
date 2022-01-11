@@ -22,7 +22,7 @@ from antarest.study.business.area_management import (
 logger = logging.getLogger(__name__)
 
 
-def create_study_area_routes(
+def create_study_data_routes(
     study_service: StudyService, config: Config
 ) -> APIRouter:
     """
@@ -109,8 +109,7 @@ def create_study_area_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study_service.update_area(uuid, area_id, area_patch_dto, params)
-        return ""
+        return study_service.update_area(uuid, area_id, area_patch_dto, params)
 
     @bp.delete(
         "/studies/{uuid}/areas/{area_id}",

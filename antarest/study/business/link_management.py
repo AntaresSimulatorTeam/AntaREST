@@ -3,9 +3,7 @@ from typing import List
 from pydantic import BaseModel
 
 from antarest.study.model import RawStudy
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
+from antarest.study.storage.storage_service import StudyStorageService
 
 
 class LinkInfoDTO(BaseModel):
@@ -14,11 +12,11 @@ class LinkInfoDTO(BaseModel):
 
 
 class LinkManager:
-    def __init__(self, raw_study_service: RawStudyService) -> None:
-        self.raw_study_service = raw_study_service
+    def __init__(self, storage_service: StudyStorageService) -> None:
+        self.storage_service = storage_service
 
     def get_all_links(self, study: RawStudy) -> List[LinkInfoDTO]:
-        file_study = self.raw_study_service.get_raw(study)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         result = []
         for area_id, area in file_study.config.areas.items():
             for link in area.links:

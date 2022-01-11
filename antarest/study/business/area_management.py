@@ -3,19 +3,18 @@ from typing import Optional, Dict, List
 
 from pydantic import BaseModel
 
-from antarest.study.model import RawStudy, PatchArea, PatchLeafDict
+from antarest.study.model import RawStudy, PatchArea
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     Set,
 )
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
+from antarest.study.storage.storage_service import StudyStorageService
 
 
 class AreaType(Enum):
     AREA = "AREA"
-    CLUSTER = "CLUSTER"
+    DISTRICT = "DISTRICT"
 
 
 class AreaCreationDTO(BaseModel):
@@ -37,14 +36,16 @@ class AreaInfoDTO(AreaCreationDTO):
 
 
 class AreaManager:
-    def __init__(self, raw_study_service: RawStudyService) -> None:
-        self.raw_study_service = raw_study_service
+    def __init__(self, storage_service: StudyStorageService) -> None:
+        self.storage_service = storage_service
+        self.patch_service = PatchService()
 
     def get_all_areas(
         self, study: RawStudy, area_type: Optional[AreaType] = None
     ) -> List[AreaInfoDTO]:
-        file_study = self.raw_study_service.get_raw(study)
-        metadata = self.raw_study_service.patch_service.get(study)
+        storage_service = self.storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        metadata = self.patch_service.get(study)
         areas_metadata: Dict[str, PatchArea] = metadata.areas or {}  # type: ignore
         result = []
         if area_type is None or area_type == AreaType.AREA:
@@ -58,13 +59,13 @@ class AreaManager:
                     )
                 )
 
-        if area_type is None or area_type == AreaType.CLUSTER:
+        if area_type is None or area_type == AreaType.DISTRICT:
             for set_name in file_study.config.sets:
                 result.append(
                     AreaInfoDTO(
                         id=set_name,
                         name=file_study.config.sets[set_name].name or set_name,
-                        type=AreaType.CLUSTER,
+                        type=AreaType.DISTRICT,
                         set=file_study.config.sets[set_name].get_areas(
                             list(file_study.config.areas.keys())
                         ),
@@ -86,21 +87,20 @@ class AreaManager:
         area_creation_info: AreaPatchUpdateDTO,
     ) -> AreaInfoDTO:
         if area_creation_info.metadata:
-            file_study = self.raw_study_service.get_raw(study)
+            file_study = self.storage_service.get_storage(study).get_raw(study)
             area_or_set = file_study.config.areas.get(
                 area_id
             ) or file_study.config.sets.get(area_id)
-            patch = self.raw_study_service.patch_service.get(study)
-            patch.areas = (patch.areas or PatchLeafDict()).patch(
-                PatchLeafDict({area_id: area_creation_info.metadata})
-            )
-            self.raw_study_service.patch_service.patch(study, patch.dict())
+            patch = self.patch_service.get(study)
+            patch.areas = patch.areas or {}
+            patch.areas[area_id] = area_creation_info.metadata
+            self.patch_service.save(study, patch)
             return AreaInfoDTO(
                 id=area_id,
                 name=area_or_set.name if area_or_set is not None else area_id,
                 type=AreaType.AREA
                 if isinstance(area_or_set, Area)
-                else AreaType.CLUSTER,
+                else AreaType.DISTRICT,
                 metadata=patch.areas.get(area_id),
                 set=area_or_set.get_areas(list(file_study.config.areas.keys()))
                 if isinstance(area_or_set, Set)

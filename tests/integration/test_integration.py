@@ -435,7 +435,7 @@ def test_area_management(app: FastAPI):
             "metadata": {"country": None},
             "name": "All areas",
             "set": [],
-            "type": "CLUSTER",
+            "type": "DISTRICT",
         }
     ]
 

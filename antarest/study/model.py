@@ -119,83 +119,14 @@ class StudyFolder:
     groups: List[Group]
 
 
-class PatchLeaf:
-    def patch(self, new_patch: "PatchLeaf") -> "PatchLeaf":
-        new_patch_leaf = deepcopy(self)
-        for attribute_name in self.__dict__.keys():
-            new_attribute = getattr(new_patch, attribute_name, None)
-            old_attribute = getattr(self, attribute_name, None)
-            setattr(
-                new_patch_leaf,
-                attribute_name,
-                new_attribute if new_attribute is not None else old_attribute,
-            )
-        return new_patch_leaf
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, PatchLeaf):
-            return NotImplemented
-
-        eq: bool = True
-        for attribute in self.__dict__.keys():
-            eq = eq and (
-                getattr(self, attribute, None)
-                == getattr(other, attribute, None)
-            )
-            if not eq:
-                return eq
-        return eq
-
-
-class PatchLeafDict(Dict[str, PatchLeaf]):
-    def patch(self, new_patch_leaf_dict: "PatchLeafDict") -> "PatchLeafDict":
-        merged_dict = deepcopy(self)
-        for new_dict_key, new_dict_value in new_patch_leaf_dict.items():
-            if new_dict_key not in self.keys():
-                merged_dict[new_dict_key] = new_dict_value
-            else:
-                if new_dict_value is None:
-                    del merged_dict[new_dict_key]
-                else:
-                    merged_dict[new_dict_key] = self[new_dict_key].patch(
-                        new_dict_value
-                    )
-
-        return merged_dict
-
-
-T = TypeVar("T")  # to fix mypy
-
-
-class PatchNode:
-    def patch(self: T, new_patch: T) -> T:
-        merged_patch = deepcopy(self)
-        for leaf_name in self.__dict__.keys():
-            old_leaf = getattr(self, leaf_name, None)
-            new_leaf = getattr(new_patch, leaf_name, None)
-            if old_leaf is None:
-                setattr(
-                    merged_patch,
-                    leaf_name,
-                    new_leaf,
-                )
-            elif new_leaf is not None:
-                setattr(
-                    merged_patch,
-                    leaf_name,
-                    old_leaf.patch(new_leaf),
-                )
-        return merged_patch
-
-
-class PatchStudy(BaseModel, PatchLeaf):
+class PatchStudy(BaseModel):
     scenario: Optional[str] = None
     doc: Optional[str] = None
     status: Optional[str] = None
     comments: Optional[str] = None
 
 
-class PatchArea(BaseModel, PatchLeaf):
+class PatchArea(BaseModel):
     country: Optional[str] = None
 
 
@@ -203,9 +134,9 @@ class PatchOutputs(BaseModel):
     reference: Optional[str] = None
 
 
-class Patch(BaseModel, PatchNode):
+class Patch(BaseModel):
     study: Optional[PatchStudy] = None
-    areas: Optional[PatchLeafDict] = None
+    areas: Optional[Dict[str, PatchArea]] = None
     outputs: Optional[PatchOutputs] = None
 
 
