@@ -15,8 +15,9 @@ import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import PanelCardView from './PanelCardView';
-import { NodeClickConfig, LinkClickConfig, TestStudyConfig } from './types';
+import { NodeClickConfig, LinkClickConfig, TestStudyConfig, AreasConfig } from './types';
 import CreateAreaModal from './CreateAreaModal';
+import NodeView from './NodeView';
 
 const buttonStyle = (theme: Theme, color: string) => ({
   width: '120px',
@@ -87,8 +88,8 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     graph: {
       '& svg[name="svg-container-graph-id"]': {
-        backgroundColor: '#ffffff',
-        backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'%3E%3Cg fill-rule=\'evenodd\'%3E%3Cg fill=\'%23002a5e\' fill-opacity=\'0.4\'%3E%3Cpath opacity=\'.5\' d=\'M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z\'/%3E%3Cpath d=\'M6 5V0H5v5H0v1h5v94h1V6h94V5H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+        backgroundColor: '#fefefe',
+        backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'8\' height=\'8\' viewBox=\'0 0 8 8\'%3E%3Cg fill=\'%23dedede\' fill-opacity=\'0.4\'%3E%3Cpath fill-rule=\'evenodd\' d=\'M0 0h4v4H0V0zm4 4h4v4H4V4z\'/%3E%3C/g%3E%3C/svg%3E")',
       },
     },
   }));
@@ -130,46 +131,16 @@ const fakeData = {
   ],
 };
 
-/*
-
-& psp x1,& psp x2,& psp y,& psp-hub,& psp-in,& psp-out,aa,bb,cc,dd,east,ee,ff,gg,hh,hydro node 1,hydro node-2,hydro node-3,ii,jj,kk,ll,mm,nn,north,oo,pp,qq,rr,solar gen node,south,ss,tt,thermal,uu,vv,west,wind power 1,wind power-2,wind power-3,ww,wind 6000,wind 9000,xx,yy,z MapView.tsx:143
-aa {
-
-ee {
-  "x": 265,
-  "y": 199,
-  "color_r": 230,
-  "color_g": 108,
-  "color_b": 44,
-  "layers": "0 8"
-}
-xx {
-  "x": 397,
-  "y": -275,
-  "color_r": 230,
-  "color_g": 108,
-  "color_b": 44,
-  "layers": "0 8"
-}
-yy {
-  "x": 319,
-  "y": -351,
-  "color_r": 230,
-  "color_g": 108,
-  "color_b": 44,
-  "layers": "0 8"
-}
-*/
-
 const MapView = (props: Props) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { studyId } = props;
   const [studyConfig, setStudyConfig] = useState<TestStudyConfig>();
   const [areasList, setAreasList] = useState<string>();
-  const [areas, setAreas] = useState<string>();
+  const [areas, setAreas] = useState<AreasConfig>();
   const [loaded, setLoaded] = useState(false);
   const [nodeClick, setNodeClick] = useState<NodeClickConfig>();
+  const [nodeData, setNodeData] = useState<Array<NodeClickConfig>>();
   const [linkClick, setLinkClick] = useState<LinkClickConfig>();
   const { enqueueSnackbar } = useSnackbar();
   const [openModal, setOpenModal] = useState<boolean>(false);
@@ -303,7 +274,26 @@ const MapView = (props: Props) => {
     init();
   }, [studyId, areasList, enqueueSnackbar, t]);
 
-  console.log(areas);
+  useEffect(() => {
+    if (areas) {
+      const nodeEnd = [];
+      for (let i = 0; i < Object.keys(areas).length; i += 1) {
+        nodeEnd.push({
+          id: Object.keys(areas)[i],
+          x: Object.keys(areas).map((item) => areas[item].ui.x)[i],
+          y: Object.keys(areas).map((item) => areas[item].ui.y)[i],
+          color: `rgb(${Object.keys(areas).map((item) => areas[item].ui.color_r)[i]}, ${Object.keys(areas).map((item) => areas[item].ui.color_g)[i]}, ${Object.keys(areas).map((item) => areas[item].ui.color_b)[i]})`,
+        });
+      }
+      setNodeData(nodeEnd);
+
+      if (studyConfig) {
+        console.log(Object.keys(studyConfig.areas).map((item) => studyConfig.areas[item].links));
+      }
+    }
+  }, [areas, studyConfig]);
+
+  console.log(nodeData);
 
   return (
     <Paper className={classes.root}>
@@ -325,9 +315,10 @@ const MapView = (props: Props) => {
                   d3: {
                   },
                   node: {
-                    color: '#d3d3d3',
-                    size: 600,
+                    size: { width: 1000, height: 400 },
+                    renderLabel: false,
                     fontSize: 15,
+                    viewGenerator: (node) => <NodeView node={node} />,
                   },
                   link: {
                     color: '#d3d3d3',
