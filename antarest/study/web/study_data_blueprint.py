@@ -11,12 +11,11 @@ from antarest.core.requests import (
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.link_management import LinkInfoDTO
-from antarest.study.model import PatchCluster
+from antarest.study.model import PatchCluster, PatchArea
 from antarest.study.service import StudyService
 from antarest.study.business.area_management import (
     AreaType,
     AreaCreationDTO,
-    AreaPatchUpdateDTO,
     AreaInfoDTO,
 )
 
@@ -75,23 +74,23 @@ def create_study_data_routes(
         areas_list = study_service.get_all_links(uuid, params)
         return areas_list
 
-    @bp.post(
-        "/studies/{uuid}/areas",
-        tags=[APITag.study_data],
-        summary="Create a new area/cluster",
-        response_model=AreaInfoDTO,
-    )
-    def create_area(
-        uuid: str,
-        area_creation_info: AreaCreationDTO,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(
-            f"Creating new area for study {uuid}",
-            extra={"user": current_user.id},
-        )
-        params = RequestParameters(user=current_user)
-        return study_service.create_area(uuid, area_creation_info, params)
+    # @bp.post(
+    #     "/studies/{uuid}/areas",
+    #     tags=[APITag.study_data],
+    #     summary="Create a new area/cluster",
+    #     response_model=AreaInfoDTO,
+    # )
+    # def create_area(
+    #     uuid: str,
+    #     area_creation_info: AreaCreationDTO,
+    #     current_user: JWTUser = Depends(auth.get_current_user),
+    # ) -> Any:
+    #     logger.info(
+    #         f"Creating new area for study {uuid}",
+    #         extra={"user": current_user.id},
+    #     )
+    #     params = RequestParameters(user=current_user)
+    #     return study_service.create_area(uuid, area_creation_info, params)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}",
@@ -102,7 +101,7 @@ def create_study_data_routes(
     def update_area_info(
         uuid: str,
         area_id: str,
-        area_patch_dto: Union[AreaPatchUpdateDTO, Dict[str, PatchCluster]],
+        area_patch_dto: Union[PatchArea, Dict[str, PatchCluster]],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -110,7 +109,7 @@ def create_study_data_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        if isinstance(area_patch_dto, AreaPatchUpdateDTO):
+        if isinstance(area_patch_dto, PatchArea):
             return study_service.update_area(
                 uuid, area_id, area_patch_dto, params
             )
@@ -122,23 +121,23 @@ def create_study_data_routes(
                 params,
             )
 
-    @bp.delete(
-        "/studies/{uuid}/areas/{area_id}",
-        tags=[APITag.study_data],
-        summary="Delete an area",
-        response_model=str,
-    )
-    def delete_area(
-        uuid: str,
-        area_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(
-            f"Removing area {area_id} in study {uuid}",
-            extra={"user": current_user.id},
-        )
-        params = RequestParameters(user=current_user)
-        study_service.delete_area(uuid, area_id, params)
-        return area_id
+    # @bp.delete(
+    #     "/studies/{uuid}/areas/{area_id}",
+    #     tags=[APITag.study_data],
+    #     summary="Delete an area",
+    #     response_model=str,
+    # )
+    # def delete_area(
+    #     uuid: str,
+    #     area_id: str,
+    #     current_user: JWTUser = Depends(auth.get_current_user),
+    # ) -> Any:
+    #     logger.info(
+    #         f"Removing area {area_id} in study {uuid}",
+    #         extra={"user": current_user.id},
+    #     )
+    #     params = RequestParameters(user=current_user)
+    #     study_service.delete_area(uuid, area_id, params)
+    #     return area_id
 
     return bp

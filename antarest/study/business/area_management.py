@@ -30,13 +30,6 @@ class AreaCreationDTO(BaseModel):
     set: Optional[List[str]]
 
 
-class AreaPatchUpdateDTO(BaseModel):
-    type: AreaType
-    name: Optional[str]
-    metadata: Optional[PatchArea]
-    set: Optional[List[str]]
-
-
 class ClusterInfoDTO(PatchCluster):
     id: str
     name: str
@@ -105,33 +98,31 @@ class AreaManager:
     ) -> AreaInfoDTO:
         raise NotImplementedError()
 
-    def update_area(
+    def update_area_metadata(
         self,
         study: RawStudy,
         area_id: str,
-        area_creation_info: AreaPatchUpdateDTO,
+        area_metadata: PatchArea,
     ) -> AreaInfoDTO:
-        if area_creation_info.metadata:
-            file_study = self.storage_service.get_storage(study).get_raw(study)
-            area_or_set = file_study.config.areas.get(
-                area_id
-            ) or file_study.config.sets.get(area_id)
-            patch = self.patch_service.get(study)
-            patch.areas = patch.areas or {}
-            patch.areas[area_id] = area_creation_info.metadata
-            self.patch_service.save(study, patch)
-            return AreaInfoDTO(
-                id=area_id,
-                name=area_or_set.name if area_or_set is not None else area_id,
-                type=AreaType.AREA
-                if isinstance(area_or_set, Area)
-                else AreaType.DISTRICT,
-                metadata=patch.areas.get(area_id),
-                set=area_or_set.get_areas(list(file_study.config.areas.keys()))
-                if isinstance(area_or_set, Set)
-                else [],
-            )
-        raise NotImplementedError()
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        area_or_set = file_study.config.areas.get(
+            area_id
+        ) or file_study.config.sets.get(area_id)
+        patch = self.patch_service.get(study)
+        patch.areas = patch.areas or {}
+        patch.areas[area_id] = area_metadata
+        self.patch_service.save(study, patch)
+        return AreaInfoDTO(
+            id=area_id,
+            name=area_or_set.name if area_or_set is not None else area_id,
+            type=AreaType.AREA
+            if isinstance(area_or_set, Area)
+            else AreaType.DISTRICT,
+            metadata=patch.areas.get(area_id),
+            set=area_or_set.get_areas(list(file_study.config.areas.keys()))
+            if isinstance(area_or_set, Set)
+            else [],
+        )
 
     def update_thermal_cluster_metadata(
         self,

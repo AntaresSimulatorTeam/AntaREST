@@ -43,10 +43,8 @@ from antarest.study.business.area_management import (
     AreaType,
     AreaInfoDTO,
     AreaCreationDTO,
-    AreaPatchUpdateDTO,
 )
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
-from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -64,6 +62,7 @@ from antarest.study.model import (
     PatchStudy,
     MatrixIndex,
     PatchCluster,
+    PatchArea,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -1337,13 +1336,13 @@ class StudyService:
         self,
         uuid: str,
         area_id: str,
-        area_patch_dto: AreaPatchUpdateDTO,
+        area_patch_dto: PatchArea,
         params: RequestParameters,
     ) -> AreaInfoDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.areas.update_area(study, area_id, area_patch_dto)
+        return self.areas.update_area_metadata(study, area_id, area_patch_dto)
 
     def update_thermal_cluster_metadata(
         self,

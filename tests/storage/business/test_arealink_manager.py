@@ -6,7 +6,6 @@ from antarest.study.model import RawStudy, Patch, PatchArea
 from antarest.study.business.area_management import (
     AreaManager,
     AreaType,
-    AreaPatchUpdateDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -236,12 +235,8 @@ def test_update_area():
 
     area_manager.patch_service.patch.side_effect = lambda x, y: y
 
-    new_area_info = area_manager.update_area(
-        study,
-        "a1",
-        AreaPatchUpdateDTO(
-            type=AreaType.AREA, metadata=PatchArea(country="fr")
-        ),
+    new_area_info = area_manager.update_area_metadata(
+        study, "a1", PatchArea(country="fr")
     )
     assert new_area_info.id == "a1"
     assert new_area_info.metadata == {"country": "fr"}
