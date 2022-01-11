@@ -18,6 +18,7 @@ import Data from './Pages/Data';
 import { addWsListeners } from '../services/utils/globalWsListeners';
 import DownloadsManagement from './Pages/DownloadsManagement';
 import MaintenanceWrapper from './MaintenanceWrapper';
+import MessageInfoModal from './MaintenanceWrapper/MessageInfoModal';
 
 const reduxStore = createStore();
 addWsListeners(reduxStore);
@@ -32,6 +33,7 @@ const App: React.FC<{}> = () => (
           <div style={{ height: '100vh' }}>
             <MaintenanceWrapper>
               <LoginWrapper>
+                <MessageInfoModal />
                 <MenuBar />
                 <div style={{ position: 'absolute', bottom: 0, width: '100%', overflow: 'hidden', top: TOOLBAR_HEIGHT }}>
                   <Switch>

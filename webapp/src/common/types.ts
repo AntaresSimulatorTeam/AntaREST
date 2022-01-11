@@ -256,7 +256,9 @@ export enum WSEvent {
   DOWNLOAD_CREATED = 'DOWNLOAD_CREATED',
   DOWNLOAD_READY = 'DOWNLOAD_READY',
   DOWNLOAD_EXPIRED = 'DOWNLOAD_EXPIRED',
-  DOWNLOAD_FAILED = 'DOWNLOAD_FAILED'
+  DOWNLOAD_FAILED = 'DOWNLOAD_FAILED',
+  MESSAGE_INFO = 'MESSAGE_INFO',
+  MAINTENANCE_MODE = 'MAINTENANCE_MODE',
 }
 
 export interface WSMessage {
@@ -368,17 +370,6 @@ export interface FileStudyTreeConfigDTO {
   store_new_set: boolean;
   archive_input_series: Array<string>;
   enr_modelling: string;
-}
-
-export enum MaintenanceMode {
-  NORMAL = 'normal_mode',
-  MAINTENANCE_MODE = 'maintenance_mode',
-  MESSAGE_MODE = 'message_mode',
-}
-
-export interface MaintenanceDTO {
-  mode: MaintenanceMode;
-  message?: string;
 }
 
 export default {};

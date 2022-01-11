@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { PropsWithChildren, useState, useEffect } from 'react';
-import Particles from 'react-particles-js';
+import Particles from 'react-tsparticles';
+import { IOptions, RecursivePartial } from 'tsparticles';
 import { useTranslation } from 'react-i18next';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { createStyles, makeStyles, Theme, Typography, TextField, Button } from '@material-ui/core';
@@ -10,9 +11,8 @@ import debug from 'debug';
 import { AppState } from '../reducers';
 import { loginUser, logoutAction } from '../../ducks/auth';
 import { login as loginRequest, needAuth, refresh } from '../../services/api/auth';
-import particlesConf from './particles.json';
+import particleOptions from './particle';
 import logo from './antarestlogo.png';
-import './particles.css';
 import GlobalPageLoadingError from '../../components/ui/GlobalPageLoadingError';
 import AppLoader from '../../components/ui/loaders/AppLoader';
 import { updateRefreshInterceptor } from '../../services/api/client';
@@ -149,7 +149,9 @@ const LoginWrapper = (props: PropsWithChildren<PropTypes>) => {
       <div className={classes.sidebar}>
         <div style={{ height: '100%', position: 'relative' }}>
           <Particles
-            params={particlesConf}
+            id="tsparticles"
+            style={{ position: 'relative', height: '100%', width: '40%' }}
+            options={particleOptions as RecursivePartial<IOptions>}
           />
           <div style={{ zIndex: 50, position: 'absolute', top: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
             <img style={{ backgroundColor: '#fff' }} height="140px" src={logo} alt="logo" />

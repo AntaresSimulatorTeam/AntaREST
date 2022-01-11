@@ -7,14 +7,11 @@ from sqlalchemy.orm import relationship  # type: ignore
 
 
 class MaintenanceMode(str, Enum):
-    NORMAL_MODE = "normal_mode"
-    MAINTENANCE_MODE = "maintenance_mode"
+    NORMAL_MODE = "NORMAL"
+    MAINTENANCE_MODE = "MAINTENANCE"
 
     @staticmethod
-    def from_str(element):
-        if element == "normal_mode":
-            return MaintenanceMode.NORMAL_MODE
-        elif element == "maintenance_mode":
-            return MaintenanceMode.MAINTENANCE_MODE
-        else:
-            raise NotImplementedError
+    def to_str(element: bool) -> str:
+        if element:
+            return MaintenanceMode.MAINTENANCE_MODE.value
+        return MaintenanceMode.NORMAL_MODE.value

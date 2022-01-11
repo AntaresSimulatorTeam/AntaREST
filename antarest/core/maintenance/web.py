@@ -1,11 +1,11 @@
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.maintenance.model import MaintenanceDTO
+from antarest.core.maintenance.model import MaintenanceMode
 from antarest.core.maintenance.service import MaintenanceService
 from antarest.core.requests import RequestParameters
 from antarest.login.auth import Auth
@@ -31,16 +31,31 @@ def create_maintenance_api(
     @bp.get("/core/maintenance")
     def get_maintenance_status(
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> MaintenanceDTO:
+    ) -> bool:
         request_params = RequestParameters(user=current_user)
         return service.get_maintenance_status(request_params)
 
     @bp.post("/core/maintenance")
     def set_maintenance_status(
-        maintenance: MaintenanceDTO,
+        maintenance: bool,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         request_params = RequestParameters(user=current_user)
         return service.set_maintenance_status(maintenance, request_params)
+
+    @bp.get("/core/maintenance/message")
+    def get_message_info(
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> str:
+        request_params = RequestParameters(user=current_user)
+        return service.get_message_info(request_params)
+
+    @bp.post("/core/maintenance/message")
+    def set_message_info(
+        message: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        request_params = RequestParameters(user=current_user)
+        return service.set_message_info(message, request_params)
 
     return bp

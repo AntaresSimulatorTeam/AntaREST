@@ -38,5 +38,5 @@ class ConfigData(Base):  # type: ignore
 
 # APP MAIN CONFIG KEYS
 class ConfigDataAppKeys(str, Enum):
-    MAINTENANCE_MODE = "maintenance_mode"
-    MESSAGE_INFO = "message_info"
+    MAINTENANCE_MODE = "MAINTENANCE_MODE"
+    MESSAGE_INFO = "MESSAGE_INFO"

@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Action } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import { AppState } from '../App/reducers';
-import { MaintenanceDTO, MaintenanceMode } from '../common/types';
 
 const logError = debug('antares:global:error');
 
@@ -13,12 +12,14 @@ const logError = debug('antares:global:error');
 
 export interface GlobalState {
   onCloseListeners: {[id: string]: (event: Event) => void};
-  maintenanceMode: MaintenanceDTO;
+  maintenanceMode: boolean;
+  messageInfo: string;
 }
 
 const initialState: GlobalState = {
   onCloseListeners: {},
-  maintenanceMode: { mode: MaintenanceMode.NORMAL },
+  maintenanceMode: false,
+  messageInfo: '',
 };
 
 /** ******************************************* */
@@ -71,16 +72,26 @@ export const removeOnCloseListener = (id: string): RemoveOnCloseListenerAction =
 
 export interface SetMaintenanceModeAction extends Action {
   type: 'GLOBAL/SET_MAINTENANCE_MODE';
-  payload: MaintenanceDTO;
+  payload: boolean;
 }
 
-export const setMaintenanceMode = (data: MaintenanceDTO): SetMaintenanceModeAction => ({
+export const setMaintenanceMode = (data: boolean): SetMaintenanceModeAction => ({
   type: 'GLOBAL/SET_MAINTENANCE_MODE',
   payload: data,
 });
 
+export interface SetMessageInfoAction extends Action {
+  type: 'GLOBAL/SET_MESSAGE_INFO';
+  payload: string;
+}
+
+export const setMessageInfo = (data: string): SetMessageInfoAction => ({
+  type: 'GLOBAL/SET_MESSAGE_INFO',
+  payload: data,
+});
+
 type GlobalAction = AddOnCloseListenerAction
-  | RemoveOnCloseListenerAction | SetMaintenanceModeAction;
+  | RemoveOnCloseListenerAction | SetMaintenanceModeAction | SetMessageInfoAction;
 
 /** ******************************************* */
 /* Selectors / Misc                             */
@@ -117,6 +128,12 @@ export default (state = initialState, action: GlobalAction): GlobalState => {
       return {
         ...state,
         maintenanceMode: action.payload,
+      };
+    }
+    case 'GLOBAL/SET_MESSAGE_INFO': {
+      return {
+        ...state,
+        messageInfo: action.payload,
       };
     }
     default:

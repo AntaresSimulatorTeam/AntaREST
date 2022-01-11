@@ -1,8 +1,8 @@
 import React from 'react';
+import { IOptions, RecursivePartial } from 'tsparticles';
+import Particles from 'react-tsparticles';
 import { useTheme } from '@material-ui/core';
-import Particles from 'react-particles-js';
-import particlesConf from './particles.json';
-import './particles.css';
+import particleOptions from './particles';
 
 const AppLoader = () => {
   const theme = useTheme();
@@ -11,7 +11,8 @@ const AppLoader = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
         <div style={{ height: '50%', width: '50%' }}>
           <Particles
-            params={particlesConf}
+            id="tsparticles"
+            options={particleOptions as RecursivePartial<IOptions>}
           />
         </div>
       </div>

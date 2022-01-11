@@ -1,7 +1,8 @@
 import moment from 'moment';
 import { useSnackbar, OptionsObject } from 'notistack';
-import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType, VariantTreeDTO, VariantTree, GenericInfo, MaintenanceDTO, MaintenanceMode } from '../../common/types';
-import { getMaintenanceMode } from '../api/maintenance';
+import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType, VariantTreeDTO, VariantTree, GenericInfo } from '../../common/types';
+import { getMaintenanceMode, getMessageInfo } from '../api/maintenance';
+import { getConfig } from '../config';
 
 export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDTO): StudyMetadata => ({
   id: sid,
@@ -117,16 +118,25 @@ export const convertVersions = (versions: Array<string>): Array<GenericInfo> => 
     name: displayVersionName(version),
   }));
 
-export const getMaintenanceStatus = async (): Promise<MaintenanceDTO> => {
+export const getMaintenanceStatus = async (): Promise<boolean> => {
+  const { maintenanceMode } = getConfig();
   try {
     const tmpMaintenance = await getMaintenanceMode();
-    console.log('---------- YES MAINTENANCE: ', tmpMaintenance);
     return tmpMaintenance;
   } catch (e) {
-    console.log('---------- ERROR MAINTENANCE');
     console.log(e);
   }
-  return { mode: MaintenanceMode.NORMAL };
+  return maintenanceMode;
+};
+
+export const getInitMessageInfo = async (): Promise<string> => {
+  try {
+    const tmpMessage = await getMessageInfo();
+    return tmpMessage;
+  } catch (e) {
+    console.log(e);
+  }
+  return '';
 };
 
 export default {};

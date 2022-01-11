@@ -1,14 +1,16 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { PropsWithChildren, useState, useEffect } from 'react';
+import React, { PropsWithChildren, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createStyles, makeStyles, Theme } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, Typography } from '@material-ui/core';
 import { ConnectedProps, connect } from 'react-redux';
 import debug from 'debug';
+import WarningIcon from '@material-ui/icons/Warning';
 import { AppState } from '../reducers';
-import { MaintenanceMode } from '../../common/types';
-import { setMaintenanceMode } from '../../ducks/global';
 import { isUserAdmin } from '../../services/utils';
 import { getMaintenanceMode } from '../../services/api/maintenance';
+import { getConfig } from '../../services/config';
+import { setMaintenanceMode } from '../../ducks/global';
+import SmokeEffect from './SmokeEffect';
 
 const logError = debug('antares:maintenancewrapper:error');
 
@@ -18,7 +20,38 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       height: '100%',
       width: '100%',
-      backgroundColor: 'black',
+      flexFlow: 'column nowrap',
+      justifyContent: 'center',
+      alignItems: 'center',
+      background: `linear-gradient(${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
+    },
+    message: {
+      display: 'flex',
+      flexFlow: 'row nowrap',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 999,
+    },
+    icon: {
+      color: theme.palette.secondary.main,
+      width: '200px',
+      height: '200px',
+      animation: '$myEffect 500ms linear 0s infinite alternate',
+      marginRight: theme.spacing(4),
+    },
+    '@keyframes myEffect': {
+      '0%': {
+        transform: 'scale(1.0)',
+      },
+      '100%': {
+        transform: 'scale(1.1)',
+      },
+    },
+    text: {
+      fontSize: '4em',
+      color: 'white',
+      fontWeight: 'bold',
+      //animation: '$myEffect 2s linear 0s infinite alternate',
     },
   }));
 
@@ -38,24 +71,31 @@ type PropTypes = PropsFromRedux;
 const MaintenanceWrapper = (props: PropsWithChildren<PropTypes>) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { children } = props;
-  const { user, maintenance, setMaintenance } = props;
+  const { children, user, maintenance, setMaintenance } = props;
 
   useEffect(() => {
     const init = async () => {
+      const { maintenanceMode } = getConfig();
       try {
         const tmpMaintenance = await getMaintenanceMode();
         setMaintenance(tmpMaintenance);
       } catch (e) {
         logError(e);
+        setMaintenance(maintenanceMode);
       }
     };
     init();
   }, []);
 
-  if (maintenance.mode === MaintenanceMode.MAINTENANCE_MODE && (user !== undefined && !isUserAdmin(user))) {
+  if (maintenance && (user !== undefined && !isUserAdmin(user))) {
     return (
-      <div className={classes.root} />
+      <div className={classes.root}>
+        <SmokeEffect />
+        <div className={classes.message}>
+          <WarningIcon className={classes.icon} />
+          <Typography className={classes.text}>Oups ! App under maintenance.</Typography>
+        </div>
+      </div>
     );
   }
 
