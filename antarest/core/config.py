@@ -343,6 +343,9 @@ class Config:
             tasks=TaskConfig.from_dict(data["tasks"])
             if "tasks" in data
             else TaskConfig(),
+            server=ServerConfig.from_dict(data["server"])
+            if "server" in data
+            else ServerConfig(),
         )
 
     @staticmethod
