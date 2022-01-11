@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Dict, Union, cast
 
 from fastapi import APIRouter, Depends
 
@@ -11,6 +11,7 @@ from antarest.core.requests import (
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.link_management import LinkInfoDTO
+from antarest.study.model import PatchCluster
 from antarest.study.service import StudyService
 from antarest.study.business.area_management import (
     AreaType,
@@ -101,7 +102,7 @@ def create_study_data_routes(
     def update_area_info(
         uuid: str,
         area_id: str,
-        area_patch_dto: AreaPatchUpdateDTO,
+        area_patch_dto: Union[AreaPatchUpdateDTO, Dict[str, PatchCluster]],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -109,7 +110,17 @@ def create_study_data_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.update_area(uuid, area_id, area_patch_dto, params)
+        if isinstance(area_patch_dto, AreaPatchUpdateDTO):
+            return study_service.update_area(
+                uuid, area_id, area_patch_dto, params
+            )
+        else:
+            return study_service.update_thermal_cluster_metadata(
+                uuid,
+                area_id,
+                area_patch_dto,
+                params,
+            )
 
     @bp.delete(
         "/studies/{uuid}/areas/{area_id}",

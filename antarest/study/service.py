@@ -63,6 +63,7 @@ from antarest.study.model import (
     NEW_DEFAULT_STUDY_VERSION,
     PatchStudy,
     MatrixIndex,
+    PatchCluster,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -1343,6 +1344,20 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         return self.areas.update_area(study, area_id, area_patch_dto)
+
+    def update_thermal_cluster_metadata(
+        self,
+        uuid: str,
+        area_id: str,
+        clusters_metadata: Dict[str, PatchCluster],
+        params: RequestParameters,
+    ) -> AreaInfoDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.areas.update_thermal_cluster_metadata(
+            study, area_id, clusters_metadata
+        )
 
     def delete_area(
         self, uuid: str, area_id: str, params: RequestParameters

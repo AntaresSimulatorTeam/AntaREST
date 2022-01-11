@@ -25,6 +25,7 @@ PATCH_CONTENT = """
       "country": "FR"
     }
   },
+  "thermal_clusters": null,
   "outputs": {
     "reference": "20210588-eco-1532"
     }

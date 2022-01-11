@@ -130,6 +130,16 @@ class PatchArea(BaseModel):
     country: Optional[str] = None
 
 
+class PatchCluster(BaseModel):
+    type: Optional[str] = None
+    code_oi: Optional[str] = None
+
+    class Config:
+        @classmethod
+        def alias_generator(cls, string: str) -> str:
+            return "-".join(word for word in string.split("_"))
+
+
 class PatchOutputs(BaseModel):
     reference: Optional[str] = None
 
@@ -137,6 +147,7 @@ class PatchOutputs(BaseModel):
 class Patch(BaseModel):
     study: Optional[PatchStudy] = None
     areas: Optional[Dict[str, PatchArea]] = None
+    thermal_clusters: Optional[Dict[str, PatchCluster]] = None
     outputs: Optional[PatchOutputs] = None
 
 

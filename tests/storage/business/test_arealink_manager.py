@@ -93,6 +93,7 @@ def test_get_all_area():
             "type": AreaType.AREA,
             "metadata": {"country": "fr"},
             "set": None,
+            "thermals": [],
             "id": "a1",
         },
         {
@@ -100,6 +101,7 @@ def test_get_all_area():
             "type": AreaType.AREA,
             "metadata": {"country": None},
             "set": None,
+            "thermals": [],
             "id": "a2",
         },
         {
@@ -107,6 +109,7 @@ def test_get_all_area():
             "type": AreaType.AREA,
             "metadata": {"country": None},
             "set": None,
+            "thermals": [],
             "id": "a3",
         },
     ]
@@ -119,6 +122,7 @@ def test_get_all_area():
             "type": AreaType.DISTRICT,
             "metadata": {"country": None},
             "set": ["a1"],
+            "thermals": None,
             "id": "s1",
         }
     ]
@@ -131,6 +135,7 @@ def test_get_all_area():
             "type": AreaType.AREA,
             "metadata": {"country": "fr"},
             "set": None,
+            "thermals": [],
             "id": "a1",
         },
         {
@@ -138,6 +143,7 @@ def test_get_all_area():
             "type": AreaType.AREA,
             "metadata": {"country": None},
             "set": None,
+            "thermals": [],
             "id": "a2",
         },
         {
@@ -145,6 +151,7 @@ def test_get_all_area():
             "type": AreaType.AREA,
             "metadata": {"country": None},
             "set": None,
+            "thermals": [],
             "id": "a3",
         },
         {
@@ -152,6 +159,7 @@ def test_get_all_area():
             "type": AreaType.DISTRICT,
             "metadata": {"country": None},
             "set": ["a1"],
+            "thermals": None,
             "id": "s1",
         },
     ]
