@@ -2,7 +2,6 @@
 .github
 venv
 tests
-scripts
 examples
 webapp/node_modules
 
