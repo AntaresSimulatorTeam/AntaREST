@@ -1,4 +1,4 @@
-export interface NodeClickConfig {
+export interface NodeProperties {
     id: string;
     x: number;
     y: number;
@@ -24,7 +24,7 @@ export interface AreasNameSynthesis {
     [index: string]: AreasSynthesis;
 }
 
-export interface TestStudyConfig {
+export interface StudyProperties {
     archiveInputSeries: Array<string>;
     areas: AreasNameSynthesis;
     bindings: Array<string>;
@@ -39,7 +39,7 @@ export interface TestStudyConfig {
     version: number;
 }
 
-export interface LinkClickConfig {
+export interface LinkProperties {
     source: string;
     target: string;
 }

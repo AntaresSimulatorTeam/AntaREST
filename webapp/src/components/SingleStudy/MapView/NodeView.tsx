@@ -4,7 +4,7 @@ import {
   createStyles,
   Theme,
 } from '@material-ui/core';
-import { NodeClickConfig } from './types';
+import { NodeProperties } from './types';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -16,17 +16,21 @@ const useStyles = makeStyles((theme: Theme) =>
       alignItems: 'center',
     },
     node: {
-      backgroundColor: 'rgb(139,139,139)',
       opacity: '.8',
-      minWidth: '10px',
+      minWidth: '20px',
       color: 'white',
+      textAlign: 'center',
       padding: theme.spacing(0.5),
-      borderRadius: '20px',
+      borderRadius: '30px',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      height: '20px',
     },
   }));
 
 interface PropType {
-    node: NodeClickConfig;
+    node: NodeProperties;
 }
 
 const NodeView = (props: PropType) => {
@@ -35,7 +39,7 @@ const NodeView = (props: PropType) => {
 
   return (
     <div className={classes.root}>
-      <div className={classes.node}>
+      <div className={classes.node} style={{ backgroundColor: node.color }}>
         {node.id}
       </div>
     </div>

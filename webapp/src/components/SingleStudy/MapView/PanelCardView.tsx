@@ -11,7 +11,7 @@ import {
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import CloseIcon from '@material-ui/icons/Close';
-import { NodeClickConfig, LinkClickConfig } from './types';
+import { NodeProperties, LinkProperties } from './types';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -64,8 +64,8 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropType {
     name: string;
-    node?: NodeClickConfig;
-    link?: LinkClickConfig;
+    node?: NodeProperties;
+    link?: LinkProperties;
     onClose: () => void;
     onDelete: (id: string, target?: string) => void;
 }

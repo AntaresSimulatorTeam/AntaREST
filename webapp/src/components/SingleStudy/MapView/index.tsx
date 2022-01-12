@@ -15,7 +15,7 @@ import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import PanelCardView from './PanelCardView';
-import { NodeClickConfig, LinkClickConfig, TestStudyConfig, AreasConfig } from './types';
+import { NodeProperties, LinkProperties, StudyProperties, AreasConfig } from './types';
 import CreateAreaModal from './CreateAreaModal';
 import NodeView from './NodeView';
 
@@ -131,18 +131,31 @@ const fakeData = {
   ],
 };
 
+const FONT_SIZE = 15;
+
+const calculateSize = (text: string): number => {
+  const textSize = text.length;
+  if (textSize < 5) {
+    return FONT_SIZE * textSize * 12;
+  }
+  if (textSize <= 10) {
+    return FONT_SIZE * textSize * 7.5;
+  }
+  return FONT_SIZE * textSize * 6.5;
+};
+
 const MapView = (props: Props) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { studyId } = props;
-  const [studyConfig, setStudyConfig] = useState<TestStudyConfig>();
-  const [areasList, setAreasList] = useState<string>();
+  const [studyConfig, setStudyConfig] = useState<StudyProperties>();
+  const [areasList, setAreasList] = useState<Array<string>>();
   const [areas, setAreas] = useState<AreasConfig>();
   const [loaded, setLoaded] = useState(false);
-  const [nodeClick, setNodeClick] = useState<NodeClickConfig>();
-  const [nodeData, setNodeData] = useState<Array<NodeClickConfig>>();
-  const [linkData, setLinkData] = useState<Array<LinkClickConfig>>();
-  const [linkClick, setLinkClick] = useState<LinkClickConfig>();
+  const [nodeClick, setNodeClick] = useState<NodeProperties>();
+  const [nodeData, setNodeData] = useState<Array<NodeProperties>>();
+  const [linkData, setLinkData] = useState<Array<LinkProperties>>();
+  const [linkClick, setLinkClick] = useState<LinkProperties>();
   const { enqueueSnackbar } = useSnackbar();
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [createLinkMode, setCreateLinkMode] = useState<boolean>(false);
@@ -242,7 +255,7 @@ const MapView = (props: Props) => {
     const init = async () => {
       try {
         const data = await getSynthesis(studyId);
-        setStudyConfig(data as TestStudyConfig);
+        setStudyConfig(data as StudyProperties);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
       } finally {
@@ -255,7 +268,7 @@ const MapView = (props: Props) => {
   useEffect(() => {
     if (loaded) {
       if (studyConfig) {
-        setAreasList(Object.keys(studyConfig.areas).join(','));
+        setAreasList(Object.keys(studyConfig.areas));
       }
     }
   }, [loaded, studyConfig, enqueueSnackbar, t]);
@@ -264,8 +277,14 @@ const MapView = (props: Props) => {
     const init = async () => {
       try {
         if (areasList) {
-          const data = await getAreaPositions(studyId, areasList);
-          setAreas(data);
+          const data = await getAreaPositions(studyId, areasList.join(','));
+          if (areasList.length === 1) {
+            setAreas({
+              [areasList[0]]: data,
+            });
+          } else {
+            setAreas(data);
+          }
         }
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
@@ -276,30 +295,40 @@ const MapView = (props: Props) => {
 
   useEffect(() => {
     if (areas) {
-      const nodeEnd = [];
-      for (let i = 0; i < Object.keys(areas).length; i += 1) {
-        nodeEnd.push({
-          id: Object.keys(areas)[i],
-          x: Object.keys(areas).map((item) => areas[item].ui.x)[i],
-          y: Object.keys(areas).map((item) => areas[item].ui.y)[i],
-          color: `rgb(${Object.keys(areas).map((item) => areas[item].ui.color_r)[i]}, ${Object.keys(areas).map((item) => areas[item].ui.color_g)[i]}, ${Object.keys(areas).map((item) => areas[item].ui.color_b)[i]})`,
-        });
+      const tempNodeData = Object.keys(areas).map((areaId) => ({
+        id: areaId,
+        x: areas[areaId].ui.x,
+        y: areas[areaId].ui.y,
+        color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
+        size: { width: calculateSize(areaId), height: 250 },
+      }));
+
+      if (tempNodeData.length > 0) {
+        const enclosingRect = tempNodeData.reduce((acc, currentNode) => ({
+          xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
+          xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
+          ymax: acc.ymax > currentNode.y ? acc.ymax : currentNode.y,
+          ymin: acc.ymin > currentNode.y ? acc.xmin : currentNode.y,
+        }), { xmax: tempNodeData[0].x, xmin: tempNodeData[0].x, ymax: tempNodeData[0].y, ymin: tempNodeData[0].y });
+        const rectCenter = { x: (enclosingRect.xmax - enclosingRect.xmin) / 2, y: (enclosingRect.ymax - enclosingRect.ymin) / 2 };
+        const positionOffset = { x: enclosingRect.xmin < 0 ? enclosingRect.xmin : 0, y: enclosingRect.ymin < 0 ? enclosingRect.ymin : 0 };
+        setNodeData(
+          tempNodeData.map((area) => ({
+            ...area,
+            x: area.x - positionOffset.x + rectCenter.x,
+            y: area.y - positionOffset.y + rectCenter.y,
+          })),
+        );
+      } else {
+        setNodeData(tempNodeData);
       }
-      setNodeData(nodeEnd);
+
       if (studyConfig) {
-        const linkEnd = [];
-        for (let i = 0; i < Object.keys(areas).length; i += 1) {
-          const tab = Object.keys(studyConfig.areas).map((item) => Object.keys(studyConfig.areas[item].links));
-          if (tab.length > 0) {
-            for (let n = 0; n < tab[i].length; n += 1) {
-              linkEnd.push({
-                source: Object.keys(areas)[i],
-                target: tab[i][n],
-              });
-            }
-          }
-        }
-        setLinkData(linkEnd);
+        setLinkData(Object.keys(studyConfig.areas).reduce((links, currentAreaId) =>
+          links.concat(Object.keys(studyConfig.areas[currentAreaId].links).map((linkId) => ({
+            source: currentAreaId,
+            target: linkId,
+          }))), [] as Array<LinkProperties>));
       }
     }
   }, [areas, studyConfig]);
@@ -324,13 +353,11 @@ const MapView = (props: Props) => {
                     height,
                     width,
                     staticGraphWithDragAndDrop: true,
-                    initialZoom: 1.5,
                     d3: {
                     },
                     node: {
-                      size: { width: 1000, height: 400 },
                       renderLabel: false,
-                      fontSize: 15,
+                      fontSize: FONT_SIZE,
                       viewGenerator: (node) => <NodeView node={node} />,
                     },
                     link: {
