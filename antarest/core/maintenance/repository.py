@@ -28,7 +28,6 @@ class MaintenanceRepository(ConfigDataRepository):
             owner=owner,
             key=ConfigDataAppKeys.MAINTENANCE_MODE.value,
         )
-        print("----------- MAINTENANCE MODE: ", config_data.value)
         if config_data is not None:
             return config_data.value
         return None
@@ -39,6 +38,5 @@ class MaintenanceRepository(ConfigDataRepository):
             key=ConfigDataAppKeys.MESSAGE_INFO.value,
         )
         if config_data is not None:
-            print("----------- MESSAGE INFO: ", config_data.value)
             return config_data.value
         return None

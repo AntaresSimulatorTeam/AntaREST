@@ -36,6 +36,8 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      zIndex: 999,
+      backgroundColor: theme.palette.grey[200],
     },
     loginFormContainer: {
       width: '70%',
@@ -53,6 +55,13 @@ const useStyles = makeStyles((theme: Theme) =>
       color: theme.palette.error.main,
       marginBottom: -theme.spacing(4),
       fontSize: '0.9rem',
+    },
+    particles: {
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      overflow: 'hidden',
     },
   }));
 
@@ -98,7 +107,7 @@ const LoginWrapper = (props: PropsWithChildren<PropTypes>) => {
         login(res);
       } catch (e) {
         setStatus('default');
-        setLoginError(e.data?.message || t('main:loginError'));
+        setLoginError((e as any).data?.message || t('main:loginError'));
       } finally {
         reset({ username: data.username });
       }
@@ -150,13 +159,12 @@ const LoginWrapper = (props: PropsWithChildren<PropTypes>) => {
         <div style={{ height: '100%', position: 'relative' }}>
           <Particles
             id="tsparticles"
-            style={{ position: 'relative', height: '100%', width: '40%' }}
+            className={classes.particles}
             options={particleOptions as RecursivePartial<IOptions>}
           />
           <div style={{ zIndex: 50, position: 'absolute', top: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
             <img style={{ backgroundColor: '#fff' }} height="140px" src={logo} alt="logo" />
           </div>
-
         </div>
       </div>
       <div className={classes.main}>

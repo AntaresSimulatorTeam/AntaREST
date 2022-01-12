@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { createStyles, makeStyles, Theme, TextField, Switch, Typography } from '@material-ui/core';
 import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
@@ -11,6 +11,7 @@ import ConfirmationModal from '../../ui/ConfirmationModal';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { updateMaintenanceMode, updateMessageInfo } from '../../../services/api/maintenance';
 import { setMaintenanceMode, setMessageInfo } from '../../../ducks/global';
+import { isStringEmpty } from '../../../services/utils';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -21,9 +22,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'flex-start',
     alignItems: 'center',
     color: theme.palette.primary.main,
-    // margin: theme.spacing(4),
     padding: theme.spacing(3, 1),
-    // backgroundColor: 'red',
   },
   main: {
     width: '600px',
@@ -33,7 +32,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
     borderRadius: theme.shape.borderRadius,
     border: `2px solid ${theme.palette.primary.main}`,
-    // backgroundColor: 'green',
     padding: theme.spacing(3),
   },
   container: {
@@ -44,7 +42,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
     padding: 0,
     marginBottom: theme.spacing(3),
-    // backgroundColor: 'blue',
   },
   message: {
     width: '100%',
@@ -128,7 +125,7 @@ const Maintenance = (props: PropTypes) => {
   const onMessageSave = async () => {
     try {
       if (currentMessage !== messageInfo) {
-        await updateMessageInfo(currentMessage);
+        await updateMessageInfo(isStringEmpty(currentMessage) ? '' : currentMessage.trim());
         updateMessage(currentMessage);
         enqueueSnackbar(t('settings:onUpdateMessageInfo'), { variant: 'success' });
       }
@@ -137,11 +134,6 @@ const Maintenance = (props: PropTypes) => {
     }
     setOpenConfirmationModal(false);
   };
-
-  useEffect(() => {
-    console.log('MAINTENANCE MODE: ', maintenanceMode);
-    //setCurrentMessage()
-  }, [maintenanceMode]);
 
   return (
     <div className={classes.root}>

@@ -15,7 +15,7 @@ from antarest.core.maintenance.model import (
     MaintenanceMode,
 )
 from antarest.core.maintenance.repository import MaintenanceRepository
-from antarest.core.model import PermissionInfo
+from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import (
     RequestParameters,
     MustBeAuthenticatedError,
@@ -59,46 +59,29 @@ class MaintenanceService:
         try:
             data_json = self.cache.get(cache_id)
             if data_json is not None and json_key in data_json.keys():
-                print(
-                    f"----- {json_key} FOUND IN CACHE : ", data_json[json_key]
-                )
                 return data_json[json_key]
-            print(f"----- {json_key} NOT FOUND IN CACHE : ", data_json)
         except Exception as e:
             logger.error(cache_get_error, exc_info=e)
-            print(f"----- {json_key} NOT FOUND IN CACHE")
 
         # Else get from database
         data = default_value
         try:
-            data = db_call(request_params.user.id)
-            print(f"----- {json_key} FOUND IN DATABASE: ", data)
+            data = db_call(0)
         except Exception as e:
             logger.error(database_get_error, exc_info=e)
-            print(f"----- {json_key} NOT FOUND IN DATABASE")
 
         if not data:
             data = default_value
             if raise_db_not_found:
-                print(f"----- {json_key} IS NONE")
                 raise HTTPException(status_code=400, detail=database_not_found)
             else:
-                print(f"----- {json_key} IS NONE")
                 logger.error(database_not_found)
 
         # Update cache
         try:
             self.cache.put(cache_id, {json_key: data})
-            print(
-                f"----- {cache_id} PUT IN CACHE WITH VALUE: (",
-                json_key,
-                ": ",
-                data,
-                ")",
-            )
         except Exception as e:
             logger.error(cache_set_error, exc_info=e)
-            print(f"----- {cache_id} NOT PUT IN CACHE")
         return data
 
     def _set_maintenance_data(
@@ -117,7 +100,7 @@ class MaintenanceService:
 
         # Update database
         try:
-            db_call(request_params.user.id, data)  # owner ?
+            db_call(0, data)
         except Exception as e:
             logger.error(database_save_error, exc_info=e)
             raise HTTPException(status_code=400, detail=database_save_error)
@@ -149,9 +132,7 @@ class MaintenanceService:
             Event(
                 type=EventType.MAINTENANCE_MODE,
                 payload=data,
-                permissions=PermissionInfo(
-                    owner=request_params.user.impersonator
-                ),
+                permissions=PermissionInfo(public_mode=PublicMode.READ),
             )
         )
 
@@ -179,8 +160,10 @@ class MaintenanceService:
         data: str,
         request_params: RequestParameters,
     ) -> None:
+        message = "" if data.replace("\t", "").replace(" ", "") == "" else data
+        message = message.strip()
         self._set_maintenance_data(
-            data=data,
+            data=message,
             cache_id=ConfigDataAppKeys.MESSAGE_INFO.value,
             db_call=lambda x, y: self.repo.save_message_info(x, y),
             json_cache_key="message",
@@ -191,7 +174,7 @@ class MaintenanceService:
         self.event_bus.push(
             Event(
                 type=EventType.MESSAGE_INFO,
-                payload=data,
+                payload=message,
                 permissions=PermissionInfo(
                     owner=request_params.user.impersonator
                 ),

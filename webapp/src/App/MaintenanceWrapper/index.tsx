@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { createStyles, makeStyles, Theme, Typography } from '@material-ui/core';
 import { ConnectedProps, connect } from 'react-redux';
 import debug from 'debug';
-import WarningIcon from '@material-ui/icons/Warning';
+import ErrorIcon from '@material-ui/icons/Error';
 import { AppState } from '../reducers';
 import { isUserAdmin } from '../../services/utils';
 import { getMaintenanceMode } from '../../services/api/maintenance';
 import { getConfig } from '../../services/config';
 import { setMaintenanceMode } from '../../ducks/global';
-import SmokeEffect from './SmokeEffect';
+import MessageInfoModal from './MessageInfoModal';
+import Stars from './Stars';
 
 const logError = debug('antares:maintenancewrapper:error');
 
@@ -23,7 +24,7 @@ const useStyles = makeStyles((theme: Theme) =>
       flexFlow: 'column nowrap',
       justifyContent: 'center',
       alignItems: 'center',
-      background: `linear-gradient(${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
+      backgroundColor: theme.palette.primary.main,
     },
     message: {
       display: 'flex',
@@ -33,25 +34,24 @@ const useStyles = makeStyles((theme: Theme) =>
       zIndex: 999,
     },
     icon: {
-      color: theme.palette.secondary.main,
-      width: '200px',
-      height: '200px',
-      animation: '$myEffect 500ms linear 0s infinite alternate',
-      marginRight: theme.spacing(4),
+      color: 'white',
+      width: '160px',
+      height: '160px',
+      animation: '$myEffect 2s linear 0s infinite alternate',
+      marginRight: theme.spacing(5),
     },
     '@keyframes myEffect': {
       '0%': {
         transform: 'scale(1.0)',
       },
       '100%': {
-        transform: 'scale(1.1)',
+        transform: 'scale(1.05)',
       },
     },
     text: {
-      fontSize: '4em',
+      fontSize: '3.5em',
       color: 'white',
       fontWeight: 'bold',
-      //animation: '$myEffect 2s linear 0s infinite alternate',
     },
   }));
 
@@ -90,16 +90,25 @@ const MaintenanceWrapper = (props: PropsWithChildren<PropTypes>) => {
   if (maintenance && (user !== undefined && !isUserAdmin(user))) {
     return (
       <div className={classes.root}>
-        <SmokeEffect />
+        <Stars />
         <div className={classes.message}>
-          <WarningIcon className={classes.icon} />
-          <Typography className={classes.text}>Oups ! App under maintenance.</Typography>
+          <ErrorIcon className={classes.icon} />
+          <Typography className={classes.text}>
+            {t('main:appUnderMaintenance')}
+            <br />
+            {t('main:comeBackLater')}
+          </Typography>
         </div>
+        <MessageInfoModal />
       </div>
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+    </>
+  );
 };
 
 export default connector(MaintenanceWrapper);

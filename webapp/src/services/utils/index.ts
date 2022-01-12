@@ -139,4 +139,6 @@ export const getInitMessageInfo = async (): Promise<string> => {
   return '';
 };
 
+export const isStringEmpty = (data: string): boolean => data.replace(/\s/g, '') === '';
+
 export default {};

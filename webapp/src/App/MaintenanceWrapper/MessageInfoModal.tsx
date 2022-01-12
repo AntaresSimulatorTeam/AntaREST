@@ -1,11 +1,17 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useEffect, useState } from 'react';
 import { createStyles, makeStyles, Theme, Button, Typography, Modal, Fade, Paper } from '@material-ui/core';
+import { connect, ConnectedProps } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import Backdrop from '@material-ui/core/Backdrop';
 import CancelIcon from '@material-ui/icons/Cancel';
-import { connect, ConnectedProps } from 'react-redux';
+import { useSnackbar } from 'notistack';
+import { AxiosError } from 'axios';
 import { AppState } from '../reducers';
-import { isUserAdmin } from '../../services/utils';
+import { isStringEmpty, isUserAdmin } from '../../services/utils';
+import { getMessageInfo } from '../../services/api/maintenance';
+import { setMessageInfo } from '../../ducks/global';
+import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -16,9 +22,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'center',
     alignItems: 'center',
     color: theme.palette.primary.main,
-    // margin: theme.spacing(4),
     padding: theme.spacing(3, 1),
-    // backgroundColor: 'red',
   },
   main: {
     position: 'relative',
@@ -30,7 +34,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'center',
     borderRadius: theme.shape.borderRadius,
     border: `2px solid ${theme.palette.primary.main}`,
-    // backgroundColor: 'green',
     padding: theme.spacing(3),
     outline: 0,
   },
@@ -71,23 +74,39 @@ const mapState = (state: AppState) => ({
   messageInfo: state.global.messageInfo,
 });
 
-const connector = connect(mapState);
+const mapDispatch = ({
+  setMessage: setMessageInfo,
+});
+
+const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
 const MessageInfoModal = (props: PropTypes) => {
   const classes = useStyles();
-  const { user, messageInfo } = props;
-  const [open, setOpen] = useState(true);
+  const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
+  const { user, messageInfo, setMessage } = props;
+  const [open, setOpen] = useState(false);
 
   const handleClose = (): void => {
-    console.log('Close Message info modal');
     setOpen(false);
   };
 
   useEffect(() => {
+    const init = async () => {
+      try {
+        const tmpMessage = await getMessageInfo();
+        setMessage(isStringEmpty(tmpMessage) ? '' : tmpMessage);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('main:onGetMessageInfoError'), e as AxiosError);
+      }
+    };
+    init();
+  }, [enqueueSnackbar, setMessage, t, user]);
+
+  useEffect(() => {
     if (messageInfo !== undefined && messageInfo !== '' && user !== undefined && !isUserAdmin(user)) setOpen(true);
-    else setOpen(false);
   }, [messageInfo, user]);
 
   return (
