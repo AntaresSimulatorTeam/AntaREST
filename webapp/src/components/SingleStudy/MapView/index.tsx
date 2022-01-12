@@ -141,6 +141,7 @@ const MapView = (props: Props) => {
   const [loaded, setLoaded] = useState(false);
   const [nodeClick, setNodeClick] = useState<NodeClickConfig>();
   const [nodeData, setNodeData] = useState<Array<NodeClickConfig>>();
+  const [linkData, setLinkData] = useState<Array<LinkClickConfig>>();
   const [linkClick, setLinkClick] = useState<LinkClickConfig>();
   const { enqueueSnackbar } = useSnackbar();
   const [openModal, setOpenModal] = useState<boolean>(false);
@@ -241,7 +242,6 @@ const MapView = (props: Props) => {
     const init = async () => {
       try {
         const data = await getSynthesis(studyId);
-        console.log(data);
         setStudyConfig(data as TestStudyConfig);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
@@ -286,14 +286,23 @@ const MapView = (props: Props) => {
         });
       }
       setNodeData(nodeEnd);
-
       if (studyConfig) {
-        console.log(Object.keys(studyConfig.areas).map((item) => studyConfig.areas[item].links));
+        const linkEnd = [];
+        for (let i = 0; i < Object.keys(areas).length; i += 1) {
+          const tab = Object.keys(studyConfig.areas).map((item) => Object.keys(studyConfig.areas[item].links));
+          if (tab.length > 0) {
+            for (let n = 0; n < tab[i].length; n += 1) {
+              linkEnd.push({
+                source: Object.keys(areas)[i],
+                target: tab[i][n],
+              });
+            }
+          }
+        }
+        setLinkData(linkEnd);
       }
     }
   }, [areas, studyConfig]);
-
-  console.log(nodeData);
 
   return (
     <Paper className={classes.root}>
@@ -301,36 +310,41 @@ const MapView = (props: Props) => {
         <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
       </div>
       <div className={`${classes.autosizer} ${classes.graph}`}>
-        <AutoSizer>
-          {
-            ({ height, width }) => (
-              <Graph
-                id="graph-id" // id is mandatory
-                data={fakeData}
-                config={{
-                  height,
-                  width,
-                  staticGraphWithDragAndDrop: true,
-                  initialZoom: 1.5,
-                  d3: {
-                  },
-                  node: {
-                    size: { width: 1000, height: 400 },
-                    renderLabel: false,
-                    fontSize: 15,
-                    viewGenerator: (node) => <NodeView node={node} />,
-                  },
-                  link: {
-                    color: '#d3d3d3',
-                    strokeWidth: 2,
-                  },
-                }}
-                onClickNode={onClickNode}
-                onClickLink={onClickLink}
-              />
-            )
-          }
-        </AutoSizer>
+        {nodeData && linkData && (
+          <AutoSizer>
+            {
+              ({ height, width }) => (
+                <Graph
+                  id="graph-id" // id is mandatory
+                  data={{
+                    nodes: nodeData,
+                    links: linkData,
+                  }}
+                  config={{
+                    height,
+                    width,
+                    staticGraphWithDragAndDrop: true,
+                    initialZoom: 1.5,
+                    d3: {
+                    },
+                    node: {
+                      size: { width: 1000, height: 400 },
+                      renderLabel: false,
+                      fontSize: 15,
+                      viewGenerator: (node) => <NodeView node={node} />,
+                    },
+                    link: {
+                      color: '#d3d3d3',
+                      strokeWidth: 2,
+                    },
+                  }}
+                  onClickNode={onClickNode}
+                  onClickLink={onClickLink}
+                />
+              )
+            }
+          </AutoSizer>
+        )}
 
         <Button className={classes.button} onClick={() => setOpenModal(true)}>
           {t('singlestudy:newArea')}
