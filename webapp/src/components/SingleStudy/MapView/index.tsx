@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
-import { NodeProperties, LinkProperties, StudyProperties, AreasConfig } from './types';
+import { NodeProperties, LinkProperties, StudyProperties, AreasConfig, SingleAreaConfig } from './types';
 import CreateAreaModal from './CreateAreaModal';
 import NodeView from './NodeView';
 import PropertiesView from './PropertiesView';
@@ -124,14 +124,12 @@ const MapView = (props: Props) => {
   const [t] = useTranslation();
   const { studyId } = props;
   const [studyConfig, setStudyConfig] = useState<StudyProperties>();
-  const [areasList, setAreasList] = useState<Array<string>>();
   const [areas, setAreas] = useState<AreasConfig>();
   const [loaded, setLoaded] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [nodeClick, setNodeClick] = useState<NodeProperties>();
   const [linkClick, setLinkClick] = useState<LinkProperties>();
-  const [nodeData, setNodeData] = useState<Array<NodeProperties>>();
-  const [linkData, setLinkData] = useState<Array<LinkProperties>>();
+  const [nodeData, setNodeData] = useState<Array<NodeProperties>>([]);
+  const [linkData, setLinkData] = useState<Array<LinkProperties>>([]);
   const { enqueueSnackbar } = useSnackbar();
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [createLinkMode, setCreateLinkMode] = useState<boolean>(false);
@@ -235,6 +233,14 @@ const MapView = (props: Props) => {
       try {
         const data = await getSynthesis(studyId);
         setStudyConfig(data as StudyProperties);
+        const areaData = await getAreaPositions(studyId, Object.keys(data.areas).join(','));
+        if (Object.keys(data.areas).length === 1) {
+          setAreas({
+            [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig,
+          });
+        } else {
+          setAreas(areaData as AreasConfig);
+        }
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
       } finally {
@@ -243,34 +249,6 @@ const MapView = (props: Props) => {
     };
     init();
   }, [enqueueSnackbar, studyId, t]);
-
-  useEffect(() => {
-    if (loaded) {
-      if (studyConfig) {
-        setAreasList(Object.keys(studyConfig.areas));
-      }
-    }
-  }, [loaded, studyConfig, enqueueSnackbar, t]);
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        if (areasList) {
-          const data = await getAreaPositions(studyId, areasList.join(','));
-          if (areasList.length === 1) {
-            setAreas({
-              [areasList[0]]: data,
-            });
-          } else {
-            setAreas(data);
-          }
-        }
-      } catch (e) {
-        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
-      }
-    };
-    init();
-  }, [studyId, areasList, enqueueSnackbar, t]);
 
   useEffect(() => {
     if (areas) {
@@ -290,7 +268,6 @@ const MapView = (props: Props) => {
             source: currentAreaId,
             target: linkId,
           }))), [] as Array<LinkProperties>));
-        setLoading(true);
       }
     }
   }, [areas, studyConfig]);
@@ -312,11 +289,13 @@ const MapView = (props: Props) => {
         )}
 
         <div className={`${classes.autosizer} ${classes.graph}`}>
-          {nodeData && linkData && loading ? (
+          {loaded ? (
             <AutoSizer>
               {
                 ({ height, width }) => {
-                  if (nodeData.length > 0) {
+                  /* let nodeDataToRender = nodeData;
+                  let initialZoom = 1;
+                   if (nodeData.length > 0) {
                     const enclosingRect = nodeData.reduce((acc, currentNode) => ({
                       xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
                       xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
@@ -325,45 +304,54 @@ const MapView = (props: Props) => {
                     }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y });
                     const rectVector = { x: -enclosingRect.xmin, y: -enclosingRect.ymax };
                     const centerVector = { x: (width / 2) - ((enclosingRect.xmax - enclosingRect.xmin) / 2), y: (height / 2) - ((enclosingRect.ymax - enclosingRect.ymin) / 2) };
-
-                    return (
-                      <Graph
-                        id="graph-id" // id is mandatory
-                        data={{
-                          nodes: nodeData.map((area) => ({
-                            ...area,
-                            x: area.x + rectVector.x + centerVector.x,
-                            y: -(area.y + rectVector.y - centerVector.y),
-                          })),
-                          links: linkData,
-                        }}
-                        config={{
-                          height,
-                          width,
-                          staticGraphWithDragAndDrop: true,
-                          d3: {
-                            disableLinkForce: true,
-                          },
-                          node: {
-                            renderLabel: false,
-                            fontSize: FONT_SIZE,
-                            viewGenerator: (node) => <NodeView node={node} />,
-                          },
-                          link: {
-                            color: '#d3d3d3',
-                            strokeWidth: 2,
-                          },
-                        }}
-                        onClickNode={onClickNode}
-                        onClickLink={onClickLink}
-                      />
-                    );
-                  }
-                  return (<></>);
+                    const scaleY = height / (enclosingRect.ymax - enclosingRect.ymin);
+                    const scaleX = width / (enclosingRect.xmax - enclosingRect.xmin);
+                    initialZoom = scaleX > scaleY ? scaleY : scaleX;
+                    nodeDataToRender = nodeData.map((area) => ({
+                      ...area,
+                      x: area.x + (rectVector.x - centerVector.x) * scaleX,
+                      y: -(area.y + (rectVector.y - centerVector.y) * scaleY),
+                    }));
+                    console.log(width / (enclosingRect.xmax - enclosingRect.xmin));
+                    console.log(height / (enclosingRect.ymax - enclosingRect.ymin));
+                    console.log(enclosingRect.xmax - enclosingRect.xmin);
+                    console.log((enclosingRect.ymax - enclosingRect.ymin));
+                  } */
+                  console.log(width);
+                  console.log(height);
+                  return (
+                    <Graph
+                      id="graph-id" // id is mandatory
+                      data={{
+                        nodes: nodeData,
+                        links: linkData,
+                      }}
+                      config={{
+                        height,
+                        width,
+                        initialZoom: 0.5,
+                        staticGraphWithDragAndDrop: true,
+                        d3: {
+                          disableLinkForce: true,
+                        },
+                        node: {
+                          renderLabel: false,
+                          fontSize: FONT_SIZE,
+                          viewGenerator: (node) => <NodeView node={node} />,
+                        },
+                        link: {
+                          color: '#d3d3d3',
+                          strokeWidth: 2,
+                        },
+                      }}
+                      onClickNode={onClickNode}
+                      onClickLink={onClickLink}
+                    />
+                  );
                 }
             }
             </AutoSizer>
-          ) : (!loading && <SimpleLoader />)
+          ) : <SimpleLoader />
           }
 
           <Button className={classes.button} onClick={() => setOpenModal(true)}>

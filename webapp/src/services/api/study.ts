@@ -4,6 +4,7 @@ import { LaunchJob, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMod
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 import { FileDownloadTask } from './downloads';
+import { AreasConfig, SingleAreaConfig, StudyProperties } from '../../components/SingleStudy/MapView/types';
 
 const getStudiesRaw = async (): Promise<{[sid: string]: StudyMetadataDTO}> => {
   const res = await client.get('/v1/studies?summary=true');
@@ -33,12 +34,12 @@ export const getComments = async (sid: string): Promise<any> => {
   return res.data;
 };
 
-export const getSynthesis = async (uuid: string): Promise<any> => {
+export const getSynthesis = async (uuid: string): Promise<StudyProperties> => {
   const res = await client.get(`/v1/studies/${uuid}/synthesis`);
   return res.data;
 };
 
-export const getAreaPositions = async (uuid: string, path: string, depth = -1): Promise<any> => {
+export const getAreaPositions = async (uuid: string, path: string, depth = -1): Promise<AreasConfig | SingleAreaConfig> => {
   const res = await client.get(`v1/studies/${uuid}/raw?path=/input/areas/${encodeURIComponent(path)}/ui&depth=${depth}`);
   return res.data;
 };
