@@ -43,13 +43,3 @@ class PatchService:
             else study.config.study_path
         ) / "patch.json"
         patch_path.write_text(patch_content)
-
-    def patch(
-        self,
-        study: Union[RawStudy, VariantStudy, FileStudy],
-        new_patch_content: JSON,
-    ) -> None:
-        new_patch = Patch.parse_obj(new_patch_content)
-        old_patch = self.get(study)
-        merged_path = old_patch.patch(new_patch)
-        self.save(study, merged_path)

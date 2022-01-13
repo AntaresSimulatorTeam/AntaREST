@@ -435,42 +435,10 @@ def test_area_management(app: FastAPI):
             "metadata": {"country": None},
             "name": "All areas",
             "set": [],
-            "type": "CLUSTER",
+            "thermals": None,
+            "type": "DISTRICT",
         }
     ]
-
-    res_create = client.post(
-        f"/v1/studies/{study_id}/areas",
-        headers={
-            "Authorization": f'Bearer {admin_credentials["access_token"]}'
-        },
-        json={"name": "test", "type": "AREA"},
-    )
-    res_update = client.put(
-        f"/v1/studies/{study_id}/areas/test",
-        headers={
-            "Authorization": f'Bearer {admin_credentials["access_token"]}'
-        },
-        json={"name": "test", "type": "AREA"},
-    )
-    res_delete = client.delete(
-        f"/v1/studies/{study_id}/areas/test",
-        headers={
-            "Authorization": f'Bearer {admin_credentials["access_token"]}'
-        },
-    )
-    assert (
-        res_create.status_code == 500
-        and res_create.json()["exception"] == "NotImplementedError"
-    )
-    assert (
-        res_update.status_code == 500
-        and res_update.json()["exception"] == "NotImplementedError"
-    )
-    assert (
-        res_delete.status_code == 500
-        and res_delete.json()["exception"] == "NotImplementedError"
-    )
 
 
 def test_archive(app: FastAPI, tmp_path: Path):
