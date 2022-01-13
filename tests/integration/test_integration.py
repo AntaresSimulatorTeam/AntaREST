@@ -807,10 +807,11 @@ def test_maintenance(app: FastAPI):
     # Set message info
     message = "Hey"
     res = client.post(
-        f"/v1/core/maintenance/message?message={message}",
+        f"/v1/core/maintenance/message",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
+        json=message,
     )
     assert res.status_code == 200
 

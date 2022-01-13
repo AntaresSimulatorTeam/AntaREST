@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useState } from 'react';
-import { createStyles, makeStyles, Theme, TextField, Switch, Typography } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, Switch, Typography, TextareaAutosize } from '@material-ui/core';
 import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
 import { useSnackbar } from 'notistack';
@@ -125,8 +125,10 @@ const Maintenance = (props: PropTypes) => {
   const onMessageSave = async () => {
     try {
       if (currentMessage !== messageInfo) {
-        await updateMessageInfo(isStringEmpty(currentMessage) ? '' : currentMessage.trim());
-        updateMessage(currentMessage);
+        const newMessage = isStringEmpty(currentMessage) ? '' : currentMessage.trim();
+        await updateMessageInfo(newMessage);
+        updateMessage(newMessage);
+        setCurrentMessage(newMessage);
         enqueueSnackbar(t('settings:onUpdateMessageInfo'), { variant: 'success' });
       }
     } catch (e) {
@@ -157,14 +159,13 @@ const Maintenance = (props: PropTypes) => {
         <div className={classes.container}>
           <div className={classes.message}>
             <Typography className={classes.messageText}>{t('settings:messageMode')}</Typography>
-            <TextField
+            <TextareaAutosize
+              aria-label="message"
+              minRows={5}
               className={classes.textField}
-              variant="outlined"
-              fullWidth
-              label="Message"
-              id="fullWidth"
               value={currentMessage !== undefined ? currentMessage : ''}
               onChange={(event) => setCurrentMessage(event.target.value as string)}
+              placeholder=""
             />
           </div>
           <SaveIcon

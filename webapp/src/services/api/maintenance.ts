@@ -16,7 +16,7 @@ export const getMessageInfo = async (): Promise<string> => {
 };
 
 export const updateMessageInfo = async (data: string): Promise<any> => {
-  const res = await client.post(`/v1/core/maintenance/message?message=${data}`);
+  const res = await client.post('/v1/core/maintenance/message', data);
   return res.data;
 };
 

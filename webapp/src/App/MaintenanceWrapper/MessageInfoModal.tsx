@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useEffect, useState } from 'react';
-import { createStyles, makeStyles, Theme, Button, Typography, Modal, Fade, Paper } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, Button, Modal, Fade, Paper, Typography } from '@material-ui/core';
 import { connect, ConnectedProps } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import Backdrop from '@material-ui/core/Backdrop';
@@ -125,7 +125,7 @@ const MessageInfoModal = (props: PropTypes) => {
       <Fade in={open}>
         <Paper className={classes.main}>
           <div className={classes.content}>
-            <Typography>{messageInfo}</Typography>
+            <Typography variant="body1" style={{ whiteSpace: 'pre-wrap' }}>{messageInfo}</Typography>
           </div>
           <div className={classes.footer}>
             <Button
