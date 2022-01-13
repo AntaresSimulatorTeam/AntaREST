@@ -24,19 +24,19 @@ class MaintenanceRepository(ConfigDataRepository):
         )
 
     def get_maintenance_mode(self, owner: int) -> Optional[str]:
-        config_data: ConfigData = self.get(
+        config_data = self.get(
             owner=owner,
             key=ConfigDataAppKeys.MAINTENANCE_MODE.value,
         )
         if config_data is not None:
-            return config_data.value
+            return str(config_data.value)
         return None
 
     def get_message_info(self, owner: int) -> Optional[str]:
-        config_data: ConfigData = self.get(
+        config_data = self.get(
             owner=owner,
             key=ConfigDataAppKeys.MESSAGE_INFO.value,
         )
         if config_data is not None:
-            return config_data.value
+            return str(config_data.value)
         return None

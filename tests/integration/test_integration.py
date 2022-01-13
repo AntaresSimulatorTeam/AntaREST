@@ -746,3 +746,80 @@ def test_variant_manager(app: FastAPI):
         },
     )
     assert res.status_code == 404
+
+
+def test_maintenance(app: FastAPI):
+    client = TestClient(app, raise_server_exceptions=False)
+
+    # Get admin credentials
+    res = client.post(
+        "/v1/login", json={"username": "admin", "password": "admin"}
+    )
+    admin_credentials = res.json()
+
+    # Create non admin user
+    res = client.post(
+        "/v1/users",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={"name": "user", "password": "user"},
+    )
+    assert res.status_code == 200
+
+    res = client.post(
+        "/v1/login", json={"username": "user", "password": "user"}
+    )
+    non_admin_credentials = res.json()
+
+    # Test maintenance update utils function
+    def set_maintenance(value: bool) -> None:
+        # Set maintenance mode
+        result = client.post(
+            f"/v1/core/maintenance?maintenance={'true' if value else 'false'}",
+            headers={
+                "Authorization": f'Bearer {admin_credentials["access_token"]}'
+            },
+        )
+        assert result.status_code == 200
+
+        result = client.get(
+            "/v1/core/maintenance",
+            headers={
+                "Authorization": f'Bearer {admin_credentials["access_token"]}'
+            },
+        )
+        assert result.status_code == 200
+        assert result.json() == value
+
+    set_maintenance(True)
+    set_maintenance(False)
+
+    # Set maintenance mode when not admin
+    res = client.post(
+        "/v1/core/maintenance?maintenance=true",
+        headers={
+            "Authorization": f'Bearer {non_admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 403
+
+    # Set message info
+    message = "Hey"
+    res = client.post(
+        f"/v1/core/maintenance/message?message={message}",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+
+    # Set message info when not admin
+    res = client.get(
+        "/v1/core/maintenance/message",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    assert res.json() == message

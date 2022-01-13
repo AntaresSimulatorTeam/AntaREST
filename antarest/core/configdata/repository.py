@@ -1,7 +1,5 @@
 from operator import and_
-from typing import List, Optional
-
-from sqlalchemy import exists
+from typing import Optional
 
 from antarest.core.configdata.model import ConfigData
 from antarest.core.utils.fastapi_sqlalchemy import db

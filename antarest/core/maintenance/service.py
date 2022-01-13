@@ -1,10 +1,10 @@
 import logging
-from typing import Any, Optional, Callable
+from typing import Optional, Callable
 
 from fastapi import HTTPException
 
 from antarest.core.config import Config
-from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
+from antarest.core.configdata.model import ConfigDataAppKeys
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import (
     IEventBus,
@@ -41,7 +41,7 @@ class MaintenanceService:
     def _get_maintenance_data(
         self,
         cache_id: str,
-        db_call: Optional[Callable[[int], Optional[str]]],
+        db_call: Callable[[int], Optional[str]],
         json_key: str,
         cache_get_error: str,
         database_get_error: str,
@@ -50,7 +50,7 @@ class MaintenanceService:
         cache_set_error: str,
         default_value: str,
         request_params: RequestParameters,
-    ):
+    ) -> str:
 
         if not request_params.user:
             raise MustBeAuthenticatedError()
@@ -59,14 +59,13 @@ class MaintenanceService:
         try:
             data_json = self.cache.get(cache_id)
             if data_json is not None and json_key in data_json.keys():
-                return data_json[json_key]
+                return str(data_json[json_key])
         except Exception as e:
             logger.error(cache_get_error, exc_info=e)
 
         # Else get from database
-        data = default_value
         try:
-            data = db_call(0)
+            data: Optional[str] = db_call(0)
         except Exception as e:
             logger.error(database_get_error, exc_info=e)
 
@@ -88,7 +87,7 @@ class MaintenanceService:
         self,
         data: str,
         cache_id: str,
-        db_call: Optional[Callable[[int, str], None]],
+        db_call: Callable[[int, str], None],
         json_cache_key: str,
         database_save_error: str,
         cache_save_error: str,
@@ -175,16 +174,12 @@ class MaintenanceService:
             Event(
                 type=EventType.MESSAGE_INFO,
                 payload=message,
-                permissions=PermissionInfo(
-                    owner=request_params.user.impersonator
-                ),
+                permissions=PermissionInfo(public_mode=PublicMode.READ),
             )
         )
 
     # GET MESSAGE INFO
-    def get_message_info(
-        self, request_params: RequestParameters
-    ) -> MaintenanceMode:
+    def get_message_info(self, request_params: RequestParameters) -> str:
         return self._get_maintenance_data(
             cache_id=ConfigDataAppKeys.MESSAGE_INFO.value,
             db_call=lambda x: self.repo.get_message_info(x),
