@@ -17,7 +17,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     node: {
       opacity: '.8',
-      minWidth: '20px',
+      minWidth: '50px',
       color: 'white',
       textAlign: 'center',
       padding: theme.spacing(0.5),

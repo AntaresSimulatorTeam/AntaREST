@@ -14,10 +14,11 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
-import PanelCardView from './PanelCardView';
 import { NodeProperties, LinkProperties, StudyProperties, AreasConfig } from './types';
 import CreateAreaModal from './CreateAreaModal';
 import NodeView from './NodeView';
+import PropertiesView from './PropertiesView';
+import SimpleLoader from '../../ui/loaders/SimpleLoader';
 
 const buttonStyle = (theme: Theme, color: string) => ({
   width: '120px',
@@ -62,7 +63,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     autosizer: {
       display: 'block',
-      width: '100%',
+      width: '80%',
       height: '100%',
       position: 'relative',
     },
@@ -92,6 +93,13 @@ const useStyles = makeStyles((theme: Theme) =>
         backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'8\' height=\'8\' viewBox=\'0 0 8 8\'%3E%3Cg fill=\'%23dedede\' fill-opacity=\'0.4\'%3E%3Cpath fill-rule=\'evenodd\' d=\'M0 0h4v4H0V0zm4 4h4v4H4V4z\'/%3E%3C/g%3E%3C/svg%3E")',
       },
     },
+    graphView: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '100%',
+      height: '100%',
+    },
   }));
 
 interface Props {
@@ -101,6 +109,44 @@ interface Props {
 const fakeData = {
   nodes: [
     {
+      id: 'test',
+      x: 0,
+      y: 0,
+      color: 'rgb(230, 108, 44)',
+    },
+    {
+      id: 'x+',
+      x: 1000,
+      y: 0,
+      color: 'rgb(230, 108, 44)',
+    },
+    {
+      id: 'x-',
+      x: -1000,
+      y: 0,
+      color: 'rgb(230, 108, 44)',
+    },
+    {
+      id: 'y+',
+      x: 0,
+      y: 1000,
+      color: 'rgb(230, 108, 44)',
+    },
+    {
+      id: 'y-',
+      x: 0,
+      y: -1000,
+      color: 'rgb(230, 108, 44)',
+    }],
+  links: [
+    { source: 'test', target: 'x+' },
+    { source: 'test', target: 'x-' },
+    { source: 'test', target: 'y+' },
+    { source: 'test', target: 'y-' },
+  ],
+};
+
+/*     {
       id: 'aa',
       x: 252,
       y: 290,
@@ -123,13 +169,7 @@ const fakeData = {
       x: 265,
       y: 199,
       color: 'rgb(230, 108, 44)',
-    }],
-  links: [
-    { source: 'aa', target: 'bb' },
-    { source: 'aa', target: 'cc' },
-    { source: 'aa', target: 'dd' },
-  ],
-};
+    }, */
 
 const FONT_SIZE = 15;
 
@@ -152,10 +192,11 @@ const MapView = (props: Props) => {
   const [areasList, setAreasList] = useState<Array<string>>();
   const [areas, setAreas] = useState<AreasConfig>();
   const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [nodeClick, setNodeClick] = useState<NodeProperties>();
+  const [linkClick, setLinkClick] = useState<LinkProperties>();
   const [nodeData, setNodeData] = useState<Array<NodeProperties>>();
   const [linkData, setLinkData] = useState<Array<LinkProperties>>();
-  const [linkClick, setLinkClick] = useState<LinkProperties>();
   const { enqueueSnackbar } = useSnackbar();
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [createLinkMode, setCreateLinkMode] = useState<boolean>(false);
@@ -163,8 +204,8 @@ const MapView = (props: Props) => {
   const [secondNode, setSecondNode] = useState<string>();
 
   const onClickNode = (nodeId: string) => {
-    if (!createLinkMode) {
-      const obj = fakeData.nodes.find((o) => o.id === nodeId);
+    if (!createLinkMode && nodeData) {
+      const obj = nodeData.find((o) => o.id === nodeId);
       setNodeClick(obj);
       setLinkClick(undefined);
     } else if (!firstNode) {
@@ -303,25 +344,7 @@ const MapView = (props: Props) => {
         size: { width: calculateSize(areaId), height: 250 },
       }));
 
-      if (tempNodeData.length > 0) {
-        const enclosingRect = tempNodeData.reduce((acc, currentNode) => ({
-          xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
-          xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
-          ymax: acc.ymax > currentNode.y ? acc.ymax : currentNode.y,
-          ymin: acc.ymin > currentNode.y ? acc.xmin : currentNode.y,
-        }), { xmax: tempNodeData[0].x, xmin: tempNodeData[0].x, ymax: tempNodeData[0].y, ymin: tempNodeData[0].y });
-        const rectCenter = { x: (enclosingRect.xmax - enclosingRect.xmin) / 2, y: (enclosingRect.ymax - enclosingRect.ymin) / 2 };
-        const positionOffset = { x: enclosingRect.xmin < 0 ? enclosingRect.xmin : 0, y: enclosingRect.ymin < 0 ? enclosingRect.ymin : 0 };
-        setNodeData(
-          tempNodeData.map((area) => ({
-            ...area,
-            x: area.x - positionOffset.x + rectCenter.x,
-            y: area.y - positionOffset.y + rectCenter.y,
-          })),
-        );
-      } else {
-        setNodeData(tempNodeData);
-      }
+      setNodeData(tempNodeData);
 
       if (studyConfig) {
         setLinkData(Object.keys(studyConfig.areas).reduce((links, currentAreaId) =>
@@ -329,6 +352,7 @@ const MapView = (props: Props) => {
             source: currentAreaId,
             target: linkId,
           }))), [] as Array<LinkProperties>));
+        setLoading(true);
       }
     }
   }, [areas, studyConfig]);
@@ -338,55 +362,79 @@ const MapView = (props: Props) => {
       <div className={classes.header}>
         <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
       </div>
-      <div className={`${classes.autosizer} ${classes.graph}`}>
-        {nodeData && linkData && (
-          <AutoSizer>
-            {
-              ({ height, width }) => (
-                <Graph
-                  id="graph-id" // id is mandatory
-                  data={{
-                    nodes: nodeData,
-                    links: linkData,
-                  }}
-                  config={{
-                    height,
-                    width,
-                    staticGraphWithDragAndDrop: true,
-                    d3: {
-                    },
-                    node: {
-                      renderLabel: false,
-                      fontSize: FONT_SIZE,
-                      viewGenerator: (node) => <NodeView node={node} />,
-                    },
-                    link: {
-                      color: '#d3d3d3',
-                      strokeWidth: 2,
-                    },
-                  }}
-                  onClickNode={onClickNode}
-                  onClickLink={onClickLink}
-                />
-              )
+      <div className={classes.graphView}>
+        {!nodeClick && !linkClick && (
+          <PropertiesView />
+        )}
+        {nodeClick && !linkClick && (
+          <PropertiesView node={nodeClick} onClose={() => setNodeClick(undefined)} onDelete={onDelete} />
+        )}
+        {!nodeClick && linkClick && (
+          <PropertiesView link={linkClick} onClose={() => setLinkClick(undefined)} onDelete={onDelete} />
+        )}
+
+        <div className={`${classes.autosizer} ${classes.graph}`}>
+          {nodeData && linkData && loading ? (
+            <AutoSizer>
+              {
+                ({ height, width }) => {
+                  if (nodeData.length > 0) {
+                    const enclosingRect = nodeData.reduce((acc, currentNode) => ({
+                      xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
+                      xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
+                      ymax: acc.ymax > currentNode.y ? acc.ymax : currentNode.y,
+                      ymin: acc.ymin < currentNode.y ? acc.ymin : currentNode.y,
+                    }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y });
+                    const rectVector = { x: -enclosingRect.xmin, y: -enclosingRect.ymax };
+                    const centerVector = { x: (width / 2) - ((enclosingRect.xmax - enclosingRect.xmin) / 2), y: (height / 2) - ((enclosingRect.ymax - enclosingRect.ymin) / 2) };
+
+                    return (
+                      <Graph
+                        id="graph-id" // id is mandatory
+                        data={{
+                          nodes: nodeData.map((area) => ({
+                            ...area,
+                            x: area.x + rectVector.x + centerVector.x,
+                            y: -(area.y + rectVector.y - centerVector.y),
+                          })),
+                          links: linkData,
+                        }}
+                        config={{
+                          height,
+                          width,
+                          staticGraphWithDragAndDrop: true,
+                          d3: {
+                            disableLinkForce: true,
+                          },
+                          node: {
+                            renderLabel: false,
+                            fontSize: FONT_SIZE,
+                            viewGenerator: (node) => <NodeView node={node} />,
+                          },
+                          link: {
+                            color: '#d3d3d3',
+                            strokeWidth: 2,
+                          },
+                        }}
+                        onClickNode={onClickNode}
+                        onClickLink={onClickLink}
+                      />
+                    );
+                  }
+                  return (<></>);
+                }
             }
-          </AutoSizer>
-        )}
+            </AutoSizer>
+          ) : (!loading && <SimpleLoader />)
+          }
 
-        <Button className={classes.button} onClick={() => setOpenModal(true)}>
-          {t('singlestudy:newArea')}
-        </Button>
-        <Button className={classes.button2} onClick={createLink}>
-          {t('singlestudy:newLink')}
-        </Button>
-
-        {nodeClick && (
-          <PanelCardView name={t('singlestudy:area')} node={nodeClick} onClose={() => setNodeClick(undefined)} onDelete={onDelete} />
-        )}
-
-        {linkClick && (
-          <PanelCardView name={t('singlestudy:link')} link={linkClick} onClose={() => setLinkClick(undefined)} onDelete={onDelete} />
-        )}
+          <Button className={classes.button} onClick={() => setOpenModal(true)}>
+            {t('singlestudy:newArea')}
+          </Button>
+          <Button className={classes.button2} onClick={createLink}>
+            {t('singlestudy:newLink')}
+          </Button>
+        </div>
       </div>
       {openModal && (
         <CreateAreaModal
