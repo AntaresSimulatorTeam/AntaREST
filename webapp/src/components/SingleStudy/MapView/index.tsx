@@ -106,71 +106,6 @@ interface Props {
     studyId: string;
 }
 
-const fakeData = {
-  nodes: [
-    {
-      id: 'test',
-      x: 0,
-      y: 0,
-      color: 'rgb(230, 108, 44)',
-    },
-    {
-      id: 'x+',
-      x: 1000,
-      y: 0,
-      color: 'rgb(230, 108, 44)',
-    },
-    {
-      id: 'x-',
-      x: -1000,
-      y: 0,
-      color: 'rgb(230, 108, 44)',
-    },
-    {
-      id: 'y+',
-      x: 0,
-      y: 1000,
-      color: 'rgb(230, 108, 44)',
-    },
-    {
-      id: 'y-',
-      x: 0,
-      y: -1000,
-      color: 'rgb(230, 108, 44)',
-    }],
-  links: [
-    { source: 'test', target: 'x+' },
-    { source: 'test', target: 'x-' },
-    { source: 'test', target: 'y+' },
-    { source: 'test', target: 'y-' },
-  ],
-};
-
-/*     {
-      id: 'aa',
-      x: 252,
-      y: 290,
-      color: 'rgb(230, 108, 44)',
-    },
-    {
-      id: 'bb',
-      x: 415,
-      y: 290,
-      color: 'rgb(230, 108, 44)',
-    },
-    {
-      id: 'cc',
-      x: 113,
-      y: 199,
-      color: 'rgb(230, 108, 44)',
-    },
-    {
-      id: 'dd',
-      x: 265,
-      y: 199,
-      color: 'rgb(230, 108, 44)',
-    }, */
-
 const FONT_SIZE = 15;
 
 const calculateSize = (text: string): number => {
@@ -240,40 +175,43 @@ const MapView = (props: Props) => {
 
   const onSave = (name: string, posX: number, posY: number, color: string) => {
     setOpenModal(false);
-    fakeData.nodes.push({
-      id: name,
-      x: posX,
-      y: posY,
-      color,
-    });
+    if (nodeData) {
+      nodeData.push({
+        id: name,
+        x: posX,
+        y: posY,
+        color,
+      });
+    }
   };
 
   const onDelete = (id: string, target?: string) => {
-    if (target) {
-      const obj = fakeData.links.find((o) => o.source === id && o.target === target);
+    if (target && linkData) {
+      const obj = linkData.find((o) => o.source === id && o.target === target);
       if (obj) {
-        const i = fakeData.links.indexOf(obj);
+        const i = linkData.indexOf(obj);
         if (i !== -1) {
-          fakeData.links.splice(i, 1);
+          linkData.splice(i, 1);
           setLinkClick(undefined);
         }
       }
-    } else {
-      const obj = fakeData.nodes.find((o) => o.id === id);
-      const links = fakeData.links.filter((o) => o.source === id || o.target === id);
+    }
+    if (nodeData && linkData && !target) {
+      const obj = nodeData.find((o) => o.id === id);
+      const links = linkData.filter((o) => o.source === id || o.target === id);
       if (obj) {
-        const i = fakeData.nodes.indexOf(obj);
+        const i = nodeData.indexOf(obj);
         if (i !== -1) {
-          fakeData.nodes.splice(i, 1);
+          nodeData.splice(i, 1);
           setNodeClick(undefined);
         }
       }
       if (links) {
         // eslint-disable-next-line array-callback-return
         for (let i = 0; i < links.length; i += 1) {
-          const index = fakeData.links.indexOf(links[i]);
+          const index = linkData.indexOf(links[i]);
           if (index !== -1) {
-            fakeData.links.splice(index, 1);
+            linkData.splice(index, 1);
           }
         }
       }
@@ -281,8 +219,8 @@ const MapView = (props: Props) => {
   };
 
   useEffect(() => {
-    if (firstNode && secondNode) {
-      fakeData.links.push({
+    if (firstNode && secondNode && linkData) {
+      linkData.push({
         source: firstNode,
         target: secondNode,
       });
@@ -290,7 +228,7 @@ const MapView = (props: Props) => {
       setFirstNode(undefined);
       setSecondNode(undefined);
     }
-  }, [setCreateLinkMode, firstNode, secondNode]);
+  }, [setCreateLinkMode, firstNode, secondNode, linkData]);
 
   useEffect(() => {
     const init = async () => {
