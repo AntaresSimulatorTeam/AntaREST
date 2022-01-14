@@ -92,7 +92,7 @@ class MaintenanceService:
         except Exception as e:
             cache_save_error = f"Failed to put {cache_id} in cache"
             logger.error(cache_save_error, exc_info=e)
-            raise HTTPException(status_code=400, detail=cache_save_error)
+            raise HTTPException(status_code=500, detail=cache_save_error)
 
     def set_maintenance_status(
         self,
