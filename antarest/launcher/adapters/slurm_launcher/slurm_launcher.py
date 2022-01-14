@@ -80,7 +80,9 @@ class SlurmLauncher(AbstractLauncher):
             else Path(self.slurm_config.local_workspace)
         )
 
-        self.log_tail_manager = LogTailManager(self.local_workspace)
+        self.log_tail_manager = LogTailManager(
+            Path(self.slurm_config.local_workspace)
+        )
         self.launcher_args = self._init_launcher_arguments(
             self.local_workspace
         )
@@ -128,12 +130,7 @@ class SlurmLauncher(AbstractLauncher):
                     / "STUDIES_IN"
                 )
             ),
-            log_dir=str(
-                (
-                    Path(local_workspace or self.slurm_config.local_workspace)
-                    / "LOGS"
-                )
-            ),
+            log_dir=str((Path(self.slurm_config.local_workspace) / "LOGS")),
             finished_dir=str(
                 (
                     Path(local_workspace or self.slurm_config.local_workspace)
