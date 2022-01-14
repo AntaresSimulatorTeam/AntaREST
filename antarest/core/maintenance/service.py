@@ -40,7 +40,7 @@ class MaintenanceService:
     def _get_maintenance_data(
         self,
         cache_id: str,
-        db_call: Callable[[None], Optional[str]],
+        db_call: Callable[[], Optional[str]],
         default_value: str,
     ) -> str:
 
@@ -75,7 +75,7 @@ class MaintenanceService:
         self,
         data: str,
         cache_id: str,
-        db_call: Callable[[int, str], None],
+        db_call: Callable[[str], None],
         request_params: RequestParameters,
     ) -> None:
 
