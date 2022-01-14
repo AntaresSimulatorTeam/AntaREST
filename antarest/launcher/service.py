@@ -143,7 +143,7 @@ class LauncherService:
         return job_uuid
 
     def kill_job(self, job_id: str, params: RequestParameters) -> JobResult:
-
+        logger.info(f"Trying to cancel job {job_id}")
         job_result = self.job_result_repository.get(job_id)
         assert job_result
         study_uuid = job_result.study_id
