@@ -29,11 +29,8 @@ def create_maintenance_api(
     auth = Auth(config)
 
     @bp.get("/core/maintenance")
-    def get_maintenance_status(
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> bool:
-        request_params = RequestParameters(user=current_user)
-        return service.get_maintenance_status(request_params)
+    def get_maintenance_status() -> bool:
+        return service.get_maintenance_status()
 
     @bp.post("/core/maintenance")
     def set_maintenance_status(
@@ -44,11 +41,8 @@ def create_maintenance_api(
         return service.set_maintenance_status(maintenance, request_params)
 
     @bp.get("/core/maintenance/message")
-    def get_message_info(
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> str:
-        request_params = RequestParameters(user=current_user)
-        return service.get_message_info(request_params)
+    def get_message_info() -> str:
+        return service.get_message_info()
 
     @bp.post("/core/maintenance/message")
     def set_message_info(

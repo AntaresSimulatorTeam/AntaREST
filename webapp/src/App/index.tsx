@@ -19,6 +19,7 @@ import { addWsListeners } from '../services/utils/globalWsListeners';
 import DownloadsManagement from './Pages/DownloadsManagement';
 import MaintenanceWrapper from './MaintenanceWrapper';
 import MessageInfoModal from './MaintenanceWrapper/MessageInfoModal';
+import Logout from './Pages/Logout';
 
 const reduxStore = createStore();
 addWsListeners(reduxStore);
@@ -63,6 +64,9 @@ const App: React.FC<{}> = () => (
                     </Route>
                     <Route path="/swagger">
                       <SwaggerDoc />
+                    </Route>
+                    <Route path="/login" key="login">
+                      <Logout />
                     </Route>
                   </Switch>
                 </div>

@@ -17,7 +17,7 @@ from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 
 
-def test_service_without_cache() -> MaintenanceService:
+def test_service_without_cache() -> None:
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
@@ -39,48 +39,41 @@ def test_service_without_cache() -> MaintenanceService:
 
     # Get maintenance status (maintenance mode)
     repo_mock.get_maintenance_mode.return_value = maintenance_mode
-    maintenance_status = service.get_maintenance_status(
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
+    maintenance_status = service.get_maintenance_status()
     cache.put.assert_called_with(
         ConfigDataAppKeys.MAINTENANCE_MODE.value,
-        {"maintenance": maintenance_mode},
+        {"content": maintenance_mode},
     )
     assert maintenance_status
 
     # Get maintenance status (normal mode)
     repo_mock.get_maintenance_mode.return_value = normal_mode
-    maintenance_status = service.get_maintenance_status(
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
+    maintenance_status = service.get_maintenance_status()
     cache.put.assert_called_with(
-        ConfigDataAppKeys.MAINTENANCE_MODE.value, {"maintenance": normal_mode}
+        ConfigDataAppKeys.MAINTENANCE_MODE.value, {"content": normal_mode}
     )
     assert not maintenance_status
 
     # Get maintenance status when status not found in cache and db
     repo_mock.get_maintenance_mode.return_value = None
-    with pytest.raises(HTTPException):
-        service.get_maintenance_status(
-            request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
-        )
+    maintenance_status = service.get_maintenance_status()
+    cache.put.assert_called_with(
+        ConfigDataAppKeys.MAINTENANCE_MODE.value, {"content": normal_mode}
+    )
+    assert not maintenance_status
 
     # Get message info
     ret_message = "Hey"
     repo_mock.get_message_info.return_value = ret_message
-    message_info = service.get_message_info(
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
+    message_info = service.get_message_info()
     cache.put.assert_called_with(
-        ConfigDataAppKeys.MESSAGE_INFO.value, {"message": ret_message}
+        ConfigDataAppKeys.MESSAGE_INFO.value, {"content": ret_message}
     )
     assert message_info == ret_message
 
     # Get message info when status not found in cache and db
     repo_mock.get_message_info.return_value = None
-    message_info = service.get_message_info(
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER)
-    )
+    message_info = service.get_message_info()
     assert message_info == ""
 
     # Set maintenance mode
@@ -89,9 +82,9 @@ def test_service_without_cache() -> MaintenanceService:
     service.set_maintenance_status(
         data=mode, request_params=RequestParameters(user=DEFAULT_ADMIN_USER)
     )
-    repo_mock.save_maintenance_mode.assert_called_with(0, data)
+    repo_mock.save_maintenance_mode.assert_called_with(data)
     cache.put.assert_called_with(
-        ConfigDataAppKeys.MAINTENANCE_MODE.value, {"maintenance": data}
+        ConfigDataAppKeys.MAINTENANCE_MODE.value, {"content": data}
     )
     event_bus.push.assert_called_with(
         Event(
@@ -106,9 +99,9 @@ def test_service_without_cache() -> MaintenanceService:
     service.set_message_info(
         data=data, request_params=RequestParameters(user=DEFAULT_ADMIN_USER)
     )
-    repo_mock.save_message_info.assert_called_with(0, data)
+    repo_mock.save_message_info.assert_called_with(data)
     cache.put.assert_called_with(
-        ConfigDataAppKeys.MESSAGE_INFO.value, {"message": data}
+        ConfigDataAppKeys.MESSAGE_INFO.value, {"content": data}
     )
     event_bus.push.assert_called_with(
         Event(
@@ -131,14 +124,7 @@ def test_service_without_cache() -> MaintenanceService:
         )
 
 
-def test_service_with_cache() -> MaintenanceService:
-    engine = create_engine("sqlite:///:memory:", echo=True)
-    Base.metadata.create_all(engine)
-    DBSessionMiddleware(
-        Mock(),
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
+def test_service_with_cache() -> None:
 
     repo_mock = Mock(spec=MaintenanceRepository)
     cache = Mock()
@@ -152,23 +138,17 @@ def test_service_with_cache() -> MaintenanceService:
     )
 
     # Get maintenance status (maintenance mode)
-    cache.get.return_value = {"maintenance": maintenance_mode}
-    maintenance_status = service.get_maintenance_status(
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
+    cache.get.return_value = {"content": maintenance_mode}
+    maintenance_status = service.get_maintenance_status()
     assert maintenance_status
 
     # Get maintenance status (normal mode)
-    cache.get.return_value = {"maintenance": normal_mode}
-    maintenance_status = service.get_maintenance_status(
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
+    cache.get.return_value = {"content": normal_mode}
+    maintenance_status = service.get_maintenance_status()
     assert not maintenance_status
 
     # Get message info
     ret_message = "Hey"
-    cache.get.return_value = {"message": ret_message}
-    message_info = service.get_message_info(
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
+    cache.get.return_value = {"content": ret_message}
+    message_info = service.get_message_info()
     assert message_info == ret_message

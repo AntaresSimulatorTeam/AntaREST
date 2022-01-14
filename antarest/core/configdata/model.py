@@ -29,7 +29,7 @@ class ConfigData(Base):  # type: ignore
         )
 
     def __repr__(self) -> str:
-        return f"key={self.key}, value={self.value}, , owner={self.owner}"
+        return f"key={self.key}, value={self.value}, owner={self.owner}"
 
     def to_dto(self) -> ConfigDataDTO:
         return ConfigDataDTO(key=self.key, value=self.value)

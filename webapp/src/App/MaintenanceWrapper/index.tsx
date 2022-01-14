@@ -1,9 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { PropsWithChildren, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createStyles, makeStyles, Theme, Typography } from '@material-ui/core';
+import { Button, createStyles, makeStyles, Theme, Typography } from '@material-ui/core';
 import { ConnectedProps, connect } from 'react-redux';
 import debug from 'debug';
+import { useLocation, useHistory } from 'react-router-dom';
 import ErrorIcon from '@material-ui/icons/Error';
 import { AppState } from '../reducers';
 import { isUserAdmin } from '../../services/utils';
@@ -19,11 +20,13 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       display: 'flex',
+      position: 'absolute',
       height: '100%',
       width: '100%',
       flexFlow: 'column nowrap',
       justifyContent: 'center',
       alignItems: 'center',
+      overflow: 'hidden',
       backgroundColor: theme.palette.primary.main,
     },
     message: {
@@ -71,7 +74,13 @@ type PropTypes = PropsFromRedux;
 const MaintenanceWrapper = (props: PropsWithChildren<PropTypes>) => {
   const classes = useStyles();
   const [t] = useTranslation();
+  const location = useLocation();
+  const history = useHistory();
   const { children, user, maintenance, setMaintenance } = props;
+
+  const onClick = () => {
+    history.push('/login');
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -87,10 +96,13 @@ const MaintenanceWrapper = (props: PropsWithChildren<PropTypes>) => {
     init();
   }, []);
 
-  if (maintenance && (user !== undefined && !isUserAdmin(user))) {
+  if (maintenance && ((user === undefined || !isUserAdmin(user)) && location.pathname !== '/login')) {
     return (
       <div className={classes.root}>
         <Stars />
+        <Button variant="text" style={{ color: 'white', position: 'absolute', top: '10px', right: '10px' }} onClick={onClick}>
+          {t('main:connexion')}
+        </Button>
         <div className={classes.message}>
           <ErrorIcon className={classes.icon} />
           <Typography className={classes.text}>
