@@ -7,7 +7,7 @@ import threading
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Optional, Dict
+from typing import Callable, Optional, Dict, Awaitable
 from uuid import UUID, uuid4
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
@@ -70,6 +70,9 @@ class SlurmLauncher(AbstractLauncher):
         self.slurm_config: SlurmConfig = config.launcher.slurm
         self.check_state: bool = True
         self.event_bus = event_bus
+        self.event_bus.add_listener(
+            self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST]
+        )
         self.thread: Optional[threading.Thread] = None
         self.job_id_to_study_id: Dict[str, str] = {}
         self._check_config()
@@ -436,23 +439,33 @@ class SlurmLauncher(AbstractLauncher):
                     return log_path.read_text()
         return None
 
-    def kill_job(self, job_id: str) -> None:
+    def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
+        async def _listen_to_kill_job(event: Event) -> None:
+            if event.type == EventType.STUDY_JOB_CANCEL_REQUEST:
+                self.kill_job(event.payload, dispatch=False)
+
+        return _listen_to_kill_job
+
+    def kill_job(self, job_id: str, dispatch: bool = True) -> None:
         launcher_args = deepcopy(self.launcher_args)
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
                 launcher_args.job_id_to_kill = study.job_id
+                logger.info(
+                    f"Cancelling job {job_id} (dispatched={not dispatch})"
+                )
                 with self.antares_launcher_lock:
                     run_with(
                         launcher_args, self.launcher_params, show_banner=False
                     )
                 return
-        # todo kill job should be sent to other slurm launcher so that is correctly killed
-        logger.warning(
-            "Failed to retrieve job id in antares launcher database"
-        )
-        self.callbacks.update_status(
-            job_id,
-            JobStatus.FAILED,
-            None,
-            None,
-        )
+        if dispatch:
+            self.event_bus.push(
+                Event(type=EventType.STUDY_JOB_CANCEL_REQUEST, payload=job_id)
+            )
+            self.callbacks.update_status(
+                job_id,
+                JobStatus.FAILED,
+                None,
+                None,
+            )
