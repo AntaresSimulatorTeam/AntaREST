@@ -324,7 +324,6 @@ class Config:
 
         """
         return Config(
-            server=ServerConfig.from_dict(data.get("server", {})),
             security=SecurityConfig.from_dict(data["security"]),
             storage=StorageConfig.from_dict(data["storage"]),
             launcher=LauncherConfig.from_dict(data["launcher"]),
