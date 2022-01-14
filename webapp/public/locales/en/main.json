@@ -26,5 +26,9 @@
   "copy": "Copy",
   "data": "Data",
   "websocketstatusmessage": "Websocket connection unavailable. Check your internet connection or try to refresh the page.",
-  "noContent": "No content"
+  "noContent": "No content",
+  "appUnderMaintenance": "App under maintenance.",
+  "comeBackLater": "Please come back later.",
+  "onGetMessageInfoError": "Unable to retrieve message info",
+  "onGetMaintenanceError": "Unable to retrieve maintenance status"
 }

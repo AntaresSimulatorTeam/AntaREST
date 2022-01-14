@@ -23,6 +23,7 @@ from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.filetransfer.main import build_filetransfer_service
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
+from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.persistence import upgrade_db
 from antarest.core.swagger import customize_openapi
 from antarest.core.tasks.main import build_taskjob_manager
@@ -265,6 +266,10 @@ def fastapi_app(
     )
     task_service = build_taskjob_manager(application, config, event_bus)
 
+    maintenance_service = build_maintenance_manager(
+        application, config=config, cache=cache, event_bus=event_bus
+    )
+
     user_service = build_login(application, config, event_bus=event_bus)
 
     matrix_service = build_matrixstore(
@@ -303,7 +308,7 @@ def fastapi_app(
     services["user"] = user_service
     services["cache"] = cache
     services["watcher"] = watcher
-
+    services["maintenance"] = maintenance_service
     customize_openapi(application)
     return application, services
 

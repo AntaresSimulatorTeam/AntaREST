@@ -1,6 +1,8 @@
 import moment from 'moment';
 import { useSnackbar, OptionsObject } from 'notistack';
 import { StudyMetadataDTO, StudyMetadata, JWTGroup, UserInfo, RoleType, VariantTreeDTO, VariantTree, GenericInfo } from '../../common/types';
+import { getMaintenanceMode, getMessageInfo } from '../api/maintenance';
+import { getConfig } from '../config';
 
 export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDTO): StudyMetadata => ({
   id: sid,
@@ -115,5 +117,28 @@ export const convertVersions = (versions: Array<string>): Array<GenericInfo> => 
     id: version,
     name: displayVersionName(version),
   }));
+
+export const getMaintenanceStatus = async (): Promise<boolean> => {
+  const { maintenanceMode } = getConfig();
+  try {
+    const tmpMaintenance = await getMaintenanceMode();
+    return tmpMaintenance;
+  } catch (e) {
+    console.log(e);
+  }
+  return maintenanceMode;
+};
+
+export const getInitMessageInfo = async (): Promise<string> => {
+  try {
+    const tmpMessage = await getMessageInfo();
+    return tmpMessage;
+  } catch (e) {
+    console.log(e);
+  }
+  return '';
+};
+
+export const isStringEmpty = (data: string): boolean => data.replace(/\s/g, '') === '';
 
 export default {};
