@@ -36,8 +36,8 @@ Example of creation of 2 areas and 1 link:
 
 | Action Name           | Arguments              | Description                              |
 |-----------------------|------------------------|------------------------------------------|
-| update_config         | <pre>{<br>target:&nbsp;&lt;INI_TARGET&gt;<br>value:&nbsp;&lt;INI_MODEL&gt;<br>}</pre>              | Update arbitrary config                              |
-| replace_matrix        | <pre>{<br>target:&nbsp;&lt;INPUT_SERIES_MATRIX&gt;<br>value:&nbsp;&lt;MATRIX&gt;<br>}</pre>              | Replace arbitrary matrix                              |
+| update_config         | <pre>{<br>target:&nbsp;&lt;INI_TARGET&gt;<br>data:&nbsp;&lt;INI_MODEL&gt;<br>}</pre>              | Update arbitrary config                              |
+| replace_matrix        | <pre>{<br>target:&nbsp;&lt;INPUT_SERIES_MATRIX&gt;<br>matrix:&nbsp;&lt;MATRIX&gt;<br>}</pre>              | Replace arbitrary matrix                              |
 | create_area           | <pre>{<br>area_name:&nbsp;&lt;STRING&gt;<br>}</pre>              | Create a new area                              |
 | remove_area           | <pre>{<br>id:&nbsp;&lt;AREA_ID&gt;<br>}</pre>              | Remove an existing area                              |
 | create_cluster           | <pre>{<br>area_id:&nbsp;&lt;AREA_ID&gt;<br>cluster_name:&nbsp;&lt;STRING&gt;<br>prepro?:&nbsp;&lt;STRING&gt;<br>modulation?:&nbsp;&lt;MATRIX&gt;<br>parameters?:&nbsp;&lt;INI_MODEL&gt;<br>}</pre>              | Create a new thermal cluster                              |
