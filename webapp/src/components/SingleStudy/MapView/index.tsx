@@ -19,6 +19,7 @@ import CreateAreaModal from './CreateAreaModal';
 import NodeView from './NodeView';
 import PropertiesView from './PropertiesView';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
+import { StudyMetadata } from '../../../common/types';
 
 const buttonStyle = (theme: Theme, color: string) => ({
   width: '120px',
@@ -103,7 +104,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface Props {
-    studyId: string;
+    study: StudyMetadata;
 }
 
 const FONT_SIZE = 15;
@@ -122,7 +123,7 @@ const calculateSize = (text: string): number => {
 const MapView = (props: Props) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { studyId } = props;
+  const { study } = props;
   const [studyConfig, setStudyConfig] = useState<StudyProperties>();
   const [areas, setAreas] = useState<AreasConfig>();
   const [loaded, setLoaded] = useState(false);
@@ -231,9 +232,9 @@ const MapView = (props: Props) => {
   useEffect(() => {
     const init = async () => {
       try {
-        const data = await getSynthesis(studyId);
+        const data = await getSynthesis(study.id);
         setStudyConfig(data as StudyProperties);
-        const areaData = await getAreaPositions(studyId, Object.keys(data.areas).join(','));
+        const areaData = await getAreaPositions(study.id, Object.keys(data.areas).join(','));
         if (Object.keys(data.areas).length === 1) {
           setAreas({
             [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig,
@@ -248,7 +249,7 @@ const MapView = (props: Props) => {
       }
     };
     init();
-  }, [enqueueSnackbar, studyId, t]);
+  }, [enqueueSnackbar, study.id, t]);
 
   useEffect(() => {
     if (areas) {
@@ -293,9 +294,9 @@ const MapView = (props: Props) => {
             <AutoSizer>
               {
                 ({ height, width }) => {
-                  /* let nodeDataToRender = nodeData;
+                  let nodeDataToRender = nodeData;
                   let initialZoom = 1;
-                   if (nodeData.length > 0) {
+                  /* if (nodeData.length > 0) {
                     const enclosingRect = nodeData.reduce((acc, currentNode) => ({
                       xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
                       xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
@@ -306,30 +307,86 @@ const MapView = (props: Props) => {
                     const centerVector = { x: (width / 2) - ((enclosingRect.xmax - enclosingRect.xmin) / 2), y: (height / 2) - ((enclosingRect.ymax - enclosingRect.ymin) / 2) };
                     const scaleY = height / (enclosingRect.ymax - enclosingRect.ymin);
                     const scaleX = width / (enclosingRect.xmax - enclosingRect.xmin);
-                    initialZoom = scaleX > scaleY ? scaleY : scaleX;
+                    initialZoom = scaleY;
                     nodeDataToRender = nodeData.map((area) => ({
                       ...area,
-                      x: area.x + (rectVector.x - centerVector.x) * scaleX,
-                      y: -(area.y + (rectVector.y - centerVector.y) * scaleY),
+                      x: area.x + rectVector.x + centerVector.x,
+                      y: -(area.y + rectVector.y - centerVector.y),
                     }));
                     console.log(width / (enclosingRect.xmax - enclosingRect.xmin));
                     console.log(height / (enclosingRect.ymax - enclosingRect.ymin));
-                    console.log(enclosingRect.xmax - enclosingRect.xmin);
-                    console.log((enclosingRect.ymax - enclosingRect.ymin));
+                    // console.log(enclosingRect.xmax - enclosingRect.xmin);
+                    // console.log((enclosingRect.ymax - enclosingRect.ymin));
+                    console.log(width / scaleY);
+                    console.log(height);
+                    console.log(height / scaleY);
+                  }
+                  nodeDataToRender = nodeData.map((area) => ({
+                    ...area,
+                    x: area.x,
+                    y: -area.y,
+                  })); */
+                  /* if (nodeData.length > 0) {
+                    const enclosingRect = nodeData.reduce((acc, currentNode) => ({
+                      xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
+                      xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
+                      ymax: acc.ymax > currentNode.y ? acc.ymax : currentNode.y,
+                      ymin: acc.ymin < currentNode.y ? acc.ymin : currentNode.y,
+                    }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y });
+                    const centerVector = { x: (width / 2), y: (height / 2) };
+                    const rectVector = { x: -enclosingRect.xmin, y: -enclosingRect.ymax };
+                    const scaleY = height / (enclosingRect.ymax - enclosingRect.ymin);
+                    const scaleX = width / (enclosingRect.xmax - enclosingRect.xmin);
+                    // initialZoom = scaleY > scaleX ? scaleX : scaleY;
+                    initialZoom = scaleY > scaleX ? scaleX : scaleY;
+                    if (initialZoom > 1) {
+                      initialZoom = 1;
+                    }
+                    console.log(centerVector.x / initialZoom);
+                    nodeDataToRender = nodeData.map((area) => ({
+                      ...area,
+                      x: area.x + (-(centerVector.x / initialZoom) + rectVector.x),
+                      y: -(area.y + rectVector.y - centerVector.y),
+                    }));
+                    console.log(height);
+                    console.log(height * 0.3288372093023256);
+                    console.log(height / 0.3288372093023256);
                   } */
+                  if (nodeData.length > 0) {
+                    const enclosingRect = nodeData.reduce((acc, currentNode) => ({
+                      xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
+                      xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
+                      ymax: acc.ymax > currentNode.y ? acc.ymax : currentNode.y,
+                      ymin: acc.ymin < currentNode.y ? acc.ymin : currentNode.y,
+                    }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y });
+                    // const scaleY = height / (enclosingRect.ymax - enclosingRect.ymin);
+                    // const scaleX = width / (enclosingRect.xmax - enclosingRect.xmin);
+                    initialZoom = 1;
+                    const centerVector = { x: (width / 2), y: (height / 2) };
+
+                    nodeDataToRender = nodeData.map((area) => {
+                      const yCentered = -area.y + centerVector.y;
+                      return ({
+                        ...area,
+                        x: (area.x + centerVector.x),
+                        y: yCentered,
+                      });
+                    });
+                  }
                   console.log(width);
                   console.log(height);
+
                   return (
                     <Graph
                       id="graph-id" // id is mandatory
                       data={{
-                        nodes: nodeData,
+                        nodes: nodeDataToRender,
                         links: linkData,
                       }}
                       config={{
                         height,
                         width,
-                        initialZoom: 0.5,
+                        initialZoom,
                         staticGraphWithDragAndDrop: true,
                         d3: {
                           disableLinkForce: true,

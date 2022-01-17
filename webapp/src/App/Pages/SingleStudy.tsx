@@ -16,6 +16,7 @@ import StudyViewLoader from '../../components/SingleStudy/StudyViewLoader';
 import { LaunchJob, StudyMetadata, WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
+import MapView from '../../components/SingleStudy/MapView';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -80,7 +81,7 @@ const SingleStudyView = (props: PropTypes) => {
   const [navData, setNavData] = useState<MenuTab>({});
   const { enqueueSnackbar } = useSnackbar();
 
-  const paramList = ['treeView', 'informations', 'variants'];
+  const paramList = ['treeView', 'informations', 'variants', 'map'];
 
   const fetchStudyInfo = useCallback(async () => {
     try {
@@ -151,7 +152,7 @@ const SingleStudyView = (props: PropTypes) => {
         }
       }
     } else {
-      history.replace({ pathname: `/study/${studyId}/informations` });
+      history.replace({ pathname: `/study/${studyId}/map` });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studyId, history, tab, query]);
@@ -170,6 +171,8 @@ const SingleStudyView = (props: PropTypes) => {
 
   useEffect(() => {
     const newNavData: {[key: string]: () => JSX.Element} = {
+      map: () =>
+        (study ? <MapView study={study} /> : <StudyViewLoader />),
       informations: () =>
         (study ? <Informations study={study} jobs={studyJobs || []} /> : <StudyViewLoader />),
     };
@@ -193,7 +196,7 @@ const SingleStudyView = (props: PropTypes) => {
           {study?.name || '...'}
         </div>
       </Breadcrumbs>
-      <GenericTabView items={navData} studyId={studyId} initialValue={paramList.includes(tab) ? tab : 'informations'} />
+      <GenericTabView items={navData} studyId={studyId} initialValue={paramList.includes(tab) ? tab : 'map'} />
     </div>
   );
 };
