@@ -5,11 +5,23 @@ import {
   Theme,
   TextField,
   InputAdornment,
+  Button,
 } from '@material-ui/core';
 import SearchIcon from '@material-ui/icons/Search';
 import { useTranslation } from 'react-i18next';
 import { LinkProperties, NodeProperties } from './types';
 import PanelView from './PanelView';
+
+const buttonStyle = (theme: Theme, color: string) => ({
+  width: '120px',
+  border: `2px solid ${color}`,
+  color,
+  margin: theme.spacing(0.5),
+  '&:hover': {
+    color: 'white',
+    backgroundColor: color,
+  },
+});
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -25,6 +37,20 @@ const useStyles = makeStyles((theme: Theme) =>
     search: {
       marginTop: theme.spacing(2),
     },
+    button: {
+      position: 'absolute',
+      left: '10px',
+      bottom: '10px',
+      ...buttonStyle(theme, theme.palette.primary.main),
+      boxSizing: 'border-box',
+    },
+    button2: {
+      position: 'absolute',
+      left: '150px',
+      bottom: '10px',
+      ...buttonStyle(theme, theme.palette.primary.main),
+      boxSizing: 'border-box',
+    },
   }));
 
 interface PropsType {
@@ -32,11 +58,13 @@ interface PropsType {
     link?: LinkProperties;
     onClose?: () => void;
     onDelete?: (id: string, target?: string) => void;
+    onArea?: () => void;
+    onLink?: () => void;
 }
 
 const PropertiesView = (props: PropsType) => {
   const classes = useStyles();
-  const { node, link, onClose, onDelete } = props;
+  const { node, link, onClose, onDelete, onArea, onLink } = props;
   const [t] = useTranslation();
 
   return (
@@ -58,6 +86,12 @@ const PropertiesView = (props: PropsType) => {
       ) : (link && onClose && onDelete && (
         <PanelView link={link} onDelete={onDelete} />
       ))}
+      <Button className={classes.button} onClick={onArea}>
+        {t('singlestudy:newArea')}
+      </Button>
+      <Button className={classes.button2} onClick={onLink}>
+        {t('singlestudy:newLink')}
+      </Button>
     </div>
   );
 };
@@ -67,6 +101,8 @@ PropertiesView.defaultProps = {
   link: undefined,
   onClose: undefined,
   onDelete: undefined,
+  onArea: undefined,
+  onLink: undefined,
 };
 
 export default PropertiesView;

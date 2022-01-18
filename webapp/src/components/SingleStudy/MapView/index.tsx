@@ -7,7 +7,6 @@ import {
   Theme,
   Paper,
   Typography,
-  Button,
 } from '@material-ui/core';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useTranslation } from 'react-i18next';
@@ -20,17 +19,6 @@ import NodeView from './NodeView';
 import PropertiesView from './PropertiesView';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
 import { StudyMetadata } from '../../../common/types';
-
-const buttonStyle = (theme: Theme, color: string) => ({
-  width: '120px',
-  border: `2px solid ${color}`,
-  color,
-  margin: theme.spacing(0.5),
-  '&:hover': {
-    color: 'white',
-    backgroundColor: color,
-  },
-});
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -73,20 +61,6 @@ const useStyles = makeStyles((theme: Theme) =>
       right: '30px',
       top: '100px',
       width: '200px',
-    },
-    button: {
-      position: 'absolute',
-      left: '10px',
-      bottom: '10px',
-      ...buttonStyle(theme, theme.palette.primary.main),
-      boxSizing: 'border-box',
-    },
-    button2: {
-      position: 'absolute',
-      left: '150px',
-      bottom: '10px',
-      ...buttonStyle(theme, theme.palette.primary.main),
-      boxSizing: 'border-box',
     },
     graph: {
       '& svg[name="svg-container-graph-id"]': {
@@ -280,13 +254,13 @@ const MapView = (props: Props) => {
       </div>
       <div className={classes.graphView}>
         {!nodeClick && !linkClick && (
-          <PropertiesView />
+          <PropertiesView onArea={() => setOpenModal(true)} onLink={createLink} />
         )}
         {nodeClick && !linkClick && (
-          <PropertiesView node={nodeClick} onClose={() => setNodeClick(undefined)} onDelete={onDelete} />
+          <PropertiesView node={nodeClick} onClose={() => setNodeClick(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onLink={createLink} />
         )}
         {!nodeClick && linkClick && (
-          <PropertiesView link={linkClick} onClose={() => setLinkClick(undefined)} onDelete={onDelete} />
+          <PropertiesView link={linkClick} onClose={() => setLinkClick(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onLink={createLink} />
         )}
 
         <div className={`${classes.autosizer} ${classes.graph}`}>
@@ -353,12 +327,12 @@ const MapView = (props: Props) => {
                     console.log(height / 0.3288372093023256);
                   } */
                   if (nodeData.length > 0) {
-                    const enclosingRect = nodeData.reduce((acc, currentNode) => ({
+                    /* const enclosingRect = nodeData.reduce((acc, currentNode) => ({
                       xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
                       xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
                       ymax: acc.ymax > currentNode.y ? acc.ymax : currentNode.y,
                       ymin: acc.ymin < currentNode.y ? acc.ymin : currentNode.y,
-                    }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y });
+                    }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y }); */
                     // const scaleY = height / (enclosingRect.ymax - enclosingRect.ymin);
                     // const scaleX = width / (enclosingRect.xmax - enclosingRect.xmin);
                     initialZoom = 1;
@@ -410,13 +384,6 @@ const MapView = (props: Props) => {
             </AutoSizer>
           ) : <SimpleLoader />
           }
-
-          <Button className={classes.button} onClick={() => setOpenModal(true)}>
-            {t('singlestudy:newArea')}
-          </Button>
-          <Button className={classes.button2} onClick={createLink}>
-            {t('singlestudy:newLink')}
-          </Button>
         </div>
       </div>
       {openModal && (

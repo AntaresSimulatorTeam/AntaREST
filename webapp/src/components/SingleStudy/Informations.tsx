@@ -3,7 +3,6 @@ import { makeStyles, createStyles, Theme } from '@material-ui/core';
 import InformationView from './InformationView';
 import TaskView from './TaskView';
 import NoteView from './NoteView';
-import MapView from './MapView/index';
 import { LaunchJob, StudyMetadata } from '../../common/types';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
