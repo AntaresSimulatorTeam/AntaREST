@@ -17,9 +17,9 @@ const useStyles = makeStyles((theme: Theme) =>
     buttons: {
       marginTop: theme.spacing(2),
       width: '80%',
-      display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
+      display: 'none',
     },
     form: {
       width: '100%',

@@ -171,10 +171,10 @@ const SingleStudyView = (props: PropTypes) => {
 
   useEffect(() => {
     const newNavData: {[key: string]: () => JSX.Element} = {
-      map: () =>
-        (study ? <MapView study={study} /> : <StudyViewLoader />),
       informations: () =>
         (study ? <Informations study={study} jobs={studyJobs || []} /> : <StudyViewLoader />),
+      map: () =>
+        (study ? <MapView study={study} /> : <StudyViewLoader />),
     };
     if (study?.managed) {
       newNavData.variants = () => (study ? <VariantView study={study} option={option} /> : <div />);

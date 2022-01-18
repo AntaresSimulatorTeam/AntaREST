@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Graph } from 'react-d3-graph';
+import React, { useEffect, useState, useRef } from 'react';
+import { Graph, GraphLink, GraphNode } from 'react-d3-graph';
 import { AxiosError } from 'axios';
 import {
   makeStyles,
@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
-import { NodeProperties, LinkProperties, StudyProperties, AreasConfig, SingleAreaConfig } from './types';
+import { NodeProperties, LinkProperties, StudyProperties, AreasConfig, SingleAreaConfig, ColorProperties } from './types';
 import CreateAreaModal from './CreateAreaModal';
 import NodeView from './NodeView';
 import PropertiesView from './PropertiesView';
@@ -94,6 +94,8 @@ const calculateSize = (text: string): number => {
   return FONT_SIZE * textSize * 6.5;
 };
 
+const USE_AUTO_FIT = false;
+
 const MapView = (props: Props) => {
   const classes = useStyles();
   const [t] = useTranslation();
@@ -110,6 +112,10 @@ const MapView = (props: Props) => {
   const [createLinkMode, setCreateLinkMode] = useState<boolean>(false);
   const [firstNode, setFirstNode] = useState<string>();
   const [secondNode, setSecondNode] = useState<string>();
+  const graphRef = useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
+  const [colors, setColors] = useState<Array<ColorProperties>>([]);
+
+  // const [zoom, setZoom] = useState<number>();
 
   const onClickNode = (nodeId: string) => {
     if (!createLinkMode && nodeData) {
@@ -201,6 +207,10 @@ const MapView = (props: Props) => {
       setFirstNode(undefined);
       setSecondNode(undefined);
     }
+    if (graphRef.current) {
+      // eslint-disable-next-line no-underscore-dangle
+      graphRef.current._setNodeHighlightedValue('23_fr', true);
+    }
   }, [setCreateLinkMode, firstNode, secondNode, linkData]);
 
   useEffect(() => {
@@ -235,7 +245,15 @@ const MapView = (props: Props) => {
         size: { width: calculateSize(areaId), height: 250 },
       }));
 
+      const colorsRGB = Object.keys(areas).map((areaId) => ({
+        id: areaId,
+        r: areas[areaId].ui.color_r,
+        g: areas[areaId].ui.color_g,
+        b: areas[areaId].ui.color_b,
+      }));
+
       setNodeData(tempNodeData);
+      setColors(colorsRGB);
 
       if (studyConfig) {
         setLinkData(Object.keys(studyConfig.areas).reduce((links, currentAreaId) =>
@@ -282,16 +300,18 @@ const MapView = (props: Props) => {
                     // get min scale (don't scale up)
                     const scaleY = height / (enclosingRect.ymax - enclosingRect.ymin);
                     const scaleX = width / (enclosingRect.xmax - enclosingRect.xmin);
-                    initialZoom = scaleX > scaleY ? scaleY : scaleX;
-                    initialZoom = initialZoom > 1 ? 1 : 0.9 * initialZoom;
+                    if (USE_AUTO_FIT) {
+                      initialZoom = scaleX > scaleY ? scaleY : scaleX;
+                      initialZoom = initialZoom > 1 ? 1 : 0.9 * initialZoom;
+                    }
 
                     // compute center offset with scale fix on x axis
                     const centerVector = { x: (width / initialZoom / 2), y: (height / 2) };
                     // get real center from origin enclosing rectange
-                    const realCenter = {
+                    const realCenter = USE_AUTO_FIT ? {
                       y: enclosingRect.ymin + ((enclosingRect.ymax - enclosingRect.ymin) / 2),
                       x: enclosingRect.xmin + ((enclosingRect.xmax - enclosingRect.xmin) / 2),
-                    };
+                    } : { y: 0, x: 0 };
                     // apply translations (y axis is inverted)
                     nodeDataToRender = nodeData.map((area) => ({
                       ...area,
@@ -303,6 +323,7 @@ const MapView = (props: Props) => {
                   return (
                     <Graph
                       id="graph-id" // id is mandatory
+                      ref={graphRef}
                       data={{
                         nodes: nodeDataToRender,
                         links: linkData,
@@ -310,7 +331,7 @@ const MapView = (props: Props) => {
                       config={{
                         height,
                         width,
-                        initialZoom,
+                        // initialZoom: zoom || initialZoom,
                         staticGraphWithDragAndDrop: true,
                         d3: {
                           disableLinkForce: true,
@@ -318,7 +339,9 @@ const MapView = (props: Props) => {
                         node: {
                           renderLabel: false,
                           fontSize: FONT_SIZE,
-                          viewGenerator: (node) => <NodeView node={node} />,
+                          viewGenerator: (node) => <NodeView node={node} color={colors.find((el) => el.id === node.id) || { id: 'none', r: 0, g: 0, b: 0 }} />,
+                          highlightColor: 'red',
+                          highlightStrokeColor: 'red',
                         },
                         link: {
                           color: '#d3d3d3',
@@ -327,6 +350,7 @@ const MapView = (props: Props) => {
                       }}
                       onClickNode={onClickNode}
                       onClickLink={onClickLink}
+                      // onZoomChange={(previousZoom, newZoom) => { if (previousZoom !== newZoom) { setZoom(newZoom); } }}
                     />
                   );
                 }

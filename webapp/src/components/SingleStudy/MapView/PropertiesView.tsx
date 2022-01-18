@@ -9,19 +9,9 @@ import {
 } from '@material-ui/core';
 import SearchIcon from '@material-ui/icons/Search';
 import { useTranslation } from 'react-i18next';
+import AddIcon from '@material-ui/icons/Add';
 import { LinkProperties, NodeProperties } from './types';
 import PanelView from './PanelView';
-
-const buttonStyle = (theme: Theme, color: string) => ({
-  width: '120px',
-  border: `2px solid ${color}`,
-  color,
-  margin: theme.spacing(0.5),
-  '&:hover': {
-    color: 'white',
-    backgroundColor: color,
-  },
-});
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -39,17 +29,24 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     button: {
       position: 'absolute',
-      left: '10px',
-      bottom: '10px',
-      ...buttonStyle(theme, theme.palette.primary.main),
-      boxSizing: 'border-box',
+      left: '20px',
+      bottom: '25px',
+      cursor: 'pointer',
+      borderRadius: '50px',
+      padding: theme.spacing(2),
+      backgroundColor: theme.palette.secondary.main,
+      color: 'white',
+      '&:hover': {
+        backgroundColor: theme.palette.secondary.dark,
+      },
+      display: 'none',
     },
     button2: {
       position: 'absolute',
       left: '150px',
       bottom: '10px',
-      ...buttonStyle(theme, theme.palette.primary.main),
       boxSizing: 'border-box',
+      display: 'none',
     },
   }));
 
@@ -86,9 +83,7 @@ const PropertiesView = (props: PropsType) => {
       ) : (link && onClose && onDelete && (
         <PanelView link={link} onDelete={onDelete} />
       ))}
-      <Button className={classes.button} onClick={onArea}>
-        {t('singlestudy:newArea')}
-      </Button>
+      <AddIcon className={classes.button} onClick={onArea} />
       <Button className={classes.button2} onClick={onLink}>
         {t('singlestudy:newLink')}
       </Button>
