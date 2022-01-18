@@ -270,85 +270,35 @@ const MapView = (props: Props) => {
                 ({ height, width }) => {
                   let nodeDataToRender = nodeData;
                   let initialZoom = 1;
-                  /* if (nodeData.length > 0) {
-                    const enclosingRect = nodeData.reduce((acc, currentNode) => ({
-                      xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
-                      xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
-                      ymax: acc.ymax > currentNode.y ? acc.ymax : currentNode.y,
-                      ymin: acc.ymin < currentNode.y ? acc.ymin : currentNode.y,
-                    }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y });
-                    const rectVector = { x: -enclosingRect.xmin, y: -enclosingRect.ymax };
-                    const centerVector = { x: (width / 2) - ((enclosingRect.xmax - enclosingRect.xmin) / 2), y: (height / 2) - ((enclosingRect.ymax - enclosingRect.ymin) / 2) };
-                    const scaleY = height / (enclosingRect.ymax - enclosingRect.ymin);
-                    const scaleX = width / (enclosingRect.xmax - enclosingRect.xmin);
-                    initialZoom = scaleY;
-                    nodeDataToRender = nodeData.map((area) => ({
-                      ...area,
-                      x: area.x + rectVector.x + centerVector.x,
-                      y: -(area.y + rectVector.y - centerVector.y),
-                    }));
-                    console.log(width / (enclosingRect.xmax - enclosingRect.xmin));
-                    console.log(height / (enclosingRect.ymax - enclosingRect.ymin));
-                    // console.log(enclosingRect.xmax - enclosingRect.xmin);
-                    // console.log((enclosingRect.ymax - enclosingRect.ymin));
-                    console.log(width / scaleY);
-                    console.log(height);
-                    console.log(height / scaleY);
-                  }
-                  nodeDataToRender = nodeData.map((area) => ({
-                    ...area,
-                    x: area.x,
-                    y: -area.y,
-                  })); */
-                  /* if (nodeData.length > 0) {
-                    const enclosingRect = nodeData.reduce((acc, currentNode) => ({
-                      xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
-                      xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
-                      ymax: acc.ymax > currentNode.y ? acc.ymax : currentNode.y,
-                      ymin: acc.ymin < currentNode.y ? acc.ymin : currentNode.y,
-                    }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y });
-                    const centerVector = { x: (width / 2), y: (height / 2) };
-                    const rectVector = { x: -enclosingRect.xmin, y: -enclosingRect.ymax };
-                    const scaleY = height / (enclosingRect.ymax - enclosingRect.ymin);
-                    const scaleX = width / (enclosingRect.xmax - enclosingRect.xmin);
-                    // initialZoom = scaleY > scaleX ? scaleX : scaleY;
-                    initialZoom = scaleY > scaleX ? scaleX : scaleY;
-                    if (initialZoom > 1) {
-                      initialZoom = 1;
-                    }
-                    console.log(centerVector.x / initialZoom);
-                    nodeDataToRender = nodeData.map((area) => ({
-                      ...area,
-                      x: area.x + (-(centerVector.x / initialZoom) + rectVector.x),
-                      y: -(area.y + rectVector.y - centerVector.y),
-                    }));
-                    console.log(height);
-                    console.log(height * 0.3288372093023256);
-                    console.log(height / 0.3288372093023256);
-                  } */
                   if (nodeData.length > 0) {
-                    /* const enclosingRect = nodeData.reduce((acc, currentNode) => ({
+                    // compute original enclosing rectange
+                    const enclosingRect = nodeData.reduce((acc, currentNode) => ({
                       xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
                       xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
                       ymax: acc.ymax > currentNode.y ? acc.ymax : currentNode.y,
                       ymin: acc.ymin < currentNode.y ? acc.ymin : currentNode.y,
-                    }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y }); */
-                    // const scaleY = height / (enclosingRect.ymax - enclosingRect.ymin);
-                    // const scaleX = width / (enclosingRect.xmax - enclosingRect.xmin);
-                    initialZoom = 1;
-                    const centerVector = { x: (width / 2), y: (height / 2) };
+                    }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y });
 
-                    nodeDataToRender = nodeData.map((area) => {
-                      const yCentered = -area.y + centerVector.y;
-                      return ({
-                        ...area,
-                        x: (area.x + centerVector.x),
-                        y: yCentered,
-                      });
-                    });
+                    // get min scale (don't scale up)
+                    const scaleY = height / (enclosingRect.ymax - enclosingRect.ymin);
+                    const scaleX = width / (enclosingRect.xmax - enclosingRect.xmin);
+                    initialZoom = scaleX > scaleY ? scaleY : scaleX;
+                    initialZoom = initialZoom > 1 ? 1 : 0.9 * initialZoom;
+
+                    // compute center offset with scale fix on x axis
+                    const centerVector = { x: (width / initialZoom / 2), y: (height / 2) };
+                    // get real center from origin enclosing rectange
+                    const realCenter = {
+                      y: enclosingRect.ymin + ((enclosingRect.ymax - enclosingRect.ymin) / 2),
+                      x: enclosingRect.xmin + ((enclosingRect.xmax - enclosingRect.xmin) / 2),
+                    };
+                    // apply translations (y axis is inverted)
+                    nodeDataToRender = nodeData.map((area) => ({
+                      ...area,
+                      x: (area.x + centerVector.x - realCenter.x),
+                      y: -area.y + centerVector.y + realCenter.y,
+                    }));
                   }
-                  console.log(width);
-                  console.log(height);
 
                   return (
                     <Graph
