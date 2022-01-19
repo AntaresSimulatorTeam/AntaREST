@@ -58,7 +58,7 @@ const PanelView = (props: PropType) => {
       <div className={classes.form}>
         {node && (
           <>
-            <TextField className={classes.fields} label={t('singlestudy:area')} variant="filled" value={node.id} />
+            <TextField className={classes.fields} label={t('singlestudy:areaName')} variant="filled" value={node.id} />
             <TextField className={classes.fields} label={t('singlestudy:color')} variant="filled" value={node.color} />
             <TextField className={classes.fields} label={t('singlestudy:posX')} variant="filled" value={node.x} />
             <TextField className={classes.fields} label={t('singlestudy:posY')} variant="filled" value={node.y} />

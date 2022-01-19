@@ -75,6 +75,14 @@ const useStyles = makeStyles((theme: Theme) =>
       width: '100%',
       height: '100%',
     },
+    areaCount: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '12%',
+      position: 'absolute',
+      right: theme.spacing(2),
+    },
   }));
 
 interface Props {
@@ -319,7 +327,7 @@ const MapView = (props: Props) => {
                       y: -area.y + centerVector.y + realCenter.y,
                     }));
                   }
-
+                  console.log('rerender');
                   return (
                     <Graph
                       id="graph-id" // id is mandatory
@@ -358,6 +366,14 @@ const MapView = (props: Props) => {
             </AutoSizer>
           ) : <SimpleLoader />
           }
+          <div className={classes.areaCount}>
+            <p>
+              {`${nodeData.length} ${t('singlestudy:area')}`}
+            </p>
+            <p>
+              {`${linkData.length} ${t('singlestudy:link')}`}
+            </p>
+          </div>
         </div>
       </div>
       {openModal && (
