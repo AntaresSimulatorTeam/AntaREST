@@ -28,12 +28,9 @@
   "data": "Données",
   "websocketstatusmessage": "Connexion websocket non disponible. Vérifier la connexion internet ou tentez de rafraichir la page.",
   "noContent": "Pas de contenu",
-<<<<<<< HEAD
   "appUnderMaintenance": "Site en maintenance",
   "comeBackLater": "Merci de revenir plus tard",
   "onGetMessageInfoError": "Impossible de récupérer le message d'info",
-  "onGetMaintenanceError": "Impossible de récupérer le status de maintenance de l'application"
-=======
+  "onGetMaintenanceError": "Impossible de récupérer le status de maintenance de l'application",
   "search": "Rechercher"
->>>>>>> Properties component, graph centered, simple loader
 }
