@@ -46,7 +46,7 @@ const NodeView = (props: PropType) => {
 
   return (
     <div className={classes.root}>
-      <div className={classes.node} style={{ backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})`, color: fontColor }}>
+      <div className={classes.node} style={{ backgroundColor: node.highlighted ? '#f00' : `rgb(${color.r}, ${color.g}, ${color.b})`, color: fontColor }}>
         {node.id}
       </div>
     </div>

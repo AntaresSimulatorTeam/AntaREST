@@ -10,6 +10,7 @@ export interface NodeProperties {
     x: number;
     y: number;
     color: string;
+    highlighted?: boolean;
 }
 
 export interface LinkSynthesis {

@@ -51,8 +51,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropsType {
-    node?: NodeProperties;
-    link?: LinkProperties;
+    item?: NodeProperties | LinkProperties | undefined;
     onClose?: () => void;
     onDelete?: (id: string, target?: string) => void;
     onArea?: () => void;
@@ -61,9 +60,9 @@ interface PropsType {
 
 const PropertiesView = (props: PropsType) => {
   const classes = useStyles();
-  const { node, link, onClose, onDelete, onArea, onLink } = props;
+  const { item, onClose, onDelete, onArea, onLink } = props;
   const [t] = useTranslation();
-
+  console.log(item);
   return (
     <div className={classes.root}>
       <TextField
@@ -78,10 +77,10 @@ const PropertiesView = (props: PropsType) => {
           ),
         }}
       />
-      {node && onClose && onDelete ? (
-        <PanelView node={node} onDelete={onDelete} />
-      ) : (link && onClose && onDelete && (
-        <PanelView link={link} onDelete={onDelete} />
+      {item as NodeProperties && onClose && onDelete ? (
+        <PanelView node={item as NodeProperties} onDelete={onDelete} />
+      ) : (item && onClose && onDelete && (
+        <PanelView link={item as LinkProperties} onDelete={onDelete} />
       ))}
       <AddIcon className={classes.button} onClick={onArea} />
       <Button className={classes.button2} onClick={onLink}>
@@ -92,8 +91,7 @@ const PropertiesView = (props: PropsType) => {
 };
 
 PropertiesView.defaultProps = {
-  node: undefined,
-  link: undefined,
+  item: undefined,
   onClose: undefined,
   onDelete: undefined,
   onArea: undefined,

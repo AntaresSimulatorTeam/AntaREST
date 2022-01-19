@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Graph, GraphLink, GraphNode } from 'react-d3-graph';
 import { AxiosError } from 'axios';
 import {
@@ -15,10 +15,10 @@ import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { NodeProperties, LinkProperties, StudyProperties, AreasConfig, SingleAreaConfig, ColorProperties } from './types';
 import CreateAreaModal from './CreateAreaModal';
-import NodeView from './NodeView';
 import PropertiesView from './PropertiesView';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
 import { StudyMetadata } from '../../../common/types';
+import GraphView from './GraphView';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -102,7 +102,7 @@ const calculateSize = (text: string): number => {
   return FONT_SIZE * textSize * 6.5;
 };
 
-const USE_AUTO_FIT = false;
+const GraphViewMemo = React.memo(GraphView);
 
 const MapView = (props: Props) => {
   const classes = useStyles();
@@ -111,8 +111,7 @@ const MapView = (props: Props) => {
   const [studyConfig, setStudyConfig] = useState<StudyProperties>();
   const [areas, setAreas] = useState<AreasConfig>();
   const [loaded, setLoaded] = useState(false);
-  const [nodeClick, setNodeClick] = useState<NodeProperties>();
-  const [linkClick, setLinkClick] = useState<LinkProperties>();
+  const [selectedItem, setSelectedItem] = useState<NodeProperties | LinkProperties>();
   const [nodeData, setNodeData] = useState<Array<NodeProperties>>([]);
   const [linkData, setLinkData] = useState<Array<LinkProperties>>([]);
   const { enqueueSnackbar } = useSnackbar();
@@ -121,30 +120,40 @@ const MapView = (props: Props) => {
   const [firstNode, setFirstNode] = useState<string>();
   const [secondNode, setSecondNode] = useState<string>();
   const graphRef = useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
+  const prevselectedItemId = useRef<string>();
   const [colors, setColors] = useState<Array<ColorProperties>>([]);
 
   // const [zoom, setZoom] = useState<number>();
 
-  const onClickNode = (nodeId: string) => {
+  const onClickNode = useCallback((nodeId: string) => {
     if (!createLinkMode && nodeData) {
       const obj = nodeData.find((o) => o.id === nodeId);
-      setNodeClick(obj);
-      setLinkClick(undefined);
+      setSelectedItem(obj);
+      if (graphRef.current) {
+        const currentGraph = graphRef.current;
+        if (prevselectedItemId.current) {
+          // eslint-disable-next-line no-underscore-dangle
+          currentGraph._setNodeHighlightedValue(prevselectedItemId.current, false);
+        }
+        // eslint-disable-next-line no-underscore-dangle
+        currentGraph._setNodeHighlightedValue(nodeId, true);
+      }
+      prevselectedItemId.current = nodeId;
+      setSelectedItem(undefined);
     } else if (!firstNode) {
       setFirstNode(nodeId);
     } else if (firstNode) {
       setSecondNode(nodeId);
     }
-  };
+  }, [createLinkMode, firstNode, nodeData]);
 
-  const onClickLink = (source: string, target: string) => {
+  const onClickLink = useCallback((source: string, target: string) => {
     const obj = {
       source,
       target,
     };
-    setLinkClick(obj);
-    setNodeClick(undefined);
-  };
+    setSelectedItem(obj);
+  }, []);
 
   const createLink = () => {
     if (createLinkMode) {
@@ -179,7 +188,7 @@ const MapView = (props: Props) => {
         const i = linkData.indexOf(obj);
         if (i !== -1) {
           linkData.splice(i, 1);
-          setLinkClick(undefined);
+          setSelectedItem(undefined);
         }
       }
     }
@@ -190,7 +199,7 @@ const MapView = (props: Props) => {
         const i = nodeData.indexOf(obj);
         if (i !== -1) {
           nodeData.splice(i, 1);
-          setNodeClick(undefined);
+          setSelectedItem(undefined);
         }
       }
       if (links) {
@@ -214,10 +223,6 @@ const MapView = (props: Props) => {
       setCreateLinkMode(false);
       setFirstNode(undefined);
       setSecondNode(undefined);
-    }
-    if (graphRef.current) {
-      // eslint-disable-next-line no-underscore-dangle
-      graphRef.current._setNodeHighlightedValue('23_fr', true);
     }
   }, [setCreateLinkMode, firstNode, secondNode, linkData]);
 
@@ -279,86 +284,15 @@ const MapView = (props: Props) => {
         <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
       </div>
       <div className={classes.graphView}>
-        {!nodeClick && !linkClick && (
-          <PropertiesView onArea={() => setOpenModal(true)} onLink={createLink} />
-        )}
-        {nodeClick && !linkClick && (
-          <PropertiesView node={nodeClick} onClose={() => setNodeClick(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onLink={createLink} />
-        )}
-        {!nodeClick && linkClick && (
-          <PropertiesView link={linkClick} onClose={() => setLinkClick(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onLink={createLink} />
-        )}
-
+        <PropertiesView item={selectedItem} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onLink={createLink} />
         <div className={`${classes.autosizer} ${classes.graph}`}>
           {loaded ? (
             <AutoSizer>
               {
                 ({ height, width }) => {
-                  let nodeDataToRender = nodeData;
-                  let initialZoom = 1;
-                  if (nodeData.length > 0) {
-                    // compute original enclosing rectange
-                    const enclosingRect = nodeData.reduce((acc, currentNode) => ({
-                      xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
-                      xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
-                      ymax: acc.ymax > currentNode.y ? acc.ymax : currentNode.y,
-                      ymin: acc.ymin < currentNode.y ? acc.ymin : currentNode.y,
-                    }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y });
-
-                    // get min scale (don't scale up)
-                    const scaleY = height / (enclosingRect.ymax - enclosingRect.ymin);
-                    const scaleX = width / (enclosingRect.xmax - enclosingRect.xmin);
-                    if (USE_AUTO_FIT) {
-                      initialZoom = scaleX > scaleY ? scaleY : scaleX;
-                      initialZoom = initialZoom > 1 ? 1 : 0.9 * initialZoom;
-                    }
-
-                    // compute center offset with scale fix on x axis
-                    const centerVector = { x: (width / initialZoom / 2), y: (height / 2) };
-                    // get real center from origin enclosing rectange
-                    const realCenter = USE_AUTO_FIT ? {
-                      y: enclosingRect.ymin + ((enclosingRect.ymax - enclosingRect.ymin) / 2),
-                      x: enclosingRect.xmin + ((enclosingRect.xmax - enclosingRect.xmin) / 2),
-                    } : { y: 0, x: 0 };
-                    // apply translations (y axis is inverted)
-                    nodeDataToRender = nodeData.map((area) => ({
-                      ...area,
-                      x: (area.x + centerVector.x - realCenter.x),
-                      y: -area.y + centerVector.y + realCenter.y,
-                    }));
-                  }
+                  console.log('Rendering with');
                   return (
-                    <Graph
-                      id="graph-id" // id is mandatory
-                      ref={graphRef}
-                      data={{
-                        nodes: nodeDataToRender,
-                        links: linkData,
-                      }}
-                      config={{
-                        height,
-                        width,
-                        // initialZoom: zoom || initialZoom,
-                        staticGraphWithDragAndDrop: true,
-                        d3: {
-                          disableLinkForce: true,
-                        },
-                        node: {
-                          renderLabel: false,
-                          fontSize: FONT_SIZE,
-                          viewGenerator: (node) => <NodeView node={node} color={colors.find((el) => el.id === node.id) || { id: 'none', r: 0, g: 0, b: 0 }} />,
-                          highlightColor: 'red',
-                          highlightStrokeColor: 'red',
-                        },
-                        link: {
-                          color: '#d3d3d3',
-                          strokeWidth: 2,
-                        },
-                      }}
-                      onClickNode={onClickNode}
-                      onClickLink={onClickLink}
-                      // onZoomChange={(previousZoom, newZoom) => { if (previousZoom !== newZoom) { setZoom(newZoom); } }}
-                    />
+                    <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} colors={colors} />
                   );
                 }
             }
