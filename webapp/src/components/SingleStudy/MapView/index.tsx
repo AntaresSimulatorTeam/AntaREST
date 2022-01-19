@@ -327,7 +327,6 @@ const MapView = (props: Props) => {
                       y: -area.y + centerVector.y + realCenter.y,
                     }));
                   }
-                  console.log('rerender');
                   return (
                     <Graph
                       id="graph-id" // id is mandatory
