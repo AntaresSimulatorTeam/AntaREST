@@ -34,6 +34,9 @@ from antarest.study.storage.variantstudy.model.command.create_district import (
 from antarest.study.storage.variantstudy.model.command.create_link import (
     CreateLink,
 )
+from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import (
+    CreateRenewablesCluster,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
@@ -211,21 +214,33 @@ class CommandExtraction(ICommandExtractor):
         )
         return commands
 
-    def extract_cluster(
-        self, study: FileStudy, area_id: str, thermal_id: str
+    def _extract_cluster(
+        self, study: FileStudy, area_id: str, cluster_id: str, renewables: bool
     ) -> List[ICommand]:
         study_commands: List[ICommand] = []
         study_tree = study.tree
-        thermal_name = thermal_id
-        for thermal in study.config.areas[area_id].thermals:
-            if thermal.id == thermal_id:
-                thermal_name = thermal.name
+        cluster_name = cluster_id
+
+        cluster_type = "renewables" if renewables else "thermal"
+        cluster_list = (
+            study.config.areas[area_id].thermals
+            if not renewables
+            else study.config.areas[area_id].renewables
+        )
+        create_cluster_command = (
+            CreateCluster if not renewables else CreateRenewablesCluster
+        )
+
+        for cluster in cluster_list:
+            if cluster.id == cluster_id:
+                cluster_name = cluster.name
                 break
-        assert thermal_name is not None
+
+        assert cluster_name is not None
         study_commands.append(
-            CreateCluster(
+            create_cluster_command(
                 area_id=area_id,
-                cluster_name=thermal_name,
+                cluster_name=cluster_name,
                 parameters={},
                 command_context=self.command_context,
             )
@@ -235,11 +250,11 @@ class CommandExtraction(ICommandExtractor):
                 study_tree,
                 [
                     "input",
-                    "thermal",
+                    cluster_type,
                     "clusters",
                     area_id,
                     "list",
-                    thermal_name,
+                    cluster_name,
                 ],
             )
         )
@@ -248,42 +263,10 @@ class CommandExtraction(ICommandExtractor):
                 study_tree,
                 [
                     "input",
-                    "thermal",
-                    "prepro",
-                    area_id,
-                    thermal_id,
-                    "data",
-                ],
-                strip_matrix_protocol(
-                    self.generator_matrix_constants.get_null_matrix()
-                ),
-            )
-        )
-        study_commands.append(
-            self.generate_replace_matrix(
-                study_tree,
-                [
-                    "input",
-                    "thermal",
-                    "prepro",
-                    area_id,
-                    thermal_id,
-                    "modulation",
-                ],
-                strip_matrix_protocol(
-                    self.generator_matrix_constants.get_null_matrix()
-                ),
-            )
-        )
-        study_commands.append(
-            self.generate_replace_matrix(
-                study_tree,
-                [
-                    "input",
-                    "thermal",
+                    cluster_type,
                     "series",
                     area_id,
-                    thermal_id,
+                    cluster_id,
                     "series",
                 ],
                 strip_matrix_protocol(
@@ -291,7 +274,50 @@ class CommandExtraction(ICommandExtractor):
                 ),
             )
         )
+        if not renewables:
+            study_commands.append(
+                self.generate_replace_matrix(
+                    study_tree,
+                    [
+                        "input",
+                        cluster_type,
+                        "prepro",
+                        area_id,
+                        cluster_id,
+                        "data",
+                    ],
+                    strip_matrix_protocol(
+                        self.generator_matrix_constants.get_null_matrix()
+                    ),
+                )
+            )
+            study_commands.append(
+                self.generate_replace_matrix(
+                    study_tree,
+                    [
+                        "input",
+                        cluster_type,
+                        "prepro",
+                        area_id,
+                        cluster_id,
+                        "modulation",
+                    ],
+                    strip_matrix_protocol(
+                        self.generator_matrix_constants.get_null_matrix()
+                    ),
+                )
+            )
         return study_commands
+
+    def extract_cluster(
+        self, study: FileStudy, area_id: str, thermal_id: str
+    ) -> List[ICommand]:
+        return self._extract_cluster(study, area_id, thermal_id, False)
+
+    def extract_renewables_cluster(
+        self, study: FileStudy, area_id: str, renewables_id: str
+    ) -> List[ICommand]:
+        return self._extract_cluster(study, area_id, renewables_id, True)
 
     def extract_hydro(self, study: FileStudy, area_id: str) -> List[ICommand]:
         study_tree = study.tree

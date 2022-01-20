@@ -84,7 +84,7 @@ class ConfigPathBuilder:
             if e.strip()
         ]
         enr_modelling: str = general.get("other preferences", {}).get(
-            "renewable-generation-modelling", "aggregated"
+            "renewables-generation-modelling", "aggregated"
         )
         return store_new_set, archive_input_series, enr_modelling
 

@@ -368,7 +368,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
     general_data = general_data_file.read_text()
     assert (
         re.search(
-            "^renewable-generation-modelling = false",
+            "^renewables-generation-modelling = false",
             general_data,
             flags=re.MULTILINE,
         )
