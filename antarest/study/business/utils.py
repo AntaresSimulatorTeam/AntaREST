@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Sequence
 
 from antarest.core.exceptions import CommandApplicationError
 from antarest.core.jwt import DEFAULT_ADMIN_USER
@@ -13,11 +13,11 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 def execute_or_add_commands(
     study: Study,
     file_study: FileStudy,
-    commands: List[ICommand],
+    commands: Sequence[ICommand],
     storage_service: StudyStorageService,
 ) -> None:
     if isinstance(study, RawStudy):
-        executed_commands = []
+        executed_commands: List[ICommand] = []
         for command in commands:
             result = command.apply(file_study)
             if not result.status:
@@ -37,7 +37,7 @@ def execute_or_add_commands(
         )
 
 
-def aggregate_commands(commands: List[ICommand]) -> List[CommandDTO]:
+def aggregate_commands(commands: Sequence[ICommand]) -> List[CommandDTO]:
     if len(commands) <= 1:
         return [command.to_dto() for command in commands]
     commands_dto: List[CommandDTO] = []

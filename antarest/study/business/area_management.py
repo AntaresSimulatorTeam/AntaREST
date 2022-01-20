@@ -132,7 +132,7 @@ class AreaManager:
         area_id = transform_name_to_id(area_creation_info.name)
         patch = self.patch_service.get(study)
         patch.areas = patch.areas or {}
-        patch.areas[area_id] = area_creation_info.metadata
+        patch.areas[area_id] = area_creation_info.metadata or PatchArea()
         self.patch_service.save(study, patch)
         return AreaInfoDTO(
             id=area_id,
