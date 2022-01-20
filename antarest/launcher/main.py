@@ -11,7 +11,7 @@ from antarest.study.service import StudyService
 
 
 def build_launcher(
-    application: FastAPI,
+    application: Optional[FastAPI],
     config: Config,
     study_service: Optional[StudyService] = None,
     service_launcher: Optional[LauncherService] = None,
@@ -28,7 +28,7 @@ def build_launcher(
             event_bus=event_bus,
         )
 
-    if service_launcher:
+    if service_launcher and application:
         application.include_router(
             create_launcher_api(service_launcher, config)
         )

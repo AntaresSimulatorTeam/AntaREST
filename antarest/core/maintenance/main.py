@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import FastAPI
 
 from antarest.core.config import Config
@@ -9,7 +11,7 @@ from antarest.core.maintenance.web import create_maintenance_api
 
 
 def build_maintenance_manager(
-    application: FastAPI,
+    application: Optional[FastAPI],
     config: Config,
     cache: ICache,
     event_bus: IEventBus = DummyEventBusService(),
@@ -18,6 +20,7 @@ def build_maintenance_manager(
     repository = MaintenanceRepository()
     service = MaintenanceService(config, repository, event_bus, cache)
 
-    application.include_router(create_maintenance_api(service, config))
+    if application:
+        application.include_router(create_maintenance_api(service, config))
 
     return service

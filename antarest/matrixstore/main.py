@@ -17,7 +17,7 @@ from antarest.matrixstore.web import create_matrix_api
 
 
 def build_matrixstore(
-    application: FastAPI,
+    application: Optional[FastAPI],
     config: Config,
     file_transfer_manager: FileTransferManager,
     task_service: ITaskService,
@@ -53,7 +53,9 @@ def build_matrixstore(
             config=config,
         )
 
-    application.include_router(
-        create_matrix_api(service, file_transfer_manager, config)
-    )
+    if application:
+        application.include_router(
+            create_matrix_api(service, file_transfer_manager, config)
+        )
+
     return service

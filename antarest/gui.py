@@ -35,7 +35,13 @@ def open_app() -> None:
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
-    config_file, display_version, no_front, auto_upgrade_db = get_arguments()
+    (
+        config_file,
+        display_version,
+        no_front,
+        auto_upgrade_db,
+        module,
+    ) = get_arguments()
 
     if display_version:
         print(__version__)
