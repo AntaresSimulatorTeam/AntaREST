@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-d
 import { CssBaseline, styled, ThemeProvider } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
 import maintheme from './theme';
+import LogginWrapper from './pages/wrappers/LogginWrapper';
 import MenuWrapper from './pages/wrappers/MenuWrapper';
 import Studies from './pages/Studies';
 import Data from './pages/Data';
@@ -28,20 +29,22 @@ function App() {
       <ThemeProvider theme={maintheme}>
         <SnackbarProvider maxSnack={5}>
           <CssBaseline />
-          <MenuWrapper>
-            <Routes>
-              <Route index element={<Studies />} />
-              <Route path="/studies" element={<Studies />} />
-              <Route path="/data" element={<Data />} />
-              <Route path="/tasks" element={<Tasks />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/api" element={<Api />} />
-              <Route
-                path="*"
-                element={<Navigate to="/" />}
-              />
-            </Routes>
-          </MenuWrapper>
+          <LogginWrapper>
+            <MenuWrapper>
+              <Routes>
+                <Route index element={<Studies />} />
+                <Route path="/studies" element={<Studies />} />
+                <Route path="/data" element={<Data />} />
+                <Route path="/tasks" element={<Tasks />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/api" element={<Api />} />
+                <Route
+                  path="*"
+                  element={<Navigate to="/" />}
+                />
+              </Routes>
+            </MenuWrapper>
+          </LogginWrapper>
         </SnackbarProvider>
       </ThemeProvider>
     </Router>

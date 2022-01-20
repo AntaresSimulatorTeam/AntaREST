@@ -13,6 +13,7 @@ const theme = createTheme({
     },
     secondary: {
       main: '#ffd927',
+      light: '#ffd927AA',
     },
   },
 });

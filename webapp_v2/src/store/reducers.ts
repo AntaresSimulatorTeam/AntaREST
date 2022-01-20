@@ -8,6 +8,7 @@ import auth, { AuthState, logoutAction, persistState as persistAuthState } from 
 import { setLogoutInterceptor } from '../services/api/client';
 import upload, { UploadState } from './upload';
 import global, { GlobalState } from './global';
+import ui, { UIState } from './ui';
 import websockets, { WebsocketState } from './websockets';
 
 const reducers = combineReducers({
@@ -15,6 +16,7 @@ const reducers = combineReducers({
   study,
   auth,
   upload,
+  ui,
   websockets,
 });
 
@@ -23,6 +25,7 @@ export type AppState = CombinedState<{
   study: StudyState;
   auth: AuthState;
   upload: UploadState;
+  ui: UIState;
   websockets: WebsocketState;
 }>;
 

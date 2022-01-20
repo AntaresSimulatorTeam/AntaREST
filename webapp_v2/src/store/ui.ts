@@ -12,10 +12,12 @@ const logError = debug('antares:ui:error');
 
 export interface UIState {
   menuExtended: boolean;
+  currentPage: string;
 }
 
 const initialState: UIState = {
     menuExtended: false,
+    currentPage: '/',
 };
 
 /** ******************************************* */
@@ -36,7 +38,17 @@ export const setMenuExtension = (status: boolean): ThunkAction<void, AppState, u
     dispatch(setMenuExtensionStatusAction(status));
 };
 
-type UIAction = SetMenuExtensionStatusAction;
+export interface SetAppPageAction extends Action {
+    type: 'UI/SET_APP_PAGE';
+    payload: string;
+  }
+  
+export const setAppPage = (page: string): SetAppPageAction => ({
+    type: 'UI/SET_APP_PAGE',
+    payload: page,
+});
+
+type UIAction = SetMenuExtensionStatusAction | SetAppPageAction;
 
 /** ******************************************* */
 /* Selectors / Misc                             */
@@ -54,6 +66,12 @@ export default (state = initialState, action: UIAction): UIState => {
         menuExtended: action.payload,
       };
     }
+    case 'UI/SET_APP_PAGE': {
+        return {
+          ...state,
+          currentPage: action.payload,
+        };
+      }
     default:
       return state;
   }
