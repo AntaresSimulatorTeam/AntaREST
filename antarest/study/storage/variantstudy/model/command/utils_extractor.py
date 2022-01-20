@@ -129,6 +129,16 @@ class CommandExtraction(ICommandExtractor):
             lambda x: logger.info(f"Thermal command extraction done in {x}s")
         )
 
+        for renewable in area.renewables:
+            study_commands += self.extract_renewables_cluster(
+                study, area_id, renewable.id
+            )
+        stopwatch.log_elapsed(
+            lambda x: logger.info(
+                f"Renewables command extraction done in {x}s"
+            )
+        )
+
         # load, wind, solar
         for type in ["load", "wind", "solar"]:
             for matrix in ["conversion", "data", "k", "translation"]:
