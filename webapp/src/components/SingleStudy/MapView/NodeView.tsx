@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   makeStyles,
   createStyles,
   Theme,
 } from '@material-ui/core';
 import { ColorProperties, NodeProperties } from './types';
+import { rgbToHsl } from '../../../services/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -17,7 +18,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     node: {
       opacity: '.8',
-      minWidth: '50px',
+      minWidth: '40px',
       textAlign: 'center',
       padding: theme.spacing(0.5),
       borderRadius: '30px',
@@ -25,6 +26,16 @@ const useStyles = makeStyles((theme: Theme) =>
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
       height: '20px',
+      backgroundColor: '#555',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    dot: {
+      width: '0.5em',
+      height: '0.5em',
+      borderRadius: '50%',
+      marginRight: theme.spacing(1),
     },
   }));
 
@@ -36,19 +47,23 @@ interface PropType {
 const NodeView = (props: PropType) => {
   const classes = useStyles();
   const { node, color } = props;
-  const [fontColor, setFontColor] = useState<string>('white');
 
-  useEffect(() => {
-    if ((color.r > 230 && color.g > 230) || (color.r > 220 && color.g > 220 && color.b > 220) || (color.r > 190 && color.g > 230 && color.b > 230)) {
-      setFontColor('black');
-    }
-  }, [color]);
+  const hslColors = rgbToHsl(color.r, color.g, color.b);
+
+  // style={{ border: node.highlighted ? '#f00 solid 2px' : `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%) solid 2px`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 60 && hslColors[2] >= 70) ? 'black' : 'white' }}
 
   return (
     <div className={classes.root}>
-      <div className={classes.node} style={{ backgroundColor: node.highlighted ? '#f00' : `rgb(${color.r}, ${color.g}, ${color.b})`, color: fontColor }}>
-        {node.id}
-      </div>
+      {node.highlighted ? (
+        <div className={classes.node} style={{ backgroundColor: `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 60 && hslColors[2] >= 70) ? 'black' : 'white' }}>
+          {node.id}
+        </div>
+      ) : (
+        <div className={classes.node} style={{ color: `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)` }}>
+          {node.id}
+        </div>
+      )
+      }
     </div>
   );
 };

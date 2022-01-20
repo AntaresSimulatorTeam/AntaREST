@@ -56,7 +56,6 @@ const GraphView = (props: GraphViewProps) => {
         height,
         width,
         highlightDegree: 0,
-        nodeHighlightBehavior: false,
         staticGraphWithDragAndDrop: true,
         d3: {
           disableLinkForce: true,

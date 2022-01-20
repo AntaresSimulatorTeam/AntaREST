@@ -26,6 +26,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     search: {
       marginTop: theme.spacing(2),
+      padding: theme.spacing(1),
     },
     button: {
       position: 'absolute',
@@ -39,7 +40,6 @@ const useStyles = makeStyles((theme: Theme) =>
       '&:hover': {
         backgroundColor: theme.palette.secondary.dark,
       },
-      display: 'none',
     },
     button2: {
       position: 'absolute',
@@ -52,6 +52,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropsType {
     item?: NodeProperties | LinkProperties | undefined;
+    nodeLinks?: Array<LinkProperties> | undefined;
     onClose?: () => void;
     onDelete?: (id: string, target?: string) => void;
     onArea?: () => void;
@@ -60,9 +61,9 @@ interface PropsType {
 
 const PropertiesView = (props: PropsType) => {
   const classes = useStyles();
-  const { item, onClose, onDelete, onArea, onLink } = props;
+  const { item, nodeLinks, onClose, onDelete, onArea, onLink } = props;
   const [t] = useTranslation();
-  console.log(item);
+
   return (
     <div className={classes.root}>
       <TextField
@@ -77,8 +78,8 @@ const PropertiesView = (props: PropsType) => {
           ),
         }}
       />
-      {item as NodeProperties && onClose && onDelete ? (
-        <PanelView node={item as NodeProperties} onDelete={onDelete} />
+      {item && Object.keys(item)[0] === 'id' && nodeLinks && onClose && onDelete ? (
+        <PanelView node={item as NodeProperties} links={nodeLinks} onDelete={onDelete} />
       ) : (item && onClose && onDelete && (
         <PanelView link={item as LinkProperties} onDelete={onDelete} />
       ))}
@@ -92,6 +93,7 @@ const PropertiesView = (props: PropsType) => {
 
 PropertiesView.defaultProps = {
   item: undefined,
+  nodeLinks: undefined,
   onClose: undefined,
   onDelete: undefined,
   onArea: undefined,

@@ -93,8 +93,14 @@ const FONT_SIZE = 15;
 
 const calculateSize = (text: string): number => {
   const textSize = text.length;
-  if (textSize < 5) {
-    return FONT_SIZE * textSize * 12;
+  if (textSize === 1) {
+    return FONT_SIZE * textSize * 32;
+  }
+  if (textSize <= 2) {
+    return FONT_SIZE * textSize * 16;
+  }
+  if (textSize <= 5) {
+    return FONT_SIZE * textSize * 10;
   }
   if (textSize <= 10) {
     return FONT_SIZE * textSize * 7.5;
@@ -112,6 +118,7 @@ const MapView = (props: Props) => {
   const [areas, setAreas] = useState<AreasConfig>();
   const [loaded, setLoaded] = useState(false);
   const [selectedItem, setSelectedItem] = useState<NodeProperties | LinkProperties>();
+  const [selectedNodeLinks, setSelectedNodeLinks] = useState<Array<LinkProperties>>();
   const [nodeData, setNodeData] = useState<Array<NodeProperties>>([]);
   const [linkData, setLinkData] = useState<Array<LinkProperties>>([]);
   const { enqueueSnackbar } = useSnackbar();
@@ -122,13 +129,15 @@ const MapView = (props: Props) => {
   const graphRef = useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
   const prevselectedItemId = useRef<string>();
   const [colors, setColors] = useState<Array<ColorProperties>>([]);
-
   // const [zoom, setZoom] = useState<number>();
 
   const onClickNode = useCallback((nodeId: string) => {
     if (!createLinkMode && nodeData) {
       const obj = nodeData.find((o) => o.id === nodeId);
       setSelectedItem(obj);
+      if (obj) {
+        setSelectedNodeLinks(linkData.filter((o) => o.source === obj.id || o.target === obj.id));
+      }
       if (graphRef.current) {
         const currentGraph = graphRef.current;
         if (prevselectedItemId.current) {
@@ -139,13 +148,12 @@ const MapView = (props: Props) => {
         currentGraph._setNodeHighlightedValue(nodeId, true);
       }
       prevselectedItemId.current = nodeId;
-      setSelectedItem(undefined);
     } else if (!firstNode) {
       setFirstNode(nodeId);
     } else if (firstNode) {
       setSecondNode(nodeId);
     }
-  }, [createLinkMode, firstNode, nodeData]);
+  }, [createLinkMode, firstNode, nodeData, linkData]);
 
   const onClickLink = useCallback((source: string, target: string) => {
     const obj = {
@@ -255,7 +263,7 @@ const MapView = (props: Props) => {
         x: areas[areaId].ui.x,
         y: areas[areaId].ui.y,
         color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
-        size: { width: calculateSize(areaId), height: 250 },
+        size: { width: calculateSize(areaId), height: 320 },
       }));
 
       const colorsRGB = Object.keys(areas).map((areaId) => ({
@@ -284,7 +292,7 @@ const MapView = (props: Props) => {
         <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
       </div>
       <div className={classes.graphView}>
-        <PropertiesView item={selectedItem} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onLink={createLink} />
+        <PropertiesView item={selectedItem} nodeLinks={selectedNodeLinks} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onLink={createLink} />
         <div className={`${classes.autosizer} ${classes.graph}`}>
           {loaded ? (
             <AutoSizer>

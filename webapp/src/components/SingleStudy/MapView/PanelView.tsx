@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import DeleteIcon from '@material-ui/icons/Delete';
 import { NodeProperties, LinkProperties } from './types';
 import ConfirmationModal from '../../ui/ConfirmationModal';
+import LinksView from './LinksView';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -19,15 +20,15 @@ const useStyles = makeStyles((theme: Theme) =>
       width: '80%',
       justifyContent: 'space-between',
       alignItems: 'center',
-      display: 'none',
+      display: 'flex',
     },
     form: {
-      width: '100%',
       display: 'flex',
       justifyContent: 'flex-start',
       alignItems: 'center',
       flexDirection: 'column',
       marginTop: theme.spacing(2),
+      padding: theme.spacing(1),
     },
     fields: {
       marginTop: theme.spacing(1),
@@ -43,6 +44,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropType {
     node?: NodeProperties;
+    links?: Array<LinkProperties>;
     link?: LinkProperties;
     onDelete: (id: string, target?: string) => void;
 }
@@ -50,7 +52,7 @@ interface PropType {
 const PanelView = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { node, link, onDelete } = props;
+  const { node, links, link, onDelete } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
   return (
@@ -58,11 +60,14 @@ const PanelView = (props: PropType) => {
       <div className={classes.form}>
         {node && (
           <>
-            <TextField className={classes.fields} label={t('singlestudy:areaName')} variant="filled" value={node.id} />
+            <TextField className={classes.fields} label={t('singlestudy:areaName')} variant="filled" value={node.id} disabled />
             <TextField className={classes.fields} label={t('singlestudy:color')} variant="filled" value={node.color} />
             <TextField className={classes.fields} label={t('singlestudy:posX')} variant="filled" value={node.x} />
             <TextField className={classes.fields} label={t('singlestudy:posY')} variant="filled" value={node.y} />
           </>
+        )}
+        {links && node && (
+          <LinksView links={links} node={node} />
         )}
         {link && (
         <Typography variant="body2" component="p">
@@ -100,6 +105,7 @@ const PanelView = (props: PropType) => {
 
 PanelView.defaultProps = {
   node: undefined,
+  links: undefined,
   link: undefined,
 };
 export default PanelView;
