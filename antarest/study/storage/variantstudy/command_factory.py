@@ -24,6 +24,9 @@ from antarest.study.storage.variantstudy.model.command.create_district import (
 from antarest.study.storage.variantstudy.model.command.create_link import (
     CreateLink,
 )
+from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import (
+    CreateRenewablesCluster,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import (
     RemoveArea,
@@ -39,6 +42,9 @@ from antarest.study.storage.variantstudy.model.command.remove_district import (
 )
 from antarest.study.storage.variantstudy.model.command.remove_link import (
     RemoveLink,
+)
+from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import (
+    RemoveRenewablesCluster,
 )
 from antarest.study.storage.variantstudy.model.command.replace_matrix import (
     ReplaceMatrix,
@@ -143,6 +149,18 @@ class CommandFactory:
 
         elif action == CommandName.REMOVE_CLUSTER.value:
             return RemoveCluster(
+                **args,
+                command_context=self.command_context,
+            )
+
+        elif action == CommandName.CREATE_RENEWABLES_CLUSTER.value:
+            return CreateRenewablesCluster(
+                **args,
+                command_context=self.command_context,
+            )
+
+        elif action == CommandName.REMOVE_RENEWABLES_CLUSTER.value:
+            return RemoveRenewablesCluster(
                 **args,
                 command_context=self.command_context,
             )

@@ -1,5 +1,6 @@
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
+    ENR_MODELLING,
 )
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
@@ -23,8 +24,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.load.load impor
 from antarest.study.storage.rawstudy.model.filesystem.root.input.miscgen.miscgen import (
     InputMiscGen,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.input.renewable.renewable import (
-    ClusteredRenewable,
+from antarest.study.storage.rawstudy.model.filesystem.root.input.renewables.renewable import (
+    ClusteredRenewables,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.input.reserves.reserves import (
     InputReserves,
@@ -63,8 +64,8 @@ class Input(FolderNode):
             "wind": InputWind(self.context, self.config.next_file("wind")),
         }
 
-        if self.config.enr_modelling == "clusters":
-            children["renewables"] = ClusteredRenewable(
+        if self.config.enr_modelling == ENR_MODELLING.CLUSTERS.value:
+            children["renewables"] = ClusteredRenewables(
                 self.context, self.config.next_file("renewables")
             )
 

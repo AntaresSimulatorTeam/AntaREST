@@ -15,12 +15,10 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 class ClusteredRenewableSeries(FolderNode):
     def build(self) -> TREE:
-        children: TREE = {}
         series_config = self.config.next_file("series.txt")
-        if series_config.path.exists():
-            children = {
-                "series": InputSeriesMatrix(self.context, series_config)
-            }
+        children: TREE = {
+            "series": InputSeriesMatrix(self.context, series_config)
+        }
         return children
 
 

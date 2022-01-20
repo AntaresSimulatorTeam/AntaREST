@@ -1,3 +1,4 @@
+from enum import Enum
 from pathlib import Path
 from typing import Optional, List, Dict
 
@@ -5,6 +6,11 @@ from pydantic.main import BaseModel
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import DTO
+
+
+class ENR_MODELLING(Enum):
+    AGGREGATED = "aggregated"
+    CLUSTERS = "clusters"
 
 
 class Cluster(BaseModel):
@@ -108,7 +114,7 @@ class FileStudyTreeConfig(DTO):
         bindings: Optional[List[str]] = None,
         store_new_set: bool = False,
         archive_input_series: Optional[List[str]] = None,
-        enr_modelling: str = "aggregated",
+        enr_modelling: str = ENR_MODELLING.AGGREGATED.value,
         cache: Optional[Dict[str, List[str]]] = None,
     ):
         self.study_path = study_path
@@ -244,7 +250,7 @@ class FileStudyTreeConfigDTO(BaseModel):
     bindings: List[str] = list()
     store_new_set: bool = False
     archive_input_series: List[str] = list()
-    enr_modelling: str = "aggregated"
+    enr_modelling: str = ENR_MODELLING.AGGREGATED.value
 
     @staticmethod
     def from_build_config(
