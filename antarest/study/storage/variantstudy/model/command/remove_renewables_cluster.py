@@ -178,7 +178,6 @@ class RemoveRenewablesCluster(ICommand):
                 == self.cluster_id
                 and command.area_id == self.area_id
             ):
-                # todo revert binding constraints that has the cluster in constraint and also search in base for one
                 return [command]
 
         try:
@@ -186,7 +185,6 @@ class RemoveRenewablesCluster(ICommand):
                 self.command_context.command_extractor
                 or CommandExtraction(self.command_context.matrix_service)
             ).extract_renewables_cluster(base, self.area_id, self.cluster_id)
-            # todo revert binding constraints that has the cluster in constraint
         except ChildNotFoundError as e:
             logging.getLogger(__name__).warning(
                 f"Failed to extract revert command for remove_cluster {self.area_id}#{self.cluster_id}",
