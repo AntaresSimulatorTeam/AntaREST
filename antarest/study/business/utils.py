@@ -10,21 +10,31 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-def execute_or_add_commands(study: Study, file_study: FileStudy, commands: List[ICommand], storage_service: StudyStorageService) -> None:
+def execute_or_add_commands(
+    study: Study,
+    file_study: FileStudy,
+    commands: List[ICommand],
+    storage_service: StudyStorageService,
+) -> None:
     if isinstance(study, RawStudy):
         executed_commands = []
         for command in commands:
             result = command.apply(file_study)
             if not result.status:
-                for i in range(0,len(executed_commands)):
+                for i in range(0, len(executed_commands)):
                     executed_command = executed_commands[i]
-                    executed_command.revert(history=executed_commands[i+1:], base=file_study)
+                    executed_command.revert(
+                        history=executed_commands[i + 1 :], base=file_study
+                    )
                 raise CommandApplicationError(result.message)
             executed_commands.append(command)
         storage_service.raw_study_service.cache.invalidate(study.id)
     else:
-        storage_service.variant_study_service.append_commands(study.id, aggregate_commands(commands),
-                                                             RequestParameters(user=DEFAULT_ADMIN_USER))
+        storage_service.variant_study_service.append_commands(
+            study.id,
+            aggregate_commands(commands),
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
 
 
 def aggregate_commands(commands: List[ICommand]) -> List[CommandDTO]:
@@ -37,8 +47,17 @@ def aggregate_commands(commands: List[ICommand]) -> List[CommandDTO]:
         if command.command_name == prev_command.command_name:
             cur_command_args_batch.append(command.to_dto().args)
         else:
-            commands_dto.append(CommandDTO(action=prev_command.command_name, args=cur_command_args_batch))
+            commands_dto.append(
+                CommandDTO(
+                    action=prev_command.command_name,
+                    args=cur_command_args_batch,
+                )
+            )
             cur_command_args_batch = [command.to_dto().args]
         prev_command = command
-    commands_dto.append(CommandDTO(action=prev_command.command_name, args=cur_command_args_batch))
+    commands_dto.append(
+        CommandDTO(
+            action=prev_command.command_name, args=cur_command_args_batch
+        )
+    )
     return commands_dto

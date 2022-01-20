@@ -5,8 +5,12 @@ from pydantic import BaseModel
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
-from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
+from antarest.study.storage.variantstudy.model.command.create_link import (
+    CreateLink,
+)
+from antarest.study.storage.variantstudy.model.command.remove_link import (
+    RemoveLink,
+)
 
 
 class LinkInfoDTO(BaseModel):
@@ -35,22 +39,23 @@ class LinkManager:
         command = CreateLink(
             area1=link_creation_info.area1,
             area2=link_creation_info.area2,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
         return LinkInfoDTO(
             area1=link_creation_info.area1,
             area2=link_creation_info.area2,
         )
 
-    def delete_area(
-        self, study: Study, area1_id: str, area2_id: str
-    ) -> None:
+    def delete_area(self, study: Study, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         command = RemoveLink(
             area1=area1_id,
             area2=area2_id,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
-
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )

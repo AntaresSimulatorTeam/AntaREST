@@ -11,19 +11,29 @@ from antarest.study.model import (
     RawStudy,
     PatchArea,
     Patch,
-    PatchCluster, Study,
+    PatchCluster,
+    Study,
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    Set, transform_name_to_id,
+    Set,
+    transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.common import CommandName
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+)
+from antarest.study.storage.variantstudy.model.command.create_area import (
+    CreateArea,
+)
+from antarest.study.storage.variantstudy.model.command.remove_area import (
+    RemoveArea,
+)
+from antarest.study.storage.variantstudy.model.command.update_config import (
+    UpdateConfig,
+)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -71,7 +81,7 @@ class AreaManager:
         self.patch_service = PatchService()
 
     def get_all_areas(
-            self, study: RawStudy, area_type: Optional[AreaType] = None
+        self, study: RawStudy, area_type: Optional[AreaType] = None
     ) -> List[AreaInfoDTO]:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
@@ -109,12 +119,16 @@ class AreaManager:
         return result
 
     def create_area(
-            self, study: Study, area_creation_info: AreaCreationDTO
+        self, study: Study, area_creation_info: AreaCreationDTO
     ) -> AreaInfoDTO:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        command = CreateArea(area_name=area_creation_info.name,
-                             command_context=self.storage_service.variant_study_service.command_factory.command_context)
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        command = CreateArea(
+            area_name=area_creation_info.name,
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
         area_id = transform_name_to_id(area_creation_info.name)
         patch = self.patch_service.get(study)
         patch.areas = patch.areas or {}
@@ -124,17 +138,15 @@ class AreaManager:
             id=area_id,
             name=area_creation_info.name,
             type=AreaType.AREA,
-            thermals=self._get_clusters(
-                file_study, area_id, patch
-            ),
+            thermals=self._get_clusters(file_study, area_id, patch),
             metadata=area_creation_info.metadata,
         )
 
     def update_area_metadata(
-            self,
-            study: Study,
-            area_id: str,
-            area_metadata: PatchArea,
+        self,
+        study: Study,
+        area_id: str,
+        area_metadata: PatchArea,
     ) -> AreaInfoDTO:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         area_or_set = file_study.config.areas.get(
@@ -156,27 +168,46 @@ class AreaManager:
             else [],
         )
 
-    def update_area_ui(self, study: Study, area_id: str, area_ui: AreaUI) -> None:
+    def update_area_ui(
+        self, study: Study, area_id: str, area_ui: AreaUI
+    ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         commands = [
-            UpdateConfig(target=f"input/areas/{area_id}/ui/x", data=area_ui.x,
-                         command_context=self.storage_service.variant_study_service.command_factory.command_context),
-            UpdateConfig(target=f"input/areas/{area_id}/ui/y", data=area_ui.y,
-                         command_context=self.storage_service.variant_study_service.command_factory.command_context),
-            UpdateConfig(target=f"input/areas/{area_id}/ui/color_r", data=area_ui.color_rgb[0],
-                         command_context=self.storage_service.variant_study_service.command_factory.command_context),
-            UpdateConfig(target=f"input/areas/{area_id}/ui/color_g", data=area_ui.color_rgb[1],
-                         command_context=self.storage_service.variant_study_service.command_factory.command_context),
-            UpdateConfig(target=f"input/areas/{area_id}/ui/color_b", data=area_ui.color_rgb[2],
-                         command_context=self.storage_service.variant_study_service.command_factory.command_context),
+            UpdateConfig(
+                target=f"input/areas/{area_id}/ui/x",
+                data=area_ui.x,
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            ),
+            UpdateConfig(
+                target=f"input/areas/{area_id}/ui/y",
+                data=area_ui.y,
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            ),
+            UpdateConfig(
+                target=f"input/areas/{area_id}/ui/color_r",
+                data=area_ui.color_rgb[0],
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            ),
+            UpdateConfig(
+                target=f"input/areas/{area_id}/ui/color_g",
+                data=area_ui.color_rgb[1],
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            ),
+            UpdateConfig(
+                target=f"input/areas/{area_id}/ui/color_b",
+                data=area_ui.color_rgb[2],
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            ),
         ]
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        execute_or_add_commands(
+            study, file_study, commands, self.storage_service
+        )
 
     def update_thermal_cluster_metadata(
-            self,
-            study: Study,
-            area_id: str,
-            clusters_metadata: Dict[str, PatchCluster],
+        self,
+        study: Study,
+        area_id: str,
+        clusters_metadata: Dict[str, PatchCluster],
     ) -> AreaInfoDTO:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         patch = self.patch_service.get(study)
@@ -200,15 +231,19 @@ class AreaManager:
 
     def delete_area(self, study: Study, area_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        command = RemoveArea(id=area_id,
-                             command_context=self.storage_service.variant_study_service.command_factory.command_context)
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        command = RemoveArea(
+            id=area_id,
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        execute_or_add_commands(
+            study, file_study, [command], self.storage_service
+        )
 
     @staticmethod
     def _update_with_cluster_metadata(
-            area: str,
-            info: ClusterInfoDTO,
-            cluster_patch: Dict[str, PatchCluster],
+        area: str,
+        info: ClusterInfoDTO,
+        cluster_patch: Dict[str, PatchCluster],
     ) -> ClusterInfoDTO:
         patch = cluster_patch.get(f"{area}.{info.id}", PatchCluster())
         info.code_oi = patch.code_oi
@@ -217,7 +252,7 @@ class AreaManager:
 
     @staticmethod
     def _get_clusters(
-            file_study: FileStudy, area: str, metadata_patch: Patch
+        file_study: FileStudy, area: str, metadata_patch: Patch
     ) -> List[ClusterInfoDTO]:
         thermal_clusters_data = file_study.tree.get(
             ["input", "thermal", "clusters", area, "list"]
