@@ -188,6 +188,38 @@ from antarest.study.storage.variantstudy.model.command.common import (
             args=[{"area_id": "area_name", "cluster_id": "cluster_name"}],
         ),
         CommandDTO(
+            action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
+            args={
+                "area_id": "area_name",
+                "cluster_name": "cluster_name",
+                "parameters": {
+                    "name": "name",
+                    "ts-interpretation": "power-generation",
+                },
+            },
+        ),
+        CommandDTO(
+            action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
+            args=[
+                {
+                    "area_id": "area_name",
+                    "cluster_name": "cluster_name",
+                    "parameters": {
+                        "name": "name",
+                        "ts-interpretation": "power-generation",
+                    },
+                }
+            ],
+        ),
+        CommandDTO(
+            action=CommandName.REMOVE_RENEWABLES_CLUSTER.value,
+            args={"area_id": "area_name", "cluster_id": "cluster_name"},
+        ),
+        CommandDTO(
+            action=CommandName.REMOVE_RENEWABLES_CLUSTER.value,
+            args=[{"area_id": "area_name", "cluster_id": "cluster_name"}],
+        ),
+        CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
             args={"target": "target_element", "matrix": "matrix"},
         ),

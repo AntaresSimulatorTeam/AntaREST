@@ -28,7 +28,9 @@ class CreateRenewablesCluster(ICommand):
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
-            command_name=CommandName.CREATE_CLUSTER, version=1, **data
+            command_name=CommandName.CREATE_RENEWABLES_CLUSTER,
+            version=1,
+            **data,
         )
 
     @validator("cluster_name")
