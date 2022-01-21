@@ -49,7 +49,7 @@ class LinkManager:
             area2=link_creation_info.area2,
         )
 
-    def delete_area(self, study: Study, area1_id: str, area2_id: str) -> None:
+    def delete_link(self, study: Study, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         command = RemoveLink(
             area1=area1_id,

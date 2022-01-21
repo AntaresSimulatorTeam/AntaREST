@@ -49,7 +49,7 @@ def aggregate_commands(commands: Sequence[ICommand]) -> List[CommandDTO]:
         else:
             commands_dto.append(
                 CommandDTO(
-                    action=prev_command.command_name,
+                    action=prev_command.command_name.value,
                     args=cur_command_args_batch,
                 )
             )
@@ -57,7 +57,7 @@ def aggregate_commands(commands: Sequence[ICommand]) -> List[CommandDTO]:
         prev_command = command
     commands_dto.append(
         CommandDTO(
-            action=prev_command.command_name, args=cur_command_args_batch
+            action=prev_command.command_name.value, args=cur_command_args_batch
         )
     )
     return commands_dto

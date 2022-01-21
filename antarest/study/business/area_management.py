@@ -69,7 +69,7 @@ class AreaInfoDTO(AreaCreationDTO):
     thermals: Optional[List[ClusterInfoDTO]] = None
 
 
-class AreaUI:
+class AreaUI(BaseModel):
     x: int
     y: int
     color_rgb: Tuple[int, int, int]
@@ -138,7 +138,8 @@ class AreaManager:
             id=area_id,
             name=area_creation_info.name,
             type=AreaType.AREA,
-            thermals=self._get_clusters(file_study, area_id, patch),
+            # this should always be empty since it's a new area
+            thermals=[],
             metadata=area_creation_info.metadata,
         )
 
@@ -174,27 +175,27 @@ class AreaManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         commands = [
             UpdateConfig(
-                target=f"input/areas/{area_id}/ui/x",
+                target=f"input/areas/{area_id}/ui/ui/x",
                 data=area_ui.x,
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
             ),
             UpdateConfig(
-                target=f"input/areas/{area_id}/ui/y",
+                target=f"input/areas/{area_id}/ui/ui/y",
                 data=area_ui.y,
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
             ),
             UpdateConfig(
-                target=f"input/areas/{area_id}/ui/color_r",
+                target=f"input/areas/{area_id}/ui/ui/color_r",
                 data=area_ui.color_rgb[0],
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
             ),
             UpdateConfig(
-                target=f"input/areas/{area_id}/ui/color_g",
+                target=f"input/areas/{area_id}/ui/ui/color_g",
                 data=area_ui.color_rgb[1],
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
             ),
             UpdateConfig(
-                target=f"input/areas/{area_id}/ui/color_b",
+                target=f"input/areas/{area_id}/ui/ui/color_b",
                 data=area_ui.color_rgb[2],
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
             ),

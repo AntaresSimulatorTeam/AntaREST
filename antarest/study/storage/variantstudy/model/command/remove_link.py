@@ -28,7 +28,16 @@ class RemoveLink(ICommand):
             command_name=CommandName.REMOVE_LINK, version=1, **data
         )
 
-    def _apply_config(
+    def _apply_config(self, study_data: FileStudyTreeConfig):
+        result, _ = self._check_link_exists(study_data)
+        if not result.status:
+            return result
+
+        area_from, area_to = sorted([self.area1, self.area2])
+        del study_data.areas[area_from].links[area_to]
+        return result
+
+    def _check_link_exists(
         self, study_data: FileStudyTreeConfig
     ) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.area1 not in study_data.areas:
@@ -67,7 +76,7 @@ class RemoveLink(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, data = self._apply_config(study_data.config)
+        output, data = self._check_link_exists(study_data.config)
         if not output.status:
             return output
         area_from = data["area_from"]
@@ -76,6 +85,7 @@ class RemoveLink(ICommand):
         study_data.tree.delete(
             ["input", "links", area_from, "properties", area_to]
         )
+        del study_data.config.areas[area_from].links[area_to]
         return output
 
     def to_dto(self) -> CommandDTO:
