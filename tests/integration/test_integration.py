@@ -1,10 +1,12 @@
 import time
 from pathlib import Path
+from unittest.mock import ANY
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+from antarest.study.business.area_management import AreaType
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
 
 
@@ -438,6 +440,164 @@ def test_area_management(app: FastAPI):
             "thermals": None,
             "type": "DISTRICT",
         }
+    ]
+
+    client.post(
+        f"/v1/studies/{study_id}/areas",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "name": "area 1",
+            "type": AreaType.AREA.value,
+            "metadata": {"country": "FR"},
+        },
+    )
+    res = client.post(
+        f"/v1/studies/{study_id}/areas",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "name": "area 1",
+            "type": AreaType.AREA.value,
+            "metadata": {"country": "FR"},
+        },
+    )
+    assert res.status_code == 500
+    assert res.json() == {
+        "description": "Area 'area 1' already exists and could not be created",
+        "exception": "CommandApplicationError",
+    }
+
+    client.post(
+        f"/v1/studies/{study_id}/areas",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "name": "area 2",
+            "type": AreaType.AREA.value,
+            "metadata": {"country": "DE"},
+        },
+    )
+
+    res_areas = client.get(
+        f"/v1/studies/{study_id}/areas",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res_areas.json() == [
+        {
+            "id": "area 1",
+            "metadata": {"country": "FR"},
+            "name": "area 1",
+            "set": None,
+            "thermals": [],
+            "type": "AREA",
+        },
+        {
+            "id": "area 2",
+            "metadata": {"country": "DE"},
+            "name": "area 2",
+            "set": None,
+            "thermals": [],
+            "type": "AREA",
+        },
+        {
+            "id": "all areas",
+            "metadata": {"country": None},
+            "name": "All areas",
+            "set": ANY,  # because some time the order is not the same
+            "thermals": None,
+            "type": "DISTRICT",
+        },
+    ]
+
+    client.post(
+        f"/v1/studies/{study_id}/links",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "area1": "area 1",
+            "area2": "area 2",
+        },
+    )
+    res_links = client.get(
+        f"/v1/studies/{study_id}/links",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res_links.json() == [{"area1": "area 1", "area2": "area 2"}]
+    client.delete(
+        f"/v1/studies/{study_id}/links/area%201/area%202",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_links = client.get(
+        f"/v1/studies/{study_id}/links",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res_links.json() == []
+
+    res = client.put(
+        f"/v1/studies/{study_id}/areas/area%201/ui",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={"x": 100, "y": 100, "color_rgb": [255, 0, 100]},
+    )
+    assert res.status_code == 200
+    res_ui = client.get(
+        f"/v1/studies/{study_id}/raw?path=input/areas/area%201/ui/ui",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res_ui.json() == {
+        "x": 100,
+        "y": 100,
+        "color_r": 255,
+        "color_g": 0,
+        "color_b": 100,
+        "layers": 0,
+    }
+
+    client.delete(
+        f"/v1/studies/{study_id}/areas/area%201",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_areas = client.get(
+        f"/v1/studies/{study_id}/areas",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res_areas.json() == [
+        {
+            "id": "area 2",
+            "metadata": {"country": "DE"},
+            "name": "area 2",
+            "set": None,
+            "thermals": [],
+            "type": "AREA",
+        },
+        {
+            "id": "all areas",
+            "metadata": {"country": None},
+            "name": "All areas",
+            "set": ["area 2"],
+            "thermals": None,
+            "type": "DISTRICT",
+        },
     ]
 
 

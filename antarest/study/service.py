@@ -43,6 +43,7 @@ from antarest.study.business.area_management import (
     AreaType,
     AreaInfoDTO,
     AreaCreationDTO,
+    AreaUI,
 )
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.model import (
@@ -1332,6 +1333,17 @@ class StudyService:
         self._assert_study_unarchived(study)
         return self.areas.create_area(study, area_creation_dto)
 
+    def create_link(
+        self,
+        uuid: str,
+        link_creation_dto: LinkInfoDTO,
+        params: RequestParameters,
+    ) -> LinkInfoDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.links.create_link(study, link_creation_dto)
+
     def update_area(
         self,
         uuid: str,
@@ -1343,6 +1355,18 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         return self.areas.update_area_metadata(study, area_id, area_patch_dto)
+
+    def update_area_ui(
+        self,
+        uuid: str,
+        area_id: str,
+        area_ui: AreaUI,
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.areas.update_area_ui(study, area_id, area_ui)
 
     def update_thermal_cluster_metadata(
         self,
@@ -1365,6 +1389,18 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         return self.areas.delete_area(study, area_id)
+
+    def delete_link(
+        self,
+        uuid: str,
+        area_from: str,
+        area_to: str,
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.links.delete_link(study, area_from, area_to)
 
     def archive(self, uuid: str, params: RequestParameters) -> None:
         study = self.get_study(uuid)

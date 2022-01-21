@@ -1,11 +1,29 @@
+import json
+import os
+import uuid
 from pathlib import Path
 from unittest.mock import Mock
+from zipfile import ZipFile
 
-from antarest.study.business.link_management import LinkManager
+import pytest
+
+from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.requests import RequestParameters
+from antarest.matrixstore.service import (
+    ISimpleMatrixService,
+    SimpleMatrixService,
+)
+from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.model import RawStudy, Patch, PatchArea, PatchCluster
 from antarest.study.business.area_management import (
     AreaManager,
     AreaType,
+    AreaCreationDTO,
+    AreaUI,
+)
+from antarest.study.storage.patch_service import PatchService
+from antarest.study.storage.rawstudy.model.filesystem.config.files import (
+    ConfigPathBuilder,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -22,14 +40,188 @@ from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+)
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+from antarest.study.storage.variantstudy.model.model import CommandDTO
+from antarest.study.storage.variantstudy.variant_study_service import (
+    VariantStudyService,
+)
 
 
-def test_create_area():
+@pytest.fixture
+def empty_study(tmpdir: Path) -> FileStudy:
+    cur_dir: Path = Path(__file__).parent
+    study_path = Path(tmpdir / str(uuid.uuid4()))
+    os.mkdir(study_path)
+    with ZipFile(cur_dir / "assets" / "empty_study_810.zip") as zip_output:
+        zip_output.extractall(path=study_path)
+    config = ConfigPathBuilder.build(study_path, "1")
+    return FileStudy(config, FileStudyTree(Mock(), config))
+
+
+@pytest.fixture
+def matrix_service(tmpdir: Path) -> ISimpleMatrixService:
+    matrix_path = Path(tmpdir / "matrix_store")
+    os.mkdir(matrix_path)
+    return SimpleMatrixService(matrix_path)
+
+
+def test_area_crud(
+    empty_study: FileStudy, matrix_service: ISimpleMatrixService
+):
     raw_study_service = Mock(spec=RawStudyService)
+    variant_study_service = Mock(spec=VariantStudyService)
     area_manager = AreaManager(
-        storage_service=StudyStorageService(raw_study_service, Mock())
+        storage_service=StudyStorageService(
+            raw_study_service, variant_study_service
+        ),
     )
-    pass
+    link_manager = LinkManager(
+        storage_service=StudyStorageService(
+            raw_study_service, variant_study_service
+        )
+    )
+    study = RawStudy(id="1", path=empty_study.config.study_path)
+    raw_study_service.get_raw.return_value = empty_study
+    raw_study_service.cache = Mock()
+    variant_study_service.command_factory = CommandFactory(
+        GeneratorMatrixConstants(matrix_service), matrix_service
+    )
+    assert len(empty_study.config.areas.keys()) == 0
+
+    area_manager.create_area(
+        study, AreaCreationDTO(name="test", type=AreaType.AREA)
+    )
+    assert len(empty_study.config.areas.keys()) == 1
+    assert (
+        json.loads((empty_study.config.study_path / "patch.json").read_text())[
+            "areas"
+        ]["test"]["country"]
+        is None
+    )
+
+    area_manager.update_area_ui(
+        study, "test", AreaUI(x=100, y=200, color_rgb=(255, 0, 100))
+    )
+    assert empty_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
+        "x": 100,
+        "y": 200,
+        "color_r": 255,
+        "color_g": 0,
+        "color_b": 100,
+        "layers": 0,
+    }
+
+    area_manager.create_area(
+        study, AreaCreationDTO(name="test2", type=AreaType.AREA)
+    )
+    link_manager.create_link(study, LinkInfoDTO(area1="test", area2="test2"))
+    assert empty_study.config.areas["test"].links.get("test2") is not None
+
+    link_manager.delete_link(study, "test", "test2")
+    assert empty_study.config.areas["test"].links.get("test2") is None
+    area_manager.delete_area(study, "test")
+    area_manager.delete_area(study, "test2")
+    assert len(empty_study.config.areas.keys()) == 0
+
+    study = VariantStudy(id="2", path=empty_study.config.study_path)
+    variant_study_service.get_raw.return_value = empty_study
+    area_manager.create_area(
+        study,
+        AreaCreationDTO(
+            name="test", type=AreaType.AREA, metadata=PatchArea(country="FR")
+        ),
+    )
+    variant_study_service.append_commands.assert_called_with(
+        "2",
+        [
+            CommandDTO(
+                action=CommandName.CREATE_AREA.value,
+                args={"area_name": "test"},
+            )
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
+    assert (empty_study.config.study_path / "patch.json").exists()
+    assert (
+        json.loads((empty_study.config.study_path / "patch.json").read_text())[
+            "areas"
+        ]["test"]["country"]
+        == "FR"
+    )
+
+    area_manager.update_area_ui(
+        study, "test", AreaUI(x=100, y=200, color_rgb=(255, 0, 100))
+    )
+    variant_study_service.append_commands.assert_called_with(
+        "2",
+        [
+            CommandDTO(
+                action=CommandName.UPDATE_CONFIG.value,
+                args=[
+                    {"target": "input/areas/test/ui/ui/x", "data": "100"},
+                    {"target": "input/areas/test/ui/ui/y", "data": "200"},
+                    {
+                        "target": "input/areas/test/ui/ui/color_r",
+                        "data": "255",
+                    },
+                    {"target": "input/areas/test/ui/ui/color_g", "data": "0"},
+                    {
+                        "target": "input/areas/test/ui/ui/color_b",
+                        "data": "100",
+                    },
+                ],
+            ),
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
+
+    area_manager.create_area(
+        study, AreaCreationDTO(name="test2", type=AreaType.AREA)
+    )
+    link_manager.create_link(study, LinkInfoDTO(area1="test", area2="test2"))
+    variant_study_service.append_commands.assert_called_with(
+        "2",
+        [
+            CommandDTO(
+                action=CommandName.CREATE_LINK.value,
+                args={
+                    "area1": "test",
+                    "area2": "test2",
+                    "parameters": None,
+                    "series": "720054535be488afe06e985617709276147195349c34565c63af15e9068364da",
+                },
+            ),
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
+    link_manager.delete_link(study, "test", "test2")
+    variant_study_service.append_commands.assert_called_with(
+        "2",
+        [
+            CommandDTO(
+                action=CommandName.REMOVE_LINK.value,
+                args={"area1": "test", "area2": "test2"},
+            ),
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
+    area_manager.delete_area(study, "test2")
+    variant_study_service.append_commands.assert_called_with(
+        "2",
+        [
+            CommandDTO(
+                action=CommandName.REMOVE_AREA.value, args={"id": "test2"}
+            ),
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
 
 
 def test_get_all_area():
@@ -214,14 +406,6 @@ def test_get_all_area():
         },
     ] == [link.dict() for link in links]
 
-    pass
-
-
-def test_delete_area():
-    raw_study_service = Mock(spec=RawStudyService)
-    area_manager = AreaManager(
-        storage_service=StudyStorageService(raw_study_service, Mock())
-    )
     pass
 
 
