@@ -4,41 +4,26 @@ import {
   createStyles,
   Theme,
   Typography,
-  Button,
   TextField,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
-import DeleteIcon from '@material-ui/icons/Delete';
 import { NodeProperties, LinkProperties } from './types';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import LinksView from './LinksView';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    buttons: {
-      marginTop: theme.spacing(2),
-      width: '80%',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      display: 'flex',
-    },
     form: {
       display: 'flex',
       justifyContent: 'flex-start',
       alignItems: 'center',
       flexDirection: 'column',
-      marginTop: theme.spacing(2),
       padding: theme.spacing(1),
+      flexGrow: 1,
+      marginBottom: '76px',
     },
     fields: {
       marginTop: theme.spacing(1),
-    },
-    deleteIcon: {
-      cursor: 'pointer',
-      color: theme.palette.error.light,
-      '&:hover': {
-        color: theme.palette.error.main,
-      },
     },
   }));
 
@@ -76,10 +61,7 @@ const PanelView = (props: PropType) => {
           {link.target}
         </Typography>
         )}
-      </div>
-      <div className={classes.buttons}>
-        <Button size="small">{t('singlestudy:more')}</Button>
-        <DeleteIcon className={classes.deleteIcon} onClick={() => setOpenConfirmationModal(true)} />
+
       </div>
       {openConfirmationModal && node && (
         <ConfirmationModal

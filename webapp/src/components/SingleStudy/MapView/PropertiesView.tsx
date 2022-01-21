@@ -40,6 +40,8 @@ const useStyles = makeStyles((theme: Theme) =>
       '&:hover': {
         backgroundColor: theme.palette.secondary.dark,
       },
+      height: '25px',
+      /* taille fixe pour margin bottom de l'autre côté */
     },
     button2: {
       position: 'absolute',
