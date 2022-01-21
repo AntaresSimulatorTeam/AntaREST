@@ -1,5 +1,5 @@
-import React, { CSSProperties, PropsWithChildren, useEffect, useState } from 'react';
-import { Link, NavLink, useLocation } from "react-router-dom";
+import React, { CSSProperties, PropsWithChildren } from 'react';
+import { NavLink } from "react-router-dom";
 import { connect, ConnectedProps,  } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
@@ -71,7 +71,6 @@ type PropTypes = ReduxProps;
 const PermanentDrawerLeft = (props: PropsWithChildren<PropTypes>) => {
     const { children, extended, setExtended } = props;
     const theme = useTheme();
-    const location = useLocation();
     const [t] = useTranslation();
 
     const navigation: Array<MenuItem> = [
@@ -90,22 +89,22 @@ const PermanentDrawerLeft = (props: PropsWithChildren<PropTypes>) => {
     width: '100%',
     height: '100%',
     display: 'flex',
-    padding: theme.spacing(1, 1),
-    flexFlow: extended ? 'row nowrap' : 'column nowrap',
-    justifyContent: extended ? 'flex-start' : 'center',
+    padding: 0,
+    flexFlow: 'row nowrap',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     boxSizing: 'border-box',
     textDecoration: 0,
     outline: 0};
   const iconStyle: CSSProperties = {
-    width: extended ? 'auto': '100%',
+    width: 'auto',
     display: 'flex',
+    boxSizing: 'border-box',
     justifyContent: 'center'};
   const textStyle: SxProps<Theme> = {
     color: theme.palette.grey[400],
     '& span, & svg': {
-      fontSize: extended ? '0.8em': '0.48em',
-      fontWeight: 'bold',
+      fontSize: '0.8em',
     }}; 
 
     const drawMenuItem = (elm: MenuItem): JSX.Element => {
@@ -116,16 +115,15 @@ const PermanentDrawerLeft = (props: PropsWithChildren<PropTypes>) => {
                   <ListItemIcon sx={iconStyle}>
                     {elm.icon({style: { color: theme.palette.grey[400] }})}
                   </ListItemIcon>
-                  <ListItemText primary={t(`main:${elm.id}`)} sx={textStyle} />
+                  {extended && <ListItemText primary={t(`main:${elm.id}`)} sx={textStyle} />}
                 </MenuLink>:
                 <NavLink to={elm.link}
                       style={({isActive}) => ({...linkStyle,
-                              backgroundColor: isActive ? theme.palette.primary.dark :  undefined,
-                              borderRight: isActive ? `4px solid ${theme.palette.primary.light}`: 0,})}>
+                              backgroundColor: isActive ? theme.palette.primary.dark :  undefined,})}>
                   <ListItemIcon sx={iconStyle}>
                     {elm.icon({sx: { color: theme.palette.grey[400], }})}
                   </ListItemIcon>
-                  <ListItemText primary={t(`main:${elm.id}`)} sx={textStyle} />
+                  {extended && <ListItemText primary={t(`main:${elm.id}`)} sx={textStyle} />}
                 </NavLink>}
               </CustomListItem>            
     )};
@@ -154,24 +152,23 @@ const PermanentDrawerLeft = (props: PropsWithChildren<PropTypes>) => {
             {extended && <Typography style={{color: theme.palette.secondary.main, fontWeight: 'bold'}}>Antares Web</Typography>}
           </div>
         </Toolbar>
-        <Divider style={{ height: '1px', background: theme.palette.grey[800] }}/>
         <div style={{display: 'flex', flex: 1, flexFlow: 'column nowrap', boxSizing: 'border-box', justifyContent: 'space-between'}}>
-        <List>
-          {navigation.slice(0, 3).map((elm: MenuItem, index) => (
-              drawMenuItem(elm)
-          ))}
-        </List>
-        <List>
-          {navigation.slice(3, 6).map((elm: MenuItem, index) => (
-              drawMenuItem(elm)
-          ))}
-        </List>
+          <List>
+            {navigation.slice(0, 3).map((elm: MenuItem, index) => (
+                drawMenuItem(elm)
+            ))}
+          </List>
+          <List>
+            {navigation.slice(3, 6).map((elm: MenuItem, index) => (
+                drawMenuItem(elm)
+            ))}
+          </List>
         </div>
         <Divider style={{ height: '1px', background: theme.palette.grey[800] }}/>
         <List>
             {drawMenuItem(settings)}
             <CustomListItem sx={{ 
-                              padding: extended ? theme.spacing(1, 1): 0,
+                              padding: 0,
                               width: '100%',
                               display: 'flex',
                               flexFlow: 'row nowrap',
@@ -179,23 +176,23 @@ const PermanentDrawerLeft = (props: PropsWithChildren<PropTypes>) => {
                               alignItems: 'center',
                               boxSizing: 'border-box'}}>
               <ListItemIcon sx={iconStyle}>
-              <AccountCircleOutlinedIcon style={{ color: theme.palette.grey[400] }}/>
-             </ListItemIcon>
-              <ListItemText primary={t(`main:connexion`)} sx={textStyle} />
+                <AccountCircleOutlinedIcon style={{ color: theme.palette.grey[400] }}/>
+              </ListItemIcon>
+              {extended && <ListItemText primary={t(`main:connexion`)} sx={textStyle} />}
             </CustomListItem>
             <CustomListItem onClick={() => setExtended(!extended)} sx={{ 
-                              padding: extended ? theme.spacing(1, 1): 0,
+                              padding: 0,
                               width: '100%',
                               display: 'flex',
                               flexFlow: 'row nowrap',
                               justifyContent: 'flex-start',
                               alignItems: 'center',
                               boxSizing: 'border-box'}}>
-            <ListItemIcon sx={iconStyle}>
-              {extended ? <FormatIndentDecreaseOutlinedIcon style={{ color: theme.palette.grey[400] }}/>: <FormatIndentIncreaseOutlinedIcon style={{ color: theme.palette.grey[400]  }}/>}
-            </ListItemIcon>
-            {extended && <ListItemText primary={t(`main:hide`)} sx={textStyle} />}
-          </CustomListItem>
+              <ListItemIcon sx={iconStyle}>
+                {extended ? <FormatIndentDecreaseOutlinedIcon style={{ color: theme.palette.grey[400] }}/>: <FormatIndentIncreaseOutlinedIcon style={{ color: theme.palette.grey[400]  }}/>}
+              </ListItemIcon>
+              {extended && <ListItemText primary={t(`main:hide`)} sx={textStyle} />}
+            </CustomListItem>
         </List>
       </Drawer>
       <Box
