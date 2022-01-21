@@ -28,9 +28,9 @@ class RemoveLink(ICommand):
             command_name=CommandName.REMOVE_LINK, version=1, **data
         )
 
-    def _apply_config(self, study_data: FileStudyTreeConfig):
-        result, _ = self._check_link_exists(study_data)
-        if not result.status:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+        result = self._check_link_exists(study_data)
+        if not result[0].status:
             return result
 
         area_from, area_to = sorted([self.area1, self.area2])
