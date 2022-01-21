@@ -4,6 +4,7 @@
   "variants": "Gestion des variantes",
   "runStudy": "Lancer l'étude",
   "xpansionMode": "Mode Xpansion",
+  "useXpansionVersionR": "Utiliser la version R d'Xpansion",
   "postProcessing": "Post processing",
   "timeLimit": "Limite de temps",
   "timeLimitHelper": "Limite de temps (en heures)",

@@ -4,6 +4,7 @@
   "variants": "Variant management",
   "runStudy": "Run study",
   "xpansionMode": "Xpansion mode",
+  "useXpansionVersionR": "Use the R legacy Xpansion mode",
   "postProcessing": "Post processing",
   "timeLimit": "Time limit",
   "timeLimitHelper": "Time limit (in hours)",
