@@ -1,17 +1,12 @@
-import React, { CSSProperties, PropsWithChildren } from 'react';
-import { NavLink } from "react-router-dom";
+import React, { PropsWithChildren } from 'react';
 import { connect, ConnectedProps,  } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
-import Drawer from '@mui/material/Drawer';
 import CssBaseline from '@mui/material/CssBaseline';
 import Toolbar from '@mui/material/Toolbar';
 import List from '@mui/material/List';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
-import ListItem, { ListItemProps } from '@mui/material/ListItem';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
 import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
 import ShowChartOutlinedIcon from '@mui/icons-material/ShowChartOutlined';
 import PlaylistAddCheckOutlinedIcon from '@mui/icons-material/PlaylistAddCheckOutlined';
@@ -25,29 +20,12 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import FormatIndentIncreaseOutlinedIcon from '@mui/icons-material/FormatIndentIncreaseOutlined';
 import FormatIndentDecreaseOutlinedIcon from '@mui/icons-material/FormatIndentDecreaseOutlined';
 
-import { styled, SxProps, Theme, useTheme } from '@mui/material';
+import { useTheme } from '@mui/material';
 import logo from '../../assets/logo.png';
 import { AppState } from '../../store/reducers';
 import { setMenuExtensionStatusAction } from '../../store/ui';
+import { CustomDrawer, CustomListItem, MenuLink, CustomNavLink, CustomListItemText, CustomListItemIcon} from '../../components/MenuWrapperComponents';
 
-const drawerWidth = 60;
-const drawerWidthExtended = 240;
-
-const MenuLink = styled('a')(({ theme }) => ({
-  color: 'white',
-  outline: 0,
-  textDecoration: 0,
-}));
-
-const CustomListItem = styled(ListItem)<ListItemProps>(({ theme }) => ({
-  cursor: 'pointer',
-  width: '100%',
-  height: '60px',
-  padding: 0,
-  '&:hover': {
-    backgroundColor: theme.palette.primary.dark,
-  },
-}));
 
 interface MenuItem {
   id: string;
@@ -68,7 +46,7 @@ const connector = connect(mapState, mapDispatch);
 type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps;
 
-const PermanentDrawerLeft = (props: PropsWithChildren<PropTypes>) => {
+const MenuWrapper = (props: PropsWithChildren<PropTypes>) => {
     const { children, extended, setExtended } = props;
     const theme = useTheme();
     const [t] = useTranslation();
@@ -85,74 +63,42 @@ const PermanentDrawerLeft = (props: PropsWithChildren<PropTypes>) => {
 
   const settings = navigation[navigation.length -1];
 
-  const linkStyle: CSSProperties = {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    padding: 0,
-    flexFlow: 'row nowrap',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    boxSizing: 'border-box',
-    textDecoration: 0,
-    outline: 0};
-  const iconStyle: CSSProperties = {
-    width: 'auto',
-    display: 'flex',
-    boxSizing: 'border-box',
-    justifyContent: 'center'};
-  const textStyle: SxProps<Theme> = {
-    color: theme.palette.grey[400],
-    '& span, & svg': {
-      fontSize: '0.8em',
-    }}; 
-
     const drawMenuItem = (elm: MenuItem): JSX.Element => {
            
-      return (<CustomListItem key={elm.id}>
+      return (<CustomListItem link key={elm.id}>
                 {elm.newTab === true ?
-                <MenuLink href={elm.link} target='_blank' sx={linkStyle}>
-                  <ListItemIcon sx={iconStyle}>
-                    {elm.icon({style: { color: theme.palette.grey[400] }})}
-                  </ListItemIcon>
-                  {extended && <ListItemText primary={t(`main:${elm.id}`)} sx={textStyle} />}
+                <MenuLink href={elm.link} target='_blank'>
+                  <CustomListItemIcon>
+                    {elm.icon({sx: { color: 'grey.400' }})}
+                  </CustomListItemIcon>
+                  {extended && <CustomListItemText primary={t(`main:${elm.id}`)} />}
                 </MenuLink>:
-                <NavLink to={elm.link}
-                      style={({isActive}) => ({...linkStyle,
+                <CustomNavLink to={elm.link}
+                      style={({isActive}) => ({
                               backgroundColor: isActive ? theme.palette.primary.dark :  undefined,})}>
-                  <ListItemIcon sx={iconStyle}>
-                    {elm.icon({sx: { color: theme.palette.grey[400], }})}
-                  </ListItemIcon>
-                  {extended && <ListItemText primary={t(`main:${elm.id}`)} sx={textStyle} />}
-                </NavLink>}
+                  <CustomListItemIcon>
+                    {elm.icon({sx: { color: 'grey.400', }})}
+                  </CustomListItemIcon>
+                  {extended && <CustomListItemText primary={t(`main:${elm.id}`)} />}
+                </CustomNavLink>}
               </CustomListItem>            
     )};
 
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      <Drawer
-        sx={{
-          width: extended ? drawerWidthExtended: drawerWidth,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: extended ? drawerWidthExtended: drawerWidth,
-            boxSizing: 'border-box',
-            overflow: 'hidden',
-            backgroundColor: theme.palette.primary.main,
-            borderRight: `1px solid ${theme.palette.grey[800]}`,
-          },
-        }}
+      <CustomDrawer
+      extended={extended}
         variant="permanent"
         anchor="left"
       >
         <Toolbar>
-          <div style={{display: 'flex', width: '100%', height: '100%', flexFlow: 'row nowrap', boxSizing: 'border-box', justifyContent: extended ? 'flex-start' : 'center', alignItems: 'center'}}>
+          <Box display="flex" width="100%" height="100%" justifyContent={extended ? 'flex-start' : 'center'} alignItems="center" flexDirection="row" flexWrap="nowrap" boxSizing="border-box">
             <img src={logo} alt="logo" style={{ height: '32px', marginRight: extended ? '20px' : 0 }}/>
             {extended && <Typography style={{color: theme.palette.secondary.main, fontWeight: 'bold'}}>Antares Web</Typography>}
-          </div>
+          </Box>
         </Toolbar>
-        <div style={{display: 'flex', flex: 1, flexFlow: 'column nowrap', boxSizing: 'border-box', justifyContent: 'space-between'}}>
+        <Box display="flex" flex={1} justifyContent="space-between" flexDirection="column" sx={{ boxSizing: 'border-box'}}>
           <List>
             {navigation.slice(0, 3).map((elm: MenuItem, index) => (
                 drawMenuItem(elm)
@@ -163,41 +109,29 @@ const PermanentDrawerLeft = (props: PropsWithChildren<PropTypes>) => {
                 drawMenuItem(elm)
             ))}
           </List>
-        </div>
-        <Divider style={{ height: '1px', background: theme.palette.grey[800] }}/>
+        </Box>
+        <Divider style={{ height: '1px', backgroundColor: theme.palette.grey[800] }}/>
         <List>
             {drawMenuItem(settings)}
-            <CustomListItem sx={{ 
-                              padding: 0,
-                              width: '100%',
-                              display: 'flex',
-                              flexFlow: 'row nowrap',
-                              justifyContent: 'flex-start',
-                              alignItems: 'center',
-                              boxSizing: 'border-box'}}>
-              <ListItemIcon sx={iconStyle}>
-                <AccountCircleOutlinedIcon style={{ color: theme.palette.grey[400] }}/>
-              </ListItemIcon>
-              {extended && <ListItemText primary={t(`main:connexion`)} sx={textStyle} />}
+            <CustomListItem >
+              <CustomListItemIcon>
+                <AccountCircleOutlinedIcon sx={{ color: 'grey.400' }}/>
+              </CustomListItemIcon>
+              {extended && <CustomListItemText primary={t(`main:connexion`)} />}
             </CustomListItem>
-            <CustomListItem onClick={() => setExtended(!extended)} sx={{ 
-                              padding: 0,
-                              width: '100%',
-                              display: 'flex',
-                              flexFlow: 'row nowrap',
-                              justifyContent: 'flex-start',
-                              alignItems: 'center',
-                              boxSizing: 'border-box'}}>
-              <ListItemIcon sx={iconStyle}>
-                {extended ? <FormatIndentDecreaseOutlinedIcon style={{ color: theme.palette.grey[400] }}/>: <FormatIndentIncreaseOutlinedIcon style={{ color: theme.palette.grey[400]  }}/>}
-              </ListItemIcon>
-              {extended && <ListItemText primary={t(`main:hide`)} sx={textStyle} />}
+            <CustomListItem onClick={() => setExtended(!extended)}>
+              <CustomListItemIcon>
+                {extended ? <FormatIndentDecreaseOutlinedIcon sx={{ color: 'grey.400' }}/>: <FormatIndentIncreaseOutlinedIcon sx={{ color: 'grey.400'  }}/>}
+              </CustomListItemIcon>
+              {extended && <CustomListItemText primary={t(`main:hide`)} />}
             </CustomListItem>
         </List>
-      </Drawer>
+      </CustomDrawer>
       <Box
         component="main"
-        sx={{ flexGrow: 1, bgcolor: 'background.default', p: 0, height: '100vh'}}
+        flexGrow={1}
+        bgcolor="background.default"
+        height="100vh"
       >
           {children}
       </Box>
@@ -205,4 +139,4 @@ const PermanentDrawerLeft = (props: PropsWithChildren<PropTypes>) => {
   );
 }
 
-export default connector(PermanentDrawerLeft);
+export default connector(MenuWrapper);

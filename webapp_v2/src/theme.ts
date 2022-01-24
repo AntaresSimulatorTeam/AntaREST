@@ -1,5 +1,7 @@
 import { createTheme } from '@mui/material/styles';
-import { green, purple } from '@mui/material/colors';
+
+export const DRAWER_WIDTH = 60;
+export const DRAWER_WIDTH_EXTENDED = 240;
 
 const theme = createTheme({
   typography: {
