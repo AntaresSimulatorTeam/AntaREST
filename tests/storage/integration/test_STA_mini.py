@@ -415,7 +415,7 @@ def test_sta_mini_copy(storage_service) -> None:
     )
     client = TestClient(app)
     result = client.post(
-        f"/v1/studies/{source_study_name}/copy?dest={destination_study_name}"
+        f"/v1/studies/{source_study_name}/copy?dest={destination_study_name}&use_task=false"
     )
 
     assert result.status_code == HTTPStatus.CREATED.value

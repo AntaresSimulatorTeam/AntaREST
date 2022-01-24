@@ -178,7 +178,7 @@ def test_main(app: FastAPI):
 
     # Study copy
     copied = client.post(
-        f"/v1/studies/{created.json()}/copy?dest=copied",
+        f"/v1/studies/{created.json()}/copy?dest=copied&use_task=false",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },

@@ -147,6 +147,7 @@ def create_study_routes(
         dest: str,
         with_outputs: bool = False,
         groups: Optional[str] = None,
+        use_task: Optional[bool] = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -160,15 +161,16 @@ def create_study_routes(
 
         params = RequestParameters(user=current_user)
 
-        destination_uuid = study_service.copy_study(
+        task_id = study_service.copy_study(
             src_uuid=source_uuid_sanitized,
             dest_study_name=destination_name_sanitized,
             group_ids=group_ids,
             with_outputs=with_outputs,
+            use_task=use_task,
             params=params,
         )
 
-        return destination_uuid
+        return task_id
 
     @bp.post(
         "/studies",
