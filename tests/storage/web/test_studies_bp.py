@@ -241,7 +241,7 @@ def test_copy_study(tmp_path: Path) -> None:
     client = TestClient(app)
 
     result = client.post(
-        "/v1/studies/existing-study/copy?dest=study-copied&use_task=false"
+        "/v1/studies/existing-study/copy?dest=study-copied"
     )
 
     storage_service.copy_study.assert_called_with(
@@ -249,6 +249,7 @@ def test_copy_study(tmp_path: Path) -> None:
         dest_study_name="study-copied",
         group_ids=[],
         with_outputs=False,
+        use_task=True,
         params=PARAMS,
     )
     assert result.status_code == HTTPStatus.CREATED.value
