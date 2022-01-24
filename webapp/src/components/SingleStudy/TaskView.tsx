@@ -22,6 +22,7 @@ import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import { subscribe, unsubscribe, WsChannel } from '../../ducks/websockets';
 import { convertUTCToLocalTime } from '../../services/utils';
+import moment from 'moment';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -215,49 +216,51 @@ const TaskView = (props: PropTypes) => {
       <div className={classes.main}>
         <div className={classes.tasksList}>
           {jobs.length > 0 ? (
-            jobs.map((item) => (
-              <div className={classes.task} key={item.id}>
-                <GridList cellHeight={50} className={classes.gridList}>
-                  <GridListTile className={classes.gridTile}>
-                    <Typography className={classes.label}>{t('singlestudy:taskId')}</Typography>
-                    <Typography>{item.id}</Typography>
-                  </GridListTile>
-                  <GridListTile className={`${classes.gridTile} ${classes.statusTile}`}>
-                    <div className={classes.statusText}>
-                      <Typography className={classes.label}>{t('singlestudy:taskStatus')}</Typography>
-                      <Typography>{item.status}</Typography>
-                    </div>
-                    {/* item.status === 'running' ? <Button variant="contained" color="primary" onClick={() => openConfirmModal(item.id)}>{t('singlestudy:killStudy')}</Button> : <Button color="primary" variant="contained" className={classes.killButtonHide}>{t('singlestudy:killStudy')}</Button> */}
-                    <Button color="primary" variant="contained" className={classes.killButtonHide} onClick={() => openConfirmModal(item.id)}>{t('singlestudy:killStudy')}</Button>
-                  </GridListTile>
-                  <GridListTile className={classes.gridTile}>
-                    <Typography className={classes.label}>
-                      {t('singlestudy:taskCreationDate')}
-                    </Typography>
-                    <Typography>{convertUTCToLocalTime(item.creationDate)}</Typography>
-                  </GridListTile>
-                  <GridListTile className={classes.gridTile}>
-                    <Typography className={classes.label}>
-                      {t('singlestudy:taskCompletionDate')}
-                    </Typography>
-                    <Typography>{convertUTCToLocalTime(item.completionDate)}</Typography>
-                  </GridListTile>
-                  <GridListTile className={classes.gridTile}>
-                    <Typography className={classes.label}>
-                      {`${t('singlestudy:taskMessage')} / `}
-                      <span onClick={() => openLogView(item.id)} className={classes.logButton}>
-                        {t('singlestudy:taskLog')}
-                      </span>
-                    </Typography>
-                    <Typography>{item.msg}</Typography>
-                  </GridListTile>
-                  <GridListTile className={classes.gridTile}>
-                    <Typography className={classes.label}>{t('singlestudy:taskOutputId')}</Typography>
-                    <Typography>{item.outputId}</Typography>
-                  </GridListTile>
-                </GridList>
-              </div>
-            ))
+            jobs
+              .sort((a, b) => (moment(a.completionDate || a.creationDate).isAfter(moment(b.completionDate || b.creationDate)) ? -1 : 1))
+              .map((item) => (
+                <div className={classes.task} key={item.id}>
+                  <GridList cellHeight={50} className={classes.gridList}>
+                    <GridListTile className={classes.gridTile}>
+                      <Typography className={classes.label}>{t('singlestudy:taskId')}</Typography>
+                      <Typography>{item.id}</Typography>
+                    </GridListTile>
+                    <GridListTile className={`${classes.gridTile} ${classes.statusTile}`}>
+                      <div className={classes.statusText}>
+                        <Typography className={classes.label}>{t('singlestudy:taskStatus')}</Typography>
+                        <Typography>{item.status}</Typography>
+                      </div>
+                      {/* item.status === 'running' ? <Button variant="contained" color="primary" onClick={() => openConfirmModal(item.id)}>{t('singlestudy:killStudy')}</Button> : <Button color="primary" variant="contained" className={classes.killButtonHide}>{t('singlestudy:killStudy')}</Button> */}
+                      <Button color="primary" variant="contained" className={classes.killButtonHide} onClick={() => openConfirmModal(item.id)}>{t('singlestudy:killStudy')}</Button>
+                    </GridListTile>
+                    <GridListTile className={classes.gridTile}>
+                      <Typography className={classes.label}>
+                        {t('singlestudy:taskCreationDate')}
+                      </Typography>
+                      <Typography>{convertUTCToLocalTime(item.creationDate)}</Typography>
+                    </GridListTile>
+                    <GridListTile className={classes.gridTile}>
+                      <Typography className={classes.label}>
+                        {t('singlestudy:taskCompletionDate')}
+                      </Typography>
+                      <Typography>{convertUTCToLocalTime(item.completionDate)}</Typography>
+                    </GridListTile>
+                    <GridListTile className={classes.gridTile}>
+                      <Typography className={classes.label}>
+                        {`${t('singlestudy:taskMessage')} / `}
+                        <span onClick={() => openLogView(item.id)} className={classes.logButton}>
+                          {t('singlestudy:taskLog')}
+                        </span>
+                      </Typography>
+                      <Typography>{item.msg}</Typography>
+                    </GridListTile>
+                    <GridListTile className={classes.gridTile}>
+                      <Typography className={classes.label}>{t('singlestudy:taskOutputId')}</Typography>
+                      <Typography>{item.outputId}</Typography>
+                    </GridListTile>
+                  </GridList>
+                </div>
+              ))
           ) : (
             <div className={classes.message}>
               <Typography style={{ fontWeight: 'bold', fontSize: '1em' }}>
