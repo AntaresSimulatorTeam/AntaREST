@@ -391,7 +391,11 @@ class SlurmLauncher(AbstractLauncher):
         if launcher_params:
             launcher_args = deepcopy(self.launcher_args)
             if launcher_params.get("xpansion", False):
-                launcher_args.xpansion_mode = True
+                launcher_args.xpansion_mode = (
+                    "r"
+                    if launcher_params.get("xpansion_r_version", False)
+                    else "cpp"
+                )
             time_limit = launcher_params.get("time_limit", None)
             if time_limit and isinstance(time_limit, int):
                 if MIN_TIME_LIMIT < time_limit < MAX_TIME_LIMIT:
