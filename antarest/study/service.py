@@ -669,7 +669,7 @@ class StudyService:
             )
         else:
             res = copy_task(noop_notifier)
-            task_or_study_id = res.return_value
+            task_or_study_id = res.return_value or ""
 
         return task_or_study_id
 

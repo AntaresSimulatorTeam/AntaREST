@@ -147,7 +147,7 @@ def create_study_routes(
         dest: str,
         with_outputs: bool = False,
         groups: Optional[str] = None,
-        use_task: Optional[bool] = True,
+        use_task: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
