@@ -15,6 +15,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { connect, ConnectedProps } from 'react-redux';
+import moment from 'moment';
 import { getStudyJobLog, killStudy } from '../../services/api/study';
 import { LaunchJob } from '../../common/types';
 import LogModal from '../ui/LogModal';
@@ -22,7 +23,6 @@ import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import { subscribe, unsubscribe, WsChannel } from '../../ducks/websockets';
 import { convertUTCToLocalTime } from '../../services/utils';
-import moment from 'moment';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
