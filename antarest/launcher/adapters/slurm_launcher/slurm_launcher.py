@@ -154,7 +154,7 @@ class SlurmLauncher(AbstractLauncher):
         arguments.check_queue = False
         arguments.json_ssh_config = None
         arguments.job_id_to_kill = None
-        arguments.xpansion_mode = False
+        arguments.xpansion_mode = None
         arguments.version = False
         arguments.post_processing = False
         return arguments
@@ -186,18 +186,18 @@ class SlurmLauncher(AbstractLauncher):
                 shutil.rmtree(study_path)
 
     def _import_study_output(
-        self, job_id: str, xpansion_mode: bool = False
+        self, job_id: str, xpansion_mode: Optional[str] = None
     ) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
-        if xpansion_mode:
-            self._import_xpansion_result(job_id, study_id)
+        if xpansion_mode is not None:
+            self._import_xpansion_result(job_id, xpansion_mode)
         return self.storage_service.import_output(
             study_id,
             self.local_workspace / "OUTPUT" / job_id / "output",
             params=RequestParameters(DEFAULT_ADMIN_USER),
         )
 
-    def _import_xpansion_result(self, job_id: str, study_id: str) -> None:
+    def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
         output_path = self.local_workspace / "OUTPUT" / job_id / "output"
         if output_path.exists() and len(os.listdir(output_path)) == 1:
             output_path = output_path / os.listdir(output_path)[0]
@@ -205,8 +205,7 @@ class SlurmLauncher(AbstractLauncher):
                 self.local_workspace / "OUTPUT" / job_id / "input" / "links",
                 output_path / "updated_links",
             )
-            study = self.storage_service.get_study(study_id)
-            if int(study.version) < 800:
+            if xpansion_mode == "r":
                 shutil.copytree(
                     self.local_workspace
                     / "OUTPUT"
@@ -248,7 +247,7 @@ class SlurmLauncher(AbstractLauncher):
                         output_id: Optional[str] = None
                         if not study.with_error:
                             output_id = self._import_study_output(
-                                study.name, study.xpansion_study
+                                study.name, study.xpansion_mode
                             )
                         self.callbacks.update_status(
                             study.name,
