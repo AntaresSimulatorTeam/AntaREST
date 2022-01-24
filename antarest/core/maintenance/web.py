@@ -46,7 +46,7 @@ def create_maintenance_api(
 
     @bp.post("/core/maintenance/message")
     def set_message_info(
-        message: str = Body(...),
+        message: str = Body(default=""),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         request_params = RequestParameters(user=current_user)
