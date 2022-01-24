@@ -240,9 +240,7 @@ def test_copy_study(tmp_path: Path) -> None:
     )
     client = TestClient(app)
 
-    result = client.post(
-        "/v1/studies/existing-study/copy?dest=study-copied"
-    )
+    result = client.post("/v1/studies/existing-study/copy?dest=study-copied")
 
     storage_service.copy_study.assert_called_with(
         src_uuid="existing-study",
