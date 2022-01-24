@@ -174,7 +174,8 @@ const LauncherModal = (props: PropTypes) => {
               <FormControlLabel control={<Checkbox checked={!!options.post_processing} onChange={(e, checked) => handleChange('post_processing', checked)} />} label={t('singlestudy:postProcessing')} />
             </FormGroup> */}
             <FormGroup className={clsx(classes.fieldSection)}>
-              <FormControlLabel control={<Checkbox checked={!!options.xpansion} onChange={(e, checked) => handleChange('xpansion', checked)} />} label={t('singlestudy:xpansionMode')} />
+              <FormControlLabel control={<Checkbox checked={!!options.xpansion} onChange={(e, checked) => { handleChange('xpansion', checked); }} />} label={t('singlestudy:xpansionMode')} />
+              <FormControlLabel control={<Checkbox checked={!!options.xpansion && !!options.xpansion_r_version} onChange={(e, checked) => handleChange('xpansion_r_version', checked)} />} label={t('singlestudy:useXpansionVersionR')} />
             </FormGroup>
           </div>
           <div className={classes.footer}>
