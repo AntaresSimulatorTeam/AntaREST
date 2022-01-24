@@ -345,7 +345,7 @@ class Config:
             security=SecurityConfig.from_dict(data["security"]),
             storage=StorageConfig.from_dict(data["storage"]),
             launcher=LauncherConfig.from_dict(data["launcher"]),
-            db=DbConfig.from_dict(data) if "db" in data else DbConfig(),
+            db=DbConfig.from_dict(data["db"]) if "db" in data else DbConfig(),
             logging=LoggingConfig.from_dict(data.get("logging", {})),
             debug=data["debug"],
             resources_path=res or Path(),
