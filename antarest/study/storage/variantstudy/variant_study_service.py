@@ -40,6 +40,7 @@ from antarest.core.tasks.service import (
     ITaskService,
     TaskUpdateNotifier,
     noop_notifier,
+    TaskType,
 )
 from antarest.study.model import (
     Study,
@@ -597,6 +598,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             metadata.generation_task = self.task_service.add_task(
                 action=callback,
                 name=f"Generation of {metadata.id} study",
+                task_type=TaskType.VARIANT_GENERATION,
                 custom_event_messages=CustomTaskEventMessages(
                     start=metadata.id, running=metadata.id, end=metadata.id
                 ),

@@ -13,6 +13,7 @@
   "failtosavedata": "Failed to save data",
   "failtocopystudy": "Failed to copy study",
   "studycopiedsuccess": "Success copying study",
+  "studycopying": "Copying study...",
   "archive": "Archive",
   "unarchive": "Unarchive",
   "archivesuccess": "Study {{studyname}} archived",

@@ -59,6 +59,7 @@ class TaskDTO(BaseModel):
     completion_date_utc: Optional[str]
     result: Optional[TaskResult]
     logs: Optional[List[TaskLogDTO]]
+    type: Optional[str] = None
 
 
 class TaskListFilter(BaseModel):
@@ -112,6 +113,7 @@ class TaskJob(Base):  # type: ignore
     )
     # this is not a foreign key to prevent the need to delete the job history if the user is deleted
     owner_id = Column(Integer(), nullable=True)
+    type = Column(String(), nullable=True)
 
     def to_dto(self, with_logs: bool = False) -> TaskDTO:
         return TaskDTO(
@@ -135,6 +137,7 @@ class TaskJob(Base):  # type: ignore
             )
             if with_logs
             else None,
+            type=self.type,
         )
 
     def __eq__(self, other: Any) -> bool:

@@ -4,6 +4,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, Future
+from enum import Enum
 from http import HTTPStatus
 from typing import Callable, Optional, List, Dict, Awaitable
 
@@ -43,12 +44,19 @@ TaskUpdateNotifier = Callable[[str], None]
 Task = Callable[[TaskUpdateNotifier], TaskResult]
 
 
+class TaskType(str, Enum):
+    EXPORT = "EXPORT"
+    VARIANT_GENERATION = "VARIANT_GENERATION"
+    COPY = "COPY"
+
+
 class ITaskService(ABC):
     @abstractmethod
     def add_task(
         self,
         action: Task,
         name: Optional[str],
+        task_type: Optional[TaskType],
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
@@ -105,6 +113,7 @@ class TaskJobService(ITaskService):
         self,
         action: Task,
         name: Optional[str],
+        task_type: Optional[TaskType],
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
@@ -115,6 +124,7 @@ class TaskJobService(ITaskService):
             TaskJob(
                 name=name or "Unnamed",
                 owner_id=request_params.user.impersonator,
+                type=task_type,
             )
         )
 

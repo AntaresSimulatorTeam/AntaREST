@@ -38,6 +38,7 @@ from antarest.core.tasks.service import (
     ITaskService,
     TaskUpdateNotifier,
     noop_notifier,
+    TaskType,
 )
 from antarest.login.model import Group
 from antarest.login.service import LoginService
@@ -664,6 +665,7 @@ class StudyService:
             task_or_study_id = self.task_service.add_task(
                 copy_task,
                 f"Study {src_study.name} ({src_uuid}) copy",
+                task_type=TaskType.COPY,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -716,6 +718,7 @@ class StudyService:
         task_id = self.task_service.add_task(
             export_task,
             export_name,
+            task_type=TaskType.EXPORT,
             custom_event_messages=None,
             request_params=params,
         )
@@ -771,6 +774,7 @@ class StudyService:
         task_id = self.task_service.add_task(
             export_task,
             export_name,
+            task_type=TaskType.EXPORT,
             custom_event_messages=None,
             request_params=params,
         )

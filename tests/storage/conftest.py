@@ -22,7 +22,7 @@ from antarest.core.tasks.model import (
     TaskStatus,
 )
 
-from antarest.core.tasks.service import ITaskService, Task
+from antarest.core.tasks.service import ITaskService, Task, TaskType
 
 project_dir: Path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_dir))
@@ -296,6 +296,7 @@ class SimpleSyncTaskService(ITaskService):
         self,
         action: Task,
         name: Optional[str],
+        task_type: Optional[TaskType],
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
