@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { LaunchJob, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode, TaskDTO, TaskStatus } from '../../common/types';
+import { LaunchJob, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 import { FileDownloadTask } from './downloads';
