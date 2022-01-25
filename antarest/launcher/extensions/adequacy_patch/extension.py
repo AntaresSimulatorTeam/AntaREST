@@ -22,10 +22,10 @@ class AdequacyPatchExtension(ILauncherExtension):
         launcher_opts: Any,
     ) -> None:
         post_processing_file = (
-            Path(__file__).parent / "resources" / "post_processing.R"
+            Path(__file__).parent / "resources" / "post-processing.R"
         )
         shutil.copy(
-            post_processing_file, study_export_path / "post_processing.R"
+            post_processing_file, study_export_path / "post-processing.R"
         )
         (
             study_config,

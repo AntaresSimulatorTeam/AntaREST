@@ -64,19 +64,24 @@ class LocalLauncher(AbstractLauncher):
             )
             job = threading.Thread(
                 target=LocalLauncher._compute,
-                args=(self, antares_solver_path, export_path, uuid),
+                args=(self, antares_solver_path, export_path, uuid, launcher_parameters),
             )
             job.start()
             return uuid
 
     def _compute(
-        self, antares_solver_path: Path, study_path: Path, uuid: UUID
+        self, antares_solver_path: Path, study_path: Path, uuid: UUID, launcher_parameters: Optional[JSON]
     ) -> None:
         process = subprocess.run(
             [antares_solver_path, study_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
+
+        post_processing = launcher_parameters.get("post_processing", False)
+        if (isinstance(post_processing, bool) and post_processing) or launcher_parameters.get("adequacy_patch", None) is not None:
+            subprocess.run(['Rscript', 'post-processing.R'], cwd=study_path)
+
         study_id, launch_path = self.job_id_to_study_id[str(uuid)]
         try:
             self._import_output(study_id, launch_path)
