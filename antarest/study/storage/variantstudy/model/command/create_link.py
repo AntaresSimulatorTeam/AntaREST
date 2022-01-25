@@ -37,21 +37,21 @@ class CreateLink(ICommand):
     area2: str
     parameters: Optional[Dict[str, str]] = None
     series: Optional[Union[List[List[MatrixData]], str]] = None
+    direct: Optional[Union[List[List[MatrixData]], str]] = None
+    indirect: Optional[Union[List[List[MatrixData]], str]] = None
 
     def __init__(self, **data: Any) -> None:
         super().__init__(
             command_name=CommandName.CREATE_LINK, version=1, **data
         )
 
-    @validator("series", always=True)
+    @validator("series", "direct", "indirect", always=True)
     def validate_series(
         cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
     ) -> Optional[Union[List[List[MatrixData]], str]]:
-        if v is None:
-            v = values["command_context"].generator_matrix_constants.get_link()
-            return v
-        else:
+        if v is not None:
             return validate_matrix(v, values)
+        return v
 
     def _create_link_in_config(
         self, area_from: str, area_to: str, study_data: FileStudyTreeConfig
@@ -173,6 +173,7 @@ class CreateLink(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
+        version = study_data.config.version
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
@@ -185,22 +186,66 @@ class CreateLink(ICommand):
         study_data.tree.save(
             link_property, ["input", "links", area_from, "properties", area_to]
         )
-        if self.series:
-            assert isinstance(self.series, str)
+        if self.series is None:
+            self.series = (
+                self.command_context.generator_matrix_constants.get_link(
+                    version=version
+                )
+            )
+
+        assert type(self.series) is str
+        if version < 820:
             study_data.tree.save(
                 self.series, ["input", "links", area_from, area_to]
             )
+        else:
+            study_data.tree.save(
+                self.series,
+                ["input", "links", area_from, f"{area_to}_parameters"],
+            )
+            if self.direct:
+                assert isinstance(self.direct, str)
+                study_data.tree.save(
+                    self.direct,
+                    [
+                        "input",
+                        "links",
+                        area_from,
+                        "capacities",
+                        f"{area_to}_direct",
+                    ],
+                )
+
+            if self.indirect:
+                assert isinstance(self.indirect, str)
+                study_data.tree.save(
+                    self.indirect,
+                    [
+                        "input",
+                        "links",
+                        area_from,
+                        "capacities",
+                        f"{area_to}_indirect",
+                    ],
+                )
+
         return output
 
     def to_dto(self) -> CommandDTO:
+        args = {
+            "area1": self.area1,
+            "area2": self.area2,
+            "parameters": self.parameters,
+        }
+        if self.series:
+            args["series"] = strip_matrix_protocol(self.series)
+        if self.direct:
+            args["direct"] = strip_matrix_protocol(self.direct)
+        if self.indirect:
+            args["indirect"] = strip_matrix_protocol(self.indirect)
         return CommandDTO(
             action=CommandName.CREATE_LINK.value,
-            args={
-                "area1": self.area1,
-                "area2": self.area2,
-                "parameters": self.parameters,
-                "series": strip_matrix_protocol(self.series),
-            },
+            args=args,
         )
 
     def match_signature(self) -> str:
@@ -222,6 +267,8 @@ class CreateLink(ICommand):
             simple_match
             and self.parameters == other.parameters
             and self.series == other.series
+            and self.direct == other.direct
+            and self.indirect == other.indirect
         )
 
     def revert(
@@ -264,7 +311,7 @@ class CreateLink(ICommand):
         if self.series != other.series:
             commands.append(
                 ReplaceMatrix(
-                    target=f"input/links/{area_from}/{area_to}",
+                    target=f"@links_series/{area_from}/{area_to}",
                     matrix=strip_matrix_protocol(other.series),
                     command_context=self.command_context,
                 )
@@ -272,7 +319,14 @@ class CreateLink(ICommand):
         return commands
 
     def get_inner_matrices(self) -> List[str]:
+        list_matrices = []
         if self.series:
             assert isinstance(self.series, str)
-            return [strip_matrix_protocol(self.series)]
-        return []
+            list_matrices.append(strip_matrix_protocol(self.series))
+        if self.direct:
+            assert isinstance(self.direct, str)
+            list_matrices.append(strip_matrix_protocol(self.direct))
+        if self.indirect:
+            assert isinstance(self.indirect, str)
+            list_matrices.append(strip_matrix_protocol(self.indirect))
+        return list_matrices

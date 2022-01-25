@@ -281,7 +281,7 @@ def test_create_diff(command_context: CommandContext):
             command_context=command_context,
         ),
         ReplaceMatrix(
-            target=f"input/links/bar/foo",
+            target=f"@links_series/bar/foo",
             matrix="b",
             command_context=command_context,
         ),

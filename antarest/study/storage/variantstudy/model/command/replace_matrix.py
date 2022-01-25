@@ -14,6 +14,9 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
+from antarest.study.storage.variantstudy.model.command.alias_decoder import (
+    AliasDecoder,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -54,6 +57,9 @@ class ReplaceMatrix(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
+        if self.target[0] == "@":
+            self.target = AliasDecoder.decode(self.target, study_data)
+
         replace_matrix_data: JSON = {}
         target_matrix = replace_matrix_data
         url = self.target.split("/")
