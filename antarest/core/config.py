@@ -80,6 +80,25 @@ class WorkspaceConfig:
 
 
 @dataclass(frozen=True)
+class DbConfig:
+    """
+    Sub config object dedicated to db
+    """
+
+    db_url: str = ""
+    db_admin_url: Optional[str] = None
+    db_connect_timeout: int = 10
+
+    @staticmethod
+    def from_dict(data: JSON) -> "DbConfig":
+        return DbConfig(
+            db_admin_url=data.get("admin_url", None),
+            db_url=data.get("url", ""),
+            db_connect_timeout=data.get("db_connect_timeout", 10),
+        )
+
+
+@dataclass(frozen=True)
 class StorageConfig:
     """
     Sub config object dedicated to study module
@@ -300,8 +319,7 @@ class Config:
     security: SecurityConfig = SecurityConfig()
     storage: StorageConfig = StorageConfig()
     launcher: LauncherConfig = LauncherConfig()
-    db_url: str = ""
-    db_admin_url: Optional[str] = None
+    db: DbConfig = DbConfig()
     logging: LoggingConfig = LoggingConfig()
     debug: bool = True
     resources_path: Path = Path()
@@ -327,8 +345,7 @@ class Config:
             security=SecurityConfig.from_dict(data["security"]),
             storage=StorageConfig.from_dict(data["storage"]),
             launcher=LauncherConfig.from_dict(data["launcher"]),
-            db_url=data["db"]["url"],
-            db_admin_url=data["db"].get("admin_url", None),
+            db=DbConfig.from_dict(data["db"]) if "db" in data else DbConfig(),
             logging=LoggingConfig.from_dict(data.get("logging", {})),
             debug=data["debug"],
             resources_path=res or Path(),

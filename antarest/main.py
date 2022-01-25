@@ -141,12 +141,14 @@ def init_db(
 ) -> None:
     if auto_upgrade_db:
         upgrade_db(config_file)
-    connect_args = {}
-    if config.db_url.startswith("sqlite"):
+    connect_args: Dict[str, Any] = {}
+    if config.db.db_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
+    else:
+        connect_args["connect_timeout"] = config.db.db_connect_timeout
 
     engine = create_engine(
-        config.db_url,
+        config.db.db_url,
         echo=config.debug,
         connect_args=connect_args,
     )
