@@ -110,6 +110,7 @@ def test_service() -> TaskJobService:
         "failed action",
         None,
         None,
+        None,
         RequestParameters(user=DEFAULT_ADMIN_USER),
     )
     service.await_task("a")
@@ -185,6 +186,7 @@ def test_service() -> TaskJobService:
     ]
     service.add_task(
         action_ok,
+        None,
         None,
         None,
         None,
