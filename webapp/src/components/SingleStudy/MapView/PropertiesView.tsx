@@ -26,6 +26,7 @@ const useStyles = makeStyles((theme: Theme) =>
       boxSizing: 'border-box',
     },
     list: {
+      minWidth: '75%',
       height: '100%',
       display: 'flex',
       flexFlow: 'column nowrap',
