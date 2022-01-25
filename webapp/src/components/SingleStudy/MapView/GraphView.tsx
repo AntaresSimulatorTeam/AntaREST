@@ -1,7 +1,7 @@
 import React from 'react';
 import { Graph, GraphLink, GraphNode } from 'react-d3-graph';
 import NodeView from './NodeView';
-import { ColorProperties, LinkProperties, NodeProperties } from './types';
+import { LinkProperties, NodeProperties } from './types';
 
 interface GraphViewProps {
     nodeData: Array<NodeProperties>;
@@ -11,12 +11,11 @@ interface GraphViewProps {
     onClickNode: (nodeId: string) => void;
     onClickLink: (src: string, target: string) => void;
     graph: React.RefObject<Graph<NodeProperties & GraphNode, LinkProperties & GraphLink>>;
-    colors: Array<ColorProperties>;
     setSelectedItem: (item: NodeProperties | LinkProperties | undefined) => void;
   }
 
 const GraphView = (props: GraphViewProps) => {
-  const { nodeData, linkData, height, width, onClickNode, onClickLink, graph, colors, setSelectedItem } = props;
+  const { nodeData, linkData, height, width, onClickNode, onClickLink, graph, setSelectedItem } = props;
   let nodeDataToRender = nodeData;
   const initialZoom = 1;
   if (nodeData.length > 0) {
@@ -63,7 +62,7 @@ const GraphView = (props: GraphViewProps) => {
         },
         node: {
           renderLabel: false,
-          viewGenerator: (node) => <NodeView node={node} color={colors.find((el) => el.id === node.id) || { id: 'none', r: 0, g: 0, b: 0 }} />,
+          viewGenerator: (node) => <NodeView node={node} />,
         },
         link: {
           color: '#d3d3d3',

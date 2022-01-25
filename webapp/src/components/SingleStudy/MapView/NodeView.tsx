@@ -4,7 +4,7 @@ import {
   createStyles,
   Theme,
 } from '@material-ui/core';
-import { ColorProperties, NodeProperties } from './types';
+import { NodeProperties } from './types';
 import { rgbToHsl } from '../../../services/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -41,14 +41,13 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropType {
     node: NodeProperties;
-    color: ColorProperties;
 }
 
 const NodeView = (props: PropType) => {
   const classes = useStyles();
-  const { node, color } = props;
+  const { node } = props;
 
-  const hslColors = rgbToHsl(color.r, color.g, color.b);
+  const hslColors = rgbToHsl(node.color);
 
   // style={{ border: node.highlighted ? '#f00 solid 2px' : `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%) solid 2px`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 60 && hslColors[2] >= 70) ? 'black' : 'white' }}
 

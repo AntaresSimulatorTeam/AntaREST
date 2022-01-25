@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
-import { NodeProperties, LinkProperties, StudyProperties, AreasConfig, SingleAreaConfig, ColorProperties } from './types';
+import { NodeProperties, LinkProperties, StudyProperties, AreasConfig, SingleAreaConfig } from './types';
 import CreateAreaModal from './CreateAreaModal';
 import PropertiesView from './PropertiesView';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
@@ -128,7 +128,6 @@ const MapView = (props: Props) => {
   const [secondNode, setSecondNode] = useState<string>();
   const graphRef = useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
   const prevselectedItemId = useRef<string>();
-  const [colors, setColors] = useState<Array<ColorProperties>>([]);
   // const [zoom, setZoom] = useState<number>();
 
   const onClickNode = useCallback((nodeId: string) => {
@@ -273,15 +272,7 @@ const MapView = (props: Props) => {
         size: { width: calculateSize(areaId), height: 320 },
       }));
 
-      const colorsRGB = Object.keys(areas).map((areaId) => ({
-        id: areaId,
-        r: areas[areaId].ui.color_r,
-        g: areas[areaId].ui.color_g,
-        b: areas[areaId].ui.color_b,
-      }));
-
       setNodeData(tempNodeData);
-      setColors(colorsRGB);
 
       if (studyConfig) {
         setLinkData(Object.keys(studyConfig.areas).reduce((links, currentAreaId) =>
@@ -307,7 +298,7 @@ const MapView = (props: Props) => {
                 ({ height, width }) => {
                   console.log('Rendering with');
                   return (
-                    <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} colors={colors} setSelectedItem={setSelectedItem} />
+                    <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} setSelectedItem={setSelectedItem} />
                   );
                 }
             }

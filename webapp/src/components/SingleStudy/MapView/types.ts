@@ -1,10 +1,3 @@
-export interface ColorProperties {
-    id: string;
-    r: number;
-    g: number;
-    b: number;
-}
-
 export interface NodeProperties {
     id: string;
     x: number;
