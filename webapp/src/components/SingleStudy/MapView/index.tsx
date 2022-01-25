@@ -135,25 +135,32 @@ const MapView = (props: Props) => {
     if (!createLinkMode && nodeData) {
       const obj = nodeData.find((o) => o.id === nodeId);
       setSelectedItem(obj);
-      if (obj) {
-        setSelectedNodeLinks(linkData.filter((o) => o.source === obj.id || o.target === obj.id));
-      }
-      if (graphRef.current) {
-        const currentGraph = graphRef.current;
-        if (prevselectedItemId.current) {
-          // eslint-disable-next-line no-underscore-dangle
-          currentGraph._setNodeHighlightedValue(prevselectedItemId.current, false);
-        }
-        // eslint-disable-next-line no-underscore-dangle
-        currentGraph._setNodeHighlightedValue(nodeId, true);
-      }
-      prevselectedItemId.current = nodeId;
     } else if (!firstNode) {
       setFirstNode(nodeId);
     } else if (firstNode) {
       setSecondNode(nodeId);
     }
-  }, [createLinkMode, firstNode, nodeData, linkData]);
+  }, [createLinkMode, firstNode, nodeData]);
+
+  useEffect(() => {
+    if (selectedItem && Object.keys(selectedItem)[0] === 'id') {
+      setSelectedNodeLinks(linkData.filter((o) => o.source === (selectedItem as NodeProperties).id || o.target === (selectedItem as NodeProperties).id));
+    }
+    if (graphRef.current) {
+      const currentGraph = graphRef.current;
+      if (prevselectedItemId.current) {
+        // eslint-disable-next-line no-underscore-dangle
+        currentGraph._setNodeHighlightedValue(prevselectedItemId.current, false);
+      }
+      if (selectedItem && Object.keys(selectedItem)[0] === 'id') {
+        setTimeout(() => {
+          // eslint-disable-next-line no-underscore-dangle
+          currentGraph._setNodeHighlightedValue((selectedItem as NodeProperties).id, true);
+          prevselectedItemId.current = (selectedItem as NodeProperties).id;
+        }, 0);
+      }
+    }
+  }, [selectedItem, linkData]);
 
   const onClickLink = useCallback((source: string, target: string) => {
     const obj = {
@@ -292,7 +299,7 @@ const MapView = (props: Props) => {
         <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
       </div>
       <div className={classes.graphView}>
-        <PropertiesView item={selectedItem} nodeLinks={selectedNodeLinks} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onLink={createLink} />
+        <PropertiesView item={selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onLink={createLink} />
         <div className={`${classes.autosizer} ${classes.graph}`}>
           {loaded ? (
             <AutoSizer>
@@ -300,7 +307,7 @@ const MapView = (props: Props) => {
                 ({ height, width }) => {
                   console.log('Rendering with');
                   return (
-                    <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} colors={colors} />
+                    <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} colors={colors} setSelectedItem={setSelectedItem} />
                   );
                 }
             }

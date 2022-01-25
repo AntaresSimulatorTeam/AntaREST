@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   makeStyles,
   createStyles,
@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import AddIcon from '@material-ui/icons/Add';
 import { LinkProperties, NodeProperties } from './types';
 import PanelView from './PanelView';
+import NodeListing from './NodeListing';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -24,9 +25,15 @@ const useStyles = makeStyles((theme: Theme) =>
       alignItems: 'center',
       boxSizing: 'border-box',
     },
+    list: {
+      height: '100%',
+      display: 'flex',
+      flexFlow: 'column nowrap',
+      justifyContent: 'flex-start',
+      alignItems: 'flex-start',
+    },
     search: {
-      marginTop: theme.spacing(2),
-      padding: theme.spacing(1),
+      margin: theme.spacing(2),
     },
     button: {
       position: 'absolute',
@@ -41,19 +48,16 @@ const useStyles = makeStyles((theme: Theme) =>
         backgroundColor: theme.palette.secondary.dark,
       },
       height: '25px',
-      /* taille fixe pour margin bottom de l'autre côté */
     },
-    button2: {
-      position: 'absolute',
-      left: '150px',
-      bottom: '10px',
-      boxSizing: 'border-box',
-      display: 'none',
+    prevButton: {
+      color: theme.palette.primary.main,
     },
   }));
 
 interface PropsType {
     item?: NodeProperties | LinkProperties | undefined;
+    setSelectedItem: (item: NodeProperties | LinkProperties | undefined) => void;
+    nodeList: Array<NodeProperties>;
     nodeLinks?: Array<LinkProperties> | undefined;
     onClose?: () => void;
     onDelete?: (id: string, target?: string) => void;
@@ -63,8 +67,25 @@ interface PropsType {
 
 const PropertiesView = (props: PropsType) => {
   const classes = useStyles();
-  const { item, nodeLinks, onClose, onDelete, onArea, onLink } = props;
+  const { item, setSelectedItem, nodeList, nodeLinks, onClose, onDelete, onArea, onLink } = props;
   const [t] = useTranslation();
+  const [filteredNodes, setFilteredNodes] = useState<Array<NodeProperties>>();
+
+  const filter = (currentName: string): NodeProperties[] => {
+    if (nodeList) {
+      return nodeList.filter((s) => !currentName || (s.id.search(new RegExp(currentName, 'i')) !== -1));
+    }
+    return [];
+  };
+
+  const onChange = async (currentName: string) => {
+    if (currentName !== '') {
+      const f = filter(currentName);
+      setFilteredNodes(f);
+    } else {
+      setFilteredNodes(undefined);
+    }
+  };
 
   return (
     <div className={classes.root}>
@@ -79,16 +100,23 @@ const PropertiesView = (props: PropsType) => {
             </InputAdornment>
           ),
         }}
+        onChange={(e) => onChange(e.target.value as string)}
       />
       {item && Object.keys(item)[0] === 'id' && nodeLinks && onClose && onDelete ? (
-        <PanelView node={item as NodeProperties} links={nodeLinks} onDelete={onDelete} />
+        <div className={classes.list}>
+          <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>Retour</Button>
+          <PanelView node={item as NodeProperties} links={nodeLinks} onDelete={onDelete} />
+        </div>
       ) : (item && onClose && onDelete && (
-        <PanelView link={item as LinkProperties} onDelete={onDelete} />
+        <div className={classes.list}>
+          <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>Retour</Button>
+          <PanelView link={item as LinkProperties} onDelete={onDelete} />
+        </div>
       ))}
+      {filteredNodes && !item && (
+        <NodeListing nodes={filteredNodes} setSelectedItem={setSelectedItem} />
+      )}
       <AddIcon className={classes.button} onClick={onArea} />
-      <Button className={classes.button2} onClick={onLink}>
-        {t('singlestudy:newLink')}
-      </Button>
     </div>
   );
 };
