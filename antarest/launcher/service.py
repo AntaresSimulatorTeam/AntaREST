@@ -98,7 +98,10 @@ class LauncherService:
         launcher_opts: Optional[JSON],
     ) -> None:
         for ext in self.extensions:
-            if launcher_opts.get(ext, None) is not None:
+            if (
+                launcher_opts is not None
+                and launcher_opts.get(ext, None) is not None
+            ):
                 logger.info(
                     f"Applying extension {ext} after_export_flat_hook on job {job_id}"
                 )

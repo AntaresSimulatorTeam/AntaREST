@@ -46,7 +46,7 @@ class LocalLauncher(AbstractLauncher):
     ) -> None:
         super().__init__(config, storage_service, callbacks, event_bus)
         self.tmpdir = config.storage.tmp_dir
-        self.job_id_to_study_id: Dict[
+        self.job_id_to_study_id: Dict[  # type: ignore
             str, Tuple[str, Path, subprocess.Popen]
         ] = {}
         self.logs: Dict[str, str] = {}
@@ -88,7 +88,7 @@ class LocalLauncher(AbstractLauncher):
     ) -> None:
         end = False
 
-        def stop_reading_output():
+        def stop_reading_output() -> bool:
             if end and str(uuid) in self.logs:
                 del self.logs[str(uuid)]
             return end
@@ -129,6 +129,7 @@ class LocalLauncher(AbstractLauncher):
                     None,
                 )
 
+            assert process.stdout is not None
             LogTailManager.follow(
                 process.stdout,
                 self.create_update_log(str(uuid), study_uuid),
@@ -141,13 +142,18 @@ class LocalLauncher(AbstractLauncher):
                     break
                 time.sleep(1)
 
-            post_processing = launcher_parameters.get("post_processing", False)
-            if (
-                isinstance(post_processing, bool) and post_processing
-            ) or launcher_parameters.get("adequacy_patch", None) is not None:
-                subprocess.run(
-                    ["Rscript", "post-processing.R"], cwd=export_path
+            if launcher_parameters is not None:
+                post_processing = launcher_parameters.get(
+                    "post_processing", False
                 )
+                if (
+                    isinstance(post_processing, bool) and post_processing
+                ) or launcher_parameters.get(
+                    "adequacy_patch", None
+                ) is not None:
+                    subprocess.run(
+                        ["Rscript", "post-processing.R"], cwd=export_path
+                    )
 
             try:
                 with db():

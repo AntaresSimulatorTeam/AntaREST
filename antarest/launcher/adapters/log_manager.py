@@ -2,7 +2,7 @@ import logging
 import time
 from pathlib import Path
 from threading import Thread
-from typing import Callable, Dict, Optional, IO, AnyStr
+from typing import Callable, Dict, Optional, IO, AnyStr, TextIO
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class LogTailManager:
 
     @staticmethod
     def follow(
-        io: IO[AnyStr],
+        io: IO[str],
         handler: Callable[[str], None],
         stop: Callable[[], bool],
         log_file: Optional[str],
@@ -91,4 +91,4 @@ class LogTailManager:
 
         with open(log_file, "r") as fh:
             logger.info(f"Scanning {log_file}")
-            LogTailManager.follow(fh, handler, stop, log_file)
+            LogTailManager.follow(fh, handler, stop, str(log_file))
