@@ -4,6 +4,12 @@ from typing import Callable, NamedTuple, Optional, Any
 from uuid import UUID
 
 from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import (
+    Event,
+    EventType,
+    EventChannelDirectory,
+    IEventBus,
+)
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobStatus, LogType
@@ -15,6 +21,7 @@ class LauncherInitException(Exception):
 
 
 class LauncherCallbacks(NamedTuple):
+    # args: job_id, job status, message, output_id
     update_status: Callable[
         [str, JobStatus, Optional[str], Optional[str]], None
     ]
@@ -28,10 +35,12 @@ class AbstractLauncher(ABC):
         config: Config,
         storage_service: StudyService,
         callbacks: LauncherCallbacks,
+        event_bus: IEventBus,
     ):
         self.config = config
         self.storage_service = storage_service
         self.callbacks = callbacks
+        self.event_bus = event_bus
 
     @abstractmethod
     def run_study(
@@ -50,3 +59,21 @@ class AbstractLauncher(ABC):
     @abstractmethod
     def kill_job(self, job_id: str) -> None:
         raise NotImplementedError()
+
+    def create_update_log(
+        self, job_id: str, study_id: str
+    ) -> Callable[[str], None]:
+        def update_log(log_line: str) -> None:
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_JOB_LOG_UPDATE,
+                    payload={
+                        "log": log_line,
+                        "job_id": job_id,
+                        "study_id": study_id,
+                    },
+                    channel=EventChannelDirectory.JOB_LOGS + job_id,
+                )
+            )
+
+        return update_log

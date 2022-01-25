@@ -792,6 +792,7 @@ class StudyService:
         dest: Path,
         outputs: bool = True,
     ) -> None:
+        logger.info(f"Flat exporting study {uuid}")
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)

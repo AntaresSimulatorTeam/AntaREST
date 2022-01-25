@@ -82,7 +82,9 @@ class LauncherService:
         self.extensions = self._init_extensions()
 
     def _init_extensions(self) -> Dict[str, ILauncherExtension]:
-        adequacy_patch_ext = AdequacyPatchExtension()
+        adequacy_patch_ext = AdequacyPatchExtension(
+            self.study_service.storage_service
+        )
         return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
     def get_launchers(self) -> List[str]:
@@ -152,6 +154,11 @@ class LauncherService:
         study_version = study_info.version
 
         self._assert_launcher_is_initialized(launcher)
+        assert_permission(
+            user=params.user,
+            study=study_info,
+            permission_type=StudyPermissionType.RUN,
+        )
 
         job_uuid: UUID = self.launchers[launcher].run_study(
             study_uuid, str(study_version), launcher_parameters, params

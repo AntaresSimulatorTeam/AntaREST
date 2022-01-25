@@ -2,7 +2,7 @@ import logging
 import time
 from pathlib import Path
 from threading import Thread
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, IO, AnyStr
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class LogTailManager:
 
         logger.info(f"Adding log {log_path} track")
         thread = Thread(
-            target=lambda: self.follow(
+            target=lambda: self._follow(
                 log_path, handler, self._stop_tracking(str(log_path))
             ),
             daemon=True,
@@ -47,7 +47,38 @@ class LogTailManager:
         if log_path_key in self.tracked_logs:
             del self.tracked_logs[log_path_key]
 
+    @staticmethod
     def follow(
+        io: IO[AnyStr],
+        handler: Callable[[str], None],
+        stop: Callable[[], bool],
+        log_file: Optional[str],
+    ) -> None:
+        line = ""
+        line_count = 0
+
+        while True:
+            if stop():
+                break
+            tmp = io.readline()
+            if not tmp:
+                if line:
+                    logger.debug(f"Calling handler for {log_file}")
+                    handler(line)
+                    line = ""
+                    line_count = 0
+                time.sleep(0.1)
+            else:
+                line += tmp
+                if line.endswith("\n"):
+                    line_count += 1
+                if line_count >= LogTailManager.BATCH_SIZE:
+                    logger.debug(f"Calling handler for {log_file}")
+                    handler(line)
+                    line = ""
+                    line_count = 0
+
+    def _follow(
         self,
         log_file: Optional[Path],
         handler: Callable[[str], None],
@@ -59,26 +90,5 @@ class LogTailManager:
             return
 
         with open(log_file, "r") as fh:
-            line = ""
-            line_count = 0
             logger.info(f"Scanning {log_file}")
-            while True:
-                if stop():
-                    break
-                tmp = fh.readline()
-                if not tmp:
-                    if line:
-                        logger.info(f"Calling handler for {log_file}")
-                        handler(line)
-                        line = ""
-                        line_count = 0
-                    time.sleep(0.1)
-                else:
-                    line += tmp
-                    if line.endswith("\n"):
-                        line_count += 1
-                    if line_count >= LogTailManager.BATCH_SIZE:
-                        logger.info(f"Calling handler for {log_file}")
-                        handler(line)
-                        line = ""
-                        line_count = 0
+            LogTailManager.follow(fh, handler, stop, log_file)

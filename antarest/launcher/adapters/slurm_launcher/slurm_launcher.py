@@ -63,7 +63,7 @@ class SlurmLauncher(AbstractLauncher):
         event_bus: IEventBus,
         use_private_workspace: bool = True,
     ) -> None:
-        super().__init__(config, study_service, callbacks)
+        super().__init__(config, study_service, callbacks, event_bus)
         if config.launcher.slurm is None:
             raise LauncherInitException()
 
@@ -274,24 +274,6 @@ class SlurmLauncher(AbstractLauncher):
 
         if all_done:
             self.stop()
-
-    def create_update_log(
-        self, job_id: str, study_id: str
-    ) -> Callable[[str], None]:
-        def update_log(log_line: str) -> None:
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_JOB_LOG_UPDATE,
-                    payload={
-                        "log": log_line,
-                        "job_id": job_id,
-                        "study_id": study_id,
-                    },
-                    channel=EventChannelDirectory.JOB_LOGS + job_id,
-                )
-            )
-
-        return update_log
 
     @staticmethod
     def _get_log_path(
