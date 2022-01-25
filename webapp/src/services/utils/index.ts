@@ -143,7 +143,6 @@ export const isStringEmpty = (data: string): boolean => data.replace(/\s/g, '') 
 
 export const rgbToHsl = (rgbStr: string): Array<number> => {
   const [r, g, b] = rgbStr.slice(4, -1).split(',').map(Number);
-  console.log([r, g, b]);
   const red = r / 255;
   const green = g / 255;
   const blue = b / 255;

@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
-import { NodeProperties, LinkProperties, StudyProperties, AreasConfig, SingleAreaConfig } from './types';
+import { NodeProperties, LinkProperties, AreasConfig, SingleAreaConfig } from './types';
 import CreateAreaModal from './CreateAreaModal';
 import PropertiesView from './PropertiesView';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
@@ -114,8 +114,6 @@ const MapView = (props: Props) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { study } = props;
-  const [studyConfig, setStudyConfig] = useState<StudyProperties>();
-  const [areas, setAreas] = useState<AreasConfig>();
   const [loaded, setLoaded] = useState(false);
   const [selectedItem, setSelectedItem] = useState<NodeProperties | LinkProperties>();
   const [selectedNodeLinks, setSelectedNodeLinks] = useState<Array<LinkProperties>>();
@@ -140,26 +138,6 @@ const MapView = (props: Props) => {
       setSecondNode(nodeId);
     }
   }, [createLinkMode, firstNode, nodeData]);
-
-  useEffect(() => {
-    if (selectedItem && Object.keys(selectedItem)[0] === 'id') {
-      setSelectedNodeLinks(linkData.filter((o) => o.source === (selectedItem as NodeProperties).id || o.target === (selectedItem as NodeProperties).id));
-    }
-    if (graphRef.current) {
-      const currentGraph = graphRef.current;
-      if (prevselectedItemId.current) {
-        // eslint-disable-next-line no-underscore-dangle
-        currentGraph._setNodeHighlightedValue(prevselectedItemId.current, false);
-      }
-      if (selectedItem && Object.keys(selectedItem)[0] === 'id') {
-        setTimeout(() => {
-          // eslint-disable-next-line no-underscore-dangle
-          currentGraph._setNodeHighlightedValue((selectedItem as NodeProperties).id, true);
-          prevselectedItemId.current = (selectedItem as NodeProperties).id;
-        }, 0);
-      }
-    }
-  }, [selectedItem, linkData]);
 
   const onClickLink = useCallback((source: string, target: string) => {
     const obj = {
@@ -244,14 +222,32 @@ const MapView = (props: Props) => {
     const init = async () => {
       try {
         const data = await getSynthesis(study.id);
-        setStudyConfig(data as StudyProperties);
+        setLinkData(Object.keys(data.areas).reduce((links, currentAreaId) =>
+          links.concat(Object.keys(data.areas[currentAreaId].links).map((linkId) => ({
+            source: currentAreaId,
+            target: linkId,
+          }))), [] as Array<LinkProperties>));
         const areaData = await getAreaPositions(study.id, Object.keys(data.areas).join(','));
         if (Object.keys(data.areas).length === 1) {
-          setAreas({
-            [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig,
-          });
+          const area = { [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig };
+          const tempNodeData = Object.keys(area).map((areaId) => ({
+            id: areaId,
+            x: area[areaId].ui.x,
+            y: area[areaId].ui.y,
+            color: `rgb(${area[areaId].ui.color_r}, ${area[areaId].ui.color_g}, ${area[areaId].ui.color_b})`,
+            size: { width: calculateSize(areaId), height: 320 },
+          }));
+          setNodeData(tempNodeData);
         } else {
-          setAreas(areaData as AreasConfig);
+          const area = areaData as AreasConfig;
+          const tempNodeData = Object.keys(area).map((areaId) => ({
+            id: areaId,
+            x: area[areaId].ui.x,
+            y: area[areaId].ui.y,
+            color: `rgb(${area[areaId].ui.color_r}, ${area[areaId].ui.color_g}, ${area[areaId].ui.color_b})`,
+            size: { width: calculateSize(areaId), height: 320 },
+          }));
+          setNodeData(tempNodeData);
         }
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
@@ -263,26 +259,24 @@ const MapView = (props: Props) => {
   }, [enqueueSnackbar, study.id, t]);
 
   useEffect(() => {
-    if (areas) {
-      const tempNodeData = Object.keys(areas).map((areaId) => ({
-        id: areaId,
-        x: areas[areaId].ui.x,
-        y: areas[areaId].ui.y,
-        color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
-        size: { width: calculateSize(areaId), height: 320 },
-      }));
-
-      setNodeData(tempNodeData);
-
-      if (studyConfig) {
-        setLinkData(Object.keys(studyConfig.areas).reduce((links, currentAreaId) =>
-          links.concat(Object.keys(studyConfig.areas[currentAreaId].links).map((linkId) => ({
-            source: currentAreaId,
-            target: linkId,
-          }))), [] as Array<LinkProperties>));
+    if (selectedItem && Object.keys(selectedItem)[0] === 'id') {
+      setSelectedNodeLinks(linkData.filter((o) => o.source === (selectedItem as NodeProperties).id || o.target === (selectedItem as NodeProperties).id));
+    }
+    if (graphRef.current) {
+      const currentGraph = graphRef.current;
+      if (prevselectedItemId.current) {
+        // eslint-disable-next-line no-underscore-dangle
+        currentGraph._setNodeHighlightedValue(prevselectedItemId.current, false);
+      }
+      if (selectedItem && Object.keys(selectedItem)[0] === 'id') {
+        setTimeout(() => {
+          // eslint-disable-next-line no-underscore-dangle
+          currentGraph._setNodeHighlightedValue((selectedItem as NodeProperties).id, true);
+          prevselectedItemId.current = (selectedItem as NodeProperties).id;
+        }, 0);
       }
     }
-  }, [areas, studyConfig]);
+  }, [selectedItem, linkData]);
 
   return (
     <Paper className={classes.root}>
