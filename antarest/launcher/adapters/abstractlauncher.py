@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Callable, NamedTuple, Optional, Any
 from uuid import UUID
 
@@ -17,6 +18,8 @@ class LauncherCallbacks(NamedTuple):
     update_status: Callable[
         [str, JobStatus, Optional[str], Optional[str]], None
     ]
+    # args: job_id, study_id, study_export_path, launcher_params
+    after_export_flat: Callable[[str, str, Path, Optional[JSON]], None]
 
 
 class AbstractLauncher(ABC):

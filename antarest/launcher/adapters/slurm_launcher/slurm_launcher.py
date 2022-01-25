@@ -370,6 +370,9 @@ class SlurmLauncher(AbstractLauncher):
                     self.storage_service.export_study_flat(
                         study_uuid, params, study_path, outputs=False
                     )
+                    self.callbacks.after_export_flat(
+                        launch_uuid, study_uuid, study_path, launcher_params
+                    )
 
                     self._assert_study_version_is_supported(study_uuid, params)
 

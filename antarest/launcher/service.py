@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from http import HTTPStatus
+from pathlib import Path
 from typing import List, Optional, cast, Dict
 from uuid import UUID
 
@@ -67,13 +68,26 @@ class LauncherService:
             LauncherCallbacks(
                 update_status=lambda jobid, status, msg, output_id: self.update(
                     jobid, status, msg, output_id
-                )
+                ),
+                after_export_flat=lambda job_id, study_id, study_path, launcher_opts: self.after_export_flat_hooks(
+                    job_id, study_id, study_path, launcher_opts
+                ),
             ),
             event_bus,
         )
 
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
+
+    def after_export_flat_hooks(
+        self,
+        job_id: str,
+        study_id: str,
+        study_exported_path: Path,
+        launcher_opts: Optional[JSON],
+    ) -> None:
+        if launcher_opts.get("adequacy_patch", False):
+            pass
 
     def update(
         self,
