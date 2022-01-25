@@ -21,6 +21,10 @@ from antarest.core.requests import (
 )
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
+from antarest.launcher.extensions.adequacy_patch.extension import (
+    AdequacyPatchExtension,
+)
+from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.launcher.model import JobResult, JobStatus, LogType
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
@@ -75,6 +79,11 @@ class LauncherService:
             ),
             event_bus,
         )
+        self.extensions = self._init_extensions()
+
+    def _init_extensions(self) -> Dict[str, ILauncherExtension]:
+        adequacy_patch_ext = AdequacyPatchExtension()
+        return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
@@ -86,8 +95,17 @@ class LauncherService:
         study_exported_path: Path,
         launcher_opts: Optional[JSON],
     ) -> None:
-        if launcher_opts.get("adequacy_patch", False):
-            pass
+        for ext in self.extensions:
+            if launcher_opts.get(ext, None) is not None:
+                logger.info(
+                    f"Applying extension {ext} after_export_flat_hook on job {job_id}"
+                )
+                self.extensions[ext].after_export_flat_hook(
+                    job_id,
+                    study_id,
+                    study_exported_path,
+                    launcher_opts.get(ext),
+                )
 
     def update(
         self,
