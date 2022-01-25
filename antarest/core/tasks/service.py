@@ -33,6 +33,7 @@ from antarest.core.tasks.model import (
     TaskResult,
     CustomTaskEventMessages,
     TaskEventPayload,
+    TaskType,
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -44,12 +45,6 @@ TaskUpdateNotifier = Callable[[str], None]
 Task = Callable[[TaskUpdateNotifier], TaskResult]
 
 
-class TaskType(str, Enum):
-    EXPORT = "EXPORT"
-    VARIANT_GENERATION = "VARIANT_GENERATION"
-    COPY = "COPY"
-
-
 class ITaskService(ABC):
     @abstractmethod
     def add_task(
@@ -57,6 +52,7 @@ class ITaskService(ABC):
         action: Task,
         name: Optional[str],
         task_type: Optional[TaskType],
+        ref_id: Optional[str],
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
@@ -114,6 +110,7 @@ class TaskJobService(ITaskService):
         action: Task,
         name: Optional[str],
         task_type: Optional[TaskType],
+        ref_id: Optional[str],
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
@@ -125,6 +122,7 @@ class TaskJobService(ITaskService):
                 name=name or "Unnamed",
                 owner_id=request_params.user.impersonator,
                 type=task_type,
+                ref_id=ref_id,
             )
         )
 

@@ -10,6 +10,13 @@ from sqlalchemy.orm import relationship  # type: ignore
 from antarest.core.persistence import Base
 
 
+class TaskType(str, Enum):
+    EXPORT = "EXPORT"
+    VARIANT_GENERATION = "VARIANT_GENERATION"
+    COPY = "COPY"
+    ARCHIVE = "ARCHIVE"
+
+
 class TaskStatus(Enum):
     PENDING = 1
     RUNNING = 2
@@ -60,11 +67,14 @@ class TaskDTO(BaseModel):
     result: Optional[TaskResult]
     logs: Optional[List[TaskLogDTO]]
     type: Optional[str] = None
+    ref_id: Optional[str] = None
 
 
 class TaskListFilter(BaseModel):
     status: List[TaskStatus] = []
     name: Optional[str] = None
+    type: List[TaskType] = []
+    ref_id: Optional[str] = None
     from_creation_date_utc: Optional[float] = None
     to_creation_date_utc: Optional[float] = None
     from_completion_date_utc: Optional[float] = None
@@ -114,6 +124,7 @@ class TaskJob(Base):  # type: ignore
     # this is not a foreign key to prevent the need to delete the job history if the user is deleted
     owner_id = Column(Integer(), nullable=True)
     type = Column(String(), nullable=True)
+    ref_id = Column(String(), nullable=True)
 
     def to_dto(self, with_logs: bool = False) -> TaskDTO:
         return TaskDTO(
@@ -138,6 +149,7 @@ class TaskJob(Base):  # type: ignore
             if with_logs
             else None,
             type=self.type,
+            ref_id=self.ref_id,
         )
 
     def __eq__(self, other: Any) -> bool:

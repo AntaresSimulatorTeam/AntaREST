@@ -20,11 +20,10 @@ from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.core.tasks.model import TaskResult
+from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import (
     TaskUpdateNotifier,
     ITaskService,
-    TaskType,
 )
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch

@@ -20,9 +20,10 @@ from antarest.core.tasks.model import (
     TaskDTO,
     CustomTaskEventMessages,
     TaskStatus,
+    TaskType,
 )
 
-from antarest.core.tasks.service import ITaskService, Task, TaskType
+from antarest.core.tasks.service import ITaskService, Task
 
 project_dir: Path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_dir))
@@ -297,6 +298,7 @@ class SimpleSyncTaskService(ITaskService):
         action: Task,
         name: Optional[str],
         task_type: Optional[TaskType],
+        ref_id: Optional[str],
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:

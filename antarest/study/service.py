@@ -33,12 +33,11 @@ from antarest.core.requests import (
     UserHasNotPermissionError,
 )
 from antarest.core.roles import RoleType
-from antarest.core.tasks.model import TaskResult
+from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import (
     ITaskService,
     TaskUpdateNotifier,
     noop_notifier,
-    TaskType,
 )
 from antarest.login.model import Group
 from antarest.login.service import LoginService
@@ -666,6 +665,7 @@ class StudyService:
                 copy_task,
                 f"Study {src_study.name} ({src_uuid}) copy",
                 task_type=TaskType.COPY,
+                ref_id=src_study.id,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -719,6 +719,7 @@ class StudyService:
             export_task,
             export_name,
             task_type=TaskType.EXPORT,
+            ref_id=study.id,
             custom_event_messages=None,
             request_params=params,
         )
@@ -775,6 +776,7 @@ class StudyService:
             export_task,
             export_name,
             task_type=TaskType.EXPORT,
+            ref_id=study.id,
             custom_event_messages=None,
             request_params=params,
         )
