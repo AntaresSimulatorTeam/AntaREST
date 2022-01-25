@@ -130,12 +130,16 @@ class LocalLauncher(AbstractLauncher):
                 )
 
             assert process.stdout is not None
-            LogTailManager.follow(
-                process.stdout,
-                self.create_update_log(str(uuid), study_uuid),
-                stop_reading_output,
-                None,
+            thread = threading.Thread(
+                target=lambda: LogTailManager.follow(
+                    process.stdout,
+                    self.create_update_log(str(uuid), study_uuid),
+                    stop_reading_output,
+                    None,
+                ),
+                daemon=True,
             )
+            thread.start()
 
             while True:
                 if process.poll() is not None:

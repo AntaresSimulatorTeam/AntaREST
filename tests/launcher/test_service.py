@@ -12,6 +12,7 @@ from antarest.core.config import (
 )
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+from antarest.core.model import PermissionInfo
 from antarest.core.requests import RequestParameters
 from antarest.launcher.model import JobResult, JobStatus
 from antarest.launcher.service import LauncherService
@@ -30,7 +31,7 @@ def test_service_run_study(get_current_user_mock):
         created=1,
         updated=1,
         type="rawstudy",
-        owner=OwnerInfo(name="author"),
+        owner=OwnerInfo(id=0, name="author"),
         groups=[],
         public_mode=PublicMode.NONE,
         version=42,
@@ -86,6 +87,7 @@ def test_service_run_study(get_current_user_mock):
         Event(
             type=EventType.STUDY_JOB_STARTED,
             payload=pending.to_dto().dict(),
+            permissions=PermissionInfo(owner=0),
         )
     )
 
