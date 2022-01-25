@@ -7,7 +7,7 @@ import threading
 import time
 from multiprocessing import Process
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Callable
+from typing import Dict, Optional, Tuple, Callable, cast, IO
 from uuid import UUID, uuid4
 
 from antarest.core.config import Config
@@ -129,10 +129,9 @@ class LocalLauncher(AbstractLauncher):
                     None,
                 )
 
-            assert process.stdout is not None
             thread = threading.Thread(
                 target=lambda: LogTailManager.follow(
-                    process.stdout,
+                    cast(IO[str], process.stdout),
                     self.create_update_log(str(uuid), study_uuid),
                     stop_reading_output,
                     None,
