@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import debug from 'debug';
 import { useTranslation } from 'react-i18next';
-import { createStyles, makeStyles, Theme, Breadcrumbs } from '@material-ui/core';
-import { Link } from 'react-router-dom';
+import { createStyles, makeStyles } from '@material-ui/core';
 import { AppState } from '../../App/reducers';
 import { getStudyJobs, getStudies } from '../../services/api/study';
 import JobListing from '.';
@@ -15,17 +14,13 @@ import { LaunchJob } from '../../common/types';
 
 const logError = debug('antares:studymanagement:error');
 
-const useStyles = makeStyles((theme: Theme) => createStyles({
+const useStyles = makeStyles(() => createStyles({
   root: {
     width: '100%',
     flex: 1,
     overflowY: 'auto',
     display: 'flex',
     flexDirection: 'column',
-  },
-  breadcrumbs: {
-    backgroundColor: '#d7d7d7',
-    padding: theme.spacing(1),
   },
   header: {
     borderBottom: '1px solid #d7d7d7',
@@ -75,14 +70,6 @@ const JobManagement = (props: PropTypes) => {
 
   return (
     <div className={classes.root}>
-      <Breadcrumbs aria-label="breadcrumb" className={classes.breadcrumbs}>
-        <Link to="/">
-          {t('main:allStudies')}
-        </Link>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          {t('main:jobs')}
-        </div>
-      </Breadcrumbs>
       {!loaded && <MainContentLoader />}
       {loaded && jobs && <JobListing jobs={jobs} />}
     </div>

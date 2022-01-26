@@ -122,6 +122,7 @@ const OtherJobManagement = (props: PropTypes) => {
         });
       };
     }
+    return () => { /* noop */ };
   }, [tasks, subscribeChannel, unsubscribeChannel]);
 
   const renderTasks = () => {

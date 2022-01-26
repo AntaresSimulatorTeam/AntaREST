@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { makeStyles, createStyles } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, Breadcrumbs } from '@material-ui/core';
 import { connect, ConnectedProps } from 'react-redux';
+import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { addListener, removeListener } from '../../ducks/websockets';
 import GenericTab from '../../components/JobListing/TabView';
 import JobManagement from '../../components/JobListing/JobManagement';
 import DownloadsManagement from '../../components/JobListing/DownloadsManagement';
 import OtherJobManagement from '../../components/JobListing/OtherJobManagement';
 
-const useStyles = makeStyles(() =>
+const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       height: '100%',
@@ -19,6 +21,14 @@ const useStyles = makeStyles(() =>
       flexDirection: 'column',
       overflow: 'hidden',
       boxSizing: 'border-box',
+    },
+    breadcrumbs: {
+      backgroundColor: '#d7d7d7',
+      width: '100%',
+      padding: theme.spacing(1),
+    },
+    breadcrumbsfirstelement: {
+      marginLeft: theme.spacing(1),
     },
   }));
 
@@ -41,10 +51,11 @@ interface MenuTab {
 const Jobs = () => {
   const classes = useStyles();
   const [navData, setNavData] = useState<MenuTab>({});
+  const [t] = useTranslation();
 
   useEffect(() => {
     const newNavData: {[key: string]: () => JSX.Element} = {
-      jobs: () => <JobManagement />,
+      launches: () => <JobManagement />,
       exports: () => <DownloadsManagement />,
       others: () => <OtherJobManagement />,
     };
@@ -53,7 +64,15 @@ const Jobs = () => {
 
   return (
     <div className={classes.root}>
-      <GenericTab items={navData} initialValue="jobs" />
+      <Breadcrumbs aria-label="breadcrumb" className={classes.breadcrumbs}>
+        <Link to="/" className={classes.breadcrumbsfirstelement}>
+          {t('main:allStudies')}
+        </Link>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {t('main:jobs')}
+        </div>
+      </Breadcrumbs>
+      <GenericTab items={navData} initialValue="launches" />
     </div>
   );
 };
