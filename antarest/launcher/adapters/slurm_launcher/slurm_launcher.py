@@ -298,6 +298,12 @@ class SlurmLauncher(AbstractLauncher):
         study: StudyDTO, log_type: LogType = LogType.STDOUT
     ) -> Optional[Path]:
         log_dir = Path(study.job_log_dir)
+        return SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
+
+    @staticmethod
+    def _get_log_path_from_log_dir(
+        log_dir: Path, log_type: LogType = LogType.STDOUT
+    ) -> Optional[Path]:
         log_prefix = (
             "antares-out-" if log_type == LogType.STDOUT else "antares-err-"
         )
@@ -440,6 +446,12 @@ class SlurmLauncher(AbstractLauncher):
                 log_path = SlurmLauncher._get_log_path(study, log_type)
                 if log_path:
                     return log_path.read_text()
+        # when this is not the current worker handling this job (found in data_repo_tinydb)
+        log_path = SlurmLauncher._get_log_path_from_log_dir(
+            Path(self.launcher_args.log_dir) / job_id, log_type
+        )
+        if log_path:
+            return log_path.read_text()
         return None
 
     def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
