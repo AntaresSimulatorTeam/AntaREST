@@ -79,4 +79,11 @@ export interface AreasConfig {
     [index: string]: SingleAreaConfig;
 }
 
+export interface UpdateAreaUi {
+    x: number;
+    y: number;
+    // eslint-disable-next-line camelcase
+    color_rgb: Array<number>;
+}
+
 export default {};

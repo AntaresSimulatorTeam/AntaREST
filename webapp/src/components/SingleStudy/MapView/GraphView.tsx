@@ -72,6 +72,7 @@ const GraphView = (props: GraphViewProps) => {
       onClickNode={onClickNode}
       onClickLink={onClickLink}
       onClickGraph={() => setSelectedItem(undefined)}
+      onNodePositionChange={() => console.log('test')}
     />
 
   );

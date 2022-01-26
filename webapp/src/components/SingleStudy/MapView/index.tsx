@@ -19,6 +19,7 @@ import PropertiesView from './PropertiesView';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
 import { StudyMetadata } from '../../../common/types';
 import GraphView from './GraphView';
+import { createArea, updateAreaUI } from '../../../services/api/studydata';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -161,15 +162,15 @@ const MapView = (props: Props) => {
     setOpenModal(false);
   };
 
-  const onSave = (name: string, posX: number, posY: number, color: string) => {
+  const onSave = async (name: string, posX: number, posY: number, color: string) => {
     setOpenModal(false);
-    if (nodeData) {
-      nodeData.push({
-        id: name,
-        x: posX,
-        y: posY,
-        color,
-      });
+    try {
+      await createArea(study.id, name);
+      const [r, g, b] = color.slice(4, -1).split(',').map(Number);
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      await updateAreaUI(study.id, name, { x: posX, y: posY, color_rgb: [r, g, b] });
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
     }
   };
 
@@ -289,12 +290,9 @@ const MapView = (props: Props) => {
           {loaded ? (
             <AutoSizer>
               {
-                ({ height, width }) => {
-                  console.log('Rendering with');
-                  return (
-                    <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} setSelectedItem={setSelectedItem} />
-                  );
-                }
+                ({ height, width }) => (
+                  <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} setSelectedItem={setSelectedItem} />
+                )
             }
             </AutoSizer>
           ) : <SimpleLoader />
