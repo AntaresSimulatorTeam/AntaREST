@@ -20,6 +20,7 @@ from antarest.core.tasks.model import (
     TaskDTO,
     CustomTaskEventMessages,
     TaskStatus,
+    TaskType,
 )
 
 from antarest.core.tasks.service import ITaskService, Task
@@ -296,6 +297,8 @@ class SimpleSyncTaskService(ITaskService):
         self,
         action: Task,
         name: Optional[str],
+        task_type: Optional[TaskType],
+        ref_id: Optional[str],
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:

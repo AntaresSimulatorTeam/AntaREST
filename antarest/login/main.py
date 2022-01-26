@@ -23,7 +23,7 @@ from antarest.login.web import create_login_api
 
 
 def build_login(
-    application: FastAPI,
+    application: Optional[FastAPI],
     config: Config,
     service: Optional[LoginService] = None,
     event_bus: IEventBus = DummyEventBusService(),
@@ -61,14 +61,16 @@ def build_login(
             event_bus=event_bus,
         )
 
-    @application.exception_handler(AuthJWTException)
-    def authjwt_exception_handler(
-        request: Request, exc: AuthJWTException
-    ) -> Any:
-        return JSONResponse(
-            status_code=HTTPStatus.UNAUTHORIZED,
-            content={"detail": exc.message},
-        )
+    if application:
+
+        @application.exception_handler(AuthJWTException)
+        def authjwt_exception_handler(
+            request: Request, exc: AuthJWTException
+        ) -> Any:
+            return JSONResponse(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                content={"detail": exc.message},
+            )
 
     @AuthJWT.token_in_denylist_loader  # type: ignore
     def check_if_token_is_revoked(decrypted_token: Any) -> bool:
@@ -81,5 +83,6 @@ def build_login(
             and not service.exists_bot(user_id)
         )
 
-    application.include_router(create_login_api(service, config))
+    if application:
+        application.include_router(create_login_api(service, config))
     return service

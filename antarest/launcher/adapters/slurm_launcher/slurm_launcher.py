@@ -7,7 +7,7 @@ import threading
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Optional, Dict
+from typing import Callable, Optional, Dict, Awaitable
 from uuid import UUID, uuid4
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
@@ -70,6 +70,9 @@ class SlurmLauncher(AbstractLauncher):
         self.slurm_config: SlurmConfig = config.launcher.slurm
         self.check_state: bool = True
         self.event_bus = event_bus
+        self.event_bus.add_listener(
+            self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST]
+        )
         self.thread: Optional[threading.Thread] = None
         self.job_id_to_study_id: Dict[str, str] = {}
         self._check_config()
@@ -80,7 +83,9 @@ class SlurmLauncher(AbstractLauncher):
             else Path(self.slurm_config.local_workspace)
         )
 
-        self.log_tail_manager = LogTailManager(self.local_workspace)
+        self.log_tail_manager = LogTailManager(
+            Path(self.slurm_config.local_workspace)
+        )
         self.launcher_args = self._init_launcher_arguments(
             self.local_workspace
         )
@@ -128,12 +133,7 @@ class SlurmLauncher(AbstractLauncher):
                     / "STUDIES_IN"
                 )
             ),
-            log_dir=str(
-                (
-                    Path(local_workspace or self.slurm_config.local_workspace)
-                    / "LOGS"
-                )
-            ),
+            log_dir=str((Path(self.slurm_config.local_workspace) / "LOGS")),
             finished_dir=str(
                 (
                     Path(local_workspace or self.slurm_config.local_workspace)
@@ -154,7 +154,7 @@ class SlurmLauncher(AbstractLauncher):
         arguments.check_queue = False
         arguments.json_ssh_config = None
         arguments.job_id_to_kill = None
-        arguments.xpansion_mode = False
+        arguments.xpansion_mode = None
         arguments.version = False
         arguments.post_processing = False
         return arguments
@@ -186,18 +186,18 @@ class SlurmLauncher(AbstractLauncher):
                 shutil.rmtree(study_path)
 
     def _import_study_output(
-        self, job_id: str, xpansion_mode: bool = False
+        self, job_id: str, xpansion_mode: Optional[str] = None
     ) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
-        if xpansion_mode:
-            self._import_xpansion_result(job_id, study_id)
+        if xpansion_mode is not None:
+            self._import_xpansion_result(job_id, xpansion_mode)
         return self.storage_service.import_output(
             study_id,
             self.local_workspace / "OUTPUT" / job_id / "output",
             params=RequestParameters(DEFAULT_ADMIN_USER),
         )
 
-    def _import_xpansion_result(self, job_id: str, study_id: str) -> None:
+    def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
         output_path = self.local_workspace / "OUTPUT" / job_id / "output"
         if output_path.exists() and len(os.listdir(output_path)) == 1:
             output_path = output_path / os.listdir(output_path)[0]
@@ -205,8 +205,7 @@ class SlurmLauncher(AbstractLauncher):
                 self.local_workspace / "OUTPUT" / job_id / "input" / "links",
                 output_path / "updated_links",
             )
-            study = self.storage_service.get_study(study_id)
-            if int(study.version) < 800:
+            if xpansion_mode == "r":
                 shutil.copytree(
                     self.local_workspace
                     / "OUTPUT"
@@ -248,7 +247,7 @@ class SlurmLauncher(AbstractLauncher):
                         output_id: Optional[str] = None
                         if not study.with_error:
                             output_id = self._import_study_output(
-                                study.name, study.xpansion_study
+                                study.name, study.xpansion_mode
                             )
                         self.callbacks.update_status(
                             study.name,
@@ -299,6 +298,12 @@ class SlurmLauncher(AbstractLauncher):
         study: StudyDTO, log_type: LogType = LogType.STDOUT
     ) -> Optional[Path]:
         log_dir = Path(study.job_log_dir)
+        return SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
+
+    @staticmethod
+    def _get_log_path_from_log_dir(
+        log_dir: Path, log_type: LogType = LogType.STDOUT
+    ) -> Optional[Path]:
         log_prefix = (
             "antares-out-" if log_type == LogType.STDOUT else "antares-err-"
         )
@@ -391,7 +396,11 @@ class SlurmLauncher(AbstractLauncher):
         if launcher_params:
             launcher_args = deepcopy(self.launcher_args)
             if launcher_params.get("xpansion", False):
-                launcher_args.xpansion_mode = True
+                launcher_args.xpansion_mode = (
+                    "r"
+                    if launcher_params.get("xpansion_r_version", False)
+                    else "cpp"
+                )
             time_limit = launcher_params.get("time_limit", None)
             if time_limit and isinstance(time_limit, int):
                 if MIN_TIME_LIMIT < time_limit < MAX_TIME_LIMIT:
@@ -437,25 +446,41 @@ class SlurmLauncher(AbstractLauncher):
                 log_path = SlurmLauncher._get_log_path(study, log_type)
                 if log_path:
                     return log_path.read_text()
+        # when this is not the current worker handling this job (found in data_repo_tinydb)
+        log_path = SlurmLauncher._get_log_path_from_log_dir(
+            Path(self.launcher_args.log_dir) / job_id, log_type
+        )
+        if log_path:
+            return log_path.read_text()
         return None
 
-    def kill_job(self, job_id: str) -> None:
+    def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
+        async def _listen_to_kill_job(event: Event) -> None:
+            if event.type == EventType.STUDY_JOB_CANCEL_REQUEST:
+                self.kill_job(event.payload, dispatch=False)
+
+        return _listen_to_kill_job
+
+    def kill_job(self, job_id: str, dispatch: bool = True) -> None:
         launcher_args = deepcopy(self.launcher_args)
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
                 launcher_args.job_id_to_kill = study.job_id
+                logger.info(
+                    f"Cancelling job {job_id} (dispatched={not dispatch})"
+                )
                 with self.antares_launcher_lock:
                     run_with(
                         launcher_args, self.launcher_params, show_banner=False
                     )
                 return
-        # todo kill job should be sent to other slurm launcher so that is correctly killed
-        logger.warning(
-            "Failed to retrieve job id in antares launcher database"
-        )
-        self.callbacks.update_status(
-            job_id,
-            JobStatus.FAILED,
-            None,
-            None,
-        )
+        if dispatch:
+            self.event_bus.push(
+                Event(type=EventType.STUDY_JOB_CANCEL_REQUEST, payload=job_id)
+            )
+            self.callbacks.update_status(
+                job_id,
+                JobStatus.FAILED,
+                None,
+                None,
+            )

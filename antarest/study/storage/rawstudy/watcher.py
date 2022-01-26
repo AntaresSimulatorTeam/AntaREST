@@ -35,15 +35,18 @@ class Watcher:
             else None
         )
 
-    def start(self) -> None:
+    def start(self, threaded: bool = True) -> None:
         """
         Start watching
         Returns:
 
         """
         self.should_stop = False
-        if self.thread and not self.thread.is_alive():
-            self.thread.start()
+        if threaded:
+            if self.thread and not self.thread.is_alive():
+                self.thread.start()
+        else:
+            self._loop()
 
     def stop(self) -> None:
         self.should_stop = True

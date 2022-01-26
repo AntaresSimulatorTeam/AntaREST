@@ -38,6 +38,8 @@ class CommandName(Enum):
     REMOVE_BINDING_CONSTRAINT = "remove_binding_constraint"
     CREATE_CLUSTER = "create_cluster"
     REMOVE_CLUSTER = "remove_cluster"
+    CREATE_RENEWABLES_CLUSTER = "create_renewables_cluster"
+    REMOVE_RENEWABLES_CLUSTER = "remove_renewables_cluster"
     REPLACE_MATRIX = "replace_matrix"
     UPDATE_CONFIG = "update_config"
     UPDATE_COMMENTS = "update_comments"

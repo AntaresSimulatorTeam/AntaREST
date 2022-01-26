@@ -73,6 +73,14 @@ class TaskJobRepository:
                     )
                 )
             )
+        if filter.ref_id is not None:
+            where_clauses.append(TaskJob.ref_id.__eq__(filter.ref_id))
+        if len(filter.type) > 0:
+            where_clauses.append(
+                TaskJob.type.in_(
+                    [task_type.value for task_type in filter.type]
+                )
+            )
         if len(where_clauses) > 1:
             query = query.where(and_(*where_clauses))
         elif len(where_clauses) == 1:

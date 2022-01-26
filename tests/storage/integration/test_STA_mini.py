@@ -46,7 +46,7 @@ def assert_url_content(
         file_transfer_manager=Mock(),
         storage_service=storage_service,
         matrix_service=Mock(spec=MatrixService),
-        config=storage_service.raw_study_service.config,
+        config=storage_service.storage_service.raw_study_service.config,
     )
     client = TestClient(app)
     res = client.get(url)
@@ -411,11 +411,11 @@ def test_sta_mini_copy(storage_service) -> None:
         file_transfer_manager=Mock(),
         storage_service=storage_service,
         matrix_service=Mock(spec=MatrixService),
-        config=storage_service.raw_study_service.config,
+        config=storage_service.storage_service.raw_study_service.config,
     )
     client = TestClient(app)
     result = client.post(
-        f"/v1/studies/{source_study_name}/copy?dest={destination_study_name}"
+        f"/v1/studies/{source_study_name}/copy?dest={destination_study_name}&use_task=false"
     )
 
     assert result.status_code == HTTPStatus.CREATED.value
@@ -514,7 +514,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
         storage_service=storage_service,
         user_service=Mock(),
         matrix_service=Mock(spec=MatrixService),
-        config=storage_service.raw_study_service.config,
+        config=storage_service.storage_service.raw_study_service.config,
     )
     client = TestClient(app)
 
@@ -550,7 +550,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         storage_service=storage_service,
         user_service=Mock(),
         matrix_service=Mock(spec=MatrixService),
-        config=storage_service.raw_study_service.config,
+        config=storage_service.storage_service.raw_study_service.config,
     )
     client = TestClient(app)
 

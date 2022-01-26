@@ -12,7 +12,7 @@ from antarest.eventbus.web import configure_websockets
 
 
 def build_eventbus(
-    application: FastAPI,
+    application: Optional[FastAPI],
     config: Config,
     autostart: bool = True,
     redis_client: Optional[Redis] = None,  # type: ignore
@@ -25,5 +25,6 @@ def build_eventbus(
         autostart,
     )
 
-    configure_websockets(application, config, eventbus)
+    if application:
+        configure_websockets(application, config, eventbus)
     return eventbus

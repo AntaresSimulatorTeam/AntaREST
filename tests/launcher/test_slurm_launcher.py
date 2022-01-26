@@ -394,12 +394,12 @@ def test_import_study_output(launcher_config):
     assert not (output_dir / "updated_links" / "something").exists()
     assert not (output_dir / "updated_links" / "something").exists()
 
-    slurm_launcher._import_study_output("1", True)
+    slurm_launcher._import_study_output("1", "cpp")
     assert (output_dir / "updated_links" / "something").exists()
     assert (output_dir / "updated_links" / "something").read_text() == "hello"
     shutil.rmtree(output_dir / "updated_links")
 
-    slurm_launcher._import_study_output("1", True)
+    slurm_launcher._import_study_output("1", "r")
     assert (output_dir / "results" / "something_else").exists()
     assert (output_dir / "results" / "something_else").read_text() == "world"
 
@@ -443,7 +443,7 @@ def test_kill_job(
         version=False,
         wait_mode=False,
         wait_time=0,
-        xpansion_mode=False,
+        xpansion_mode=None,
     )
     launcher_parameters = MainParameters(
         json_dir=Path(tmp_path),

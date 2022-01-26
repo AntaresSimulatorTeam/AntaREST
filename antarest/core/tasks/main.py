@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import FastAPI
 
 from antarest.core.config import Config
@@ -8,7 +10,7 @@ from antarest.core.tasks.web import create_tasks_api
 
 
 def build_taskjob_manager(
-    application: FastAPI,
+    application: Optional[FastAPI],
     config: Config,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> ITaskService:
@@ -16,6 +18,7 @@ def build_taskjob_manager(
     repository = TaskJobRepository()
     service = TaskJobService(config, repository, event_bus)
 
-    application.include_router(create_tasks_api(service, config))
+    if application:
+        application.include_router(create_tasks_api(service, config))
 
     return service

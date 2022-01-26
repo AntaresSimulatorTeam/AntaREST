@@ -24,7 +24,7 @@ config = context.config
 config_path = os.getenv('ANTAREST_CONF') or utils.get_default_config_path()
 if config_path and Path(config_path).exists():
     antarest_conf = Config.from_yaml_file(config_path)
-    config.set_main_option("sqlalchemy.url", antarest_conf.db_admin_url or antarest_conf.db_url)
+    config.set_main_option("sqlalchemy.url", antarest_conf.db.db_admin_url or antarest_conf.db.db_url)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

@@ -7,6 +7,11 @@ class ShouldNotHappenException(Exception):
     pass
 
 
+class UnknownModuleError(Exception):
+    def __init__(self, message: str) -> None:
+        super(UnknownModuleError, self).__init__(message)
+
+
 class StudyNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)

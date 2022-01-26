@@ -33,6 +33,12 @@ class ICommandExtractor(abc.ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def extract_renewables_cluster(
+        self, study: FileStudy, area_id: str, thermal_id: str
+    ) -> List["ICommand"]:  # type: ignore
+        raise NotImplementedError()
+
+    @abstractmethod
     def extract_hydro(
         self, study: FileStudy, area_id: str
     ) -> List["ICommand"]:  # type: ignore

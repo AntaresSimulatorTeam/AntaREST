@@ -1,10 +1,12 @@
 import time
 from pathlib import Path
+from unittest.mock import ANY
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+from antarest.study.business.area_management import AreaType
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
 
 
@@ -176,7 +178,7 @@ def test_main(app: FastAPI):
 
     # Study copy
     copied = client.post(
-        f"/v1/studies/{created.json()}/copy?dest=copied",
+        f"/v1/studies/{created.json()}/copy?dest=copied&use_task=false",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -435,42 +437,168 @@ def test_area_management(app: FastAPI):
             "metadata": {"country": None},
             "name": "All areas",
             "set": [],
-            "type": "CLUSTER",
+            "thermals": None,
+            "type": "DISTRICT",
         }
     ]
 
-    res_create = client.post(
+    client.post(
         f"/v1/studies/{study_id}/areas",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
-        json={"name": "test", "type": "AREA"},
+        json={
+            "name": "area 1",
+            "type": AreaType.AREA.value,
+            "metadata": {"country": "FR"},
+        },
     )
-    res_update = client.put(
-        f"/v1/studies/{study_id}/areas/test",
+    res = client.post(
+        f"/v1/studies/{study_id}/areas",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
-        json={"name": "test", "type": "AREA"},
+        json={
+            "name": "area 1",
+            "type": AreaType.AREA.value,
+            "metadata": {"country": "FR"},
+        },
     )
-    res_delete = client.delete(
-        f"/v1/studies/{study_id}/areas/test",
+    assert res.status_code == 500
+    assert res.json() == {
+        "description": "Area 'area 1' already exists and could not be created",
+        "exception": "CommandApplicationError",
+    }
+
+    client.post(
+        f"/v1/studies/{study_id}/areas",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "name": "area 2",
+            "type": AreaType.AREA.value,
+            "metadata": {"country": "DE"},
+        },
+    )
+
+    res_areas = client.get(
+        f"/v1/studies/{study_id}/areas",
         headers={
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
-    assert (
-        res_create.status_code == 500
-        and res_create.json()["exception"] == "NotImplementedError"
+    assert res_areas.json() == [
+        {
+            "id": "area 1",
+            "metadata": {"country": "FR"},
+            "name": "area 1",
+            "set": None,
+            "thermals": [],
+            "type": "AREA",
+        },
+        {
+            "id": "area 2",
+            "metadata": {"country": "DE"},
+            "name": "area 2",
+            "set": None,
+            "thermals": [],
+            "type": "AREA",
+        },
+        {
+            "id": "all areas",
+            "metadata": {"country": None},
+            "name": "All areas",
+            "set": ANY,  # because some time the order is not the same
+            "thermals": None,
+            "type": "DISTRICT",
+        },
+    ]
+
+    client.post(
+        f"/v1/studies/{study_id}/links",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={
+            "area1": "area 1",
+            "area2": "area 2",
+        },
     )
-    assert (
-        res_update.status_code == 500
-        and res_update.json()["exception"] == "NotImplementedError"
+    res_links = client.get(
+        f"/v1/studies/{study_id}/links",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
     )
-    assert (
-        res_delete.status_code == 500
-        and res_delete.json()["exception"] == "NotImplementedError"
+    assert res_links.json() == [{"area1": "area 1", "area2": "area 2"}]
+    client.delete(
+        f"/v1/studies/{study_id}/links/area%201/area%202",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
     )
+    res_links = client.get(
+        f"/v1/studies/{study_id}/links",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res_links.json() == []
+
+    res = client.put(
+        f"/v1/studies/{study_id}/areas/area%201/ui",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={"x": 100, "y": 100, "color_rgb": [255, 0, 100]},
+    )
+    assert res.status_code == 200
+    res_ui = client.get(
+        f"/v1/studies/{study_id}/raw?path=input/areas/area%201/ui/ui",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res_ui.json() == {
+        "x": 100,
+        "y": 100,
+        "color_r": 255,
+        "color_g": 0,
+        "color_b": 100,
+        "layers": 0,
+    }
+
+    client.delete(
+        f"/v1/studies/{study_id}/areas/area%201",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    res_areas = client.get(
+        f"/v1/studies/{study_id}/areas",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res_areas.json() == [
+        {
+            "id": "area 2",
+            "metadata": {"country": "DE"},
+            "name": "area 2",
+            "set": None,
+            "thermals": [],
+            "type": "AREA",
+        },
+        {
+            "id": "all areas",
+            "metadata": {"country": None},
+            "name": "All areas",
+            "set": ["area 2"],
+            "thermals": None,
+            "type": "DISTRICT",
+        },
+    ]
 
 
 def test_archive(app: FastAPI, tmp_path: Path):
@@ -778,3 +906,81 @@ def test_variant_manager(app: FastAPI):
         },
     )
     assert res.status_code == 404
+
+
+def test_maintenance(app: FastAPI):
+    client = TestClient(app, raise_server_exceptions=False)
+
+    # Get admin credentials
+    res = client.post(
+        "/v1/login", json={"username": "admin", "password": "admin"}
+    )
+    admin_credentials = res.json()
+
+    # Create non admin user
+    res = client.post(
+        "/v1/users",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json={"name": "user", "password": "user"},
+    )
+    assert res.status_code == 200
+
+    res = client.post(
+        "/v1/login", json={"username": "user", "password": "user"}
+    )
+    non_admin_credentials = res.json()
+
+    # Test maintenance update utils function
+    def set_maintenance(value: bool) -> None:
+        # Set maintenance mode
+        result = client.post(
+            f"/v1/core/maintenance?maintenance={'true' if value else 'false'}",
+            headers={
+                "Authorization": f'Bearer {admin_credentials["access_token"]}'
+            },
+        )
+        assert result.status_code == 200
+
+        result = client.get(
+            "/v1/core/maintenance",
+            headers={
+                "Authorization": f'Bearer {admin_credentials["access_token"]}'
+            },
+        )
+        assert result.status_code == 200
+        assert result.json() == value
+
+    set_maintenance(True)
+    set_maintenance(False)
+
+    # Set maintenance mode when not admin
+    res = client.post(
+        "/v1/core/maintenance?maintenance=true",
+        headers={
+            "Authorization": f'Bearer {non_admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 403
+
+    # Set message info
+    message = "Hey"
+    res = client.post(
+        f"/v1/core/maintenance/message",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+        json=message,
+    )
+    assert res.status_code == 200
+
+    # Set message info when not admin
+    res = client.get(
+        "/v1/core/maintenance/message",
+        headers={
+            "Authorization": f'Bearer {admin_credentials["access_token"]}'
+        },
+    )
+    assert res.status_code == 200
+    assert res.json() == message

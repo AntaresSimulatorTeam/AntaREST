@@ -4,6 +4,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, Future
+from enum import Enum
 from http import HTTPStatus
 from typing import Callable, Optional, List, Dict, Awaitable
 
@@ -32,6 +33,7 @@ from antarest.core.tasks.model import (
     TaskResult,
     CustomTaskEventMessages,
     TaskEventPayload,
+    TaskType,
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -49,6 +51,8 @@ class ITaskService(ABC):
         self,
         action: Task,
         name: Optional[str],
+        task_type: Optional[TaskType],
+        ref_id: Optional[str],
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
@@ -105,6 +109,8 @@ class TaskJobService(ITaskService):
         self,
         action: Task,
         name: Optional[str],
+        task_type: Optional[TaskType],
+        ref_id: Optional[str],
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
@@ -115,6 +121,8 @@ class TaskJobService(ITaskService):
             TaskJob(
                 name=name or "Unnamed",
                 owner_id=request_params.user.impersonator,
+                type=task_type,
+                ref_id=ref_id,
             )
         )
 
@@ -122,10 +130,11 @@ class TaskJobService(ITaskService):
             Event(
                 type=EventType.TASK_ADDED,
                 payload=TaskEventPayload(
-                    id=task.id, message=custom_event_messages.start
-                ).dict()
-                if custom_event_messages is not None
-                else f"Task {task.id} added",
+                    id=task.id,
+                    message=custom_event_messages.start
+                    if custom_event_messages is not None
+                    else f"Task {task.id} added",
+                ).dict(),
                 permissions=PermissionInfo(
                     owner=request_params.user.impersonator
                 ),
@@ -237,10 +246,11 @@ class TaskJobService(ITaskService):
             Event(
                 type=EventType.TASK_RUNNING,
                 payload=TaskEventPayload(
-                    id=task_id, message=custom_event_messages.running
-                ).dict()
-                if custom_event_messages is not None
-                else f"Task {task_id} is running",
+                    id=task_id,
+                    message=custom_event_messages.running
+                    if custom_event_messages is not None
+                    else f"Task {task_id} is running",
+                ).dict(),
                 channel=EventChannelDirectory.TASK + task_id,
             )
         )
@@ -269,10 +279,11 @@ class TaskJobService(ITaskService):
                         if result.success
                         else EventType.TASK_FAILED,
                         payload=TaskEventPayload(
-                            id=task_id, message=custom_event_messages.end
-                        ).dict()
-                        if custom_event_messages is not None
-                        else f'Task {task_id} {"completed" if result.success else "failed"}',
+                            id=task_id,
+                            message=custom_event_messages.end
+                            if custom_event_messages is not None
+                            else f'Task {task_id} {"completed" if result.success else "failed"}',
+                        ).dict(),
                         channel=EventChannelDirectory.TASK + task_id,
                     )
                 )
@@ -287,10 +298,11 @@ class TaskJobService(ITaskService):
                     Event(
                         type=EventType.TASK_FAILED,
                         payload=TaskEventPayload(
-                            id=task_id, message=custom_event_messages.end
-                        ).dict()
-                        if custom_event_messages is not None
-                        else f"Task {task_id} failed",
+                            id=task_id,
+                            message=custom_event_messages.end
+                            if custom_event_messages is not None
+                            else f"Task {task_id} failed",
+                        ).dict(),
                         channel=EventChannelDirectory.TASK + task_id,
                     )
                 )

@@ -3,8 +3,9 @@ import logging
 import os
 import sys
 from datetime import timezone, datetime
+from enum import Enum
 from pathlib import Path
-from typing import Tuple, Any, Optional, Dict
+from typing import Tuple, Any, Optional, Dict, cast
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
@@ -21,8 +22,10 @@ from antarest import __version__
 from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
+from antarest.core.exceptions import UnknownModuleError
 from antarest.core.filetransfer.main import build_filetransfer_service
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
+from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.persistence import upgrade_db
 from antarest.core.swagger import customize_openapi
 from antarest.core.tasks.main import build_taskjob_manager
@@ -42,6 +45,12 @@ from antarest.study.main import build_study_service
 from antarest.study.storage.rawstudy.watcher import Watcher
 
 logger = logging.getLogger(__name__)
+
+
+class Module(str, Enum):
+    APP = "app"
+    WATCHER = "watcher"
+    MATRIX_GC = "matrix_gc"
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -74,6 +83,19 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         required=False,
     )
+    parser.add_argument(
+        "--module",
+        dest="module",
+        help="Select a module to run (default is the application server)",
+        choices=[
+            Module.APP.value,
+            Module.WATCHER.value,
+            Module.MATRIX_GC.value,
+        ],
+        action="store",
+        default=Module.APP.value,
+        required=False,
+    )
     return parser.parse_args()
 
 
@@ -86,7 +108,7 @@ def get_default_config_path_or_raise() -> Path:
     return config_path
 
 
-def get_arguments() -> Tuple[Path, bool, bool, bool]:
+def get_arguments() -> Tuple[Path, bool, bool, bool, Module]:
     arguments = parse_arguments()
 
     display_version = arguments.version or False
@@ -96,6 +118,7 @@ def get_arguments() -> Tuple[Path, bool, bool, bool]:
             display_version,
             arguments.no_front,
             arguments.auto_upgrade_db,
+            Module.APP,
         )
 
     config_file = Path(
@@ -106,7 +129,108 @@ def get_arguments() -> Tuple[Path, bool, bool, bool]:
         display_version,
         arguments.no_front,
         arguments.auto_upgrade_db,
+        Module(arguments.module),
     )
+
+
+def init_db(
+    config_file: Path,
+    config: Config,
+    auto_upgrade_db: bool,
+    application: Optional[FastAPI],
+) -> None:
+    if auto_upgrade_db:
+        upgrade_db(config_file)
+    connect_args: Dict[str, Any] = {}
+    if config.db.db_url.startswith("sqlite"):
+        connect_args["check_same_thread"] = False
+    else:
+        connect_args["connect_timeout"] = config.db.db_connect_timeout
+
+    engine = create_engine(
+        config.db.db_url,
+        echo=config.debug,
+        connect_args=connect_args,
+    )
+
+    session_args = {
+        "autocommit": False,
+        "expire_on_commit": False,
+        "autoflush": False,
+    }
+    if application:
+        application.add_middleware(
+            DBSessionMiddleware,
+            custom_engine=engine,
+            session_args=session_args,
+        )
+    else:
+        DBSessionMiddleware(
+            None, custom_engine=engine, session_args=session_args
+        )
+
+
+def create_services(
+    config: Config, application: Optional[FastAPI], create_all: bool = False
+) -> Dict[str, Any]:
+    services: Dict[str, Any] = {}
+
+    redis_client = (
+        new_redis_instance(config.redis) if config.redis is not None else None
+    )
+    event_bus = build_eventbus(application, config, True, redis_client)
+    cache = build_cache(config=config, redis_client=redis_client)
+
+    maintenance_service = build_maintenance_manager(
+        application, config=config, cache=cache, event_bus=event_bus
+    )
+
+    filetransfer_service = build_filetransfer_service(
+        application, event_bus, config
+    )
+    task_service = build_taskjob_manager(application, config, event_bus)
+
+    user_service = build_login(application, config, event_bus=event_bus)
+
+    matrix_service = build_matrixstore(
+        application,
+        config=config,
+        file_transfer_manager=filetransfer_service,
+        task_service=task_service,
+        user_service=user_service,
+        service=None,
+    )
+
+    study_service = build_study_service(
+        application,
+        config,
+        matrix_service=matrix_service,
+        cache=cache,
+        file_transfer_manager=filetransfer_service,
+        task_service=task_service,
+        user_service=user_service,
+        event_bus=event_bus,
+    )
+
+    launcher = build_launcher(
+        application,
+        config,
+        study_service=study_service,
+        event_bus=event_bus,
+    )
+
+    if Module.WATCHER.value in config.server.services or create_all:
+        watcher = Watcher(config=config, service=study_service)
+        services["watcher"] = watcher
+
+    services["event_bus"] = event_bus
+    services["study"] = study_service
+    services["launcher"] = launcher
+    services["matrix"] = matrix_service
+    services["user"] = user_service
+    services["cache"] = cache
+    services["maintenance"] = maintenance_service
+    return services
 
 
 def fastapi_app(
@@ -121,19 +245,6 @@ def fastapi_app(
 
     logger.info("Initiating application")
 
-    # Database
-    if auto_upgrade_db:
-        upgrade_db(config_file)
-    connect_args = {}
-    if config.db_url.startswith("sqlite"):
-        connect_args["check_same_thread"] = False
-
-    engine = create_engine(
-        config.db_url,
-        echo=config.debug,
-        connect_args=connect_args,
-    )
-
     application = FastAPI(
         title="AntaREST",
         version=__version__,
@@ -142,15 +253,8 @@ def fastapi_app(
         openapi_tags=tags_metadata,
     )
 
-    application.add_middleware(
-        DBSessionMiddleware,
-        custom_engine=engine,
-        session_args={
-            "autocommit": False,
-            "expire_on_commit": False,
-            "autoflush": False,
-        },
-    )
+    # Database
+    init_db(config_file, config, auto_upgrade_db, application)
 
     application.add_middleware(LoggingMiddleware)
 
@@ -252,72 +356,42 @@ def fastapi_app(
             status_code=500,
         )
 
-    services: Dict[str, Any] = {}
+    services = create_services(config, application)
 
-    redis_client = (
-        new_redis_instance(config.redis) if config.redis is not None else None
-    )
-    event_bus = build_eventbus(application, config, True, redis_client)
-    cache = build_cache(config=config, redis_client=redis_client)
-
-    filetransfer_service = build_filetransfer_service(
-        application, event_bus, config
-    )
-    task_service = build_taskjob_manager(application, config, event_bus)
-
-    user_service = build_login(application, config, event_bus=event_bus)
-
-    matrix_service = build_matrixstore(
-        application,
-        config=config,
-        file_transfer_manager=filetransfer_service,
-        task_service=task_service,
-        user_service=user_service,
-        service=None,
-    )
-
-    study_service = build_study_service(
-        application,
-        config,
-        matrix_service=matrix_service,
-        cache=cache,
-        file_transfer_manager=filetransfer_service,
-        task_service=task_service,
-        user_service=user_service,
-        event_bus=event_bus,
-    )
-    watcher = Watcher(config=config, service=study_service)
-    watcher.start()
-
-    launcher = build_launcher(
-        application,
-        config,
-        study_service=study_service,
-        event_bus=event_bus,
-    )
-
-    services["event_bus"] = event_bus
-    services["study"] = study_service
-    services["launcher"] = launcher
-    services["matrix"] = matrix_service
-    services["user"] = user_service
-    services["cache"] = cache
-    services["watcher"] = watcher
+    if Module.WATCHER.value in config.server.services:
+        watcher = cast(Watcher, services["watcher"])
+        watcher.start()
 
     customize_openapi(application)
     return application, services
 
 
 if __name__ == "__main__":
-    config_file, display_version, no_front, auto_upgrade_db = get_arguments()
+    (
+        config_file,
+        display_version,
+        no_front,
+        auto_upgrade_db,
+        module,
+    ) = get_arguments()
 
     if display_version:
         print(__version__)
         sys.exit()
     else:
-        app, _ = fastapi_app(
-            config_file,
-            mount_front=not no_front,
-            auto_upgrade_db=auto_upgrade_db,
-        )
-        uvicorn.run(app, host="0.0.0.0", port=8080)
+        if module == Module.APP:
+            app, _ = fastapi_app(
+                config_file,
+                mount_front=not no_front,
+                auto_upgrade_db=auto_upgrade_db,
+            )
+            uvicorn.run(app, host="0.0.0.0", port=8080)
+        elif module == Module.WATCHER:
+            res = get_local_path() / "resources"
+            config = Config.from_yaml_file(res=res, file=config_file)
+            configure_logger(config)
+            init_db(config_file, config, False, None)
+            services = create_services(config, None, True)
+            cast(Watcher, services["watcher"]).start(threaded=False)
+        else:
+            raise UnknownModuleError(module)

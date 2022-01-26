@@ -12,10 +12,14 @@ const logError = debug('antares:global:error');
 
 export interface GlobalState {
   onCloseListeners: {[id: string]: (event: Event) => void};
+  maintenanceMode: boolean;
+  messageInfo: string;
 }
 
 const initialState: GlobalState = {
   onCloseListeners: {},
+  maintenanceMode: false,
+  messageInfo: '',
 };
 
 /** ******************************************* */
@@ -66,8 +70,28 @@ export const removeOnCloseListener = (id: string): RemoveOnCloseListenerAction =
   payload: id,
 });
 
+export interface SetMaintenanceModeAction extends Action {
+  type: 'GLOBAL/SET_MAINTENANCE_MODE';
+  payload: boolean;
+}
+
+export const setMaintenanceMode = (data: boolean): SetMaintenanceModeAction => ({
+  type: 'GLOBAL/SET_MAINTENANCE_MODE',
+  payload: data,
+});
+
+export interface SetMessageInfoAction extends Action {
+  type: 'GLOBAL/SET_MESSAGE_INFO';
+  payload: string;
+}
+
+export const setMessageInfo = (data: string): SetMessageInfoAction => ({
+  type: 'GLOBAL/SET_MESSAGE_INFO',
+  payload: data,
+});
+
 type GlobalAction = AddOnCloseListenerAction
-  | RemoveOnCloseListenerAction;
+  | RemoveOnCloseListenerAction | SetMaintenanceModeAction | SetMessageInfoAction;
 
 /** ******************************************* */
 /* Selectors / Misc                             */
@@ -98,6 +122,18 @@ export default (state = initialState, action: GlobalAction): GlobalState => {
       return {
         ...state,
         onCloseListeners: newOnCloseListeners,
+      };
+    }
+    case 'GLOBAL/SET_MAINTENANCE_MODE': {
+      return {
+        ...state,
+        maintenanceMode: action.payload,
+      };
+    }
+    case 'GLOBAL/SET_MESSAGE_INFO': {
+      return {
+        ...state,
+        messageInfo: action.payload,
       };
     }
     default:

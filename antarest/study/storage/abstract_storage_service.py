@@ -60,15 +60,15 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         study: T,
         metadata: StudyMetadataPatchDTO,
     ) -> StudyMetadataDTO:
-        self.patch_service.patch(
+        old_patch = self.patch_service.get(study)
+        old_patch.study = PatchStudy(
+            scenario=metadata.scenario,
+            doc=metadata.doc,
+            status=metadata.status,
+        )
+        self.patch_service.save(
             study,
-            {
-                "study": {
-                    "scenario": metadata.scenario,
-                    "doc": metadata.doc,
-                    "status": metadata.status,
-                }
-            },
+            old_patch,
         )
         remove_from_cache(self.cache, study.id)
         return self.get_study_information(study)

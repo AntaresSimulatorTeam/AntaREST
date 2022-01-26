@@ -1,5 +1,6 @@
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
+    ENR_MODELLING,
 )
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
@@ -59,7 +60,7 @@ class OutputSimulationModeMcAllAreasArea(FolderNode):
                 )
 
             if (
-                self.config.enr_modelling == "clusters"
+                self.config.enr_modelling == ENR_MODELLING.CLUSTERS.value
                 and len(
                     self.config.get_renewable_names(
                         self.area, only_enabled=True

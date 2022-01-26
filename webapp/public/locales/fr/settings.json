@@ -2,6 +2,7 @@
   "users": "Utilisateurs",
   "tokens": "Tokens",
   "groups": "Groupes",
+  "maintenance": "Maintenance",
   "usersSearchbarPlaceholder": "Recherchez des utilisateurs...",
   "tokensSearchbarPlaceholder": "Recherchez des tokens...",
   "groupsSearchbarPlaceholder": "Recherchez des groupes...",
@@ -48,5 +49,13 @@
   "deleteUserConfirmation": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
   "deleteTokenConfirmation": "Êtes-vous sûr de vouloir supprimer ce token ?",
   "printTokenMessage": "Veuillez noter et enregistrer le token qui s'affiche ci-dessous en lieu sûr",
-  "removeUserFromGroup": "Êtes vous sûr de vouloir supprimer cet utilisateur du groupe ?"            
+  "removeUserFromGroup": "Êtes vous sûr de vouloir supprimer cet utilisateur du groupe ?",
+  "messageMode": "Message",
+  "maintenanceMode": "Mode maintenance",
+  "onUpdateMessageInfo": "Message d'information modifié avec succès",
+  "onUpdateMaintenance": "Status de maintenance modifié avec succès",
+  "onUpdateMaintenanceError": "Erreur lors du changement du status de maintenance",
+  "onUpdateMessageInfoError": "Erreur lors du changement du message d'information",
+  "updateMaintenanceModeConfirmation": "Êtes vous sûr de vouloir changer le status de maintenance de l'application ?",
+  "updateMessageModeConfirmation": "Êtes vous sûr de vouloir changer le message d'information ?"              
 }

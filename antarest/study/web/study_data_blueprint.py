@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Dict, Union, cast
 
 from fastapi import APIRouter, Depends
 
@@ -11,18 +11,19 @@ from antarest.core.requests import (
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.link_management import LinkInfoDTO
+from antarest.study.model import PatchCluster, PatchArea
 from antarest.study.service import StudyService
 from antarest.study.business.area_management import (
     AreaType,
     AreaCreationDTO,
-    AreaPatchUpdateDTO,
     AreaInfoDTO,
+    AreaUI,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def create_study_area_routes(
+def create_study_data_routes(
     study_service: StudyService, config: Config
 ) -> APIRouter:
     """
@@ -92,6 +93,43 @@ def create_study_area_routes(
         params = RequestParameters(user=current_user)
         return study_service.create_area(uuid, area_creation_info, params)
 
+    @bp.post(
+        "/studies/{uuid}/links",
+        tags=[APITag.study_data],
+        summary="Create a link",
+        response_model=AreaInfoDTO,
+    )
+    def create_link(
+        uuid: str,
+        link_creation_info: LinkInfoDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Creating new link for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.create_link(uuid, link_creation_info, params)
+
+    @bp.put(
+        "/studies/{uuid}/areas/{area_id}/ui",
+        tags=[APITag.study_data],
+        summary="Update area information",
+        response_model=AreaInfoDTO,
+    )
+    def update_area_ui(
+        uuid: str,
+        area_id: str,
+        area_ui: AreaUI,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Updating area ui {area_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.update_area_ui(uuid, area_id, area_ui, params)
+
     @bp.put(
         "/studies/{uuid}/areas/{area_id}",
         tags=[APITag.study_data],
@@ -101,7 +139,7 @@ def create_study_area_routes(
     def update_area_info(
         uuid: str,
         area_id: str,
-        area_patch_dto: AreaPatchUpdateDTO,
+        area_patch_dto: Union[PatchArea, Dict[str, PatchCluster]],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -109,8 +147,17 @@ def create_study_area_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study_service.update_area(uuid, area_id, area_patch_dto, params)
-        return ""
+        if isinstance(area_patch_dto, PatchArea):
+            return study_service.update_area(
+                uuid, area_id, area_patch_dto, params
+            )
+        else:
+            return study_service.update_thermal_cluster_metadata(
+                uuid,
+                area_id,
+                area_patch_dto,
+                params,
+            )
 
     @bp.delete(
         "/studies/{uuid}/areas/{area_id}",
@@ -130,5 +177,25 @@ def create_study_area_routes(
         params = RequestParameters(user=current_user)
         study_service.delete_area(uuid, area_id, params)
         return area_id
+
+    @bp.delete(
+        "/studies/{uuid}/links/{area_from}/{area_to}",
+        tags=[APITag.study_data],
+        summary="Delete a link",
+        response_model=str,
+    )
+    def delete_link(
+        uuid: str,
+        area_from: str,
+        area_to: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Removing link {area_from}%{area_to} in study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study_service.delete_link(uuid, area_from, area_to, params)
+        return f"{area_from}%{area_to}"
 
     return bp

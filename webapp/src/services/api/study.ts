@@ -135,6 +135,8 @@ export const importFile = async (file: File, study: string, path: string, onProg
 export interface LaunchOptions {
   xpansion?: boolean;
   // eslint-disable-next-line camelcase
+  xpansion_r_version?: boolean;
+  // eslint-disable-next-line camelcase
   nb_cpu?: number;
   // eslint-disable-next-line camelcase
   time_limit?: number;

@@ -6,6 +6,7 @@ import GenericNavView from '../../components/ui/NavComponents/GenericNavView';
 import GroupsSettings from '../../components/Settings/Groups';
 import TokensSettings from '../../components/Settings/Tokens';
 import UsersSettings from '../../components/Settings/Users';
+import MaintenanceSettings from '../../components/Settings/Maintenance';
 
 const mapState = (state: AppState) => ({
   user: state.auth.user,
@@ -34,6 +35,7 @@ const UserSettings = (props: PropTypes) => {
             'settings:users': () => <UsersSettings />,
             'settings:groups': () => <GroupsSettings />,
             'settings:tokens': () => <TokensSettings />,
+            'settings:maintenance': () => <MaintenanceSettings />,
           },
           initialValue: 'settings:users',
         };

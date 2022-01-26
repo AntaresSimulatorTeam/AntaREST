@@ -22,4 +22,4 @@ RUN pip3 install --upgrade pip \
     && pip3 install -r /conf/requirements.txt
 
 
-ENTRYPOINT ./scripts/start.sh
+ENTRYPOINT ["./scripts/start.sh"]

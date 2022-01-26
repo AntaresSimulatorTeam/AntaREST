@@ -256,7 +256,9 @@ export enum WSEvent {
   DOWNLOAD_CREATED = 'DOWNLOAD_CREATED',
   DOWNLOAD_READY = 'DOWNLOAD_READY',
   DOWNLOAD_EXPIRED = 'DOWNLOAD_EXPIRED',
-  DOWNLOAD_FAILED = 'DOWNLOAD_FAILED'
+  DOWNLOAD_FAILED = 'DOWNLOAD_FAILED',
+  MESSAGE_INFO = 'MESSAGE_INFO',
+  MAINTENANCE_MODE = 'MAINTENANCE_MODE',
 }
 
 export interface WSMessage {
@@ -310,6 +312,8 @@ export interface TaskDTO {
   completion_date_utc?: string;
   result?: TaskResult;
   logs?: Array<TaskLogDTO>;
+  type?: string;
+  ref_id?: string;
 }
 
 export interface TaskEventPayload {

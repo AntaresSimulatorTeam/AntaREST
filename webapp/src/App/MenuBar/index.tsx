@@ -80,17 +80,14 @@ const MenuBar = (props: PropTypes) => {
           <Typography className={classes.menuitem}>
             <Link to="/">{t('main:studies')}</Link>
           </Typography>
-          <Typography className={classes.menuitem}>
-            <Link to="/jobs">{t('main:jobs')}</Link>
-          </Typography>
+          <DownloadBadge>
+            <Typography className={classes.menuitem}>
+              <Link to="/jobs">{t('main:jobs')}</Link>
+            </Typography>
+          </DownloadBadge>
           <Typography className={classes.menuitem}>
             <Link to="/data">{t('main:data')}</Link>
           </Typography>
-          <DownloadBadge>
-            <Typography className={classes.menuitem}>
-              <Link to="/downloads">{t('main:exports')}</Link>
-            </Typography>
-          </DownloadBadge>
         </div>
         {!websocketConnected &&
           (

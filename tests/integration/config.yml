@@ -30,6 +30,10 @@ launcher:
 
 debug: false
 
+server:
+  services:
+    - watcher
+
 logging:
   level: INFO
 

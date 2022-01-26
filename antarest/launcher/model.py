@@ -52,7 +52,9 @@ class JobResult(DTO, Base):  # type: ignore
             launcher=self.launcher,
             status=self.job_status,
             creation_date=str(self.creation_date),
-            completion_date=str(self.completion_date),
+            completion_date=str(self.completion_date)
+            if self.completion_date
+            else None,
             msg=self.msg,
             output_id=self.output_id,
             exit_code=self.exit_code,

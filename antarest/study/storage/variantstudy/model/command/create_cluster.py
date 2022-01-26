@@ -31,7 +31,6 @@ class CreateCluster(ICommand):
     parameters: Dict[str, str]
     prepro: Optional[Union[List[List[MatrixData]], str]] = None
     modulation: Optional[Union[List[List[MatrixData]], str]] = None
-    # TODO: Maybe add the prefix option ?
 
     def __init__(self, **data: Any) -> None:
         super().__init__(

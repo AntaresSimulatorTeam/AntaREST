@@ -34,14 +34,14 @@ from antarest.study.storage.variantstudy.repository import (
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
-from antarest.study.web.areas_blueprint import create_study_area_routes
+from antarest.study.web.study_data_blueprint import create_study_data_routes
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
 from antarest.study.web.variant_blueprint import create_study_variant_routes
 
 
 def build_study_service(
-    application: FastAPI,
+    application: Optional[FastAPI],
     config: Config,
     user_service: LoginService,
     matrix_service: ISimpleMatrixService,
@@ -128,20 +128,21 @@ def build_study_service(
         config=config,
     )
 
-    application.include_router(
-        create_study_routes(storage_service, file_transfer_manager, config)
-    )
-    application.include_router(
-        create_raw_study_routes(storage_service, config)
-    )
-    application.include_router(
-        create_study_area_routes(storage_service, config)
-    )
-    application.include_router(
-        create_study_variant_routes(
-            variant_study_service=variant_study_service,
-            config=config,
+    if application:
+        application.include_router(
+            create_study_routes(storage_service, file_transfer_manager, config)
         )
-    )
+        application.include_router(
+            create_raw_study_routes(storage_service, config)
+        )
+        application.include_router(
+            create_study_data_routes(storage_service, config)
+        )
+        application.include_router(
+            create_study_variant_routes(
+                variant_study_service=variant_study_service,
+                config=config,
+            )
+        )
 
     return storage_service
