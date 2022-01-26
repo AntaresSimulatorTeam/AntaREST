@@ -1,6 +1,7 @@
 import React from 'react';
 import { makeStyles, createStyles, Theme, Paper, Typography, CircularProgress } from '@material-ui/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import InfoIcon from '@material-ui/icons/Info';
 import { TaskDTO } from '../../common/types';
 import { convertUTCToLocalTime } from '../../services/utils';
 
@@ -67,6 +68,14 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   killButtonHide: {
     display: 'none',
   },
+  errorIcon: {
+    width: '18px',
+    height: 'auto',
+    color: theme.palette.error.main,
+    '&:hover': {
+      color: theme.palette.error.dark,
+    },
+  },
 }));
 
 interface Props {
@@ -85,6 +94,9 @@ const TaskView = (props: Props) => {
             {
                 !task.completion_date_utc &&
                 <CircularProgress color="primary" style={{ width: '18px', height: '18px' }} />
+            }
+            {
+              task.completion_date_utc && !task.result?.success && <InfoIcon className={classes.errorIcon} />
             }
           </div>
           <Typography className={classes.title}>

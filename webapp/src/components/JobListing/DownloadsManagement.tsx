@@ -49,7 +49,7 @@ const DownloadManagement = (props: PropTypes) => {
   const { addWsListener, removeWsListener } = props;
   const [downloads, setDownloads] = useState<FileDownload[]>();
   const createNotif = useNotif();
-  const [loaded, setLoaded] = useState(true);
+  const [loaded, setLoaded] = useState(false);
 
   const init = async () => {
     setLoaded(false);
