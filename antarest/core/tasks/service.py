@@ -48,34 +48,34 @@ Task = Callable[[TaskUpdateNotifier], TaskResult]
 class ITaskService(ABC):
     @abstractmethod
     def add_task(
-            self,
-            action: Task,
-            name: Optional[str],
-            task_type: Optional[TaskType],
-            ref_id: Optional[str],
-            custom_event_messages: Optional[CustomTaskEventMessages],
-            request_params: RequestParameters,
+        self,
+        action: Task,
+        name: Optional[str],
+        task_type: Optional[TaskType],
+        ref_id: Optional[str],
+        custom_event_messages: Optional[CustomTaskEventMessages],
+        request_params: RequestParameters,
     ) -> str:
         raise NotImplementedError()
 
     @abstractmethod
     def status_task(
-            self,
-            task_id: str,
-            request_params: RequestParameters,
-            with_logs: bool = False,
+        self,
+        task_id: str,
+        request_params: RequestParameters,
+        with_logs: bool = False,
     ) -> TaskDTO:
         raise NotImplementedError()
 
     @abstractmethod
     def list_tasks(
-            self, task_filter: TaskListFilter, request_params: RequestParameters
+        self, task_filter: TaskListFilter, request_params: RequestParameters
     ) -> List[TaskDTO]:
         raise NotImplementedError()
 
     @abstractmethod
     def await_task(
-            self, task_id: str, timeout_sec: Optional[int] = None
+        self, task_id: str, timeout_sec: Optional[int] = None
     ) -> None:
         raise NotImplementedError()
 
@@ -89,10 +89,10 @@ DEFAULT_AWAIT_MAX_TIMEOUT = 172800
 
 class TaskJobService(ITaskService):
     def __init__(
-            self,
-            config: Config,
-            repository: TaskJobRepository,
-            event_bus: IEventBus,
+        self,
+        config: Config,
+        repository: TaskJobRepository,
+        event_bus: IEventBus,
     ):
         self.config = config
         self.repo = repository
@@ -106,13 +106,13 @@ class TaskJobService(ITaskService):
         self._fix_running_status()
 
     def add_task(
-            self,
-            action: Task,
-            name: Optional[str],
-            task_type: Optional[TaskType],
-            ref_id: Optional[str],
-            custom_event_messages: Optional[CustomTaskEventMessages],
-            request_params: RequestParameters,
+        self,
+        action: Task,
+        name: Optional[str],
+        task_type: Optional[TaskType],
+        ref_id: Optional[str],
+        custom_event_messages: Optional[CustomTaskEventMessages],
+        request_params: RequestParameters,
     ) -> str:
         if not request_params.user:
             raise MustBeAuthenticatedError()
@@ -130,8 +130,10 @@ class TaskJobService(ITaskService):
             Event(
                 type=EventType.TASK_ADDED,
                 payload=TaskEventPayload(
-                    id=task.id, message=custom_event_messages.start if custom_event_messages is not None
-                    else f"Task {task.id} added"
+                    id=task.id,
+                    message=custom_event_messages.start
+                    if custom_event_messages is not None
+                    else f"Task {task.id} added",
                 ).dict(),
                 permissions=PermissionInfo(
                     owner=request_params.user.impersonator
@@ -152,12 +154,12 @@ class TaskJobService(ITaskService):
         return task_event_callback
 
     def cancel_task(
-            self, task_id: str, params: RequestParameters, dispatch: bool = False
+        self, task_id: str, params: RequestParameters, dispatch: bool = False
     ) -> None:
         task = self.repo.get_or_raise(task_id)
         if params.user and (
-                params.user.is_site_admin()
-                or task.owner_id == params.user.impersonator
+            params.user.is_site_admin()
+            or task.owner_id == params.user.impersonator
         ):
             self._cancel_task(task_id, dispatch)
         else:
@@ -175,10 +177,10 @@ class TaskJobService(ITaskService):
             )
 
     def status_task(
-            self,
-            task_id: str,
-            request_params: RequestParameters,
-            with_logs: bool = False,
+        self,
+        task_id: str,
+        request_params: RequestParameters,
+        with_logs: bool = False,
     ) -> TaskDTO:
         if not request_params.user:
             raise MustBeAuthenticatedError()
@@ -192,7 +194,7 @@ class TaskJobService(ITaskService):
         return task.to_dto(with_logs)
 
     def list_tasks(
-            self, task_filter: TaskListFilter, request_params: RequestParameters
+        self, task_filter: TaskListFilter, request_params: RequestParameters
     ) -> List[TaskDTO]:
         return [
             task.to_dto()
@@ -200,7 +202,7 @@ class TaskJobService(ITaskService):
         ]
 
     def list_db_tasks(
-            self, task_filter: TaskListFilter, request_params: RequestParameters
+        self, task_filter: TaskListFilter, request_params: RequestParameters
     ) -> List[TaskJob]:
         if not request_params.user:
             raise MustBeAuthenticatedError()
@@ -212,7 +214,7 @@ class TaskJobService(ITaskService):
         )
 
     def await_task(
-            self, task_id: str, timeout_sec: Optional[int] = None
+        self, task_id: str, timeout_sec: Optional[int] = None
     ) -> None:
         logger.info(f"Awaiting task {task_id}")
         if task_id in self.tasks:
@@ -234,18 +236,20 @@ class TaskJobService(ITaskService):
                 time.sleep(2)
 
     def _run_task(
-            self,
-            callback: Task,
-            task_id: str,
-            custom_event_messages: Optional[CustomTaskEventMessages] = None,
+        self,
+        callback: Task,
+        task_id: str,
+        custom_event_messages: Optional[CustomTaskEventMessages] = None,
     ) -> None:
 
         self.event_bus.push(
             Event(
                 type=EventType.TASK_RUNNING,
                 payload=TaskEventPayload(
-                    id=task_id, message=custom_event_messages.running if custom_event_messages is not None
-                    else f"Task {task_id} is running"
+                    id=task_id,
+                    message=custom_event_messages.running
+                    if custom_event_messages is not None
+                    else f"Task {task_id} is running",
                 ).dict(),
                 channel=EventChannelDirectory.TASK + task_id,
             )
@@ -275,8 +279,10 @@ class TaskJobService(ITaskService):
                         if result.success
                         else EventType.TASK_FAILED,
                         payload=TaskEventPayload(
-                            id=task_id, message=custom_event_messages.end if custom_event_messages is not None
-                            else f'Task {task_id} {"completed" if result.success else "failed"}'
+                            id=task_id,
+                            message=custom_event_messages.end
+                            if custom_event_messages is not None
+                            else f'Task {task_id} {"completed" if result.success else "failed"}',
                         ).dict(),
                         channel=EventChannelDirectory.TASK + task_id,
                     )
@@ -292,8 +298,10 @@ class TaskJobService(ITaskService):
                     Event(
                         type=EventType.TASK_FAILED,
                         payload=TaskEventPayload(
-                            id=task_id, message=custom_event_messages.end if custom_event_messages is not None
-                            else f"Task {task_id} failed"
+                            id=task_id,
+                            message=custom_event_messages.end
+                            if custom_event_messages is not None
+                            else f"Task {task_id} failed",
                         ).dict(),
                         channel=EventChannelDirectory.TASK + task_id,
                     )
@@ -325,12 +333,12 @@ class TaskJobService(ITaskService):
                 )
 
     def _update_task_status(
-            self,
-            task_id: str,
-            status: TaskStatus,
-            result: bool,
-            message: str,
-            command_result: Optional[str] = None,
+        self,
+        task_id: str,
+        status: TaskStatus,
+        result: bool,
+        message: str,
+        command_result: Optional[str] = None,
     ) -> None:
         task = self.repo.get_or_raise(task_id)
         task.status = status.value
