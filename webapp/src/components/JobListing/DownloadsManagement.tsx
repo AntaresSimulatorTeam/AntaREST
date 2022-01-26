@@ -6,10 +6,10 @@ import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
 import { useNotif } from '../../services/utils';
-import MainContentLoader from '../../components/ui/loaders/MainContentLoader';
+import MainContentLoader from '../ui/loaders/MainContentLoader';
 import { convertFileDownloadDTO, FileDownload, FileDownloadDTO, getDownloadsList } from '../../services/api/downloads';
-import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
-import DownloadsListing from '../../components/DownloadsListing';
+import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
+import DownloadsListing from '../DownloadsListing';
 import { WSEvent, WSMessage } from '../../common/types';
 import { addListener, removeListener } from '../../ducks/websockets';
 
@@ -17,6 +17,7 @@ const logError = debug('antares:studymanagement:error');
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
+    width: '100%',
     height: '100%',
     display: 'flex',
     flexDirection: 'column',

@@ -12,11 +12,10 @@ import SingleStudyView from './Pages/SingleStudy';
 import LoginWrapper from './LoginWrapper';
 import theme, { TOOLBAR_HEIGHT } from './theme';
 import SwaggerDoc from './Pages/SwaggerDoc';
-import JobManagement from './Pages/JobManagement';
+import JobManagement from './Pages/Jobs';
 import UserSettings from './Pages/Settings';
 import Data from './Pages/Data';
 import { addWsListeners } from '../services/utils/globalWsListeners';
-import DownloadsManagement from './Pages/DownloadsManagement';
 import MaintenanceWrapper from './MaintenanceWrapper';
 import MessageInfoModal from './MaintenanceWrapper/MessageInfoModal';
 import Logout from './Pages/Logout';
@@ -58,9 +57,6 @@ const App: React.FC<{}> = () => (
                     </Route>
                     <Route path="/data" key="data">
                       <Data />
-                    </Route>
-                    <Route path="/downloads" key="download">
-                      <DownloadsManagement />
                     </Route>
                     <Route path="/swagger">
                       <SwaggerDoc />
