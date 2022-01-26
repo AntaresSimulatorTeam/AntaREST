@@ -137,6 +137,44 @@ class TestCreateLink:
             == FilteringOptions.FILTER_YEAR_BY_YEAR.value
         )
 
+        empty_study.config.version = 820
+        create_link_command: ICommand = CreateLink(
+            area1=area2_id,
+            area2=area3_id,
+            parameters={},
+            command_context=command_context,
+            series=[[0]],
+        )
+        output = create_link_command.apply(
+            study_data=empty_study,
+        )
+        assert output.status
+        empty_study.config.version = 800
+
+        assert (
+            study_path
+            / "input"
+            / "links"
+            / area2_id
+            / f"{area3_id}_parameters.txt.link"
+        ).exists()
+        assert (
+            study_path
+            / "input"
+            / "links"
+            / area2_id
+            / "capacities"
+            / f"{area3_id}_direct.txt.link"
+        ).exists()
+        assert (
+            study_path
+            / "input"
+            / "links"
+            / area2_id
+            / "capacities"
+            / f"{area3_id}_indirect.txt.link"
+        ).exists()
+
         output = CreateLink.parse_obj(
             {
                 "area1": area1_id,

@@ -40,7 +40,7 @@ class InputLinkArea(FolderNode):
             }
         else:
             children = {
-                l: InputSeriesMatrix(
+                f"{l}_parameters": InputSeriesMatrix(
                     self.context, self.config.next_file(f"{l}_parameters.txt")
                 )
                 for l in self.config.get_links(self.area)

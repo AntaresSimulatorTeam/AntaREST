@@ -186,12 +186,17 @@ class CreateLink(ICommand):
         study_data.tree.save(
             link_property, ["input", "links", area_from, "properties", area_to]
         )
-        if self.series is None:
-            self.series = (
-                self.command_context.generator_matrix_constants.get_link(
-                    version=version
-                )
+        self.series = self.series or (
+            self.command_context.generator_matrix_constants.get_link(
+                version=version
             )
+        )
+        self.direct = self.direct or (
+            self.command_context.generator_matrix_constants.get_null_matrix()
+        )
+        self.indirect = self.indirect or (
+            self.command_context.generator_matrix_constants.get_null_matrix()
+        )
 
         assert type(self.series) is str
         if version < 820:
@@ -202,6 +207,10 @@ class CreateLink(ICommand):
             study_data.tree.save(
                 self.series,
                 ["input", "links", area_from, f"{area_to}_parameters"],
+            )
+
+            study_data.tree.save(
+                {}, ["input", "links", area_from, "capacities"]
             )
             if self.direct:
                 assert isinstance(self.direct, str)

@@ -1,4 +1,4 @@
-from typing import Union, List, Any, Optional, Tuple, Dict
+from typing import Union, List, Any, Tuple, Dict
 
 from pydantic import validator
 
@@ -14,9 +14,6 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixNode,
 )
-from antarest.study.storage.variantstudy.model.command.alias_decoder import (
-    AliasDecoder,
-)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
     CommandName,
@@ -28,6 +25,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
     strip_matrix_protocol,
+    AliasDecoder,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
