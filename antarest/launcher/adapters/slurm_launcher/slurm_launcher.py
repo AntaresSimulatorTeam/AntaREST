@@ -448,7 +448,7 @@ class SlurmLauncher(AbstractLauncher):
                     return log_path.read_text()
         # when this is not the current worker handling this job (found in data_repo_tinydb)
         log_path = SlurmLauncher._get_log_path_from_log_dir(
-            Path(self.launcher_args.log_dir) / job_id, log_type
+            Path(self.launcher_args.log_dir) / "JOB_LOGS" / job_id, log_type
         )
         if log_path:
             return log_path.read_text()
