@@ -1,3 +1,4 @@
+import logging
 import shutil
 from pathlib import Path
 from typing import Optional, Any
@@ -5,6 +6,8 @@ from typing import Optional, Any
 from antarest.core.model import JSON
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.study.storage.storage_service import StudyStorageService
+
+logger = logging.getLogger(__name__)
 
 
 class AdequacyPatchExtension(ILauncherExtension):
@@ -21,16 +24,17 @@ class AdequacyPatchExtension(ILauncherExtension):
         study_export_path: Path,
         launcher_opts: Any,
     ) -> None:
+        logger.info("Applying adequacy patch postprocessing script")
         post_processing_file = (
             Path(__file__).parent / "resources" / "post-processing.R"
         )
         shutil.copy(
             post_processing_file, study_export_path / "post-processing.R"
         )
-        (
-            study_config,
-            study_tree,
-        ) = self.storage_service.raw_study_service.study_factory.create_from_fs(
-            study_export_path, study_id
-        )
-        study_tree.get(["user", "adequacy_patch", "config.ini"])
+        # (
+        #     study_config,
+        #     study_tree,
+        # ) = self.storage_service.raw_study_service.study_factory.create_from_fs(
+        #     study_export_path, study_id
+        # )
+        # study_tree.get(["user", "adequacypatch", "config.yaml"])
