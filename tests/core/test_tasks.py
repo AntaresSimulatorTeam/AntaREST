@@ -17,6 +17,7 @@ from antarest.core.tasks.model import (
     TaskJobLog,
     TaskResult,
     TaskDTO,
+    TaskType,
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import TaskJobService
@@ -108,6 +109,8 @@ def test_service() -> TaskJobService:
         action_fail,
         "failed action",
         None,
+        None,
+        None,
         RequestParameters(user=DEFAULT_ADMIN_USER),
     )
     service.await_task("a")
@@ -183,6 +186,8 @@ def test_service() -> TaskJobService:
     ]
     service.add_task(
         action_ok,
+        None,
+        None,
         None,
         None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
@@ -266,8 +271,8 @@ def test_repository():
     with db():
         task_repository = TaskJobRepository()
 
-        new_task = TaskJob(name="foo", owner_id=0)
-        second_task = TaskJob(owner_id=1)
+        new_task = TaskJob(name="foo", owner_id=0, type=TaskType.COPY)
+        second_task = TaskJob(owner_id=1, ref_id="a")
 
         now = datetime.datetime.utcnow()
         new_task = task_repository.save(new_task)
@@ -277,6 +282,14 @@ def test_repository():
         assert new_task.creation_date >= now
 
         second_task = task_repository.save(second_task)
+
+        result = task_repository.list(TaskListFilter(type=[TaskType.COPY]))
+        assert len(result) == 1
+        assert result[0].id == new_task.id
+
+        result = task_repository.list(TaskListFilter(ref_id="a"))
+        assert len(result) == 1
+        assert result[0].id == second_task.id
 
         result = task_repository.list(TaskListFilter(), user=1)
         assert len(result) == 1

@@ -20,8 +20,11 @@ from antarest.core.requests import (
     RequestParameters,
     UserHasNotPermissionError,
 )
-from antarest.core.tasks.model import TaskResult
-from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
+from antarest.core.tasks.model import TaskResult, TaskType
+from antarest.core.tasks.service import (
+    TaskUpdateNotifier,
+    ITaskService,
+)
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
@@ -438,6 +441,8 @@ class MatrixService(ISimpleMatrixService):
         task_id = self.task_service.add_task(
             export_task,
             export_name,
+            task_type=TaskType.EXPORT,
+            ref_id=None,
             custom_event_messages=None,
             request_params=params,
         )

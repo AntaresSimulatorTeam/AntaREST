@@ -14,7 +14,7 @@ import HelpIcon from '@material-ui/icons/Help';
 import { CommandItem, JsonCommandItem } from './CommandTypes';
 import CommandListView from './DraggableCommands/CommandListView';
 import { reorder, fromCommandDTOToCommandItem, fromCommandDTOToJsonCommand, exportJson, isTaskFinal, updateCommandResults } from './utils';
-import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getTask, getStudyTask } from '../../../services/api/variant';
+import { appendCommand, deleteCommand, getCommand, getCommands, moveCommand, updateCommand, replaceCommands, applyCommands, getStudyTask } from '../../../services/api/variant';
 import AddCommandModal from './AddCommandModal';
 import { CommandDTO, WSEvent, WSMessage, CommandResultDTO, TaskEventPayload, TaskStatus } from '../../../common/types';
 import CommandImportButton from './DraggableCommands/CommandImportButton';
@@ -22,6 +22,7 @@ import { addListener, removeListener, subscribe, unsubscribe, WsChannel } from '
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import NoContent from '../../ui/NoContent';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
+import { getTask } from '../../../services/api/tasks';
 
 const logError = debug('antares:variantedition:error');
 

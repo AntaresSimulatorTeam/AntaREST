@@ -33,8 +33,12 @@ from antarest.core.requests import (
     UserHasNotPermissionError,
 )
 from antarest.core.roles import RoleType
-from antarest.core.tasks.model import TaskResult
-from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
+from antarest.core.tasks.model import TaskResult, TaskType
+from antarest.core.tasks.service import (
+    ITaskService,
+    TaskUpdateNotifier,
+    noop_notifier,
+)
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.matrixstore.utils import parse_tsv_matrix
@@ -606,6 +610,7 @@ class StudyService:
         src_uuid: str,
         dest_study_name: str,
         group_ids: List[str],
+        use_task: bool,
         params: RequestParameters,
         with_outputs: bool = False,
     ) -> str:
@@ -618,6 +623,7 @@ class StudyService:
             group_ids: group to attach on new study
             params: request parameters
             with_outputs: indicate if outputs should be copied too
+            use_task: indicate if the task job service should be used
 
         Returns:
 
@@ -626,27 +632,48 @@ class StudyService:
         assert_permission(params.user, src_study, StudyPermissionType.READ)
         self._assert_study_unarchived(src_study)
 
-        study = self.storage_service.get_storage(src_study).copy(
-            src_study,
-            dest_study_name,
-            with_outputs,
-        )
-        self._save_study(study, params.user, group_ids)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_CREATED,
-                payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+        def copy_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            origin_study = self.get_study(src_uuid)
+            study = self.storage_service.get_storage(origin_study).copy(
+                origin_study,
+                dest_study_name,
+                with_outputs,
             )
-        )
+            self._save_study(study, params.user, group_ids)
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_CREATED,
+                    payload=study.to_json_summary(),
+                    permissions=create_permission_from_study(study),
+                )
+            )
 
-        logger.info(
-            "study %s copied to %s by user %s",
-            src_study,
-            study.id,
-            params.get_user_id(),
-        )
-        return str(study.id)
+            logger.info(
+                "study %s copied to %s by user %s",
+                origin_study,
+                study.id,
+                params.get_user_id(),
+            )
+            return TaskResult(
+                success=True,
+                message=f"Study {src_uuid} successfully copied to {study.id}",
+                return_value=study.id,
+            )
+
+        if use_task:
+            task_or_study_id = self.task_service.add_task(
+                copy_task,
+                f"Study {src_study.name} ({src_uuid}) copy",
+                task_type=TaskType.COPY,
+                ref_id=src_study.id,
+                custom_event_messages=None,
+                request_params=params,
+            )
+        else:
+            res = copy_task(noop_notifier)
+            task_or_study_id = res.return_value or ""
+
+        return task_or_study_id
 
     def export_study(
         self,
@@ -691,6 +718,8 @@ class StudyService:
         task_id = self.task_service.add_task(
             export_task,
             export_name,
+            task_type=TaskType.EXPORT,
+            ref_id=study.id,
             custom_event_messages=None,
             request_params=params,
         )
@@ -746,6 +775,8 @@ class StudyService:
         task_id = self.task_service.add_task(
             export_task,
             export_name,
+            task_type=TaskType.EXPORT,
+            ref_id=study.id,
             custom_event_messages=None,
             request_params=params,
         )

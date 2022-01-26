@@ -1,9 +1,13 @@
 import React, { PropsWithChildren, useEffect, useRef, useState } from 'react';
+import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
 import { Popover, makeStyles, Theme, createStyles, Paper } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import { addListener, removeListener } from '../../ducks/websockets';
-import { WSEvent, WSMessage } from '../../common/types';
+import { TaskEventPayload, WSEvent, WSMessage } from '../../common/types';
+import { getTask } from '../../services/api/tasks';
+
+const logError = debug('antares:downloadbadge:error');
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -55,11 +59,21 @@ const DownloadBadge = (props: PropTypes) => {
   const [notificationMessage, setNotificationMessage] = useState<string>();
 
   useEffect(() => {
-    const listener = (ev: WSMessage) => {
+    const listener = async (ev: WSMessage) => {
       if (ev.type === WSEvent.DOWNLOAD_CREATED) {
         setNotificationMessage('downloads:newDownload');
       } else if (ev.type === WSEvent.DOWNLOAD_READY) {
         setNotificationMessage('downloads:downloadReady');
+      } else if (ev.type === WSEvent.TASK_ADDED) {
+        const taskId = (ev.payload as TaskEventPayload).id;
+        try {
+          const task = await getTask(taskId);
+          if (task.type === 'COPY') {
+            setNotificationMessage('studymanager:studycopying');
+          }
+        } catch (error) {
+          logError(error);
+        }
       }
     };
     addWsListener(listener);

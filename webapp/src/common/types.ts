@@ -312,6 +312,8 @@ export interface TaskDTO {
   completion_date_utc?: string;
   result?: TaskResult;
   logs?: Array<TaskLogDTO>;
+  type?: string;
+  ref_id?: string;
 }
 
 export interface TaskEventPayload {
