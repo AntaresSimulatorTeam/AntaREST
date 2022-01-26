@@ -73,6 +73,6 @@ export const initConfig = async (callback: any): Promise<void> => {
   }
 
   info('config is', config);
-
-  callback();
+  // to let the initAxiosClient complete
+  setTimeout(() => callback(), 50);
 };
