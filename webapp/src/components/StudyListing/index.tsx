@@ -96,7 +96,6 @@ const StudyListing = (props: PropTypes) => {
   const importStudy = async (study: StudyMetadata, withOutputs: boolean) => {
     try {
       await callCopyStudy(study.id, `${study.name} (${t('main:copy')})`, withOutputs);
-      enqueueSnackbar(t('studymanager:studycopying', { studyname: study.name }), { variant: 'info' });
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtocopystudy'), e as AxiosError);
       logError('Failed to copy/import study', study, e);

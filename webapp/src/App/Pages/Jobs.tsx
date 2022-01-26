@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { makeStyles, createStyles, Theme } from '@material-ui/core';
+import { makeStyles, createStyles } from '@material-ui/core';
 import { connect, ConnectedProps } from 'react-redux';
 import { addListener, removeListener } from '../../ducks/websockets';
 import GenericTab from '../../components/JobListing/TabView';
-import Jobs from '../../components/JobListing/JobManagement';
+import JobManagement from '../../components/JobListing/JobManagement';
 import DownloadsManagement from '../../components/JobListing/DownloadsManagement';
+import OtherJobManagement from '../../components/JobListing/OtherJobManagement';
 
-const useStyles = makeStyles((theme: Theme) =>
+const useStyles = makeStyles(() =>
   createStyles({
     root: {
       height: '100%',
@@ -18,18 +19,6 @@ const useStyles = makeStyles((theme: Theme) =>
       flexDirection: 'column',
       overflow: 'hidden',
       boxSizing: 'border-box',
-    },
-    breadcrumbs: {
-      backgroundColor: '#d7d7d7',
-      width: '100%',
-      padding: theme.spacing(1),
-    },
-    breadcrumbsfirstelement: {
-      marginLeft: theme.spacing(1),
-    },
-    dot: {
-      height: '0.5em',
-      width: '0.5em',
     },
   }));
 
@@ -49,15 +38,15 @@ interface MenuTab {
     () => JSX.Element;
 }
 
-const JobManagement = () => {
+const Jobs = () => {
   const classes = useStyles();
   const [navData, setNavData] = useState<MenuTab>({});
 
   useEffect(() => {
     const newNavData: {[key: string]: () => JSX.Element} = {
-      jobs: () => <Jobs />,
+      jobs: () => <JobManagement />,
       exports: () => <DownloadsManagement />,
-      others: () => <div style={{ width: '100%', height: '100%', backgroundColor: 'green' }} />,
+      others: () => <OtherJobManagement />,
     };
     setNavData(newNavData);
   }, []);
@@ -69,4 +58,4 @@ const JobManagement = () => {
   );
 };
 
-export default connector(JobManagement);
+export default connector(Jobs);

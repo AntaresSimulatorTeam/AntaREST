@@ -18,7 +18,8 @@ const logError = debug('antares:studymanagement:error');
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
     width: '100%',
-    height: '100%',
+    flex: 1,
+    overflowY: 'auto',
     display: 'flex',
     flexDirection: 'column',
   },
