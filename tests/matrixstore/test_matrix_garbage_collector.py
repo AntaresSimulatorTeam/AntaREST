@@ -55,12 +55,40 @@ def test_get_saved_matrices(
 
 
 @pytest.mark.unit_test
-def test_get_matrices_used_in_raw_studies():
-    pass
+def test_get_matrices_used_in_raw_studies(
+    matrix_garbage_collector: MatrixGarbageCollector,
+):
+    """
+    Test that the get_matrices_used_in_raw_studies function returns a list of
+    all matrices used in raw studies.
+    """
+    matrix_name1 = "matrix_name1"
+    matrix_name2 = "matrix_name2"
+    matrix_name3 = "matrix_name3"
+    matrix_name4 = "matrix_name4"
+
+    raw_study_path = (
+        matrix_garbage_collector.managed_studies_path / "raw_study"
+    )
+    raw_study_path.mkdir()
+    (raw_study_path / f"{matrix_name1}.link").touch()
+    (raw_study_path / f"{matrix_name2}.link").touch()
+    (raw_study_path / f"{matrix_name3}.link").touch()
+    (raw_study_path / f"{matrix_name4}.txt").touch()
+
+    output = matrix_garbage_collector._get_matrices_used_in_raw_studies()
+
+    assert len(output) == 3
+    assert matrix_name1 in output
+    assert matrix_name2 in output
+    assert matrix_name3 in output
+    assert matrix_name4 not in output
 
 
 @pytest.mark.unit_test
-def test_get_matrices_used_in_variant_studies():
+def test_get_matrices_used_in_variant_studies(
+    matrix_garbage_collector: MatrixGarbageCollector,
+):
     pass
 
 

@@ -9,7 +9,6 @@ from antarest.core.exceptions import StudyTypeUnsupported
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.matrixstore.repository import MatrixDataSetRepository
-from antarest.matrixstore.service import MatrixService
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
