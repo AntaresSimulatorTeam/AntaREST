@@ -1,8 +1,6 @@
 import argparse
 import logging
-import os
 import sys
-from datetime import timezone, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Tuple, Any, Optional, Dict, cast
@@ -11,7 +9,7 @@ import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -37,10 +35,13 @@ from antarest.core.utils.utils import (
 )
 from antarest.core.utils.web import tags_metadata
 from antarest.eventbus.main import build_eventbus
+from antarest.matrixstore.matrix_garbage_collector import (
+    MatrixGarbageCollector,
+)
 from antarest.launcher.main import build_launcher
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.main import build_login
-from antarest.matrixstore.main import build_matrixstore
+from antarest.matrixstore.main import build_matrix_service
 from antarest.study.main import build_study_service
 from antarest.study.storage.rawstudy.watcher import Watcher
 
@@ -192,7 +193,7 @@ def create_services(
 
     user_service = build_login(application, config, event_bus=event_bus)
 
-    matrix_service = build_matrixstore(
+    matrix_service = build_matrix_service(
         application,
         config=config,
         file_transfer_manager=filetransfer_service,
@@ -222,6 +223,12 @@ def create_services(
     if Module.WATCHER.value in config.server.services or create_all:
         watcher = Watcher(config=config, service=study_service)
         services["watcher"] = watcher
+
+    if Module.MATRIX_GC.value in config.server.services or create_all:
+        matrix_garbage_collector = MatrixGarbageCollector(
+            config=config, study_service=study_service
+        )
+        services["matrix_gc"] = matrix_garbage_collector
 
     services["event_bus"] = event_bus
     services["study"] = study_service
@@ -361,6 +368,10 @@ def fastapi_app(
     if Module.WATCHER.value in config.server.services:
         watcher = cast(Watcher, services["watcher"])
         watcher.start()
+
+    if Module.MATRIX_GC.value in config.server.services:
+        matrix_gc = cast(MatrixGarbageCollector, services["matrix_gc"])
+        matrix_gc.start()
 
     customize_openapi(application)
     return application, services

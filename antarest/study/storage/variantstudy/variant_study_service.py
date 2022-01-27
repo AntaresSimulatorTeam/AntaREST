@@ -732,6 +732,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         # Generate
         return self._generate_config(metadata, parent_config)
 
+    def get_icommands(
+        self, variant_study_id: str, params: RequestParameters
+    ) -> List[ICommand]:
+        variant_study = self._get_variant_study(variant_study_id, params)
+        commands: List[List[ICommand]] = self._to_icommand(variant_study)
+        commands_flatten = [
+            command for command_list in commands for command in command_list
+        ]
+        return commands_flatten
+
     def _get_commands_and_notifier(
         self, variant_study: VariantStudy, notifier: TaskUpdateNotifier
     ) -> Tuple[List[List[ICommand]], Callable[[int, bool, str], None]]:

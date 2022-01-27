@@ -8,7 +8,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.config import Config, SecurityConfig
 from antarest.main import JwtSettings
-from antarest.matrixstore.main import build_matrixstore
+from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.model import MatrixDTO, MatrixInfoDTO
 from tests.login.test_web import create_auth_token
 
@@ -24,7 +24,7 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
             authjwt_denylist_enabled=False,
         )
 
-    build_matrixstore(
+    build_matrix_service(
         app,
         user_service=Mock(),
         file_transfer_manager=Mock(),
