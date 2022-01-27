@@ -23,7 +23,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import _ from 'lodash';
 import { AppState } from '../../App/reducers';
 import {
+  FileStudyTreeConfigDTO,
   RoleType,
+  StudyDownloadDTO,
   StudyMetadata,
   StudyOutput,
 } from '../../common/types';
@@ -35,6 +37,8 @@ import {
   exportStudy,
   exportOuput as callExportOutput,
   getStudyOutputs,
+  getStudySynthesis,
+  getDownloadOutput,
 } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
 import { hasAuthorization, getStudyExtendedName, convertUTCToLocalTime } from '../../services/utils';
@@ -45,6 +49,7 @@ import RenameModal from './RenameModal';
 import { CopyIcon } from '../Data/utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import LauncherModal from '../ui/LauncherModal';
+import ExportFilterModal from './ExportFilterModal';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -244,9 +249,12 @@ const InformationView = (props: PropTypes) => {
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [openPermissionModal, setOpenPermissionModal] = useState<boolean>(false);
   const [openRenameModal, setOpenRenameModal] = useState<boolean>(false);
+  const [openFilterModal, setOpenFilterModal] = useState<boolean>(false);
+  const [currentOutput, setCurrentOutput] = useState<string>('');
   const [outputList, setOutputList] = useState<Array<string>>();
   const [outputExportButtonAnchor, setOutputExportButtonAnchor] = React.useState<null | HTMLElement>(null);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [synthesis, setStudySynthesis] = useState<FileStudyTreeConfigDTO>();
 
   const openStudyLauncher = (): void => {
     if (study) {
@@ -307,6 +315,24 @@ const InformationView = (props: PropTypes) => {
     }
   }, 2000, { leading: true, trailing: false });
 
+  const onFilter = async (output: string, filter: StudyDownloadDTO): Promise<void> => {
+    console.log(filter);
+    if (study) {
+      try {
+        await getDownloadOutput(study.id, output);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
+      }
+    }
+    setOpenFilterModal(false);
+  };
+
+  const onExport = (output: string): void => {
+    console.log(output);
+    setOpenFilterModal(false);
+    exportOutput(output);
+  };
+
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -315,11 +341,25 @@ const InformationView = (props: PropTypes) => {
     setAnchorEl(null);
   };
 
+  const handleExportFilter = (output: string): void => {
+    setCurrentOutput(output);
+    setOpenFilterModal(true);
+  };
+
   useEffect(() => {
     (async () => {
       try {
         const res = await getStudyOutputs(study.id);
         setOutputList(res.map((o: StudyOutput) => o.name));
+      } catch (e) {
+        logError(t('singlestudy:failedToListOutputs'), study, e);
+      }
+    })();
+
+    (async () => {
+      try {
+        const res = await getStudySynthesis(study.id);
+        setStudySynthesis(res);
       } catch (e) {
         logError(t('singlestudy:failedToListOutputs'), study, e);
       }
@@ -482,11 +522,12 @@ const InformationView = (props: PropTypes) => {
                     onClose={() => setOutputExportButtonAnchor(null)}
                   >
                     {outputList.map((output) => (
-                      <MenuItem onClick={() => exportOutput(output)}>
+                      <MenuItem onClick={() => handleExportFilter(output)}>
                         {output}
                       </MenuItem>
                     ))}
                   </Menu>
+                  <ExportFilterModal open={openFilterModal} synthesis={synthesis} output={currentOutput} onExport={onExport} onFilter={onFilter} onClose={() => setOpenFilterModal(false)} />
                 </>
               )}
               {study.managed && (

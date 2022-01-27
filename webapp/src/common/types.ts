@@ -374,4 +374,30 @@ export interface FileStudyTreeConfigDTO {
   enr_modelling: string;
 }
 
+export enum StudyDownloadType {
+  LINK = 'LINK',
+  DISTRICT = 'DISTRICT',
+  AREA = 'AREA',
+}
+
+export enum StudyDownloadLevelDTO {
+  ANNUAL = 'annual',
+  MONTHLY = 'monthly',
+  WEEKLY = 'weekly',
+  DAILY = 'daily',
+  HOURLY = 'hourly',
+}
+
+export interface StudyDownloadDTO {
+  type: StudyDownloadType;
+  years?: Array<number>;
+  level: StudyDownloadLevelDTO;
+  filterIn?: string;
+  filterOut?: string;
+  filter?: Array<string>;
+  columns?: Array<string>;
+  synthesis: boolean;
+  includeClusters: boolean;
+}
+
 export default {};

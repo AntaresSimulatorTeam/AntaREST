@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { LaunchJob, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode } from '../../common/types';
+import { FileStudyTreeConfigDTO, LaunchJob, StudyDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 import { FileDownloadTask } from './downloads';
@@ -40,6 +40,16 @@ export const getStudyMetadata = async (sid: string, summary = true): Promise<Stu
 
 export const getStudyOutputs = async (sid: string): Promise<Array<StudyOutput>> => {
   const res = await client.get(`/v1/studies/${sid}/outputs`);
+  return res.data;
+};
+
+export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfigDTO> => {
+  const res = await client.get(`/v1/studies/${sid}/synthesis`);
+  return res.data;
+};
+
+export const getDownloadOutput = async (sid: string, output: string): Promise<StudyDownloadDTO> => {
+  const res = await client.get(`/v1/studies/${sid}/outputs/${output}/download`);
   return res.data;
 };
 
