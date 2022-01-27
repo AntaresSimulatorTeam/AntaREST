@@ -49,6 +49,7 @@ const useStyles = makeStyles((theme: Theme) =>
 interface PropsType {
     links: Array<LinkProperties>;
     node: NodeProperties;
+    onDelete: (id: string, target?: string) => void;
 }
 
 const Row = React.memo((props: ListChildComponentProps) => {
@@ -65,7 +66,7 @@ const Row = React.memo((props: ListChildComponentProps) => {
 
 const LinksView = (props: PropsType) => {
   const classes = useStyles();
-  const { links, node } = props;
+  const { links, node, onDelete } = props;
   const [t] = useTranslation();
 
   return (
@@ -84,7 +85,7 @@ const LinksView = (props: PropsType) => {
                 </FixedSizeList>
                 <div className={classes.buttons} style={{ width }}>
                   <Button color="primary" size="small">{t('singlestudy:more')}</Button>
-                  <DeleteIcon className={classes.deleteIcon} />
+                  <DeleteIcon className={classes.deleteIcon} onClick={() => { onDelete(node.id); }} />
                 </div>
               </>
             );

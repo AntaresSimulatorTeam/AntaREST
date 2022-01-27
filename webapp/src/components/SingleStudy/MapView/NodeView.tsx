@@ -49,14 +49,15 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropType {
     node: NodeProperties;
+    linkCreation: (id: string) => void;
 }
 
 const NodeView = (props: PropType) => {
   const classes = useStyles();
   const nodeRef = useRef<HTMLDivElement>(null);
-  const { node } = props;
+  const { node, linkCreation } = props;
 
-  const hslColors = rgbToHsl(node.color);
+  const hslColors = rgbToHsl(node.color || 'rgb(211, 211, 211)');
 
   // style={{ border: node.highlighted ? '#f00 solid 2px' : `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%) solid 2px`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 60 && hslColors[2] >= 70) ? 'black' : 'white' }}
 
@@ -64,19 +65,17 @@ const NodeView = (props: PropType) => {
     if (nodeRef.current) {
       const parentNode = nodeRef.current.parentElement?.parentElement?.parentElement?.getAttribute('prevWidth');
       if (parentNode !== null && parentNode) {
-        console.log('la');
         const newSize = parseInt(parentNode, 10);
         // eslint-disable-next-line no-unused-expressions
         nodeRef.current.parentElement?.parentElement?.parentElement?.setAttribute('width', `${newSize}`);
         // eslint-disable-next-line no-unused-expressions
         nodeRef.current.parentElement?.style.setProperty('width', `${newSize}px`);
         // eslint-disable-next-line no-unused-expressions
-        nodeRef.current.parentElement?.parentElement?.parentElement?.removeAttribute('prevWidth');
+        // nodeRef.current.parentElement?.parentElement?.parentElement?.removeAttribute('prevWidth');
       } else {
         const parentNodeClicked = nodeRef.current.parentElement?.parentElement?.parentElement?.getAttribute('width');
         if (node.highlighted) {
           if (parentNodeClicked !== null && parentNodeClicked) {
-            console.log('ici');
             const newSizeClicked = parseInt(parentNodeClicked, 10) + 32;
             // eslint-disable-next-line no-unused-expressions
             nodeRef.current.parentElement?.parentElement?.parentElement?.setAttribute('width', `${newSizeClicked}`);
@@ -97,7 +96,7 @@ const NodeView = (props: PropType) => {
           <div className={classes.node} style={{ backgroundColor: `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 60 && hslColors[2] >= 70) ? 'black' : 'white' }}>
             {node.id}
           </div>
-          <LinkIcon className={classes.linkIcon} onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('link clicked'); }} />
+          <LinkIcon className={classes.linkIcon} onClick={(e) => { e.preventDefault(); e.stopPropagation(); linkCreation(node.id); }} />
         </>
       ) : (
         <div className={classes.node} style={{ backgroundColor: `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 60 && hslColors[2] >= 70) ? 'black' : 'white' }}>

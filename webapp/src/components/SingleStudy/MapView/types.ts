@@ -3,6 +3,7 @@ export interface NodeProperties {
     x: number;
     y: number;
     color: string;
+    size?: { width: number; height: number };
     highlighted?: boolean;
 }
 
@@ -84,6 +85,11 @@ export interface UpdateAreaUi {
     y: number;
     // eslint-disable-next-line camelcase
     color_rgb: Array<number>;
+}
+
+export interface LinkCreationInfo {
+    area1: string;
+    area2: string;
 }
 
 export default {};

@@ -63,12 +63,11 @@ interface PropsType {
     onClose?: () => void;
     onDelete?: (id: string, target?: string) => void;
     onArea?: () => void;
-    onLink?: () => void;
 }
 
 const PropertiesView = (props: PropsType) => {
   const classes = useStyles();
-  const { item, setSelectedItem, nodeList, nodeLinks, onClose, onDelete, onArea, onLink } = props;
+  const { item, setSelectedItem, nodeList, nodeLinks, onClose, onDelete, onArea } = props;
   const [t] = useTranslation();
   const [filteredNodes, setFilteredNodes] = useState<Array<NodeProperties>>();
 
@@ -128,7 +127,6 @@ PropertiesView.defaultProps = {
   onClose: undefined,
   onDelete: undefined,
   onArea: undefined,
-  onLink: undefined,
 };
 
 export default PropertiesView;

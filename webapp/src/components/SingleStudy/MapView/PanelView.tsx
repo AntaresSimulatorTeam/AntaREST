@@ -5,8 +5,10 @@ import {
   Theme,
   Typography,
   TextField,
+  Button,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
+import DeleteIcon from '@material-ui/icons/Delete';
 import { NodeProperties, LinkProperties } from './types';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import LinksView from './LinksView';
@@ -21,9 +23,23 @@ const useStyles = makeStyles((theme: Theme) =>
       padding: theme.spacing(1),
       flexGrow: 1,
       marginBottom: '76px',
+      width: '94%',
     },
     fields: {
       marginTop: theme.spacing(1),
+    },
+    deleteIcon: {
+      cursor: 'pointer',
+      color: theme.palette.error.light,
+      '&:hover': {
+        color: theme.palette.error.main,
+      },
+    },
+    buttons: {
+      width: '100%',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      display: 'flex',
     },
   }));
 
@@ -52,14 +68,20 @@ const PanelView = (props: PropType) => {
           </>
         )}
         {links && node && (
-          <LinksView links={links} node={node} />
+          <LinksView links={links} node={node} onDelete={onDelete} />
         )}
         {link && (
-        <Typography variant="body2" component="p">
-          {link.source}
-          <br />
-          {link.target}
-        </Typography>
+        <>
+          <Typography variant="body2" component="p">
+            {link.source}
+            <br />
+            {link.target}
+          </Typography>
+          <div className={classes.buttons}>
+            <Button color="primary" size="small">{t('singlestudy:more')}</Button>
+            <DeleteIcon className={classes.deleteIcon} onClick={() => { onDelete(link.source, link.target); }} />
+          </div>
+        </>
         )}
 
       </div>

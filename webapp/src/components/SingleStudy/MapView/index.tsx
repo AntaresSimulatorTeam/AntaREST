@@ -19,7 +19,7 @@ import PropertiesView from './PropertiesView';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
 import { StudyMetadata } from '../../../common/types';
 import GraphView from './GraphView';
-import { createArea, updateAreaUI } from '../../../services/api/studydata';
+import { createArea, createLink, deleteArea, deleteLink, updateAreaUI } from '../../../services/api/studydata';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -122,7 +122,6 @@ const MapView = (props: Props) => {
   const [linkData, setLinkData] = useState<Array<LinkProperties>>([]);
   const { enqueueSnackbar } = useSnackbar();
   const [openModal, setOpenModal] = useState<boolean>(false);
-  const [createLinkMode, setCreateLinkMode] = useState<boolean>(false);
   const [firstNode, setFirstNode] = useState<string>();
   const [secondNode, setSecondNode] = useState<string>();
   const graphRef = useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
@@ -130,15 +129,13 @@ const MapView = (props: Props) => {
   // const [zoom, setZoom] = useState<number>();
 
   const onClickNode = useCallback((nodeId: string) => {
-    if (!createLinkMode && nodeData) {
+    if (!firstNode && nodeData) {
       const obj = nodeData.find((o) => o.id === nodeId);
       setSelectedItem(obj);
-    } else if (!firstNode) {
-      setFirstNode(nodeId);
     } else if (firstNode) {
       setSecondNode(nodeId);
     }
-  }, [createLinkMode, firstNode, nodeData]);
+  }, [firstNode, nodeData]);
 
   const onClickLink = useCallback((source: string, target: string) => {
     const obj = {
@@ -148,15 +145,14 @@ const MapView = (props: Props) => {
     setSelectedItem(obj);
   }, []);
 
-  const createLink = () => {
-    if (createLinkMode) {
-      setCreateLinkMode(false);
+  const createModeLink = useCallback((id: string) => {
+    if (firstNode && firstNode === id) {
       setFirstNode(undefined);
       setSecondNode(undefined);
     } else {
-      setCreateLinkMode(true);
+      setFirstNode(id);
     }
-  };
+  }, [firstNode, setFirstNode, setSecondNode]);
 
   const onClose = () => {
     setOpenModal(false);
@@ -169,55 +165,63 @@ const MapView = (props: Props) => {
       const [r, g, b] = color.slice(4, -1).split(',').map(Number);
       // eslint-disable-next-line @typescript-eslint/camelcase
       await updateAreaUI(study.id, name, { x: posX, y: posY, color_rgb: [r, g, b] });
+      setNodeData([...nodeData, ...[{
+        id: name,
+        x: posX,
+        y: posY,
+        color,
+        size: { width: calculateSize(name), height: 320 },
+      }]]);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
     }
   };
 
-  const onDelete = (id: string, target?: string) => {
-    if (target && linkData) {
-      const obj = linkData.find((o) => o.source === id && o.target === target);
-      if (obj) {
-        const i = linkData.indexOf(obj);
-        if (i !== -1) {
-          linkData.splice(i, 1);
-          setSelectedItem(undefined);
-        }
-      }
+  const onDelete = async (id: string, target?: string) => {
+    if (graphRef.current) {
+      const currentGraph = graphRef.current;
+      // eslint-disable-next-line no-underscore-dangle
+      currentGraph._setNodeHighlightedValue(id, false);
     }
-    if (nodeData && linkData && !target) {
-      const obj = nodeData.find((o) => o.id === id);
-      const links = linkData.filter((o) => o.source === id || o.target === id);
-      if (obj) {
-        const i = nodeData.indexOf(obj);
-        if (i !== -1) {
-          nodeData.splice(i, 1);
-          setSelectedItem(undefined);
-        }
+    setTimeout(async () => {
+      if (target && linkData) {
+        const links = linkData.filter((o) => o.source !== id || o.target !== target);
+        setLinkData(links);
+        setSelectedItem(undefined);
+        await deleteLink(study.id, id, target);
       }
-      if (links) {
-        // eslint-disable-next-line array-callback-return
-        for (let i = 0; i < links.length; i += 1) {
-          const index = linkData.indexOf(links[i]);
-          if (index !== -1) {
-            linkData.splice(index, 1);
-          }
-        }
+    }, 0);
+
+    setTimeout(async () => {
+      if (nodeData && linkData && !target) {
+        setSelectedItem(undefined);
+        const obj = nodeData.filter((o) => o.id !== id);
+        const links = linkData.filter((o) => o.source !== id && o.target !== id);
+        setLinkData(links);
+        setNodeData(obj);
+        await deleteArea(study.id, id);
       }
-    }
+    }, 0);
   };
 
   useEffect(() => {
-    if (firstNode && secondNode && linkData) {
-      linkData.push({
-        source: firstNode,
-        target: secondNode,
-      });
-      setCreateLinkMode(false);
-      setFirstNode(undefined);
-      setSecondNode(undefined);
-    }
-  }, [setCreateLinkMode, firstNode, secondNode, linkData]);
+    const init = async () => {
+      if (firstNode && secondNode) {
+        try {
+          setLinkData([...linkData, ...[{
+            source: firstNode,
+            target: secondNode,
+          }]]);
+          setFirstNode(undefined);
+          setSecondNode(undefined);
+          await createLink(study.id, { area1: firstNode, area2: secondNode });
+        } catch (e) {
+          enqueueErrorSnackbar(enqueueSnackbar, 'lien marche pas', e as AxiosError);
+        }
+      }
+    };
+    init();
+  }, [enqueueSnackbar, firstNode, secondNode, study.id, linkData]);
 
   useEffect(() => {
     const init = async () => {
@@ -285,13 +289,13 @@ const MapView = (props: Props) => {
         <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
       </div>
       <div className={classes.graphView}>
-        <PropertiesView item={selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onLink={createLink} />
+        <PropertiesView item={selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} />
         <div className={`${classes.autosizer} ${classes.graph}`}>
           {loaded ? (
             <AutoSizer>
               {
                 ({ height, width }) => (
-                  <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} setSelectedItem={setSelectedItem} />
+                  <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} setSelectedItem={setSelectedItem} onLink={createModeLink} />
                 )
             }
             </AutoSizer>

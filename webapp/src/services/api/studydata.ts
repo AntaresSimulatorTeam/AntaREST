@@ -1,4 +1,4 @@
-import { UpdateAreaUi } from '../../components/SingleStudy/MapView/types';
+import { LinkCreationInfo, UpdateAreaUi } from '../../components/SingleStudy/MapView/types';
 import client from './client';
 
 export const createArea = async (uuid: string, name: string): Promise<string> => {
@@ -6,8 +6,8 @@ export const createArea = async (uuid: string, name: string): Promise<string> =>
   return res.data;
 };
 
-export const createLink = async (uuid: string): Promise<string> => {
-  const res = await client.post(`/v1/studies/${uuid}/links`);
+export const createLink = async (uuid: string, linkCreationInfo: LinkCreationInfo): Promise<string> => {
+  const res = await client.post(`/v1/studies/${uuid}/links?uuid=${uuid}`, linkCreationInfo);
   return res.data;
 };
 
@@ -17,12 +17,12 @@ export const updateAreaUI = async (uuid: string, areaId: string, areaUi: UpdateA
 };
 
 export const deleteArea = async (uuid: string, areaId: string): Promise<string> => {
-  const res = await client.delete(`/v1/studies/${uuid}/areas/${areaId}`);
+  const res = await client.delete(`/v1/studies/${uuid}/areas/${areaId}?uuid=${uuid}&area_id=${areaId}`);
   return res.data;
 };
 
 export const deleteLink = async (uuid: string, areaIdFrom: string, areaIdTo: string): Promise<string> => {
-  const res = await client.delete(`/v1/studies/${uuid}/links/${areaIdFrom}/${areaIdTo}`);
+  const res = await client.delete(`/v1/studies/${uuid}/links/${areaIdFrom}/${areaIdTo}?uuid=${uuid}&area_from=${areaIdFrom}&area_to=${areaIdTo}`);
   return res.data;
 };
 
