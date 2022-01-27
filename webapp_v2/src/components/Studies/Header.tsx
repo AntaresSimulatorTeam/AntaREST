@@ -15,37 +15,48 @@ const Root = styled('div')(({ theme }) => ({
   flexFlow: 'column nowrap',
   justifyContent: 'flex-start',
   alignItems: 'center',
+  padding: theme.spacing(2, 0),
   boxSizing: 'border-box',
 }));
 
 const Searchbar = styled(TextField)(({ theme }) => ({
   color: theme.palette.grey[400],
-  width: '400px',
-  margin: theme.spacing(2),
+  width: '300px',
+
   "& .MuiOutlinedInput-root": {
     backgroundColor: theme.palette.primary.dark,
+    border: `1px solid ${theme.palette.grey[400]}`,
     height: '40px',
     "&.Mui-focused fieldset": {
-      borderColor: theme.palette.grey[400],
-      color: theme.palette.grey[400]
+      color: theme.palette.grey[400],
+      border: `1px solid ${theme.palette.grey[400]}`,
     }
   }
 }));
 
-function Header() {
+interface Props {
+    inputValue: string;
+    setInputValue: (value: string) => void;
+    onImportClick: () => void;
+    onCreateClick: () => void;
+    onFilterClick: () => void;
+}
+
+function Header(props: Props) {
     const [t] = useTranslation();
+    const { inputValue, setInputValue, onImportClick, onCreateClick, onFilterClick } = props;
   return (
     <Root>
         <Box width="100%" alignItems="center" display="flex" px={3}>
             <Box alignItems="center" display="flex">
-                <TravelExploreOutlinedIcon sx={{ color: "grey.400", w: '32px', h: '32px' }} />
-                <Typography color='white' sx={{ ml: 2, fontSize: '1.3em' }}>{t('main:studies')}</Typography>
+                <TravelExploreOutlinedIcon sx={{ color: "grey.400", w: '64px', h: '64px' }} />
+                <Typography color='white' sx={{ ml: 2, fontSize: '1.8em' }}>{t('main:studies')}</Typography>
             </Box>
             <Box alignItems="center" justifyContent="flex-end" flexGrow={1} display="flex">
-                <Button variant="outlined" color="secondary" startIcon={<GetAppOutlinedIcon />}>
+                <Button variant="outlined" color="secondary" startIcon={<GetAppOutlinedIcon />} onClick={onImportClick}>
                     {t('main:import')}
                 </Button>
-                <Button sx={{ m: 2 }} variant="contained" color="secondary" startIcon={<AddCircleOutlineOutlinedIcon />}>
+                <Button sx={{ m: 2 }} variant="contained" color="secondary" startIcon={<AddCircleOutlineOutlinedIcon />} onClick={onCreateClick}>
                     {t('main:create')}
                 </Button>
             </Box>
@@ -55,6 +66,8 @@ function Header() {
                 <Searchbar
                     id="standard-basic"
                     placeholder={t('main:search')}
+                    value={inputValue}
+                    onChange={(event) => setInputValue(event.target.value as string)}
                     InputLabelProps={{
                         sx: { color: 'grey.400' },
                     }}
@@ -65,8 +78,8 @@ function Header() {
                         </InputAdornment>
                         ),
                         sx: { color: 'grey.400' } }}/>
-                <Divider style={{ width: '1px', height: '40px', backgroundColor: 'gray' }}/>
-                <Button sx={{color:'primary.light', m: 2, borderStyle: "solid",  borderColor: 'primary.light' }} variant="outlined">
+                <Divider style={{ width: '1px', height: '40px', backgroundColor: 'gray', margin: '0px 16px' }}/>
+                <Button sx={{color:'primary.light', borderStyle: "solid",  borderColor: 'primary.light' }} variant="outlined" onClick={onFilterClick}>
                     {t('main:filter')}
                 </Button>
             </Box>

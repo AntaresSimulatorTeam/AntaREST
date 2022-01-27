@@ -52,7 +52,7 @@ export const CustomListItem = styled(ListItem, { shouldForwardProp: (prop) => pr
   margin: theme.spacing(1, 0),
   boxSizing: 'border-box',
   '&:hover': {
-    backgroundColor: theme.palette.primary.dark,
+    backgroundColor: theme.palette.secondary.light,
   },
   ...(!link && { display: 'flex',
   flexFlow: 'row nowrap',
@@ -99,7 +99,8 @@ const options = {
       width: extended ? DRAWER_WIDTH_EXTENDED: DRAWER_WIDTH,
       boxSizing: 'border-box',
       overflow: 'hidden',
-      backgroundColor: theme.palette.primary.main,
+      backgroundColor: 'inherit',
+      //backgroundColor: theme.palette.primary.main,
       borderRight: `1px solid ${theme.palette.grey[800]}`,
     },
   }));

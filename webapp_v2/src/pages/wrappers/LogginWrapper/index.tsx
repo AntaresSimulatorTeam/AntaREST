@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, { PropsWithChildren, useState, useEffect } from 'react';
 import Particles from 'react-tsparticles';
 import { IOptions, RecursivePartial } from 'tsparticles';

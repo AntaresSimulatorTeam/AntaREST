@@ -9,15 +9,14 @@ const theme = createTheme({
   },
   palette: {
     primary: {
-      dark: '#112446',
-      main: '#070c32',
-      light: '#00a3ca',
+      dark: '#222433',//'#212032',
+      main: '#1b0c25',
+      light: '#03b2ff',
     },
     secondary: {
-      main: '#ffd927',
-      light: '#ffd927AA',
+      main: '#ffb801',
+      light: '#ffb80122',
     },
   },
 });
-
 export default theme;

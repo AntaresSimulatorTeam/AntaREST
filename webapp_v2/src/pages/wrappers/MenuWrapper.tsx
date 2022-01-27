@@ -75,7 +75,7 @@ const MenuWrapper = (props: PropsWithChildren<PropTypes>) => {
                 </MenuLink>:
                 <CustomNavLink to={elm.link}
                       style={({isActive}) => ({
-                              backgroundColor: isActive ? theme.palette.primary.dark :  undefined,})}>
+                              backgroundColor: isActive ? theme.palette.secondary.light :  undefined,})}>
                   <CustomListItemIcon>
                     {elm.icon({sx: { color: 'grey.400', }})}
                   </CustomListItemIcon>
@@ -85,10 +85,10 @@ const MenuWrapper = (props: PropsWithChildren<PropTypes>) => {
     )};
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box display='flex' width='100vw' height='100vh' sx={{ background: 'linear-gradient(140deg, rgba(33,32,50,1) 0%, rgba(29,28,48,1) 35%, rgba(27,11,36,1) 100%)'}}>
       <CssBaseline />
       <CustomDrawer
-      extended={extended}
+        extended={extended}
         variant="permanent"
         anchor="left"
       >
@@ -130,7 +130,8 @@ const MenuWrapper = (props: PropsWithChildren<PropTypes>) => {
       <Box
         component="main"
         flexGrow={1}
-        bgcolor="background.default"
+        //bgcolor="background.default"
+        bgcolor='inherit'
         height="100vh"
       >
           {children}

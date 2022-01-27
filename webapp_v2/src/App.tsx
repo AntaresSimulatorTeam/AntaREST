@@ -11,18 +11,6 @@ import Tasks from './pages/Tasks';
 import Settings from './pages/Settings';
 import Api from './pages/Api';
 
-const Root = styled('div')({
-  width: '100vw',
-  height: '100vh',
-  minWidth: '280px',
-  display: 'flex',
-  flexFlow: 'column nowrap',
-  justifyContent: 'flex-start',
-  alignItems: 'flex-start',
-  boxSizing: 'border-box',
-  backgroundColor: 'blue',
-});
-
 function App() {
   return (
     <Router>
