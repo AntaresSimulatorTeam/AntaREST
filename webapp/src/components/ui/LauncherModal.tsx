@@ -97,7 +97,8 @@ const LauncherModal = (props: PropTypes) => {
       return;
     }
     try {
-      await launchStudy(study.id, options);
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      await launchStudy(study.id, { ...options, adequacy_patch: {} });
       enqueueSnackbar(t('studymanager:studylaunched', { studyname: study.name }), { variant: 'success' });
       close();
     } catch (e) {

@@ -3,6 +3,8 @@ import shutil
 from pathlib import Path
 from typing import Optional, Any
 
+import yaml
+
 from antarest.core.model import JSON
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.study.storage.storage_service import StudyStorageService
@@ -31,10 +33,18 @@ class AdequacyPatchExtension(ILauncherExtension):
         shutil.copy(
             post_processing_file, study_export_path / "post-processing.R"
         )
-        # (
-        #     study_config,
-        #     study_tree,
-        # ) = self.storage_service.raw_study_service.study_factory.create_from_fs(
-        #     study_export_path, study_id
-        # )
-        # study_tree.get(["user", "adequacypatch", "config.yaml"])
+        self._check_config(study_id, study_export_path)
+
+    def _check_config(self, study_id: str, study_export_path: Path) -> None:
+        (
+            study_config,
+            study_tree,
+        ) = self.storage_service.raw_study_service.study_factory.create_from_fs(
+            study_export_path, study_id
+        )
+        user_config = study_tree.get(["user"])
+        assert "flowbased" in user_config or "Flowbased" in user_config
+        adequacy_patch_config = yaml.safe_load(
+            study_tree.get(["user", "adequacypatch", "config.yml"])
+        )
+        assert "areas" in adequacy_patch_config

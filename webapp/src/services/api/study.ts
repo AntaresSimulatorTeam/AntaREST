@@ -142,6 +142,8 @@ export interface LaunchOptions {
   time_limit?: number;
   // eslint-disable-next-line camelcase
   post_processing?: boolean;
+  // eslint-disable-next-line camelcase
+  adequacy_patch?: object;
 }
 
 export const launchStudy = async (sid: string, options: LaunchOptions = {}): Promise<string> => {

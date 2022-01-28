@@ -40,7 +40,6 @@ from antarest.study.service import StudyService
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
-
 MAX_NB_CPU = 24
 MAX_TIME_LIMIT = 604800
 MIN_TIME_LIMIT = 3600
@@ -186,7 +185,10 @@ class SlurmLauncher(AbstractLauncher):
                 shutil.rmtree(study_path)
 
     def _import_study_output(
-        self, job_id: str, xpansion_mode: Optional[str] = None
+        self,
+        job_id: str,
+        xpansion_mode: Optional[str] = None,
+        log_dir: Optional[str] = None,
     ) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
         if xpansion_mode is not None:
@@ -195,6 +197,11 @@ class SlurmLauncher(AbstractLauncher):
             study_id,
             self.local_workspace / "OUTPUT" / job_id / "output",
             params=RequestParameters(DEFAULT_ADMIN_USER),
+            log_path=SlurmLauncher._get_log_path_from_log_dir(
+                Path(log_dir), LogType.STDOUT
+            )
+            if log_dir is not None
+            else None,
         )
 
     def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
@@ -247,7 +254,9 @@ class SlurmLauncher(AbstractLauncher):
                         output_id: Optional[str] = None
                         if not study.with_error:
                             output_id = self._import_study_output(
-                                study.name, study.xpansion_mode
+                                study.name,
+                                study.xpansion_mode,
+                                study.job_log_dir,
                             )
                         self.callbacks.update_status(
                             study.name,
