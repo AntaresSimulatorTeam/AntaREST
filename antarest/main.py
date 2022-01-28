@@ -226,7 +226,9 @@ def create_services(
 
     if Module.MATRIX_GC.value in config.server.services or create_all:
         matrix_garbage_collector = MatrixGarbageCollector(
-            config=config, study_service=study_service
+            config=config,
+            study_service=study_service,
+            matrix_service=matrix_service,
         )
         services["matrix_gc"] = matrix_garbage_collector
 

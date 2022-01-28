@@ -76,7 +76,7 @@ def test_get_matrices_used_in_raw_studies(
     (raw_study_path / f"{matrix_name3}.link").touch()
     (raw_study_path / f"{matrix_name4}.txt").touch()
 
-    output = matrix_garbage_collector._get_matrices_used_in_raw_studies()
+    output = matrix_garbage_collector._get_raw_studies_matrices()
 
     assert len(output) == 3
     assert matrix_name1 in output
