@@ -9,7 +9,7 @@ import {
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { NodeProperties, LinkProperties } from './types';
+import { NodeProperties, LinkProperties, UpdateAreaUi } from './types';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import LinksView from './LinksView';
 
@@ -48,12 +48,13 @@ interface PropType {
     links?: Array<LinkProperties>;
     link?: LinkProperties;
     onDelete: (id: string, target?: string) => void;
+    onBlur: (id: string, value: UpdateAreaUi) => void;
 }
 
 const PanelView = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { node, links, link, onDelete } = props;
+  const { node, links, link, onDelete, onBlur } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
   return (
@@ -62,9 +63,12 @@ const PanelView = (props: PropType) => {
         {node && (
           <>
             <TextField className={classes.fields} label={t('singlestudy:areaName')} variant="filled" value={node.id} disabled />
-            <TextField className={classes.fields} label={t('singlestudy:color')} variant="filled" value={node.color} />
-            <TextField className={classes.fields} label={t('singlestudy:posX')} variant="filled" value={node.x} />
-            <TextField className={classes.fields} label={t('singlestudy:posY')} variant="filled" value={node.y} />
+            { /* eslint-disable-next-line @typescript-eslint/camelcase */ }
+            <TextField className={classes.fields} label={t('singlestudy:color')} variant="filled" defaultValue={node.color} onBlur={(e) => onBlur(node.id, { x: node.x, y: node.y, color_rgb: e.target.value !== null ? (e.target.value).slice(4, -1).split(',').map(Number) : node.color.slice(4, -1).split(',').map(Number) })} />
+            { /* eslint-disable-next-line @typescript-eslint/camelcase */ }
+            <TextField className={classes.fields} label={t('singlestudy:posX')} variant="filled" value={node.x} disabled />
+            { /* eslint-disable-next-line @typescript-eslint/camelcase */ }
+            <TextField className={classes.fields} label={t('singlestudy:posY')} variant="filled" value={node.y} disabled />
           </>
         )}
         {links && node && (

@@ -13,10 +13,11 @@ interface GraphViewProps {
     graph: React.RefObject<Graph<NodeProperties & GraphNode, LinkProperties & GraphLink>>;
     setSelectedItem: (item: NodeProperties | LinkProperties | undefined) => void;
     onLink: (id: string) => void;
+    onNodePositionChange: (id: string, x: number, y: number) => void;
   }
 
 const GraphView = (props: GraphViewProps) => {
-  const { nodeData, linkData, height, width, onClickNode, onClickLink, graph, setSelectedItem, onLink } = props;
+  const { nodeData, linkData, height, width, onClickNode, onClickLink, graph, setSelectedItem, onLink, onNodePositionChange } = props;
   let nodeDataToRender = nodeData;
   const initialZoom = 1;
   if (nodeData.length > 0) {
@@ -73,7 +74,7 @@ const GraphView = (props: GraphViewProps) => {
       onClickNode={onClickNode}
       onClickLink={onClickLink}
       onClickGraph={() => setSelectedItem(undefined)}
-      onNodePositionChange={() => console.log('test')}
+      onNodePositionChange={(id, x, y) => onNodePositionChange(id, x - (width / initialZoom / 2) - 0, -y + (height / 2) + 0)}
     />
 
   );

@@ -14,8 +14,9 @@ const useStyles = makeStyles((theme: Theme) =>
       width: '100%',
       height: '100%',
       display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
+      padding: theme.spacing(0.5),
+      marginTop: '2px',
+      marginLeft: '2px',
     },
     node: {
       opacity: '.8',
@@ -32,18 +33,14 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: 'center',
       alignItems: 'center',
     },
-    dot: {
-      width: '0.5em',
-      height: '0.5em',
-      borderRadius: '50%',
-      marginRight: theme.spacing(1),
-    },
     linkIcon: {
       marginLeft: theme.spacing(1),
       color: theme.palette.secondary.main,
       '&:hover': {
         color: theme.palette.secondary.dark,
       },
+    },
+    highlighted: {
     },
   }));
 
@@ -58,33 +55,32 @@ const NodeView = (props: PropType) => {
   const { node, linkCreation } = props;
 
   const hslColors = rgbToHsl(node.color || 'rgb(211, 211, 211)');
+  // const [r,g,b] = node.color.slice(4, -1).split(',').map(Number);
 
   // style={{ border: node.highlighted ? '#f00 solid 2px' : `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%) solid 2px`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 60 && hslColors[2] >= 70) ? 'black' : 'white' }}
 
   useEffect(() => {
     if (nodeRef.current) {
-      const parentNode = nodeRef.current.parentElement?.parentElement?.parentElement?.getAttribute('prevWidth');
-      if (parentNode !== null && parentNode) {
-        const newSize = parseInt(parentNode, 10);
+      const parentNodeClickedWidth = nodeRef.current.parentElement?.parentElement?.parentElement?.getAttribute('width');
+      const parentNodePrevWidth = nodeRef.current.parentElement?.parentElement?.parentElement?.getAttribute('prevWidth');
+      if (node.highlighted) {
+        if (parentNodeClickedWidth !== null && parentNodeClickedWidth && !parentNodePrevWidth) {
+          const newSizeClickedWidth = parseInt(parentNodeClickedWidth, 10) + 32;
+          // eslint-disable-next-line no-unused-expressions
+          nodeRef.current.parentElement?.parentElement?.parentElement?.setAttribute('width', `${newSizeClickedWidth}`);
+          // eslint-disable-next-line no-unused-expressions
+          nodeRef.current.parentElement?.parentElement?.parentElement?.setAttribute('prevWidth', parentNodeClickedWidth);
+          // eslint-disable-next-line no-unused-expressions
+          nodeRef.current.parentElement?.style.setProperty('width', `${newSizeClickedWidth}px`);
+        }
+      } else if (parentNodePrevWidth) {
+        const newSize = parseInt(parentNodePrevWidth, 10);
         // eslint-disable-next-line no-unused-expressions
         nodeRef.current.parentElement?.parentElement?.parentElement?.setAttribute('width', `${newSize}`);
         // eslint-disable-next-line no-unused-expressions
         nodeRef.current.parentElement?.style.setProperty('width', `${newSize}px`);
         // eslint-disable-next-line no-unused-expressions
-        // nodeRef.current.parentElement?.parentElement?.parentElement?.removeAttribute('prevWidth');
-      } else {
-        const parentNodeClicked = nodeRef.current.parentElement?.parentElement?.parentElement?.getAttribute('width');
-        if (node.highlighted) {
-          if (parentNodeClicked !== null && parentNodeClicked) {
-            const newSizeClicked = parseInt(parentNodeClicked, 10) + 32;
-            // eslint-disable-next-line no-unused-expressions
-            nodeRef.current.parentElement?.parentElement?.parentElement?.setAttribute('width', `${newSizeClicked}`);
-            // eslint-disable-next-line no-unused-expressions
-            nodeRef.current.parentElement?.parentElement?.parentElement?.setAttribute('prevWidth', parentNodeClicked);
-            // eslint-disable-next-line no-unused-expressions
-            nodeRef.current.parentElement?.style.setProperty('width', `${newSizeClicked}px`);
-          }
-        }
+        nodeRef.current.parentElement?.parentElement?.parentElement?.removeAttribute('prevWidth');
       }
     }
   }, [node]);
@@ -93,7 +89,7 @@ const NodeView = (props: PropType) => {
     <div ref={nodeRef} className={classes.root}>
       {node.highlighted ? (
         <>
-          <div className={classes.node} style={{ backgroundColor: `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 60 && hslColors[2] >= 70) ? 'black' : 'white' }}>
+          <div className={`${classes.node} ${classes.highlighted}`} style={{ backgroundColor: `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 60 && hslColors[2] >= 70) ? 'black' : 'white', boxShadow: '0px 0px 4px 2px rgba(255,255,255,1)' }}>
             {node.id}
           </div>
           <LinkIcon className={classes.linkIcon} onClick={(e) => { e.preventDefault(); e.stopPropagation(); linkCreation(node.id); }} />

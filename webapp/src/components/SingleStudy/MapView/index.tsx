@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
-import { NodeProperties, LinkProperties, AreasConfig, SingleAreaConfig } from './types';
+import { NodeProperties, LinkProperties, AreasConfig, SingleAreaConfig, UpdateAreaUi } from './types';
 import CreateAreaModal from './CreateAreaModal';
 import PropertiesView from './PropertiesView';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
@@ -91,14 +91,18 @@ interface Props {
 }
 
 const FONT_SIZE = 15;
+const NODE_HEIGHT = 400;
 
 const calculateSize = (text: string): number => {
   const textSize = text.length;
   if (textSize === 1) {
-    return FONT_SIZE * textSize * 32;
+    return FONT_SIZE * textSize * 36;
   }
   if (textSize <= 2) {
-    return FONT_SIZE * textSize * 16;
+    return FONT_SIZE * textSize * 20;
+  }
+  if (textSize <= 3) {
+    return FONT_SIZE * textSize * 12;
   }
   if (textSize <= 5) {
     return FONT_SIZE * textSize * 10;
@@ -162,16 +166,52 @@ const MapView = (props: Props) => {
     setOpenModal(false);
     try {
       await createArea(study.id, name);
-      const [r, g, b] = color.slice(4, -1).split(',').map(Number);
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      await updateAreaUI(study.id, name, { x: posX, y: posY, color_rgb: [r, g, b] });
-      setNodeData([...nodeData, ...[{
+      setNodeData([...nodeData, {
         id: name,
         x: posX,
         y: posY,
         color,
-        size: { width: calculateSize(name), height: 320 },
-      }]]);
+        size: { width: calculateSize(name), height: NODE_HEIGHT },
+      }]);
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+    }
+  };
+
+  const handleUpdate = async (id: string, value: UpdateAreaUi) => {
+    try {
+      const prevColors = nodeData.filter((o) => o.id === id)[0].color.slice(4, -1).split(',').map(Number);
+      if (value.color_rgb[0] !== prevColors[0] || value.color_rgb[1] !== prevColors[1] || value.color_rgb[2] !== prevColors[2]) {
+        const updateNode = nodeData.filter((o) => o.id !== id);
+        setNodeData([...updateNode, {
+          id,
+          x: value.x,
+          y: value.y,
+          color: `rgb(${value.color_rgb[0]}, ${value.color_rgb[1]}, ${value.color_rgb[2]})`,
+          size: { width: calculateSize(id), height: NODE_HEIGHT },
+        }]);
+        await updateAreaUI(study.id, id, value);
+      }
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+    }
+  };
+
+  const handleUpdatePosition = async (id: string, x: number, y: number) => {
+    try {
+      const prevPosition = { x: nodeData.filter((o) => o.id === id)[0].x, y: nodeData.filter((o) => o.id === id)[0].y };
+      if (x !== prevPosition.x || y !== prevPosition.y) {
+        const updateNode = nodeData.filter((o) => o.id !== id);
+        setNodeData([...updateNode, {
+          id,
+          x: Math.floor(x),
+          y: Math.floor(y),
+          color: nodeData.filter((o) => o.id === id)[0].color,
+          size: { width: calculateSize(id), height: NODE_HEIGHT },
+        }]);
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        await updateAreaUI(study.id, id, { x, y, color_rgb: nodeData.filter((o) => o.id === id)[0].color.slice(4, -1).split(',').map(Number) });
+      }
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
     }
@@ -183,6 +223,7 @@ const MapView = (props: Props) => {
       // eslint-disable-next-line no-underscore-dangle
       currentGraph._setNodeHighlightedValue(id, false);
     }
+
     setTimeout(async () => {
       if (target && linkData) {
         const links = linkData.filter((o) => o.source !== id || o.target !== target);
@@ -240,7 +281,7 @@ const MapView = (props: Props) => {
             x: area[areaId].ui.x,
             y: area[areaId].ui.y,
             color: `rgb(${area[areaId].ui.color_r}, ${area[areaId].ui.color_g}, ${area[areaId].ui.color_b})`,
-            size: { width: calculateSize(areaId), height: 320 },
+            size: { width: calculateSize(areaId), height: NODE_HEIGHT },
           }));
           setNodeData(tempNodeData);
         } else {
@@ -250,7 +291,7 @@ const MapView = (props: Props) => {
             x: area[areaId].ui.x,
             y: area[areaId].ui.y,
             color: `rgb(${area[areaId].ui.color_r}, ${area[areaId].ui.color_g}, ${area[areaId].ui.color_b})`,
-            size: { width: calculateSize(areaId), height: 320 },
+            size: { width: calculateSize(areaId), height: NODE_HEIGHT },
           }));
           setNodeData(tempNodeData);
         }
@@ -289,13 +330,13 @@ const MapView = (props: Props) => {
         <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
       </div>
       <div className={classes.graphView}>
-        <PropertiesView item={selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} />
+        <PropertiesView item={selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onBlur={handleUpdate} />
         <div className={`${classes.autosizer} ${classes.graph}`}>
           {loaded ? (
             <AutoSizer>
               {
                 ({ height, width }) => (
-                  <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} setSelectedItem={setSelectedItem} onLink={createModeLink} />
+                  <GraphViewMemo height={height} width={width} nodeData={nodeData} linkData={linkData} onClickLink={onClickLink} onClickNode={onClickNode} graph={graphRef} setSelectedItem={setSelectedItem} onLink={createModeLink} onNodePositionChange={handleUpdatePosition} />
                 )
             }
             </AutoSizer>

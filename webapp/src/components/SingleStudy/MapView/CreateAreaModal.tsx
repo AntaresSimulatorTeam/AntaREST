@@ -41,15 +41,12 @@ const CreateAreaModal = (props: PropType) => {
   const [t] = useTranslation();
   const { open, onClose, onSave } = props;
   const [name, setName] = useState<string>('');
-  const [posX, setPosX] = useState<number>(0);
-  const [posY, setPosY] = useState<number>(0);
-  const [color, setColor] = useState<string>('rgb(0, 0, 0)');
 
   return (
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={() => onSave(name, posX, posY, color)}
+      handleSave={() => onSave(name, 0, 0, 'rgb(230, 108, 44)')}
       title={t('singlestudy:newArea')}
     >
       <div className={classes.name}>
@@ -58,35 +55,6 @@ const CreateAreaModal = (props: PropType) => {
           variant="outlined"
           onChange={(event) => setName(event.target.value as string)}
           value={name}
-          size="small"
-        />
-      </div>
-      <div className={classes.positions}>
-        <TextField
-          className={classes.posX}
-          label={t('singlestudy:posX')}
-          type="number"
-          variant="outlined"
-          size="small"
-          onChange={(event) => setPosX(parseInt(event.target.value, 10) as number)}
-          value={posX}
-        />
-        <TextField
-          className={classes.posY}
-          label={t('singlestudy:posY')}
-          type="number"
-          variant="outlined"
-          size="small"
-          onChange={(event) => setPosY(parseInt(event.target.value, 10) as number)}
-          value={posY}
-        />
-      </div>
-      <div className={classes.color}>
-        <TextField
-          label={t('singlestudy:color')}
-          variant="outlined"
-          onChange={(event) => setColor(event.target.value as string)}
-          value={color}
           size="small"
         />
       </div>
