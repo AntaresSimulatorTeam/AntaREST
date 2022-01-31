@@ -1,2 +1,2 @@
 -r requirements.txt
-pytest-cov~=6.2.5
+pytest-cov
