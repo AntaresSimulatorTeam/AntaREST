@@ -360,6 +360,7 @@ const InformationView = (props: PropTypes) => {
       try {
         const res = await getStudySynthesis(study.id);
         setStudySynthesis(res);
+        console.log(res);
       } catch (e) {
         logError(t('singlestudy:failedToListOutputs'), study, e);
       }

@@ -54,5 +54,8 @@
   "onStudyIdCopySuccess": "Identifiant de l'étude copié",
   "onStudyIdCopyError": "Erreur lors de la copie de l'identifiant de l'étude",
   "copyId": "Copie l'identifiant de l'étude",
-  "copyIdDir": "Copier l'ID"
+  "copyIdDir": "Copier l'ID",
+  "filter": "Filtrer",
+  "filterIn": "Filtrer entrées",
+  "filterOut": "Filtrer sorties"
 }

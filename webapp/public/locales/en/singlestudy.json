@@ -54,5 +54,8 @@
   "onStudyIdCopySucces": "Study id copied !",
   "onStudyIdCopyError": "Failed to copy study id",
   "copyId": "Copy the study id",
-  "copyIdDir": "Copy id"
+  "copyIdDir": "Copy id",
+  "filter": "Filter",
+  "filterIn": "Filter In",
+  "filterOut": "Filter Out"
 }
