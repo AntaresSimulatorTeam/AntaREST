@@ -10,7 +10,7 @@ from typing import List, IO, Optional, cast, Union, Dict, Callable
 from uuid import uuid4
 
 from fastapi import HTTPException
-from markupsafe import escape  # type: ignore
+from markupsafe import escape
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import (

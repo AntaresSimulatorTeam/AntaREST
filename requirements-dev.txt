@@ -1,6 +1,6 @@
 -r requirements-test.txt
 pytest~=6.2.5
 black~=22.1.0
-mypy
+mypy~=0.931
 pyinstaller~=4.8
 checksumdir~=1.2.0

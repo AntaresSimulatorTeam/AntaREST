@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional, cast, Union
 
-import numpy as np  # type: ignore
+import numpy as np
 import pandas as pd  # type: ignore
 
 from antarest.core.model import JSON

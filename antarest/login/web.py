@@ -5,7 +5,7 @@ from typing import Any, Optional, List, Union, Tuple
 
 from fastapi import Depends, APIRouter, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
-from markupsafe import escape  # type: ignore
+from markupsafe import escape
 from pydantic import BaseModel
 
 from antarest.core.config import Config
