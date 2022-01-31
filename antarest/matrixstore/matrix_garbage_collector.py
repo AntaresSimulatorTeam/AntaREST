@@ -73,13 +73,12 @@ class MatrixGarbageCollector:
 
     def _get_datasets_matrices(self) -> Set[str]:
         logger.info("Getting all matrices used in datasets")
-        matrix_set = set()
         datasets = self.dataset_repository.get_all_datasets()
-        for dataset in datasets:
-            matrices = dataset.matrices
-            for matrix in matrices:
-                matrix_set.add(matrix.id)
-        return matrix_set
+        return {
+            matrix.matrix_id
+            for dataset in datasets
+            for matrix in dataset.matrices
+        }
 
     def _get_used_matrices(self) -> Set[str]:
         """Return all matrices used in raw studies, variant studies and datasets"""
