@@ -21,6 +21,9 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
 )
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
+from antarest.study.storage.variantstudy.repository import (
+    VariantStudyRepository,
+)
 
 
 @pytest.fixture
@@ -46,6 +49,9 @@ def matrix_garbage_collector(tmp_path: Path):
     study_service = Mock()
     study_service.storage_service.variant_study_service.command_factory = (
         command_factory
+    )
+    study_service.storage_service.variant_study_service.repository = (
+        VariantStudyRepository(cache_service=Mock())
     )
 
     matrix_garbage_collector = MatrixGarbageCollector(

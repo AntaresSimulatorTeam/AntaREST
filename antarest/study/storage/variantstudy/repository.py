@@ -25,3 +25,6 @@ class VariantStudyRepository(StudyMetadataRepository):
             .all()
         )
         return studies
+
+    def get_all_commandblocks(self) -> List[CommandBlock]:
+        return db.session.query(CommandBlock).all()

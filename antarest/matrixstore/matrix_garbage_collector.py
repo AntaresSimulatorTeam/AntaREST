@@ -40,6 +40,7 @@ class MatrixGarbageCollector:
         self.dataset_repository: MatrixDataSetRepository = (
             matrix_service.repo_dataset
         )
+        self.sleeping_time = config.storage.matrix_gc_sleeping_time
 
     def _get_saved_matrices(self) -> Set[str]:
         logging.info("Getting all saved matrices")
@@ -54,9 +55,9 @@ class MatrixGarbageCollector:
 
     def _get_variant_studies_matrices(self) -> Set[str]:
         logger.info("Getting all matrices used in variant studies")
-        command_blocks: List[CommandBlock] = db.session.query(
+        command_blocks: List[
             CommandBlock
-        ).all()
+        ] = self.variant_study_service.repository.get_all_commandblocks()
         variant_study_commands = [
             icommand
             for c in command_blocks
@@ -110,10 +111,12 @@ class MatrixGarbageCollector:
 
     def _loop(self) -> None:
         while True:
-            self._clean_matrices()
-            logging.info("Sleeping for 1 hour")
-
-            time.sleep(3600)
+            try:
+                self._clean_matrices()
+            except Exception as e:
+                logging.error(f"Error while cleaning matrices: {e}")
+            logging.info(f"Sleeping for {self.sleeping_time}s")
+            time.sleep(self.sleeping_time)
 
     def start(self) -> None:
         self.thread.start()
