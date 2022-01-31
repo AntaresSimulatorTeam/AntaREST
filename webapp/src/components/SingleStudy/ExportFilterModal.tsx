@@ -9,7 +9,7 @@ import { FileStudyTreeConfigDTO, StudyDownloadDTO, StudyDownloadLevelDTO, StudyD
 const useStyles = makeStyles((theme: Theme) => createStyles({
   infos: {
     flex: '1',
-    width: '300px',
+    width: '350px',
     display: 'flex',
     flexFlow: 'column nowrap',
     justifyContent: 'flex-start',
