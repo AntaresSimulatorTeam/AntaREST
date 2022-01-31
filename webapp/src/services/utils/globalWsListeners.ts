@@ -4,7 +4,7 @@ import { getStudyMetadata } from '../api/study';
 import { StudySummary, WSEvent, WSMessage } from '../../common/types';
 import { addListenerAction, refreshHandlerAction } from '../../ducks/websockets';
 import { AppState } from '../../App/reducers';
-import { getMaintenanceStatus, getInitMessageInfo, isStringEmpty } from '.';
+import { isStringEmpty } from '.';
 import { setMaintenanceMode, setMessageInfo } from '../../ducks/global';
 
 const studyListener = (reduxStore: Store<AppState>) => async (ev: WSMessage): Promise<void> => {
@@ -43,12 +43,6 @@ export const addWsListeners = async (reduxStore: Store<AppState>): Promise<void>
   reduxStore.dispatch(addListenerAction(studyListener(reduxStore)));
   reduxStore.dispatch(addListenerAction(maintenanceListener(reduxStore)));
   reduxStore.dispatch(refreshHandlerAction());
-
-  const initMaintenanceMode = await getMaintenanceStatus();
-  reduxStore.dispatch(setMaintenanceMode(initMaintenanceMode));
-
-  const initMessageInfo = await getInitMessageInfo();
-  reduxStore.dispatch(setMessageInfo(initMessageInfo));
 };
 
 export default {};
