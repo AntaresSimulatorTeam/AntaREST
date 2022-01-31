@@ -301,6 +301,14 @@ class SlurmLauncher(AbstractLauncher):
         return SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
 
     @staticmethod
+    def _find_log_dir(base_log_dir: Path, job_id: str) -> Optional[Path]:
+        if base_log_dir.exists() and base_log_dir.is_dir():
+            for fname in os.listdir(base_log_dir):
+                if fname.startswith(job_id):
+                    return base_log_dir / fname
+        return None
+
+    @staticmethod
     def _get_log_path_from_log_dir(
         log_dir: Path, log_type: LogType = LogType.STDOUT
     ) -> Optional[Path]:
@@ -441,15 +449,20 @@ class SlurmLauncher(AbstractLauncher):
         return launch_uuid
 
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+        log_path: Optional[Path] = None
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
                 log_path = SlurmLauncher._get_log_path(study, log_type)
                 if log_path:
                     return log_path.read_text()
         # when this is not the current worker handling this job (found in data_repo_tinydb)
-        log_path = SlurmLauncher._get_log_path_from_log_dir(
-            Path(self.launcher_args.log_dir) / "JOB_LOGS" / job_id, log_type
+        log_dir = SlurmLauncher._find_log_dir(
+            Path(self.launcher_args.log_dir) / "JOB_LOGS", job_id
         )
+        if log_dir:
+            log_path = SlurmLauncher._get_log_path_from_log_dir(
+                log_dir, log_type
+            )
         if log_path:
             return log_path.read_text()
         return None
