@@ -1,7 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Optional, Any
+from typing import Optional, Any, cast
 
 import yaml
 
@@ -45,6 +45,8 @@ class AdequacyPatchExtension(ILauncherExtension):
         user_config = study_tree.get(["user"])
         assert "flowbased" in user_config or "Flowbased" in user_config
         adequacy_patch_config = yaml.safe_load(
-            study_tree.get(["user", "adequacypatch", "config.yml"])
+            cast(
+                bytes, study_tree.get(["user", "adequacypatch", "config.yml"])
+            )
         )
         assert "areas" in adequacy_patch_config
