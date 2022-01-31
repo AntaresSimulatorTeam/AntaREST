@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional, List, Dict
 
 from fastapi import APIRouter, File, Depends, Request, HTTPException
-from markupsafe import escape  # type: ignore
+from markupsafe import escape
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config

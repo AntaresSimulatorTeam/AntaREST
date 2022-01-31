@@ -42,6 +42,7 @@ class InputSeriesMatrix(MatrixNode):
                 sep="\t",
                 dtype=float,
                 header=None,
+                float_precision="legacy",
             )
             matrix.dropna(how="any", axis=1, inplace=True)
             data: JSON = matrix.to_dict(orient="split")

@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional, cast, Union
 
-import numpy as np  # type: ignore
+import numpy as np
 import pandas as pd  # type: ignore
 
 from antarest.core.model import JSON
@@ -57,7 +57,11 @@ class OutputSeriesMatrix(
         self,
     ) -> JSON:
         df = pd.read_csv(
-            self.config.path, sep="\t", skiprows=4, na_values="N/A"
+            self.config.path,
+            sep="\t",
+            skiprows=4,
+            na_values="N/A",
+            float_precision="legacy",
         )
 
         date, body = self.date_serializer.extract_date(df)
