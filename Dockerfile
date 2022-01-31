@@ -18,7 +18,7 @@ RUN cp /antares-launcher/requirements.txt /conf/antares-launcher/requirements.tx
 
 RUN ./scripts/install-debug.sh
 
-RUN pip3 install --upgrade pip \
+RUN pip3 install --upgrade pip==21.3.1 \
     && pip3 install -r /conf/requirements.txt
 
 
