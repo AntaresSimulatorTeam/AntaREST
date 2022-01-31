@@ -16,7 +16,7 @@ from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.web import create_matrix_api
 
 
-def build_matrixstore(
+def build_matrix_service(
     application: Optional[FastAPI],
     config: Config,
     file_transfer_manager: FileTransferManager,

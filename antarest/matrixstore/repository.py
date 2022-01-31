@@ -43,6 +43,12 @@ class MatrixDataSetRepository:
         matrix: MatrixDataSet = db.session.query(MatrixDataSet).get(id)
         return matrix
 
+    def get_all_datasets(self) -> List[MatrixDataSet]:
+        matrix_datasets: List[MatrixDataSet] = db.session.query(
+            MatrixDataSet
+        ).all()
+        return matrix_datasets
+
     def query(
         self,
         name: Optional[str],

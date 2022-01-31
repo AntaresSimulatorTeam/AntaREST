@@ -50,7 +50,7 @@ def build_study_service(
     task_service: ITaskService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
     variant_repository: Optional[VariantStudyRepository] = None,
-    storage_service: Optional[StudyService] = None,
+    study_service: Optional[StudyService] = None,
     patch_service: Optional[PatchService] = None,
     generator_matrix_constants: Optional[GeneratorMatrixConstants] = None,
     event_bus: IEventBus = DummyEventBusService(),
@@ -68,7 +68,7 @@ def build_study_service(
         task_service: task job service
         metadata_repository: used by testing to inject mock. Let None to use true instantiation
         variant_repository: used by testing to inject mock. Let None to use true instantiation
-        storage_service: used by testing to inject mock. Let None to use true instantiation
+        study_service: used by testing to inject mock. Let None to use true instantiation
         patch_service: used by testing to inject mock. Let None to use true instantiation
         generator_matrix_constants: used by testing to inject mock. Let None to use true instantiation
         event_bus: used by testing to inject mock. Let None to use true instantiation
@@ -116,7 +116,7 @@ def build_study_service(
         patch_service=patch_service,
     )
 
-    storage_service = storage_service or StudyService(
+    study_service = study_service or StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
         user_service=user_service,
@@ -130,13 +130,13 @@ def build_study_service(
 
     if application:
         application.include_router(
-            create_study_routes(storage_service, file_transfer_manager, config)
+            create_study_routes(study_service, file_transfer_manager, config)
         )
         application.include_router(
-            create_raw_study_routes(storage_service, config)
+            create_raw_study_routes(study_service, config)
         )
         application.include_router(
-            create_study_data_routes(storage_service, config)
+            create_study_data_routes(study_service, config)
         )
         application.include_router(
             create_study_variant_routes(
@@ -145,4 +145,4 @@ def build_study_service(
             )
         )
 
-    return storage_service
+    return study_service
