@@ -57,7 +57,11 @@ class OutputSeriesMatrix(
         self,
     ) -> JSON:
         df = pd.read_csv(
-            self.config.path, sep="\t", skiprows=4, na_values="N/A"
+            self.config.path,
+            sep="\t",
+            skiprows=4,
+            na_values="N/A",
+            float_precision="legacy",
         )
 
         date, body = self.date_serializer.extract_date(df)
