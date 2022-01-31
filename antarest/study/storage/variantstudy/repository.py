@@ -27,4 +27,11 @@ class VariantStudyRepository(StudyMetadataRepository):
         return studies
 
     def get_all_commandblocks(self) -> List[CommandBlock]:
-        return db.session.query(CommandBlock).all()
+        outputs = db.session.query(CommandBlock).all()
+
+        # for mypy
+        assert isinstance(outputs, list)
+        for output in outputs:
+            assert isinstance(output, CommandBlock)
+
+        return outputs
