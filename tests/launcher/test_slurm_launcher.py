@@ -203,6 +203,11 @@ def test_extra_parameters(launcher_config: Config):
     )
     assert launcher_params.post_processing
 
+    launcher_params = slurm_launcher._check_and_apply_launcher_params(
+        {"adequacy_patch": True}
+    )
+    assert launcher_params.post_processing
+
 
 @pytest.mark.parametrize(
     "version,job_status", [(42, JobStatus.RUNNING), (99, JobStatus.FAILED)]

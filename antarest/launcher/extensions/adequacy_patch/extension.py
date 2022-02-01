@@ -13,11 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class AdequacyPatchExtension(ILauncherExtension):
+    EXTENSION_NAME = "adequacy_patch"
+
     def __init__(self, storage_service: StudyStorageService):
         self.storage_service = storage_service
 
     def get_name(self) -> str:
-        return "adequacy_patch"
+        return AdequacyPatchExtension.EXTENSION_NAME
 
     def after_export_flat_hook(
         self,
