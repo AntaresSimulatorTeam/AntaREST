@@ -2,6 +2,7 @@ import base64
 import io
 import logging
 import os
+import shutil
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
@@ -792,6 +793,7 @@ class StudyService:
         dest: Path,
         outputs: bool = True,
     ) -> None:
+        logger.info(f"Flat exporting study {uuid}")
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
@@ -1025,6 +1027,7 @@ class StudyService:
         uuid: str,
         output: Union[IO[bytes], Path],
         params: RequestParameters,
+        additional_logs: Optional[List[Path]] = None,
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -1032,6 +1035,7 @@ class StudyService:
             uuid: study uuid
             output: zip file with simulation folder or simulation folder path
             params: request parameters
+            additional_logs: path to the simulation log
 
         Returns: output simulation json formatted
 
@@ -1043,6 +1047,11 @@ class StudyService:
         res = self.storage_service.get_storage(study).import_output(
             study, output
         )
+        if res is not None and additional_logs:
+            for log_path in additional_logs:
+                shutil.copyfile(
+                    log_path, Path(study.path) / "output" / res / log_path.name
+                )
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(
             "output added to study %s by user %s", uuid, params.get_user_id()
