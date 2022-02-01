@@ -263,20 +263,22 @@ class SlurmLauncher(AbstractLauncher):
                     )
                     with db():
                         output_id: Optional[str] = None
-                        if not study.with_error:
-                            output_id = self._import_study_output(
+                        try:
+                            if not study.with_error:
+                                output_id = self._import_study_output(
+                                    study.name,
+                                    study.xpansion_mode,
+                                    study.job_log_dir,
+                                )
+                        finally:
+                            self.callbacks.update_status(
                                 study.name,
-                                study.xpansion_mode,
-                                study.job_log_dir,
+                                JobStatus.FAILED
+                                if study.with_error or output_id is None
+                                else JobStatus.SUCCESS,
+                                None,
+                                output_id,
                             )
-                        self.callbacks.update_status(
-                            study.name,
-                            JobStatus.FAILED
-                            if study.with_error or output_id is None
-                            else JobStatus.SUCCESS,
-                            None,
-                            output_id,
-                        )
                 except Exception as e:
                     logger.error(
                         f"Failed to finalize study {study.name} launch",
