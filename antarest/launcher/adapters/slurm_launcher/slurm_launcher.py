@@ -422,7 +422,9 @@ class SlurmLauncher(AbstractLauncher):
                     logger.warning(
                         f"Invalid slurm launcher nb_cpu ({nb_cpu}), should be between 1 and 24"
                     )
-            if launcher_params.get("adequacy_patch", None):
+            if (
+                launcher_params.get("adequacy_patch", None) is not None
+            ):  # the adequacy patch can be an empty object
                 launcher_args.post_processing = True
             return launcher_args
         return self.launcher_args

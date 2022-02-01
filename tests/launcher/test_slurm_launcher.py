@@ -204,7 +204,7 @@ def test_extra_parameters(launcher_config: Config):
     assert launcher_params.post_processing
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
-        {"adequacy_patch": True}
+        {"adequacy_patch": {}}
     )
     assert launcher_params.post_processing
 
