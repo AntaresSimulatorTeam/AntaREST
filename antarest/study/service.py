@@ -1027,7 +1027,7 @@ class StudyService:
         uuid: str,
         output: Union[IO[bytes], Path],
         params: RequestParameters,
-        log_path: Optional[Path] = None,
+        additional_logs: Optional[List[Path]] = None,
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -1035,7 +1035,7 @@ class StudyService:
             uuid: study uuid
             output: zip file with simulation folder or simulation folder path
             params: request parameters
-            log_path: path to the simulation log
+            additional_logs: path to the simulation log
 
         Returns: output simulation json formatted
 
@@ -1047,10 +1047,11 @@ class StudyService:
         res = self.storage_service.get_storage(study).import_output(
             study, output
         )
-        if res is not None and log_path is not None:
-            shutil.copyfile(
-                log_path, study.path / "output" / res / "simulation.log"
-            )
+        if res is not None and additional_logs:
+            for log_path in additional_logs:
+                shutil.copyfile(
+                    log_path, Path(study.path) / "output" / res / log_path.name
+                )
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(
             "output added to study %s by user %s", uuid, params.get_user_id()

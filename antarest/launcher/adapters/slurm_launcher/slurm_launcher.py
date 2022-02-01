@@ -7,7 +7,7 @@ import threading
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Optional, Dict, Awaitable
+from typing import Callable, Optional, Dict, Awaitable, List
 from uuid import UUID, uuid4
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
@@ -193,15 +193,26 @@ class SlurmLauncher(AbstractLauncher):
         study_id = self.job_id_to_study_id[job_id]
         if xpansion_mode is not None:
             self._import_xpansion_result(job_id, xpansion_mode)
+
+        launcher_logs: List[Path] = []
+        if log_dir is not None:
+            launcher_logs = [
+                log_path
+                for log_path in [
+                    SlurmLauncher._get_log_path_from_log_dir(
+                        Path(log_dir), LogType.STDOUT
+                    ),
+                    SlurmLauncher._get_log_path_from_log_dir(
+                        Path(log_dir), LogType.STDERR
+                    ),
+                ]
+                if log_path
+            ]
         return self.storage_service.import_output(
             study_id,
             self.local_workspace / "OUTPUT" / job_id / "output",
             params=RequestParameters(DEFAULT_ADMIN_USER),
-            log_path=SlurmLauncher._get_log_path_from_log_dir(
-                Path(log_dir), LogType.STDOUT
-            )
-            if log_dir is not None
-            else None,
+            additional_logs=launcher_logs,
         )
 
     def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
