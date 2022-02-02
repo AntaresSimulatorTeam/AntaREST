@@ -17,7 +17,6 @@ function App() {
       <ThemeProvider theme={maintheme}>
         <SnackbarProvider maxSnack={5}>
           <CssBaseline />
-          <LogginWrapper>
             <MenuWrapper>
               <Routes>
                 <Route index element={<Studies />} />
@@ -32,7 +31,6 @@ function App() {
                 />
               </Routes>
             </MenuWrapper>
-          </LogginWrapper>
         </SnackbarProvider>
       </ThemeProvider>
     </Router>
