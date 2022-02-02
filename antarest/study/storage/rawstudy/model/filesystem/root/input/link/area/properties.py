@@ -6,6 +6,7 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -35,4 +36,6 @@ class InputLinkAreaProperties(IniFileNode):
             section["colorb"] = int
 
         types = {link: section for link in config.get_links(area)}
-        IniFileNode.__init__(self, context, config, types)
+        IniFileNode.__init__(
+            self, context, config, validator=DEFAULT_INI_VALIDATOR
+        )

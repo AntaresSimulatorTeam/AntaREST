@@ -13,6 +13,7 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -130,7 +131,7 @@ class GeneralData(IniFileNode):
             self,
             context,
             config,
-            types=types,
+            validator=DEFAULT_INI_VALIDATOR,
             reader=MultipleSameKeysIniReader(DUPLICATE_KEYS),
             writer=IniWriter(special_keys=DUPLICATE_KEYS),
         )

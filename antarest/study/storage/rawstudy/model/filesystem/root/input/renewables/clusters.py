@@ -9,6 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 
@@ -32,7 +33,9 @@ class ClusteredRenewableClusterConfig(IniFileNode):
             renewable: section
             for renewable in config.get_renewable_names(area)
         }
-        IniFileNode.__init__(self, context, config, types)
+        IniFileNode.__init__(
+            self, context, config, validator=DEFAULT_INI_VALIDATOR
+        )
 
 
 class ClusteredRenewableCluster(FolderNode):

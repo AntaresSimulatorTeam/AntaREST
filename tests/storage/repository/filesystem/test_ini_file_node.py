@@ -3,6 +3,7 @@ from typing import Tuple
 from unittest.mock import Mock
 
 import pytest
+from jsonschema import Validator, Draft6Validator
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -10,6 +11,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -54,7 +56,7 @@ def test_get(tmp_path: str) -> None:
             outputs=dict(),
             study_id="id",
         ),
-        types=types,
+        validator=DEFAULT_INI_VALIDATOR,
     )
     assert node.get([]) == expected_json
     assert node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
@@ -79,7 +81,7 @@ def test_get_depth(tmp_path: str) -> None:
             outputs=dict(),
             study_id="id",
         ),
-        types=types,
+        validator=DEFAULT_INI_VALIDATOR,
     )
     assert node.get(depth=1) == expected_json
 
@@ -93,7 +95,14 @@ def test_validate_section():
         config=FileStudyTreeConfig(
             study_path=Path(), path=Path(), version=-1, study_id="id"
         ),
-        types={"wrong-section": {}},
+        validators={
+            -1: Draft6Validator(
+                {
+                    "type": "object",
+                    "properties": {"wrong-section": {"type": "string"}},
+                }
+            )
+        },
     )
     assert node.check_errors(data=data) == [
         "section wrong-section not in IniFileNode"
@@ -106,7 +115,19 @@ def test_validate_section():
         config=FileStudyTreeConfig(
             study_path=Path(), path=Path(), version=-1, study_id="id"
         ),
-        types={"section": {"wrong-params": 42}},
+        validators={
+            -1: Draft6Validator(
+                {
+                    "type": "object",
+                    "properties": {
+                        "section": {
+                            "type": "object",
+                            "properties": {"wrong-params": {"type": "string"}},
+                        }
+                    },
+                }
+            )
+        },
     )
     assert node.check_errors(data=data) == [
         "param wrong-params of section section not in IniFileNode"
@@ -119,7 +140,19 @@ def test_validate_section():
         config=FileStudyTreeConfig(
             study_path=Path(), path=Path(), version=-1, study_id="id"
         ),
-        types={"section": {"params": str}},
+        validators={
+            -1: Draft6Validator(
+                {
+                    "type": "object",
+                    "properties": {
+                        "section": {
+                            "type": "object",
+                            "properties": {"params": {"type": "string"}},
+                        }
+                    },
+                }
+            )
+        },
     )
     assert node.check_errors(data=data) == [
         "param params of section section in IniFileNode bad type"
@@ -156,7 +189,7 @@ key_float = 3.14
             areas=dict(),
             outputs=dict(),
         ),
-        types=types,
+        validator=DEFAULT_INI_VALIDATOR,
     )
     data = {
         "part1": {"key_int": 10, "key_str": "value10", "key_float": 2.1},

@@ -1,4 +1,7 @@
+from functools import reduce
 from typing import List, Optional, cast, Dict, Any, Union
+
+from jsonschema import Validator, Draft6Validator
 
 from antarest.core.model import JSON, SUB_JSON
 from antarest.core.utils.utils import assert_this
@@ -19,6 +22,13 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import (
 )
 
 
+DEFAULT_INI_VALIDATOR = Draft6Validator(
+    {
+        "type": "object",
+    }
+)
+
+
 class IniReaderError(Exception):
     """
     Left node to handle .ini file behavior
@@ -33,14 +43,14 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        types: Optional[Dict[str, Any]] = None,
+        validator: Validator,
         reader: Optional[IReader] = None,
         writer: Optional[IniWriter] = None,
     ):
         super().__init__(config)
         self.context = context
         self.path = config.path
-        self.types = types or {}
+        self.validator = validator
         self.reader = reader or IniReader()
         self.writer = writer or IniWriter()
 
@@ -136,43 +146,13 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
-        errors = list()
-        for section, params in self.types.items():
-            if section not in data:
-                msg = f"section {section} not in {self.__class__.__name__}"
-                if raising:
-                    raise ValueError(msg)
-                errors.append(msg)
-            else:
-                self._validate_param(
-                    section, params, data[section], errors, raising
-                )
+        return [error.message for error in self.validator.iter_errors(data)]
 
-        return errors
+    def get_validator(self) -> Validator:
+        return self.validator
 
     def normalize(self) -> None:
         pass  # no external store in this node
 
     def denormalize(self) -> None:
         pass  # no external store in this node
-
-    def _validate_param(
-        self,
-        section: str,
-        params: Any,
-        data: JSON,
-        errors: List[str],
-        raising: bool,
-    ) -> None:
-        for param, typing in params.items():
-            if param not in data:
-                msg = f"param {param} of section {section} not in {self.__class__.__name__}"
-                if raising:
-                    raise ValueError(msg)
-                errors.append(msg)
-            else:
-                if not isinstance(data[param], typing):
-                    msg = f"param {param} of section {section} in {self.__class__.__name__} bad type"
-                    if raising:
-                        raise ValueError(msg)
-                    errors.append(msg)

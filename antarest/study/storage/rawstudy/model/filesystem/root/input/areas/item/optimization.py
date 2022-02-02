@@ -1,3 +1,5 @@
+from jsonschema import Draft7Validator
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -6,6 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -27,14 +30,42 @@ class InputAreasOptimization(IniFileNode):
     """
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        types = {
-            "nodal optimization": {
-                "non-dispatchable-power": bool,
-                "dispatchable-hydro-power": bool,
-                "other-dispatchable-power": bool,
-                "spread-unsupplied-energy-cost": (int, float),
-                "spread-spilled-energy-cost": (int, float),
+        base_schema = {
+            "type": "object",
+            "properties": {
+                "nodal optimization": {
+                    "type": "object",
+                    "properties": {
+                        "non-dispatchable-power": {"type": "boolean"},
+                        "dispatchable-hydro-power": {"type": "boolean"},
+                        "other-dispatchable-power": {"type": "boolean"},
+                        "spread-unsupplied-energy-cost": {
+                            "type": "array",
+                            "prefixItems": [
+                                {"type": "integer"},
+                                {"type": "number"},
+                            ],
+                            "items": False,
+                        },
+                        "spread-spilled-energy-cost": {
+                            "type": "array",
+                            "prefixItems": [
+                                {"type": "integer"},
+                                {"type": "number"},
+                            ],
+                            "items": False,
+                        },
+                    },
+                },
+                "filtering": {
+                    "type": "object",
+                    "properties": {
+                        "filter-synthesis": {"type": "string"},
+                        "filter-year-by-year": {"type": "string"},
+                    },
+                },
             },
-            "filtering": {"filter-synthesis": str, "filter-year-by-year": str},
         }
-        IniFileNode.__init__(self, context, config, types)
+        IniFileNode.__init__(
+            self, context, config, validator=Draft7Validator(base_schema)
+        )

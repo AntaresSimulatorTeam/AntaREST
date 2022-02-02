@@ -8,6 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -20,12 +21,13 @@ class ScenarioBuilder(IniFileNode):
             for mode in ["l", "s", "w", "h"]:
                 rules[f"{mode},{area},0"] = int
             self._add_thermal(area, rules)
+        types = {"Default Ruleset": rules}
 
         IniFileNode.__init__(
             self,
             context=context,
             config=config,
-            types={"Default Ruleset": rules},
+            validator=DEFAULT_INI_VALIDATOR,
         )
 
     def _add_thermal(self, area: str, rules: Dict[str, Type[int]]) -> None:

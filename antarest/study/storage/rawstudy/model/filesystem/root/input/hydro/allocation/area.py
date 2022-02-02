@@ -10,6 +10,7 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -31,5 +32,9 @@ class InputHydroAllocationArea(IniFileNode):
     ):
         types = {"[allocation]": {area: int}}
         IniFileNode.__init__(
-            self, context, config, types, reader=FixedAllocationKeyIniReader()
+            self,
+            context,
+            config,
+            validator=DEFAULT_INI_VALIDATOR,
+            reader=FixedAllocationKeyIniReader(),
         )

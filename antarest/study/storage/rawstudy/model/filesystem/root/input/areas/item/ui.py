@@ -6,6 +6,7 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -44,4 +45,6 @@ class InputAreasUi(IniFileNode):
             "layerY": {"0": int},
             "layerColor": {"0": str},
         }
-        IniFileNode.__init__(self, context, config, types)
+        IniFileNode.__init__(
+            self, context, config, validator=DEFAULT_INI_VALIDATOR
+        )

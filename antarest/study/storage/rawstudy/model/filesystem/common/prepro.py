@@ -9,6 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
@@ -33,12 +34,16 @@ class PreproCorrelation(IniFileNode):
             "10": {},
             "11": {},
         }
-        IniFileNode.__init__(self, context, config, types)
+        IniFileNode.__init__(
+            self, context, config, validator=DEFAULT_INI_VALIDATOR
+        )
 
 
 class PreproAreaSettings(IniFileNode):
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        IniFileNode.__init__(self, context, config, types={})
+        IniFileNode.__init__(
+            self, context, config, validator=DEFAULT_INI_VALIDATOR
+        )
 
 
 class PreproArea(FolderNode):

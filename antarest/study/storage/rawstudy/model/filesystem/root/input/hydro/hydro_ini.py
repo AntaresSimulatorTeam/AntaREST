@@ -6,6 +6,7 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -31,4 +32,6 @@ class InputHydroIni(IniFileNode):
         section = {a: (int, float) for a in config.area_names()}
         types = {name: section for name in sections}
 
-        IniFileNode.__init__(self, context, config, types)
+        IniFileNode.__init__(
+            self, context, config, validator=DEFAULT_INI_VALIDATOR
+        )

@@ -8,6 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
+    DEFAULT_INI_VALIDATOR,
 )
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
@@ -153,14 +154,14 @@ def test_delete(tmp_path: Path):
                         config=config.next_file("sub_folder").next_file(
                             "ini_node1.txt"
                         ),
-                        types={},
+                        validator=DEFAULT_INI_VALIDATOR,
                     ),
                     "ini_node2": IniFileNode(
                         context=Mock(),
                         config=config.next_file("sub_folder").next_file(
                             "ini_node2.txt"
                         ),
-                        types={},
+                        validator=DEFAULT_INI_VALIDATOR,
                     ),
                     "area_list": InputAreasList(
                         context=Mock(),
