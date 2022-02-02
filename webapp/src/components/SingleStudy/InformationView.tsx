@@ -305,7 +305,6 @@ const InformationView = (props: PropTypes) => {
   };
 
   const exportOutput = _.debounce(async (output: string) => {
-    setOutputExportButtonAnchor(null);
     if (study) {
       try {
         await callExportOutput(study.id, output);
@@ -316,6 +315,7 @@ const InformationView = (props: PropTypes) => {
   }, 2000, { leading: true, trailing: false });
 
   const onFilter = async (output: string, filter: StudyDownloadDTO): Promise<void> => {
+    setOpenFilterModal(false);
     if (study) {
       try {
         await downloadOutput(study.id, output, filter);
@@ -324,7 +324,6 @@ const InformationView = (props: PropTypes) => {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
       }
     }
-    setOpenFilterModal(false);
   };
 
   const onExport = (output: string): void => {
@@ -341,6 +340,7 @@ const InformationView = (props: PropTypes) => {
   };
 
   const handleExportFilter = (output: string): void => {
+    setOutputExportButtonAnchor(null);
     setCurrentOutput(output);
     setOpenFilterModal(true);
   };

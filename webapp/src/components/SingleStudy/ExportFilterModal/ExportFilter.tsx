@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import React, { useEffect, useState } from 'react';
-import { Chip, createStyles, makeStyles, Theme, Typography } from '@material-ui/core';
+import { Chip, createStyles, makeStyles, TextField, Theme, Typography } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import AddCircleOutlinedIcon from '@material-ui/icons/AddCircleOutlined';
 import { Area, Set, StudyDownloadType } from '../../../common/types';
@@ -68,24 +68,22 @@ interface PropTypes {
     setFilterOutValue: (elm: string) => void;
 }
 
-const SingleLinkElement = (props: {label: string; areas: Array<string>; onChange: (value: string) => void}) => {
+const SingleLinkElement = (props: {globalFilter?: boolean; label: string; areas: Array<string>; onChange: (value: string) => void}) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { label, areas, onChange } = props;
+  const { globalFilter, label, areas, onChange } = props;
   const [link, setLink] = useState<FilterLink>({ area1: '', area2: '' });
 
   const onSelectChange = (id: number, elm: string): void => {
     let { area1, area2 } = link;
-    if (elm !== '') {
-      if (id === 0) {
-        area1 = elm;
-        setLink({ ...link, area1: elm });
-      } else {
-        area2 = elm;
-        setLink({ ...link, area2: elm });
-      }
-      if (area1 !== '' && area2 !== '') onChange(`${area1}^${area2}`);
+    if (id === 0) {
+      area1 = elm;
+      setLink({ ...link, area1: elm });
+    } else {
+      area2 = elm;
+      setLink({ ...link, area2: elm });
     }
+    onChange(`${area1}^${area2}`);
   };
   return (
     <div className={classes.singleLink}>
@@ -94,11 +92,25 @@ const SingleLinkElement = (props: {label: string; areas: Array<string>; onChange
         :
       </Typography>
       <div className={classes.singleLink} style={{ width: 'auto', flex: 1, alignItems: 'center', height: '40px' }}>
-        <SingleSelect fullWidth label={`${t('singlestudy:area')} 1`} list={areas} value={link.area1} onChange={(elm) => onSelectChange(0, elm)} style={{ marginLeft: '5px', marginRight: '5px' }} />
-        <SingleSelect fullWidth label={`${t('singlestudy:area')}2`} list={areas} value={link.area2} onChange={(elm) => onSelectChange(1, elm)} />
+        {
+          globalFilter === true ? (
+            <>
+              <SingleSelect fullWidth label={`${t('singlestudy:area')} 1`} list={areas} value={link.area1} onChange={(elm) => onSelectChange(0, elm)} style={{ marginLeft: '5px', marginRight: '5px' }} />
+              <SingleSelect fullWidth label={`${t('singlestudy:area')}2`} list={areas} value={link.area2} onChange={(elm) => onSelectChange(1, elm)} />
+            </>
+          ) : (
+            <>
+              <TextField label={`${t('singlestudy:area')} 1`} value={link.area1} onChange={(event) => onSelectChange(0, event.target.value)} style={{ marginLeft: '5px', marginRight: '5px', width: '100%' }} />
+              <TextField label={`${t('singlestudy:area')} 2`} value={link.area2} onChange={(event) => onSelectChange(1, event.target.value)} style={{ width: '100%' }} />
+            </>
+          )}
       </div>
     </div>
   );
+};
+
+SingleLinkElement.defaultProps = {
+  globalFilter: false,
 };
 
 const MultipleLinkElement = (props: {label: string; areas: Array<string>; values: Array<string>; onChange: (value: Array<string>) => void}) => {
@@ -115,7 +127,7 @@ const MultipleLinkElement = (props: {label: string; areas: Array<string>; values
   return (
     <div className={classes.root} style={{ marginBottom: 0 }}>
       <div className={classes.singleLink} style={{ alignItems: 'center' }}>
-        <SingleLinkElement label={label} areas={areas} onChange={setCurrentLink} />
+        <SingleLinkElement globalFilter label={label} areas={areas} onChange={setCurrentLink} />
         <AddCircleOutlinedIcon className={classes.addIcon} onClick={onAddLink} />
       </div>
       <ul className={classes.filterLinkContainer}>
@@ -164,8 +176,8 @@ const ExportFilter = (props: PropTypes) => {
       {type !== StudyDownloadType.LINK ? (
         <>
           <MultipleSelect fullWidth label={t('singlestudy:filter')} list={areasOrDistrictsList} value={filterValue} onChange={setFilterValue} style={{ marginBottom: '16px' }} />
-          <SingleSelect fullWidth label={t('singlestudy:filterIn')} list={areasOrDistrictsList} value={filterInValue} onChange={setFilterInValue} style={{ marginBottom: '16px' }} />
-          <SingleSelect fullWidth label={t('singlestudy:filterOut')} list={areasOrDistrictsList} value={filterOutValue} onChange={setFilterOutValue} style={{ marginBottom: '16px' }} />
+          <TextField label={t('singlestudy:filterIn')} value={filterInValue} onChange={(event) => setFilterInValue(event.target.value)} style={{ marginBottom: '16px', width: '100%' }} />
+          <TextField label={t('singlestudy:filterOut')} value={filterOutValue} onChange={(event) => setFilterOutValue(event.target.value)} style={{ marginBottom: '16px', width: '100%' }} />
         </>
       ) : (
         <>
