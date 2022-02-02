@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-/* eslint-disable @typescript-eslint/camelcase */
 import debug from 'debug';
 import { Action } from 'redux';
 import { ThunkAction } from 'redux-thunk';

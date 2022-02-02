@@ -81,6 +81,8 @@ const getAllStudies = async (refresh: boolean) => {
     if (studies.length === 0 || refresh) {
       const allStudies = await getStudies();
       loadStudies(allStudies);
+      setFilteredStudies(allStudies); // DELETE THIS
+      console.log('YES SIR');
     }
   } catch (e) {
     //enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoretrievestudies'), e as AxiosError);
