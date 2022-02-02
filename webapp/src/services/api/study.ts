@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { FileStudyTreeConfigDTO, LaunchJob, StudyDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode } from '../../common/types';
+import { FileStudyTreeConfigDTO, LaunchJob, MatrixAggregationResult, StudyDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 import { FileDownloadTask } from './downloads';
@@ -48,9 +48,35 @@ export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfi
   return res.data;
 };
 
-export const getDownloadOutput = async (sid: string, output: string): Promise<StudyDownloadDTO> => {
-  const res = await client.get(`/v1/studies/${sid}/outputs/${output}/download`);
-  return res.data;
+export const downloadOutput = async (sid: string, output: string, data: StudyDownloadDTO, jsonFormat = false): Promise<boolean | MatrixAggregationResult> => {
+  const restconfig = {
+    headers: {
+      // 'content-type': 'multipart/form-data',
+      Accept: 'application/zip',
+      responseType: 'arraybuffer',
+      'Access-Control-Allow-Origin': '*',
+    },
+  };
+  const res = await client.post(`/v1/studies/${sid}/outputs/${output}/download`, data, jsonFormat ? {} : restconfig);
+  if (jsonFormat) return res.data;
+
+  const disposition = res.request.getResponseHeader('Content-Disposition');
+  let fileName = '';
+  const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+  const matches = filenameRegex.exec(disposition);
+  if (matches === null || !matches[1]) {
+    return false;
+  }
+  fileName = matches[1].replace(/['"]/g, '');
+  const blob = new Blob([res.data], { type: 'application/zip' });
+
+  const downloadUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  return true;
 };
 
 export const createStudy = async (name: string, version: number): Promise<string> => {

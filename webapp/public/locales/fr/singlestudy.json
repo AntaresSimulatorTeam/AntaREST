@@ -55,7 +55,9 @@
   "onStudyIdCopyError": "Erreur lors de la copie de l'identifiant de l'étude",
   "copyId": "Copie l'identifiant de l'étude",
   "copyIdDir": "Copier l'ID",
-  "filter": "Filtrer",
-  "filterIn": "Filtrer entrées",
-  "filterOut": "Filtrer sorties"
+  "exportAll": "Exporter toutes les sorties",
+  "outputExportSuccess": "Sorties exportées avec succès",
+  "filter": "Filtre",
+  "filterIn": "Filtre entrées",
+  "filterOut": "Filtre sorties"
 }

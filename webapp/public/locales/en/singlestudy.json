@@ -55,6 +55,8 @@
   "onStudyIdCopyError": "Failed to copy study id",
   "copyId": "Copy the study id",
   "copyIdDir": "Copy id",
+  "exportAll": "Export all outputs",
+  "outputExportSuccess": "Outputs exported successfully",
   "filter": "Filter",
   "filterIn": "Filter In",
   "filterOut": "Filter Out"

@@ -38,7 +38,7 @@ import {
   exportOuput as callExportOutput,
   getStudyOutputs,
   getStudySynthesis,
-  getDownloadOutput,
+  downloadOutput,
 } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
 import { hasAuthorization, getStudyExtendedName, convertUTCToLocalTime } from '../../services/utils';
@@ -316,10 +316,10 @@ const InformationView = (props: PropTypes) => {
   }, 2000, { leading: true, trailing: false });
 
   const onFilter = async (output: string, filter: StudyDownloadDTO): Promise<void> => {
-    console.log(filter);
     if (study) {
       try {
-        await getDownloadOutput(study.id, output);
+        await downloadOutput(study.id, output, filter);
+        enqueueSnackbar(t('singlestudy:outputExportSuccess'), { variant: 'success' });
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
       }
@@ -328,7 +328,6 @@ const InformationView = (props: PropTypes) => {
   };
 
   const onExport = (output: string): void => {
-    console.log(output);
     setOpenFilterModal(false);
     exportOutput(output);
   };
@@ -360,7 +359,6 @@ const InformationView = (props: PropTypes) => {
       try {
         const res = await getStudySynthesis(study.id);
         setStudySynthesis(res);
-        console.log(res);
       } catch (e) {
         logError(t('singlestudy:failedToListOutputs'), study, e);
       }
@@ -523,12 +521,12 @@ const InformationView = (props: PropTypes) => {
                     onClose={() => setOutputExportButtonAnchor(null)}
                   >
                     {outputList.map((output) => (
-                      <MenuItem onClick={() => handleExportFilter(output)}>
+                      <MenuItem key={output} onClick={() => handleExportFilter(output)}>
                         {output}
                       </MenuItem>
                     ))}
                   </Menu>
-                  <ExportFilterModal open={openFilterModal} synthesis={synthesis} output={currentOutput} onExport={onExport} onFilter={onFilter} onClose={() => setOpenFilterModal(false)} />
+                  {openFilterModal && <ExportFilterModal open={openFilterModal} synthesis={synthesis} output={currentOutput} onExport={onExport} onFilter={onFilter} onClose={() => setOpenFilterModal(false)} />}
                 </>
               )}
               {study.managed && (

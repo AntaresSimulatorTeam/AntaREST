@@ -84,7 +84,7 @@ const SingleLinkElement = (props: {label: string; areas: Array<string>; onChange
         area2 = elm;
         setLink({ ...link, area2: elm });
       }
-      if (area1 !== '' && area2 !== '') onChange(`${area1}>${area2}`);
+      if (area1 !== '' && area2 !== '') onChange(`${area1}^${area2}`);
     }
   };
   return (
@@ -107,10 +107,8 @@ const MultipleLinkElement = (props: {label: string; areas: Array<string>; values
   const [currentLink, setCurrentLink] = useState<string>('');
 
   const onAddLink = (): void => {
-    // const tmp: Array<string> = [...value];
     if (values.findIndex((elm) => elm === currentLink) < 0 && currentLink !== '') {
       onChange(values.concat(currentLink));
-      console.log(values.concat(currentLink));
     }
   };
 

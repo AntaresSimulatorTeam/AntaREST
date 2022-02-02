@@ -400,4 +400,22 @@ export interface StudyDownloadDTO {
   includeClusters: boolean;
 }
 
+export interface MatrixIndex {
+  start_date: string;
+  steps: number;
+  first_week_size: number;
+  level: StudyDownloadLevelDTO;
+}
+
+export interface MatrixAggregationResult {
+  index: MatrixIndex;
+  data: {
+    [id: string]: {
+      [elm: string]: {
+        [item: string]: Array<number>;
+      };
+    };
+  };
+  warnings: Array<string>;
+}
 export default {};
