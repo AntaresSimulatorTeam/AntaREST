@@ -95,17 +95,16 @@ def test_validate_section():
         config=FileStudyTreeConfig(
             study_path=Path(), path=Path(), version=-1, study_id="id"
         ),
-        validators={
-            -1: Draft6Validator(
-                {
-                    "type": "object",
-                    "properties": {"wrong-section": {"type": "string"}},
-                }
-            )
-        },
+        validator=Draft6Validator(
+            {
+                "type": "object",
+                "properties": {"wrong-section": {"type": "string"}},
+                "additionalProperties": False,
+            }
+        ),
     )
     assert node.check_errors(data=data) == [
-        "section wrong-section not in IniFileNode"
+        "Additional properties are not allowed ('section' was unexpected)"
     ]
     with pytest.raises(ValueError):
         node.check_errors(data, raising=True)
@@ -115,22 +114,22 @@ def test_validate_section():
         config=FileStudyTreeConfig(
             study_path=Path(), path=Path(), version=-1, study_id="id"
         ),
-        validators={
-            -1: Draft6Validator(
-                {
-                    "type": "object",
-                    "properties": {
-                        "section": {
-                            "type": "object",
-                            "properties": {"wrong-params": {"type": "string"}},
-                        }
-                    },
-                }
-            )
-        },
+        validator=Draft6Validator(
+            {
+                "type": "object",
+                "properties": {
+                    "section": {
+                        "type": "object",
+                        "properties": {"wrong-params": {"type": "string"}},
+                        "additionalProperties": False,
+                    }
+                },
+                "additionalProperties": False,
+            }
+        ),
     )
     assert node.check_errors(data=data) == [
-        "param wrong-params of section section not in IniFileNode"
+        "Additional properties are not allowed ('params' was unexpected)"
     ]
     with pytest.raises(ValueError):
         node.check_errors(data, raising=True)
@@ -140,23 +139,40 @@ def test_validate_section():
         config=FileStudyTreeConfig(
             study_path=Path(), path=Path(), version=-1, study_id="id"
         ),
-        validators={
-            -1: Draft6Validator(
-                {
-                    "type": "object",
-                    "properties": {
-                        "section": {
-                            "type": "object",
-                            "properties": {"params": {"type": "string"}},
-                        }
-                    },
-                }
-            )
-        },
+        validator=Draft6Validator(
+            {
+                "type": "object",
+                "properties": {
+                    "section": {
+                        "type": "object",
+                        "properties": {"params": {"type": "string"}},
+                    }
+                },
+                "additionalProperties": False,
+            }
+        ),
     )
-    assert node.check_errors(data=data) == [
-        "param params of section section in IniFileNode bad type"
-    ]
+    assert node.check_errors(data=data) == ["42 is not of type 'string'"]
+
+    node = IniFileNode(
+        context=Mock(),
+        config=FileStudyTreeConfig(
+            study_path=Path(), path=Path(), version=-1, study_id="id"
+        ),
+        validator=Draft6Validator(
+            {
+                "type": "object",
+                "properties": {
+                    "section": {
+                        "type": "object",
+                        "properties": {"params": {"type": "integer"}},
+                    }
+                },
+                "additionalProperties": False,
+            }
+        ),
+    )
+    assert node.check_errors(data=data) == []
 
 
 @pytest.mark.unit_test

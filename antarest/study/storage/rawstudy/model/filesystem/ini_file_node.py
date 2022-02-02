@@ -146,7 +146,10 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url: Optional[List[str]] = None,
         raising: bool = False,
     ) -> List[str]:
-        return [error.message for error in self.validator.iter_errors(data)]
+        errors = [error.message for error in self.validator.iter_errors(data)]
+        if raising and errors:
+            raise ValueError("\n".join(errors))
+        return errors
 
     def get_validator(self) -> Validator:
         return self.validator

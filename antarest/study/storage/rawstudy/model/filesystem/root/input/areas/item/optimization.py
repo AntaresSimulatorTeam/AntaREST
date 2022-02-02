@@ -55,6 +55,7 @@ class InputAreasOptimization(IniFileNode):
                             ],
                             "items": False,
                         },
+                        "additionalProperties": False,
                     },
                 },
                 "filtering": {
@@ -63,7 +64,9 @@ class InputAreasOptimization(IniFileNode):
                         "filter-synthesis": {"type": "string"},
                         "filter-year-by-year": {"type": "string"},
                     },
+                    "additionalProperties": False,
                 },
+                "additionalProperties": False,
             },
         }
         IniFileNode.__init__(
