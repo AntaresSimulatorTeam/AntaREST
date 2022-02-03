@@ -235,6 +235,12 @@ class StudyDownloadLevelDTO(str, enum.Enum):
             raise ShouldNotHappenException()
 
 
+class StudyExportFormat(str, enum.Enum):
+    JSON = "JSON"
+    ZIP = "ZIP"
+    TAR_GZ = "TAR_GZ"
+
+
 class StudyDownloadDTO(BaseModel):
     """
     DTO used to download outputs
@@ -249,6 +255,7 @@ class StudyDownloadDTO(BaseModel):
     columns: Optional[List[str]]
     synthesis: bool = False
     includeClusters: bool = False
+    export_format: StudyExportFormat = StudyExportFormat.JSON
 
 
 class MatrixIndex(BaseModel):

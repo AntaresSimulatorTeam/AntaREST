@@ -19,6 +19,7 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
     StudyDownloadType,
     MatrixIndex,
+    StudyExportFormat,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -363,13 +364,14 @@ class StudyDownloader:
 
     @staticmethod
     def export(
-        matrix: MatrixAggregationResult, type: str, target_file: Path
+        matrix: MatrixAggregationResult,
+        type: StudyExportFormat,
+        target_file: Path,
     ) -> None:
-
         # 1- Zip/tar+gz container
         with (
             ZipFile(target_file, "w", ZIP_DEFLATED)  # type: ignore
-            if type == "application/zip"
+            if type == StudyExportFormat.ZIP
             else tarfile.open(target_file, mode="w:gz")
         ) as output_data:
 

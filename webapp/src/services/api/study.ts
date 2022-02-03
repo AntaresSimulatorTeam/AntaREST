@@ -48,35 +48,17 @@ export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfi
   return res.data;
 };
 
-export const downloadOutput = async (sid: string, output: string, data: StudyDownloadDTO, jsonFormat = false): Promise<boolean | MatrixAggregationResult> => {
+export const downloadOutput = async (sid: string, output: string, data: StudyDownloadDTO, jsonFormat = false): Promise<FileDownloadTask | MatrixAggregationResult> => {
   const restconfig = {
     headers: {
       // 'content-type': 'multipart/form-data',
       Accept: 'application/zip',
-      responseType: 'arraybuffer',
+      responseType: 'blob',
       'Access-Control-Allow-Origin': '*',
     },
   };
   const res = await client.post(`/v1/studies/${sid}/outputs/${output}/download`, data, jsonFormat ? {} : restconfig);
-  if (jsonFormat) return res.data;
-
-  const disposition = res.request.getResponseHeader('Content-Disposition');
-  let fileName = '';
-  const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-  const matches = filenameRegex.exec(disposition);
-  if (matches === null || !matches[1]) {
-    return false;
-  }
-  fileName = matches[1].replace(/['"]/g, '');
-  const blob = new Blob([res.data], { type: 'application/zip' });
-
-  const downloadUrl = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = downloadUrl;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  return true;
+  return res.data;
 };
 
 export const createStudy = async (name: string, version: number): Promise<string> => {

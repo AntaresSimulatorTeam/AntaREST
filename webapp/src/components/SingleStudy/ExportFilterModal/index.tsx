@@ -5,7 +5,7 @@ import { createStyles, makeStyles, Theme, FormControlLabel, Checkbox, Divider } 
 import { useTranslation } from 'react-i18next';
 import _ from 'lodash';
 import GenericModal from '../../ui/GenericModal';
-import { Area, Set as District, FileStudyTreeConfigDTO, StudyDownloadDTO, StudyDownloadLevelDTO, StudyDownloadType } from '../../../common/types';
+import { Area, Set as District, FileStudyTreeConfigDTO, StudyDownloadDTO, StudyDownloadLevelDTO, StudyDownloadType, StudyExportFormat } from '../../../common/types';
 import MultipleSelect from './MultipleSelect';
 import SingleSelect from './SingleSelect';
 import ExportFilter from './ExportFilter';
@@ -53,6 +53,7 @@ const ExportFilterModal = (props: PropTypes) => {
     level: StudyDownloadLevelDTO.WEEKLY,
     synthesis: false,
     includeClusters: false,
+    export_format: StudyExportFormat.ZIP,
   });
 
   const typeList: Array<string> = [StudyDownloadType.AREA, StudyDownloadType.LINK, StudyDownloadType.DISTRICT];
@@ -84,7 +85,8 @@ const ExportFilterModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={onSave}
+      handleAction={onSave}
+      actionName={t('main:export')}
       title={`${t('singlestudy:exportOutput')}: ${output}`}
     >
       <div className={classes.infos}>

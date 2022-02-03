@@ -388,6 +388,12 @@ export enum StudyDownloadLevelDTO {
   HOURLY = 'hourly',
 }
 
+export enum StudyExportFormat {
+  JSON = 'JSON',
+  ZIP = 'ZIP',
+  TAR_GZ = 'TAR_GZ',
+}
+
 export interface StudyDownloadDTO {
   type: StudyDownloadType;
   years?: Array<number>;
@@ -398,6 +404,7 @@ export interface StudyDownloadDTO {
   columns?: Array<string>;
   synthesis: boolean;
   includeClusters: boolean;
+  export_format: StudyExportFormat;
 }
 
 export interface MatrixIndex {

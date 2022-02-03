@@ -58,6 +58,6 @@
   "exportAll": "Exporter toutes les sorties",
   "outputExportSuccess": "Sorties exportées avec succès",
   "filter": "Filtre",
-  "filterIn": "Filtre entrées",
-  "filterOut": "Filtre sorties"
+  "filterIn": "Filtre d'inclusion (Regex)",
+  "filterOut": "Filtre d'exclusion (Regex)"
 }

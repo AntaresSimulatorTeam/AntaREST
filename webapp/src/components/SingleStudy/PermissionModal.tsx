@@ -146,7 +146,7 @@ const PermissionModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={onSave}
+      handleAction={onSave}
       title={`${t('studymanager:permission')} - ${name}`}
     >
       <div className={classes.root}>
