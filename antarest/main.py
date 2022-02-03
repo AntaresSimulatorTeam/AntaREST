@@ -22,6 +22,8 @@ from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.exceptions import UnknownModuleError
 from antarest.core.filetransfer.main import build_filetransfer_service
+from antarest.core.interfaces.cache import ICache
+from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.persistence import upgrade_db
@@ -38,6 +40,7 @@ from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.main import build_login
+from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import (
     MatrixGarbageCollector,
@@ -173,26 +176,25 @@ def init_db(
         )
 
 
-def create_core_services(application, config) -> Any:
+def create_core_services(
+    application: Optional[FastAPI], config: Config
+) -> Tuple[ICache, IEventBus, LoginService, MatrixService, StudyService]:
     redis_client = (
         new_redis_instance(config.redis) if config.redis is not None else None
     )
     event_bus = build_eventbus(application, config, True, redis_client)
     cache = build_cache(config=config, redis_client=redis_client)
-    maintenance_service = build_maintenance_manager(
-        application, config=config, cache=cache, event_bus=event_bus
-    )
     filetransfer_service = build_filetransfer_service(
         application, event_bus, config
     )
     task_service = build_taskjob_manager(application, config, event_bus)
-    user_service = build_login(application, config, event_bus=event_bus)
+    login_service = build_login(application, config, event_bus=event_bus)
     matrix_service = build_matrix_service(
         application,
         config=config,
         file_transfer_manager=filetransfer_service,
         task_service=task_service,
-        user_service=user_service,
+        user_service=login_service,
         service=None,
     )
     study_service = build_study_service(
@@ -202,16 +204,15 @@ def create_core_services(application, config) -> Any:
         cache=cache,
         file_transfer_manager=filetransfer_service,
         task_service=task_service,
-        user_service=user_service,
+        user_service=login_service,
         event_bus=event_bus,
     )
     return (
         cache,
         event_bus,
-        maintenance_service,
+        login_service,
         matrix_service,
         study_service,
-        user_service,
     )
 
 
@@ -223,9 +224,7 @@ def create_watcher(
     if study_service:
         return Watcher(config=config, service=study_service)
     else:
-        _, _, _, _, study_service, _ = create_core_services(
-            application, config
-        )
+        _, _, _, _, study_service = create_core_services(application, config)
 
         return Watcher(config=config, service=study_service)
 
@@ -244,7 +243,7 @@ def create_matrix_gc(
             matrix_service=matrix_service,
         )
     else:
-        _, _, _, matrix_service, study_service, _ = create_core_services(
+        _, _, _, matrix_service, study_service = create_core_services(
             application, config
         )
         return MatrixGarbageCollector(
@@ -262,11 +261,14 @@ def create_services(
     (
         cache,
         event_bus,
-        maintenance_service,
+        user_service,
         matrix_service,
         study_service,
-        user_service,
     ) = create_core_services(application, config)
+
+    maintenance_service = build_maintenance_manager(
+        application, config=config, cache=cache, event_bus=event_bus
+    )
 
     launcher = build_launcher(
         application,
