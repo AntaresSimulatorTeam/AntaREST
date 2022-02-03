@@ -10,7 +10,6 @@ from antarest.core.config import Config
 from antarest.core.filetransfer.model import (
     FileDownloadTaskDTO,
 )
-from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import (
@@ -36,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_study_routes(
-    study_service: StudyService, ftm: FileTransferManager, config: Config
+    study_service: StudyService, config: Config
 ) -> APIRouter:
     """
     Endpoint implementation for studies management

@@ -33,7 +33,8 @@ from antarest.study.model import (
     StudyDownloadType,
     StudyMetadataDTO,
     OwnerInfo,
-    StudyDownloadLevelDTO, StudyExportFormat,
+    StudyDownloadLevelDTO,
+    StudyExportFormat,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService, UserHasNotPermissionError
@@ -441,7 +442,7 @@ def test_download_output() -> None:
         columns=[],
         synthesis=False,
         includeClusters=True,
-        export_format=StudyExportFormat.JSON
+        export_format=StudyExportFormat.JSON,
     )
 
     area = Area(

@@ -7,11 +7,11 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.core.model import JSON
 from antarest.study.model import (
     MatrixAggregationResult,
     MatrixIndex,
     StudyDownloadLevelDTO,
+    StudyExportFormat,
 )
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import get_start_date
@@ -45,7 +45,7 @@ def test_output_downloads_export(tmp_path: Path):
         warnings=[],
     )
     zip_file = tmp_path / "output.zip"
-    StudyDownloader.export(matrix, "application/zip", zip_file)
+    StudyDownloader.export(matrix, StudyExportFormat.ZIP, zip_file)
     with ZipFile(zip_file) as zip_input:
         assert zip_input.namelist() == ["a1.csv", "a2.csv"]
         assert (
