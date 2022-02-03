@@ -21,9 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.settings.settings imp
 from antarest.study.storage.rawstudy.model.filesystem.root.study_antares import (
     StudyAntares,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.user.user import (
-    User,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.user import User
 
 
 class FileStudyTree(FolderNode):
