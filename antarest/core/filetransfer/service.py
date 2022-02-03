@@ -49,7 +49,6 @@ class FileTransferManager:
     @staticmethod
     def _cleanup_file(tmpfile: Path) -> None:
         tmpfile.unlink(missing_ok=True)
-        pass
 
     def request_download(
         self,

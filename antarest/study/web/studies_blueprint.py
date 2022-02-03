@@ -471,16 +471,6 @@ def create_study_routes(
             data,
             params,
         )
-        #        accept = request.headers.get("Accept")
-        #        if accept == "application/zip" or accept == "application/tar+gz":
-        #            StudyDownloader.export(content, accept, tmp_export_file)
-        #            return FileResponse(
-        #                tmp_export_file,
-        #                headers={
-        #                    "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
-        #                },
-        #                media_type=accept,
-        #            )
         return content
 
     @bp.get(
