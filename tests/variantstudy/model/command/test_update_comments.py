@@ -63,7 +63,12 @@ def test_revert(command_context: CommandContext, empty_study: FileStudy):
     ) == [UpdateComments(comments="comments", command_context=command_context)]
     assert base_command.revert([], base=empty_study) == [
         UpdateComments(
-            comments='<?xml version="1.0" encoding="UTF-8"?>\n<richtext version="1.0.0.0" xmlns="http://www.wxwidgets.org">\n  <paragraphlayout textcolor="#000000" fontpointsize="9" fontfamily="70" fontstyle="90" fontweight="90" fontunderlined="0" fontface="Segoe UI" alignment="1" parspacingafter="10" parspacingbefore="0" linespacing="10" margin-left="5,4098" margin-right="5,4098" margin-top="5,4098" margin-bottom="5,4098">\n    <paragraph>\n      <text></text>\n    </paragraph>\n  </paragraphlayout>\n</richtext>\n',
+            comments='<?xml version="1.0" encoding="UTF-8"?>\n<richtext version="1.0.0.0" '
+                     'xmlns="http://www.wxwidgets.org">\n  <paragraphlayout textcolor="#000000" fontpointsize="9" '
+                     'fontfamily="70" fontstyle="90" fontweight="90" fontunderlined="0" fontface="Segoe UI" '
+                     'alignment="1" parspacingafter="10" parspacingbefore="0" linespacing="10" margin-left="5,'
+                     '4098" margin-right="5,4098" margin-top="5,4098" margin-bottom="5,4098">\n    <paragraph>\n      '
+                     '<text></text>\n    </paragraph>\n  </paragraphlayout>\n</richtext>\n',
             command_context=command_context,
         )
     ]
