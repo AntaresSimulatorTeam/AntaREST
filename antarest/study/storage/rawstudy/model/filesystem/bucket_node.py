@@ -1,4 +1,4 @@
-from typing import Optional, List, Union, Dict, Callable, Any
+from typing import Optional, List, Union, Dict, Callable
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -26,12 +26,7 @@ class BucketNode(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         planned_files: Optional[
-            Dict[
-                str,
-                Callable[
-                    [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
-                ],
-            ]
+            Dict[str, Callable[[ContextServer, FileStudyTreeConfig], INode]]
         ] = None,
     ):
         super().__init__(context, config)
