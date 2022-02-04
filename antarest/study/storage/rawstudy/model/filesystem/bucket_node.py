@@ -1,4 +1,4 @@
-from typing import Optional, List, Union, Dict, Callable, Any
+from typing import Optional, List, Union, Dict, Callable, Any, Mapping
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -26,7 +26,7 @@ class BucketNode(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         planned_files: Optional[
-            Dict[
+            Mapping[
                 str,
                 Callable[
                     [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
