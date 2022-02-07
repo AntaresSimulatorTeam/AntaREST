@@ -1462,7 +1462,7 @@ class StudyService:
         if self.task_service.list_tasks(
             TaskListFilter(
                 ref_id=uuid,
-                type=TaskType.ARCHIVE,
+                type=[TaskType.ARCHIVE],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
             ),
             RequestParameters(user=DEFAULT_ADMIN_USER),
@@ -1483,7 +1483,7 @@ class StudyService:
                     permissions=create_permission_from_study(study_to_archive),
                 )
             )
-            return TaskResult(success=True)
+            return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
             archive_task,
@@ -1504,7 +1504,7 @@ class StudyService:
         if self.task_service.list_tasks(
             TaskListFilter(
                 ref_id=uuid,
-                type=TaskType.UNARCHIVE,
+                type=[TaskType.UNARCHIVE],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
             ),
             RequestParameters(user=DEFAULT_ADMIN_USER),
@@ -1543,7 +1543,7 @@ class StudyService:
                     permissions=create_permission_from_study(study),
                 )
             )
-            return TaskResult(success=True)
+            return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
             unarchive_task,
