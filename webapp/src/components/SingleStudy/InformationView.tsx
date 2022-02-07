@@ -25,7 +25,7 @@ import { AppState } from '../../App/reducers';
 import {
   FileStudyTreeConfigDTO,
   RoleType,
-  StudyDownloadDTO,
+  StudyOutputDownloadDTO,
   StudyMetadata,
   StudyOutput,
 } from '../../common/types';
@@ -314,12 +314,11 @@ const InformationView = (props: PropTypes) => {
     }
   }, 2000, { leading: true, trailing: false });
 
-  const onFilter = async (output: string, filter: StudyDownloadDTO): Promise<void> => {
+  const onExportFiltered = async (output: string, filter: StudyOutputDownloadDTO): Promise<void> => {
     setOpenFilterModal(false);
     if (study) {
       try {
-        const res = await downloadOutput(study.id, output, filter);
-        console.log(res);
+        await downloadOutput(study.id, output, filter, false, true);
         enqueueSnackbar(t('singlestudy:outputExportSuccess'), { variant: 'success' });
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
@@ -350,16 +349,9 @@ const InformationView = (props: PropTypes) => {
     (async () => {
       try {
         const res = await getStudyOutputs(study.id);
+        const tmpSynth = await getStudySynthesis(study.id);
         setOutputList(res.map((o: StudyOutput) => o.name));
-      } catch (e) {
-        logError(t('singlestudy:failedToListOutputs'), study, e);
-      }
-    })();
-
-    (async () => {
-      try {
-        const res = await getStudySynthesis(study.id);
-        setStudySynthesis(res);
+        setStudySynthesis(tmpSynth);
       } catch (e) {
         logError(t('singlestudy:failedToListOutputs'), study, e);
       }
@@ -527,7 +519,7 @@ const InformationView = (props: PropTypes) => {
                       </MenuItem>
                     ))}
                   </Menu>
-                  {openFilterModal && <ExportFilterModal open={openFilterModal} synthesis={synthesis} output={currentOutput} onExport={onExport} onFilter={onFilter} onClose={() => setOpenFilterModal(false)} />}
+                  {openFilterModal && <ExportFilterModal open={openFilterModal} synthesis={synthesis} output={currentOutput} onExport={onExport} onExportFiltered={onExportFiltered} onClose={() => setOpenFilterModal(false)} />}
                 </>
               )}
               {study.managed && (

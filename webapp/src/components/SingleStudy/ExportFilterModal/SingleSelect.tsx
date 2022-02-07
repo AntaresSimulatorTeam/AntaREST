@@ -12,15 +12,15 @@ interface PropTypes {
     onChange: (value: string) => void;
 }
 
-const MultipleSelect = (props: PropTypes) => {
+const SingleSelect = (props: PropTypes) => {
   const { list, label, style, fullWidth, value, onChange } = props;
 
   return (
     <FormControl fullWidth={fullWidth !== undefined ? fullWidth : false} style={style}>
-      <InputLabel id="single-filter-label">{label}</InputLabel>
+      <InputLabel id={`single-filter-label-${label}`}>{label}</InputLabel>
       <Select
-        labelId="single-filter-label"
-        id="single-filter"
+        labelId={`single-filter-label-${label}`}
+        id={`single-filter-${label}`}
         value={value}
         onChange={(event) => onChange(event.target.value as string)}
         input={<Input />}
@@ -32,13 +32,12 @@ const MultipleSelect = (props: PropTypes) => {
         ))}
       </Select>
     </FormControl>
-
   );
 };
 
-MultipleSelect.defaultProps = {
+SingleSelect.defaultProps = {
   style: undefined,
   fullWidth: false,
 };
 
-export default MultipleSelect;
+export default SingleSelect;

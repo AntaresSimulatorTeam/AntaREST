@@ -129,7 +129,9 @@ def build_study_service(
     )
 
     if application:
-        application.include_router(create_study_routes(study_service, config))
+        application.include_router(
+            create_study_routes(study_service, file_transfer_manager, config)
+        )
         application.include_router(
             create_raw_study_routes(study_service, config)
         )

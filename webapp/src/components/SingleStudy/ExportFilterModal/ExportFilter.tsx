@@ -4,8 +4,7 @@ import { Chip, createStyles, makeStyles, TextField, Theme, Typography } from '@m
 import { useTranslation } from 'react-i18next';
 import AddCircleOutlinedIcon from '@material-ui/icons/AddCircleOutlined';
 import { Area, Set, StudyDownloadType } from '../../../common/types';
-import MultipleSelect from './MultipleSelect';
-import SingleSelect from './SingleSelect';
+import CustomSelect from './CustomSelect';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -45,6 +44,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   addIcon: {
     color: theme.palette.primary.main,
     margin: theme.spacing(0, 1),
+    cursor: 'pointer',
     '&:hover': {
       color: theme.palette.secondary.main,
     },
@@ -95,8 +95,21 @@ const SingleLinkElement = (props: {globalFilter?: boolean; label: string; areas:
         {
           globalFilter === true ? (
             <>
-              <SingleSelect fullWidth label={`${t('singlestudy:area')} 1`} list={areas} value={link.area1} onChange={(elm) => onSelectChange(0, elm)} style={{ marginLeft: '5px', marginRight: '5px' }} />
-              <SingleSelect fullWidth label={`${t('singlestudy:area')}2`} list={areas} value={link.area2} onChange={(elm) => onSelectChange(1, elm)} />
+              <CustomSelect
+                fullWidth
+                label={`${t('singlestudy:area')} 1`}
+                list={areas}
+                value={link.area1}
+                onChange={(elm: Array<string> | string) => onSelectChange(0, elm as string)}
+                style={{ marginLeft: '5px', marginRight: '5px' }}
+              />
+              <CustomSelect
+                fullWidth
+                label={`${t('singlestudy:area')}2`}
+                list={areas}
+                value={link.area2}
+                onChange={(elm: Array<string> | string) => onSelectChange(1, elm as string)}
+              />
             </>
           ) : (
             <>
@@ -175,7 +188,15 @@ const ExportFilter = (props: PropTypes) => {
     <div className={classes.root}>
       {type !== StudyDownloadType.LINK ? (
         <>
-          <MultipleSelect fullWidth label={t('singlestudy:filter')} list={areasOrDistrictsList} value={filterValue} onChange={setFilterValue} style={{ marginBottom: '16px' }} />
+          <CustomSelect
+            fullWidth
+            multiple
+            label={t('singlestudy:filter')}
+            list={areasOrDistrictsList}
+            value={filterValue}
+            onChange={(elm: Array<string> | string) => setFilterValue(elm as Array<string>)}
+            style={{ marginBottom: '16px' }}
+          />
           <TextField label={t('singlestudy:filterIn')} value={filterInValue} onChange={(event) => setFilterInValue(event.target.value)} style={{ marginBottom: '16px', width: '100%' }} />
           <TextField label={t('singlestudy:filterOut')} value={filterOutValue} onChange={(event) => setFilterOutValue(event.target.value)} style={{ marginBottom: '16px', width: '100%' }} />
         </>

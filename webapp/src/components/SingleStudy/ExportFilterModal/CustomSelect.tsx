@@ -7,23 +7,24 @@ interface PropTypes {
     style?: CSSProperties;
     fullWidth?: boolean;
     list: Array<string>;
-    value: Array<string>;
+    value: Array<string> | string;
     label: string;
-    onChange: (value: Array<string>) => void;
+    multiple?: boolean;
+    onChange: (value: Array<string> | string) => void;
 }
 
-const MultipleSelect = (props: PropTypes) => {
-  const { list, label, style, fullWidth, value, onChange } = props;
+const CustomSelect = (props: PropTypes) => {
+  const { list, label, style, fullWidth, value, multiple, onChange } = props;
 
   return (
     <FormControl fullWidth={fullWidth !== undefined ? fullWidth : false} style={style}>
-      <InputLabel id="mutiple-filter-label">{label}</InputLabel>
+      <InputLabel id={`filter-label-${label}`}>{label}</InputLabel>
       <Select
-        labelId="mutiple-filter-label"
-        id="mutiple-filter"
-        multiple
-        value={value}
-        onChange={(event) => onChange(event.target.value as typeof list)}
+        labelId={`filter-label-${label}`}
+        id={`filter-${label}`}
+        multiple={multiple}
+        value={multiple === true ? value as Array<string> : value as string}
+        onChange={(event) => onChange(multiple === true ? event.target.value as Array<string> : event.target.value as string)}
         input={<Input />}
       >
         {list.map((elm) => (
@@ -37,9 +38,10 @@ const MultipleSelect = (props: PropTypes) => {
   );
 };
 
-MultipleSelect.defaultProps = {
+CustomSelect.defaultProps = {
   style: undefined,
   fullWidth: false,
+  multiple: undefined,
 };
 
-export default MultipleSelect;
+export default CustomSelect;

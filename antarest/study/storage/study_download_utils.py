@@ -1,16 +1,13 @@
-import calendar
+import csv
 import csv
 import logging
 import os
 import re
 import tarfile
-import time
 from datetime import datetime, timedelta
 from io import BytesIO, StringIO
-from math import ceil
 from pathlib import Path
-from time import strptime
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from antarest.study.model import (
@@ -18,8 +15,6 @@ from antarest.study.model import (
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
     StudyDownloadType,
-    MatrixIndex,
-    StudyExportFormat,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -365,13 +360,13 @@ class StudyDownloader:
     @staticmethod
     def export(
         matrix: MatrixAggregationResult,
-        type: StudyExportFormat,
+        type: str,
         target_file: Path,
     ) -> None:
         # 1- Zip/tar+gz container
         with (
             ZipFile(target_file, "w", ZIP_DEFLATED)  # type: ignore
-            if type == StudyExportFormat.ZIP
+            if type == "application/zip"
             else tarfile.open(target_file, mode="w:gz")
         ) as output_data:
 

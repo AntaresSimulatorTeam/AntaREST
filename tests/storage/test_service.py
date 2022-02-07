@@ -34,7 +34,6 @@ from antarest.study.model import (
     StudyMetadataDTO,
     OwnerInfo,
     StudyDownloadLevelDTO,
-    StudyExportFormat,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService, UserHasNotPermissionError
@@ -442,7 +441,6 @@ def test_download_output() -> None:
         columns=[],
         synthesis=False,
         includeClusters=True,
-        export_format=StudyExportFormat.JSON,
     )
 
     area = Area(
@@ -522,7 +520,9 @@ def test_download_output() -> None:
         "study-id",
         "output-id",
         input_data,
-        RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        use_task=False,
+        filetype="application/json",
+        params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
     assert result == res_matrix
 
@@ -543,7 +543,9 @@ def test_download_output() -> None:
         "study-id",
         "output-id",
         input_data,
-        RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        use_task=False,
+        filetype="application/json",
+        params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
     assert result == res_matrix
 
@@ -565,7 +567,9 @@ def test_download_output() -> None:
         "study-id",
         "output-id",
         input_data,
-        RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        use_task=False,
+        filetype="application/json",
+        params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
     assert result == res_matrix
 

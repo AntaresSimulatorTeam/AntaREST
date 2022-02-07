@@ -12,6 +12,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException
 from markupsafe import escape
+from starlette.responses import FileResponse
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import (
@@ -74,7 +75,6 @@ from antarest.study.model import (
     MatrixIndex,
     PatchCluster,
     PatchArea,
-    StudyExportFormat,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -892,14 +892,20 @@ class StudyService:
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
+        use_task: bool,
+        filetype: str,
         params: RequestParameters,
-    ) -> Union[MatrixAggregationResult, FileDownloadTaskDTO]:
+        tmp_export_file: Optional[Path] = None,
+    ) -> Union[MatrixAggregationResult, FileDownloadTaskDTO, FileResponse]:
         """
         Download outputs
         Args:
             study_id: study Id
             output_id: output id
             data: Json parameters
+            use_task: use task or not
+            filetype: type of returning file,
+            tmp_export_file: temporary file (if use_task is false),
             params: request parameters
 
         Returns: CSV content file
@@ -920,45 +926,55 @@ class StudyService:
             output_id,
             data,
         )
-        if data.export_format != StudyExportFormat.JSON:
-            logger.info(f"Exporting {output_id} from study {study_id}")
-            export_name = (
-                f"Study filtered output {study.name}/{output_id} export"
-            )
-            export_file_download = self.file_transfer_manager.request_download(
-                f"{study.name}-{study_id}-{output_id}_filtered.{'tar.gz' if data.export_format == StudyExportFormat.TAR_GZ else 'zip'}",
-                export_name,
-                params.user,
-            )
-            export_path = Path(export_file_download.path)
-            export_id = export_file_download.id
 
-            def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
-                try:
-                    StudyDownloader.export(
-                        matrix, data.export_format, export_path
+        if filetype != "application/json":
+            if use_task:
+                logger.info(f"Exporting {output_id} from study {study_id}")
+                export_name = (
+                    f"Study filtered output {study.name}/{output_id} export"
+                )
+                export_file_download = self.file_transfer_manager.request_download(
+                    f"{study.name}-{study_id}-{output_id}_filtered.{'tar.gz' if filetype == 'application/tar+gz' else 'zip'}",
+                    export_name,
+                    params.user,
+                )
+                export_path = Path(export_file_download.path)
+                export_id = export_file_download.id
+
+                def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+                    try:
+                        StudyDownloader.export(matrix, filetype, export_path)
+                        self.file_transfer_manager.set_ready(export_id)
+                        return TaskResult(
+                            success=True,
+                            message=f"Study filtered output {study_id}/{output_id} successfully exported",
+                        )
+                    except Exception as e:
+                        self.file_transfer_manager.fail(export_id, str(e))
+                        raise e
+
+                task_id = self.task_service.add_task(
+                    export_task,
+                    export_name,
+                    task_type=TaskType.EXPORT,
+                    ref_id=study.id,
+                    custom_event_messages=None,
+                    request_params=params,
+                )
+
+                return FileDownloadTaskDTO(
+                    file=export_file_download.to_dto(), task=task_id
+                )
+            else:
+                if tmp_export_file is not None:
+                    StudyDownloader.export(matrix, filetype, tmp_export_file)
+                    return FileResponse(
+                        tmp_export_file,
+                        headers={
+                            "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
+                        },
+                        media_type=filetype,
                     )
-                    self.file_transfer_manager.set_ready(export_id)
-                    return TaskResult(
-                        success=True,
-                        message=f"Study filtered output {study_id}/{output_id} successfully exported",
-                    )
-                except Exception as e:
-                    self.file_transfer_manager.fail(export_id, str(e))
-                    raise e
-
-            task_id = self.task_service.add_task(
-                export_task,
-                export_name,
-                task_type=TaskType.EXPORT,
-                ref_id=study.id,
-                custom_event_messages=None,
-                request_params=params,
-            )
-
-            return FileDownloadTaskDTO(
-                file=export_file_download.to_dto(), task=task_id
-            )
 
         return matrix
 

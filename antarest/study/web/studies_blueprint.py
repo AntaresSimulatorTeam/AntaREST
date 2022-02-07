@@ -1,15 +1,17 @@
 import io
 import logging
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any, Optional, List, Dict
 
-from fastapi import APIRouter, File, Depends, HTTPException
+from fastapi import APIRouter, File, Depends, Request, HTTPException
 from markupsafe import escape  # type: ignore
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import (
     FileDownloadTaskDTO,
 )
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import (
@@ -35,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_study_routes(
-    study_service: StudyService, config: Config
+    study_service: StudyService, ftm: FileTransferManager, config: Config
 ) -> APIRouter:
     """
     Endpoint implementation for studies management
@@ -456,6 +458,9 @@ def create_study_routes(
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
+        request: Request,
+        use_task: bool = False,
+        tmp_export_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
@@ -465,11 +470,15 @@ def create_study_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
+        filetype = request.headers.get("Accept")
         content = study_service.download_outputs(
             study_id,
             output_id,
             data,
+            use_task,
+            filetype,
             params,
+            tmp_export_file,
         )
         return content
 

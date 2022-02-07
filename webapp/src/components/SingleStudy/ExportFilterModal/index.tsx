@@ -5,10 +5,9 @@ import { createStyles, makeStyles, Theme, FormControlLabel, Checkbox, Divider } 
 import { useTranslation } from 'react-i18next';
 import _ from 'lodash';
 import GenericModal from '../../ui/GenericModal';
-import { Area, Set as District, FileStudyTreeConfigDTO, StudyDownloadDTO, StudyDownloadLevelDTO, StudyDownloadType, StudyExportFormat } from '../../../common/types';
-import MultipleSelect from './MultipleSelect';
-import SingleSelect from './SingleSelect';
+import { Area, Set as District, FileStudyTreeConfigDTO, StudyOutputDownloadDTO, StudyDownloadLevelDTO, StudyDownloadType } from '../../../common/types';
 import ExportFilter from './ExportFilter';
+import CustomSelect from './CustomSelect';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   infos: {
@@ -35,41 +34,56 @@ interface PropTypes {
     onClose: () => void;
     output: string;
     synthesis: FileStudyTreeConfigDTO | undefined;
-    onFilter: (output: string, filter: StudyDownloadDTO) => void;
+    onExportFiltered: (output: string, filter: StudyOutputDownloadDTO) => void;
     onExport: (output: string) => void;
 }
 
 const ExportFilterModal = (props: PropTypes) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { open, onClose, output, synthesis, onFilter, onExport } = props;
+  const { open, onClose, output, synthesis, onExportFiltered, onExport } = props;
   const [exportChecked, setExportChecked] = useState<boolean>(false);
   const [year, setCurrentYear] = useState<Array<number>>([]);
   const [byYear, setByYear] = useState<{isByYear: boolean; nbYear: number}>({ isByYear: false, nbYear: -1 });
   const [areaList, setAreaList] = useState<{[elm: string]: Area}>({});
   const [districtList, setDistrictList] = useState<{[elm: string]: District}>({});
-  const [filter, setFilter] = useState<StudyDownloadDTO>({
+  const [filter, setFilter] = useState<StudyOutputDownloadDTO>({
     type: StudyDownloadType.AREA,
     level: StudyDownloadLevelDTO.WEEKLY,
     synthesis: false,
     includeClusters: false,
-    export_format: StudyExportFormat.ZIP,
   });
 
   const typeList: Array<string> = [StudyDownloadType.AREA, StudyDownloadType.LINK, StudyDownloadType.DISTRICT];
+  const translatedTypeList = typeList.map((elm) => t(`singlestudy:${elm.toLowerCase()}`));
   const levelList: Array<string> = [StudyDownloadLevelDTO.HOURLY,
     StudyDownloadLevelDTO.DAILY,
     StudyDownloadLevelDTO.WEEKLY,
     StudyDownloadLevelDTO.MONTHLY,
     StudyDownloadLevelDTO.ANNUAL];
+  const translatedLevelList = levelList.map((elm) => t(`singlestudy:${elm.toLowerCase()}`));
 
   const onSave = async () => {
     if (exportChecked) {
       onExport(output);
     } else {
-      onFilter(output, filter);
+      onExportFiltered(output, filter);
     }
     onClose();
+  };
+
+  const onTypeChange = (value: Array<string> | string): void => {
+    const index = translatedTypeList.findIndex((elm) => elm === (value as string));
+    if (index >= 0) {
+      setFilter({ ...filter, type: typeList[index] as StudyDownloadType });
+    }
+  };
+
+  const onLevelChange = (value: Array<string> | string): void => {
+    const index = translatedLevelList.findIndex((elm) => elm === (value as string));
+    if (index >= 0) {
+      setFilter({ ...filter, level: levelList[index] as StudyDownloadLevelDTO });
+    }
   };
 
   useEffect(() => {
@@ -91,29 +105,37 @@ const ExportFilterModal = (props: PropTypes) => {
     >
       <div className={classes.infos}>
         <FormControlLabel
-          control={<Checkbox checked={exportChecked} onChange={(e, checked) => setExportChecked(checked)} name="Export output" />}
+          control={<Checkbox checked={exportChecked} onChange={(e, checked) => setExportChecked(checked)} name={t('singlestudy:exportAll')} />}
           label={t('singlestudy:exportAll')}
         />
         {!exportChecked && (
         <>
           <Divider className={classes.divider} />
-          <SingleSelect
+          <CustomSelect
             fullWidth
-            label="Type"
+            label={t('singlestudy:type')}
             style={{ marginBottom: '16px' }}
-            list={typeList}
-            value={filter.type}
-            onChange={(value: string) => setFilter({ ...filter, type: value as StudyDownloadType })}
+            list={translatedTypeList}
+            value={t(`singlestudy:${filter.type.toLowerCase()}`)}
+            onChange={onTypeChange}
           />
-          {byYear.isByYear && byYear.nbYear > 0 &&
-          <MultipleSelect fullWidth label="Year" list={_.range(byYear.nbYear).map((elm) => elm.toString())} value={year.map((elm) => elm.toString())} onChange={(value: Array<string>) => setCurrentYear(value.map((elm) => parseInt(elm, 10)))} />}
-          <SingleSelect
+          {byYear.isByYear && byYear.nbYear > 0 && (
+          <CustomSelect
             fullWidth
-            label="Level"
+            multiple
+            label={t('singlestudy:years')}
+            list={_.range(byYear.nbYear).map((elm) => elm.toString())}
+            value={year.map((elm) => elm.toString())}
+            onChange={(value: Array<string> | string) => setCurrentYear((value as Array<string>).map((elm) => parseInt(elm, 10)))}
+          />
+          )}
+          <CustomSelect
+            fullWidth
+            label={t('singlestudy:level')}
             style={{ marginBottom: '16px' }}
-            list={levelList}
-            value={filter.level}
-            onChange={(value: string) => setFilter({ ...filter, level: value as StudyDownloadLevelDTO })}
+            list={translatedLevelList}
+            value={t(`singlestudy:${filter.level.toLowerCase()}`)}
+            onChange={onLevelChange}
           />
           <ExportFilter
             type={filter.type}
@@ -127,12 +149,12 @@ const ExportFilterModal = (props: PropTypes) => {
             setFilterOutValue={(elm: string) => setFilter({ ...filter, filterOut: elm })}
           />
           <FormControlLabel
-            control={<Checkbox checked={filter.synthesis} onChange={(e, checked) => setFilter({ ...filter, synthesis: checked })} name="Synthesis" />}
-            label="Synthesis"
+            control={<Checkbox checked={filter.synthesis} onChange={(e, checked) => setFilter({ ...filter, synthesis: checked })} name={t('singlestudy:synthesis')} />}
+            label={t('singlestudy:synthesis')}
           />
           <FormControlLabel
-            control={<Checkbox checked={filter.includeClusters} onChange={(e, checked) => setFilter({ ...filter, includeClusters: checked })} name="Include clusters" />}
-            label="Include clusters"
+            control={<Checkbox checked={filter.includeClusters} onChange={(e, checked) => setFilter({ ...filter, includeClusters: checked })} name={t('singlestudy:includeClusters')} />}
+            label={t('singlestudy:includeClusters')}
           />
         </>
         )}

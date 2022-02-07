@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { FileStudyTreeConfigDTO, LaunchJob, MatrixAggregationResult, StudyDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode } from '../../common/types';
+import { FileStudyTreeConfigDTO, LaunchJob, MatrixAggregationResult, StudyOutputDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 import { FileDownloadTask } from './downloads';
@@ -48,16 +48,15 @@ export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfi
   return res.data;
 };
 
-export const downloadOutput = async (sid: string, output: string, data: StudyDownloadDTO, jsonFormat = false): Promise<FileDownloadTask | MatrixAggregationResult> => {
+export const downloadOutput = async (sid: string, output: string, data: StudyOutputDownloadDTO, jsonFormat = false, useTask = false): Promise<FileDownloadTask | MatrixAggregationResult> => {
   const restconfig = {
     headers: {
-      // 'content-type': 'multipart/form-data',
       Accept: 'application/zip',
       responseType: 'blob',
       'Access-Control-Allow-Origin': '*',
     },
   };
-  const res = await client.post(`/v1/studies/${sid}/outputs/${output}/download`, data, jsonFormat ? {} : restconfig);
+  const res = await client.post(`/v1/studies/${sid}/outputs/${output}/download?use_task=${useTask}`, data, jsonFormat ? {} : restconfig);
   return res.data;
 };
 
