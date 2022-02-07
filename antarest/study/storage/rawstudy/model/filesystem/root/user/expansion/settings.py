@@ -16,7 +16,7 @@ class ExpansionSettings(IniFileNode):
     """
     Common:
         optimality_gap:float = 1
-        max-iteration:int = inf
+        max_iteration:int = inf
         uc_type:str = "expansion_fast" or "expansion_accurate". default="expansion_fast"
         master:str = "integer" or "relaxed". default="integer"
         yearly-weights:str = filename. default = None
@@ -35,7 +35,7 @@ class ExpansionSettings(IniFileNode):
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         types = {
             "optimality_gap": float,
-            "max-iteration": int,
+            "max_iteration": int,
             "uc_type": str,
             "master": str,
             "yearly-weights": str,
