@@ -5,28 +5,31 @@ import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import { StudyMetadata } from '../../common/types';
 
-export default function StudyCard() {
+interface Props {
+  study: StudyMetadata
+}
+
+export default function StudyCard(props: Props) {
+  const { study } = props;
   return (
-    <Card sx={{ minWidth: 275 }}>
+    <Card sx={{ minWidth: 275,  backgroundColor: 'primary.dark' }} >
       <CardContent>
-        <Typography sx={{ fontSize: 14 }} color="text.secondary" gutterBottom>
-          Word of the Day
+        <Typography variant="h5" component="div" color="white" height="60px">
+          {study.name}
         </Typography>
-        <Typography variant="h5" component="div">
-          benevolent
-        </Typography>
-        <Typography sx={{ mb: 1.5 }} color="text.secondary">
+        <Typography sx={{ mb: 1.5 }} color="white">
           adjective
         </Typography>
-        <Typography variant="body2">
+        <Typography variant="body2" color="white">
           well meaning and kindly.
           <br />
           {'"a benevolent smile"'}
         </Typography>
       </CardContent>
       <CardActions>
-        <Button size="small">Learn More</Button>
+        <Button size="small" sx={{ color: 'secondary.main' }}>Explore</Button>
       </CardActions>
     </Card>
   );

@@ -7,10 +7,11 @@ import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import TextField from '@mui/material/TextField';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Divider, InputAdornment, Typography } from '@mui/material';
+import { STUDIES_HEIGHT_HEADER } from '../../theme';
 
 const Root = styled('div')(({ theme }) => ({
   width: '100%',
-  height: 'auto',
+  height: `${STUDIES_HEIGHT_HEADER}px`,
   display: 'flex',
   flexFlow: 'column nowrap',
   justifyContent: 'flex-start',

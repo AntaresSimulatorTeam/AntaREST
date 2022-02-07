@@ -19,7 +19,6 @@ function App() {
           <CssBaseline />
             <MenuWrapper>
               <Routes>
-                <Route index element={<Studies />} />
                 <Route path="/studies" element={<Studies />} />
                 <Route path="/data" element={<Data />} />
                 <Route path="/tasks" element={<Tasks />} />
@@ -27,7 +26,7 @@ function App() {
                 <Route path="/api" element={<Api />} />
                 <Route
                   path="*"
-                  element={<Navigate to="/" />}
+                  element={<Navigate to="/studies" />}
                 />
               </Routes>
             </MenuWrapper>

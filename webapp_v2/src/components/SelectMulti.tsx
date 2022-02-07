@@ -26,7 +26,7 @@ interface Props {
    setValue: (data: Array<string>) => void;
 }
 
-const FilterDrawer = (props: Props) => {
+const SelectMulti = (props: Props) => {
   const theme = useTheme();
   const { name, list, data, setValue } = props;
 
@@ -39,20 +39,23 @@ const FilterDrawer = (props: Props) => {
   
   return (
     <FormControl sx={{ m: 1, width: 200 }}>
-        <InputLabel id="multiple-checkbox-label">{name}</InputLabel>
+        <InputLabel id="multiple-checkbox-label" sx={{ color: 'white' }}>{name}</InputLabel>
         <Select
         labelId="multiple-checkbox-label"
         id="multiple-checkbox"
         multiple
         value={data}
         onChange={handleChange}
-        input={<OutlinedInput label={name} />}
-        renderValue={(selected) => selected.join(', ')}
+        sx={{ color: 'white' }}
+        input={<OutlinedInput sx={{ color: 'white' }} label={name} />}
+        renderValue={(selected) => selected.map((elm) => (
+            list.find((item) => typeof item.id === 'string' ? item.id === elm : item.id.toString() === elm )?.name
+        )).join(', ')}
         MenuProps={MenuProps}
         >
         {list.map(({id, name}) => (
-            <MenuItem key={id} value={name}>
-                <Checkbox checked={data.indexOf(name) > -1} />
+            <MenuItem key={id} value={id}>
+                <Checkbox checked={data.indexOf(id as string) > -1} />
                 <ListItemText primary={name} />
             </MenuItem>
         ))}
@@ -61,4 +64,4 @@ const FilterDrawer = (props: Props) => {
   );
 }
 
-export default FilterDrawer;
+export default SelectMulti;
