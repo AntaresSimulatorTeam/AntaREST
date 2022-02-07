@@ -3,6 +3,7 @@ export interface NodeProperties {
     x: number;
     y: number;
     color: string;
+    rgbColor: Array<number>;
     size?: { width: number; height: number };
     highlighted?: boolean;
 }
@@ -91,5 +92,9 @@ export interface LinkCreationInfo {
     area1: string;
     area2: string;
 }
+
+export const isNode = (el: NodeProperties | LinkProperties): boolean => {
+  return (el as any).id !== undefined;
+};
 
 export default {};

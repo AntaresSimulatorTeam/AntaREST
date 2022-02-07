@@ -36,6 +36,10 @@ interface PropType {
     onSave: (name: string, posX: number, posY: number, color: string) => void;
 }
 
+const DEFAULT_COLOR = 'rgb(230, 108, 44)';
+const DEFAULT_X = 0;
+const DEFAULT_Y = 0;
+
 const CreateAreaModal = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
@@ -46,7 +50,7 @@ const CreateAreaModal = (props: PropType) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={() => onSave(name, 0, 0, 'rgb(230, 108, 44)')}
+      handleSave={() => onSave(name, DEFAULT_X, DEFAULT_Y, DEFAULT_COLOR)}
       title={t('singlestudy:newArea')}
     >
       <div className={classes.name}>

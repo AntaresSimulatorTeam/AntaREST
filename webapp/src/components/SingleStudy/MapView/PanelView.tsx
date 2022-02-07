@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { ColorResult, HuePicker, MaterialPicker } from 'react-color';
 import {
   makeStyles,
   createStyles,
@@ -56,6 +57,24 @@ const PanelView = (props: PropType) => {
   const [t] = useTranslation();
   const { node, links, link, onDelete, onBlur } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
+  const [currentColor, setCurrentColor] = useState<string>(node?.color || '');
+
+  console.log(node?.x);
+  console.log(node?.y);
+
+  const handleChangeColor = (color: ColorResult) => {
+    if (node) {
+      setCurrentColor(`rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})`);
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      onBlur(node.id, { x: node.x, y: node.y, color_rgb: color.rgb !== null ? [color.rgb.r, color.rgb.g, color.rgb.b] : node.color.slice(4, -1).split(',').map(Number) });
+    }
+  };
+
+  useEffect(() => {
+    if (node?.color) {
+      setCurrentColor(node.color);
+    }
+  }, [node]);
 
   return (
     <>
@@ -64,7 +83,8 @@ const PanelView = (props: PropType) => {
           <>
             <TextField className={classes.fields} label={t('singlestudy:areaName')} variant="filled" value={node.id} disabled />
             { /* eslint-disable-next-line @typescript-eslint/camelcase */ }
-            <TextField className={classes.fields} label={t('singlestudy:color')} variant="filled" defaultValue={node.color} onBlur={(e) => onBlur(node.id, { x: node.x, y: node.y, color_rgb: e.target.value !== null ? (e.target.value).slice(4, -1).split(',').map(Number) : node.color.slice(4, -1).split(',').map(Number) })} />
+            <HuePicker color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
+            <MaterialPicker color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
             { /* eslint-disable-next-line @typescript-eslint/camelcase */ }
             <TextField className={classes.fields} label={t('singlestudy:posX')} variant="filled" value={node.x} disabled />
             { /* eslint-disable-next-line @typescript-eslint/camelcase */ }

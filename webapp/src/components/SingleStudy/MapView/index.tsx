@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
-import { NodeProperties, LinkProperties, AreasConfig, SingleAreaConfig, UpdateAreaUi } from './types';
+import { NodeProperties, LinkProperties, AreasConfig, SingleAreaConfig, UpdateAreaUi, isNode } from './types';
 import CreateAreaModal from './CreateAreaModal';
 import PropertiesView from './PropertiesView';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
@@ -171,29 +171,36 @@ const MapView = (props: Props) => {
         x: posX,
         y: posY,
         color,
+        rgbColor: color.slice(4, -1).split(',').map(Number),
         size: { width: calculateSize(name), height: NODE_HEIGHT },
       }]);
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      setNodeData(nodeData.filter((o) => o.id !== name));
+      enqueueErrorSnackbar(enqueueSnackbar, 'Creation marche pas', e as AxiosError);
     }
   };
 
   const handleUpdate = async (id: string, value: UpdateAreaUi) => {
     try {
-      const prevColors = nodeData.filter((o) => o.id === id)[0].color.slice(4, -1).split(',').map(Number);
-      if (value.color_rgb[0] !== prevColors[0] || value.color_rgb[1] !== prevColors[1] || value.color_rgb[2] !== prevColors[2]) {
-        const updateNode = nodeData.filter((o) => o.id !== id);
-        setNodeData([...updateNode, {
-          id,
-          x: value.x,
-          y: value.y,
-          color: `rgb(${value.color_rgb[0]}, ${value.color_rgb[1]}, ${value.color_rgb[2]})`,
-          size: { width: calculateSize(id), height: NODE_HEIGHT },
-        }]);
-        await updateAreaUI(study.id, id, value);
+      const filterNodes = nodeData.filter((o) => o.id === id);
+      if (filterNodes.length >= 1) {
+        const prevColors = filterNodes[0].color.slice(4, -1).split(',').map(Number);
+        if (value.color_rgb[0] !== prevColors[0] || value.color_rgb[1] !== prevColors[1] || value.color_rgb[2] !== prevColors[2]) {
+          const updateNode = nodeData.filter((o) => o.id !== id);
+          setNodeData([...updateNode, {
+            id,
+            x: value.x,
+            y: value.y,
+            color: `rgb(${value.color_rgb[0]}, ${value.color_rgb[1]}, ${value.color_rgb[2]})`,
+            rgbColor: filterNodes[0].rgbColor,
+            size: { width: calculateSize(id), height: NODE_HEIGHT },
+          }]);
+          await updateAreaUI(study.id, id, value);
+        }
       }
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      // setNodeData(nodeData.filter((o) => o.id !== id));
+      enqueueErrorSnackbar(enqueueSnackbar, 'Color update marche pas', e as AxiosError);
     }
   };
 
@@ -202,47 +209,60 @@ const MapView = (props: Props) => {
       const prevPosition = { x: nodeData.filter((o) => o.id === id)[0].x, y: nodeData.filter((o) => o.id === id)[0].y };
       if (x !== prevPosition.x || y !== prevPosition.y) {
         const updateNode = nodeData.filter((o) => o.id !== id);
+        console.log('salut');
         setNodeData([...updateNode, {
           id,
           x: Math.floor(x),
           y: Math.floor(y),
           color: nodeData.filter((o) => o.id === id)[0].color,
+          rgbColor: nodeData.filter((o) => o.id === id)[0].rgbColor,
           size: { width: calculateSize(id), height: NODE_HEIGHT },
         }]);
         // eslint-disable-next-line @typescript-eslint/camelcase
         await updateAreaUI(study.id, id, { x, y, color_rgb: nodeData.filter((o) => o.id === id)[0].color.slice(4, -1).split(',').map(Number) });
       }
     } catch (e) {
-      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      // setNodeData(nodeData.filter((o) => o.id !== id));
+      enqueueErrorSnackbar(enqueueSnackbar, 'Position Update marche pas', e as AxiosError);
     }
   };
 
   const onDelete = async (id: string, target?: string) => {
-    if (graphRef.current) {
-      const currentGraph = graphRef.current;
-      // eslint-disable-next-line no-underscore-dangle
-      currentGraph._setNodeHighlightedValue(id, false);
-    }
+    try {
+      if (graphRef.current) {
+        const currentGraph = graphRef.current;
+        // eslint-disable-next-line no-underscore-dangle
+        currentGraph._setNodeHighlightedValue(id, false);
+      }
 
-    setTimeout(async () => {
+      setTimeout(async () => {
+        if (target && linkData) {
+          const links = linkData.filter((o) => o.source !== id || o.target !== target);
+          setLinkData(links);
+          setSelectedItem(undefined);
+          await deleteLink(study.id, id, target);
+        }
+      }, 0);
+
+      setTimeout(async () => {
+        if (nodeData && linkData && !target) {
+          setSelectedItem(undefined);
+          const obj = nodeData.filter((o) => o.id !== id);
+          const links = linkData.filter((o) => o.source !== id && o.target !== id);
+          setLinkData(links);
+          setNodeData(obj);
+          await deleteArea(study.id, id);
+        }
+      }, 0);
+    } catch (e) {
       if (target && linkData) {
-        const links = linkData.filter((o) => o.source !== id || o.target !== target);
-        setLinkData(links);
-        setSelectedItem(undefined);
-        await deleteLink(study.id, id, target);
+        setLinkData([...linkData, ...[{
+          source: id,
+          target,
+        }]]);
       }
-    }, 0);
-
-    setTimeout(async () => {
-      if (nodeData && linkData && !target) {
-        setSelectedItem(undefined);
-        const obj = nodeData.filter((o) => o.id !== id);
-        const links = linkData.filter((o) => o.source !== id && o.target !== id);
-        setLinkData(links);
-        setNodeData(obj);
-        await deleteArea(study.id, id);
-      }
-    }, 0);
+      enqueueErrorSnackbar(enqueueSnackbar, 'delete marche pas', e as AxiosError);
+    }
   };
 
   useEffect(() => {
@@ -257,6 +277,7 @@ const MapView = (props: Props) => {
           setSecondNode(undefined);
           await createLink(study.id, { area1: firstNode, area2: secondNode });
         } catch (e) {
+          setLinkData(linkData.filter((o) => o.source !== firstNode || o.target !== secondNode));
           enqueueErrorSnackbar(enqueueSnackbar, 'lien marche pas', e as AxiosError);
         }
       }
@@ -281,6 +302,7 @@ const MapView = (props: Props) => {
             x: area[areaId].ui.x,
             y: area[areaId].ui.y,
             color: `rgb(${area[areaId].ui.color_r}, ${area[areaId].ui.color_g}, ${area[areaId].ui.color_b})`,
+            rgbColor: [area[areaId].ui.color_r, area[areaId].ui.color_g, area[areaId].ui.color_b],
             size: { width: calculateSize(areaId), height: NODE_HEIGHT },
           }));
           setNodeData(tempNodeData);
@@ -291,6 +313,7 @@ const MapView = (props: Props) => {
             x: area[areaId].ui.x,
             y: area[areaId].ui.y,
             color: `rgb(${area[areaId].ui.color_r}, ${area[areaId].ui.color_g}, ${area[areaId].ui.color_b})`,
+            rgbColor: [area[areaId].ui.color_r, area[areaId].ui.color_g, area[areaId].ui.color_b],
             size: { width: calculateSize(areaId), height: NODE_HEIGHT },
           }));
           setNodeData(tempNodeData);
@@ -305,7 +328,7 @@ const MapView = (props: Props) => {
   }, [enqueueSnackbar, study.id, t]);
 
   useEffect(() => {
-    if (selectedItem && Object.keys(selectedItem)[0] === 'id') {
+    if (selectedItem && isNode(selectedItem)) {
       setSelectedNodeLinks(linkData.filter((o) => o.source === (selectedItem as NodeProperties).id || o.target === (selectedItem as NodeProperties).id));
     }
     if (graphRef.current) {
@@ -314,7 +337,7 @@ const MapView = (props: Props) => {
         // eslint-disable-next-line no-underscore-dangle
         currentGraph._setNodeHighlightedValue(prevselectedItemId.current, false);
       }
-      if (selectedItem && Object.keys(selectedItem)[0] === 'id') {
+      if (selectedItem && isNode(selectedItem)) {
         setTimeout(() => {
           // eslint-disable-next-line no-underscore-dangle
           currentGraph._setNodeHighlightedValue((selectedItem as NodeProperties).id, true);
@@ -330,7 +353,7 @@ const MapView = (props: Props) => {
         <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
       </div>
       <div className={classes.graphView}>
-        <PropertiesView item={selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onBlur={handleUpdate} />
+        <PropertiesView item={selectedItem && isNode(selectedItem) ? nodeData.find((o) => o.id === (selectedItem as NodeProperties).id) : selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onBlur={handleUpdate} />
         <div className={`${classes.autosizer} ${classes.graph}`}>
           {loaded ? (
             <AutoSizer>
