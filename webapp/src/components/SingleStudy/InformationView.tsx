@@ -257,7 +257,6 @@ const InformationView = (props: PropTypes) => {
   const archiveStudy = async () => {
     try {
       await callArchiveStudy(study.id);
-      enqueueSnackbar(t('studymanager:archivesuccess', { studyname: study.name }), { variant: 'success' });
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:archivefailure', { studyname: study.name }), e as AxiosError);
     }
@@ -266,7 +265,6 @@ const InformationView = (props: PropTypes) => {
   const unarchiveStudy = async () => {
     try {
       await callUnarchiveStudy(study.id);
-      enqueueSnackbar(t('studymanager:unarchivesuccess', { studyname: study.name }), { variant: 'success' });
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:unarchivefailure', { studyname: study.name }), e as AxiosError);
     }
