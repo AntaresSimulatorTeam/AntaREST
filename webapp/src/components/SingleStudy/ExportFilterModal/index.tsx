@@ -8,6 +8,7 @@ import GenericModal from '../../ui/GenericModal';
 import { Area, Set as District, FileStudyTreeConfigDTO, StudyOutputDownloadDTO, StudyOutputDownloadLevelDTO, StudyOutputDownloadType } from '../../../common/types';
 import ExportFilter from './ExportFilter';
 import CustomSelect from './CustomSelect';
+import TagSelect from './TagSelect';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   infos: {
@@ -55,13 +56,11 @@ const ExportFilterModal = (props: PropTypes) => {
   });
 
   const typeList: Array<string> = [StudyOutputDownloadType.AREA, StudyOutputDownloadType.LINK, StudyOutputDownloadType.DISTRICT];
-  const translatedTypeList = typeList.map((elm) => t(`singlestudy:${elm.toLowerCase()}`));
   const levelList: Array<string> = [StudyOutputDownloadLevelDTO.HOURLY,
     StudyOutputDownloadLevelDTO.DAILY,
     StudyOutputDownloadLevelDTO.WEEKLY,
     StudyOutputDownloadLevelDTO.MONTHLY,
     StudyOutputDownloadLevelDTO.ANNUAL];
-  const translatedLevelList = levelList.map((elm) => t(`singlestudy:${elm.toLowerCase()}`));
 
   const onSave = async () => {
     if (exportChecked) {
@@ -73,17 +72,11 @@ const ExportFilterModal = (props: PropTypes) => {
   };
 
   const onTypeChange = (value: Array<string> | string): void => {
-    const index = translatedTypeList.findIndex((elm) => elm === (value as string));
-    if (index >= 0) {
-      setFilter({ ...filter, type: typeList[index] as StudyOutputDownloadType });
-    }
+    setFilter({ ...filter, type: value as StudyOutputDownloadType });
   };
 
   const onLevelChange = (value: Array<string> | string): void => {
-    const index = translatedLevelList.findIndex((elm) => elm === (value as string));
-    if (index >= 0) {
-      setFilter({ ...filter, level: levelList[index] as StudyOutputDownloadLevelDTO });
-    }
+    setFilter({ ...filter, level: value as StudyOutputDownloadLevelDTO });
   };
 
   useEffect(() => {
@@ -115,8 +108,8 @@ const ExportFilterModal = (props: PropTypes) => {
             fullWidth
             label={t('singlestudy:type')}
             style={{ marginBottom: '16px' }}
-            list={translatedTypeList}
-            value={t(`singlestudy:${filter.type.toLowerCase()}`)}
+            list={typeList.map((elm) => ({ key: elm, value: t(`singlestudy:${elm.toLowerCase()}`) }))}
+            value={filter.type}
             onChange={onTypeChange}
           />
           {byYear.isByYear && byYear.nbYear > 0 && (
@@ -124,7 +117,8 @@ const ExportFilterModal = (props: PropTypes) => {
             fullWidth
             multiple
             label={t('singlestudy:years')}
-            list={_.range(byYear.nbYear).map((elm) => elm.toString())}
+            style={{ marginBottom: '16px' }}
+            list={_.range(byYear.nbYear).map((elm) => ({ key: elm.toString(), value: elm.toString() }))}
             value={year.map((elm) => elm.toString())}
             onChange={(value: Array<string> | string) => setCurrentYear((value as Array<string>).map((elm) => parseInt(elm, 10)))}
           />
@@ -133,9 +127,14 @@ const ExportFilterModal = (props: PropTypes) => {
             fullWidth
             label={t('singlestudy:level')}
             style={{ marginBottom: '16px' }}
-            list={translatedLevelList}
-            value={t(`singlestudy:${filter.level.toLowerCase()}`)}
+            list={levelList.map((elm) => ({ key: elm, value: t(`singlestudy:${elm.toLowerCase()}`) }))}
+            value={filter.level}
             onChange={onLevelChange}
+          />
+          <TagSelect
+            label={t('singlestudy:columns')}
+            values={filter.columns !== undefined ? filter.columns : []}
+            onChange={(value: Array<string>) => setFilter({ ...filter, columns: value })}
           />
           <ExportFilter
             type={filter.type}

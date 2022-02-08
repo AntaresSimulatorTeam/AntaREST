@@ -6,7 +6,7 @@ import { CSSProperties } from '@material-ui/core/styles/withStyles';
 interface PropTypes {
     style?: CSSProperties;
     fullWidth?: boolean;
-    list: Array<string>;
+    list: Array<{key: string; value: string}>;
     value: Array<string> | string;
     label: string;
     multiple?: boolean;
@@ -28,8 +28,8 @@ const CustomSelect = (props: PropTypes) => {
         input={<Input />}
       >
         {list.map((elm) => (
-          <MenuItem key={elm} value={elm}>
-            {elm}
+          <MenuItem key={elm.key} value={elm.key}>
+            {elm.value}
           </MenuItem>
         ))}
       </Select>

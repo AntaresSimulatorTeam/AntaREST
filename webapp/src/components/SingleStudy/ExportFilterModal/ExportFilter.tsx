@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Chip, createStyles, makeStyles, TextField, Theme, Typography } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
+import clsx from 'clsx';
 import AddCircleOutlinedIcon from '@material-ui/icons/AddCircleOutlined';
 import { Area, Set, StudyOutputDownloadType } from '../../../common/types';
 import CustomSelect from './CustomSelect';
@@ -15,14 +16,26 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'flex-start',
     padding: 0,
   },
-  singleLink: {
+  linkContainer: {
     width: '100%',
     display: 'flex',
     flexFlow: 'row nowrap',
     justifyContent: 'flex-start',
+    boxSizing: 'border-box',
+  },
+  singleLink: {
     alignItems: 'flex-end',
+    marginBottom: theme.spacing(2),
+  },
+  linkFilter: {
+    display: 'flex',
+    flexFlow: 'row nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    boxSizing: 'border-box',
     padding: 0,
-    marginBottom: theme.spacing(1),
+    width: '250px',
+    overflow: 'hidden',
   },
   linkLabel: {
     height: '100%',
@@ -36,6 +49,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     flexWrap: 'wrap',
     listStyle: 'none',
     padding: theme.spacing(0.5),
+    marginTop: theme.spacing(1),
     margin: 0,
   },
   chip: {
@@ -86,38 +100,35 @@ const SingleLinkElement = (props: {globalFilter?: boolean; label: string; areas:
     onChange(`${area1}^${area2}`);
   };
   return (
-    <div className={classes.singleLink}>
+    <div className={clsx(classes.linkContainer, classes.singleLink)}>
       <Typography className={classes.linkLabel}>
         {label}
         :
       </Typography>
-      <div className={classes.singleLink} style={{ width: 'auto', flex: 1, alignItems: 'center', height: '40px' }}>
-        {
+      {
           globalFilter === true ? (
-            <>
+            <div className={classes.linkFilter}>
               <CustomSelect
-                fullWidth
                 label={`${t('singlestudy:area')} 1`}
-                list={areas}
+                list={areas.map((elm) => ({ key: elm, value: elm }))}
                 value={link.area1}
                 onChange={(elm: Array<string> | string) => onSelectChange(0, elm as string)}
-                style={{ marginLeft: '5px', marginRight: '5px' }}
+                style={{ marginLeft: '5px', marginRight: '5px', width: '50%' }}
               />
               <CustomSelect
-                fullWidth
+                style={{ width: '50%' }}
                 label={`${t('singlestudy:area')}2`}
-                list={areas}
+                list={areas.map((elm) => ({ key: elm, value: elm }))}
                 value={link.area2}
                 onChange={(elm: Array<string> | string) => onSelectChange(1, elm as string)}
               />
-            </>
+            </div>
           ) : (
-            <>
+            <div className={classes.linkFilter}>
               <TextField label={`${t('singlestudy:area')} 1`} value={link.area1} onChange={(event) => onSelectChange(0, event.target.value)} style={{ marginLeft: '5px', marginRight: '5px', width: '100%' }} />
               <TextField label={`${t('singlestudy:area')} 2`} value={link.area2} onChange={(event) => onSelectChange(1, event.target.value)} style={{ width: '100%' }} />
-            </>
+            </div>
           )}
-      </div>
     </div>
   );
 };
@@ -138,11 +149,12 @@ const MultipleLinkElement = (props: {label: string; areas: Array<string>; values
   };
 
   return (
-    <div className={classes.root} style={{ marginBottom: 0 }}>
-      <div className={classes.singleLink} style={{ alignItems: 'center' }}>
+    <div className={classes.root} style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <div className={classes.linkContainer} style={{ alignItems: 'center' }}>
         <SingleLinkElement globalFilter label={label} areas={areas} onChange={setCurrentLink} />
         <AddCircleOutlinedIcon className={classes.addIcon} onClick={onAddLink} />
       </div>
+      {values.length > 0 && (
       <ul className={classes.filterLinkContainer}>
         {values.map((elm) => (
           <li key={elm}>
@@ -154,6 +166,7 @@ const MultipleLinkElement = (props: {label: string; areas: Array<string>; values
           </li>
         ))}
       </ul>
+      )}
     </div>
   );
 };
@@ -185,29 +198,29 @@ const ExportFilter = (props: PropTypes) => {
   }, [areas, sets, type]);
 
   return (
-    <div className={classes.root}>
+    <>
       {type !== StudyOutputDownloadType.LINK ? (
-        <>
+        <div className={classes.root}>
           <CustomSelect
             fullWidth
             multiple
             label={t('singlestudy:filter')}
-            list={areasOrDistrictsList}
+            list={areasOrDistrictsList.map((elm) => ({ key: elm, value: elm }))}
             value={filterValue}
             onChange={(elm: Array<string> | string) => setFilterValue(elm as Array<string>)}
             style={{ marginBottom: '16px' }}
           />
           <TextField label={t('singlestudy:filterIn')} value={filterInValue} onChange={(event) => setFilterInValue(event.target.value)} style={{ marginBottom: '16px', width: '100%' }} />
           <TextField label={t('singlestudy:filterOut')} value={filterOutValue} onChange={(event) => setFilterOutValue(event.target.value)} style={{ marginBottom: '16px', width: '100%' }} />
-        </>
+        </div>
       ) : (
-        <>
+        <div className={classes.root}>
           <MultipleLinkElement label={t('singlestudy:filter')} areas={Object.keys(areas)} values={filterValue} onChange={setFilterValue} />
           <SingleLinkElement label={t('singlestudy:filterIn')} areas={Object.keys(areas)} onChange={setFilterInValue} />
           <SingleLinkElement label={t('singlestudy:filterOut')} areas={Object.keys(areas)} onChange={setFilterOutValue} />
-        </>
+        </div>
       )}
-    </div>
+    </>
 
   );
 };

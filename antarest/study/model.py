@@ -240,7 +240,7 @@ class ExportFormat(str, enum.Enum):
     JSON = "application/json"
 
     @staticmethod
-    def from_dto(data: str):
+    def from_dto(data: str) -> "ExportFormat":
         if data == "application/zip":
             return ExportFormat.ZIP
         if data == "application/tar+gz":
