@@ -1,13 +1,16 @@
-from typing import Optional, List, Union, Dict
+from typing import Optional, List, Union, Dict, Callable, Any, Mapping
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,
 )
-from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
 )
@@ -17,6 +20,22 @@ class BucketNode(FolderNode):
     """
     Node to handle structure free, user purpose folder. BucketNode accept any file or sub folder as children.
     """
+
+    def __init__(
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        registered_files: Optional[
+            Mapping[
+                str,
+                Callable[
+                    [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
+                ],
+            ]
+        ] = None,
+    ):
+        super().__init__(context, config)
+        self.registered_files = registered_files or {}
 
     def save(
         self,
@@ -30,15 +49,24 @@ class BucketNode(FolderNode):
         else:
             key = url[0]
             if len(url) > 1:
-                BucketNode(self.context, self.config.next_file(key)).save(
-                    data, url[1:]
-                )
+                if key in self.registered_files:
+                    self.registered_files[key](
+                        self.context, self.config.next_file(key)
+                    ).save(data, url[1:])
+                else:
+                    BucketNode(self.context, self.config.next_file(key)).save(
+                        data, url[1:]
+                    )
             else:
                 self._save(data, key)
 
     def _save(
         self, data: Union[str, int, bool, float, bytes, JSON], key: str
     ) -> None:
+        if key in self.registered_files:
+            self.registered_files[key](
+                self.context, self.config.next_file(key)
+            ).save(data)
         if isinstance(data, (str, bytes)):
             RawFileNode(self.context, self.config.next_file(key)).save(data)
         elif isinstance(data, dict):
@@ -50,7 +78,11 @@ class BucketNode(FolderNode):
 
         children: TREE = {}
         for item in sorted(self.config.path.iterdir()):
-            if item.is_file():
+            if item.name in self.registered_files:
+                children[item.name.split(".")[0]] = self.registered_files[
+                    item.name
+                ](self.context, self.config.next_file(item.name))
+            elif item.is_file():
                 children[item.name] = RawFileNode(
                     self.context, self.config.next_file(item.name)
                 )

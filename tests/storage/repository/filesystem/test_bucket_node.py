@@ -10,6 +10,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    FolderNode,
+)
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
+    IniFileNode,
+)
 
 
 def build_bucket(tmp: Path) -> Path:
@@ -19,11 +25,18 @@ def build_bucket(tmp: Path) -> Path:
     (bucket / "fileB.txt").touch()
     (bucket / "folder").mkdir()
     (bucket / "folder/fileC.txt").touch()
+    (bucket / "registered_file.ini").touch()
+    (bucket / "registered_folder_node").mkdir()
 
     return bucket
 
 
 def test_get_bucket(tmp_path: Path):
+    registered_files = {
+        "registered_file.ini": IniFileNode,
+        # "registered_folder_node": FolderNode,
+    }
+
     file = build_bucket(tmp_path)
 
     resolver = Mock()
@@ -40,6 +53,7 @@ def test_get_bucket(tmp_path: Path):
             study_path=file, path=file, study_id="id", version=-1
         ),
         context=context,
+        registered_files=registered_files,
     )
 
     assert node.get(["fileA.txt"]) == b"Content A"
@@ -47,6 +61,11 @@ def test_get_bucket(tmp_path: Path):
     assert "fileA.txt" in bucket["fileA.txt"]
     assert "fileB.txt" in bucket["fileB.txt"]
     assert "fileC.txt" in bucket["folder"]["fileC.txt"]
+    for file_name, node_type in registered_files.items():
+        assert (
+            type(node._get([file_name.split(".")[0]], get_node=True))
+            == node_type
+        )
 
 
 def test_save_bucket(tmp_path: Path):
