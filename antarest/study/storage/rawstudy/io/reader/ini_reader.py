@@ -77,7 +77,7 @@ class IniReader(IReader):
         }
 
 
-class XpansionSettingsIniReader(IReader):
+class SimpleKeyValueReader(IReader):
     """
     Standard .ini file reader. Use for general purpose.
     """
@@ -93,7 +93,7 @@ class XpansionSettingsIniReader(IReader):
     def parse_value(value: str) -> ELEMENT:
         parsed: Union[
             str, int, float, bool, None
-        ] = XpansionSettingsIniReader._parse_inf(value)
+        ] = SimpleKeyValueReader._parse_inf(value)
         parsed = parsed if parsed is not None else IniReader._parse_bool(value)
         parsed = parsed if parsed is not None else IniReader._parse_int(value)
         parsed = (
@@ -102,26 +102,22 @@ class XpansionSettingsIniReader(IReader):
         return parsed if parsed is not None else value
 
     @staticmethod
-    def _parse_json(json: configparser.SectionProxy) -> JSON:
+    def _parse_json(json: JSON) -> JSON:
         return {
-            key: XpansionSettingsIniReader.parse_value(value)
+            key: SimpleKeyValueReader.parse_value(value)
             for key, value in json.items()
         }
 
     def read(self, path: Path) -> JSON:
-        config = IniConfigParser()
-
         with open(path, "r") as f:
             json = {}
             for line in f.readlines():
                 line = line.strip()
-                try:
-                    json[line.split("=")[0]] = line.split("=")[1]
-                except IndexError:
-                    pass
-            config["settings"] = json
+                if line and not line.startswith("#"):
+                    key, value = line.split("=")
+                    json[key] = value
 
-        return self._parse_json(config["settings"])
+        return self._parse_json(json)
 
 
 class IniConfigParser(configparser.RawConfigParser):
