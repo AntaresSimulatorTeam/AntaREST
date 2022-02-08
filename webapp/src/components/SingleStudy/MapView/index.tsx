@@ -179,14 +179,14 @@ const MapView = (props: Props) => {
       }]);
     } catch (e) {
       setNodeData(nodeData.filter((o) => o.id !== name));
-      enqueueErrorSnackbar(enqueueSnackbar, 'Creation marche pas', e as AxiosError);
+      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:createAreaError'), e as AxiosError);
     }
   };
 
   const handleUpdate = async (id: string, value: UpdateAreaUi) => {
-    try {
-      const filterNodes = nodeData.find((o) => o.id === id);
-      if (filterNodes) {
+    const filterNodes = nodeData.find((o) => o.id === id);
+    if (filterNodes) {
+      try {
         const prevColors = filterNodes.rgbColor;
         if (value.color_rgb[0] !== prevColors[0] || value.color_rgb[1] !== prevColors[1] || value.color_rgb[2] !== prevColors[2]) {
           const updateNode = nodeData.filter((o) => o.id !== id);
@@ -196,21 +196,28 @@ const MapView = (props: Props) => {
             y: value.y,
             color: `rgb(${value.color_rgb[0]}, ${value.color_rgb[1]}, ${value.color_rgb[2]})`,
             rgbColor: filterNodes.rgbColor,
-            size: { width: calculateSize(id), height: NODE_HEIGHT },
+            size: filterNodes.size,
           }]);
           await updateAreaUI(study.id, id, value);
         }
+      } catch (e) {
+        setNodeData([...nodeData, {
+          id,
+          x: filterNodes.x,
+          y: filterNodes.y,
+          color: `rgb(${filterNodes.rgbColor[0]}, ${filterNodes.rgbColor[1]}, ${filterNodes.rgbColor[2]})`,
+          rgbColor: filterNodes.rgbColor,
+          size: filterNodes.size,
+        }]);
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:colorUpdateError'), e as AxiosError);
       }
-    } catch (e) {
-      // setNodeData(nodeData.filter((o) => o.id !== id));
-      enqueueErrorSnackbar(enqueueSnackbar, 'Color update marche pas', e as AxiosError);
     }
   };
 
   const handleUpdatePosition = async (id: string, x: number, y: number) => {
-    try {
-      const filterNodes = nodeData.find((o) => o.id === id);
-      if (filterNodes) {
+    const filterNodes = nodeData.find((o) => o.id === id);
+    if (filterNodes) {
+      try {
         const prevPosition = { x: nodeData.find((o) => o.id === id)?.x, y: nodeData.find((o) => o.id === id)?.y };
         if (x !== prevPosition.x || y !== prevPosition.y) {
           const updateNode = nodeData.filter((o) => o.id !== id);
@@ -220,15 +227,22 @@ const MapView = (props: Props) => {
             y: Math.floor(y),
             color: filterNodes.color,
             rgbColor: filterNodes.rgbColor,
-            size: { width: calculateSize(id), height: NODE_HEIGHT },
+            size: filterNodes.size,
           }]);
           // eslint-disable-next-line @typescript-eslint/camelcase
           await updateAreaUI(study.id, id, { x, y, color_rgb: filterNodes.rgbColor });
         }
+      } catch (e) {
+        setNodeData([...nodeData, {
+          id,
+          x: filterNodes.x,
+          y: filterNodes.y,
+          color: filterNodes.color,
+          rgbColor: filterNodes.rgbColor,
+          size: filterNodes.size,
+        }]);
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:positionUpdateError'), e as AxiosError);
       }
-    } catch (e) {
-      // setNodeData(nodeData.filter((o) => o.id !== id));
-      enqueueErrorSnackbar(enqueueSnackbar, 'Position Update marche pas', e as AxiosError);
     }
   };
 
@@ -266,7 +280,8 @@ const MapView = (props: Props) => {
           target,
         }]]);
       }
-      enqueueErrorSnackbar(enqueueSnackbar, 'delete marche pas', e as AxiosError);
+      // manque qlq chose je crois
+      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:deleteAreaOrLink'), e as AxiosError);
     }
   };
 
@@ -283,12 +298,12 @@ const MapView = (props: Props) => {
           await createLink(study.id, { area1: firstNode, area2: secondNode });
         } catch (e) {
           setLinkData(linkData.filter((o) => o.source !== firstNode || o.target !== secondNode));
-          enqueueErrorSnackbar(enqueueSnackbar, 'lien marche pas', e as AxiosError);
+          enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:createLinkError'), e as AxiosError);
         }
       }
     };
     init();
-  }, [enqueueSnackbar, firstNode, secondNode, study.id, linkData]);
+  }, [enqueueSnackbar, t, firstNode, secondNode, study.id, linkData]);
 
   useEffect(() => {
     const init = async () => {

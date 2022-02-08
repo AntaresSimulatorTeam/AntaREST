@@ -104,12 +104,12 @@ const PropertiesView = (props: PropsType) => {
       />
       {item && isNode(item) && onDelete ? (
         <div className={classes.list}>
-          <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>Retour</Button>
+          <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
           <PanelView node={item as NodeProperties} links={nodeLinks} onDelete={onDelete} onBlur={onBlur} />
         </div>
       ) : (item && onDelete && (
         <div className={classes.list}>
-          <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>Retour</Button>
+          <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
           <PanelView link={item as LinkProperties} onDelete={onDelete} onBlur={onBlur} />
         </div>
       ))}

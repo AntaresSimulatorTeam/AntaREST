@@ -93,8 +93,6 @@ export interface LinkCreationInfo {
     area2: string;
 }
 
-export const isNode = (el: NodeProperties | LinkProperties): boolean => {
-  return (el as any).id !== undefined;
-};
+export const isNode = (el: NodeProperties | LinkProperties): boolean => (el as any).id !== undefined;
 
 export default {};

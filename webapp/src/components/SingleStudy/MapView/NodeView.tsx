@@ -56,9 +56,6 @@ const NodeView = (props: PropType) => {
   const { node, linkCreation } = props;
 
   const hslColors = rgbToHsl(node.color || 'rgb(211, 211, 211)');
-  // const [r,g,b] = node.color.slice(4, -1).split(',').map(Number);
-
-  // style={{ border: node.highlighted ? '#f00 solid 2px' : `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%) solid 2px`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 60 && hslColors[2] >= 70) ? 'black' : 'white' }}
 
   useEffect(() => {
     if (nodeRef.current) {

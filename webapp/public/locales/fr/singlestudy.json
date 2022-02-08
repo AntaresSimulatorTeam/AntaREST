@@ -68,5 +68,10 @@
   "color": "Couleur",
   "more": "Plus",
   "confirmDeleteLink": "Êtes-vous sûr de vouloir supprimer ce lien ?",
-  "confirmDeleteArea": "Êtes-vous sûr de vouloir supprimer cette zone ?"
+  "confirmDeleteArea": "Êtes-vous sûr de vouloir supprimer cette zone ?",
+  "createAreaError": "Échec lors de la création de la zone",
+  "createLinkError": "Échec lors de la création du lien",
+  "colorUpdateError": "Échec lors de la modification de la couleur",
+  "positionUpdateError": "Échec lors de la modification de la position",
+  "deleteAreaOrLink": "Zone ou lien non supprimé"
 }

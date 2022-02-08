@@ -87,17 +87,14 @@ const PanelView = (props: PropType) => {
         {node && (
           <>
             <TextField className={classes.fields} label={t('singlestudy:areaName')} variant="filled" value={node.id} disabled />
-            { /* eslint-disable-next-line @typescript-eslint/camelcase */ }
             <HuePicker className={classes.sliderpicker} color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
             <MaterialPicker className={classes.materialpicker} color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
-            { /* eslint-disable-next-line @typescript-eslint/camelcase */ }
             <TextField className={classes.fields} label={t('singlestudy:posX')} variant="filled" value={node.x} disabled />
-            { /* eslint-disable-next-line @typescript-eslint/camelcase */ }
             <TextField className={classes.fields} label={t('singlestudy:posY')} variant="filled" value={node.y} disabled />
           </>
         )}
         {links && node && (
-          <LinksView links={links} node={node} onDelete={onDelete} />
+          <LinksView links={links} node={node} onDelete={() => setOpenConfirmationModal(true)} />
         )}
         {link && (
         <>
@@ -108,7 +105,7 @@ const PanelView = (props: PropType) => {
             {link.target}
           </Typography>
           <div className={classes.buttons}>
-            <DeleteIcon className={classes.deleteIcon} onClick={() => { onDelete(link.source, link.target); }} />
+            <DeleteIcon className={classes.deleteIcon} onClick={() => setOpenConfirmationModal(true)} />
           </div>
         </>
         )}

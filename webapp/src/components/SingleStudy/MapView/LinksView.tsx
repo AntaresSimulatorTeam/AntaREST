@@ -48,7 +48,7 @@ const useStyles = makeStyles((theme: Theme) =>
 interface PropsType {
     links: Array<LinkProperties>;
     node: NodeProperties;
-    onDelete: (id: string, target?: string) => void;
+    onDelete: () => void;
 }
 
 const Row = React.memo((props: ListChildComponentProps) => {
@@ -70,9 +70,11 @@ const LinksView = (props: PropsType) => {
 
   return (
     <div className={classes.root}>
+      {links.length >= 1 && (
       <Typography className={classes.title}>
         {t('singlestudy:link')}
       </Typography>
+      )}
       <AutoSizer>
         {
           ({ height, width }) => {
@@ -83,7 +85,7 @@ const LinksView = (props: PropsType) => {
                   {Row}
                 </FixedSizeList>
                 <div className={classes.buttons} style={{ width }}>
-                  <DeleteIcon className={classes.deleteIcon} onClick={() => { onDelete(node.id); }} />
+                  <DeleteIcon className={classes.deleteIcon} onClick={onDelete} />
                 </div>
               </>
             );
