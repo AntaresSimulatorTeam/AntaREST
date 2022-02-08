@@ -27,6 +27,7 @@ from antarest.study.model import (
     CommentsDto,
     StudyDownloadDTO,
     MatrixIndex,
+    ExportFormat,
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -470,7 +471,9 @@ def create_study_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        filetype = request.headers.get("Accept")
+        accept = request.headers.get("Accept")
+        filetype = ExportFormat.from_dto(accept)
+
         content = study_service.download_outputs(
             study_id,
             output_id,

@@ -5,7 +5,7 @@ import { createStyles, makeStyles, Theme, FormControlLabel, Checkbox, Divider } 
 import { useTranslation } from 'react-i18next';
 import _ from 'lodash';
 import GenericModal from '../../ui/GenericModal';
-import { Area, Set as District, FileStudyTreeConfigDTO, StudyOutputDownloadDTO, StudyDownloadLevelDTO, StudyDownloadType } from '../../../common/types';
+import { Area, Set as District, FileStudyTreeConfigDTO, StudyOutputDownloadDTO, StudyOutputDownloadLevelDTO, StudyOutputDownloadType } from '../../../common/types';
 import ExportFilter from './ExportFilter';
 import CustomSelect from './CustomSelect';
 
@@ -48,19 +48,19 @@ const ExportFilterModal = (props: PropTypes) => {
   const [areaList, setAreaList] = useState<{[elm: string]: Area}>({});
   const [districtList, setDistrictList] = useState<{[elm: string]: District}>({});
   const [filter, setFilter] = useState<StudyOutputDownloadDTO>({
-    type: StudyDownloadType.AREA,
-    level: StudyDownloadLevelDTO.WEEKLY,
+    type: StudyOutputDownloadType.AREA,
+    level: StudyOutputDownloadLevelDTO.WEEKLY,
     synthesis: false,
     includeClusters: false,
   });
 
-  const typeList: Array<string> = [StudyDownloadType.AREA, StudyDownloadType.LINK, StudyDownloadType.DISTRICT];
+  const typeList: Array<string> = [StudyOutputDownloadType.AREA, StudyOutputDownloadType.LINK, StudyOutputDownloadType.DISTRICT];
   const translatedTypeList = typeList.map((elm) => t(`singlestudy:${elm.toLowerCase()}`));
-  const levelList: Array<string> = [StudyDownloadLevelDTO.HOURLY,
-    StudyDownloadLevelDTO.DAILY,
-    StudyDownloadLevelDTO.WEEKLY,
-    StudyDownloadLevelDTO.MONTHLY,
-    StudyDownloadLevelDTO.ANNUAL];
+  const levelList: Array<string> = [StudyOutputDownloadLevelDTO.HOURLY,
+    StudyOutputDownloadLevelDTO.DAILY,
+    StudyOutputDownloadLevelDTO.WEEKLY,
+    StudyOutputDownloadLevelDTO.MONTHLY,
+    StudyOutputDownloadLevelDTO.ANNUAL];
   const translatedLevelList = levelList.map((elm) => t(`singlestudy:${elm.toLowerCase()}`));
 
   const onSave = async () => {
@@ -75,14 +75,14 @@ const ExportFilterModal = (props: PropTypes) => {
   const onTypeChange = (value: Array<string> | string): void => {
     const index = translatedTypeList.findIndex((elm) => elm === (value as string));
     if (index >= 0) {
-      setFilter({ ...filter, type: typeList[index] as StudyDownloadType });
+      setFilter({ ...filter, type: typeList[index] as StudyOutputDownloadType });
     }
   };
 
   const onLevelChange = (value: Array<string> | string): void => {
     const index = translatedLevelList.findIndex((elm) => elm === (value as string));
     if (index >= 0) {
-      setFilter({ ...filter, level: levelList[index] as StudyDownloadLevelDTO });
+      setFilter({ ...filter, level: levelList[index] as StudyOutputDownloadLevelDTO });
     }
   };
 

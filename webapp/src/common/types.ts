@@ -374,13 +374,13 @@ export interface FileStudyTreeConfigDTO {
   enr_modelling: string;
 }
 
-export enum StudyDownloadType {
+export enum StudyOutputDownloadType {
   LINK = 'LINK',
   DISTRICT = 'DISTRICT',
   AREA = 'AREA',
 }
 
-export enum StudyDownloadLevelDTO {
+export enum StudyOutputDownloadLevelDTO {
   ANNUAL = 'annual',
   MONTHLY = 'monthly',
   WEEKLY = 'weekly',
@@ -389,9 +389,9 @@ export enum StudyDownloadLevelDTO {
 }
 
 export interface StudyOutputDownloadDTO {
-  type: StudyDownloadType;
+  type: StudyOutputDownloadType;
   years?: Array<number>;
-  level: StudyDownloadLevelDTO;
+  level: StudyOutputDownloadLevelDTO;
   filterIn?: string;
   filterOut?: string;
   filter?: Array<string>;
@@ -404,7 +404,7 @@ export interface MatrixIndex {
   start_date: string;
   steps: number;
   first_week_size: number;
-  level: StudyDownloadLevelDTO;
+  level: StudyOutputDownloadLevelDTO;
 }
 
 export interface MatrixAggregationResult {

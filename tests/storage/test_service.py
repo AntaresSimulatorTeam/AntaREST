@@ -7,6 +7,7 @@ from uuid import uuid4
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
+from antarest.core.filetransfer.model import FileDownloadTaskDTO, FileDownload
 from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser, JWTGroup, DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, SUB_JSON
@@ -34,6 +35,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
     OwnerInfo,
     StudyDownloadLevelDTO,
+    ExportFormat,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService, UserHasNotPermissionError
@@ -503,6 +505,9 @@ def test_download_output() -> None:
         output_config,
         res_study,
         res_study,
+        output_config,
+        res_study,
+        res_study,
     ]
 
     # AREA TYPE
@@ -521,10 +526,40 @@ def test_download_output() -> None:
         "output-id",
         input_data,
         use_task=False,
-        filetype="application/json",
+        filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
     assert result == res_matrix
+
+    # AREA TYPE - ZIP & TASK
+    export_file_download = FileDownload(
+        id="download-id",
+        filename="filename",
+        name="name",
+        ready=False,
+        path="path",
+        owner=None,
+        expiration_date=datetime.utcnow(),
+    )
+    service.file_transfer_manager.request_download.return_value = (
+        export_file_download
+    )
+    task_id = "task-id"
+    service.task_service.add_task.return_value = task_id
+
+    result = service.download_outputs(
+        "study-id",
+        "output-id",
+        input_data,
+        use_task=True,
+        filetype=ExportFormat.ZIP,
+        params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    )
+
+    res_file_download = FileDownloadTaskDTO(
+        file=export_file_download.to_dto(), task=task_id
+    )
+    assert result == res_file_download
 
     # LINK TYPE
     input_data.type = StudyDownloadType.LINK
@@ -544,7 +579,7 @@ def test_download_output() -> None:
         "output-id",
         input_data,
         use_task=False,
-        filetype="application/json",
+        filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
     assert result == res_matrix
@@ -568,7 +603,7 @@ def test_download_output() -> None:
         "output-id",
         input_data,
         use_task=False,
-        filetype="application/json",
+        filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
     assert result == res_matrix

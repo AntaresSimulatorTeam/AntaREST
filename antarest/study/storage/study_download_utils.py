@@ -1,5 +1,4 @@
 import csv
-import csv
 import logging
 import os
 import re
@@ -15,6 +14,7 @@ from antarest.study.model import (
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
     StudyDownloadType,
+    ExportFormat,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -360,13 +360,13 @@ class StudyDownloader:
     @staticmethod
     def export(
         matrix: MatrixAggregationResult,
-        type: str,
+        filetype: ExportFormat,
         target_file: Path,
     ) -> None:
         # 1- Zip/tar+gz container
         with (
             ZipFile(target_file, "w", ZIP_DEFLATED)  # type: ignore
-            if type == "application/zip"
+            if filetype == ExportFormat.ZIP
             else tarfile.open(target_file, mode="w:gz")
         ) as output_data:
 

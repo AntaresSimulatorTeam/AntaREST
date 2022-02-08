@@ -70,6 +70,7 @@
   "copyIdDir": "Copy id",
   "exportAll": "Export all outputs",
   "outputExportSuccess": "Outputs exported successfully",
+  "outputExportInProgress": "Downloading study outputs...",
   "filter": "Filter",
   "filterIn": "Filter In",
   "filterOut": "Filter Out"

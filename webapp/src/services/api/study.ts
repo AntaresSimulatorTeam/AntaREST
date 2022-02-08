@@ -48,7 +48,7 @@ export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfi
   return res.data;
 };
 
-export const downloadOutput = async (sid: string, output: string, data: StudyOutputDownloadDTO, jsonFormat = false, useTask = false): Promise<FileDownloadTask | MatrixAggregationResult> => {
+export const downloadOutput = async (sid: string, output: string, data: StudyOutputDownloadDTO, jsonFormat = false, useTask = true): Promise<FileDownloadTask | MatrixAggregationResult> => {
   const restconfig = {
     headers: {
       Accept: 'application/zip',

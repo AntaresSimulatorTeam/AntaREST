@@ -70,6 +70,7 @@
   "copyIdDir": "Copier l'ID",
   "exportAll": "Exporter toutes les sorties",
   "outputExportSuccess": "Sorties exportées avec succès",
+  "outputExportInProgress": "Téléchargement des sorties en cours...",
   "filter": "Filtre",
   "filterIn": "Filtre d'inclusion (Regex)",
   "filterOut": "Filtre d'exclusion (Regex)"

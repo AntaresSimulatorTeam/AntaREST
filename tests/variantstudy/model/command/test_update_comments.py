@@ -57,21 +57,10 @@ def test_revert(command_context: CommandContext, empty_study: FileStudy):
     base_command.command_context.command_extractor.generate_update_comments.assert_called_with(
         empty_study.tree
     )
-    assert (
-        base_command.revert(
-            [
-                UpdateComments(
-                    comments="comments", command_context=command_context
-                )
-            ],
-            empty_study,
-        )
-        == [
-            UpdateComments(
-                comments="comments", command_context=command_context
-            )
-        ]
-    )
+    assert base_command.revert(
+        [UpdateComments(comments="comments", command_context=command_context)],
+        empty_study,
+    ) == [UpdateComments(comments="comments", command_context=command_context)]
     assert base_command.revert([], base=empty_study) == [
         UpdateComments(
             comments='<?xml version="1.0" encoding="UTF-8"?>\n<richtext version="1.0.0.0" '

@@ -15,10 +15,6 @@ from markupsafe import escape
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
-from antarest.core.filetransfer.model import (
-    FileDownloadTaskDTO,
-)
-from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -26,6 +22,10 @@ from antarest.core.exceptions import (
     NotAManagedStudyException,
     CommandApplicationError,
 )
+from antarest.core.filetransfer.model import (
+    FileDownloadTaskDTO,
+)
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache, CacheConstants
 from antarest.core.interfaces.eventbus import IEventBus, Event, EventType
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
@@ -75,6 +75,7 @@ from antarest.study.model import (
     MatrixIndex,
     PatchCluster,
     PatchArea,
+    ExportFormat,
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -893,7 +894,7 @@ class StudyService:
         output_id: str,
         data: StudyDownloadDTO,
         use_task: bool,
-        filetype: str,
+        filetype: ExportFormat,
         params: RequestParameters,
         tmp_export_file: Optional[Path] = None,
     ) -> Union[MatrixAggregationResult, FileDownloadTaskDTO, FileResponse]:
@@ -927,14 +928,14 @@ class StudyService:
             data,
         )
 
-        if filetype != "application/json":
+        if filetype != ExportFormat.JSON:
             if use_task:
                 logger.info(f"Exporting {output_id} from study {study_id}")
                 export_name = (
                     f"Study filtered output {study.name}/{output_id} export"
                 )
                 export_file_download = self.file_transfer_manager.request_download(
-                    f"{study.name}-{study_id}-{output_id}_filtered.{'tar.gz' if filetype == 'application/tar+gz' else 'zip'}",
+                    f"{study.name}-{study_id}-{output_id}_filtered.{'tar.gz' if filetype == ExportFormat.TAR_GZ else 'zip'}",
                     export_name,
                     params.user,
                 )
@@ -971,7 +972,7 @@ class StudyService:
                     return FileResponse(
                         tmp_export_file,
                         headers={
-                            "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
+                            "Content-Disposition": f'attachment; filename="output-{output_id}.{"tar.gz" if filetype == ExportFormat.TAR_GZ else "zip"}'
                         },
                         media_type=filetype,
                     )

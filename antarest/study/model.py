@@ -1,11 +1,10 @@
 import enum
 import uuid
-from copy import deepcopy
+from dataclasses import dataclass
 from datetime import timedelta, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional
 
-from dataclasses import dataclass
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Integer, DateTime, Table, ForeignKey, Enum, Boolean  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -233,6 +232,20 @@ class StudyDownloadLevelDTO(str, enum.Enum):
             return date + timedelta(hours=1)
         else:
             raise ShouldNotHappenException()
+
+
+class ExportFormat(str, enum.Enum):
+    ZIP = "application/zip"
+    TAR_GZ = "application/tar+gz"
+    JSON = "application/json"
+
+    @staticmethod
+    def from_dto(data: str):
+        if data == "application/zip":
+            return ExportFormat.ZIP
+        if data == "application/tar+gz":
+            return ExportFormat.TAR_GZ
+        return ExportFormat.JSON
 
 
 class StudyDownloadDTO(BaseModel):

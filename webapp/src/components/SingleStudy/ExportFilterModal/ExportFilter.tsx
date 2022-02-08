@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Chip, createStyles, makeStyles, TextField, Theme, Typography } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import AddCircleOutlinedIcon from '@material-ui/icons/AddCircleOutlined';
-import { Area, Set, StudyDownloadType } from '../../../common/types';
+import { Area, Set, StudyOutputDownloadType } from '../../../common/types';
 import CustomSelect from './CustomSelect';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
@@ -57,7 +57,7 @@ interface FilterLink {
 }
 
 interface PropTypes {
-    type: StudyDownloadType;
+    type: StudyOutputDownloadType;
     areas: {[elm: string]: Area};
     sets: {[elm: string]: Set};
     filterValue: Array<string>;
@@ -168,11 +168,11 @@ const ExportFilter = (props: PropTypes) => {
     const getAreasOrDistrictsList = (): Array<string> => {
       let res: Array<string> = [];
       switch (type) {
-        case StudyDownloadType.AREA:
+        case StudyOutputDownloadType.AREA:
           res = Object.keys(areas);
           break;
 
-        case StudyDownloadType.DISTRICT:
+        case StudyOutputDownloadType.DISTRICT:
           res = Object.keys(sets);
           break;
 
@@ -186,7 +186,7 @@ const ExportFilter = (props: PropTypes) => {
 
   return (
     <div className={classes.root}>
-      {type !== StudyDownloadType.LINK ? (
+      {type !== StudyOutputDownloadType.LINK ? (
         <>
           <CustomSelect
             fullWidth

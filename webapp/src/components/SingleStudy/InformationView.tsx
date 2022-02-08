@@ -318,8 +318,8 @@ const InformationView = (props: PropTypes) => {
     setOpenFilterModal(false);
     if (study) {
       try {
-        await downloadOutput(study.id, output, filter, false, true);
-        enqueueSnackbar(t('singlestudy:outputExportSuccess'), { variant: 'success' });
+        await downloadOutput(study.id, output, filter);
+        enqueueSnackbar(t('singlestudy:outputExportInProgress'), { variant: 'info' });
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
       }
