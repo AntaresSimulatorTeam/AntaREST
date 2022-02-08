@@ -9,6 +9,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.study.business.xpansion_management import XpansionSettingsDTO
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
@@ -63,23 +64,23 @@ def create_study_routes(
         study_service.delete_xpansion_configuration(uuid=uuid, params=params)
 
     #
-    # @bp.get(
-    #     "/studies/{uuid}/extensions/xpansion/settings",
-    #     tags=[APITag.xpansion_study_management],
-    #     summary="Get Xpansion Settings",
-    #     response_model=Dict[str, StudyMetadataDTO],
-    # )
-    # def get_settings(
-    #     summary: bool = False,
-    #     managed: bool = False,
-    #     current_user: JWTUser = Depends(auth.get_current_user),
-    # ) -> Any:
-    #     logger.info(f"Fetching study list", extra={"user": current_user.id})
-    #     params = RequestParameters(user=current_user)
-    #     available_studies = study_service.get_studies_information(
-    #         summary, managed, params
-    #     )
-    #     return available_studies
+    @bp.get(
+        "/studies/{uuid}/extensions/xpansion/settings",
+        tags=[APITag.xpansion_study_management],
+        summary="Get Xpansion Settings",
+        response_model=XpansionSettingsDTO,
+    )
+    def get_settings(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Fetching Xpansion Settings of the study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.get_xpansion_settings(uuid=uuid, params=params)
+
     #
     # @bp.post(
     #     "/studies/{uuid}/extensions/xpansion/settings",

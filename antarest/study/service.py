@@ -57,7 +57,10 @@ from antarest.study.business.area_management import (
     AreaUI,
 )
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
-from antarest.study.business.xpansion_management import XpansionManager
+from antarest.study.business.xpansion_management import (
+    XpansionManager,
+    XpansionSettingsDTO,
+)
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -1723,3 +1726,11 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         self.xpansion_manager.delete_xpansion_configuration(study)
+
+    def get_xpansion_settings(
+        self, uuid: str, params: RequestParameters
+    ) -> XpansionSettingsDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_xpansion_settings(study)

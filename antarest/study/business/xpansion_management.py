@@ -1,8 +1,36 @@
+import re
+from dataclasses import dataclass
+from typing import Optional, Literal, Union
+
+from pydantic import Field, BaseModel
+
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
 )
 from antarest.study.storage.storage_service import StudyStorageService
+
+
+class XpansionSettingsDTO(BaseModel):
+    optimality_gap: Optional[int] = None
+    max_iteration: Optional[Union[int, Literal["inf"]]] = None
+    uc_type: Optional[str] = None
+    master: Optional[str] = None
+    yearly_weight: Optional[str] = None
+    additional_constraints: Optional[str] = Field(
+        None, alias="additional-constraints"
+    )
+    relaxed_optimality_gap: Optional[float] = Field(
+        None, alias="relaxed-optimality-gap"
+    )
+    cut_type: Optional[str] = Field(None, alias="cut-type")
+    ampl_solver: Optional[str] = Field(None, alias="ampl.solver")
+    ampl_presolve: Optional[int] = Field(None, alias="ampl.presolve")
+    ampl_solve_bounds_frequency: Optional[int] = Field(
+        None, alias="ampl.solve_bounds_frequency"
+    )
+    relative_gap: Optional[float] = None
+    solver: Optional[str] = None
 
 
 class XpansionManager:
@@ -54,3 +82,10 @@ class XpansionManager:
             study
         )
         file_study.tree.delete(["user", "expansion"])
+
+    def get_xpansion_settings(self, study: Study) -> XpansionSettingsDTO:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        json = file_study.tree.get(["user", "expansion", "settings"])
+        return XpansionSettingsDTO.parse_obj(json)
