@@ -396,6 +396,44 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict):
 
 
 @pytest.mark.integration_test
+@pytest.mark.parametrize(
+    "url, expected_output",
+    [
+        (
+            "/v1/studies/STA-mini/raw?path=user/expansion/settings",
+            {
+                "optimality_gap ": 1,
+                "max_iteration ": "inf",
+                "uc_type ": ' "expansion_fast"',
+                "master ": ' "integer"',
+                "yearly-weights ": " None",
+                "additional-constraints ": " None",
+                "relaxed-optimality-gap ": 1000000.0,
+                "cut-type ": ' "average"',
+                "ampl.solver ": ' "cbc"',
+                "ampl.presolve ": 0,
+                "ampl.solve_bounds_frequency ": 1000000,
+            },
+        ),
+        (
+            "/v1/studies/STA-mini/raw?path=user/expansion/candidates",
+            {},
+        ),
+        (
+            "/v1/studies/STA-mini/raw?path=user/expansion/capa",
+            {},
+        ),
+    ],
+)
+def test_sta_mini_expansion(storage_service, url: str, expected_output: dict):
+    assert_with_errors(
+        storage_service=storage_service,
+        url=url,
+        expected_output=expected_output,
+    )
+
+
+@pytest.mark.integration_test
 def test_sta_mini_copy(storage_service) -> None:
     input_link = "input/links/de/fr.txt"
 

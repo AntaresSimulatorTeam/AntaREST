@@ -1,4 +1,7 @@
 from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.io.reader.ini_reader import (
+    XpansionSettingsIniReader,
+)
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -33,6 +36,7 @@ class ExpansionSettings(IniFileNode):
     """
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+        super().__init__(context, config, reader=XpansionSettingsIniReader())
         types = {
             "optimality_gap": float,
             "max_iteration": int,
@@ -54,12 +58,3 @@ class ExpansionSettings(IniFileNode):
             del types["ampl.solver"]
             del types["ampl.presolve"]
             del types["ampl.solve_bounds_frequency"]
-
-        IniFileNode.__init__(
-            self,
-            context,
-            config,
-            types=types,
-            reader=IniReader(),
-            writer=IniWriter(),
-        )

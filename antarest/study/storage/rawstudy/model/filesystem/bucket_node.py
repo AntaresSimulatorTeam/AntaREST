@@ -25,7 +25,7 @@ class BucketNode(FolderNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        planned_files: Optional[
+        registered_files: Optional[
             Mapping[
                 str,
                 Callable[
@@ -35,7 +35,7 @@ class BucketNode(FolderNode):
         ] = None,
     ):
         super().__init__(context, config)
-        self.planned_files = planned_files or {}
+        self.registered_files = registered_files or {}
 
     def save(
         self,
@@ -49,8 +49,8 @@ class BucketNode(FolderNode):
         else:
             key = url[0]
             if len(url) > 1:
-                if key in self.planned_files:
-                    self.planned_files[key](
+                if key in self.registered_files:
+                    self.registered_files[key](
                         self.context, self.config.next_file(key)
                     ).save(data, url[1:])
                 else:
@@ -63,8 +63,8 @@ class BucketNode(FolderNode):
     def _save(
         self, data: Union[str, int, bool, float, bytes, JSON], key: str
     ) -> None:
-        if key in self.planned_files:
-            self.planned_files[key](
+        if key in self.registered_files:
+            self.registered_files[key](
                 self.context, self.config.next_file(key)
             ).save(data)
         if isinstance(data, (str, bytes)):
@@ -78,10 +78,10 @@ class BucketNode(FolderNode):
 
         children: TREE = {}
         for item in sorted(self.config.path.iterdir()):
-            if item.name in self.planned_files:
-                children[item.name] = self.planned_files[item.name](
-                    self.context, self.config.next_file(item.name)
-                )
+            if item.name in self.registered_files:
+                children[item.name.split(".")[0]] = self.registered_files[
+                    item.name
+                ](self.context, self.config.next_file(item.name))
             elif item.is_file():
                 children[item.name] = RawFileNode(
                     self.context, self.config.next_file(item.name)
