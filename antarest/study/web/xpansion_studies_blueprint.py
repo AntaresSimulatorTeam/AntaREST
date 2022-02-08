@@ -34,7 +34,6 @@ def create_study_routes(
         "/studies/{uuid}/extensions/xpansion/create",
         tags=[APITag.xpansion_study_management],
         summary="Create Xpansion Configuration",
-        response_model=bool,
     )
     def create_xpansion_configuration(
         uuid: str,
@@ -45,9 +44,7 @@ def create_study_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.create_xpansion_configuration(
-            uuid=uuid, params=params
-        )
+        study_service.create_xpansion_configuration(uuid=uuid, params=params)
 
     # @bp.post(
     #     "/studies/{uuid}/extensions/xpansion/delete",

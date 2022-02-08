@@ -13,6 +13,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     ConfigPathBuilder,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
+    ChildNotFoundError,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
     FileStudyTree,
 )
@@ -97,6 +100,9 @@ def test_create_configuration(
     )
     raw_study_service.get_raw.return_value = empty_study
     raw_study_service.cache = Mock()
+
+    with pytest.raises(ChildNotFoundError):
+        empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
 
     xpansion_manager.create_xpansion_configuration(study)
 
