@@ -10,7 +10,7 @@ import {
 import SearchIcon from '@material-ui/icons/Search';
 import { useTranslation } from 'react-i18next';
 import AddIcon from '@material-ui/icons/Add';
-import { LinkProperties, NodeProperties, UpdateAreaUi } from './types';
+import { LinkProperties, NodeProperties, UpdateAreaUi, isNode } from './types';
 import PanelView from './PanelView';
 import NodeListing from './NodeListing';
 
@@ -60,7 +60,6 @@ interface PropsType {
     setSelectedItem: (item: NodeProperties | LinkProperties | undefined) => void;
     nodeList: Array<NodeProperties>;
     nodeLinks?: Array<LinkProperties> | undefined;
-    onClose?: () => void;
     onDelete?: (id: string, target?: string) => void;
     onArea?: () => void;
     onBlur: (id: string, value: UpdateAreaUi) => void;
@@ -68,7 +67,7 @@ interface PropsType {
 
 const PropertiesView = (props: PropsType) => {
   const classes = useStyles();
-  const { item, setSelectedItem, nodeList, nodeLinks, onClose, onDelete, onArea, onBlur } = props;
+  const { item, setSelectedItem, nodeList, nodeLinks, onDelete, onArea, onBlur } = props;
   const [t] = useTranslation();
   const [filteredNodes, setFilteredNodes] = useState<Array<NodeProperties>>();
 
@@ -103,12 +102,12 @@ const PropertiesView = (props: PropsType) => {
         }}
         onChange={(e) => onChange(e.target.value as string)}
       />
-      {item && Object.keys(item)[0] === 'id' && nodeLinks && onClose && onDelete ? (
+      {item && isNode(item) && onDelete ? (
         <div className={classes.list}>
           <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>Retour</Button>
           <PanelView node={item as NodeProperties} links={nodeLinks} onDelete={onDelete} onBlur={onBlur} />
         </div>
-      ) : (item && onClose && onDelete && (
+      ) : (item && onDelete && (
         <div className={classes.list}>
           <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>Retour</Button>
           <PanelView link={item as LinkProperties} onDelete={onDelete} onBlur={onBlur} />
@@ -125,7 +124,6 @@ const PropertiesView = (props: PropsType) => {
 PropertiesView.defaultProps = {
   item: undefined,
   nodeLinks: undefined,
-  onClose: undefined,
   onDelete: undefined,
   onArea: undefined,
 };

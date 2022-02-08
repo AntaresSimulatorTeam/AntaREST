@@ -6,7 +6,6 @@ import {
   Theme,
   Typography,
   TextField,
-  Button,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -38,9 +37,18 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     buttons: {
       width: '100%',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-end',
       alignItems: 'center',
       display: 'flex',
+    },
+    sliderpicker: {
+      width: '100% !important',
+      margin: theme.spacing(1),
+    },
+    materialpicker: {
+      width: 'unset !important',
+      maxWidth: '230px !important',
+      fontFamily: '"Inter", sans-serif !important',
     },
   }));
 
@@ -58,9 +66,6 @@ const PanelView = (props: PropType) => {
   const { node, links, link, onDelete, onBlur } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [currentColor, setCurrentColor] = useState<string>(node?.color || '');
-
-  console.log(node?.x);
-  console.log(node?.y);
 
   const handleChangeColor = (color: ColorResult) => {
     if (node) {
@@ -83,8 +88,8 @@ const PanelView = (props: PropType) => {
           <>
             <TextField className={classes.fields} label={t('singlestudy:areaName')} variant="filled" value={node.id} disabled />
             { /* eslint-disable-next-line @typescript-eslint/camelcase */ }
-            <HuePicker color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
-            <MaterialPicker color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
+            <HuePicker className={classes.sliderpicker} color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
+            <MaterialPicker className={classes.materialpicker} color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
             { /* eslint-disable-next-line @typescript-eslint/camelcase */ }
             <TextField className={classes.fields} label={t('singlestudy:posX')} variant="filled" value={node.x} disabled />
             { /* eslint-disable-next-line @typescript-eslint/camelcase */ }
@@ -98,11 +103,11 @@ const PanelView = (props: PropType) => {
         <>
           <Typography variant="body2" component="p">
             {link.source}
-            <br />
+          </Typography>
+          <Typography variant="body2" component="p">
             {link.target}
           </Typography>
           <div className={classes.buttons}>
-            <Button color="primary" size="small">{t('singlestudy:more')}</Button>
             <DeleteIcon className={classes.deleteIcon} onClick={() => { onDelete(link.source, link.target); }} />
           </div>
         </>

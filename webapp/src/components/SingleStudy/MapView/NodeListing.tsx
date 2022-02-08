@@ -47,7 +47,7 @@ const NodeListing = (props: PropsType) => {
 
   return (
     <div className={classes.root}>
-      {nodes.length > 0 && nodes ? (
+      {nodes.length > 0 && nodes && (
         <AutoSizer>
           { ({ height, width }) => {
             const idealHeight = ROW_ITEM_SIZE * nodes.length;
@@ -65,7 +65,7 @@ const NodeListing = (props: PropsType) => {
           }
           }
         </AutoSizer>
-      ) : ''}
+      )}
     </div>
   );
 };

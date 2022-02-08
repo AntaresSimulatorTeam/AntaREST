@@ -6,7 +6,6 @@ import {
   ListItemText,
   ListItem,
   Typography,
-  Button,
 } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
 import { useTranslation } from 'react-i18next';
@@ -36,7 +35,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     buttons: {
       width: '100%',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-end',
       alignItems: 'center',
       display: 'flex',
       height: BUTTONS_SIZE,
@@ -84,7 +83,6 @@ const LinksView = (props: PropsType) => {
                   {Row}
                 </FixedSizeList>
                 <div className={classes.buttons} style={{ width }}>
-                  <Button color="primary" size="small">{t('singlestudy:more')}</Button>
                   <DeleteIcon className={classes.deleteIcon} onClick={() => { onDelete(node.id); }} />
                 </div>
               </>

@@ -107,6 +107,9 @@ const calculateSize = (text: string): number => {
   if (textSize <= 5) {
     return FONT_SIZE * textSize * 10;
   }
+  if (textSize <= 6) {
+    return FONT_SIZE * textSize * 8.5;
+  }
   if (textSize <= 10) {
     return FONT_SIZE * textSize * 7.5;
   }
@@ -182,9 +185,9 @@ const MapView = (props: Props) => {
 
   const handleUpdate = async (id: string, value: UpdateAreaUi) => {
     try {
-      const filterNodes = nodeData.filter((o) => o.id === id);
-      if (filterNodes.length >= 1) {
-        const prevColors = filterNodes[0].color.slice(4, -1).split(',').map(Number);
+      const filterNodes = nodeData.find((o) => o.id === id);
+      if (filterNodes) {
+        const prevColors = filterNodes.rgbColor;
         if (value.color_rgb[0] !== prevColors[0] || value.color_rgb[1] !== prevColors[1] || value.color_rgb[2] !== prevColors[2]) {
           const updateNode = nodeData.filter((o) => o.id !== id);
           setNodeData([...updateNode, {
@@ -192,7 +195,7 @@ const MapView = (props: Props) => {
             x: value.x,
             y: value.y,
             color: `rgb(${value.color_rgb[0]}, ${value.color_rgb[1]}, ${value.color_rgb[2]})`,
-            rgbColor: filterNodes[0].rgbColor,
+            rgbColor: filterNodes.rgbColor,
             size: { width: calculateSize(id), height: NODE_HEIGHT },
           }]);
           await updateAreaUI(study.id, id, value);
@@ -206,20 +209,22 @@ const MapView = (props: Props) => {
 
   const handleUpdatePosition = async (id: string, x: number, y: number) => {
     try {
-      const prevPosition = { x: nodeData.filter((o) => o.id === id)[0].x, y: nodeData.filter((o) => o.id === id)[0].y };
-      if (x !== prevPosition.x || y !== prevPosition.y) {
-        const updateNode = nodeData.filter((o) => o.id !== id);
-        console.log('salut');
-        setNodeData([...updateNode, {
-          id,
-          x: Math.floor(x),
-          y: Math.floor(y),
-          color: nodeData.filter((o) => o.id === id)[0].color,
-          rgbColor: nodeData.filter((o) => o.id === id)[0].rgbColor,
-          size: { width: calculateSize(id), height: NODE_HEIGHT },
-        }]);
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        await updateAreaUI(study.id, id, { x, y, color_rgb: nodeData.filter((o) => o.id === id)[0].color.slice(4, -1).split(',').map(Number) });
+      const filterNodes = nodeData.find((o) => o.id === id);
+      if (filterNodes) {
+        const prevPosition = { x: nodeData.find((o) => o.id === id)?.x, y: nodeData.find((o) => o.id === id)?.y };
+        if (x !== prevPosition.x || y !== prevPosition.y) {
+          const updateNode = nodeData.filter((o) => o.id !== id);
+          setNodeData([...updateNode, {
+            id,
+            x: Math.floor(x),
+            y: Math.floor(y),
+            color: filterNodes.color,
+            rgbColor: filterNodes.rgbColor,
+            size: { width: calculateSize(id), height: NODE_HEIGHT },
+          }]);
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          await updateAreaUI(study.id, id, { x, y, color_rgb: filterNodes.rgbColor });
+        }
       }
     } catch (e) {
       // setNodeData(nodeData.filter((o) => o.id !== id));
@@ -353,7 +358,7 @@ const MapView = (props: Props) => {
         <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
       </div>
       <div className={classes.graphView}>
-        <PropertiesView item={selectedItem && isNode(selectedItem) ? nodeData.find((o) => o.id === (selectedItem as NodeProperties).id) : selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onClose={() => setSelectedItem(undefined)} onDelete={onDelete} onArea={() => setOpenModal(true)} onBlur={handleUpdate} />
+        <PropertiesView item={selectedItem && isNode(selectedItem) ? nodeData.find((o) => o.id === (selectedItem as NodeProperties).id) : selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onDelete={onDelete} onArea={() => setOpenModal(true)} onBlur={handleUpdate} />
         <div className={`${classes.autosizer} ${classes.graph}`}>
           {loaded ? (
             <AutoSizer>
