@@ -678,34 +678,70 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         # Remove from cache
         remove_from_cache(self.cache, variant_study.id)
 
-        # Remove snapshot directory if it exist
+        # Get snapshot directory
         dest_path = self.get_study_path(variant_study)
+
+        # this indicate that the current snapshot is up to date and we can only generate from the next command
+        last_executed_command_index = (
+            VariantStudyService._get_snapshot_last_executed_command_index(
+                variant_study
+            )
+        )
+        last_executed_command_index = (
+            None
+            if isinstance(parent_study, VariantStudy)
+            and not self.exists(parent_study)
+            else last_executed_command_index
+        )
 
         variant_study.snapshot = None
         self.repository.save(variant_study, update_modification_date=False)
 
         if dest_path.is_dir():
-            shutil.rmtree(dest_path)
-
-        if isinstance(parent_study, VariantStudy):
-            self._safe_generation(parent_study)
-            self.export_study_flat(
-                metadata=parent_study,
-                dest=dest_path,
-                outputs=False,
-                denormalize=False,
+            # Remove snapshot directory if it exists and last snapshot is out of sync
+            if last_executed_command_index is None:
+                logger.info("Removing previous snapshot data")
+                shutil.rmtree(dest_path)
+            else:
+                logger.info("Using previous snapshot data")
+        elif last_executed_command_index is not None:
+            # there is no snapshot so last_command_index should be None
+            logger.warning(
+                "Previous snapshot with last_executed_command found, but no data found"
             )
-        else:
-            self.raw_study_service.export_study_flat(
-                metadata=parent_study,
-                dest=dest_path,
-                outputs=False,
-                denormalize=False,
-            )
+            last_executed_command_index = None
 
-        # Copy parent study to dest
+        if last_executed_command_index is None:
+            # Copy parent study to dest
+            if isinstance(parent_study, VariantStudy):
+                self._safe_generation(parent_study)
+                self.export_study_flat(
+                    metadata=parent_study,
+                    dest=dest_path,
+                    outputs=False,
+                    denormalize=False,
+                )
+            else:
+                self.raw_study_service.export_study_flat(
+                    metadata=parent_study,
+                    dest=dest_path,
+                    outputs=False,
+                    denormalize=False,
+                )
+
+        command_start_index = (
+            last_executed_command_index + 1
+            if last_executed_command_index is not None
+            else 0
+        )
+        logger.info(
+            f"Generating study snapshot from command index {command_start_index}"
+        )
         results = self._generate_snapshot(
-            variant_study=variant_study, dest_path=dest_path, notifier=notifier
+            variant_study=variant_study,
+            dest_path=dest_path,
+            notifier=notifier,
+            from_command_index=command_start_index,
         )
         if results.success:
             last_command_index = len(variant_study.commands) - 1
@@ -754,21 +790,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return self._generate_config(metadata, parent_config)
 
     def _get_commands_and_notifier(
-        self, variant_study: VariantStudy, notifier: TaskUpdateNotifier
+        self,
+        variant_study: VariantStudy,
+        notifier: TaskUpdateNotifier,
+        from_index: int = 0,
     ) -> Tuple[List[List[ICommand]], Callable[[int, bool, str], None]]:
         # Generate
-        last_executed_command_index = (
-            VariantStudyService._get_snapshot_last_executed_command_index(
-                variant_study
-            )
-        )
         commands: List[List[ICommand]] = self._to_icommand(
-            variant_study, last_executed_command_index
-        )
-        command_index_offset = (
-            last_executed_command_index + 1
-            if last_executed_command_index is not None
-            else 0
+            variant_study, from_index
         )
 
         def notify(
@@ -777,9 +806,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             try:
                 command_result_obj = CommandResultDTO(
                     study_id=variant_study.id,
-                    id=variant_study.commands[
-                        command_index_offset + command_index
-                    ].id,
+                    id=variant_study.commands[from_index + command_index].id,
                     success=command_result,
                     message=command_message,
                 )
@@ -801,12 +828,12 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return commands, notify
 
     def _to_icommand(
-        self, metadata: VariantStudy, skip_until_index: Optional[int] = None
+        self, metadata: VariantStudy, from_index: int = 0
     ) -> List[List[ICommand]]:
         commands: List[List[ICommand]] = []
         index = 0
         for command_block in metadata.commands:
-            if skip_until_index is None or skip_until_index < index:
+            if from_index <= index:
                 commands.append(
                     self.command_factory.to_icommand(command_block.to_dto())
                 )
@@ -832,10 +859,12 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         variant_study: VariantStudy,
         dest_path: Path,
         notifier: TaskUpdateNotifier = noop_notifier,
+        from_command_index: int = 0,
     ) -> GenerationResultInfoDTO:
-
         commands, notify = self._get_commands_and_notifier(
-            variant_study=variant_study, notifier=notifier
+            variant_study=variant_study,
+            notifier=notifier,
+            from_index=from_command_index,
         )
         return self.generator.generate(
             commands, dest_path, variant_study, notifier=notify
