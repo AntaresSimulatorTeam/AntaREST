@@ -46,23 +46,22 @@ def create_study_routes(
         params = RequestParameters(user=current_user)
         study_service.create_xpansion_configuration(uuid=uuid, params=params)
 
-    # @bp.post(
-    #     "/studies/{uuid}/extensions/xpansion/delete",
-    #     tags=[APITag.xpansion_study_management],
-    #     summary="Delete Xpansion Configuration",
-    #     response_model=Dict[str, StudyMetadataDTO],
-    # )
-    # def delete_xpansion_configuration(
-    #     summary: bool = False,
-    #     managed: bool = False,
-    #     current_user: JWTUser = Depends(auth.get_current_user),
-    # ) -> Any:
-    #     logger.info(f"Fetching study list", extra={"user": current_user.id})
-    #     params = RequestParameters(user=current_user)
-    #     available_studies = study_service.get_studies_information(
-    #         summary, managed, params
-    #     )
-    #     return available_studies
+    @bp.post(
+        "/studies/{uuid}/extensions/xpansion/delete",
+        tags=[APITag.xpansion_study_management],
+        summary="Delete Xpansion Configuration",
+    )
+    def delete_xpansion_configuration(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Deleting Xpansion Configuration for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study_service.delete_xpansion_configuration(uuid=uuid, params=params)
+
     #
     # @bp.get(
     #     "/studies/{uuid}/extensions/xpansion/settings",

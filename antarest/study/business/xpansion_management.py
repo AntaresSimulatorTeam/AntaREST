@@ -48,3 +48,9 @@ class XpansionManager:
             }
 
             file_study.tree.save(xpansion_configuration_data)
+
+    def delete_xpansion_configuration(self, study: Study) -> None:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        file_study.tree.delete(["user", "expansion"])

@@ -110,3 +110,33 @@ def test_create_configuration(
         empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
         == expected_output
     )
+
+
+@pytest.mark.unit_test
+def test_delete_xpansion_configuration(tmp_path: Path):
+    """
+    Test the deletion of a configuration.
+    """
+    empty_study = make_empty_study(tmp_path, 810)
+    raw_study_service = Mock(spec=RawStudyService)
+    variant_study_service = Mock(spec=VariantStudyService)
+    xpansion_manager = XpansionManager(
+        study_storage_service=StudyStorageService(
+            raw_study_service, variant_study_service
+        ),
+    )
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    raw_study_service.get_raw.return_value = empty_study
+    raw_study_service.cache = Mock()
+
+    with pytest.raises(ChildNotFoundError):
+        empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
+
+    xpansion_manager.create_xpansion_configuration(study)
+
+    assert empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
+
+    xpansion_manager.delete_xpansion_configuration(study)
+
+    with pytest.raises(ChildNotFoundError):
+        empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
