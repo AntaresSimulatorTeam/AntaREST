@@ -26,6 +26,8 @@ class VariantStudySnapshot(Base):  # type: ignore
         primary_key=True,
     )
     created_at = Column(DateTime)
+    last_executed_command = Column(String(), nullable=True)
+
     __mapper_args__ = {
         "polymorphic_identity": "variant_study_snapshot",
     }
