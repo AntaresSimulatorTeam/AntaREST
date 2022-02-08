@@ -15,6 +15,7 @@ class TaskType(str, Enum):
     VARIANT_GENERATION = "VARIANT_GENERATION"
     COPY = "COPY"
     ARCHIVE = "ARCHIVE"
+    UNARCHIVE = "UNARCHIVE"
 
 
 class TaskStatus(Enum):

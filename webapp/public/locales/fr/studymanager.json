@@ -14,6 +14,8 @@
   "failtocopystudy": "Erreur lors de la copie de l'étude",
   "studycopiedsuccess": "Etude copiée avec succès",
   "studycopying": "Etude en cours de copie...",
+  "studyarchiving": "Etude en cours d'archivage...",
+  "studyunarchiving": "Etude en cours de désarchivage...",
   "archive": "Archiver",
   "unarchive": "Désarchiver",
   "archivesuccess": "Etude {{studyname}} archivée",

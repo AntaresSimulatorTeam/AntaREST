@@ -14,6 +14,8 @@
   "failtocopystudy": "Failed to copy study",
   "studycopiedsuccess": "Success copying study",
   "studycopying": "Copying study...",
+  "studyarchiving": "Archiving study...",
+  "studyunarchiving": "Unarchiving study...",
   "archive": "Archive",
   "unarchive": "Unarchive",
   "archivesuccess": "Study {{studyname}} archived",

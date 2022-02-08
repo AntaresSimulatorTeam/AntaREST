@@ -34,7 +34,12 @@ from antarest.core.requests import (
     UserHasNotPermissionError,
 )
 from antarest.core.roles import RoleType
-from antarest.core.tasks.model import TaskResult, TaskType
+from antarest.core.tasks.model import (
+    TaskResult,
+    TaskType,
+    TaskListFilter,
+    TaskStatus,
+)
 from antarest.core.tasks.service import (
     ITaskService,
     TaskUpdateNotifier,
@@ -1442,7 +1447,7 @@ class StudyService:
         self._assert_study_unarchived(study)
         return self.links.delete_link(study, area_from, area_to)
 
-    def archive(self, uuid: str, params: RequestParameters) -> None:
+    def archive(self, uuid: str, params: RequestParameters) -> str:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.DELETE)
 
@@ -1454,22 +1459,58 @@ class StudyService:
         if not is_managed(study):
             raise NotAManagedStudyException(study.id)
 
-        self.storage_service.raw_study_service.archive(study)
-        study.archived = True
-        self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+        if self.task_service.list_tasks(
+            TaskListFilter(
+                ref_id=uuid,
+                type=[TaskType.ARCHIVE],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+            ),
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        ):
+            raise HTTPException(
+                HTTPStatus.BAD_REQUEST, "Study is already archiving"
             )
+
+        def archive_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            study_to_archive = self.get_study(uuid)
+            self.storage_service.raw_study_service.archive(study_to_archive)
+            study_to_archive.archived = True
+            self.repository.save(study_to_archive)
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_EDITED,
+                    payload=study_to_archive.to_json_summary(),
+                    permissions=create_permission_from_study(study_to_archive),
+                )
+            )
+            return TaskResult(success=True, message="ok")
+
+        return self.task_service.add_task(
+            archive_task,
+            f"Study {study.name} archiving",
+            task_type=TaskType.ARCHIVE,
+            ref_id=study.id,
+            custom_event_messages=None,
+            request_params=params,
         )
 
-    def unarchive(self, uuid: str, params: RequestParameters) -> None:
+    def unarchive(self, uuid: str, params: RequestParameters) -> str:
         study = self.get_study(uuid)
         if not study.archived:
             raise HTTPException(
                 HTTPStatus.BAD_REQUEST, "Study is not archived"
+            )
+
+        if self.task_service.list_tasks(
+            TaskListFilter(
+                ref_id=uuid,
+                type=[TaskType.UNARCHIVE],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+            ),
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        ):
+            raise HTTPException(
+                HTTPStatus.BAD_REQUEST, "Study is already unarchiving"
             )
 
         assert_permission(params.user, study, StudyPermissionType.DELETE)
@@ -1477,24 +1518,40 @@ class StudyService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study.id, study.type)
 
-        with open(
-            self.storage_service.raw_study_service.get_archive_path(study),
-            "rb",
-        ) as fh:
-            self.storage_service.raw_study_service.import_study(
-                study, io.BytesIO(fh.read())
+        def unarchive_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            study_to_archive = self.get_study(uuid)
+            with open(
+                self.storage_service.raw_study_service.get_archive_path(
+                    study_to_archive
+                ),
+                "rb",
+            ) as fh:
+                self.storage_service.raw_study_service.import_study(
+                    study_to_archive, io.BytesIO(fh.read())
+                )
+            study_to_archive.archived = False
+            os.unlink(
+                self.storage_service.raw_study_service.get_archive_path(
+                    study_to_archive
+                )
             )
-        study.archived = False
-        os.unlink(
-            self.storage_service.raw_study_service.get_archive_path(study)
-        )
-        self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=create_permission_from_study(study),
+            self.repository.save(study_to_archive)
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_EDITED,
+                    payload=study.to_json_summary(),
+                    permissions=create_permission_from_study(study),
+                )
             )
+            return TaskResult(success=True, message="ok")
+
+        return self.task_service.add_task(
+            unarchive_task,
+            f"Study {study.name} unarchiving",
+            task_type=TaskType.UNARCHIVE,
+            ref_id=study.id,
+            custom_event_messages=None,
+            request_params=params,
         )
 
     def _save_study(

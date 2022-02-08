@@ -541,8 +541,7 @@ def create_study_routes(
         )
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
-        study_service.archive(study_id, params)
-        return ""
+        return study_service.archive(study_id, params)
 
     @bp.put(
         "/studies/{study_id}/unarchive",
@@ -558,7 +557,6 @@ def create_study_routes(
         )
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
-        study_service.unarchive(study_id, params)
-        return ""
+        return study_service.unarchive(study_id, params)
 
     return bp
