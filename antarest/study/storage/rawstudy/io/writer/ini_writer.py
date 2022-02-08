@@ -87,3 +87,16 @@ class IniWriter:
         config_parser = IniConfigParser(special_keys=self.special_keys)
         config_parser.read_dict(data)
         config_parser.write(path.open("w"))
+
+
+class SimpleKeyValueWriter(IniWriter):
+    def write(self, data: JSON, path: Path) -> None:
+        """
+        Write .ini file from json content
+        Args:
+            data: json content
+            path: .ini file
+        """
+        with path.open("w") as fp:
+            for key, value in data.items():
+                fp.write(f"{key}={value}\n")

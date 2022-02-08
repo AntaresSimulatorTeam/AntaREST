@@ -67,7 +67,7 @@ class BucketNode(FolderNode):
             self.registered_files[key](
                 self.context, self.config.next_file(key)
             ).save(data)
-        if isinstance(data, (str, bytes)):
+        elif isinstance(data, (str, bytes)):
             RawFileNode(self.context, self.config.next_file(key)).save(data)
         elif isinstance(data, dict):
             BucketNode(self.context, self.config.next_file(key)).save(data)

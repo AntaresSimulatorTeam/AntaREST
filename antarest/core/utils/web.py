@@ -3,6 +3,7 @@ class APITag:
     launcher = "Launch Studies"
     study_permissions = "Manage Study Permissions"
     study_management = "Manage Studies"
+    xpansion_study_management = "Manage Expansion Studies"
     study_data = "Manage Study Data"
     study_variant_management = "Manage Study Variant"
     study_raw_data = "Manage Study Raw File Data"

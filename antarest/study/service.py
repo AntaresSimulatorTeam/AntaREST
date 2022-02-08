@@ -57,6 +57,7 @@ from antarest.study.business.area_management import (
     AreaUI,
 )
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
+from antarest.study.business.xpansion_management import XpansionManager
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -152,6 +153,7 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.storage_service)
         self.links = LinkManager(self.storage_service)
+        self.xpansion_manager = XpansionManager(self.storage_service)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
@@ -1705,3 +1707,11 @@ class StudyService:
     @staticmethod
     def get_studies_versions(params: RequestParameters) -> List[str]:
         return list(STUDY_REFERENCE_TEMPLATES.keys())
+
+    def create_xpansion_configuration(
+        self, uuid: str, params: RequestParameters
+    ) -> bool:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.create_xpansion_configuration(study)
