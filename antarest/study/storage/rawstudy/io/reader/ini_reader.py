@@ -77,6 +77,49 @@ class IniReader(IReader):
         }
 
 
+class SimpleKeyValueReader(IReader):
+    """
+    Standard .ini file reader. Use for general purpose.
+    """
+
+    @staticmethod
+    def _parse_inf(value: str) -> Optional[str]:
+        try:
+            return "inf" if float(value) == float("inf") else None
+        except ValueError:
+            return None
+
+    @staticmethod
+    def parse_value(value: str) -> ELEMENT:
+        parsed: Union[
+            str, int, float, bool, None
+        ] = SimpleKeyValueReader._parse_inf(value)
+        parsed = parsed if parsed is not None else IniReader._parse_bool(value)
+        parsed = parsed if parsed is not None else IniReader._parse_int(value)
+        parsed = (
+            parsed if parsed is not None else IniReader._parse_float(value)
+        )
+        return parsed if parsed is not None else value
+
+    @staticmethod
+    def _parse_json(json: JSON) -> JSON:
+        return {
+            key: SimpleKeyValueReader.parse_value(value)
+            for key, value in json.items()
+        }
+
+    def read(self, path: Path) -> JSON:
+        with open(path, "r") as f:
+            json = {}
+            for line in f.readlines():
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    key, value = line.split("=")
+                    json[key] = value
+
+        return self._parse_json(json)
+
+
 class IniConfigParser(configparser.RawConfigParser):
     def optionxform(self, optionstr: str) -> str:
         return optionstr

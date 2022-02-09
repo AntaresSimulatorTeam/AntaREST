@@ -7,7 +7,7 @@ import threading
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Optional, Dict, Awaitable
+from typing import Callable, Optional, Dict, Awaitable, List
 from uuid import UUID, uuid4
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
@@ -40,7 +40,6 @@ from antarest.study.service import StudyService
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
-
 MAX_NB_CPU = 24
 MAX_TIME_LIMIT = 604800
 MIN_TIME_LIMIT = 3600
@@ -63,7 +62,7 @@ class SlurmLauncher(AbstractLauncher):
         event_bus: IEventBus,
         use_private_workspace: bool = True,
     ) -> None:
-        super().__init__(config, study_service, callbacks)
+        super().__init__(config, study_service, callbacks, event_bus)
         if config.launcher.slurm is None:
             raise LauncherInitException()
 
@@ -186,15 +185,34 @@ class SlurmLauncher(AbstractLauncher):
                 shutil.rmtree(study_path)
 
     def _import_study_output(
-        self, job_id: str, xpansion_mode: Optional[str] = None
+        self,
+        job_id: str,
+        xpansion_mode: Optional[str] = None,
+        log_dir: Optional[str] = None,
     ) -> Optional[str]:
         study_id = self.job_id_to_study_id[job_id]
         if xpansion_mode is not None:
             self._import_xpansion_result(job_id, xpansion_mode)
+
+        launcher_logs: List[Path] = []
+        if log_dir is not None:
+            launcher_logs = [
+                log_path
+                for log_path in [
+                    SlurmLauncher._get_log_path_from_log_dir(
+                        Path(log_dir), LogType.STDOUT
+                    ),
+                    SlurmLauncher._get_log_path_from_log_dir(
+                        Path(log_dir), LogType.STDERR
+                    ),
+                ]
+                if log_path
+            ]
         return self.storage_service.import_output(
             study_id,
             self.local_workspace / "OUTPUT" / job_id / "output",
             params=RequestParameters(DEFAULT_ADMIN_USER),
+            additional_logs=launcher_logs,
         )
 
     def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
@@ -245,18 +263,22 @@ class SlurmLauncher(AbstractLauncher):
                     )
                     with db():
                         output_id: Optional[str] = None
-                        if not study.with_error:
-                            output_id = self._import_study_output(
-                                study.name, study.xpansion_mode
+                        try:
+                            if not study.with_error:
+                                output_id = self._import_study_output(
+                                    study.name,
+                                    study.xpansion_mode,
+                                    study.job_log_dir,
+                                )
+                        finally:
+                            self.callbacks.update_status(
+                                study.name,
+                                JobStatus.FAILED
+                                if study.with_error or output_id is None
+                                else JobStatus.SUCCESS,
+                                None,
+                                output_id,
                             )
-                        self.callbacks.update_status(
-                            study.name,
-                            JobStatus.FAILED
-                            if study.with_error or output_id is None
-                            else JobStatus.SUCCESS,
-                            None,
-                            output_id,
-                        )
                 except Exception as e:
                     logger.error(
                         f"Failed to finalize study {study.name} launch",
@@ -275,29 +297,25 @@ class SlurmLauncher(AbstractLauncher):
         if all_done:
             self.stop()
 
-    def create_update_log(
-        self, job_id: str, study_id: str
-    ) -> Callable[[str], None]:
-        def update_log(log_line: str) -> None:
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_JOB_LOG_UPDATE,
-                    payload={
-                        "log": log_line,
-                        "job_id": job_id,
-                        "study_id": study_id,
-                    },
-                    channel=EventChannelDirectory.JOB_LOGS + job_id,
-                )
-            )
-
-        return update_log
-
     @staticmethod
     def _get_log_path(
         study: StudyDTO, log_type: LogType = LogType.STDOUT
     ) -> Optional[Path]:
         log_dir = Path(study.job_log_dir)
+        return SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
+
+    @staticmethod
+    def _find_log_dir(base_log_dir: Path, job_id: str) -> Optional[Path]:
+        if base_log_dir.exists() and base_log_dir.is_dir():
+            for fname in os.listdir(base_log_dir):
+                if fname.startswith(job_id):
+                    return base_log_dir / fname
+        return None
+
+    @staticmethod
+    def _get_log_path_from_log_dir(
+        log_dir: Path, log_type: LogType = LogType.STDOUT
+    ) -> Optional[Path]:
         log_prefix = (
             "antares-out-" if log_type == LogType.STDOUT else "antares-err-"
         )
@@ -355,6 +373,9 @@ class SlurmLauncher(AbstractLauncher):
                 with self.antares_launcher_lock:
                     self.storage_service.export_study_flat(
                         study_uuid, params, study_path, outputs=False
+                    )
+                    self.callbacks.after_export_flat(
+                        launch_uuid, study_uuid, study_path, launcher_params
                     )
 
                     self._assert_study_version_is_supported(study_uuid, params)
@@ -414,6 +435,10 @@ class SlurmLauncher(AbstractLauncher):
                     logger.warning(
                         f"Invalid slurm launcher nb_cpu ({nb_cpu}), should be between 1 and 24"
                     )
+            if (
+                launcher_params.get("adequacy_patch", None) is not None
+            ):  # the adequacy patch can be an empty object
+                launcher_args.post_processing = True
             return launcher_args
         return self.launcher_args
 
@@ -435,11 +460,22 @@ class SlurmLauncher(AbstractLauncher):
         return launch_uuid
 
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+        log_path: Optional[Path] = None
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
                 log_path = SlurmLauncher._get_log_path(study, log_type)
                 if log_path:
                     return log_path.read_text()
+        # when this is not the current worker handling this job (found in data_repo_tinydb)
+        log_dir = SlurmLauncher._find_log_dir(
+            Path(self.launcher_args.log_dir) / "JOB_LOGS", job_id
+        )
+        if log_dir:
+            log_path = SlurmLauncher._get_log_path_from_log_dir(
+                log_dir, log_type
+            )
+        if log_path:
+            return log_path.read_text()
         return None
 
     def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:

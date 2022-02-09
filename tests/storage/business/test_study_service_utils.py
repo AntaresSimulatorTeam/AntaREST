@@ -1,4 +1,5 @@
 import datetime
+import tarfile
 from hashlib import md5
 from pathlib import Path
 from typing import Any, Dict
@@ -7,11 +8,11 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.core.model import JSON
 from antarest.study.model import (
     MatrixAggregationResult,
     MatrixIndex,
     StudyDownloadLevelDTO,
+    ExportFormat,
 )
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import get_start_date
@@ -45,7 +46,7 @@ def test_output_downloads_export(tmp_path: Path):
         warnings=[],
     )
     zip_file = tmp_path / "output.zip"
-    StudyDownloader.export(matrix, "application/zip", zip_file)
+    StudyDownloader.export(matrix, ExportFormat.ZIP, zip_file)
     with ZipFile(zip_file) as zip_input:
         assert zip_input.namelist() == ["a1.csv", "a2.csv"]
         assert (
@@ -56,6 +57,15 @@ def test_output_downloads_export(tmp_path: Path):
             md5(zip_input.read("a2.csv")).hexdigest()
             == "c007db83f2769e6128e0f8c6b04d43eb"
         )
+
+    tar_file = tmp_path / "output.tar.gz"
+    StudyDownloader.export(matrix, ExportFormat.TAR_GZ, tar_file)
+    with tarfile.open(tar_file, mode="r:gz") as tar_input:
+        assert tar_input.getnames() == ["a1.csv", "a2.csv"]
+        data = tar_input.extractfile("a1.csv").read()
+        assert md5(data).hexdigest() == "e183e79f2184d6f6dacb8ad215cb056c"
+        data = tar_input.extractfile("a2.csv").read()
+        assert md5(data).hexdigest() == "c007db83f2769e6128e0f8c6b04d43eb"
 
 
 @pytest.mark.parametrize(

@@ -103,7 +103,7 @@ const MessageInfoModal = (props: PropTypes) => {
       }
     };
     init();
-  }, [enqueueSnackbar, setMessage, t, user]);
+  }, [enqueueSnackbar, setMessage, t]);
 
   useEffect(() => {
     if (messageInfo !== undefined && messageInfo !== '' && (user === undefined || !isUserAdmin(user))) setOpen(true);

@@ -198,7 +198,7 @@ const DataModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={importing ? undefined : onClose}
-      handleSave={importing ? undefined : onSave}
+      handleAction={importing ? undefined : onSave}
       title={data ? data.name : t('data:newMatrixTitle')}
     >
       <div className={classes.root}>

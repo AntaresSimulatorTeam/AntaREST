@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from fastapi import HTTPException
-from markupsafe import escape  # type: ignore
+from markupsafe import escape
 
 from antarest.core.jwt import JWTUser
 

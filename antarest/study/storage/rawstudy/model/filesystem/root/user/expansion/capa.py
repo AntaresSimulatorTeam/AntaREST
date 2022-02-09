@@ -3,5 +3,5 @@ from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
 )
 
 
-class User(BucketNode):
+class ExpansionCapa(BucketNode):
     pass

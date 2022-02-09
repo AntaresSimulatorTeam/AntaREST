@@ -1,4 +1,5 @@
 import time
+from typing import Callable
 from pathlib import Path
 from unittest.mock import ANY
 
@@ -8,6 +9,18 @@ from starlette.testclient import TestClient
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.business.area_management import AreaType
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
+
+
+def wait_for(predicate: Callable[[], bool], timeout=10):
+    end = time.time() + timeout
+    while time.time() < end:
+        try:
+            if predicate():
+                return
+        except Exception as e:
+            pass
+        time.sleep(1)
+    raise TimeoutError()
 
 
 def init_test(app: FastAPI):
@@ -178,7 +191,7 @@ def test_main(app: FastAPI):
 
     # Study copy
     copied = client.post(
-        f"/v1/studies/{created.json()}/copy?dest=copied",
+        f"/v1/studies/{created.json()}/copy?dest=copied&use_task=false",
         headers={
             "Authorization": f'Bearer {george_credentials["access_token"]}'
         },
@@ -619,6 +632,16 @@ def test_archive(app: FastAPI, tmp_path: Path):
         },
     )
     assert res.status_code == 200
+    task_id = res.json()
+    wait_for(
+        lambda: client.get(
+            f"/v1/tasks/{task_id}",
+            headers={
+                "Authorization": f'Bearer {admin_credentials["access_token"]}'
+            },
+        ).json()["status"]
+        == 3
+    )
 
     res = client.get(
         f"/v1/studies/{study_id}",
@@ -635,6 +658,18 @@ def test_archive(app: FastAPI, tmp_path: Path):
             "Authorization": f'Bearer {admin_credentials["access_token"]}'
         },
     )
+
+    task_id = res.json()
+    wait_for(
+        lambda: client.get(
+            f"/v1/tasks/{task_id}",
+            headers={
+                "Authorization": f'Bearer {admin_credentials["access_token"]}'
+            },
+        ).json()["status"]
+        == 3
+    )
+
     res = client.get(
         f"/v1/studies/{study_id}",
         headers={

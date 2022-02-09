@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from http import HTTPStatus
+from pathlib import Path
 from typing import List, Optional, cast, Dict
 from uuid import UUID
 
@@ -20,6 +21,10 @@ from antarest.core.requests import (
 )
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
+from antarest.launcher.extensions.adequacy_patch.extension import (
+    AdequacyPatchExtension,
+)
+from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.launcher.model import JobResult, JobStatus, LogType
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
@@ -67,13 +72,45 @@ class LauncherService:
             LauncherCallbacks(
                 update_status=lambda jobid, status, msg, output_id: self.update(
                     jobid, status, msg, output_id
-                )
+                ),
+                after_export_flat=lambda job_id, study_id, study_path, launcher_opts: self.after_export_flat_hooks(
+                    job_id, study_id, study_path, launcher_opts
+                ),
             ),
             event_bus,
         )
+        self.extensions = self._init_extensions()
+
+    def _init_extensions(self) -> Dict[str, ILauncherExtension]:
+        adequacy_patch_ext = AdequacyPatchExtension(
+            self.study_service.storage_service
+        )
+        return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
+
+    def after_export_flat_hooks(
+        self,
+        job_id: str,
+        study_id: str,
+        study_exported_path: Path,
+        launcher_opts: Optional[JSON],
+    ) -> None:
+        for ext in self.extensions:
+            if (
+                launcher_opts is not None
+                and launcher_opts.get(ext, None) is not None
+            ):
+                logger.info(
+                    f"Applying extension {ext} after_export_flat_hook on job {job_id}"
+                )
+                self.extensions[ext].after_export_flat_hook(
+                    job_id,
+                    study_id,
+                    study_exported_path,
+                    launcher_opts.get(ext),
+                )
 
     def update(
         self,
@@ -120,6 +157,11 @@ class LauncherService:
         study_version = study_info.version
 
         self._assert_launcher_is_initialized(launcher)
+        assert_permission(
+            user=params.user,
+            study=study_info,
+            permission_type=StudyPermissionType.RUN,
+        )
 
         job_uuid: UUID = self.launchers[launcher].run_study(
             study_uuid, str(study_version), launcher_parameters, params

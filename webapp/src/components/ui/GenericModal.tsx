@@ -64,18 +64,19 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 interface PropTypes {
     open: boolean;
     title: string;
+    actionName?: string;
     handleClose?: () => void;
-    handleSave?: () => void;
+    handleAction?: () => void;
 }
 
 const GenericModal = (props: PropsWithChildren<PropTypes>) => {
-  const { title, open, handleClose, handleSave, children } = props;
+  const { title, open, handleClose, actionName, handleAction, children } = props;
   const classes = useStyles();
   const [t] = useTranslation();
 
   const handleGlobalKeyDown = (keyboardEvent: React.KeyboardEvent<HTMLDivElement>) => {
-    if (keyboardEvent.key === 'Enter' && handleSave) {
-      handleSave();
+    if (keyboardEvent.key === 'Enter' && handleAction) {
+      handleAction();
     } else if (keyboardEvent.key === 'Escape' && handleClose) {
       handleClose();
     }
@@ -113,14 +114,14 @@ const GenericModal = (props: PropsWithChildren<PropTypes>) => {
               {t('settings:cancelButton')}
             </Button>
             )}
-            {handleSave && (
+            {handleAction && (
             <Button
               variant="contained"
               className={classes.button}
               color="primary"
-              onClick={handleSave}
+              onClick={handleAction}
             >
-              {t('settings:saveButton')}
+              {actionName !== undefined ? actionName : t('settings:saveButton')}
             </Button>
             )}
           </div>
@@ -132,7 +133,8 @@ const GenericModal = (props: PropsWithChildren<PropTypes>) => {
 
 GenericModal.defaultProps = {
   handleClose: undefined,
-  handleSave: undefined,
+  handleAction: undefined,
+  actionName: undefined,
 };
 
 export default GenericModal;
