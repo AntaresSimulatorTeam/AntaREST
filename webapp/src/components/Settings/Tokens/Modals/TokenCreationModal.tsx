@@ -126,7 +126,7 @@ const TokenCreationModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={onSave}
+      handleAction={onSave}
       title={t('settings:newTokenTitle')}
     >
       <div className={classes.infos}>

@@ -127,7 +127,7 @@ const UserModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={onSave}
+      handleAction={onSave}
       title={userInfos ? userInfos.name : t('settings:newUserTitle')}
     >
       {

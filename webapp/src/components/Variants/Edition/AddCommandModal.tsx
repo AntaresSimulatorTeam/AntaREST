@@ -50,7 +50,7 @@ const AddCommandModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={onSave}
+      handleAction={onSave}
       title={t('variants:newCommand')}
     >
       <div className={classes.infos}>
