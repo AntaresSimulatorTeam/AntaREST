@@ -12,10 +12,10 @@ const reduxStore = createStore();
 addWsListeners(reduxStore);
 
 ReactDOM.render(
-    <StyledEngineProvider injectFirst>
-      <Provider store={reduxStore}>
-        <App />
-      </Provider>
-    </StyledEngineProvider>,
+  <StyledEngineProvider injectFirst>
+    <Provider store={reduxStore}>
+      <App />
+    </Provider>
+  </StyledEngineProvider>,
   document.getElementById('root'),
 );

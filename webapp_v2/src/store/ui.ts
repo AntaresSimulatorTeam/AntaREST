@@ -16,8 +16,8 @@ export interface UIState {
 }
 
 const initialState: UIState = {
-    menuExtended: false,
-    currentPage: '/',
+  menuExtended: false,
+  currentPage: '/',
 };
 
 /** ******************************************* */
@@ -30,22 +30,22 @@ export interface SetMenuExtensionStatusAction extends Action {
 }
 
 export const setMenuExtensionStatusAction = (status: boolean): SetMenuExtensionStatusAction => ({
-    type: 'UI/SET_MENU_EXTENSION_STATUS',
-    payload: status,
-  });
+  type: 'UI/SET_MENU_EXTENSION_STATUS',
+  payload: status,
+});
 
 export const setMenuExtension = (status: boolean): ThunkAction<void, AppState, unknown, SetMenuExtensionStatusAction> => (dispatch): void => {
-    dispatch(setMenuExtensionStatusAction(status));
+  dispatch(setMenuExtensionStatusAction(status));
 };
 
 export interface SetAppPageAction extends Action {
     type: 'UI/SET_APP_PAGE';
     payload: string;
   }
-  
+
 export const setAppPage = (page: string): SetAppPageAction => ({
-    type: 'UI/SET_APP_PAGE',
-    payload: page,
+  type: 'UI/SET_APP_PAGE',
+  payload: page,
 });
 
 type UIAction = SetMenuExtensionStatusAction | SetAppPageAction;
@@ -67,11 +67,11 @@ export default (state = initialState, action: UIAction): UIState => {
       };
     }
     case 'UI/SET_APP_PAGE': {
-        return {
-          ...state,
-          currentPage: action.payload,
-        };
-      }
+      return {
+        ...state,
+        currentPage: action.payload,
+      };
+    }
     default:
       return state;
   }

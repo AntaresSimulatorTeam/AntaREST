@@ -1,5 +1,4 @@
 import * as React from 'react';
-import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
@@ -14,7 +13,7 @@ interface Props {
 export default function StudyCard(props: Props) {
   const { study } = props;
   return (
-    <Card sx={{ minWidth: 275,  backgroundColor: 'primary.dark' }} >
+    <Card variant="outlined" sx={{ minWidth: 275 }}>
       <CardContent>
         <Typography variant="h5" component="div" color="white" height="60px">
           {study.name}
@@ -25,11 +24,11 @@ export default function StudyCard(props: Props) {
         <Typography variant="body2" color="white">
           well meaning and kindly.
           <br />
-          {'"a benevolent smile"'}
+          a benevolent smile
         </Typography>
       </CardContent>
       <CardActions>
-        <Button size="small" sx={{ color: 'secondary.main' }}>Explore</Button>
+        <Button size="small" color="primary">Explore</Button>
       </CardActions>
     </Card>
   );

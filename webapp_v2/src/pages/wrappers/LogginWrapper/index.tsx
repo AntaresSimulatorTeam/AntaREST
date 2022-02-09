@@ -43,7 +43,6 @@
 //   fontSize: '0.9rem',
 // }));
 
-
 // type FormStatus = 'loading' | 'default' | 'success';
 
 // interface Inputs {
