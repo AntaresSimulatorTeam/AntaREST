@@ -566,6 +566,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         metadata: VariantStudy,
         denormalize: bool = False,
+        from_scratch: bool = False,
     ) -> str:
         with FileLock(
             str(
@@ -599,6 +600,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 generate_result = self._generate(
                     variant_study_id=study_id,
                     denormalize=denormalize,
+                    from_scratch=from_scratch,
                     params=RequestParameters(DEFAULT_ADMIN_USER),
                     notifier=notifier,
                 )
@@ -627,6 +629,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         variant_study_id: str,
         denormalize: bool,
+        from_scratch: bool,
         params: RequestParameters,
     ) -> str:
         # Get variant study
@@ -657,6 +660,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         variant_study_id: str,
         params: RequestParameters,
         denormalize: bool = True,
+        from_scratch: bool = False,
         notifier: TaskUpdateNotifier = noop_notifier,
     ) -> GenerationResultInfoDTO:
         logger.info(f"Generating variant study {variant_study_id}")
@@ -689,8 +693,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
         last_executed_command_index = (
             None
-            if isinstance(parent_study, VariantStudy)
-            and not self.exists(parent_study)
+            if (
+                isinstance(parent_study, VariantStudy)
+                and not self.exists(parent_study)
+            )
+            or from_scratch
             else last_executed_command_index
         )
 
