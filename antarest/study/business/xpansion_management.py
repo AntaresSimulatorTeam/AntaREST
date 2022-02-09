@@ -1,5 +1,3 @@
-import re
-from dataclasses import dataclass
 from typing import Optional, Literal, Union
 
 from pydantic import Field, BaseModel
@@ -89,3 +87,16 @@ class XpansionManager:
         )
         json = file_study.tree.get(["user", "expansion", "settings"])
         return XpansionSettingsDTO.parse_obj(json)
+
+    def update_xpansion_settings(
+        self, study: Study, new_xpansion_settings_dto: XpansionSettingsDTO
+    ) -> XpansionSettingsDTO:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+
+        file_study.tree.save(
+            new_xpansion_settings_dto.dict(by_alias=True),
+            ["user", "expansion", "settings"],
+        )
+        return new_xpansion_settings_dto

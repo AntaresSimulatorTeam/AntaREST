@@ -53,8 +53,8 @@ def make_empty_study(tmpdir: Path, version: int) -> FileStudy:
                     "max_iteration": "inf",
                     "uc_type": "expansion_fast",
                     "master": "integer",
-                    "yearly-weights": "None",
-                    "additional-constraints": "None",
+                    "yearly-weights": None,
+                    "additional-constraints": None,
                     "relaxed-optimality-gap": 1e6,
                     "cut-type": "average",
                     "ampl.solver": "cbc",
@@ -73,8 +73,8 @@ def make_empty_study(tmpdir: Path, version: int) -> FileStudy:
                     "max_iteration": "inf",
                     "uc_type": "expansion_fast",
                     "master": "integer",
-                    "yearly-weights": "None",
-                    "additional-constraints": "None",
+                    "yearly-weights": None,
+                    "additional-constraints": None,
                     "relative_gap": 1e-12,
                     "solver": "Cbc",
                 },
@@ -158,7 +158,7 @@ def test_delete_xpansion_configuration(tmp_path: Path):
                     "uc_type": "expansion_fast",
                     "master": "integer",
                     "yearly_weight": None,
-                    "additional-constraints": "None",
+                    "additional-constraints": None,
                     "relaxed-optimality-gap": 1000000.0,
                     "cut-type": "average",
                     "ampl.solver": "cbc",
@@ -178,7 +178,7 @@ def test_delete_xpansion_configuration(tmp_path: Path):
                     "uc_type": "expansion_fast",
                     "master": "integer",
                     "yearly_weight": None,
-                    "additional-constraints": "None",
+                    "additional-constraints": None,
                     "relaxed-optimality-gap": None,
                     "cut-type": None,
                     "ampl.solver": None,
@@ -216,3 +216,46 @@ def test_get_xpansion_settings(
     xpansion_manager.create_xpansion_configuration(study)
 
     assert xpansion_manager.get_xpansion_settings(study) == expected_output
+
+
+@pytest.mark.unit_test
+def test_update_xpansion_settings(tmp_path: Path):
+    """
+    Test the retrieval of the xpansion settings.
+    """
+
+    empty_study = make_empty_study(tmp_path, 810)
+    raw_study_service = Mock(spec=RawStudyService)
+    variant_study_service = Mock(spec=VariantStudyService)
+    xpansion_manager = XpansionManager(
+        study_storage_service=StudyStorageService(
+            raw_study_service, variant_study_service
+        ),
+    )
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    raw_study_service.get_raw.return_value = empty_study
+    raw_study_service.cache = Mock()
+
+    xpansion_manager.create_xpansion_configuration(study)
+
+    new_settings = XpansionSettingsDTO.parse_obj(
+        {
+            "optimality_gap": 4,
+            "max_iteration": 123,
+            "uc_type": "expansion_fast",
+            "master": "integer",
+            "yearly_weight": None,
+            "additional-constraints": None,
+            "relaxed-optimality-gap": None,
+            "cut-type": None,
+            "ampl.solver": None,
+            "ampl.presolve": None,
+            "ampl.solve_bounds_frequency": None,
+            "relative_gap": 1e-12,
+            "solver": "Cbc",
+        }
+    )
+
+    xpansion_manager.update_xpansion_settings(study, new_settings)
+
+    assert xpansion_manager.get_xpansion_settings(study) == new_settings

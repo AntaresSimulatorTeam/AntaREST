@@ -1734,3 +1734,16 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         return self.xpansion_manager.get_xpansion_settings(study)
+
+    def update_xpansion_settings(
+        self,
+        uuid: str,
+        xpansion_settings_dto: XpansionSettingsDTO,
+        params: RequestParameters,
+    ) -> XpansionSettingsDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.update_xpansion_settings(
+            study, xpansion_settings_dto
+        )

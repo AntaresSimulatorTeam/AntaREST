@@ -82,23 +82,26 @@ def create_study_routes(
         return study_service.get_xpansion_settings(uuid=uuid, params=params)
 
     #
-    # @bp.post(
-    #     "/studies/{uuid}/extensions/xpansion/settings",
-    #     tags=[APITag.xpansion_study_management],
-    #     summary="Update Xpansion Settings",
-    #     response_model=Dict[str, StudyMetadataDTO],
-    # )
-    # def update_settings(
-    #     summary: bool = False,
-    #     managed: bool = False,
-    #     current_user: JWTUser = Depends(auth.get_current_user),
-    # ) -> Any:
-    #     logger.info(f"Fetching study list", extra={"user": current_user.id})
-    #     params = RequestParameters(user=current_user)
-    #     available_studies = study_service.get_studies_information(
-    #         summary, managed, params
-    #     )
-    #     return available_studies
+    @bp.post(
+        "/studies/{uuid}/extensions/xpansion/settings",
+        tags=[APITag.xpansion_study_management],
+        summary="Update Xpansion Settings",
+        response_model=XpansionSettingsDTO,
+    )
+    def update_settings(
+        uuid: str,
+        xpansion_settings_dto: XpansionSettingsDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Updating Xpansion Settings Of Study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.update_xpansion_settings(
+            uuid, xpansion_settings_dto, params
+        )
+
     #
     # @bp.post(
     #     "/studies/{uuid}/extensions/xpansion/candidates/{candidate_id}/add",
