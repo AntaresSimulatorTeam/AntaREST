@@ -87,10 +87,10 @@ const PanelView = (props: PropType) => {
         {node && (
           <>
             <TextField className={classes.fields} label={t('singlestudy:areaName')} variant="filled" value={node.id} disabled />
-            <HuePicker className={classes.sliderpicker} color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
-            <MaterialPicker className={classes.materialpicker} color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
             <TextField className={classes.fields} label={t('singlestudy:posX')} variant="filled" value={node.x} disabled />
             <TextField className={classes.fields} label={t('singlestudy:posY')} variant="filled" value={node.y} disabled />
+            <HuePicker className={classes.sliderpicker} color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
+            <MaterialPicker className={classes.materialpicker} color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />
           </>
         )}
         {links && node && (

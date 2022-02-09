@@ -4,7 +4,7 @@ export interface NodeProperties {
     y: number;
     color: string;
     rgbColor: Array<number>;
-    size?: { width: number; height: number };
+    size: { width: number; height: number };
     highlighted?: boolean;
 }
 

@@ -100,6 +100,7 @@ const PropertiesView = (props: PropsType) => {
             </InputAdornment>
           ),
         }}
+        disabled
         onChange={(e) => onChange(e.target.value as string)}
       />
       {item && isNode(item) && onDelete ? (

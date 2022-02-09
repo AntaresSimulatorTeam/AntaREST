@@ -201,14 +201,7 @@ const MapView = (props: Props) => {
           await updateAreaUI(study.id, id, value);
         }
       } catch (e) {
-        setNodeData([...nodeData, {
-          id,
-          x: filterNodes.x,
-          y: filterNodes.y,
-          color: `rgb(${filterNodes.rgbColor[0]}, ${filterNodes.rgbColor[1]}, ${filterNodes.rgbColor[2]})`,
-          rgbColor: filterNodes.rgbColor,
-          size: filterNodes.size,
-        }]);
+        setNodeData([...nodeData]);
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:colorUpdateError'), e as AxiosError);
       }
     }
@@ -233,56 +226,45 @@ const MapView = (props: Props) => {
           await updateAreaUI(study.id, id, { x, y, color_rgb: filterNodes.rgbColor });
         }
       } catch (e) {
-        setNodeData([...nodeData, {
-          id,
-          x: filterNodes.x,
-          y: filterNodes.y,
-          color: filterNodes.color,
-          rgbColor: filterNodes.rgbColor,
-          size: filterNodes.size,
-        }]);
+        setNodeData([...nodeData]);
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:positionUpdateError'), e as AxiosError);
       }
     }
   };
 
   const onDelete = async (id: string, target?: string) => {
-    try {
-      if (graphRef.current) {
-        const currentGraph = graphRef.current;
-        // eslint-disable-next-line no-underscore-dangle
-        currentGraph._setNodeHighlightedValue(id, false);
-      }
+    if (graphRef.current) {
+      const currentGraph = graphRef.current;
+      // eslint-disable-next-line no-underscore-dangle
+      currentGraph._setNodeHighlightedValue(id, false);
+    }
 
-      setTimeout(async () => {
-        if (target && linkData) {
+    setTimeout(async () => {
+      if (target && linkData) {
+        try {
           const links = linkData.filter((o) => o.source !== id || o.target !== target);
           setLinkData(links);
           setSelectedItem(undefined);
           await deleteLink(study.id, id, target);
+        } catch (e) {
+          setLinkData([...linkData]);
+          enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:deleteAreaOrLink'), e as AxiosError);
         }
-      }, 0);
-
-      setTimeout(async () => {
-        if (nodeData && linkData && !target) {
+      } else if (nodeData && linkData && !target) {
+        const obj = nodeData.filter((o) => o.id !== id);
+        const links = linkData.filter((o) => o.source !== id && o.target !== id);
+        try {
           setSelectedItem(undefined);
-          const obj = nodeData.filter((o) => o.id !== id);
-          const links = linkData.filter((o) => o.source !== id && o.target !== id);
           setLinkData(links);
           setNodeData(obj);
           await deleteArea(study.id, id);
+        } catch (e) {
+          setLinkData([...linkData]);
+          setNodeData([...nodeData]);
+          enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:deleteAreaOrLink'), e as AxiosError);
         }
-      }, 0);
-    } catch (e) {
-      if (target && linkData) {
-        setLinkData([...linkData, ...[{
-          source: id,
-          target,
-        }]]);
       }
-      // manque qlq chose je crois
-      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:deleteAreaOrLink'), e as AxiosError);
-    }
+    }, 0);
   };
 
   useEffect(() => {
