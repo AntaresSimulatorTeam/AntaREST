@@ -99,4 +99,5 @@ class SimpleKeyValueWriter(IniWriter):
         """
         with path.open("w") as fp:
             for key, value in data.items():
-                fp.write(f"{key}={value}\n")
+                if value is not None:
+                    fp.write(f"{key}={value}\n")

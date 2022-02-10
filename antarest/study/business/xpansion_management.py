@@ -143,12 +143,17 @@ class XpansionManager:
 
         # Find id of new candidate
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
+        max_id = (
+            2 if not candidates else int(sorted(candidates.keys()).pop()) + 2
+        )
         next_id = next(
-            str(i) for i in range(1, 1000) if str(i) not in candidates
+            str(i) for i in range(1, max_id) if str(i) not in candidates
         )  # TODO: looks ugly, is there a better way to do this?
 
         # Add candidate
-        candidates[next_id] = xpansion_candidate_dto.dict(by_alias=True)
+        candidates[next_id] = xpansion_candidate_dto.dict(
+            by_alias=True, exclude_none=True
+        )
         candidates_data = {"user": {"expansion": {"candidates": candidates}}}
         file_study.tree.save(candidates_data)
 

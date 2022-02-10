@@ -51,9 +51,6 @@ class IniReader(IReader):
 
     @staticmethod
     def parse_value(value: str) -> SUB_JSON:
-        if value == "None":
-            return None
-
         parsed: Union[str, int, float, bool, None] = IniReader._parse_bool(
             value
         )
@@ -94,8 +91,6 @@ class SimpleKeyValueReader(IReader):
 
     @staticmethod
     def parse_value(value: str) -> SUB_JSON:
-        if value == "None":
-            return None
         parsed: Union[
             str, int, float, bool, None
         ] = SimpleKeyValueReader._parse_inf(value)

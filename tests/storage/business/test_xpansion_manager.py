@@ -77,8 +77,6 @@ def make_xpansion_manager(empty_study):
                     "max_iteration": "inf",
                     "uc_type": "expansion_fast",
                     "master": "integer",
-                    "yearly-weights": None,
-                    "additional-constraints": None,
                     "relaxed-optimality-gap": 1e6,
                     "cut-type": "average",
                     "ampl.solver": "cbc",
@@ -97,8 +95,6 @@ def make_xpansion_manager(empty_study):
                     "max_iteration": "inf",
                     "uc_type": "expansion_fast",
                     "master": "integer",
-                    "yearly-weights": None,
-                    "additional-constraints": None,
                     "relative_gap": 1e-12,
                     "solver": "Cbc",
                 },
@@ -289,14 +285,14 @@ def test_add_candidate(tmp_path: Path):
 
     xpansion_manager.add_candidate(study, new_candidate)
 
-    candidates = {"1": new_candidate.dict(by_alias=True)}
+    candidates = {"1": new_candidate.dict(by_alias=True, exclude_none=True)}
 
     assert (
         empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
     )
 
     xpansion_manager.add_candidate(study, new_candidate)
-    candidates["2"] = new_candidate.dict(by_alias=True)
+    candidates["2"] = new_candidate.dict(by_alias=True, exclude_none=True)
 
     assert (
         empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
