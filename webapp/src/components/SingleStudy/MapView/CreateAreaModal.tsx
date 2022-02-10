@@ -6,7 +6,9 @@ import {
   TextField,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
 import GenericModal from '../../ui/GenericModal';
+import { isStringEmpty } from '../../../services/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -43,14 +45,23 @@ const DEFAULT_Y = 0;
 const CreateAreaModal = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const { open, onClose, onSave } = props;
   const [name, setName] = useState<string>('');
+
+  const handleSave = (id: string, posX: number, posY: number, color: string) => {
+    if (!isStringEmpty(id)) {
+      onSave(id, posX, posY, color);
+    } else {
+      enqueueSnackbar(t('singlestudy:createAreaError'), { variant: 'error' });
+    }
+  };
 
   return (
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={() => onSave(name, DEFAULT_X, DEFAULT_Y, DEFAULT_COLOR)}
+      handleAction={() => handleSave(name, DEFAULT_X, DEFAULT_Y, DEFAULT_COLOR)}
       title={t('singlestudy:newArea')}
     >
       <div className={classes.name}>

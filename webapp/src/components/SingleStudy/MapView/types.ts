@@ -1,5 +1,6 @@
 export interface NodeProperties {
     id: string;
+    name: string;
     x: number;
     y: number;
     color: string;
@@ -48,13 +49,10 @@ export interface LinkProperties {
 }
 
 export interface AreaLayerColor {
-    0: string;
-    1: string;
-    2: string;
+    [key: number]: string;
 }
 export interface AreaLayerXandY {
-    0: string;
-    2: string;
+    [key: number]: string;
 }
 
 export interface AreaUI {
@@ -91,6 +89,18 @@ export interface UpdateAreaUi {
 export interface LinkCreationInfo {
     area1: string;
     area2: string;
+}
+
+export interface AreaCreationDTO {
+    name: string;
+    type: object;
+    metadata?: object;
+    set?: Array<string>;
+}
+
+export interface AreaInfoDTO extends AreaCreationDTO {
+    id: string;
+    thermals: Array<object>;
 }
 
 export const isNode = (el: NodeProperties | LinkProperties): boolean => (el as any).id !== undefined;

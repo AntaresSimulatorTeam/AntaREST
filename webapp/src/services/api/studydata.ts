@@ -1,7 +1,7 @@
-import { LinkCreationInfo, UpdateAreaUi } from '../../components/SingleStudy/MapView/types';
+import { AreaInfoDTO, LinkCreationInfo, UpdateAreaUi } from '../../components/SingleStudy/MapView/types';
 import client from './client';
 
-export const createArea = async (uuid: string, name: string): Promise<string> => {
+export const createArea = async (uuid: string, name: string): Promise<AreaInfoDTO> => {
   const res = await client.post(`/v1/studies/${uuid}/areas?uuid=${uuid}`, { name, type: 'AREA' });
   return res.data;
 };

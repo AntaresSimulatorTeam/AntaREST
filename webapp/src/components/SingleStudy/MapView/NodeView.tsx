@@ -88,13 +88,13 @@ const NodeView = (props: PropType) => {
       {node.highlighted ? (
         <>
           <div className={`${classes.node} ${classes.highlighted}`} style={{ backgroundColor: `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 75 && hslColors[2] >= 50) ? 'black' : 'white', boxShadow: `0px 0px 4px 2px hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)` }}>
-            {node.id}
+            {node.name}
           </div>
           <LinkIcon className={classes.linkIcon} onClick={(e) => { e.preventDefault(); e.stopPropagation(); linkCreation(node.id); }} />
         </>
       ) : (
         <div className={classes.node} style={{ backgroundColor: `hsl(${hslColors[0]}, ${hslColors[1]}%, ${hslColors[2]}%)`, color: hslColors[2] >= 75 || (hslColors[0] >= 50 && hslColors[0] <= 75 && hslColors[2] >= 50) ? 'black' : 'white' }}>
-          {node.id}
+          {node.name}
         </div>
       )
       }

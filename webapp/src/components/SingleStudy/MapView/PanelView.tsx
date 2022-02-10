@@ -49,6 +49,8 @@ const useStyles = makeStyles((theme: Theme) =>
       width: 'unset !important',
       maxWidth: '230px !important',
       fontFamily: '"Inter", sans-serif !important',
+      boxShadow: 'none',
+      border: '1px solid rgba(0,0,0,.12)',
     },
   }));
 
@@ -57,13 +59,13 @@ interface PropType {
     links?: Array<LinkProperties>;
     link?: LinkProperties;
     onDelete: (id: string, target?: string) => void;
-    onBlur: (id: string, value: UpdateAreaUi) => void;
+    updateUI: (id: string, value: UpdateAreaUi) => void;
 }
 
 const PanelView = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { node, links, link, onDelete, onBlur } = props;
+  const { node, links, link, onDelete, updateUI } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [currentColor, setCurrentColor] = useState<string>(node?.color || '');
 
@@ -71,7 +73,7 @@ const PanelView = (props: PropType) => {
     if (node) {
       setCurrentColor(`rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})`);
       // eslint-disable-next-line @typescript-eslint/camelcase
-      onBlur(node.id, { x: node.x, y: node.y, color_rgb: color.rgb !== null ? [color.rgb.r, color.rgb.g, color.rgb.b] : node.color.slice(4, -1).split(',').map(Number) });
+      updateUI(node.id, { x: node.x, y: node.y, color_rgb: color.rgb !== null ? [color.rgb.r, color.rgb.g, color.rgb.b] : node.color.slice(4, -1).split(',').map(Number) });
     }
   };
 
@@ -86,7 +88,7 @@ const PanelView = (props: PropType) => {
       <div className={classes.form}>
         {node && (
           <>
-            <TextField className={classes.fields} label={t('singlestudy:areaName')} variant="filled" value={node.id} disabled />
+            <TextField className={classes.fields} label={t('singlestudy:areaName')} variant="filled" value={node.name} disabled />
             <TextField className={classes.fields} label={t('singlestudy:posX')} variant="filled" value={node.x} disabled />
             <TextField className={classes.fields} label={t('singlestudy:posY')} variant="filled" value={node.y} disabled />
             <HuePicker className={classes.sliderpicker} color={currentColor} onChangeComplete={(color) => handleChangeColor(color)} />

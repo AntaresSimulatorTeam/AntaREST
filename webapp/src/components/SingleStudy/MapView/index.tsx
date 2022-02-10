@@ -133,7 +133,6 @@ const MapView = (props: Props) => {
   const [secondNode, setSecondNode] = useState<string>();
   const graphRef = useRef<Graph<GraphNode & NodeProperties, GraphLink & LinkProperties>>(null);
   const prevselectedItemId = useRef<string>();
-  // const [zoom, setZoom] = useState<number>();
 
   const onClickNode = useCallback((nodeId: string) => {
     if (!firstNode && nodeData) {
@@ -168,9 +167,10 @@ const MapView = (props: Props) => {
   const onSave = async (name: string, posX: number, posY: number, color: string) => {
     setOpenModal(false);
     try {
-      await createArea(study.id, name);
+      const area = await createArea(study.id, name);
       setNodeData([...nodeData, {
-        id: name,
+        id: area.id,
+        name: area.name,
         x: posX,
         y: posY,
         color,
@@ -178,57 +178,41 @@ const MapView = (props: Props) => {
         size: { width: calculateSize(name), height: NODE_HEIGHT },
       }]);
     } catch (e) {
-      setNodeData(nodeData.filter((o) => o.id !== name));
       enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:createAreaError'), e as AxiosError);
     }
   };
 
-  const handleUpdate = async (id: string, value: UpdateAreaUi) => {
-    const filterNodes = nodeData.find((o) => o.id === id);
-    if (filterNodes) {
+  const getTargetNode = (id: string) => nodeData.find((o) => o.id === id);
+
+  const updateUI = async (id: string, value: UpdateAreaUi) => {
+    const targetNode = getTargetNode(id);
+    if (targetNode) {
       try {
-        const prevColors = filterNodes.rgbColor;
-        if (value.color_rgb[0] !== prevColors[0] || value.color_rgb[1] !== prevColors[1] || value.color_rgb[2] !== prevColors[2]) {
+        const prevColors = targetNode.rgbColor;
+        const prevPosition = { x: targetNode.x, y: targetNode.y };
+        if ((value.color_rgb[0] !== prevColors[0] || value.color_rgb[1] !== prevColors[1] || value.color_rgb[2] !== prevColors[2]) || (value.x !== prevPosition.x || value.y !== prevPosition.y)) {
           const updateNode = nodeData.filter((o) => o.id !== id);
           setNodeData([...updateNode, {
-            id,
+            ...targetNode,
             x: value.x,
             y: value.y,
             color: `rgb(${value.color_rgb[0]}, ${value.color_rgb[1]}, ${value.color_rgb[2]})`,
-            rgbColor: filterNodes.rgbColor,
-            size: filterNodes.size,
+            rgbColor: [value.color_rgb[0], value.color_rgb[1], value.color_rgb[2]],
           }]);
           await updateAreaUI(study.id, id, value);
         }
       } catch (e) {
         setNodeData([...nodeData]);
-        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:colorUpdateError'), e as AxiosError);
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:updateUIError'), e as AxiosError);
       }
     }
   };
 
   const handleUpdatePosition = async (id: string, x: number, y: number) => {
-    const filterNodes = nodeData.find((o) => o.id === id);
-    if (filterNodes) {
-      try {
-        const prevPosition = { x: nodeData.find((o) => o.id === id)?.x, y: nodeData.find((o) => o.id === id)?.y };
-        if (x !== prevPosition.x || y !== prevPosition.y) {
-          const updateNode = nodeData.filter((o) => o.id !== id);
-          setNodeData([...updateNode, {
-            id,
-            x: Math.floor(x),
-            y: Math.floor(y),
-            color: filterNodes.color,
-            rgbColor: filterNodes.rgbColor,
-            size: filterNodes.size,
-          }]);
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          await updateAreaUI(study.id, id, { x, y, color_rgb: filterNodes.rgbColor });
-        }
-      } catch (e) {
-        setNodeData([...nodeData]);
-        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:positionUpdateError'), e as AxiosError);
-      }
+    const targetNode = getTargetNode(id);
+    if (targetNode) {
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      updateUI(id, { x, y, color_rgb: targetNode.rgbColor });
     }
   };
 
@@ -291,35 +275,23 @@ const MapView = (props: Props) => {
     const init = async () => {
       try {
         const data = await getSynthesis(study.id);
+        const areaData = await getAreaPositions(study.id, Object.keys(data.areas).join(','));
+        const areas: AreasConfig = Object.keys(data.areas).length === 1 ? { [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig } : areaData as AreasConfig;
+        const tempNodeData = Object.keys(areas).map((areaId) => ({
+          id: areaId,
+          name: data.areas[areaId].name,
+          x: areas[areaId].ui.x,
+          y: areas[areaId].ui.y,
+          color: `rgb(${areas[areaId].ui.color_r}, ${areas[areaId].ui.color_g}, ${areas[areaId].ui.color_b})`,
+          rgbColor: [areas[areaId].ui.color_r, areas[areaId].ui.color_g, areas[areaId].ui.color_b],
+          size: { width: calculateSize(areaId), height: NODE_HEIGHT },
+        }));
+        setNodeData(tempNodeData);
         setLinkData(Object.keys(data.areas).reduce((links, currentAreaId) =>
           links.concat(Object.keys(data.areas[currentAreaId].links).map((linkId) => ({
             source: currentAreaId,
             target: linkId,
           }))), [] as Array<LinkProperties>));
-        const areaData = await getAreaPositions(study.id, Object.keys(data.areas).join(','));
-        if (Object.keys(data.areas).length === 1) {
-          const area = { [Object.keys(data.areas)[0]]: areaData as SingleAreaConfig };
-          const tempNodeData = Object.keys(area).map((areaId) => ({
-            id: areaId,
-            x: area[areaId].ui.x,
-            y: area[areaId].ui.y,
-            color: `rgb(${area[areaId].ui.color_r}, ${area[areaId].ui.color_g}, ${area[areaId].ui.color_b})`,
-            rgbColor: [area[areaId].ui.color_r, area[areaId].ui.color_g, area[areaId].ui.color_b],
-            size: { width: calculateSize(areaId), height: NODE_HEIGHT },
-          }));
-          setNodeData(tempNodeData);
-        } else {
-          const area = areaData as AreasConfig;
-          const tempNodeData = Object.keys(area).map((areaId) => ({
-            id: areaId,
-            x: area[areaId].ui.x,
-            y: area[areaId].ui.y,
-            color: `rgb(${area[areaId].ui.color_r}, ${area[areaId].ui.color_g}, ${area[areaId].ui.color_b})`,
-            rgbColor: [area[areaId].ui.color_r, area[areaId].ui.color_g, area[areaId].ui.color_b],
-            size: { width: calculateSize(areaId), height: NODE_HEIGHT },
-          }));
-          setNodeData(tempNodeData);
-        }
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
       } finally {
@@ -355,7 +327,7 @@ const MapView = (props: Props) => {
         <Typography className={classes.title}>{t('singlestudy:map')}</Typography>
       </div>
       <div className={classes.graphView}>
-        <PropertiesView item={selectedItem && isNode(selectedItem) ? nodeData.find((o) => o.id === (selectedItem as NodeProperties).id) : selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onDelete={onDelete} onArea={() => setOpenModal(true)} onBlur={handleUpdate} />
+        <PropertiesView item={selectedItem && isNode(selectedItem) ? nodeData.find((o) => o.id === (selectedItem as NodeProperties).id) : selectedItem} setSelectedItem={setSelectedItem} nodeLinks={selectedNodeLinks} nodeList={nodeData} onDelete={onDelete} onArea={() => setOpenModal(true)} updateUI={updateUI} />
         <div className={`${classes.autosizer} ${classes.graph}`}>
           {loaded ? (
             <AutoSizer>

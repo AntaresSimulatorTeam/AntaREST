@@ -62,12 +62,12 @@ interface PropsType {
     nodeLinks?: Array<LinkProperties> | undefined;
     onDelete?: (id: string, target?: string) => void;
     onArea?: () => void;
-    onBlur: (id: string, value: UpdateAreaUi) => void;
+    updateUI: (id: string, value: UpdateAreaUi) => void;
 }
 
 const PropertiesView = (props: PropsType) => {
   const classes = useStyles();
-  const { item, setSelectedItem, nodeList, nodeLinks, onDelete, onArea, onBlur } = props;
+  const { item, setSelectedItem, nodeList, nodeLinks, onDelete, onArea, updateUI } = props;
   const [t] = useTranslation();
   const [filteredNodes, setFilteredNodes] = useState<Array<NodeProperties>>();
 
@@ -106,12 +106,12 @@ const PropertiesView = (props: PropsType) => {
       {item && isNode(item) && onDelete ? (
         <div className={classes.list}>
           <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
-          <PanelView node={item as NodeProperties} links={nodeLinks} onDelete={onDelete} onBlur={onBlur} />
+          <PanelView node={item as NodeProperties} links={nodeLinks} onDelete={onDelete} updateUI={updateUI} />
         </div>
       ) : (item && onDelete && (
         <div className={classes.list}>
           <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
-          <PanelView link={item as LinkProperties} onDelete={onDelete} onBlur={onBlur} />
+          <PanelView link={item as LinkProperties} onDelete={onDelete} updateUI={updateUI} />
         </div>
       ))}
       {filteredNodes && !item && (

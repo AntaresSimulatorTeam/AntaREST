@@ -21,25 +21,13 @@ const GraphView = (props: GraphViewProps) => {
   let nodeDataToRender = nodeData;
   const initialZoom = 1;
   if (nodeData.length > 0) {
-    // compute original enclosing rectange
-    /* const enclosingRect = nodeData.reduce((acc, currentNode) => ({
-      xmax: acc.xmax > currentNode.x ? acc.xmax : currentNode.x,
-      xmin: acc.xmin < currentNode.x ? acc.xmin : currentNode.x,
-      ymax: acc.ymax > currentNode.y ? acc.ymax : currentNode.y,
-      ymin: acc.ymin < currentNode.y ? acc.ymin : currentNode.y,
-    }), { xmax: nodeData[0].x, xmin: nodeData[0].x, ymax: nodeData[0].y, ymin: nodeData[0].y }); */
-
-    // get min scale (don't scale up)
-
-    // compute center offset with scale fix on x axis
     const centerVector = { x: (width / initialZoom / 2), y: (height / 2) };
 
-    // get real center from origin enclosing rectangle
     const realCenter = {
       y: 0,
       x: 0,
     };
-    // apply translations (y axis is inverted)
+
     nodeDataToRender = nodeData.map((area) => ({
       ...area,
       x: (area.x + centerVector.x - realCenter.x),
@@ -74,6 +62,7 @@ const GraphView = (props: GraphViewProps) => {
       onClickNode={onClickNode}
       onClickLink={onClickLink}
       onClickGraph={() => setSelectedItem(undefined)}
+      // eslint-disable-next-line @typescript-eslint/camelcase
       onNodePositionChange={(id, x, y) => onNodePositionChange(id, x - (width / initialZoom / 2) - 0, -y + (height / 2) + 0)}
     />
 
