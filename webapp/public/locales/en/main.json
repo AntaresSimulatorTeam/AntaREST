@@ -30,5 +30,6 @@
   "appUnderMaintenance": "App under maintenance.",
   "comeBackLater": "Please come back later.",
   "onGetMessageInfoError": "Unable to retrieve message info",
-  "onGetMaintenanceError": "Unable to retrieve maintenance status"
+  "onGetMaintenanceError": "Unable to retrieve maintenance status",
+  "search": "Search"
 }

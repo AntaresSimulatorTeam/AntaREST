@@ -4,6 +4,7 @@ import { FileStudyTreeConfigDTO, LaunchJob, MatrixAggregationResult, StudyOutput
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 import { FileDownloadTask } from './downloads';
+import { AreasConfig, SingleAreaConfig, StudyProperties } from '../../components/SingleStudy/MapView/types';
 
 const getStudiesRaw = async (): Promise<{[sid: string]: StudyMetadataDTO}> => {
   const res = await client.get('/v1/studies?summary=true');
@@ -30,6 +31,16 @@ export const getStudyData = async (sid: string, path = '', depth = 1): Promise<a
 
 export const getComments = async (sid: string): Promise<any> => {
   const res = await client.get(`/v1/studies/${sid}/comments`);
+  return res.data;
+};
+
+export const getSynthesis = async (uuid: string): Promise<StudyProperties> => {
+  const res = await client.get(`/v1/studies/${uuid}/synthesis`);
+  return res.data;
+};
+
+export const getAreaPositions = async (uuid: string, path: string, depth = -1): Promise<AreasConfig | SingleAreaConfig> => {
+  const res = await client.get(`v1/studies/${uuid}/raw?path=/input/areas/${encodeURIComponent(path)}/ui&depth=${depth}`);
   return res.data;
 };
 
