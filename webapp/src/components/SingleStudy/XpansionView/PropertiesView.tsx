@@ -5,14 +5,10 @@ import {
   Theme,
   TextField,
   InputAdornment,
-  Button,
 } from '@material-ui/core';
 import SearchIcon from '@material-ui/icons/Search';
 import { useTranslation } from 'react-i18next';
 import AddIcon from '@material-ui/icons/Add';
-import { LinkProperties, NodeProperties, UpdateAreaUi, isNode } from './types';
-import PanelView from './PanelView';
-import NodeListing from './NodeListing';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -56,24 +52,20 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropsType {
-    item?: NodeProperties | LinkProperties | undefined;
-    setSelectedItem: (item: NodeProperties | LinkProperties | undefined) => void;
-    nodeList: Array<NodeProperties>;
-    nodeLinks?: Array<LinkProperties> | undefined;
-    onDelete?: (id: string, target?: string) => void;
-    onArea?: () => void;
-    updateUI: (id: string, value: UpdateAreaUi) => void;
+    candidate?: string;
+    candidateList: Array<string>;
+    onAdd: () => void;
 }
 
 const PropertiesView = (props: PropsType) => {
   const classes = useStyles();
-  const { item, setSelectedItem, nodeList, nodeLinks, onDelete, onArea, updateUI } = props;
+  const { candidate, candidateList, onAdd } = props;
   const [t] = useTranslation();
-  const [filteredNodes, setFilteredNodes] = useState<Array<NodeProperties>>();
+  const [filteredCandidates, setFilteredCandidates] = useState<Array<string>>();
 
-  const filter = (currentName: string): NodeProperties[] => {
-    if (nodeList) {
-      return nodeList.filter((s) => !currentName || (s.id.search(new RegExp(currentName, 'i')) !== -1));
+  const filter = (currentName: string): string[] => {
+    if (candidateList && candidate && filteredCandidates) {
+      return candidateList.filter((s) => !currentName || (s.search(new RegExp(currentName, 'i')) !== -1));
     }
     return [];
   };
@@ -81,9 +73,9 @@ const PropertiesView = (props: PropsType) => {
   const onChange = async (currentName: string) => {
     if (currentName !== '') {
       const f = filter(currentName);
-      setFilteredNodes(f);
+      setFilteredCandidates(f);
     } else {
-      setFilteredNodes(undefined);
+      setFilteredCandidates(undefined);
     }
   };
 
@@ -102,30 +94,13 @@ const PropertiesView = (props: PropsType) => {
         }}
         onChange={(e) => onChange(e.target.value as string)}
       />
-      {item && isNode(item) && onDelete ? (
-        <div className={classes.list}>
-          <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
-          <PanelView node={item as NodeProperties} links={nodeLinks} onDelete={onDelete} updateUI={updateUI} setSelectedItem={setSelectedItem} />
-        </div>
-      ) : (item && onDelete && (
-        <div className={classes.list}>
-          <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
-          <PanelView link={item as LinkProperties} nodes={nodeList} onDelete={onDelete} updateUI={updateUI} setSelectedItem={setSelectedItem} />
-        </div>
-      ))}
-      {filteredNodes && !item && (
-        <NodeListing nodes={filteredNodes} setSelectedItem={setSelectedItem} />
-      )}
-      <AddIcon className={classes.button} onClick={onArea} />
+      <AddIcon className={classes.button} onClick={onAdd} />
     </div>
   );
 };
 
 PropertiesView.defaultProps = {
-  item: undefined,
-  nodeLinks: undefined,
-  onDelete: undefined,
-  onArea: undefined,
+  candidate: undefined,
 };
 
 export default PropertiesView;

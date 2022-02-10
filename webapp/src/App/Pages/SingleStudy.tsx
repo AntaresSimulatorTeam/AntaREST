@@ -17,6 +17,7 @@ import { LaunchJob, StudyMetadata, WSEvent, WSMessage } from '../../common/types
 import { addListener, removeListener } from '../../ducks/websockets';
 import enqueueErrorSnackbar from '../../components/ui/ErrorSnackBar';
 import MapView from '../../components/SingleStudy/MapView';
+import XpansionView from '../../components/SingleStudy/XpansionView';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -81,7 +82,7 @@ const SingleStudyView = (props: PropTypes) => {
   const [navData, setNavData] = useState<MenuTab>({});
   const { enqueueSnackbar } = useSnackbar();
 
-  const paramList = ['treeView', 'informations', 'variants', 'map'];
+  const paramList = ['treeView', 'informations', 'variants', 'map', 'xpansion'];
 
   const fetchStudyInfo = useCallback(async () => {
     try {
@@ -152,7 +153,7 @@ const SingleStudyView = (props: PropTypes) => {
         }
       }
     } else {
-      history.replace({ pathname: `/study/${studyId}/informations` });
+      history.replace({ pathname: `/study/${studyId}/xpansion` });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studyId, history, tab, query]);
@@ -175,6 +176,8 @@ const SingleStudyView = (props: PropTypes) => {
         (study ? <Informations study={study} jobs={studyJobs || []} /> : <StudyViewLoader />),
       map: () =>
         (study ? <MapView study={study} /> : <StudyViewLoader />),
+      xpansion: () =>
+        (study ? <XpansionView study={study} /> : <StudyViewLoader />),
     };
     if (study?.managed) {
       newNavData.variants = () => (study ? <VariantView study={study} option={option} /> : <div />);
