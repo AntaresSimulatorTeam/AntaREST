@@ -141,6 +141,8 @@ class XpansionManager:
                 f"The link from {area_from} to {area_to} does not exist"
             )
 
+        # TODO: assert that link-profile and already-installed-link-profile exist
+
         # Find id of new candidate
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
         max_id = (
@@ -148,7 +150,8 @@ class XpansionManager:
         )
         next_id = next(
             str(i) for i in range(1, max_id) if str(i) not in candidates
-        )  # TODO: looks ugly, is there a better way to do this?
+        )  # TODO: looks ugly, is there a better way to do this? should we the list when an object is deleted?
+        # TODO: what happens when the list is disjoint?
 
         # Add candidate
         candidates[next_id] = xpansion_candidate_dto.dict(
