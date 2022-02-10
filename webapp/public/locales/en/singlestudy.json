@@ -90,5 +90,7 @@
   "columns": "Columns",
   "filter": "Filter",
   "filterIn": "Filter In",
-  "filterOut": "Filter Out"
+  "filterOut": "Filter Out",
+  "area1": "Area 1",
+  "area2": "Area 2"
 }

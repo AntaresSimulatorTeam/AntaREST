@@ -144,15 +144,15 @@ const PanelView = (props: PropType) => {
         )}
         {link && (
         <div className={classes.links}>
-          <Typography className={clsx(classes.info, classes.infoTitle)}>Lien</Typography>
+          <Typography className={clsx(classes.info, classes.infoTitle)}>{t('singlestudy:link')}</Typography>
           <div className={clsx(classes.info, classes.alignBaseline)}>
-            <Typography className={classes.infoLabel}>Zone 1</Typography>
+            <Typography className={classes.infoLabel}>{t('singlestudy:area1')}</Typography>
             <Typography className={classes.link} variant="body2" component="p" onClick={() => handleClick(link.source)}>
               {link.source}
             </Typography>
           </div>
           <div className={clsx(classes.info, classes.alignBaseline)}>
-            <Typography className={classes.infoLabel}>Zone 2</Typography>
+            <Typography className={classes.infoLabel}>{t('singlestudy:area2')}</Typography>
             <Typography className={classes.link} variant="body2" component="p" onClick={() => handleClick(link.target)}>
               {link.target}
             </Typography>

@@ -21,13 +21,15 @@ const GraphView = (props: GraphViewProps) => {
   let nodeDataToRender = nodeData;
   const initialZoom = 1;
   if (nodeData.length > 0) {
+    // compute center offset with scale fix on x axis
     const centerVector = { x: (width / initialZoom / 2), y: (height / 2) };
 
+    // get real center from origin enclosing rectangle
     const realCenter = {
       y: 0,
       x: 0,
     };
-
+    // apply translations (y axis is inverted)
     nodeDataToRender = nodeData.map((area) => ({
       ...area,
       x: (area.x + centerVector.x - realCenter.x),
