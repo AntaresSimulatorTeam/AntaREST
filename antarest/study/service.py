@@ -60,6 +60,7 @@ from antarest.study.business.link_management import LinkManager, LinkInfoDTO
 from antarest.study.business.xpansion_management import (
     XpansionManager,
     XpansionSettingsDTO,
+    XpansionNewCandidateDTO,
 )
 from antarest.study.model import (
     Study,
@@ -1746,4 +1747,17 @@ class StudyService:
         self._assert_study_unarchived(study)
         return self.xpansion_manager.update_xpansion_settings(
             study, xpansion_settings_dto
+        )
+
+    def add_candidate(
+        self,
+        uuid: str,
+        xpansion_candidate_dto: XpansionNewCandidateDTO,
+        params: RequestParameters,
+    ) -> str:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.add_candidate(
+            study, xpansion_candidate_dto
         )

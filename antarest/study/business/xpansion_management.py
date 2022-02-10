@@ -9,26 +9,50 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 from antarest.study.storage.storage_service import StudyStorageService
 
 
+class LinkDoesNotExistError(Exception):
+    pass
+
+
 class XpansionSettingsDTO(BaseModel):
-    optimality_gap: Optional[int] = None
+    optimality_gap: Optional[float] = None
     max_iteration: Optional[Union[int, Literal["inf"]]] = None
-    uc_type: Optional[str] = None
-    master: Optional[str] = None
+    uc_type: Union[
+        Literal["expansion_fast"], Literal["expansion_accurate"]
+    ] = "expansion_fast"
+    master: Union[Literal["integer"], Literal["relaxed"]] = "integer"
     yearly_weight: Optional[str] = None
     additional_constraints: Optional[str] = Field(
         None, alias="additional-constraints"
     )
     relaxed_optimality_gap: Optional[float] = Field(
-        None, alias="relaxed-optimality-gap"
+        1e6, alias="relaxed-optimality-gap"
     )
-    cut_type: Optional[str] = Field(None, alias="cut-type")
+    cut_type: Optional[
+        Union[Literal["average"], Literal["yearly"], Literal["weekly"]]
+    ] = Field(None, alias="cut-type")
     ampl_solver: Optional[str] = Field(None, alias="ampl.solver")
     ampl_presolve: Optional[int] = Field(None, alias="ampl.presolve")
     ampl_solve_bounds_frequency: Optional[int] = Field(
         None, alias="ampl.solve_bounds_frequency"
     )
     relative_gap: Optional[float] = None
-    solver: Optional[str] = None
+    solver: Optional[Union[Literal["Cbc"], Literal["Coin"]]] = None
+
+
+class XpansionNewCandidateDTO(BaseModel):
+    name: str
+    link: str
+    annual_cost_per_mw: int = Field(alias="annual-cost-per-mw")
+    unit_size: Optional[int] = Field(None, alias="unit-size")
+    max_units: Optional[int] = Field(None, alias="max-units")
+    max_investment: Optional[int] = Field(None, alias="max-investment")
+    already_installed_capacity: Optional[int] = Field(
+        None, alias="already-installed-capacity"
+    )
+    link_profile: Optional[str] = Field(None, alias="link-profile")
+    already_installed_link_profile: Optional[str] = Field(
+        None, alias="already-installed-link-profile"
+    )
 
 
 class XpansionManager:
@@ -100,3 +124,32 @@ class XpansionManager:
             ["user", "expansion", "settings"],
         )
         return new_xpansion_settings_dto
+
+    def add_candidate(
+        self, study: Study, xpansion_candidate_dto: XpansionNewCandidateDTO
+    ) -> str:
+
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        area1, area2 = xpansion_candidate_dto.link.split(" - ")
+        area_from, area_to = sorted([area1, area2])
+
+        # Assert that the link exists
+        if area_to not in file_study.config.get_links(area_from):
+            raise LinkDoesNotExistError(
+                f"The link from {area_from} to {area_to} does not exist"
+            )
+
+        # Find id of new candidate
+        candidates = file_study.tree.get(["user", "expansion", "candidates"])
+        next_id = next(
+            str(i) for i in range(1, 1000) if str(i) not in candidates
+        )  # TODO: looks ugly, is there a better way to do this?
+
+        # Add candidate
+        candidates[next_id] = xpansion_candidate_dto.dict(by_alias=True)
+        candidates_data = {"user": {"expansion": {"candidates": candidates}}}
+        file_study.tree.save(candidates_data)
+
+        return next_id

@@ -9,7 +9,10 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.xpansion_management import XpansionSettingsDTO
+from antarest.study.business.xpansion_management import (
+    XpansionSettingsDTO,
+    XpansionNewCandidateDTO,
+)
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
@@ -102,24 +105,23 @@ def create_study_routes(
             uuid, xpansion_settings_dto, params
         )
 
-    #
-    # @bp.post(
-    #     "/studies/{uuid}/extensions/xpansion/candidates/{candidate_id}/add",
-    #     tags=[APITag.xpansion_study_management],
-    #     summary="Create Xpansion Candidate",
-    #     response_model=Dict[str, StudyMetadataDTO],
-    # )
-    # def add_candidate(
-    #     summary: bool = False,
-    #     managed: bool = False,
-    #     current_user: JWTUser = Depends(auth.get_current_user),
-    # ) -> Any:
-    #     logger.info(f"Fetching study list", extra={"user": current_user.id})
-    #     params = RequestParameters(user=current_user)
-    #     available_studies = study_service.get_studies_information(
-    #         summary, managed, params
-    #     )
-    #     return available_studies
+    @bp.post(
+        "/studies/{uuid}/extensions/xpansion/candidates/add",
+        tags=[APITag.xpansion_study_management],
+        summary="Create Xpansion Candidate",
+        response_model=str,
+    )
+    def add_candidate(
+        uuid: str,
+        xpansion_candidate_dto: XpansionNewCandidateDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(f"Fetching study list", extra={"user": current_user.id})
+        params = RequestParameters(user=current_user)
+        return study_service.add_candidate(
+            uuid, xpansion_candidate_dto, params
+        )
+
     #
     # @bp.post(
     #     "/studies/{uuid}/extensions/xpansion/candidates/{candidate_id}/update",

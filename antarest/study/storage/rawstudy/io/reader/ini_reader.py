@@ -50,7 +50,10 @@ class IniReader(IReader):
             return None
 
     @staticmethod
-    def parse_value(value: str) -> ELEMENT:
+    def parse_value(value: str) -> SUB_JSON:
+        if value == "None":
+            return None
+
         parsed: Union[str, int, float, bool, None] = IniReader._parse_bool(
             value
         )

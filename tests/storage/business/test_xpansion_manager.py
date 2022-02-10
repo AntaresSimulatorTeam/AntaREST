@@ -10,6 +10,8 @@ from antarest.core.model import JSON
 from antarest.study.business.xpansion_management import (
     XpansionManager,
     XpansionSettingsDTO,
+    XpansionNewCandidateDTO,
+    LinkDoesNotExistError,
 )
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
@@ -24,6 +26,15 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 )
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.variantstudy.model.command.create_area import (
+    CreateArea,
+)
+from antarest.study.storage.variantstudy.model.command.create_link import (
+    CreateLink,
+)
+from antarest.study.storage.variantstudy.model.command_context import (
+    CommandContext,
+)
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -39,6 +50,19 @@ def make_empty_study(tmpdir: Path, version: int) -> FileStudy:
         zip_output.extractall(path=study_path)
     config = ConfigPathBuilder.build(study_path, "1")
     return FileStudy(config, FileStudyTree(Mock(), config))
+
+
+def make_xpansion_manager(empty_study):
+    raw_study_service = Mock(spec=RawStudyService)
+    variant_study_service = Mock(spec=VariantStudyService)
+    xpansion_manager = XpansionManager(
+        study_storage_service=StudyStorageService(
+            raw_study_service, variant_study_service
+        ),
+    )
+    raw_study_service.get_raw.return_value = empty_study
+    raw_study_service.cache = Mock()
+    return xpansion_manager
 
 
 @pytest.mark.unit_test
@@ -91,18 +115,10 @@ def test_create_configuration(
     Test the creation of a configuration.
     """
     empty_study = make_empty_study(tmp_path, version)
-    raw_study_service = Mock(spec=RawStudyService)
-    variant_study_service = Mock(spec=VariantStudyService)
-    xpansion_manager = XpansionManager(
-        study_storage_service=StudyStorageService(
-            raw_study_service, variant_study_service
-        ),
-    )
     study = RawStudy(
         id="1", path=empty_study.config.study_path, version=version
     )
-    raw_study_service.get_raw.return_value = empty_study
-    raw_study_service.cache = Mock()
+    xpansion_manager = make_xpansion_manager(empty_study)
 
     with pytest.raises(ChildNotFoundError):
         empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
@@ -121,16 +137,8 @@ def test_delete_xpansion_configuration(tmp_path: Path):
     Test the deletion of a configuration.
     """
     empty_study = make_empty_study(tmp_path, 810)
-    raw_study_service = Mock(spec=RawStudyService)
-    variant_study_service = Mock(spec=VariantStudyService)
-    xpansion_manager = XpansionManager(
-        study_storage_service=StudyStorageService(
-            raw_study_service, variant_study_service
-        ),
-    )
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    raw_study_service.get_raw.return_value = empty_study
-    raw_study_service.cache = Mock()
+    xpansion_manager = make_xpansion_manager(empty_study)
 
     with pytest.raises(ChildNotFoundError):
         empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
@@ -200,18 +208,10 @@ def test_get_xpansion_settings(
     """
 
     empty_study = make_empty_study(tmp_path, version)
-    raw_study_service = Mock(spec=RawStudyService)
-    variant_study_service = Mock(spec=VariantStudyService)
-    xpansion_manager = XpansionManager(
-        study_storage_service=StudyStorageService(
-            raw_study_service, variant_study_service
-        ),
-    )
     study = RawStudy(
         id="1", path=empty_study.config.study_path, version=version
     )
-    raw_study_service.get_raw.return_value = empty_study
-    raw_study_service.cache = Mock()
+    xpansion_manager = make_xpansion_manager(empty_study)
 
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -225,16 +225,8 @@ def test_update_xpansion_settings(tmp_path: Path):
     """
 
     empty_study = make_empty_study(tmp_path, 810)
-    raw_study_service = Mock(spec=RawStudyService)
-    variant_study_service = Mock(spec=VariantStudyService)
-    xpansion_manager = XpansionManager(
-        study_storage_service=StudyStorageService(
-            raw_study_service, variant_study_service
-        ),
-    )
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    raw_study_service.get_raw.return_value = empty_study
-    raw_study_service.cache = Mock()
+    xpansion_manager = make_xpansion_manager(empty_study)
 
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -259,3 +251,53 @@ def test_update_xpansion_settings(tmp_path: Path):
     xpansion_manager.update_xpansion_settings(study, new_settings)
 
     assert xpansion_manager.get_xpansion_settings(study) == new_settings
+
+
+@pytest.mark.unit_test
+def test_add_candidate(tmp_path: Path):
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+
+    assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
+
+    new_candidate = XpansionNewCandidateDTO.parse_obj(
+        {
+            "name": "candidate 1",
+            "link": "area1 - area2",
+            "annual-cost-per-mw": 1,
+        }
+    )
+
+    with pytest.raises(KeyError):
+        xpansion_manager.add_candidate(study, new_candidate)
+
+    CreateArea(
+        area_name="area1", command_context=Mock(spec=CommandContext)
+    )._apply_config(empty_study.config)
+    CreateArea(
+        area_name="area2", command_context=Mock(spec=CommandContext)
+    )._apply_config(empty_study.config)
+
+    with pytest.raises(LinkDoesNotExistError):
+        xpansion_manager.add_candidate(study, new_candidate)
+
+    CreateLink(
+        area1="area1", area2="area2", command_context=Mock(spec=CommandContext)
+    )._apply_config(empty_study.config)
+
+    xpansion_manager.add_candidate(study, new_candidate)
+
+    candidates = {"1": new_candidate.dict(by_alias=True)}
+
+    assert (
+        empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
+    )
+
+    xpansion_manager.add_candidate(study, new_candidate)
+    candidates["2"] = new_candidate.dict(by_alias=True)
+
+    assert (
+        empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
+    )
