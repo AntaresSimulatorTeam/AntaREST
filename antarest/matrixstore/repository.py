@@ -103,9 +103,13 @@ class MatrixRepository:
 
     def delete(self, id: str) -> None:
         g = db.session.query(Matrix).get(id)
-        db.session.delete(g)
-        db.session.commit()
-
+        if g:
+            db.session.delete(g)
+            db.session.commit()
+        else:
+            logger.warning(
+                f"Trying to delete matrix {id}, but was not found in database!"
+            )
         logger.debug(f"Matrix {id} deleted")
 
 

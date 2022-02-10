@@ -472,6 +472,6 @@ if __name__ == "__main__":
             configure_logger(config)
             init_db(config_file, config, False, None)
             matrix_gc = create_matrix_gc(config=config, application=None)
-            matrix_gc.start()
+            matrix_gc.start(threaded=False)
         else:
             raise UnknownModuleError(module)

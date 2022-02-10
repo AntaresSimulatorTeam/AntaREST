@@ -22,6 +22,15 @@ class UriResolverService:
             return self._resolve_matrix(uuid)
         raise NotImplementedError(f"protocol {protocol} not implemented")
 
+    @staticmethod
+    def extract_id(uri: str):
+        match = re.match(r"^(\w+)://(.+)$", uri)
+        if not match:
+            return None
+
+        uuid = match.group(2)
+        return uuid
+
     def _resolve_matrix(self, id: str) -> JSON:
         data = self.matrix_service.get(id)
         if data:
