@@ -25,7 +25,7 @@ class XpansionSettingsDTO(BaseModel):
         None, alias="additional-constraints"
     )
     relaxed_optimality_gap: Optional[float] = Field(
-        1e6, alias="relaxed-optimality-gap"
+        None, alias="relaxed-optimality-gap"
     )
     cut_type: Optional[
         Union[Literal["average"], Literal["yearly"], Literal["weekly"]]
