@@ -100,18 +100,17 @@ const PropertiesView = (props: PropsType) => {
             </InputAdornment>
           ),
         }}
-        disabled
         onChange={(e) => onChange(e.target.value as string)}
       />
       {item && isNode(item) && onDelete ? (
         <div className={classes.list}>
           <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
-          <PanelView node={item as NodeProperties} links={nodeLinks} onDelete={onDelete} updateUI={updateUI} />
+          <PanelView node={item as NodeProperties} links={nodeLinks} onDelete={onDelete} updateUI={updateUI} setSelectedItem={setSelectedItem} />
         </div>
       ) : (item && onDelete && (
         <div className={classes.list}>
           <Button className={classes.prevButton} size="small" onClick={() => setSelectedItem(undefined)}>{t('main:backButton')}</Button>
-          <PanelView link={item as LinkProperties} onDelete={onDelete} updateUI={updateUI} />
+          <PanelView link={item as LinkProperties} nodes={nodeList} onDelete={onDelete} updateUI={updateUI} setSelectedItem={setSelectedItem} />
         </div>
       ))}
       {filteredNodes && !item && (

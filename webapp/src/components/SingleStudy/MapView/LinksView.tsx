@@ -16,6 +16,12 @@ import { LinkProperties, NodeProperties } from './types';
 const ROW_ITEM_SIZE = 40;
 const BUTTONS_SIZE = 50;
 
+const hoverStyle = () => ({
+  '&:hover': {
+    textDecoration: 'underline',
+  },
+});
+
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
@@ -41,7 +47,19 @@ const useStyles = makeStyles((theme: Theme) =>
       height: BUTTONS_SIZE,
     },
     title: {
+      width: '90%',
+      marginBottom: theme.spacing(0.7),
+      color: theme.palette.primary.main,
+      boxSizing: 'border-box',
       fontWeight: 'bold',
+    },
+    list: {
+      '&> div > li > div': {
+        cursor: 'pointer',
+        '&:hover': {
+          textDecoration: 'underline',
+        },
+      },
     },
   }));
 
@@ -49,23 +67,25 @@ interface PropsType {
     links: Array<LinkProperties>;
     node: NodeProperties;
     onDelete: () => void;
+    setSelectedItem: (item: NodeProperties | LinkProperties | undefined) => void;
 }
 
 const Row = React.memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
-  const { links, node } = data;
+  const { links, node, setSelectedItem } = data;
   const link = links[index].source === node.id ? links[index].target : links[index].source;
+  const linkData = links[index].source === node.id ? { source: links[index].source, target: links[index].target } : { source: links[index].target, target: links[index].source };
 
   return (
     <ListItem key={index} style={style}>
-      <ListItemText primary={link} />
+      <ListItemText primary={link} onClick={() => setSelectedItem(linkData)} style={{ width: '100%', ...hoverStyle }} />
     </ListItem>
   );
 }, areEqual);
 
 const LinksView = (props: PropsType) => {
   const classes = useStyles();
-  const { links, node, onDelete } = props;
+  const { links, node, onDelete, setSelectedItem } = props;
   const [t] = useTranslation();
 
   return (
@@ -81,7 +101,7 @@ const LinksView = (props: PropsType) => {
             const idealHeight = ROW_ITEM_SIZE * links.length;
             return (
               <>
-                <FixedSizeList height={idealHeight > height - BUTTONS_SIZE ? height - BUTTONS_SIZE : idealHeight} width={width} itemSize={ROW_ITEM_SIZE} itemCount={links.length} itemData={{ links, node }}>
+                <FixedSizeList className={classes.list} height={idealHeight > height - BUTTONS_SIZE ? height - BUTTONS_SIZE : idealHeight} width={width} itemSize={ROW_ITEM_SIZE} itemCount={links.length} itemData={{ links, node, setSelectedItem }}>
                   {Row}
                 </FixedSizeList>
                 <div className={classes.buttons} style={{ width }}>

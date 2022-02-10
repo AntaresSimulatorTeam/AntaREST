@@ -152,7 +152,7 @@ const SingleStudyView = (props: PropTypes) => {
         }
       }
     } else {
-      history.replace({ pathname: `/study/${studyId}/map` });
+      history.replace({ pathname: `/study/${studyId}/informations` });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studyId, history, tab, query]);
@@ -196,7 +196,7 @@ const SingleStudyView = (props: PropTypes) => {
           {study?.name || '...'}
         </div>
       </Breadcrumbs>
-      <GenericTabView items={navData} studyId={studyId} initialValue={paramList.includes(tab) ? tab : 'map'} />
+      <GenericTabView items={navData} studyId={studyId} initialValue={paramList.includes(tab) ? tab : 'informations'} />
     </div>
   );
 };

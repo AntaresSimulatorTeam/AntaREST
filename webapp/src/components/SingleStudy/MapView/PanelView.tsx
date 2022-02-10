@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { ColorResult, HuePicker, MaterialPicker } from 'react-color';
 import {
@@ -52,20 +53,57 @@ const useStyles = makeStyles((theme: Theme) =>
       boxShadow: 'none',
       border: '1px solid rgba(0,0,0,.12)',
     },
+    links: {
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+    },
+    link: {
+      cursor: 'pointer',
+      color: theme.palette.primary.main,
+      padding: theme.spacing(1),
+      '&:hover': {
+        textDecoration: 'underline',
+      },
+    },
+    info: {
+      width: '90%',
+      marginBottom: theme.spacing(0.7),
+      color: theme.palette.primary.main,
+      display: 'flex',
+      flexFlow: 'row nowrap',
+      justifyContent: 'flex-start',
+      alignItems: 'center',
+      boxSizing: 'border-box',
+    },
+    alignBaseline: {
+      alignItems: 'baseline',
+    },
+    infoTitle: {
+      textDecoration: 'underline',
+      marginTop: theme.spacing(1),
+      marginBottom: theme.spacing(1),
+    },
+    infoLabel: {
+      fontWeight: 'bold',
+    },
   }));
 
 interface PropType {
     node?: NodeProperties;
+    nodes?: Array<NodeProperties>;
     links?: Array<LinkProperties>;
     link?: LinkProperties;
     onDelete: (id: string, target?: string) => void;
     updateUI: (id: string, value: UpdateAreaUi) => void;
+    setSelectedItem: (item: NodeProperties | LinkProperties | undefined) => void;
 }
 
 const PanelView = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { node, links, link, onDelete, updateUI } = props;
+  const { node, nodes, links, link, onDelete, updateUI, setSelectedItem } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [currentColor, setCurrentColor] = useState<string>(node?.color || '');
 
@@ -74,6 +112,12 @@ const PanelView = (props: PropType) => {
       setCurrentColor(`rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})`);
       // eslint-disable-next-line @typescript-eslint/camelcase
       updateUI(node.id, { x: node.x, y: node.y, color_rgb: color.rgb !== null ? [color.rgb.r, color.rgb.g, color.rgb.b] : node.color.slice(4, -1).split(',').map(Number) });
+    }
+  };
+
+  const handleClick = (name: string) => {
+    if (nodes) {
+      setSelectedItem(nodes.find((o) => o.id === name));
     }
   };
 
@@ -96,20 +140,27 @@ const PanelView = (props: PropType) => {
           </>
         )}
         {links && node && (
-          <LinksView links={links} node={node} onDelete={() => setOpenConfirmationModal(true)} />
+          <LinksView links={links} node={node} onDelete={() => setOpenConfirmationModal(true)} setSelectedItem={setSelectedItem} />
         )}
         {link && (
-        <>
-          <Typography variant="body2" component="p">
-            {link.source}
-          </Typography>
-          <Typography variant="body2" component="p">
-            {link.target}
-          </Typography>
+        <div className={classes.links}>
+          <Typography className={clsx(classes.info, classes.infoTitle)}>Lien</Typography>
+          <div className={clsx(classes.info, classes.alignBaseline)}>
+            <Typography className={classes.infoLabel}>Zone 1</Typography>
+            <Typography className={classes.link} variant="body2" component="p" onClick={() => handleClick(link.source)}>
+              {link.source}
+            </Typography>
+          </div>
+          <div className={clsx(classes.info, classes.alignBaseline)}>
+            <Typography className={classes.infoLabel}>Zone 2</Typography>
+            <Typography className={classes.link} variant="body2" component="p" onClick={() => handleClick(link.target)}>
+              {link.target}
+            </Typography>
+          </div>
           <div className={classes.buttons}>
             <DeleteIcon className={classes.deleteIcon} onClick={() => setOpenConfirmationModal(true)} />
           </div>
-        </>
+        </div>
         )}
 
       </div>
@@ -136,6 +187,7 @@ const PanelView = (props: PropType) => {
 };
 
 PanelView.defaultProps = {
+  nodes: undefined,
   node: undefined,
   links: undefined,
   link: undefined,

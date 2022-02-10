@@ -24,7 +24,7 @@ import { createArea, createLink, deleteArea, deleteLink, updateAreaUI } from '..
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      width: '100%',
+      width: '99%',
       height: '100%',
       display: 'flex',
       flexFlow: 'column nowrap',

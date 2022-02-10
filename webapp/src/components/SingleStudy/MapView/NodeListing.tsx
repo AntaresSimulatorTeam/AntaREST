@@ -9,18 +9,28 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList, areEqual, ListChildComponentProps } from 'react-window';
 import { LinkProperties, NodeProperties } from './types';
 
-const ROW_ITEM_SIZE = 60;
+const ROW_ITEM_SIZE = 30;
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       height: '500px',
       width: '90%',
-      padding: theme.spacing(2),
+      paddingLeft: theme.spacing(3),
+      paddingTop: theme.spacing(1),
+      paddingRight: theme.spacing(2),
       color: theme.palette.primary.main,
       flexGrow: 1,
       flexShrink: 1,
       marginBottom: '76px',
+    },
+    list: {
+      '&> div > div': {
+        cursor: 'pointer',
+        '&:hover': {
+          textDecoration: 'underline',
+        },
+      },
     },
   }));
 
@@ -35,8 +45,8 @@ const Row = React.memo((props: ListChildComponentProps) => {
   const node = nodes[index];
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-    <div style={{ display: 'flex', justifyContent: 'center', ...style, top: `${parseFloat((style || {}).top as string) + 16}px`, cursor: 'pointer' }} onClick={() => setSelectedItem(node)}>
-      {node.id}
+    <div style={{ display: 'flex', justifyContent: 'flex-start', ...style }} onClick={() => setSelectedItem(node)}>
+      {node.name}
     </div>
   );
 }, areEqual);
@@ -58,6 +68,7 @@ const NodeListing = (props: PropsType) => {
                 itemCount={nodes.length}
                 itemSize={ROW_ITEM_SIZE}
                 itemData={{ nodes, setSelectedItem }}
+                className={classes.list}
               >
                 {Row}
               </FixedSizeList>
