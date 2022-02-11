@@ -229,6 +229,11 @@ def test_delete_unused_saved_matrices(
     matrix_garbage_collector.matrix_service.delete.assert_any_call("matrix1")
     matrix_garbage_collector.matrix_service.delete.assert_any_call("matrix2")
 
+    matrix_garbage_collector.dry_run = True
+    matrix_garbage_collector.matrix_service.delete.reset_mock()
+    matrix_garbage_collector._delete_unused_saved_matrices(unused_matrices)
+    matrix_garbage_collector.matrix_service.delete.assert_not_called()
+
 
 @pytest.mark.unit_test
 def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector):
