@@ -125,11 +125,9 @@ def test_get_matrices_used_in_variant_studies(
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    matrix_garbage_collector.study_service.storage_service.variant_study_service.command_factory.command_context.generator_matrix_constants.get_link = Mock(
-        side_effect=["matrix1", "matrix2"]
-    )
     with db():
         study_id = "study_id"
+        # TODO: add series to the command blocks
         command_block1 = CommandBlock(
             study_id=study_id,
             command=CommandName.CREATE_LINK.value,
@@ -148,9 +146,28 @@ def test_get_matrices_used_in_variant_studies(
         db.session.add(command_block2)
         db.session.commit()
         matrices = matrix_garbage_collector._get_variant_studies_matrices()
+        assert not matrices
+        command_block1 = CommandBlock(
+            study_id=study_id,
+            command=CommandName.CREATE_LINK.value,
+            args='{"area1": "area1", "area2": "area2","series": "[[1,2,3]]"}',
+            index=0,
+            version=7,
+        )
+        command_block2 = CommandBlock(
+            study_id=study_id,
+            command=CommandName.CREATE_LINK.value,
+            args='{"area1": "area2", "area2": "area3","series": "[[1,2,4]]"}',
+            index=0,
+            version=7,
+        )
+        db.session.add(command_block1)
+        db.session.add(command_block2)
+        db.session.commit()
+        matrices = matrix_garbage_collector._get_variant_studies_matrices()
         assert len(matrices) == 2
-        assert "matrix1" in matrices
-        assert "matrix2" in matrices
+        assert "[[1,2,3]]" in matrices
+        assert "[[1,2,4]]" in matrices
 
 
 @pytest.mark.unit_test

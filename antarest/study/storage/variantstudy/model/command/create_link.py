@@ -192,10 +192,10 @@ class CreateLink(ICommand):
             )
         )
         self.direct = self.direct or (
-            self.command_context.generator_matrix_constants.get_null_matrix()
+            self.command_context.generator_matrix_constants.get_link_direct()
         )
         self.indirect = self.indirect or (
-            self.command_context.generator_matrix_constants.get_null_matrix()
+            self.command_context.generator_matrix_constants.get_link_indirect()
         )
 
         assert type(self.series) is str

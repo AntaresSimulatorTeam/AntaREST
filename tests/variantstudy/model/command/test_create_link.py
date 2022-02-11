@@ -175,6 +175,8 @@ class TestCreateLink:
             / f"{area3_id}_indirect.txt.link"
         ).exists()
 
+        # TODO:assert matrix default content : 1 column, 8760 rows, value = 1
+
         output = CreateLink.parse_obj(
             {
                 "area1": area1_id,
