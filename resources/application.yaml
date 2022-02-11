@@ -23,7 +23,8 @@ storage:
   matrixstore: ./matrices
   archive_dir: examples/archives
   allow_deletion: false # indicate if studies found in non default workspace can be deleted by the application
-  matrix_gc_sleeping_time: 3600 # time in seconds to sleep between two garbage collection
+  #matrix_gc_sleeping_time: 3600 # time in seconds to sleep between two garbage collection
+  #matrix_gc_dry_run: False # Skip matrix effective deletion
   workspaces:
     default: # required, no filters applied, this folder is not watched
       path: examples/internal_studies/

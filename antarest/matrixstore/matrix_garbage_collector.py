@@ -45,6 +45,7 @@ class MatrixGarbageCollector:
             matrix_service.repo_dataset
         )
         self.sleeping_time = config.storage.matrix_gc_sleeping_time
+        self.dry_run = config.storage.matrix_gc_dry_run
 
     def _get_saved_matrices(self) -> Set[str]:
         logger.info("Getting all saved matrices")
@@ -108,8 +109,10 @@ class MatrixGarbageCollector:
         """Delete all files with the name in unused_matrices"""
         logger.info("Deleting unused saved matrices:")
         for unused_matrix_id in unused_matrices:
-            logger.info(f"Deleting {unused_matrix_id}")
-            self.matrix_service.delete(unused_matrix_id)
+            logger.info(f"Matrix {unused_matrix_id} is set to be deleted")
+            if not self.dry_run:
+                logger.info(f"Deleting {unused_matrix_id}")
+                self.matrix_service.delete(unused_matrix_id)
 
     def _clean_matrices(self) -> None:
         """Delete all matrices that are not used anymore"""
