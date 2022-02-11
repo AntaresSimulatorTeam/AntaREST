@@ -1,5 +1,5 @@
 import re
-from typing import Union
+from typing import Union, Optional, Tuple
 
 from antarest.core.config import Config
 from antarest.core.model import JSON, SUB_JSON
@@ -11,25 +11,30 @@ class UriResolverService:
         self.matrix_service = matrix_service
 
     def resolve(self, uri: str) -> Union[bytes, SUB_JSON]:
-        match = re.match(r"^(\w+)://(.+)$", uri)
-        if not match:
+        res = UriResolverService._extract_uri_components(uri)
+        if res:
+            protocol, uuid = res
+        else:
             return None
-
-        protocol = match.group(1)
-        uuid = match.group(2)
 
         if protocol == "matrix":
             return self._resolve_matrix(uuid)
         raise NotImplementedError(f"protocol {protocol} not implemented")
 
     @staticmethod
-    def extract_id(uri: str):
+    def _extract_uri_components(uri: str) -> Optional[Tuple[str, str]]:
         match = re.match(r"^(\w+)://(.+)$", uri)
         if not match:
             return None
 
+        protocol = match.group(1)
         uuid = match.group(2)
-        return uuid
+        return protocol, uuid
+
+    @staticmethod
+    def extract_id(uri: str) -> Optional[str]:
+        res = UriResolverService._extract_uri_components(uri)
+        return res[1] if res else None
 
     def _resolve_matrix(self, id: str) -> JSON:
         data = self.matrix_service.get(id)
