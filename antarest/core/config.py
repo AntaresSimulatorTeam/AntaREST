@@ -113,6 +113,7 @@ class StorageConfig:
     watcher_lock_delay: int = 10
     download_default_expiration_timeout_minutes: int = 1440
     matrix_gc_sleeping_time: int = 3600
+    matrix_gc_dry_run: bool = False
 
     @staticmethod
     def from_dict(data: JSON) -> "StorageConfig":
@@ -130,6 +131,8 @@ class StorageConfig:
             download_default_expiration_timeout_minutes=data.get(
                 "download_default_expiration_timeout_minutes", 1440
             ),
+            matrix_gc_sleeping_time=data.get("matrix_gc_sleeping_time", 3600),
+            matrix_gc_dry_run=data.get("matrix_gc_dry_run", False),
         )
 
 

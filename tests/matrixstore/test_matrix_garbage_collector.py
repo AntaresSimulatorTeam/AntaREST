@@ -41,6 +41,7 @@ def matrix_garbage_collector(tmp_path: Path):
     mock_config = Mock()
     mock_config.storage.matrixstore = matrix_store
     mock_config.storage.workspaces = {"default": mock_workspace_config}
+    mock_config.storage.matrix_gc_dry_run = False
 
     command_factory = CommandFactory(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
@@ -100,10 +101,18 @@ def test_get_matrices_used_in_raw_studies(
         matrix_garbage_collector.managed_studies_path / "raw_study"
     )
     raw_study_path.mkdir()
-    (raw_study_path / f"{matrix_name1}.link").touch()
-    (raw_study_path / f"{matrix_name2}.link").touch()
-    (raw_study_path / f"{matrix_name3}.link").touch()
-    (raw_study_path / f"{matrix_name4}.txt").touch()
+    (raw_study_path / f"{matrix_name1}.link").write_text(
+        f"matrix://{matrix_name1}"
+    )
+    (raw_study_path / f"{matrix_name2}.link").write_text(
+        f"matrix://{matrix_name2}"
+    )
+    (raw_study_path / f"{matrix_name3}.link").write_text(
+        f"matrix://{matrix_name3}"
+    )
+    (raw_study_path / f"{matrix_name4}.txt").write_text(
+        f"matrix://{matrix_name4}"
+    )
 
     output = matrix_garbage_collector._get_raw_studies_matrices()
 
@@ -219,6 +228,11 @@ def test_delete_unused_saved_matrices(
 
     matrix_garbage_collector.matrix_service.delete.assert_any_call("matrix1")
     matrix_garbage_collector.matrix_service.delete.assert_any_call("matrix2")
+
+    matrix_garbage_collector.dry_run = True
+    matrix_garbage_collector.matrix_service.delete.reset_mock()
+    matrix_garbage_collector._delete_unused_saved_matrices(unused_matrices)
+    matrix_garbage_collector.matrix_service.delete.assert_not_called()
 
 
 @pytest.mark.unit_test

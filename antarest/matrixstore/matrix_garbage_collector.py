@@ -1,18 +1,22 @@
+import contextlib
 import logging
 import threading
 import time
 from os import listdir
 from pathlib import Path
-from typing import Set, List
+from typing import Set, List, Optional
 
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import MatrixService
+from antarest.study.common.uri_resolver_service import UriResolverService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.service import StudyService
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
@@ -41,16 +45,21 @@ class MatrixGarbageCollector:
             matrix_service.repo_dataset
         )
         self.sleeping_time = config.storage.matrix_gc_sleeping_time
+        self.dry_run = config.storage.matrix_gc_dry_run
 
     def _get_saved_matrices(self) -> Set[str]:
-        logging.info("Getting all saved matrices")
+        logger.info("Getting all saved matrices")
         return {f.split(".")[0] for f in listdir(self.saved_matrices_path)}
 
     def _get_raw_studies_matrices(self) -> Set[str]:
         logger.info("Getting all matrices used in raw studies")
         return {
-            f.name.split(".")[0]
-            for f in self.managed_studies_path.rglob("*.link")
+            matrix_id
+            for matrix_id in [
+                UriResolverService.extract_id(f.read_text())
+                for f in self.managed_studies_path.rglob("*.link")
+            ]
+            if matrix_id
         }
 
     def _get_variant_studies_matrices(self) -> Set[str]:
@@ -58,12 +67,22 @@ class MatrixGarbageCollector:
         command_blocks: List[
             CommandBlock
         ] = self.variant_study_service.repository.get_all_commandblocks()
+
+        def transform_to_icommand(command_dto: CommandDTO) -> List[ICommand]:
+            try:
+                return self.variant_study_service.command_factory.to_icommand(
+                    command_dto
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to parse command {command_dto} !", exc_info=e
+                )
+            return []
+
         variant_study_commands = [
             icommand
             for c in command_blocks
-            for icommand in self.variant_study_service.command_factory.to_icommand(
-                c.to_dto()
-            )
+            for icommand in transform_to_icommand(c.to_dto())
         ]
         matrices = {
             matrix
@@ -92,10 +111,12 @@ class MatrixGarbageCollector:
 
     def _delete_unused_saved_matrices(self, unused_matrices: Set[str]) -> None:
         """Delete all files with the name in unused_matrices"""
-        logging.info("Deleting unused saved matrices:")
+        logger.info("Deleting unused saved matrices:")
         for unused_matrix_id in unused_matrices:
-            logging.info(f"Deleting {unused_matrix_id}")
-            self.matrix_service.delete(unused_matrix_id)
+            logger.info(f"Matrix {unused_matrix_id} is set to be deleted")
+            if not self.dry_run:
+                logger.info(f"Deleting {unused_matrix_id}")
+                self.matrix_service.delete(unused_matrix_id)
 
     def _clean_matrices(self) -> None:
         """Delete all matrices that are not used anymore"""
@@ -112,11 +133,15 @@ class MatrixGarbageCollector:
     def _loop(self) -> None:
         while True:
             try:
-                self._clean_matrices()
+                with db():
+                    self._clean_matrices()
             except Exception as e:
-                logging.error(f"Error while cleaning matrices: {e}")
-            logging.info(f"Sleeping for {self.sleeping_time}s")
+                logger.error(f"Error while cleaning matrices", exc_info=e)
+            logger.info(f"Sleeping for {self.sleeping_time}s")
             time.sleep(self.sleeping_time)
 
-    def start(self) -> None:
-        self.thread.start()
+    def start(self, threaded: bool = True) -> None:
+        if threaded:
+            self.thread.start()
+        else:
+            self._loop()
