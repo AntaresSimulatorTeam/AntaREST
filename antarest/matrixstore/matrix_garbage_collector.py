@@ -54,8 +54,12 @@ class MatrixGarbageCollector:
     def _get_raw_studies_matrices(self) -> Set[str]:
         logger.info("Getting all matrices used in raw studies")
         return {
-            UriResolverService.extract_id(f.read_text())
-            for f in self.managed_studies_path.rglob("*.link")
+            matrix_id
+            for matrix_id in [
+                UriResolverService.extract_id(f.read_text())
+                for f in self.managed_studies_path.rglob("*.link")
+            ]
+            if matrix_id
         }
 
     def _get_variant_studies_matrices(self) -> Set[str]:
