@@ -13,7 +13,7 @@ import { getAreaPositions, getSynthesis } from '../../../services/api/study';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { NodeProperties, LinkProperties, AreasConfig, SingleAreaConfig, UpdateAreaUi, isNode } from './types';
 import CreateAreaModal from './CreateAreaModal';
-import PropertiesView from './PropertiesView';
+import PropertiesView from './MapPropsView';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
 import { StudyMetadata } from '../../../common/types';
 import GraphView from './GraphView';

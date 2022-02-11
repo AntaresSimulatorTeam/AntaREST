@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { ReactNode } from 'react';
 import {
   makeStyles,
   createStyles,
@@ -52,32 +52,16 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropsType {
-    candidate?: string;
-    candidateList: Array<string>;
+    content: ReactNode | undefined;
+    filter: ReactNode;
+    onChange: (value: string) => void;
     onAdd: () => void;
 }
 
 const PropertiesView = (props: PropsType) => {
   const classes = useStyles();
-  const { candidate, candidateList, onAdd } = props;
+  const { onAdd, onChange, content, filter } = props;
   const [t] = useTranslation();
-  const [filteredCandidates, setFilteredCandidates] = useState<Array<string>>();
-
-  const filter = (currentName: string): string[] => {
-    if (candidateList && candidate && filteredCandidates) {
-      return candidateList.filter((s) => !currentName || (s.search(new RegExp(currentName, 'i')) !== -1));
-    }
-    return [];
-  };
-
-  const onChange = async (currentName: string) => {
-    if (currentName !== '') {
-      const f = filter(currentName);
-      setFilteredCandidates(f);
-    } else {
-      setFilteredCandidates(undefined);
-    }
-  };
 
   return (
     <div className={classes.root}>
@@ -94,13 +78,11 @@ const PropertiesView = (props: PropsType) => {
         }}
         onChange={(e) => onChange(e.target.value as string)}
       />
+      {content}
+      {filter}
       <AddIcon className={classes.button} onClick={onAdd} />
     </div>
   );
-};
-
-PropertiesView.defaultProps = {
-  candidate: undefined,
 };
 
 export default PropertiesView;

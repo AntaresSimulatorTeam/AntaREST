@@ -6,7 +6,7 @@ import {
   Typography,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
-import PropertiesView from './PropertiesView';
+import PropertiesView from './XpansionPropsView';
 import { StudyMetadata } from '../../../common/types';
 import SplitLayoutView from '../../ui/SplitLayoutView';
 import CreateCandidateModal from './CreateCandidateModal';
