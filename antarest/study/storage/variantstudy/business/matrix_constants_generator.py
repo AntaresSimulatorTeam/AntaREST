@@ -20,7 +20,10 @@ PREPRO_CONVERSION = "prepro/conversion"
 PREPRO_DATA = "prepro/data"
 THERMAL_PREPRO_DATA = "thermals/prepro/data"
 THERMAL_PREPRO_MODULATION = "thermals/prepro/modulation"
-LINK = "link"
+LINK_V7 = "link_v7"
+LINK_V8 = "link_v8"
+LINK_DIRECT = "link_direct"
+LINK_INDIRECT = "link_indirect"
 NULL_MATRIX_NAME = "null_matrix"
 MATRIX_PROTOCOL_PREFIX = "matrix://"
 
@@ -65,8 +68,17 @@ class GeneratorMatrixConstants:
         self.hashes[THERMAL_PREPRO_MODULATION] = self.matrix_service.create(
             matrix_constants.thermals.prepro.modulation
         )
-        self.hashes[LINK] = self.matrix_service.create(
-            matrix_constants.link.link
+        self.hashes[LINK_V7] = self.matrix_service.create(
+            matrix_constants.link.v7.link
+        )
+        self.hashes[LINK_V8] = self.matrix_service.create(
+            matrix_constants.link.v8.link
+        )
+        self.hashes[LINK_DIRECT] = self.matrix_service.create(
+            matrix_constants.link.v8.direct
+        )
+        self.hashes[LINK_INDIRECT] = self.matrix_service.create(
+            matrix_constants.link.v8.indirect
         )
 
         self.hashes[NULL_MATRIX_NAME] = self.matrix_service.create(NULL_MATRIX)
@@ -115,8 +127,16 @@ class GeneratorMatrixConstants:
     def get_thermal_prepro_modulation(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[THERMAL_PREPRO_MODULATION]
 
-    def get_link(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK]
+    def get_link(self, version: int) -> str:
+        if version < 820:
+            return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_V7]
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_V8]
+
+    def get_link_direct(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_DIRECT]
+
+    def get_link_indirect(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_INDIRECT]
 
     def get_null_matrix(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]

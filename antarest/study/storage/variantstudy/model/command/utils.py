@@ -2,6 +2,7 @@ from typing import Union, List, Any
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     MATRIX_PROTOCOL_PREFIX,
 )
@@ -56,3 +57,22 @@ def strip_matrix_protocol(
     if matrix_uri.startswith(MATRIX_PROTOCOL_PREFIX):
         return matrix_uri[len(MATRIX_PROTOCOL_PREFIX) :]
     return matrix_uri
+
+
+class AliasDecoder:
+    @staticmethod
+    def links_series(alias: str, study: FileStudy) -> str:
+        data = alias.split("/")
+        area_from = data[1]
+        area_to = data[2]
+        if study.config.version < 820:
+            return f"input/links/{area_from}/{area_to}"
+        return f"input/links/{area_from}/{area_to}_parameters"
+
+    @staticmethod
+    def decode(alias: str, study: FileStudy) -> str:
+        alias_map = {"@links_series": AliasDecoder.links_series}
+        alias_code = alias.split("/")[0]
+        if alias_code in alias_map:
+            return alias_map[alias_code](alias, study)
+        raise NotImplementedError(f"Alias {alias} not implemented")
