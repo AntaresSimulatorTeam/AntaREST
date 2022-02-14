@@ -336,6 +336,7 @@ def create_study_variant_routes(
     def generate_variant(
         uuid: str,
         denormalize: bool = False,
+        from_scratch: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         logger.info(
@@ -345,7 +346,7 @@ def create_study_variant_routes(
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.generate(
-            sanitized_uuid, denormalize, params
+            sanitized_uuid, denormalize, from_scratch, params
         )
 
     @bp.get(
