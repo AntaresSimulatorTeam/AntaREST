@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { styled, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import { Box, Divider, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
@@ -62,14 +62,13 @@ function Studies(props: PropTypes) {
   const [openFilter, setOpenFiler] = useState<boolean>(false);
 
   const onImportClick = () : void => {
-    console.log('IMPORT');
+    return ;
   };
 
   const onCreateClick = () : void => {
-    console.log('CREATE');
+    return ;
   };
   const onFilterClick = () : void => {
-    console.log('OPEN FILTER');
     setOpenFiler(true);
   };
   const onFilterActionClick = (
@@ -94,8 +93,7 @@ function Studies(props: PropTypes) {
       if (studies.length === 0 || refresh) {
         const allStudies = await getStudies();
         loadStudies(allStudies);
-        setFilteredStudies(allStudies); // DELETE THIS
-        console.log('YES SIR');
+        setFilteredStudies(allStudies);
       }
     } catch (e) {
     // enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoretrievestudies'), e as AxiosError);

@@ -10,9 +10,6 @@ interface PropTypes {
 
 function StudiesList(props: PropTypes) {
   const { studies } = props;
-  useEffect(() => {
-    console.log('STUDIES:', studies);
-  }, [studies]);
   return (
     <Box
       height={`calc(100vh - ${STUDIES_HEIGHT_HEADER}px)`}
@@ -45,7 +42,7 @@ function StudiesList(props: PropTypes) {
           boxShadow: 'inset 0 0 6px rgba(0, 0, 0, 0.3)',
         },
         '&::-webkit-scrollbar-thumb': {
-          backgroundColor: 'secondary.main', // "darkgrey"
+          backgroundColor: 'secondary.main',
           outline: '1px solid slategrey',
         } }}
       >

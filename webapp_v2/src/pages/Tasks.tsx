@@ -6,7 +6,7 @@ const Root = styled('div')(({
   height: '100%',
   display: 'flex',
   flexFlow: 'row nowrap',
-  justifyContent: 'flex-start',
+  justifyContent: 'center',
   alignItems: 'center',
   boxSizing: 'border-box',
 }));

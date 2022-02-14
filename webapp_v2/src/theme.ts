@@ -1,6 +1,4 @@
-import { SettingsInputComponentSharp } from '@mui/icons-material';
-import { createTheme, PaletteColorOptions } from '@mui/material/styles';
-import { Theme } from 'tsparticles/Options/Classes/Theme/Theme';
+import { createTheme } from '@mui/material/styles';
 
 export const DRAWER_WIDTH = 60;
 export const DRAWER_WIDTH_EXTENDED = 240;
@@ -112,66 +110,4 @@ const theme = createTheme({
   },
 });
 
-/*
-
-    primary: {
-      dark: '#222433',//'#212032',
-      main: '#1b0c25',
-      light: '#03b2ff',
-    },
-    secondary: {
-      main: '#ffb801',
-      light: '#ffb80122',
-    },
-
-*/
-
-/*
-
-declare module '@mui/material/styles' {
-  interface Theme {
-    status: {
-      danger: React.CSSProperties['color'];
-    };
-  }
-
-  interface Palette {
-    neutral: Palette['primary'];
-  }
-  interface PaletteOptions {
-    neutral: PaletteOptions['primary'];
-  }
-
-  interface PaletteColor {
-    darker?: string;
-  }
-  interface SimplePaletteColorOptions {
-    darker?: string;
-  }
-  interface ThemeOptions {
-    status: {
-      danger: React.CSSProperties['color'];
-    };
-  }
-}
-
-IS FOR THIS
-
-const theme = createTheme({
-  status: {
-    danger: '#e53e3e',
-  },
-  palette: {
-    primary: {
-      main: '#0971f1',
-      darker: '#053e85',
-    },
-    neutral: {
-      main: '#64748B',
-      contrastText: '#fff',
-    },
-  },
-});
-
-*/
 export default theme;

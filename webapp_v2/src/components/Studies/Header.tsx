@@ -22,15 +22,9 @@ const Root = styled('div')(({ theme }) => ({
 
 const Searchbar = styled(TextField)(({ theme }) => ({
   color: theme.palette.grey[400],
-  // width: '300px',
-
   '& .MuiOutlinedInput-root': {
-    // backgroundColor: theme.palette.primary.dark,
-    // border: `1px solid ${theme.palette.grey[400]}`,
     height: '40px',
     '&.Mui-focused fieldset': {
-      // color: theme.palette.grey[400],
-      // border: `1px solid ${theme.palette.grey[400]}`,
     },
   },
 }));

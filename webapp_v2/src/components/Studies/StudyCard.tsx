@@ -19,12 +19,12 @@ export default function StudyCard(props: Props) {
           {study.name}
         </Typography>
         <Typography sx={{ mb: 1.5 }} color="white">
-          adjective
+          This is an example
         </Typography>
         <Typography variant="body2" color="white">
-          well meaning and kindly.
+          of text content.
           <br />
-          a benevolent smile
+          Real content is coming soon
         </Typography>
       </CardContent>
       <CardActions>
