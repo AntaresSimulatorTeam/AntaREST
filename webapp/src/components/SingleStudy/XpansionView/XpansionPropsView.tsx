@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import {
   makeStyles,
   createStyles,
@@ -6,6 +6,7 @@ import {
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import PropertiesView from '../../ui/PropertiesView';
+import { XpansionCandidate } from './types';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -23,7 +24,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropsType {
-  candidateList: Array<string>;
+  candidateList: Array<XpansionCandidate>;
   onAdd: () => void;
 }
 
@@ -32,9 +33,13 @@ const XpansionPropsView = (props: PropsType) => {
   const { candidateList, onAdd } = props;
   const [t] = useTranslation();
 
+  console.log(candidateList);
+
+  const candidateNames = candidateList.map((item) => (<div>{item.name}</div>));
+
   return (
     <PropertiesView
-      content={candidateList}
+      content={(<div>{candidateNames}</div>)}
       filter={
         <>Filtered</>
       }

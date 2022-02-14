@@ -49,7 +49,6 @@ const useStyles = makeStyles((theme: Theme) =>
       width: '80%',
       height: '100%',
       position: 'relative',
-      backgroundColor: '#EEE',
     },
     left: {
       display: 'block',

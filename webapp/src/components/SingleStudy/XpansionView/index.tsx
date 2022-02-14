@@ -6,10 +6,11 @@ import {
   Typography,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
-import PropertiesView from './XpansionPropsView';
+import XpansionPropsView from './XpansionPropsView';
 import { StudyMetadata } from '../../../common/types';
 import SplitLayoutView from '../../ui/SplitLayoutView';
 import CreateCandidateModal from './CreateCandidateModal';
+import mockdata from './mockdata.json';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -22,7 +23,7 @@ interface Props {
     study: StudyMetadata;
 }
 
-const MapView = (props: Props) => {
+const XpansionView = (props: Props) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { study } = props;
@@ -39,7 +40,7 @@ const MapView = (props: Props) => {
       <SplitLayoutView
         title={t('singlestudy:xpansion')}
         left={
-          <PropertiesView candidateList={['']} onAdd={() => setOpenModal(true)} />
+          <XpansionPropsView candidateList={mockdata} onAdd={() => setOpenModal(true)} />
         }
         right={
           <Typography className={classes.root}>{study.name}</Typography>
@@ -56,4 +57,4 @@ const MapView = (props: Props) => {
   );
 };
 
-export default MapView;
+export default XpansionView;
