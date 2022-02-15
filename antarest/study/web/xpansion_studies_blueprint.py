@@ -66,7 +66,6 @@ def create_study_routes(
         params = RequestParameters(user=current_user)
         study_service.delete_xpansion_configuration(uuid=uuid, params=params)
 
-    #
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/settings",
         tags=[APITag.xpansion_study_management],

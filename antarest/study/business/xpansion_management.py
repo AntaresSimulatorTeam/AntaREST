@@ -1,8 +1,12 @@
+from http import HTTPStatus
 from typing import Optional, Literal, Union
 
+from fastapi import HTTPException
 from pydantic import Field, BaseModel
 
+from antarest.core.model import JSON
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
 )
@@ -43,9 +47,9 @@ class XpansionNewCandidateDTO(BaseModel):
     name: str
     link: str
     annual_cost_per_mw: int = Field(alias="annual-cost-per-mw")
-    unit_size: Optional[int] = Field(None, alias="unit-size")
+    unit_size: Optional[float] = Field(None, alias="unit-size")
     max_units: Optional[int] = Field(None, alias="max-units")
-    max_investment: Optional[int] = Field(None, alias="max-investment")
+    max_investment: Optional[float] = Field(None, alias="max-investment")
     already_installed_capacity: Optional[int] = Field(
         None, alias="already-installed-capacity"
     )
@@ -53,6 +57,36 @@ class XpansionNewCandidateDTO(BaseModel):
     already_installed_link_profile: Optional[str] = Field(
         None, alias="already-installed-link-profile"
     )
+
+
+class LinkProfileNotFoundError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class AlreadyInstalledLinkProfileNotFoundError(Exception):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class IllegalCharacterInNameError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class WrongLinkFormatError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class CandidateAlreadyExistsError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class BadCandidateFormatError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
 class XpansionManager:
@@ -125,6 +159,119 @@ class XpansionManager:
         )
         return new_xpansion_settings_dto
 
+    def _assert_link_profile_are_files(
+        self,
+        file_study: FileStudy,
+        xpansion_candidate_dto: XpansionNewCandidateDTO,
+    ) -> None:
+        if xpansion_candidate_dto.link_profile and not file_study.tree.get(
+            ["user", "expansion", "capa", xpansion_candidate_dto.link_profile]
+        ):
+            raise LinkProfileNotFoundError(
+                f"The file {xpansion_candidate_dto.link_profile} does not exist"
+            )
+        if (
+            xpansion_candidate_dto.already_installed_link_profile
+            and not file_study.tree.get(
+                [
+                    "user",
+                    "expansion",
+                    "capa",
+                    xpansion_candidate_dto.already_installed_link_profile,
+                ]
+            )
+        ):
+            raise AlreadyInstalledLinkProfileNotFoundError(
+                f"The file {xpansion_candidate_dto.already_installed_link_profile} does not exist"
+            )
+
+    def _assert_link_exist(self, file_study, xpansion_candidate_dto):
+        if " - " not in xpansion_candidate_dto.link:
+            raise WrongLinkFormatError(
+                "The link must be in the format 'area1 - area2'"
+            )
+        area1, area2 = xpansion_candidate_dto.link.split(" - ")
+        area_from, area_to = sorted([area1, area2])
+        if area_to not in file_study.config.get_links(area_from):
+            raise LinkDoesNotExistError(
+                f"The link from {area_from} to {area_to} does not exist"
+            )
+
+    def _assert_no_illegal_character_is_in_candidate_name(
+        self, xpansion_candidate_name: str
+    ) -> None:
+        illegal_chars = [
+            " ",
+            "\n",
+            "\t",
+            "\r",
+            "\f",
+            "\v",
+            "-",
+            "+",
+            "=",
+            ":",
+            "[",
+            "]",
+            "(",
+            ")",
+        ]
+        for char in illegal_chars:
+            if char in xpansion_candidate_name:
+                raise IllegalCharacterInNameError(
+                    f"The character {char} is not allowed in the candidate name"
+                )
+
+    def _assert_candidate_name_is_not_already_taken(
+        self, candidates: JSON, xpansion_candidate_dto: str
+    ) -> None:
+        if candidates:
+            for candidate in candidates.values():
+                if candidate["name"] == xpansion_candidate_dto:
+                    raise CandidateAlreadyExistsError(
+                        f"The candidate {xpansion_candidate_dto.name} already exists"
+                    )
+
+    def _assert_investment_candidate_is_valid(
+        self, max_investment: float, max_units: int, unit_size: float
+    ):
+        bool_max_investment = max_investment is None
+        bool_max_units = max_units is None
+        bool_unit_size = unit_size is None
+
+        if not (
+            (not bool_max_investment and bool_max_units and bool_unit_size)
+            or (
+                bool_max_investment
+                and not bool_max_units
+                and not bool_unit_size
+            )
+        ):
+            raise BadCandidateFormatError(
+                f"The candidate is not well formatted."
+                f"It should either contain max-investment or (max-units and unit-size)."
+            )
+
+    def _assert_candidate_is_correct(
+        self,
+        candidates: JSON,
+        file_study: FileStudy,
+        xpansion_candidate_dto: XpansionNewCandidateDTO,
+    ) -> None:
+        self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
+        self._assert_link_exist(file_study, xpansion_candidate_dto)
+        self._assert_no_illegal_character_is_in_candidate_name(
+            xpansion_candidate_dto.name
+        )
+        self._assert_candidate_name_is_not_already_taken(
+            candidates, xpansion_candidate_dto.name
+        )
+        self._assert_investment_candidate_is_valid(
+            xpansion_candidate_dto.max_investment,
+            xpansion_candidate_dto.max_units,
+            xpansion_candidate_dto.unit_size,
+        )
+
     def add_candidate(
         self, study: Study, xpansion_candidate_dto: XpansionNewCandidateDTO
     ) -> str:
@@ -132,19 +279,14 @@ class XpansionManager:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
-        area1, area2 = xpansion_candidate_dto.link.split(" - ")
-        area_from, area_to = sorted([area1, area2])
 
-        # Assert that the link exists
-        if area_to not in file_study.config.get_links(area_from):
-            raise LinkDoesNotExistError(
-                f"The link from {area_from} to {area_to} does not exist"
-            )
-
-        # TODO: assert that link-profile and already-installed-link-profile exist
-
-        # Find id of new candidate
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
+
+        self._assert_candidate_is_correct(
+            candidates, file_study, xpansion_candidate_dto
+        )
+
+        # Find next candidate id
         max_id = (
             2 if not candidates else int(sorted(candidates.keys()).pop()) + 2
         )
