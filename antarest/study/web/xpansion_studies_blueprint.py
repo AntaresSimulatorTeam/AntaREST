@@ -108,7 +108,6 @@ def create_study_routes(
         "/studies/{uuid}/extensions/xpansion/candidates/add",
         tags=[APITag.xpansion_study_management],
         summary="Create Xpansion Candidate",
-        response_model=str,
     )
     def add_candidate(
         uuid: str,
@@ -153,24 +152,30 @@ def create_study_routes(
         params = RequestParameters(user=current_user)
         return study_service.get_candidates(uuid, params)
 
-    #
-    # @bp.post(
-    #     "/studies/{uuid}/extensions/xpansion/candidates/{candidate_id}/update",
-    #     tags=[APITag.xpansion_study_management],
-    #     summary="Update Xpansion Candidate",
-    #     response_model=Dict[str, StudyMetadataDTO],
-    # )
-    # def update_candidate(
-    #     summary: bool = False,
-    #     managed: bool = False,
-    #     current_user: JWTUser = Depends(auth.get_current_user),
-    # ) -> Any:
-    #     logger.info(f"Fetching study list", extra={"user": current_user.id})
-    #     params = RequestParameters(user=current_user)
-    #     available_studies = study_service.get_studies_information(
-    #         summary, managed, params
-    #     )
-    #     return available_studies
+    @bp.post(
+        "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
+        tags=[APITag.xpansion_study_management],
+        summary="Update Xpansion Candidate",
+    )
+    def update_candidate(
+        uuid: str,
+        candidate_name: str,
+        xpansion_candidate_dto: XpansionCandidateDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        # maybe just do one endpoint for both add and update and remove the name from the DTO ? or remove it from the URL ?
+        logger.info(
+            f"Updating xpansion candidate {xpansion_candidate_dto.name} of the study {uuid}",
+            extra={"user": current_user.id},
+        )
+        assert (
+            candidate_name == xpansion_candidate_dto.name
+        )  # Not sure about this. Should we keep the name in the endpoint if it is in the DTO ?
+        params = RequestParameters(user=current_user)
+        return study_service.update_xpansion_candidate(
+            uuid, xpansion_candidate_dto, params
+        )
+
     #
     # @bp.post(
     #     "/studies/{uuid}/extensions/xpansion/candidates/{candidate_id}/delete",

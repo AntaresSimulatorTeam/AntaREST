@@ -1754,7 +1754,7 @@ class StudyService:
         uuid: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
         params: RequestParameters,
-    ) -> str:
+    ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
@@ -1777,3 +1777,16 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         return self.xpansion_manager.get_candidates(study)
+
+    def update_xpansion_candidate(
+        self,
+        uuid: str,
+        xpansion_candidate_dto: XpansionCandidateDTO,
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.update_candidate(
+            study, xpansion_candidate_dto
+        )

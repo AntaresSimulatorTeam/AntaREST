@@ -13,10 +13,6 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
 from antarest.study.storage.storage_service import StudyStorageService
 
 
-class LinkDoesNotExistError(Exception):
-    pass
-
-
 class XpansionSettingsDTO(BaseModel):
     optimality_gap: Optional[float] = None
     max_iteration: Optional[Union[int, Literal["inf"]]] = None
@@ -59,6 +55,11 @@ class XpansionCandidateDTO(BaseModel):
     already_installed_link_profile: Optional[str] = Field(
         None, alias="already-installed-link-profile"
     )
+
+
+class LinkNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
 class LinkProfileNotFoundError(HTTPException):
@@ -204,8 +205,8 @@ class XpansionManager:
         area1, area2 = xpansion_candidate_dto.link.split(" - ")
         area_from, area_to = sorted([area1, area2])
         if area_to not in file_study.config.get_links(area_from):
-            raise LinkDoesNotExistError(
-                f"The link from {area_from} to {area_to} does not exist"
+            raise LinkNotFound(
+                f"The link from {area_from} to {area_to} not found"
             )
 
     def _assert_no_illegal_character_is_in_candidate_name(
@@ -270,15 +271,17 @@ class XpansionManager:
         candidates: JSON,
         file_study: FileStudy,
         xpansion_candidate_dto: XpansionCandidateDTO,
+        update=False,
     ) -> None:
         self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
         self._assert_link_exist(file_study, xpansion_candidate_dto)
         self._assert_no_illegal_character_is_in_candidate_name(
             xpansion_candidate_dto.name
         )
-        self._assert_candidate_name_is_not_already_taken(
-            candidates, xpansion_candidate_dto.name
-        )
+        if not update:
+            self._assert_candidate_name_is_not_already_taken(
+                candidates, xpansion_candidate_dto.name
+            )
         self._assert_investment_candidate_is_valid(
             xpansion_candidate_dto.max_investment,
             xpansion_candidate_dto.max_units,
@@ -287,7 +290,7 @@ class XpansionManager:
 
     def add_candidate(
         self, study: Study, xpansion_candidate_dto: XpansionCandidateDTO
-    ) -> str:
+    ) -> None:
 
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
@@ -315,8 +318,6 @@ class XpansionManager:
         file_study.tree.save(candidates_data)
         # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
 
-        return next_id
-
     def get_candidate(
         self, study: Study, candidate_name: str
     ) -> XpansionCandidateDTO:
@@ -342,3 +343,30 @@ class XpansionManager:
         )
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
         return [XpansionCandidateDTO(**c) for c in candidates.values()]
+
+    def update_candidate(
+        self, study: Study, xpansion_candidate_dto: XpansionCandidateDTO
+    ) -> None:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+
+        candidates = file_study.tree.get(["user", "expansion", "candidates"])
+
+        self._assert_candidate_is_correct(
+            candidates, file_study, xpansion_candidate_dto, update=True
+        )
+
+        for id, candidate in candidates.items():
+            if candidate["name"] == xpansion_candidate_dto.name:
+                candidates[id] = xpansion_candidate_dto.dict(
+                    by_alias=True, exclude_none=True
+                )
+                file_study.tree.save(
+                    candidates, ["user", "expansion", "candidates"]
+                )
+                return
+        raise CandidateNotFoundError(
+            f"The candidate '{xpansion_candidate_dto.name}' does not exist"
+        )
+

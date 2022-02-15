@@ -1,10 +1,11 @@
-import logging
 import shutil
 from abc import abstractmethod, ABC
+from http import HTTPStatus
 from typing import List, Optional, Tuple, Union, Dict
 
+from fastapi import HTTPException
+
 from antarest.core.model import JSON
-from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -21,8 +22,9 @@ class FilterError(Exception):
     pass
 
 
-class ChildNotFoundError(Exception):
-    pass
+class ChildNotFoundError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
 class FolderNode(

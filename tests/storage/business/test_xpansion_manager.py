@@ -11,7 +11,7 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
     XpansionSettingsDTO,
     XpansionCandidateDTO,
-    LinkDoesNotExistError,
+    LinkNotFound,
 )
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
@@ -301,7 +301,7 @@ def test_add_candidate(tmp_path: Path):
 
     make_areas(empty_study)
 
-    with pytest.raises(LinkDoesNotExistError):
+    with pytest.raises(LinkNotFound):
         xpansion_manager.add_candidate(study, new_candidate)
 
     make_link(empty_study)
@@ -400,3 +400,42 @@ def test_get_candidates(tmp_path: Path):
         new_candidate,
         new_candidate2,
     ]
+
+
+@pytest.mark.unit_test
+def test_update_candidates(tmp_path: Path):
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+
+    assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
+
+    make_link_and_areas(empty_study)
+
+    new_candidate = XpansionCandidateDTO.parse_obj(
+        {
+            "name": "candidate_1",
+            "link": "area1 - area2",
+            "annual-cost-per-mw": 1,
+            "max-investment": 1,
+        }
+    )
+    xpansion_manager.add_candidate(study, new_candidate)
+
+    new_candidate2 = XpansionCandidateDTO.parse_obj(
+        {
+            "name": "candidate_1",
+            "link": "area1 - area2",
+            "annual-cost-per-mw": 1,
+            "max-investment": 1,
+        }
+    )
+    xpansion_manager.update_candidate(study, new_candidate2)
+
+    assert (
+        xpansion_manager.get_candidate(
+            study, candidate_name=new_candidate.name
+        )
+        == new_candidate2
+    )
