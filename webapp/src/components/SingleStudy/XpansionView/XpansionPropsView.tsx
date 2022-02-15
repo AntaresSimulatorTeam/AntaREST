@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { useState } from 'react';
 import {
   makeStyles,
   createStyles,
@@ -7,43 +7,51 @@ import {
 import { useTranslation } from 'react-i18next';
 import PropertiesView from '../../ui/PropertiesView';
 import { XpansionCandidate } from './types';
+import CandidateListing from './CandidateListing';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    list: {
-      minWidth: '75%',
-      height: '100%',
-      display: 'flex',
-      flexFlow: 'column nowrap',
-      justifyContent: 'flex-start',
-      alignItems: 'flex-start',
-    },
-    prevButton: {
-      color: theme.palette.primary.main,
-    },
   }));
 
 interface PropsType {
   candidateList: Array<XpansionCandidate>;
+  setSelectedItem: (item: XpansionCandidate) => void;
   onAdd: () => void;
 }
 
 const XpansionPropsView = (props: PropsType) => {
   const classes = useStyles();
-  const { candidateList, onAdd } = props;
+  const { candidateList, setSelectedItem, onAdd } = props;
   const [t] = useTranslation();
+  const [filteredCandidates, setFilteredCandidates] = useState<Array<XpansionCandidate>>();
 
-  console.log(candidateList);
+  const filter = (currentName: string): XpansionCandidate[] => {
+    if (candidateList) {
+      return candidateList.filter((item) => !currentName || (item.name.search(new RegExp(currentName, 'i')) !== -1));
+    }
+    return [];
+  };
 
-  const candidateNames = candidateList.map((item) => (<div>{item.name}</div>));
+  const onChange = async (currentName: string) => {
+    if (currentName !== '') {
+      const f = filter(currentName);
+      setFilteredCandidates(f);
+    } else {
+      setFilteredCandidates(undefined);
+    }
+  };
 
   return (
     <PropertiesView
-      content={(<div>{candidateNames}</div>)}
+      content={!filteredCandidates && (
+        <CandidateListing candidates={candidateList} setSelectedItem={setSelectedItem} />
+      )}
       filter={
-        <>Filtered</>
+        filteredCandidates && (
+        <CandidateListing candidates={filteredCandidates} setSelectedItem={setSelectedItem} />
+        )
       }
-      onChange={() => console.log('search')}
+      onChange={(e) => onChange(e as string)}
       onAdd={onAdd}
     />
   );
