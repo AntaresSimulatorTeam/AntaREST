@@ -44,6 +44,8 @@ class XpansionSettingsDTO(BaseModel):
 
 
 class XpansionCandidateDTO(BaseModel):
+    # The id of the candidate is irrelevant, so it should stay hidden for the user
+    # The names should be the section titles of the file, and the id should be removed
     name: str
     link: str
     annual_cost_per_mw: int = Field(alias="annual-cost-per-mw")
@@ -318,6 +320,7 @@ class XpansionManager:
     def get_candidate(
         self, study: Study, candidate_name: str
     ) -> XpansionCandidateDTO:
+        # This takes the first candidate with the given name and not the id, because the name is the primary key.
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
