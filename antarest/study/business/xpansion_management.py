@@ -292,8 +292,7 @@ class XpansionManager:
         )
         next_id = next(
             str(i) for i in range(1, max_id) if str(i) not in candidates
-        )  # TODO: looks ugly, is there a better way to do this? should we the list when an object is deleted?
-        # TODO: what happens when the list is disjoint?
+        )  # The primary key is actually the name, the id does not matter and is never checked.
 
         # Add candidate
         candidates[next_id] = xpansion_candidate_dto.dict(
@@ -301,5 +300,6 @@ class XpansionManager:
         )
         candidates_data = {"user": {"expansion": {"candidates": candidates}}}
         file_study.tree.save(candidates_data)
+        # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
 
         return next_id
