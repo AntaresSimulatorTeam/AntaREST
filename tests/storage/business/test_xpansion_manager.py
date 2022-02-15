@@ -439,3 +439,39 @@ def test_update_candidates(tmp_path: Path):
         )
         == new_candidate2
     )
+
+
+@pytest.mark.unit_test
+def test_delete_candidate(tmp_path: Path):
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+
+    assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
+
+    make_link_and_areas(empty_study)
+
+    new_candidate = XpansionCandidateDTO.parse_obj(
+        {
+            "name": "candidate_1",
+            "link": "area1 - area2",
+            "annual-cost-per-mw": 1,
+            "max-investment": 1,
+        }
+    )
+    xpansion_manager.add_candidate(study, new_candidate)
+
+    new_candidate2 = XpansionCandidateDTO.parse_obj(
+        {
+            "name": "candidate_2",
+            "link": "area1 - area2",
+            "annual-cost-per-mw": 1,
+            "max-investment": 1,
+        }
+    )
+    xpansion_manager.add_candidate(study, new_candidate2)
+
+    xpansion_manager.delete_candidate(study, new_candidate.name)
+
+    assert xpansion_manager.get_candidates(study) == [new_candidate2]

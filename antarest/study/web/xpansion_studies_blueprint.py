@@ -176,24 +176,23 @@ def create_study_routes(
             uuid, xpansion_candidate_dto, params
         )
 
-    #
-    # @bp.post(
-    #     "/studies/{uuid}/extensions/xpansion/candidates/{candidate_id}/delete",
-    #     tags=[APITag.xpansion_study_management],
-    #     summary="Delete Xpansion Candidate",
-    #     response_model=Dict[str, StudyMetadataDTO],
-    # )
-    # def delete_candidate(
-    #     summary: bool = False,
-    #     managed: bool = False,
-    #     current_user: JWTUser = Depends(auth.get_current_user),
-    # ) -> Any:
-    #     logger.info(f"Fetching study list", extra={"user": current_user.id})
-    #     params = RequestParameters(user=current_user)
-    #     available_studies = study_service.get_studies_information(
-    #         summary, managed, params
-    #     )
-    #     return available_studies
+    @bp.post(
+        "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}/delete",
+        tags=[APITag.xpansion_study_management],
+        summary="Delete Xpansion Candidate",
+    )
+    def delete_candidate(
+        uuid: str,
+        candidate_name: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Deleting candidate {candidate_name}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.delete_candidate(uuid, candidate_name, params)
+
     #
     # @bp.post(
     #     "/studies/{uuid}/extensions/xpansion/constraints",

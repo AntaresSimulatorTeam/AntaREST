@@ -370,3 +370,18 @@ class XpansionManager:
             f"The candidate '{xpansion_candidate_dto.name}' does not exist"
         )
 
+    def delete_candidate(self, study: Study, candidate_name: str) -> None:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+
+        candidates = file_study.tree.get(["user", "expansion", "candidates"])
+        candidate_id = next(
+            id
+            for id, candidate in candidates.items()
+            if candidate["name"] == candidate_name
+        )
+
+        file_study.tree.delete(
+            ["user", "expansion", "candidates", candidate_id]
+        )
