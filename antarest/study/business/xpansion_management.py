@@ -271,7 +271,7 @@ class XpansionManager:
         candidates: JSON,
         file_study: FileStudy,
         xpansion_candidate_dto: XpansionCandidateDTO,
-        update=False,
+        update: bool = False,
     ) -> None:
         self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
         self._assert_link_exist(file_study, xpansion_candidate_dto)

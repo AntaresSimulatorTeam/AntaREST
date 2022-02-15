@@ -1,7 +1,13 @@
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
+from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
+    BucketNode,
+    RegisteredFile,
 )
-from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
+from antarest.study.storage.rawstudy.model.filesystem.context import (
+    ContextServer,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.candidates import (
     ExpansionCandidates,
 )
@@ -13,15 +19,13 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.settin
 )
 
 
-class Expansion(FolderNode):
-    def build(self) -> TREE:
-        children: TREE = {
-            "candidates": ExpansionCandidates(
-                self.context, self.config.next_file("candidates.ini")
+class Expansion(BucketNode):
+    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+        registered_files = {
+            "candidates": RegisteredFile(
+                ExpansionCandidates, extension=".ini"
             ),
-            "settings": ExpansionSettings(
-                self.context, self.config.next_file("settings.ini")
-            ),
-            "capa": ExpansionCapa(self.context, self.config.next_file("capa")),
+            "settings": RegisteredFile(ExpansionSettings, extension=".ini"),
+            "capa": RegisteredFile(ExpansionCapa),
         }
-        return children
+        super().__init__(context, config, registered_files)

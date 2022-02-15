@@ -139,7 +139,7 @@ def test_revert(command_context: CommandContext):
     ]
     study = FileStudy(config=Mock(), tree=Mock())
     base.command_context.command_extractor.extract_cluster.side_effect = (
-        ChildNotFoundError()
+        ChildNotFoundError("")
     )
     base.revert([], study)
     base.command_context.command_extractor.extract_cluster.assert_called_with(

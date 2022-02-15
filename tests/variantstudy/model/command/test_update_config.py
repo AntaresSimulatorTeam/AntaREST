@@ -87,8 +87,8 @@ def test_revert(command_context: CommandContext):
         target="foo", data="bar", command_context=command_context
     )
     study = FileStudy(config=Mock(), tree=Mock())
-    base.command_context.command_extractor.generate_update_config.side_effect = (
-        ChildNotFoundError()
+    base.command_context.command_extractor.generate_update_config.side_effect = ChildNotFoundError(
+        ""
     )
     res = base.revert([], study)
     base.command_context.command_extractor.generate_update_config.assert_called_with(
