@@ -185,7 +185,11 @@ class XpansionManager:
                 f"The file {xpansion_candidate_dto.already_installed_link_profile} does not exist"
             )
 
-    def _assert_link_exist(self, file_study, xpansion_candidate_dto):
+    def _assert_link_exist(
+        self,
+        file_study: FileStudy,
+        xpansion_candidate_dto: XpansionNewCandidateDTO,
+    ) -> None:
         if " - " not in xpansion_candidate_dto.link:
             raise WrongLinkFormatError(
                 "The link must be in the format 'area1 - area2'"
@@ -219,22 +223,25 @@ class XpansionManager:
         for char in illegal_chars:
             if char in xpansion_candidate_name:
                 raise IllegalCharacterInNameError(
-                    f"The character {char} is not allowed in the candidate name"
+                    f"The character '{char}' is not allowed in the candidate name"
                 )
 
     def _assert_candidate_name_is_not_already_taken(
-        self, candidates: JSON, xpansion_candidate_dto: str
+        self, candidates: JSON, xpansion_candidate_name: str
     ) -> None:
         if candidates:
             for candidate in candidates.values():
-                if candidate["name"] == xpansion_candidate_dto:
+                if candidate["name"] == xpansion_candidate_name:
                     raise CandidateAlreadyExistsError(
-                        f"The candidate {xpansion_candidate_dto.name} already exists"
+                        f"The candidate '{xpansion_candidate_name}' already exists"
                     )
 
     def _assert_investment_candidate_is_valid(
-        self, max_investment: float, max_units: int, unit_size: float
-    ):
+        self,
+        max_investment: Optional[float],
+        max_units: Optional[int],
+        unit_size: Optional[float],
+    ) -> None:
         bool_max_investment = max_investment is None
         bool_max_units = max_units is None
         bool_unit_size = unit_size is None

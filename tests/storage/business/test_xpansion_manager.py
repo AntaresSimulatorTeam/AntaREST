@@ -260,9 +260,19 @@ def test_add_candidate(tmp_path: Path):
 
     new_candidate = XpansionNewCandidateDTO.parse_obj(
         {
-            "name": "candidate 1",
+            "name": "candidate_1",
             "link": "area1 - area2",
             "annual-cost-per-mw": 1,
+            "max-investment": 1,
+        }
+    )
+
+    new_candidate2 = XpansionNewCandidateDTO.parse_obj(
+        {
+            "name": "candidate_2",
+            "link": "area1 - area2",
+            "annual-cost-per-mw": 1,
+            "max-investment": 1,
         }
     )
 
@@ -291,8 +301,8 @@ def test_add_candidate(tmp_path: Path):
         empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
     )
 
-    xpansion_manager.add_candidate(study, new_candidate)
-    candidates["2"] = new_candidate.dict(by_alias=True, exclude_none=True)
+    xpansion_manager.add_candidate(study, new_candidate2)
+    candidates["2"] = new_candidate2.dict(by_alias=True, exclude_none=True)
 
     assert (
         empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
