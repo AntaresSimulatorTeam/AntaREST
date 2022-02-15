@@ -13,14 +13,14 @@ import { convertVersions } from '../../services/utils';
 interface Props {
     open: boolean;
     managedFilter: boolean;
-    setManagedFilter: (data: boolean) => void;
     versionList: Array<GenericInfo>;
     versions: Array<GenericInfo>;
     userList: Array<UserDTO>;
     users: Array<UserDTO>;
     groupList: Array<GroupDTO>;
     groups: Array<GroupDTO>;
-    onFilterActionClick: (versions: Array<GenericInfo> | undefined,
+    onFilterActionClick: (managed: boolean,
+                          versions: Array<GenericInfo> | undefined,
                           users: Array<UserDTO> | undefined,
                           groups: Array<GroupDTO> | undefined) => void;
     onClose: () => void;
@@ -29,17 +29,26 @@ interface Props {
 function FilterDrawer(props: Props) {
   const theme = useTheme();
   const [t] = useTranslation();
-  const { open, managedFilter, setManagedFilter, versionList, versions, userList, users, groupList, groups, onFilterActionClick, onClose } = props;
+  const { open, managedFilter, versionList, versions, userList, users, groupList, groups, onFilterActionClick, onClose } = props;
 
   const [currentUsers, setCurrentUsers] = useState<Array<UserDTO>|undefined>(users);
   const [currentGroups, setCurrentGroups] = useState<Array<GroupDTO>|undefined>(groups);
   const [currentVersions, setCurrentVersions] = useState<Array<GenericInfo> | undefined>(versions);
+  const [currentManaged, setCurrentManaged] = useState<boolean>(managedFilter);
 
   const setVersions = (data: Array<string>) : void => {
+    if(data.length === 0) {
+      setCurrentVersions(undefined);
+      return ;
+    }
     setCurrentVersions(convertVersions(data || []));
   };
 
   const setUsers = (data: Array<string>) : void => {
+    if(data.length === 0) {
+      setCurrentUsers(undefined);
+      return ;
+    }
     setCurrentUsers(data.map((elm) => {
       const index = userList.findIndex((item) => {
         return item.id.toString() === elm;
@@ -49,6 +58,10 @@ function FilterDrawer(props: Props) {
   };
 
   const setGroups = (data: Array<string>) : void => {
+    if(data.length === 0) {
+      setCurrentGroups(undefined);
+      return ;
+    }
     setCurrentGroups(data.map((elm) => {
       const index = groupList.findIndex((item) => {
         return item.id === elm;
@@ -57,14 +70,19 @@ function FilterDrawer(props: Props) {
     }));
   };
 
+  const setManaged = (data: boolean) : void => {
+    setCurrentManaged(data);
+  };
+
   const onFilterClick = (): void => {
-    onFilterActionClick(currentVersions, currentUsers, currentGroups);
+    onFilterActionClick(currentManaged, currentVersions, currentUsers, currentGroups);
   };
 
   const onResetFilterClick = (): void => {
     setCurrentVersions(undefined);
     setCurrentUsers(undefined);
     setCurrentGroups(undefined);
+    setManaged(false);
   };
 
   return (
@@ -87,7 +105,7 @@ function FilterDrawer(props: Props) {
       <Toolbar sx={{ py: 3 }}>
         <Box display="flex" width="100%" height="100%" justifyContent="flex-start" alignItems="flex-start" py={2} flexDirection="column" flexWrap="nowrap" boxSizing="border-box" color="white">
           <Typography sx={{ color: 'grey.500', fontSize: '0.9em', mb: theme.spacing(2) }}>{t('main:filter').toUpperCase()}</Typography>
-          <FormControlLabel control={<Checkbox checked={managedFilter} onChange={() => setManagedFilter(!managedFilter)} sx={{ color: 'white' }} />} label="Managed studies" />
+          <FormControlLabel control={<Checkbox checked={currentManaged} onChange={() => setManaged(!currentManaged)} sx={{ color: 'white' }} />} label={t('studymanager:managedStudiesFilter') as string} />
         </Box>
       </Toolbar>
       <Divider style={{ height: '1px', backgroundColor: theme.palette.grey[800] }} />

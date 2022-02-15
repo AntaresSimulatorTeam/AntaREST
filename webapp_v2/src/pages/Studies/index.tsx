@@ -72,20 +72,25 @@ function Studies(props: PropTypes) {
     setOpenFiler(true);
   };
   const onFilterActionClick = (
+    managed: boolean,
     versions: Array<GenericInfo> | undefined,
     users: Array<UserDTO> | undefined,
     groups: Array<GroupDTO> | undefined,
   ) : void => {
-    console.log('FILTER');
-    setLoaded(true);
+    setManageFilter(managed);
     setCurrentVersion(versions);
     setCurrentUser(users);
     setCurrentGroup(groups);
+    setOpenFiler(false);
+  };
+
+  const applyFilter = () : void => {
+    console.log('APPLY FILTERS');
+    setLoaded(true);
     const f = filter(inputValue);
     setFilteredStudies(f);
     setLoaded(false);
-    setOpenFiler(false);
-  };
+  }
 
   const getAllStudies = async (refresh: boolean) => {
     setLoaded(false);
@@ -168,10 +173,11 @@ function Studies(props: PropTypes) {
     saveState(DEFAULT_FILTER_MANAGED, managedFilter);
     saveState(DEFAULT_FILTER_VERSION, currentVersion);
     saveState(DEFAULT_FILTER_SORTING, currentSortItem);
+    applyFilter();
   }, [currentVersion, currentUser, currentGroup, currentSortItem, managedFilter]);
   return (
     <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" boxSizing="border-box" overflow="hidden">
-      <Header inputValue={inputValue} setInputValue={onChange} onImportClick={onImportClick} onCreateClick={onCreateClick} onFilterClick={onFilterClick} />
+      <Header managedFilter={managedFilter as boolean} setManageFilter={setManageFilter} inputValue={inputValue} setInputValue={onChange} onImportClick={onImportClick} onCreateClick={onCreateClick} onFilterClick={onFilterClick} />
       <Divider sx={{ width: '98%' }} />
       <Box flex={1} width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center" boxSizing="border-box">
         <SideNav />
@@ -181,7 +187,6 @@ function Studies(props: PropTypes) {
           <FilterDrawer
             open={openFilter}
             managedFilter={managedFilter as boolean}
-            setManagedFilter={setManageFilter}
             versionList={versionList}
             versions={currentVersion as Array<GenericInfo>}
             userList={userList}

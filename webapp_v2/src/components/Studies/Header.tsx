@@ -6,7 +6,7 @@ import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOu
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import TextField from '@mui/material/TextField';
 import { useTranslation } from 'react-i18next';
-import { Box, Button, Divider, InputAdornment, Typography } from '@mui/material';
+import { Box, Button, Divider, InputAdornment, Typography, Chip } from '@mui/material';
 import { STUDIES_HEIGHT_HEADER } from '../../theme';
 
 const Root = styled('div')(({ theme }) => ({
@@ -35,11 +35,13 @@ interface Props {
     onImportClick: () => void;
     onCreateClick: () => void;
     onFilterClick: () => void;
+    managedFilter: boolean;
+    setManageFilter: (value: boolean) => void;
 }
 
 function Header(props: Props) {
   const [t] = useTranslation();
-  const { inputValue, setInputValue, onImportClick, onCreateClick, onFilterClick } = props;
+  const { inputValue, setInputValue, onImportClick, onCreateClick, onFilterClick, managedFilter, setManageFilter } = props;
   return (
     <Root>
       <Box width="100%" alignItems="center" display="flex" px={3}>
@@ -76,6 +78,16 @@ function Header(props: Props) {
           <Button color="secondary" variant="outlined" onClick={onFilterClick}>
             {t('main:filter')}
           </Button>
+          {
+            managedFilter && 
+            <Chip
+            label={t('studymanager:managedStudiesFilter')}
+            variant="filled"
+            color="secondary"
+            onDelete={() => setManageFilter(false)}
+            sx={{ mx: 2 }}
+          />
+          }
         </Box>
       </Box>
     </Root>

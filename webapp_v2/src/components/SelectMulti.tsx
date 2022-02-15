@@ -1,17 +1,6 @@
 import React from 'react';
-import { Checkbox, FormControl, InputLabel, ListItemText, MenuItem, OutlinedInput, Select, SelectChangeEvent, useTheme } from '@mui/material';
+import { Checkbox, FormControl, InputLabel, ListItemText, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 import { GenericInfo } from '../common/types';
-
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
 
 interface Props {
    name: string;
@@ -21,7 +10,6 @@ interface Props {
 }
 
 function SelectMulti(props: Props) {
-  const theme = useTheme();
   const { name, list, data, setValue } = props;
 
   const handleChange = (event: SelectChangeEvent<Array<string>>) => {
@@ -35,17 +23,23 @@ function SelectMulti(props: Props) {
     <FormControl sx={{ m: 1, width: 200 }}>
       <InputLabel id="multiple-checkbox-label" sx={{ color: 'white' }}>{name}</InputLabel>
       <Select
-        labelId="multiple-checkbox-label"
-        id="multiple-checkbox"
+        labelId={`multiple-checkbox-label-${name}`}
+        id={`multiple-checkbox-${name}`}
         multiple
         value={data}
+        variant="filled"
         onChange={handleChange}
-        sx={{ color: 'white' }}
-        input={<OutlinedInput sx={{ color: 'white' }} label={name} />}
         renderValue={(selected) => selected.map((elm) => (
           list.find((item) => (typeof item.id === 'string' ? item.id === elm : item.id.toString() === elm))?.name
         )).join(', ')}
-        MenuProps={MenuProps}
+        sx={{
+          background: 'rgba(255, 255, 255, 0.09)',
+          borderRadius: '4px 4px 0px 0px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.42)',
+          '.MuiSelect-icon': {
+            backgroundColor: '#222333',
+          },
+        }}
       >
         {list.map(({ id, name }) => (
           <MenuItem key={id} value={id}>
