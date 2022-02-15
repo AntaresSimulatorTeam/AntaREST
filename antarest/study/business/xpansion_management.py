@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Optional, Literal, Union
+from typing import Optional, Literal, Union, List
 
 from fastapi import HTTPException
 from pydantic import Field, BaseModel
@@ -43,7 +43,7 @@ class XpansionSettingsDTO(BaseModel):
     solver: Optional[Union[Literal["Cbc"], Literal["Coin"]]] = None
 
 
-class XpansionNewCandidateDTO(BaseModel):
+class XpansionCandidateDTO(BaseModel):
     name: str
     link: str
     annual_cost_per_mw: int = Field(alias="annual-cost-per-mw")
@@ -87,6 +87,11 @@ class CandidateAlreadyExistsError(HTTPException):
 class BadCandidateFormatError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class CandidateNotFoundError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
 class XpansionManager:
@@ -162,7 +167,7 @@ class XpansionManager:
     def _assert_link_profile_are_files(
         self,
         file_study: FileStudy,
-        xpansion_candidate_dto: XpansionNewCandidateDTO,
+        xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
         if xpansion_candidate_dto.link_profile and not file_study.tree.get(
             ["user", "expansion", "capa", xpansion_candidate_dto.link_profile]
@@ -188,7 +193,7 @@ class XpansionManager:
     def _assert_link_exist(
         self,
         file_study: FileStudy,
-        xpansion_candidate_dto: XpansionNewCandidateDTO,
+        xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
         if " - " not in xpansion_candidate_dto.link:
             raise WrongLinkFormatError(
@@ -229,12 +234,11 @@ class XpansionManager:
     def _assert_candidate_name_is_not_already_taken(
         self, candidates: JSON, xpansion_candidate_name: str
     ) -> None:
-        if candidates:
-            for candidate in candidates.values():
-                if candidate["name"] == xpansion_candidate_name:
-                    raise CandidateAlreadyExistsError(
-                        f"The candidate '{xpansion_candidate_name}' already exists"
-                    )
+        for candidate in candidates.values():
+            if candidate["name"] == xpansion_candidate_name:
+                raise CandidateAlreadyExistsError(
+                    f"The candidate '{xpansion_candidate_name}' already exists"
+                )
 
     def _assert_investment_candidate_is_valid(
         self,
@@ -263,7 +267,7 @@ class XpansionManager:
         self,
         candidates: JSON,
         file_study: FileStudy,
-        xpansion_candidate_dto: XpansionNewCandidateDTO,
+        xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
         self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
         self._assert_link_exist(file_study, xpansion_candidate_dto)
@@ -280,7 +284,7 @@ class XpansionManager:
         )
 
     def add_candidate(
-        self, study: Study, xpansion_candidate_dto: XpansionNewCandidateDTO
+        self, study: Study, xpansion_candidate_dto: XpansionCandidateDTO
     ) -> str:
 
         file_study = self.study_storage_service.get_storage(study).get_raw(
@@ -310,3 +314,28 @@ class XpansionManager:
         # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
 
         return next_id
+
+    def get_candidate(
+        self, study: Study, candidate_name: str
+    ) -> XpansionCandidateDTO:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        candidates = file_study.tree.get(["user", "expansion", "candidates"])
+        try:
+            candidate = next(
+                c for c in candidates.values() if c["name"] == candidate_name
+            )
+            return XpansionCandidateDTO(**candidate)
+
+        except StopIteration:
+            raise CandidateNotFoundError(
+                f"The candidate '{candidate_name}' does not exist"
+            )
+
+    def get_candidates(self, study: Study) -> List[XpansionCandidateDTO]:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        candidates = file_study.tree.get(["user", "expansion", "candidates"])
+        return [XpansionCandidateDTO(**c) for c in candidates.values()]

@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, List
 
 from fastapi import APIRouter, Depends
 
@@ -11,7 +11,7 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.xpansion_management import (
     XpansionSettingsDTO,
-    XpansionNewCandidateDTO,
+    XpansionCandidateDTO,
 )
 from antarest.study.service import StudyService
 
@@ -112,14 +112,46 @@ def create_study_routes(
     )
     def add_candidate(
         uuid: str,
-        xpansion_candidate_dto: XpansionNewCandidateDTO,
+        xpansion_candidate_dto: XpansionCandidateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Fetching study list", extra={"user": current_user.id})
+        logger.info(
+            f"Adding new candidate {xpansion_candidate_dto.dict(by_alias=True)} to study {uuid}",
+            extra={"user": current_user.id},
+        )
         params = RequestParameters(user=current_user)
         return study_service.add_candidate(
             uuid, xpansion_candidate_dto, params
         )
+
+    @bp.get(
+        "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
+        tags=[APITag.xpansion_study_management],
+        summary="Get Xpansion Candidate",
+        response_model=XpansionCandidateDTO,
+    )
+    def get_candidate(
+        uuid: str,
+        candidate_name: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(f"Fetching study list", extra={"user": current_user.id})
+        params = RequestParameters(user=current_user)
+        return study_service.get_candidate(uuid, candidate_name, params)
+
+    @bp.get(
+        "/studies/{uuid}/extensions/xpansion/candidates/",
+        tags=[APITag.xpansion_study_management],
+        summary="Get Xpansion Candidates",
+        response_model=List[XpansionCandidateDTO],
+    )
+    def get_candidates(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(f"Fetching study list", extra={"user": current_user.id})
+        params = RequestParameters(user=current_user)
+        return study_service.get_candidates(uuid, params)
 
     #
     # @bp.post(

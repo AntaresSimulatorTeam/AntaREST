@@ -10,7 +10,7 @@ from antarest.core.model import JSON
 from antarest.study.business.xpansion_management import (
     XpansionManager,
     XpansionSettingsDTO,
-    XpansionNewCandidateDTO,
+    XpansionCandidateDTO,
     LinkDoesNotExistError,
 )
 from antarest.study.model import RawStudy
@@ -63,6 +63,26 @@ def make_xpansion_manager(empty_study):
     raw_study_service.get_raw.return_value = empty_study
     raw_study_service.cache = Mock()
     return xpansion_manager
+
+
+def make_areas(empty_study):
+    CreateArea(
+        area_name="area1", command_context=Mock(spec=CommandContext)
+    )._apply_config(empty_study.config)
+    CreateArea(
+        area_name="area2", command_context=Mock(spec=CommandContext)
+    )._apply_config(empty_study.config)
+
+
+def make_link(empty_study):
+    CreateLink(
+        area1="area1", area2="area2", command_context=Mock(spec=CommandContext)
+    )._apply_config(empty_study.config)
+
+
+def make_link_and_areas(empty_study):
+    make_areas(empty_study)
+    make_link(empty_study)
 
 
 @pytest.mark.unit_test
@@ -258,7 +278,7 @@ def test_add_candidate(tmp_path: Path):
 
     assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
 
-    new_candidate = XpansionNewCandidateDTO.parse_obj(
+    new_candidate = XpansionCandidateDTO.parse_obj(
         {
             "name": "candidate_1",
             "link": "area1 - area2",
@@ -267,7 +287,7 @@ def test_add_candidate(tmp_path: Path):
         }
     )
 
-    new_candidate2 = XpansionNewCandidateDTO.parse_obj(
+    new_candidate2 = XpansionCandidateDTO.parse_obj(
         {
             "name": "candidate_2",
             "link": "area1 - area2",
@@ -279,19 +299,12 @@ def test_add_candidate(tmp_path: Path):
     with pytest.raises(KeyError):
         xpansion_manager.add_candidate(study, new_candidate)
 
-    CreateArea(
-        area_name="area1", command_context=Mock(spec=CommandContext)
-    )._apply_config(empty_study.config)
-    CreateArea(
-        area_name="area2", command_context=Mock(spec=CommandContext)
-    )._apply_config(empty_study.config)
+    make_areas(empty_study)
 
     with pytest.raises(LinkDoesNotExistError):
         xpansion_manager.add_candidate(study, new_candidate)
 
-    CreateLink(
-        area1="area1", area2="area2", command_context=Mock(spec=CommandContext)
-    )._apply_config(empty_study.config)
+    make_link(empty_study)
 
     xpansion_manager.add_candidate(study, new_candidate)
 
@@ -307,3 +320,83 @@ def test_add_candidate(tmp_path: Path):
     assert (
         empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
     )
+
+
+@pytest.mark.unit_test
+def test_get_candidate(tmp_path: Path):
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+
+    assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
+
+    new_candidate = XpansionCandidateDTO.parse_obj(
+        {
+            "name": "candidate_1",
+            "link": "area1 - area2",
+            "annual-cost-per-mw": 1,
+            "max-investment": 1,
+        }
+    )
+
+    new_candidate2 = XpansionCandidateDTO.parse_obj(
+        {
+            "name": "candidate_2",
+            "link": "area1 - area2",
+            "annual-cost-per-mw": 1,
+            "max-investment": 1,
+        }
+    )
+
+    make_link_and_areas(empty_study)
+
+    xpansion_manager.add_candidate(study, new_candidate)
+    xpansion_manager.add_candidate(study, new_candidate2)
+
+    assert (
+        xpansion_manager.get_candidate(study, new_candidate.name)
+        == new_candidate
+    )
+    assert (
+        xpansion_manager.get_candidate(study, new_candidate2.name)
+        == new_candidate2
+    )
+
+
+@pytest.mark.unit_test
+def test_get_candidates(tmp_path: Path):
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+
+    assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
+
+    new_candidate = XpansionCandidateDTO.parse_obj(
+        {
+            "name": "candidate_1",
+            "link": "area1 - area2",
+            "annual-cost-per-mw": 1,
+            "max-investment": 1,
+        }
+    )
+
+    new_candidate2 = XpansionCandidateDTO.parse_obj(
+        {
+            "name": "candidate_2",
+            "link": "area1 - area2",
+            "annual-cost-per-mw": 1,
+            "max-investment": 1,
+        }
+    )
+
+    make_link_and_areas(empty_study)
+
+    xpansion_manager.add_candidate(study, new_candidate)
+    xpansion_manager.add_candidate(study, new_candidate2)
+
+    assert xpansion_manager.get_candidates(study) == [
+        new_candidate,
+        new_candidate2,
+    ]
