@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Box, Divider, Typography } from '@mui/material';
+import { Box, Divider } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { connect, ConnectedProps } from 'react-redux';
@@ -22,6 +22,7 @@ const DEFAULT_FILTER_GROUP = 'v2.studylisting.filter.group';
 const DEFAULT_FILTER_VERSION = 'v2.studylisting.filter.version';
 const DEFAULT_FILTER_MANAGED = 'v2.studylisting.filter.managed';
 const DEFAULT_FILTER_SORTING = 'v2.studylisting.filter.sorting';
+const DEFAULT_FILTER_FOLDER = 'v2.studylisting.filter.folder';
 
 interface SortElement {
     id: string;
@@ -84,13 +85,6 @@ function Studies(props: PropTypes) {
     setOpenFiler(false);
   };
 
-  const applyFilter = () : void => {
-    console.log('APPLY FILTERS');
-    setLoaded(true);
-    const f = filter(inputValue);
-    setFilteredStudies(f);
-    setLoaded(false);
-  }
 
   const getAllStudies = async (refresh: boolean) => {
     setLoaded(false);
@@ -113,6 +107,7 @@ function Studies(props: PropTypes) {
   const [currentUser, setCurrentUser] = useState<Array<UserDTO>|undefined>(loadState<Array<UserDTO>>(DEFAULT_FILTER_USER));
   const [currentGroup, setCurrentGroup] = useState<Array<GroupDTO>|undefined>(loadState<Array<GroupDTO>>(DEFAULT_FILTER_GROUP));
   const [currentVersion, setCurrentVersion] = useState<Array<GenericInfo> | undefined>(loadState<Array<GenericInfo>>(DEFAULT_FILTER_VERSION));
+  const [currentFolder, setCurrentFolder] = useState<string | undefined>(loadState<string>(DEFAULT_FILTER_FOLDER, 'root'));
 
   const sortList = [t('studymanager:sortByName'), t('studymanager:sortByDate')];
   const sortStudies = (): Array<StudyMetadata> => {
@@ -130,12 +125,29 @@ function Studies(props: PropTypes) {
     return tmpStudies;
   };
 
+  const insideFolder = (study: StudyMetadata) : boolean => {
+    let studyNodeId = '';
+    if (study.folder !== undefined && study.folder !== null)
+    studyNodeId = `root/${study.workspace}/${study.folder}`;
+    else studyNodeId = `root/${study.workspace}`;
+
+    return studyNodeId.startsWith(currentFolder as string);
+  }
+
   const filter = (currentName: string): StudyMetadata[] => sortStudies()
     .filter((s) => !currentName || (s.name.search(new RegExp(currentName, 'i')) !== -1) || (s.id.search(new RegExp(currentName, 'i')) !== -1))
     .filter((s) => !currentVersion || currentVersion.map((elm) => elm.id).includes(s.version))
     .filter((s) => (currentUser ? (s.owner.id && (currentUser as Array<UserDTO>).map((elm) => elm.id).includes(s.owner.id)) : true))
     .filter((s) => (currentGroup ? s.groups.findIndex((elm) => (currentGroup as Array<GroupDTO>).includes(elm)) >= 0 : true))
-    .filter((s) => (managedFilter ? s.managed : true));
+    .filter((s) => (managedFilter ? s.managed : true))
+    .filter((s) => insideFolder(s));
+
+  const applyFilter = () : void => {
+    setLoaded(true);
+    const f = filter(inputValue);
+    setFilteredStudies(f);
+    setLoaded(false);
+  }
 
   const onChange = async (currentName: string) => {
     setLoaded(true);
@@ -153,7 +165,6 @@ function Studies(props: PropTypes) {
       const groupRes = await getGroups();
       setGroupList(groupRes);
 
-      console.log();
     } catch (error) {
       console.log(error);
     }
@@ -173,16 +184,18 @@ function Studies(props: PropTypes) {
     saveState(DEFAULT_FILTER_MANAGED, managedFilter);
     saveState(DEFAULT_FILTER_VERSION, currentVersion);
     saveState(DEFAULT_FILTER_SORTING, currentSortItem);
+    saveState(DEFAULT_FILTER_FOLDER, currentFolder);
     applyFilter();
-  }, [currentVersion, currentUser, currentGroup, currentSortItem, managedFilter]);
+  }, [currentVersion, currentUser, currentGroup, currentSortItem, managedFilter, currentFolder]);
+
   return (
     <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" boxSizing="border-box" overflow="hidden">
       <Header managedFilter={managedFilter as boolean} setManageFilter={setManageFilter} inputValue={inputValue} setInputValue={onChange} onImportClick={onImportClick} onCreateClick={onCreateClick} onFilterClick={onFilterClick} />
       <Divider sx={{ width: '98%' }} />
-      <Box flex={1} width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center" boxSizing="border-box">
-        <SideNav />
+      <Box flex={1} width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box">
+        <SideNav studies={studies} folder={currentFolder as string} setFolder={setCurrentFolder} />
         <Divider sx={{ width: '1px', height: '98%', bgcolor: 'divider' }} />
-        <StudiesList studies={filteredStudies} />
+        <StudiesList studies={filteredStudies} folder={currentFolder as string} setFolder={setCurrentFolder} />
         {openFilter && (
           <FilterDrawer
             open={openFilter}
