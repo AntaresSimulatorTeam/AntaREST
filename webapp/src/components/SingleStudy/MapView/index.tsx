@@ -22,45 +22,11 @@ import SplitLayoutView from '../../ui/SplitLayoutView';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: {
-      width: '99%',
-      height: '100%',
-      display: 'flex',
-      flexFlow: 'column nowrap',
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      backgroundColor: 'white',
-      margin: theme.spacing(1),
-      boxSizing: 'border-box',
-    },
-    header: {
-      width: '100%',
-      height: '40px',
-      boxSizing: 'border-box',
-      display: 'flex',
-      flexFlow: 'row nowrap',
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      backgroundColor: theme.palette.primary.main,
-      borderTopLeftRadius: theme.shape.borderRadius,
-      borderTopRightRadius: theme.shape.borderRadius,
-      paddingLeft: theme.spacing(2),
-    },
-    title: {
-      fontWeight: 'bold',
-      color: 'white',
-    },
     autosizer: {
       display: 'block',
       width: '100%',
       height: '100%',
       position: 'relative',
-    },
-    popup: {
-      position: 'absolute',
-      right: '30px',
-      top: '100px',
-      width: '200px',
     },
     graph: {
       '& svg[name="svg-container-graph-id"]': {

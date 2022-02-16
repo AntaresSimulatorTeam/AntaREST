@@ -21,14 +21,6 @@ const useStyles = makeStyles((theme: Theme) =>
       alignItems: 'center',
       boxSizing: 'border-box',
     },
-    list: {
-      minWidth: '75%',
-      height: '100%',
-      display: 'flex',
-      flexFlow: 'column nowrap',
-      justifyContent: 'flex-start',
-      alignItems: 'flex-start',
-    },
     search: {
       margin: theme.spacing(2),
     },
@@ -45,9 +37,6 @@ const useStyles = makeStyles((theme: Theme) =>
         backgroundColor: theme.palette.secondary.dark,
       },
       height: '25px',
-    },
-    prevButton: {
-      color: theme.palette.primary.main,
     },
   }));
 

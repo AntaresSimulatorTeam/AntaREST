@@ -3,7 +3,6 @@ import {
   makeStyles,
   createStyles,
   Theme,
-  Typography,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import XpansionPropsView from './XpansionPropsView';
@@ -12,6 +11,7 @@ import SplitLayoutView from '../../ui/SplitLayoutView';
 import CreateCandidateModal from './CreateCandidateModal';
 import mockdata from './mockdata.json';
 import { XpansionCandidate } from './types';
+import CandidateForm from './CandidateForm';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -31,8 +31,19 @@ const XpansionView = (props: Props) => {
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<XpansionCandidate>();
 
-  const onSave = () => {
+  const createCandidate = (name: string) => {
     setOpenModal(false);
+    console.log(study.id);
+    console.log(name);
+  };
+
+  const deleteCandidate = (name: string) => {
+    console.log(name);
+  };
+
+  const updateCandidate = (value: XpansionCandidate) => {
+    console.log(study.id);
+    console.log(value.name);
   };
 
   const onClose = () => setOpenModal(false);
@@ -46,7 +57,7 @@ const XpansionView = (props: Props) => {
         }
         right={
           selectedItem && (
-          <Typography className={classes.root}>{selectedItem.name}</Typography>
+            <CandidateForm candidate={selectedItem} deleteCandidate={deleteCandidate} updateCandidate={updateCandidate} />
           )
         }
       />
@@ -54,7 +65,7 @@ const XpansionView = (props: Props) => {
         <CreateCandidateModal
           open={openModal}
           onClose={onClose}
-          onSave={onSave}
+          onSave={createCandidate}
         />
       )}
     </>

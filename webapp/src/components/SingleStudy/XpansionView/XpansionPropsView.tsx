@@ -4,13 +4,22 @@ import {
   createStyles,
   Theme,
 } from '@material-ui/core';
-import { useTranslation } from 'react-i18next';
 import PropertiesView from '../../ui/PropertiesView';
 import { XpansionCandidate } from './types';
 import CandidateListing from './CandidateListing';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
+    list: {
+      display: 'flex',
+      justifyContent: 'flex-start',
+      alignItems: 'center',
+      flexDirection: 'column',
+      padding: theme.spacing(1),
+      flexGrow: 1,
+      marginBottom: '76px',
+      width: '94%',
+    },
   }));
 
 interface PropsType {
@@ -22,7 +31,6 @@ interface PropsType {
 const XpansionPropsView = (props: PropsType) => {
   const classes = useStyles();
   const { candidateList, setSelectedItem, onAdd } = props;
-  const [t] = useTranslation();
   const [filteredCandidates, setFilteredCandidates] = useState<Array<XpansionCandidate>>();
 
   const filter = (currentName: string): XpansionCandidate[] => {
@@ -42,18 +50,22 @@ const XpansionPropsView = (props: PropsType) => {
   };
 
   return (
-    <PropertiesView
-      content={!filteredCandidates && (
-        <CandidateListing candidates={candidateList} setSelectedItem={setSelectedItem} />
-      )}
-      filter={
-        filteredCandidates && (
-        <CandidateListing candidates={filteredCandidates} setSelectedItem={setSelectedItem} />
-        )
-      }
-      onChange={(e) => onChange(e as string)}
-      onAdd={onAdd}
-    />
+    <>
+      <PropertiesView
+        content={!filteredCandidates && (
+          <div className={classes.list}>
+            <CandidateListing candidates={candidateList} setSelectedItem={setSelectedItem} />
+          </div>
+        )}
+        filter={
+          filteredCandidates && (
+          <CandidateListing candidates={filteredCandidates} setSelectedItem={setSelectedItem} />
+          )
+        }
+        onChange={(e) => onChange(e as string)}
+        onAdd={onAdd}
+      />
+    </>
   );
 };
 

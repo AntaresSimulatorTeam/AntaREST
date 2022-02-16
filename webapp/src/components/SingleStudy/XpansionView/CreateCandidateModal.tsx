@@ -18,7 +18,7 @@ const useStyles = makeStyles((theme: Theme) =>
 interface PropType {
     open: boolean;
     onClose: () => void;
-    onSave: () => void;
+    onSave: (name: string) => void;
 }
 
 const CreateCandidateModal = (props: PropType) => {
@@ -31,7 +31,7 @@ const CreateCandidateModal = (props: PropType) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleAction={onSave}
+      handleAction={() => onSave(name)}
       title="Nouveau candidat"
     >
       <div className={classes.name}>
