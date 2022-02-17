@@ -24,13 +24,14 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropsType {
   candidateList: Array<XpansionCandidate>;
+  selectedItem: XpansionCandidate | undefined;
   setSelectedItem: (item: XpansionCandidate) => void;
   onAdd: () => void;
 }
 
 const XpansionPropsView = (props: PropsType) => {
   const classes = useStyles();
-  const { candidateList, setSelectedItem, onAdd } = props;
+  const { candidateList, selectedItem, setSelectedItem, onAdd } = props;
   const [filteredCandidates, setFilteredCandidates] = useState<Array<XpansionCandidate>>();
 
   const filter = (currentName: string): XpansionCandidate[] => {
@@ -52,9 +53,13 @@ const XpansionPropsView = (props: PropsType) => {
   return (
     <>
       <PropertiesView
-        content={!filteredCandidates && (
+        content={!selectedItem ? !filteredCandidates && (
           <div className={classes.list}>
             <CandidateListing candidates={candidateList} setSelectedItem={setSelectedItem} />
+          </div>
+        ) : (
+          <div className={classes.list}>
+            <CandidateListing candidates={candidateList} selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
           </div>
         )}
         filter={

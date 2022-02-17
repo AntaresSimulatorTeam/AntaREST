@@ -53,7 +53,7 @@ const XpansionView = (props: Props) => {
       <SplitLayoutView
         title={t('singlestudy:xpansion')}
         left={
-          <XpansionPropsView candidateList={mockdata} onAdd={() => setOpenModal(true)} setSelectedItem={setSelectedItem} />
+          <XpansionPropsView candidateList={mockdata} onAdd={() => setOpenModal(true)} selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
         }
         right={
           selectedItem && (

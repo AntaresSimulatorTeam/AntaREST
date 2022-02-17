@@ -13,16 +13,20 @@ import { XpansionCandidate } from './types';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     form: {
-      width: '60%',
+      width: '90%',
       height: '40%',
       display: 'flex',
-      justifyContent: 'space-evenly',
+      justifyContent: 'center',
       alignItems: 'center',
       flexWrap: 'wrap',
       padding: theme.spacing(1),
     },
     fields: {
-      marginTop: theme.spacing(1),
+      display: 'flex',
+      justifyContent: 'space-evenly',
+      alignItems: 'center',
+      width: '100%',
+      flexWrap: 'wrap',
     },
     deleteIcon: {
       cursor: 'pointer',
@@ -32,10 +36,9 @@ const useStyles = makeStyles((theme: Theme) =>
       },
     },
     buttons: {
-      width: '100%',
-      justifyContent: 'flex-end',
-      alignItems: 'center',
-      display: 'flex',
+      position: 'absolute',
+      right: '20px',
+      bottom: '20px',
     },
   }));
 
@@ -48,25 +51,29 @@ interface PropType {
 const CandidateForm = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { candidate, deleteCandidate, updateCandidate} = props;
+  const { candidate, deleteCandidate, updateCandidate } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
-
-  console.log('render');
 
   return (
     <>
       <div className={classes.form}>
         {candidate && (
           <>
-            <TextField className={classes.fields} label="name" variant="filled" value={candidate.name} />
-            <TextField className={classes.fields} label="link" variant="filled" value={candidate.link} />
-            <TextField className={classes.fields} label="annual_cost_per_mw" variant="filled" value={candidate.annual_cost_per_mw} />
-            <TextField className={classes.fields} label="unit_size" variant="filled" value={candidate.unit_size || 0} />
-            <TextField className={classes.fields} label="max_units" variant="filled" value={candidate.max_units || 0} />
-            <TextField className={classes.fields} label="max_investment" variant="filled" value={candidate.max_investment || 0} />
-            <TextField className={classes.fields} label="already_installed_capacity" variant="filled" value={candidate.already_installed_capacity || 0} />
-            <TextField className={classes.fields} label="link_profile" variant="filled" value={candidate.link_profile || ''} />
-            <TextField className={classes.fields} label="already_installed_link_profile" variant="filled" value={candidate.already_installed_link_profile || ''} />
+            <div className={classes.fields}>
+              <TextField label="name" variant="filled" value={candidate.name} onBlur={() => updateCandidate(candidate)} />
+              <TextField label="link" variant="filled" value={candidate.link} onBlur={() => updateCandidate(candidate)} />
+              <TextField label="annual_cost_per_mw" variant="filled" value={candidate.annual_cost_per_mw} onBlur={() => updateCandidate(candidate)} />
+            </div>
+            <div className={classes.fields}>
+              <TextField label="unit_size" variant="filled" value={candidate.unit_size || ''} onBlur={() => updateCandidate(candidate)} />
+              <TextField label="max_units" variant="filled" value={candidate.max_units || ''} onBlur={() => updateCandidate(candidate)} />
+              <TextField label="max_investment" variant="filled" value={candidate.max_investment || ''} onBlur={() => updateCandidate(candidate)} />
+            </div>
+            <div className={classes.fields}>
+              <TextField label="already_installed_capacity" variant="filled" value={candidate.already_installed_capacity || ''} onBlur={() => updateCandidate(candidate)} />
+              <TextField label="link_profile" variant="filled" value={candidate.link_profile || ''} onBlur={() => updateCandidate(candidate)} />
+              <TextField label="already_installed_link_profile" variant="filled" value={candidate.already_installed_link_profile || ''} onBlur={() => updateCandidate(candidate)} />
+            </div>
             <div className={classes.buttons}>
               <DeleteIcon className={classes.deleteIcon} onClick={() => setOpenConfirmationModal(true)} />
             </div>
