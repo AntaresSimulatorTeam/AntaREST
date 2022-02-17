@@ -5,7 +5,7 @@ import {
   Theme,
 } from '@material-ui/core';
 import PropertiesView from '../../ui/PropertiesView';
-import { XpansionCandidate } from './types';
+import { XpansionCandidate, XpansionSettings } from './types';
 import CandidateListing from './CandidateListing';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -24,14 +24,17 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropsType {
   candidateList: Array<XpansionCandidate>;
-  selectedItem: XpansionCandidate | undefined;
-  setSelectedItem: (item: XpansionCandidate) => void;
+  settings: XpansionSettings;
+  constraints: string;
+  selectedItem: XpansionCandidate | XpansionSettings | undefined;
+  setSelectedItem: (item: XpansionCandidate | XpansionSettings) => void;
   onAdd: () => void;
+  deleteXpansion: () => void;
 }
 
 const XpansionPropsView = (props: PropsType) => {
   const classes = useStyles();
-  const { candidateList, selectedItem, setSelectedItem, onAdd } = props;
+  const { candidateList, settings, constraints, selectedItem, setSelectedItem, onAdd, deleteXpansion } = props;
   const [filteredCandidates, setFilteredCandidates] = useState<Array<XpansionCandidate>>();
 
   const filter = (currentName: string): XpansionCandidate[] => {
@@ -53,20 +56,18 @@ const XpansionPropsView = (props: PropsType) => {
   return (
     <>
       <PropertiesView
-        content={!selectedItem ? !filteredCandidates && (
+        content={
+          !filteredCandidates && (
           <div className={classes.list}>
-            <CandidateListing candidates={candidateList} setSelectedItem={setSelectedItem} />
+            <CandidateListing candidates={candidateList} settings={settings} constraints={constraints} selectedItem={selectedItem} setSelectedItem={setSelectedItem} deleteXpansion={deleteXpansion} />
           </div>
-        ) : (
-          <div className={classes.list}>
-            <CandidateListing candidates={candidateList} selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
-          </div>
-        )}
+          )}
         filter={
           filteredCandidates && (
-          <CandidateListing candidates={filteredCandidates} setSelectedItem={setSelectedItem} />
-          )
-        }
+          <div className={classes.list}>
+            <CandidateListing candidates={filteredCandidates} settings={settings} constraints={constraints} selectedItem={selectedItem} setSelectedItem={setSelectedItem} deleteXpansion={deleteXpansion} />
+          </div>
+          )}
         onChange={(e) => onChange(e as string)}
         onAdd={onAdd}
       />

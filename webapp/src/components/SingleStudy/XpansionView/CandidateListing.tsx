@@ -1,15 +1,19 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-import React from 'react';
+import React, { useState } from 'react';
 import {
   makeStyles,
   createStyles,
   Theme,
   Button,
 } from '@material-ui/core';
+import { useTranslation } from 'react-i18next';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList, areEqual, ListChildComponentProps } from 'react-window';
 import ArrowRightIcon from '@material-ui/icons/ArrowRight';
-import { XpansionCandidate } from './types';
+import DeleteIcon from '@material-ui/icons/Delete';
+import ConfirmationModal from '../../ui/ConfirmationModal';
+import { XpansionCandidate, XpansionSettings } from './types';
+import ConstraintsModal from './ConstraintsModal';
 
 const ROW_ITEM_SIZE = 60;
 const BUTTONS_SIZE = 40;
@@ -49,12 +53,22 @@ const useStyles = makeStyles((theme: Theme) =>
     button: {
       color: theme.palette.primary.main,
     },
+    deleteIcon: {
+      cursor: 'pointer',
+      color: theme.palette.error.light,
+      '&:hover': {
+        color: theme.palette.error.main,
+      },
+    },
   }));
 
 interface PropsType {
     candidates: Array<XpansionCandidate>;
-    selectedItem?: XpansionCandidate | undefined;
-    setSelectedItem: (item: XpansionCandidate) => void;
+    settings: XpansionSettings;
+    constraints: string;
+    selectedItem: XpansionCandidate | XpansionSettings | undefined;
+    setSelectedItem: (item: XpansionCandidate | XpansionSettings) => void;
+    deleteXpansion: () => void;
 }
 
 const Row = React.memo((props: ListChildComponentProps) => {
@@ -73,7 +87,11 @@ const Row = React.memo((props: ListChildComponentProps) => {
 
 const CandidateListing = (props: PropsType) => {
   const classes = useStyles();
-  const { candidates, selectedItem, setSelectedItem } = props;
+  const [t] = useTranslation();
+  const { candidates, settings, constraints, selectedItem, setSelectedItem, deleteXpansion } = props;
+  const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
+  const [openConstraintsModal, setOpenConstraintsModal] = useState<boolean>(false);
+  // const [openConstraintsModal, setOpenConstraintsModal] = useState<boolean>(false);
 
   return (
     <>
@@ -95,8 +113,9 @@ const CandidateListing = (props: PropsType) => {
                     {Row}
                   </FixedSizeList>
                   <div className={classes.buttons} style={{ width }}>
-                    <Button className={classes.button} size="small">Settings</Button>
-                    <Button className={classes.button} size="small">Constraints</Button>
+                    <Button className={classes.button} size="small" onClick={() => setSelectedItem(settings)}>Settings</Button>
+                    <Button className={classes.button} size="small" onClick={() => setOpenConstraintsModal(true)}>Constraints</Button>
+                    <DeleteIcon className={classes.deleteIcon} onClick={() => setOpenConfirmationModal(true)} />
                   </div>
                 </>
               );
@@ -105,12 +124,25 @@ const CandidateListing = (props: PropsType) => {
           </AutoSizer>
         )}
       </div>
+      {openConstraintsModal && constraints && (
+        <ConstraintsModal
+          open={openConstraintsModal}
+          title="Constraints"
+          content={constraints}
+          onClose={() => setOpenConstraintsModal(false)}
+        />
+      )}
+      {openConfirmationModal && candidates && (
+        <ConfirmationModal
+          open={openConfirmationModal}
+          title={t('main:confirmationModalTitle')}
+          message="Êtes-vous sûr de vouloir supprimer Xpansion?"
+          handleYes={() => { deleteXpansion(); setOpenConfirmationModal(false); }}
+          handleNo={() => setOpenConfirmationModal(false)}
+        />
+      )}
     </>
   );
-};
-
-CandidateListing.defaultProps = {
-  selectedItem: undefined,
 };
 
 export default CandidateListing;
