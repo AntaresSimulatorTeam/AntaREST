@@ -8,6 +8,7 @@ import TextField from '@mui/material/TextField';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Divider, InputAdornment, Typography, Chip } from '@mui/material';
 import { STUDIES_HEIGHT_HEADER } from '../../theme';
+import ImportStudy from './ImportStudy';
 
 const Root = styled('div')(({ theme }) => ({
   width: '100%',
@@ -50,9 +51,10 @@ function Header(props: Props) {
           <Typography color="white" sx={{ ml: 2, fontSize: '34px' }}>{t('main:studies')}</Typography>
         </Box>
         <Box alignItems="center" justifyContent="flex-end" flexGrow={1} display="flex">
-          <Button variant="outlined" color="primary" startIcon={<GetAppOutlinedIcon />} onClick={onImportClick}>
+          {/*<Button variant="outlined" color="primary" startIcon={<GetAppOutlinedIcon />} onClick={onImportClick}>
             {t('main:import')}
-          </Button>
+  </Button>*/}
+          <ImportStudy />
           <Button sx={{ m: 2 }} variant="contained" color="primary" startIcon={<AddCircleOutlineOutlinedIcon />} onClick={onCreateClick}>
             {t('main:create')}
           </Button>

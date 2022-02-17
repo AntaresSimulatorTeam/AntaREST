@@ -7,10 +7,12 @@ import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined';
 import UpdateOutlinedIcon from '@mui/icons-material/UpdateOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { StudyMetadata } from '../../common/types';
+import { GenericInfo, StudyMetadata } from '../../common/types';
 
 interface Props {
   study: StudyMetadata
+  favorite: boolean;
+  onFavoriteClick: (value: GenericInfo) => void;
 }
 
 const TinyText = styled(Typography)(({ theme }) => ({
@@ -19,8 +21,11 @@ const TinyText = styled(Typography)(({ theme }) => ({
 }));
 
 export default function StudyCard(props: Props) {
-  const { study } = props;
-  const [favorite, setFavorite] = useState<boolean>(false);
+  const { study , favorite, onFavoriteClick} = props;
+
+  const handleFavoriteClick = () => {
+    onFavoriteClick({id: study.id, name: study.name});
+  }
 
   return (
     <Card variant="outlined" sx={{ minWidth: 275 }}>
@@ -29,8 +34,8 @@ export default function StudyCard(props: Props) {
           <Typography sx={{ width: '90%' }} noWrap variant="h5" component="div" color="white">
             {study.name}
           </Typography>
-          {favorite ? <StarPurple500OutlinedIcon sx={{ cursor: 'pointer' }} onClick={() => setFavorite(false)} color="primary" /> :
-                      <StarOutlineOutlinedIcon sx={{ cursor: 'pointer' }} onClick={() => setFavorite(true)} color="primary" />
+          {favorite ? <StarPurple500OutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" /> :
+                      <StarOutlineOutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" />
           }
         </Box>
         <Box width="100%" display="flex" flexDirection="row" justifyContent="space-between" mt={1}>

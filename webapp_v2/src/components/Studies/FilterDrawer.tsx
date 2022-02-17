@@ -6,7 +6,7 @@ import List from '@mui/material/List';
 import Divider from '@mui/material/Divider';
 import { Button, Checkbox, Drawer, FormControlLabel, ListItem, Typography, useTheme } from '@mui/material';
 import { STUDIES_FILTER_WIDTH } from '../../theme';
-import SelectMulti from '../SelectMulti';
+import SelectMulti from '../common/SelectMulti';
 import { GenericInfo, GroupDTO, UserDTO } from '../../common/types';
 import { convertVersions } from '../../services/utils';
 

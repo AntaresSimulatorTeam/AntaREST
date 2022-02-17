@@ -54,7 +54,7 @@ const StudyTree = (props: Props) => {
       defaultExpanded={getDefaultExpanded()}
       selected={[folder]}
       expanded={getExpandedTab(folder)}
-      sx={{ flexGrow: 1, height: 0,  width: '100%' }}
+      sx={{ flexGrow: 1, height: 0,  width: '100%', py: 1, }}
     > 
       {
         <TreeItem nodeId={tree.name}

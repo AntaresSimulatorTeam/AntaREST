@@ -21,8 +21,8 @@
   "unarchivefailure": "Erreur lors du désarchivage de l'étude {{studyname}}",
   "permission": "Permission",
   "refresh": "Charger les études",
-  "sortByName": "Trier par nom",
-  "sortByDate": "Trier par date",
+  "sortByName": "Ordre alphabétique",
+  "sortByDate": "Date",
   "managedStudiesFilter": "Etudes managées",
   "userFilter": "Filtrer par utilisateur",
   "groupFilter": "Filtrer par groupe",
@@ -30,5 +30,6 @@
   "copyWith": "Copier avec les sorties",
   "copyWithout": "Copier sans les sorties",
   "exportWith": "Exporter avec les sorties",
-  "exportWithout": "Exporter sans les sorties"
+  "exportWithout": "Exporter sans les sorties",
+  "sortBy": "Filtrer par"
 }

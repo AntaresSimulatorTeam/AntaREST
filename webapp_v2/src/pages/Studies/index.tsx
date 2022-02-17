@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useTheme } from '@mui/material/styles';
 import { Box, Divider } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
@@ -23,6 +22,7 @@ const DEFAULT_FILTER_VERSION = 'v2.studylisting.filter.version';
 const DEFAULT_FILTER_MANAGED = 'v2.studylisting.filter.managed';
 const DEFAULT_FILTER_SORTING = 'v2.studylisting.filter.sorting';
 const DEFAULT_FILTER_FOLDER = 'v2.studylisting.filter.folder';
+const DEFAULT_FAVORITE_STUDIES = 'v2.studylisting.favorite';
 
 interface SortElement {
     id: string;
@@ -51,7 +51,6 @@ const connector = connect(mapState, mapDispatch);
   type PropTypes = ReduxProps;
 
 function Studies(props: PropTypes) {
-  const theme = useTheme();
   const { studies, loadStudies, loadVersions, versions } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
@@ -108,6 +107,7 @@ function Studies(props: PropTypes) {
   const [currentGroup, setCurrentGroup] = useState<Array<GroupDTO>|undefined>(loadState<Array<GroupDTO>>(DEFAULT_FILTER_GROUP));
   const [currentVersion, setCurrentVersion] = useState<Array<GenericInfo> | undefined>(loadState<Array<GenericInfo>>(DEFAULT_FILTER_VERSION));
   const [currentFolder, setCurrentFolder] = useState<string | undefined>(loadState<string>(DEFAULT_FILTER_FOLDER, 'root'));
+  const [currentFavorite, setCurrentFavorite] = useState<Array<GenericInfo> | undefined>(loadState<Array<GenericInfo>>(DEFAULT_FAVORITE_STUDIES, []));
 
   const sortList = [t('studymanager:sortByName'), t('studymanager:sortByDate')];
   const sortStudies = (): Array<StudyMetadata> => {
@@ -157,6 +157,15 @@ function Studies(props: PropTypes) {
     if (currentName !== inputValue) setInputValue(currentName);
   };
 
+  const handleFavoriteClick = (value: GenericInfo) => {
+    const favorite = currentFavorite as Array<GenericInfo>;
+    if(favorite.findIndex((elm) => (elm.id as string) === (value.id as string)) < 0) {
+      setCurrentFavorite(favorite.concat(value));
+      return ;
+    }
+    setCurrentFavorite(favorite.filter((elm) => (elm.id  as string) !== (value.id as string)));
+  };
+
   const init = async () => {
     try {
       const userRes = await getUsers();
@@ -188,14 +197,18 @@ function Studies(props: PropTypes) {
     applyFilter();
   }, [currentVersion, currentUser, currentGroup, currentSortItem, managedFilter, currentFolder]);
 
+  useEffect(() => {
+    saveState(DEFAULT_FAVORITE_STUDIES, currentFavorite);
+  }, [currentFavorite])
+
   return (
     <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" boxSizing="border-box" overflow="hidden">
       <Header managedFilter={managedFilter as boolean} setManageFilter={setManageFilter} inputValue={inputValue} setInputValue={onChange} onImportClick={onImportClick} onCreateClick={onCreateClick} onFilterClick={onFilterClick} />
       <Divider sx={{ width: '98%' }} />
       <Box flex={1} width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box">
-        <SideNav studies={studies} folder={currentFolder as string} setFolder={setCurrentFolder} />
+        <SideNav studies={studies} folder={currentFolder as string} setFolder={setCurrentFolder} favorite={currentFavorite as Array<GenericInfo>} />
         <Divider sx={{ width: '1px', height: '98%', bgcolor: 'divider' }} />
-        <StudiesList studies={filteredStudies} folder={currentFolder as string} setFolder={setCurrentFolder} />
+        <StudiesList studies={filteredStudies} folder={currentFolder as string} setFolder={setCurrentFolder} favorite={currentFavorite !== undefined ? currentFavorite.map((elm) => elm.id as string) : []} onFavoriteClick={handleFavoriteClick} />
         {openFilter && (
           <FilterDrawer
             open={openFilter}

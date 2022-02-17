@@ -21,8 +21,8 @@
   "unarchivefailure": "Failed to unarchive study {{studyname}}",
   "permission": "Permission",
   "refresh": "Refresh studies",
-  "sortByName": "Sort by name",
-  "sortByDate": "Sort by date",
+  "sortByName": "Alphabetical order",
+  "sortByDate": "Date",
   "managedStudiesFilter": "Managed studies",
   "userFilter": "Filter by user",
   "groupFilter": "Filter by group",
@@ -30,5 +30,7 @@
   "copyWith": "Copy with outputs",
   "copyWithout": "Copy without outputs",
   "exportWith": "Export with outputs",
-  "exportWithout": "Export without outputs"
+  "exportWithout": "Export without outputs",
+  "sortBy": "View by"
+
 }
