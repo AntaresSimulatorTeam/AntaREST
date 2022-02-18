@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { styled } from '@mui/material/styles';
 import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
-import GetAppOutlinedIcon from '@mui/icons-material/GetAppOutlined';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import TextField from '@mui/material/TextField';
@@ -9,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, Button, Divider, InputAdornment, Typography, Chip } from '@mui/material';
 import { STUDIES_HEIGHT_HEADER } from '../../theme';
 import ImportStudy from './ImportStudy';
+import CreateStudyModal from './CreateStudyModal';
 
 const Root = styled('div')(({ theme }) => ({
   width: '100%',
@@ -33,8 +33,6 @@ const Searchbar = styled(TextField)(({ theme }) => ({
 interface Props {
     inputValue: string;
     setInputValue: (value: string) => void;
-    onImportClick: () => void;
-    onCreateClick: () => void;
     onFilterClick: () => void;
     managedFilter: boolean;
     setManageFilter: (value: boolean) => void;
@@ -42,7 +40,13 @@ interface Props {
 
 function Header(props: Props) {
   const [t] = useTranslation();
-  const { inputValue, setInputValue, onImportClick, onCreateClick, onFilterClick, managedFilter, setManageFilter } = props;
+  const { inputValue, setInputValue, onFilterClick, managedFilter, setManageFilter } = props;
+  const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
+
+  const onActionButtonClick = () : void => {
+    console.log('ACTION');
+    setOpenCreateModal(false);
+  }
   return (
     <Root>
       <Box width="100%" alignItems="center" display="flex" px={3}>
@@ -51,13 +55,11 @@ function Header(props: Props) {
           <Typography color="white" sx={{ ml: 2, fontSize: '34px' }}>{t('main:studies')}</Typography>
         </Box>
         <Box alignItems="center" justifyContent="flex-end" flexGrow={1} display="flex">
-          {/*<Button variant="outlined" color="primary" startIcon={<GetAppOutlinedIcon />} onClick={onImportClick}>
-            {t('main:import')}
-  </Button>*/}
           <ImportStudy />
-          <Button sx={{ m: 2 }} variant="contained" color="primary" startIcon={<AddCircleOutlineOutlinedIcon />} onClick={onCreateClick}>
+          <Button sx={{ m: 2 }} variant="contained" color="primary" startIcon={<AddCircleOutlineOutlinedIcon />} onClick={() => setOpenCreateModal(true)}>
             {t('main:create')}
           </Button>
+          {openCreateModal && <CreateStudyModal open={openCreateModal} onClose={() => setOpenCreateModal(false)} onActionButtonClick={onActionButtonClick} />}
         </Box>
       </Box>
       <Box display="flex" width="100%" alignItems="center" py={2} px={3}>

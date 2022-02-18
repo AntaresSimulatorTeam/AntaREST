@@ -31,5 +31,16 @@
   "copyWithout": "Copier sans les sorties",
   "exportWith": "Exporter avec les sorties",
   "exportWithout": "Exporter sans les sorties",
-  "sortBy": "Filtrer par"
+  "sortBy": "Filtrer par",
+  "createNewStudy": "Create a new study",
+  "studyName": "Nom de l'étude",
+  "version": "Version",
+  "baselineStudy": "Etude de base",
+  "description": "Description",
+  "Permission": "Permission",
+  "rightToChange": "Droit de changement",
+  "metadata": "Métadonnées",
+  "group": "Groupe",
+  "tag": "Tag",
+  "enterTag": "Entrer un tag"
 }

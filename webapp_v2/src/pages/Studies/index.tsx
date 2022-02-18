@@ -7,7 +7,7 @@ import moment from 'moment';
 import Header from '../../components/Studies/Header';
 import SideNav from '../../components/Studies/SideNav';
 import StudiesList from '../../components/Studies/StudiesList';
-import { GenericInfo, GroupDTO, StudyMetadata, UserDTO } from '../../common/types';
+import { GenericInfo, GroupDTO, StudyMetadata, UserDTO, SortElement, SortItem, SortStatus } from '../../common/types';
 import { loadState, saveState } from '../../services/utils/localStorage';
 import { convertVersions } from '../../services/utils';
 import { getGroups, getUsers } from '../../services/api/user';
@@ -23,18 +23,6 @@ const DEFAULT_FILTER_MANAGED = 'v2.studylisting.filter.managed';
 const DEFAULT_FILTER_SORTING = 'v2.studylisting.filter.sorting';
 const DEFAULT_FILTER_FOLDER = 'v2.studylisting.filter.folder';
 const DEFAULT_FAVORITE_STUDIES = 'v2.studylisting.favorite';
-
-interface SortElement {
-    id: string;
-    elm: string | (() => JSX.Element);
-}
-
-interface SortItem {
-    element: SortElement;
-    status: SortStatus;
-}
-
-type SortStatus = 'INCREASE' | 'DECREASE' | 'NONE';
 
 const mapState = (state: AppState) => ({
   studies: state.study.studies,
@@ -57,7 +45,7 @@ function Studies(props: PropTypes) {
   const [filteredStudies, setFilteredStudies] = useState<Array<StudyMetadata>>(studies);
   const [loaded, setLoaded] = useState(true);
   const [managedFilter, setManageFilter] = useState(loadState<boolean>(DEFAULT_FILTER_MANAGED, false));
-  const [currentSortItem, setCurrentSortItem] = useState<SortItem|undefined>(loadState<SortItem>(DEFAULT_FILTER_SORTING));
+  const [currentSortItem, setCurrentSortItem] = useState<SortItem|undefined>(loadState<SortItem>(DEFAULT_FILTER_SORTING, { element: SortElement.NAME, status: SortStatus.INCREASE}));
   const [inputValue, setInputValue] = useState<string>('');
   const [openFilter, setOpenFiler] = useState<boolean>(false);
 
@@ -109,14 +97,13 @@ function Studies(props: PropTypes) {
   const [currentFolder, setCurrentFolder] = useState<string | undefined>(loadState<string>(DEFAULT_FILTER_FOLDER, 'root'));
   const [currentFavorite, setCurrentFavorite] = useState<Array<GenericInfo> | undefined>(loadState<Array<GenericInfo>>(DEFAULT_FAVORITE_STUDIES, []));
 
-  const sortList = [t('studymanager:sortByName'), t('studymanager:sortByDate')];
   const sortStudies = (): Array<StudyMetadata> => {
     const tmpStudies: Array<StudyMetadata> = ([] as Array<StudyMetadata>).concat(studies);
-    if (currentSortItem && currentSortItem.status !== 'NONE') {
+    if (currentSortItem) {
       tmpStudies.sort((studyA: StudyMetadata, studyB: StudyMetadata) => {
-        const firstElm = currentSortItem.status === 'INCREASE' ? studyA : studyB;
-        const secondElm = currentSortItem.status === 'INCREASE' ? studyB : studyA;
-        if (currentSortItem.element.id === sortList[0]) {
+        const firstElm = currentSortItem.status === SortStatus.INCREASE ? studyA : studyB;
+        const secondElm = currentSortItem.status === SortStatus.INCREASE ? studyB : studyA;
+        if (currentSortItem.element === SortElement.NAME) {
           return firstElm.name.localeCompare(secondElm.name);
         }
         return (moment(firstElm.modificationDate).isAfter(moment(secondElm.modificationDate)) ? 1 : -1);
@@ -203,12 +190,12 @@ function Studies(props: PropTypes) {
 
   return (
     <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" boxSizing="border-box" overflow="hidden">
-      <Header managedFilter={managedFilter as boolean} setManageFilter={setManageFilter} inputValue={inputValue} setInputValue={onChange} onImportClick={onImportClick} onCreateClick={onCreateClick} onFilterClick={onFilterClick} />
+      <Header managedFilter={managedFilter as boolean} setManageFilter={setManageFilter} inputValue={inputValue} setInputValue={onChange} onFilterClick={onFilterClick} />
       <Divider sx={{ width: '98%' }} />
       <Box flex={1} width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box">
         <SideNav studies={studies} folder={currentFolder as string} setFolder={setCurrentFolder} favorite={currentFavorite as Array<GenericInfo>} />
         <Divider sx={{ width: '1px', height: '98%', bgcolor: 'divider' }} />
-        <StudiesList studies={filteredStudies} folder={currentFolder as string} setFolder={setCurrentFolder} favorite={currentFavorite !== undefined ? currentFavorite.map((elm) => elm.id as string) : []} onFavoriteClick={handleFavoriteClick} />
+        <StudiesList studies={filteredStudies}  sortItem={currentSortItem as SortItem} setSortItem={setCurrentSortItem} folder={currentFolder as string} setFolder={setCurrentFolder} favorite={currentFavorite !== undefined ? currentFavorite.map((elm) => elm.id as string) : []} onFavoriteClick={handleFavoriteClick} />
         {openFilter && (
           <FilterDrawer
             open={openFilter}

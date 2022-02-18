@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Grid, Typography, Breadcrumbs } from '@mui/material';
+import { Box, Grid, Typography, Breadcrumbs, Select, MenuItem, ListItemText, SelectChangeEvent } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeIcon from '@mui/icons-material/Home';
-import { GenericInfo, StudyMetadata } from '../../common/types';
+import { GenericInfo, StudyMetadata, SortElement, SortItem, SortStatus } from '../../common/types';
 import StudyCard from './StudyCard';
 import { scrollbarStyle, STUDIES_HEIGHT_HEADER, STUDIES_LIST_HEADER_HEIGHT } from '../../theme';
-import SelectSingle from '../common/SelectSingle';
 
 interface PropTypes {
     studies: Array<StudyMetadata>;
@@ -14,16 +13,17 @@ interface PropTypes {
     setFolder: (folder: string) => void;
     favorite: Array<string>;
     onFavoriteClick: (value: GenericInfo) => void;
+    sortItem: SortItem;
+    setSortItem: (value: SortItem) => void;
 }
 
 function StudiesList(props: PropTypes) {
-  const { studies, folder, setFolder, favorite, onFavoriteClick } = props;
+  const { studies, folder, sortItem, setFolder, favorite, setSortItem, onFavoriteClick } = props;
   const [t] = useTranslation();
   const [folderList, setFolderList] = useState<Array<string>>([]);
-  const [filter, setFilter] = useState<string>('studymanager:sortByName');
   const filterList : Array<GenericInfo> = [
-    { id: 'studymanager:sortByName', name: t('studymanager:sortByName') },
-    { id: 'studymanager:sortByDate', name: t('studymanager:sortByDate')  },
+    { id: SortElement.NAME, name: t('studymanager:sortByName') },
+    { id: SortElement.DATE, name: t('studymanager:sortByDate')  },
   ];
 
   useEffect(() => {
@@ -82,7 +82,28 @@ function StudiesList(props: PropTypes) {
         </Breadcrumbs>
         <Box display="flex" flexDirection="column" justifyContent="center" alignItems="flex-start" boxSizing="border-box">
           <Typography sx={{ mt: 1, p: 0, color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }} >{t('studymanager:sortBy')}</Typography>
-          <SelectSingle name={t('studymanager:sortBy')} list={filterList} data={filter} setValue={setFilter} />    
+          <Select
+            labelId={`single-checkbox-label-${t('studymanager:sortBy')}`}
+            id={`single-checkbox-${t('studymanager:sortBy')}`}
+            value={sortItem.element}
+            variant="filled"
+            onChange={(e: SelectChangeEvent<string>) => setSortItem({element: e.target.value as SortElement, status: SortStatus.INCREASE})}
+            sx={{
+              height: '40px', 
+              background: 'rgba(255, 255, 255, 0)',
+              borderRadius: '4px 4px 0px 0px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.42)',
+              '.MuiSelect-icon': {
+                backgroundColor: '#222333',
+              },
+            }}
+          >
+            {filterList.map(({ id, name }) => (
+              <MenuItem key={id} value={id}>
+                <ListItemText primary={name} />
+              </MenuItem>
+            ))}
+        </Select>
         </Box>
       </Box>  
       <Box
