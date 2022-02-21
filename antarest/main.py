@@ -153,10 +153,12 @@ def init_db(
     else:
         connect_args["connect_timeout"] = config.db.db_connect_timeout
 
+    extra = {}
+    if config.db.pool_recycle:
+        extra["pool_recycle"] = config.db.pool_recycle
+
     engine = create_engine(
-        config.db.db_url,
-        echo=config.debug,
-        connect_args=connect_args,
+        config.db.db_url, echo=config.debug, connect_args=connect_args, **extra
     )
 
     session_args = {

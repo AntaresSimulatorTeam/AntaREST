@@ -17,6 +17,7 @@ security:
 
 db:
   url: "sqlite:///database.db"
+  #pool_recycle:
 
 storage:
   tmp_dir: /tmp
