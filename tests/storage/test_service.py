@@ -529,7 +529,7 @@ def test_download_output() -> None:
         filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
-    assert result == res_matrix
+    assert MatrixAggregationResult.parse_raw(result.body) == res_matrix
 
     # AREA TYPE - ZIP & TASK
     export_file_download = FileDownload(
@@ -582,7 +582,7 @@ def test_download_output() -> None:
         filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
-    assert result == res_matrix
+    assert MatrixAggregationResult.parse_raw(result.body) == res_matrix
 
     # CLUSTER TYPE
     input_data.type = StudyDownloadType.DISTRICT
@@ -606,7 +606,7 @@ def test_download_output() -> None:
         filetype=ExportFormat.JSON,
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
-    assert result == res_matrix
+    assert MatrixAggregationResult.parse_raw(result.body) == res_matrix
 
 
 @pytest.mark.unit_test

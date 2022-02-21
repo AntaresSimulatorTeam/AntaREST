@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 import logging
 import os
 import shutil
@@ -12,7 +13,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException
 from markupsafe import escape
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
@@ -897,7 +898,7 @@ class StudyService:
         filetype: ExportFormat,
         params: RequestParameters,
         tmp_export_file: Optional[Path] = None,
-    ) -> Union[MatrixAggregationResult, FileDownloadTaskDTO, FileResponse]:
+    ) -> Union[Response, FileDownloadTaskDTO, FileResponse]:
         """
         Download outputs
         Args:
@@ -977,7 +978,14 @@ class StudyService:
                         media_type=filetype,
                     )
 
-        return matrix
+        json_response = json.dumps(
+            matrix.dict(),
+            ensure_ascii=False,
+            allow_nan=True,
+            indent=None,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return Response(content=json_response, media_type="application/json")
 
     def get_study_sim_result(
         self, study_id: str, params: RequestParameters
