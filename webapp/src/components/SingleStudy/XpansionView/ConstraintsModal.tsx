@@ -1,4 +1,5 @@
 import React from 'react';
+import { AxiosError } from 'axios';
 import {
   makeStyles,
   createStyles,
@@ -9,8 +10,14 @@ import {
   Typography,
   Button,
 } from '@material-ui/core';
+import debug from 'debug';
+import { useSnackbar } from 'notistack';
 import Backdrop from '@material-ui/core/Backdrop';
 import { useTranslation } from 'react-i18next';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
+import ImportForm from '../../ui/ImportForm';
+
+const logErr = debug('antares:createimportform:error');
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -81,12 +88,23 @@ interface PropType {
 const ConstraintsModal = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const { open, title, content, onClose } = props;
 
   const handleGlobalKeyDown = (keyboardEvent: React.KeyboardEvent<HTMLDivElement>) => {
     if (keyboardEvent.key === 'Escape' && onClose) {
       onClose();
     }
+  };
+
+  const onImport = async (file: File) => {
+    try {
+      console.log(file);
+    } catch (e) {
+      logErr('Failed to import file', file, e);
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtosavedata'), e as AxiosError);
+    }
+    enqueueSnackbar(t('studymanager:savedatasuccess'), { variant: 'success' });
   };
 
   return (
@@ -109,6 +127,7 @@ const ConstraintsModal = (props: PropType) => {
             </Typography>
           </div>
           <div className={classes.content}>
+            <ImportForm text={t('main:import')} onImport={onImport} />
             <code>{content}</code>
           </div>
           <div className={classes.footer}>

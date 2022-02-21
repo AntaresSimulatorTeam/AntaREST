@@ -70,12 +70,11 @@ const XpansionView = (props: Props) => {
   };
 
   const updateCandidate = (value: XpansionCandidate) => {
-    console.log(study.id);
     console.log(value.name);
+    console.log('on a edit un commit');
   };
 
   const updateSettings = (value: XpansionSettings) => {
-    console.log(study.id);
     console.log(value.master);
   };
 
