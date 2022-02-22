@@ -1808,3 +1808,11 @@ class StudyService:
         return self.xpansion_manager.update_xpansion_constraints(
             study, constraints_file_name
         )
+
+    def delete_xpansion_constraints(
+        self, uuid: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.delete_xpansion_constraints(study)

@@ -213,4 +213,19 @@ def create_study_routes(
             uuid, constraints_file_name, params
         )
 
+    @bp.post(
+        "/studies/{uuid}/extensions/xpansion/constraints/delete",
+        tags=[APITag.xpansion_study_management],
+        summary="Delete Xpansion Constraints parameter",
+    )
+    def delete_constraints(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Deleting xpansion constraints", extra={"user": current_user.id}
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.delete_xpansion_constraints(uuid, params)
+
     return bp

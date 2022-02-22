@@ -415,3 +415,15 @@ class XpansionManager:
         }
 
         file_study.tree.save(new_settings_data)
+
+    def delete_xpansion_constraints(self, study: Study) -> None:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        file_study.tree.save(
+            {
+                "user": {
+                    "expansion": {"settings": {"additional-constraints": None}}
+                }
+            }
+        )
