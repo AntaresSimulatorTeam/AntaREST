@@ -1791,10 +1791,20 @@ class StudyService:
             study, xpansion_candidate_dto
         )
 
-    def delete_candidate(
+    def delete_xpansion_candidate(
         self, uuid: str, candidate_name: str, params: RequestParameters
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         return self.xpansion_manager.delete_candidate(study, candidate_name)
+
+    def update_xpansion_constraints(
+        self, uuid: str, constraints_file_name: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.update_xpansion_constraints(
+            study, constraints_file_name
+        )

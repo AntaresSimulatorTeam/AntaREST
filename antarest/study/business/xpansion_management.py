@@ -97,6 +97,11 @@ class CandidateNotFoundError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class ConstraintsNotFoundError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
 class XpansionManager:
     def __init__(self, study_storage_service: StudyStorageService):
         self.study_storage_service = study_storage_service
@@ -385,3 +390,28 @@ class XpansionManager:
         file_study.tree.delete(
             ["user", "expansion", "candidates", candidate_id]
         )
+
+    def update_xpansion_constraints(
+        self, study: Study, constraints_file_name: str
+    ) -> None:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        try:
+            file_study.tree.get(["user", "expansion", constraints_file_name])
+        except ChildNotFoundError:
+            raise ConstraintsNotFoundError(
+                f"The constraints file {constraints_file_name} does not exist"
+            )
+
+        new_settings_data = {
+            "user": {
+                "expansion": {
+                    "settings": {
+                        "additional-constraints": constraints_file_name
+                    }
+                }
+            }
+        }
+
+        file_study.tree.save(new_settings_data)

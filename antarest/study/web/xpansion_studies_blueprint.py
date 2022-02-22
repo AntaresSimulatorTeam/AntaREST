@@ -191,25 +191,26 @@ def create_study_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.delete_candidate(uuid, candidate_name, params)
+        return study_service.delete_xpansion_candidate(
+            uuid, candidate_name, params
+        )
 
-    #
-    # @bp.post(
-    #     "/studies/{uuid}/extensions/xpansion/constraints",
-    #     tags=[APITag.xpansion_study_management],
-    #     summary="Delete Xpansion Candidate",
-    #     response_model=Dict[str, StudyMetadataDTO],
-    # )
-    # def update_constraints(
-    #     summary: bool = False,
-    #     managed: bool = False,
-    #     current_user: JWTUser = Depends(auth.get_current_user),
-    # ) -> Any:
-    #     logger.info(f"Fetching study list", extra={"user": current_user.id})
-    #     params = RequestParameters(user=current_user)
-    #     available_studies = study_service.get_studies_information(
-    #         summary, managed, params
-    #     )
-    #     return available_studies
+    @bp.post(
+        "/studies/{uuid}/extensions/xpansion/constraints",
+        tags=[APITag.xpansion_study_management],
+        summary="Update Xpansion Constraints parameter",
+    )
+    def update_constraints(
+        uuid: str,
+        constraints_file_name: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Updating xpansion constraints", extra={"user": current_user.id}
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.update_xpansion_constraints(
+            uuid, constraints_file_name, params
+        )
 
     return bp

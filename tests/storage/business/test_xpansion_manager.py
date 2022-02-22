@@ -12,6 +12,7 @@ from antarest.study.business.xpansion_management import (
     XpansionSettingsDTO,
     XpansionCandidateDTO,
     LinkNotFound,
+    ConstraintsNotFoundError,
 )
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
@@ -475,3 +476,27 @@ def test_delete_candidate(tmp_path: Path):
     xpansion_manager.delete_candidate(study, new_candidate.name)
 
     assert xpansion_manager.get_candidates(study) == [new_candidate2]
+
+
+@pytest.mark.unit_test
+def test_update_constraints(tmp_path: Path):
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+
+    with pytest.raises(ConstraintsNotFoundError):
+        xpansion_manager.update_xpansion_constraints(
+            study=study, constraints_file_name="non_existent_file"
+        )
+
+    empty_study.tree.save({"user": {"expansion": {"constraints.txt": b"0"}}})
+
+    xpansion_manager.update_xpansion_constraints(
+        study=study, constraints_file_name="constraints.txt"
+    )
+
+    assert (
+        xpansion_manager.get_xpansion_settings(study).additional_constraints
+        == "constraints.txt"
+    )
