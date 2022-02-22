@@ -33,10 +33,14 @@ def build_bucket(tmp: Path) -> Path:
 
 
 def test_get_bucket(tmp_path: Path):
-    registered_files = {
-        "registered_file": RegisteredFile(IniFileNode, ".ini"),
+    registered_files = [
+        RegisteredFile(
+            key="registered_file",
+            node=IniFileNode,
+            filename="registered_file.ini",
+        ),
         # "registered_folder_node": FolderNode,
-    }
+    ]
 
     file = build_bucket(tmp_path)
 
@@ -62,9 +66,9 @@ def test_get_bucket(tmp_path: Path):
     assert "fileA.txt" in bucket["fileA.txt"]
     assert "fileB.txt" in bucket["fileB.txt"]
     assert "fileC.txt" in bucket["folder"]["fileC.txt"]
-    for file_name, registered_file in registered_files.items():
+    for registered_file in registered_files:
         assert (
-            type(node._get([file_name.split(".")[0]], get_node=True))
+            type(node._get([registered_file.key], get_node=True))
             == registered_file.node
         )
 

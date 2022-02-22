@@ -19,13 +19,15 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
 class RegisteredFile:
     def __init__(
         self,
+        key: str,
         node: Callable[
             [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
         ],
-        extension: str = "",
+        filename: str = "",
     ):
+        self.key = key
         self.node = node
-        self.extension = extension
+        self.filename = filename or key
 
 
 class BucketNode(FolderNode):
@@ -37,15 +39,16 @@ class BucketNode(FolderNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        registered_files: Optional[
-            Mapping[
-                str,
-                RegisteredFile,
-            ]
-        ] = None,
+        registered_files: Optional[List[RegisteredFile]] = None,
     ):
         super().__init__(context, config)
-        self.registered_files = registered_files or {}
+        self.registered_files: List[RegisteredFile] = registered_files or []
+
+    def _get_registered_file(self, key: str) -> Optional[RegisteredFile]:
+        for registered_file in self.registered_files:
+            if registered_file.key == key:
+                return registered_file
+        return None
 
     def save(
         self,
@@ -62,8 +65,9 @@ class BucketNode(FolderNode):
         else:
             key = url[0]
             if len(url) > 1:
-                if key in self.registered_files:
-                    self.registered_files[key].node(
+                registered_file = self._get_registered_file(key)
+                if registered_file:
+                    registered_file.node(
                         self.context, self.config.next_file(key)
                     ).save(data, url[1:])
                 else:
@@ -76,13 +80,11 @@ class BucketNode(FolderNode):
     def _save(
         self, data: Union[str, int, bool, float, bytes, JSON], key: str
     ) -> None:
-        if key in self.registered_files:
-            registered_file = self.registered_files[key]
-            node, extension = registered_file.node, registered_file.extension
+        registered_file = self._get_registered_file(key)
+        if registered_file:
+            node, filename = registered_file.node, registered_file.filename
 
-            node(self.context, self.config.next_file(key + extension)).save(
-                data
-            )
+            node(self.context, self.config.next_file(filename)).save(data)
         elif isinstance(data, (str, bytes)):
             RawFileNode(self.context, self.config.next_file(key)).save(data)
         elif isinstance(data, dict):
@@ -94,11 +96,12 @@ class BucketNode(FolderNode):
 
         children: TREE = {}
         for item in sorted(self.config.path.iterdir()):
-            item_name_without_extension = item.name.split(".")[0]
-            if item_name_without_extension in self.registered_files:
-                children[item_name_without_extension] = self.registered_files[
-                    item_name_without_extension
-                ].node(self.context, self.config.next_file(item.name))
+            key = item.name.split(".")[0]
+            registered_file = self._get_registered_file(key)
+            if registered_file:
+                children[key] = registered_file.node(
+                    self.context, self.config.next_file(item.name)
+                )
             elif item.is_file():
                 children[item.name] = RawFileNode(
                     self.context, self.config.next_file(item.name)

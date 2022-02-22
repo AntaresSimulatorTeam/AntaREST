@@ -15,5 +15,5 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expans
 
 class User(BucketNode):
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        registered_files = {"expansion": RegisteredFile(Expansion, "")}
+        registered_files = [RegisteredFile(key="expansion", node=Expansion)]
         super().__init__(context, config, registered_files)
