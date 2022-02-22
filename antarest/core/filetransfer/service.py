@@ -25,7 +25,6 @@ from antarest.core.requests import (
     UserHasNotPermissionError,
 )
 
-
 logger = logging.getLogger(__name__)
 
 

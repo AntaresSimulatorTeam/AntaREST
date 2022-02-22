@@ -195,7 +195,6 @@ def test_area_crud(
                     "area1": "test",
                     "area2": "test2",
                     "parameters": None,
-                    "series": "720054535be488afe06e985617709276147195349c34565c63af15e9068364da",
                 },
             ),
         ],

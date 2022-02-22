@@ -374,4 +374,48 @@ export interface FileStudyTreeConfigDTO {
   enr_modelling: string;
 }
 
+export enum StudyOutputDownloadType {
+  LINK = 'LINK',
+  DISTRICT = 'DISTRICT',
+  AREA = 'AREA',
+}
+
+export enum StudyOutputDownloadLevelDTO {
+  ANNUAL = 'annual',
+  MONTHLY = 'monthly',
+  WEEKLY = 'weekly',
+  DAILY = 'daily',
+  HOURLY = 'hourly',
+}
+
+export interface StudyOutputDownloadDTO {
+  type: StudyOutputDownloadType;
+  years?: Array<number>;
+  level: StudyOutputDownloadLevelDTO;
+  filterIn?: string;
+  filterOut?: string;
+  filter?: Array<string>;
+  columns?: Array<string>;
+  synthesis: boolean;
+  includeClusters: boolean;
+}
+
+export interface MatrixIndex {
+  start_date: string;
+  steps: number;
+  first_week_size: number;
+  level: StudyOutputDownloadLevelDTO;
+}
+
+export interface MatrixAggregationResult {
+  index: MatrixIndex;
+  data: {
+    [id: string]: {
+      [elm: string]: {
+        [item: string]: Array<number>;
+      };
+    };
+  };
+  warnings: Array<string>;
+}
 export default {};

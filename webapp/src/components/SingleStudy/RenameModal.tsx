@@ -41,7 +41,7 @@ const RenameModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={onSave}
+      handleAction={onSave}
       title={t('singlestudy:renamestudy')}
     >
       <div className={classes.infos}>

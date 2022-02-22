@@ -88,6 +88,7 @@ class DbConfig:
     db_url: str = ""
     db_admin_url: Optional[str] = None
     db_connect_timeout: int = 10
+    pool_recycle: Optional[int] = None
 
     @staticmethod
     def from_dict(data: JSON) -> "DbConfig":
@@ -95,6 +96,7 @@ class DbConfig:
             db_admin_url=data.get("admin_url", None),
             db_url=data.get("url", ""),
             db_connect_timeout=data.get("db_connect_timeout", 10),
+            pool_recycle=data.get("pool_recycle", None),
         )
 
 
@@ -112,6 +114,8 @@ class StorageConfig:
     watcher_lock: bool = True
     watcher_lock_delay: int = 10
     download_default_expiration_timeout_minutes: int = 1440
+    matrix_gc_sleeping_time: int = 3600
+    matrix_gc_dry_run: bool = False
 
     @staticmethod
     def from_dict(data: JSON) -> "StorageConfig":
@@ -129,6 +133,8 @@ class StorageConfig:
             download_default_expiration_timeout_minutes=data.get(
                 "download_default_expiration_timeout_minutes", 1440
             ),
+            matrix_gc_sleeping_time=data.get("matrix_gc_sleeping_time", 3600),
+            matrix_gc_dry_run=data.get("matrix_gc_dry_run", False),
         )
 
 

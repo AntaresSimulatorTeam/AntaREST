@@ -23,7 +23,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import _ from 'lodash';
 import { AppState } from '../../App/reducers';
 import {
+  FileStudyTreeConfigDTO,
   RoleType,
+  StudyOutputDownloadDTO,
   StudyMetadata,
   StudyOutput,
 } from '../../common/types';
@@ -35,6 +37,8 @@ import {
   exportStudy,
   exportOuput as callExportOutput,
   getStudyOutputs,
+  getStudySynthesis,
+  downloadOutput,
 } from '../../services/api/study';
 import { removeStudies } from '../../ducks/study';
 import { hasAuthorization, getStudyExtendedName, convertUTCToLocalTime } from '../../services/utils';
@@ -45,6 +49,7 @@ import RenameModal from './RenameModal';
 import { CopyIcon } from '../Data/utils';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
 import LauncherModal from '../ui/LauncherModal';
+import ExportFilterModal from './ExportFilterModal';
 
 const logError = debug('antares:singlestudyview:error');
 
@@ -244,9 +249,12 @@ const InformationView = (props: PropTypes) => {
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [openPermissionModal, setOpenPermissionModal] = useState<boolean>(false);
   const [openRenameModal, setOpenRenameModal] = useState<boolean>(false);
+  const [openFilterModal, setOpenFilterModal] = useState<boolean>(false);
+  const [currentOutput, setCurrentOutput] = useState<string>('');
   const [outputList, setOutputList] = useState<Array<string>>();
   const [outputExportButtonAnchor, setOutputExportButtonAnchor] = React.useState<null | HTMLElement>(null);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [synthesis, setStudySynthesis] = useState<FileStudyTreeConfigDTO>();
 
   const openStudyLauncher = (): void => {
     if (study) {
@@ -257,7 +265,6 @@ const InformationView = (props: PropTypes) => {
   const archiveStudy = async () => {
     try {
       await callArchiveStudy(study.id);
-      enqueueSnackbar(t('studymanager:archivesuccess', { studyname: study.name }), { variant: 'success' });
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:archivefailure', { studyname: study.name }), e as AxiosError);
     }
@@ -266,7 +273,6 @@ const InformationView = (props: PropTypes) => {
   const unarchiveStudy = async () => {
     try {
       await callUnarchiveStudy(study.id);
-      enqueueSnackbar(t('studymanager:unarchivesuccess', { studyname: study.name }), { variant: 'success' });
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:unarchivefailure', { studyname: study.name }), e as AxiosError);
     }
@@ -299,7 +305,6 @@ const InformationView = (props: PropTypes) => {
   };
 
   const exportOutput = _.debounce(async (output: string) => {
-    setOutputExportButtonAnchor(null);
     if (study) {
       try {
         await callExportOutput(study.id, output);
@@ -309,6 +314,23 @@ const InformationView = (props: PropTypes) => {
     }
   }, 2000, { leading: true, trailing: false });
 
+  const onExportFiltered = async (output: string, filter: StudyOutputDownloadDTO): Promise<void> => {
+    setOpenFilterModal(false);
+    if (study) {
+      try {
+        await downloadOutput(study.id, output, filter);
+        enqueueSnackbar(t('singlestudy:outputExportInProgress'), { variant: 'info' });
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
+      }
+    }
+  };
+
+  const onExport = (output: string): void => {
+    setOpenFilterModal(false);
+    exportOutput(output);
+  };
+
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -317,11 +339,19 @@ const InformationView = (props: PropTypes) => {
     setAnchorEl(null);
   };
 
+  const handleExportFilter = (output: string): void => {
+    setOutputExportButtonAnchor(null);
+    setCurrentOutput(output);
+    setOpenFilterModal(true);
+  };
+
   useEffect(() => {
     (async () => {
       try {
         const res = await getStudyOutputs(study.id);
+        const tmpSynth = await getStudySynthesis(study.id);
         setOutputList(res.map((o: StudyOutput) => o.name));
+        setStudySynthesis(tmpSynth);
       } catch (e) {
         logError(t('singlestudy:failedToListOutputs'), study, e);
       }
@@ -484,11 +514,12 @@ const InformationView = (props: PropTypes) => {
                     onClose={() => setOutputExportButtonAnchor(null)}
                   >
                     {outputList.map((output) => (
-                      <MenuItem onClick={() => exportOutput(output)}>
+                      <MenuItem key={output} onClick={() => handleExportFilter(output)}>
                         {output}
                       </MenuItem>
                     ))}
                   </Menu>
+                  {openFilterModal && <ExportFilterModal open={openFilterModal} synthesis={synthesis} output={currentOutput} onExport={onExport} onExportFiltered={onExportFiltered} onClose={() => setOpenFilterModal(false)} />}
                 </>
               )}
               {study.managed && (

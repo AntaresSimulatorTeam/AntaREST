@@ -97,7 +97,7 @@ def create_study_data_routes(
         "/studies/{uuid}/links",
         tags=[APITag.study_data],
         summary="Create a link",
-        response_model=AreaInfoDTO,
+        response_model=LinkInfoDTO,
     )
     def create_link(
         uuid: str,

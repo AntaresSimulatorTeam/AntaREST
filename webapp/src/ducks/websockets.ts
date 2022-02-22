@@ -169,7 +169,7 @@ export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, u
           clearTimeout(reconnectionTimer);
           reconnectionTimer = null;
         }
-        const { channels } = websockets;
+        const { channels } = getState().websockets;
         sendSubscribeMessage(channels, websockets.socket);
       };
       socket.onclose = (): void => {

@@ -32,14 +32,14 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        types: Dict[str, Any],
+        types: Optional[Dict[str, Any]] = None,
         reader: Optional[IReader] = None,
         writer: Optional[IniWriter] = None,
     ):
         super().__init__(config)
         self.context = context
         self.path = config.path
-        self.types = types
+        self.types = types or {}
         self.reader = reader or IniReader()
         self.writer = writer or IniWriter()
 

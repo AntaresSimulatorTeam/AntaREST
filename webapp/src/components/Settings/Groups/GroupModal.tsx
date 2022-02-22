@@ -142,7 +142,7 @@ const GroupModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={() => onSave(text, addedUser)}
+      handleAction={() => onSave(text, addedUser)}
       title={group ? `${t('settings:group')} - ${group.group.name}` : t('settings:newGroupTitle')}
     >
       {(isAdmin || group === undefined) && (

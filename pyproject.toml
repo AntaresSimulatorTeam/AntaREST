@@ -1,4 +1,7 @@
 [tool.black]
-target-version = ["py36"]
+target-version = ["py38"]
 line-length = 79
 exclude = "(antares-?launcher/*|alembic/*)"
+
+[tool.coverage.run]
+omit = ["antarest/tools/cli.py"]

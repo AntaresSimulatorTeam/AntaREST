@@ -1,15 +1,19 @@
-from unittest.mock import Mock
+import os
+from pathlib import Path
+from unittest.mock import Mock, ANY
 
 from sqlalchemy import create_engine
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     GenerationResultInfoDTO,
@@ -31,7 +35,7 @@ SADMIN = RequestParameters(
 )
 
 
-def test_commands_service() -> VariantStudyService:
+def test_commands_service(tmp_path: Path) -> VariantStudyService:
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
@@ -48,7 +52,9 @@ def test_commands_service() -> VariantStudyService:
         study_factory=Mock(),
         config=Config(
             storage=StorageConfig(
-                workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
+                workspaces={
+                    DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)
+                }
             )
         ),
         repository=repository,
@@ -123,3 +129,110 @@ def test_commands_service() -> VariantStudyService:
         results = service._generate(saved_id, SADMIN, False)
         assert results == expected_result
         assert study.snapshot.id == study.id
+
+
+def test_smart_generation(tmp_path: Path) -> None:
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=True,
+        connect_args={"check_same_thread": False},
+    )
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+    repository = VariantStudyRepository(LocalCache())
+    service = VariantStudyService(
+        raw_study_service=Mock(),
+        cache=Mock(),
+        task_service=Mock(),
+        command_factory=Mock(),
+        study_factory=Mock(),
+        config=Config(
+            storage=StorageConfig(
+                workspaces={
+                    DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)
+                }
+            )
+        ),
+        repository=repository,
+        event_bus=Mock(),
+        patch_service=Mock(),
+    )
+    service.generator = Mock()
+    service.generator.generate.side_effect = [
+        GenerationResultInfoDTO(success=True, details=[]),
+        GenerationResultInfoDTO(success=True, details=[]),
+        GenerationResultInfoDTO(success=True, details=[]),
+        GenerationResultInfoDTO(success=True, details=[]),
+    ]
+
+    def export_flat(
+        metadata: VariantStudy,
+        dest: Path,
+        outputs: bool = True,
+        denormalize: bool = True,
+    ) -> None:
+        dest.mkdir(parents=True)
+
+    service.raw_study_service.export_study_flat.side_effect = export_flat
+
+    with db():
+        origin_id = "base-study"
+        origin_study = RawStudy(
+            id=origin_id, name="my-study", workspace=DEFAULT_WORKSPACE_NAME
+        )
+        repository.save(origin_study)
+
+        variant_id = service.create_variant_study(
+            origin_id, "my variant", SADMIN
+        )
+        service.append_command(
+            variant_id,
+            CommandDTO(action="some action", args={"some-args": "value"}),
+            SADMIN,
+        )
+        service._generate(variant_id, SADMIN, False)
+        service.generator.generate.assert_called_with(
+            [ANY], ANY, ANY, notifier=ANY
+        )
+
+        service._generate(variant_id, SADMIN, False)
+        service.generator.generate.assert_called_with(
+            [], ANY, ANY, notifier=ANY
+        )
+
+        service.append_command(
+            variant_id,
+            CommandDTO(
+                action="some other action", args={"some-args": "value"}
+            ),
+            SADMIN,
+        )
+        assert (
+            service._get_variant_study(
+                variant_id, SADMIN
+            ).snapshot.last_executed_command
+            is not None
+        )
+        service._generate(variant_id, SADMIN, False)
+        service.generator.generate.assert_called_with(
+            [ANY], ANY, ANY, notifier=ANY
+        )
+
+        service.replace_commands(
+            variant_id,
+            [
+                CommandDTO(action="some action", args={"some-args": "value"}),
+                CommandDTO(
+                    action="some other action 2", args={"some-args": "value"}
+                ),
+            ],
+            SADMIN,
+        )
+        service._generate(variant_id, SADMIN, False)
+        service.generator.generate.assert_called_with(
+            [ANY, ANY], ANY, ANY, notifier=ANY
+        )

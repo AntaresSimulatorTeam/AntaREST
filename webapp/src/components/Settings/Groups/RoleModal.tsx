@@ -64,7 +64,7 @@ const RoleModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={() => onSave(group?.id as string, user.id, selection)}
+      handleAction={() => onSave(group?.id as string, user.id, selection)}
       title={`${user?.name} in "${group?.name}"`}
     >
       <div className={classes.roleList}>

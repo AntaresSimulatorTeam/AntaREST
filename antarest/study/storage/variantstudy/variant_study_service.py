@@ -273,6 +273,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 for i, command in enumerate(commands)
             ]
         )
+        self._invalidate_snapshot(study)
         self.repository.save(metadata=study, update_modification_date=True)
         return str(study.id)
 
@@ -302,6 +303,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.commands.insert(new_index, command)
             for idx in range(len(study.commands)):
                 study.commands[idx].index = idx
+            self._invalidate_snapshot(study)
             self.repository.save(metadata=study, update_modification_date=True)
 
     def remove_command(
@@ -323,6 +325,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.commands.pop(index)
             for idx, command in enumerate(study.commands):
                 command.index = idx
+            self._invalidate_snapshot(study)
             self.repository.save(metadata=study, update_modification_date=True)
 
     def remove_all_commands(
@@ -339,6 +342,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self._check_update_authorization(study)
 
         study.commands = []
+        self._invalidate_snapshot(study)
         self.repository.save(metadata=study, update_modification_date=True)
 
     def update_command(
@@ -365,6 +369,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if index >= 0:
             study.commands[index].command = command.action
             study.commands[index].args = json.dumps(command.args)
+            self._invalidate_snapshot(study)
             self.repository.save(metadata=study, update_modification_date=True)
 
     def _get_variant_study(
@@ -390,6 +395,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         assert_permission(params.user, study, StudyPermissionType.READ)
         return study
+
+    def _invalidate_snapshot(
+        self, variant_study: VariantStudy, save_to_db: bool = False
+    ) -> None:
+        if variant_study.snapshot:
+            variant_study.snapshot.last_executed_command = None
+            if save_to_db:
+                self.repository.save(
+                    metadata=variant_study, update_modification_date=True
+                )
 
     def get_all_variants_children(
         self, parent_id: str, params: RequestParameters
@@ -551,6 +566,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         metadata: VariantStudy,
         denormalize: bool = False,
+        from_scratch: bool = False,
     ) -> str:
         with FileLock(
             str(
@@ -584,6 +600,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 generate_result = self._generate(
                     variant_study_id=study_id,
                     denormalize=denormalize,
+                    from_scratch=from_scratch,
                     params=RequestParameters(DEFAULT_ADMIN_USER),
                     notifier=notifier,
                 )
@@ -612,6 +629,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         variant_study_id: str,
         denormalize: bool,
+        from_scratch: bool,
         params: RequestParameters,
     ) -> str:
         # Get variant study
@@ -642,6 +660,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         variant_study_id: str,
         params: RequestParameters,
         denormalize: bool = True,
+        from_scratch: bool = False,
         notifier: TaskUpdateNotifier = noop_notifier,
     ) -> GenerationResultInfoDTO:
         logger.info(f"Generating variant study {variant_study_id}")
@@ -663,39 +682,84 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         # Remove from cache
         remove_from_cache(self.cache, variant_study.id)
 
-        # Remove snapshot directory if it exist
+        # Get snapshot directory
         dest_path = self.get_study_path(variant_study)
+
+        # this indicate that the current snapshot is up to date and we can only generate from the next command
+        last_executed_command_index = (
+            VariantStudyService._get_snapshot_last_executed_command_index(
+                variant_study
+            )
+        )
+        last_executed_command_index = (
+            None
+            if (
+                isinstance(parent_study, VariantStudy)
+                and not self.exists(parent_study)
+            )
+            or from_scratch
+            else last_executed_command_index
+        )
 
         variant_study.snapshot = None
         self.repository.save(variant_study, update_modification_date=False)
 
         if dest_path.is_dir():
-            shutil.rmtree(dest_path)
-
-        if isinstance(parent_study, VariantStudy):
-            self._safe_generation(parent_study)
-            self.export_study_flat(
-                metadata=parent_study,
-                dest=dest_path,
-                outputs=False,
-                denormalize=False,
+            # Remove snapshot directory if it exists and last snapshot is out of sync
+            if last_executed_command_index is None:
+                logger.info("Removing previous snapshot data")
+                shutil.rmtree(dest_path)
+            else:
+                logger.info("Using previous snapshot data")
+        elif last_executed_command_index is not None:
+            # there is no snapshot so last_command_index should be None
+            logger.warning(
+                "Previous snapshot with last_executed_command found, but no data found"
             )
-        else:
-            self.raw_study_service.export_study_flat(
-                metadata=parent_study,
-                dest=dest_path,
-                outputs=False,
-                denormalize=False,
-            )
+            last_executed_command_index = None
 
-        # Copy parent study to dest
+        if last_executed_command_index is None:
+            # Copy parent study to dest
+            if isinstance(parent_study, VariantStudy):
+                self._safe_generation(parent_study)
+                self.export_study_flat(
+                    metadata=parent_study,
+                    dest=dest_path,
+                    outputs=False,
+                    denormalize=False,
+                )
+            else:
+                self.raw_study_service.export_study_flat(
+                    metadata=parent_study,
+                    dest=dest_path,
+                    outputs=False,
+                    denormalize=False,
+                )
+
+        command_start_index = (
+            last_executed_command_index + 1
+            if last_executed_command_index is not None
+            else 0
+        )
+        logger.info(
+            f"Generating study snapshot from command index {command_start_index}"
+        )
         results = self._generate_snapshot(
-            variant_study=variant_study, dest_path=dest_path, notifier=notifier
+            variant_study=variant_study,
+            dest_path=dest_path,
+            notifier=notifier,
+            from_command_index=command_start_index,
         )
         if results.success:
+            last_command_index = len(variant_study.commands) - 1
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study.id,
                 created_at=datetime.utcnow(),
+                last_executed_command=variant_study.commands[
+                    last_command_index
+                ].id
+                if last_command_index >= 0
+                else None,
             )
             self.repository.save(variant_study)
             logger.info(f"Saving new snapshot for study {variant_study.id}")
@@ -733,10 +797,15 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return self._generate_config(metadata, parent_config)
 
     def _get_commands_and_notifier(
-        self, variant_study: VariantStudy, notifier: TaskUpdateNotifier
+        self,
+        variant_study: VariantStudy,
+        notifier: TaskUpdateNotifier,
+        from_index: int = 0,
     ) -> Tuple[List[List[ICommand]], Callable[[int, bool, str], None]]:
         # Generate
-        commands: List[List[ICommand]] = self._to_icommand(variant_study)
+        commands: List[List[ICommand]] = self._to_icommand(
+            variant_study, from_index
+        )
 
         def notify(
             command_index: int, command_result: bool, command_message: str
@@ -744,7 +813,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             try:
                 command_result_obj = CommandResultDTO(
                     study_id=variant_study.id,
-                    id=variant_study.commands[command_index].id,
+                    id=variant_study.commands[from_index + command_index].id,
                     success=command_result,
                     message=command_message,
                 )
@@ -765,12 +834,17 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return commands, notify
 
-    def _to_icommand(self, metadata: VariantStudy) -> List[List[ICommand]]:
+    def _to_icommand(
+        self, metadata: VariantStudy, from_index: int = 0
+    ) -> List[List[ICommand]]:
         commands: List[List[ICommand]] = []
+        index = 0
         for command_block in metadata.commands:
-            commands.append(
-                self.command_factory.to_icommand(command_block.to_dto())
-            )
+            if from_index <= index:
+                commands.append(
+                    self.command_factory.to_icommand(command_block.to_dto())
+                )
+            index += 1
         return commands
 
     def _generate_config(
@@ -792,10 +866,12 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         variant_study: VariantStudy,
         dest_path: Path,
         notifier: TaskUpdateNotifier = noop_notifier,
+        from_command_index: int = 0,
     ) -> GenerationResultInfoDTO:
-
         commands, notify = self._get_commands_and_notifier(
-            variant_study=variant_study, notifier=notifier
+            variant_study=variant_study,
+            notifier=notifier,
+            from_index=from_command_index,
         )
         return self.generator.generate(
             commands, dest_path, variant_study, notifier=notify
@@ -898,6 +974,21 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             raise VariantGenerationError(
                 f"Error while generating {metadata.id}"
             )
+
+    @staticmethod
+    def _get_snapshot_last_executed_command_index(
+        study: VariantStudy,
+    ) -> Optional[int]:
+        if study.snapshot and study.snapshot.last_executed_command:
+            last_executed_command_index = [
+                command.id for command in study.commands
+            ].index(study.snapshot.last_executed_command)
+            return (
+                last_executed_command_index
+                if last_executed_command_index >= 0
+                else None
+            )
+        return None
 
     def get_raw(
         self, metadata: VariantStudy, use_cache: bool = True

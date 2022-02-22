@@ -60,7 +60,7 @@ const CreateVariantModal = (props: PropTypes) => {
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleSave={onSave}
+      handleAction={onSave}
       title={t('variants:newVariant')}
     >
       <div className={classes.infos}>

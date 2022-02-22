@@ -206,7 +206,7 @@ class CommandExtraction(ICommandExtractor):
         link_data = (
             links_data.get(area2)
             if links_data is not None
-            else study_tree.get(["input", "links", area1, area2])
+            else study_tree.get(["input", "links", area1, "properties", area2])
         )
         link_config_command = UpdateConfig(
             target=f"input/links/{area1}/properties/{area2}",
@@ -215,13 +215,43 @@ class CommandExtraction(ICommandExtractor):
         )
         commands.append(link_command)
         commands.append(link_config_command)
-        commands.append(
-            self.generate_replace_matrix(
-                study_tree,
-                ["input", "links", area1, area2],
-                self.null_matrix_id,
+        if study.config.version < 820:
+            commands.append(
+                self.generate_replace_matrix(
+                    study_tree,
+                    ["input", "links", area1, area2],
+                    self.null_matrix_id,
+                )
             )
-        )
+        else:
+            commands.append(
+                self.generate_replace_matrix(
+                    study_tree,
+                    ["input", "links", area1, f"{area2}_parameters"],
+                    self.null_matrix_id,
+                )
+            )
+            commands.append(
+                self.generate_replace_matrix(
+                    study_tree,
+                    ["input", "links", area1, "capacities", f"{area2}_direct"],
+                    self.null_matrix_id,
+                )
+            )
+            commands.append(
+                self.generate_replace_matrix(
+                    study_tree,
+                    [
+                        "input",
+                        "links",
+                        area1,
+                        "capacities",
+                        f"{area2}_indirect",
+                    ],
+                    self.null_matrix_id,
+                )
+            )
+
         return commands
 
     def _extract_cluster(

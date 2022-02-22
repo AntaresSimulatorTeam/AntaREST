@@ -43,6 +43,12 @@ class MatrixDataSetRepository:
         matrix: MatrixDataSet = db.session.query(MatrixDataSet).get(id)
         return matrix
 
+    def get_all_datasets(self) -> List[MatrixDataSet]:
+        matrix_datasets: List[MatrixDataSet] = db.session.query(
+            MatrixDataSet
+        ).all()
+        return matrix_datasets
+
     def query(
         self,
         name: Optional[str],
@@ -97,9 +103,13 @@ class MatrixRepository:
 
     def delete(self, id: str) -> None:
         g = db.session.query(Matrix).get(id)
-        db.session.delete(g)
-        db.session.commit()
-
+        if g:
+            db.session.delete(g)
+            db.session.commit()
+        else:
+            logger.warning(
+                f"Trying to delete matrix {id}, but was not found in database!"
+            )
         logger.debug(f"Matrix {id} deleted")
 
 

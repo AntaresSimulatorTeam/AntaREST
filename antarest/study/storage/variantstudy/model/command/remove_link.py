@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional, Tuple, Dict
+from typing import Any, List, Tuple, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -83,7 +83,30 @@ class RemoveLink(ICommand):
             return output
         area_from = data["area_from"]
         area_to = data["area_to"]
-        study_data.tree.delete(["input", "links", area_from, area_to])
+        if study_data.config.version < 820:
+            study_data.tree.delete(["input", "links", area_from, area_to])
+        else:
+            study_data.tree.delete(
+                ["input", "links", area_from, f"{area_to}_parameters"]
+            )
+            study_data.tree.delete(
+                [
+                    "input",
+                    "links",
+                    area_from,
+                    "capacities",
+                    f"{area_to}_direct",
+                ]
+            )
+            study_data.tree.delete(
+                [
+                    "input",
+                    "links",
+                    area_from,
+                    "capacities",
+                    f"{area_to}_indirect",
+                ]
+            )
         study_data.tree.delete(
             ["input", "links", area_from, "properties", area_to]
         )

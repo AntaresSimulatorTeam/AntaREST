@@ -1,23 +1,23 @@
 import io
+import json
 import logging
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional, List, Dict
 
 from fastapi import APIRouter, File, Depends, Request, HTTPException
-from markupsafe import escape  # type: ignore
-from starlette.responses import FileResponse
+from markupsafe import escape
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import (
     FileDownloadTaskDTO,
 )
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import (
     RequestParameters,
 )
-from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -25,16 +25,15 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudySimResultDTO,
     StudyMetadataDTO,
-    MatrixAggregationResult,
     CommentsDto,
     StudyDownloadDTO,
     MatrixIndex,
+    ExportFormat,
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
 )
-from antarest.study.storage.study_download_utils import StudyDownloader
 
 logger = logging.getLogger(__name__)
 
@@ -460,8 +459,9 @@ def create_study_routes(
     def output_download(
         study_id: str,
         output_id: str,
-        request: Request,
         data: StudyDownloadDTO,
+        request: Request,
+        use_task: bool = False,
         tmp_export_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -472,19 +472,18 @@ def create_study_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        content = study_service.download_outputs(
-            study_id, output_id, data, params
-        )
         accept = request.headers.get("Accept")
-        if accept == "application/zip" or accept == "application/tar+gz":
-            StudyDownloader.export(content, accept, tmp_export_file)
-            return FileResponse(
-                tmp_export_file,
-                headers={
-                    "Content-Disposition": f'attachment; filename="output-{output_id}.zip'
-                },
-                media_type=accept,
-            )
+        filetype = ExportFormat.from_dto(accept)
+
+        content = study_service.download_outputs(
+            study_id,
+            output_id,
+            data,
+            use_task,
+            filetype,
+            params,
+            tmp_export_file,
+        )
         return content
 
     @bp.get(
@@ -541,8 +540,7 @@ def create_study_routes(
         )
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
-        study_service.archive(study_id, params)
-        return ""
+        return study_service.archive(study_id, params)
 
     @bp.put(
         "/studies/{study_id}/unarchive",
@@ -558,7 +556,6 @@ def create_study_routes(
         )
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
-        study_service.unarchive(study_id, params)
-        return ""
+        return study_service.unarchive(study_id, params)
 
     return bp

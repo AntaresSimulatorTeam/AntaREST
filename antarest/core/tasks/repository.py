@@ -1,7 +1,7 @@
 import datetime
 from http import HTTPStatus
 from operator import and_
-from typing import Optional, List
+from typing import Optional, List, Any
 
 from fastapi import HTTPException
 
@@ -28,11 +28,22 @@ class TaskJobRepository:
             raise HTTPException(HTTPStatus.NOT_FOUND, f"Task {id} not found")
         return task
 
+    @staticmethod
+    def _combine_clauses(where_clauses: List[Any]) -> Any:
+        assert len(where_clauses) > 0
+        if len(where_clauses) > 1:
+            return and_(
+                where_clauses[0],
+                TaskJobRepository._combine_clauses(where_clauses[1:]),
+            )
+        else:
+            return where_clauses[0]
+
     def list(
         self, filter: TaskListFilter, user: Optional[int] = None
     ) -> List[TaskJob]:
         query = db.session.query(TaskJob)
-        where_clauses = []
+        where_clauses: List[Any] = []
         if user:
             where_clauses.append(TaskJob.owner_id == user)
         if len(filter.status) > 0:
@@ -82,7 +93,9 @@ class TaskJobRepository:
                 )
             )
         if len(where_clauses) > 1:
-            query = query.where(and_(*where_clauses))
+            query = query.where(
+                TaskJobRepository._combine_clauses(where_clauses)
+            )
         elif len(where_clauses) == 1:
             query = query.where(*where_clauses)
 

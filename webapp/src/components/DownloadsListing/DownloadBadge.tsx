@@ -70,6 +70,10 @@ const DownloadBadge = (props: PropTypes) => {
           const task = await getTask(taskId);
           if (task.type === 'COPY') {
             setNotificationMessage('studymanager:studycopying');
+          } else if (task.type === 'ARCHIVE') {
+            setNotificationMessage('studymanager:studyarchiving');
+          } else if (task.type === 'UNARCHIVE') {
+            setNotificationMessage('studymanager:studyunarchiving');
           }
         } catch (error) {
           logError(error);

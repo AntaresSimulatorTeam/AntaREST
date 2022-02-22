@@ -1,4 +1,4 @@
-from typing import Union, List, Any, Optional, Tuple, Dict
+from typing import Union, List, Any, Tuple, Dict
 
 from pydantic import validator
 
@@ -25,6 +25,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
 from antarest.study.storage.variantstudy.model.command.utils import (
     validate_matrix,
     strip_matrix_protocol,
+    AliasDecoder,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -54,6 +55,9 @@ class ReplaceMatrix(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
+        if self.target[0] == "@":
+            self.target = AliasDecoder.decode(self.target, study_data)
+
         replace_matrix_data: JSON = {}
         target_matrix = replace_matrix_data
         url = self.target.split("/")

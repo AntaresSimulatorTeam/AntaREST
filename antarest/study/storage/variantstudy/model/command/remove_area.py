@@ -151,6 +151,9 @@ class RemoveArea(ICommand):
                     study_data.tree.delete(
                         ["input", "links", area_name, self.id]
                     )
+                    study_data.tree.delete(
+                        ["input", "links", area_name, "properties", self.id]
+                    )
 
         new_area_data: JSON = {
             "input": {
