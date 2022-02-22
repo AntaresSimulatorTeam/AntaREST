@@ -2,8 +2,8 @@
 import { Moment } from 'moment';
 
 export enum SortElement {
-  DATE="DATE",
-  NAME="NAME"
+  DATE='DATE',
+  NAME='NAME'
 }
 
 export enum SortStatus {
@@ -271,7 +271,9 @@ export enum WSEvent {
   DOWNLOAD_CREATED = 'DOWNLOAD_CREATED',
   DOWNLOAD_READY = 'DOWNLOAD_READY',
   DOWNLOAD_EXPIRED = 'DOWNLOAD_EXPIRED',
-  DOWNLOAD_FAILED = 'DOWNLOAD_FAILED'
+  DOWNLOAD_FAILED = 'DOWNLOAD_FAILED',
+  MESSAGE_INFO = 'MESSAGE_INFO',
+  MAINTENANCE_MODE = 'MAINTENANCE_MODE',
 }
 
 export interface WSMessage {

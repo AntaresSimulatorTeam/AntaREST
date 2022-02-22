@@ -11,7 +11,7 @@ interface Props {
    placeholder?: string;
 }
 
-const SelectSingle = (props: Props) => {
+function SelectSingle(props: Props) {
   const { name, list, data, setValue, placeholder, sx } = props;
 
   const handleChange = (event: SelectChangeEvent<string>) => {
@@ -53,6 +53,6 @@ const SelectSingle = (props: Props) => {
 SelectSingle.defaultProps = {
   sx: { m: 0, width: 200 },
   placeholder: undefined,
-}
+};
 
 export default SelectSingle;

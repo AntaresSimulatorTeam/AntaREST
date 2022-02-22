@@ -58,6 +58,6 @@ function SelectMulti(props: Props) {
 SelectMulti.defaultProps = {
   sx: { m: 1, width: 200 },
   placeholder: undefined,
-}
+};
 
 export default SelectMulti;

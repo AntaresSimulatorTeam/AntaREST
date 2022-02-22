@@ -4,19 +4,20 @@ import { scrollbarStyle, STUDIES_SIDE_NAV_WIDTH } from '../../theme';
 import StudyTree from './StudyTree';
 import { GenericInfo, StudyMetadata } from '../../common/types';
 import { buildStudyTree, StudyTreeNode } from './utils';
+
 interface Props {
   studies: Array<StudyMetadata>
   folder: string;
   setFolder: (folder: string) => void;
   favorite: Array<GenericInfo>;
-};
+}
 
 function SideNav(props: Props) {
   const { studies, folder, setFolder, favorite } = props;
   const [tree, setTree] = useState<StudyTreeNode>(buildStudyTree(studies));
   useEffect(() => {
     setTree(buildStudyTree(studies));
-  }, [studies])
+  }, [studies]);
   return (
     <Box
       flex={`0 0 ${STUDIES_SIDE_NAV_WIDTH}px`}
@@ -30,20 +31,22 @@ function SideNav(props: Props) {
       sx={{ overflowX: 'hidden', overflowY: 'auto', ...scrollbarStyle }}
     >
       <Typography sx={{ color: 'grey.400' }}>Favorites</Typography>
-      <List sx={{ width: '100%'}}>
+      <List sx={{ width: '100%' }}>
         {
           favorite.map((elm) => (
-            <ListItem key={elm.id} 
-                      sx={{ 
-                        width: '100%',
-                        m: 0,
-                        py: 0,
-                        px: 1,
-                        cursor: 'pointer',
-                        '&:hover': {
-                          bgcolor: 'primary.outlinedHoverBackground',
-                        },
-                      }}>
+            <ListItem
+              key={elm.id}
+              sx={{
+                width: '100%',
+                m: 0,
+                py: 0,
+                px: 1,
+                cursor: 'pointer',
+                '&:hover': {
+                  bgcolor: 'primary.outlinedHoverBackground',
+                },
+              }}
+            >
               <ListItemText primary={elm.name} />
             </ListItem>
           ))

@@ -8,8 +8,8 @@ export interface StudyTreeNode {
 
 const nodeProcess = (tree: StudyTreeNode, path: Array<string>): void => {
   const { children } = tree;
-  if (path.length === 0) {
-    return ;
+  if (path.length === 1) {
+    return;
   }
   const element = path.pop() || '';
   const index = children.findIndex((elm: StudyTreeNode) => elm.name === element);

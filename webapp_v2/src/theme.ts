@@ -1,3 +1,4 @@
+import React from 'react';
 import { createTheme } from '@mui/material/styles';
 
 export const DRAWER_WIDTH = 60;
@@ -7,18 +8,18 @@ export const STUDIES_SIDE_NAV_WIDTH = 300;
 export const STUDIES_LIST_HEADER_HEIGHT = 100;
 export const STUDIES_FILTER_WIDTH = 300;
 
-export const scrollbarStyle = { 
+export const scrollbarStyle = {
   '&::-webkit-scrollbar': {
     width: 7,
   },
   '&::-webkit-scrollbar-track': {
     boxShadow: 'inset 0 0 6px rgba(0, 0, 0, 0.3)',
   },
-'&::-webkit-scrollbar-thumb': {
-  backgroundColor: 'secondary.main',
-  outline: '1px solid slategrey',
-  }, 
-}
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: 'secondary.main',
+    outline: '1px solid slategrey',
+  },
+};
 
 declare module '@mui/material/styles' {
   interface PaletteColor {

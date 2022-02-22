@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { connect, ConnectedProps } from 'react-redux';
 import moment from 'moment';
+import { AxiosError } from 'axios';
 import Header from '../../components/Studies/Header';
 import SideNav from '../../components/Studies/SideNav';
 import StudiesList from '../../components/Studies/StudiesList';
@@ -15,6 +16,8 @@ import { getStudies } from '../../services/api/study';
 import { AppState } from '../../store/reducers';
 import { initStudies, initStudiesVersion } from '../../store/study';
 import FilterDrawer from '../../components/Studies/FilterDrawer';
+import enqueueErrorSnackbar from '../../components/common/ErrorSnackBar';
+import MainContentLoader from '../../components/common/loaders/MainContentLoader';
 
 const DEFAULT_FILTER_USER = 'v2.studylisting.filter.user';
 const DEFAULT_FILTER_GROUP = 'v2.studylisting.filter.group';
@@ -45,17 +48,10 @@ function Studies(props: PropTypes) {
   const [filteredStudies, setFilteredStudies] = useState<Array<StudyMetadata>>(studies);
   const [loaded, setLoaded] = useState(true);
   const [managedFilter, setManageFilter] = useState(loadState<boolean>(DEFAULT_FILTER_MANAGED, false));
-  const [currentSortItem, setCurrentSortItem] = useState<SortItem|undefined>(loadState<SortItem>(DEFAULT_FILTER_SORTING, { element: SortElement.NAME, status: SortStatus.INCREASE}));
+  const [currentSortItem, setCurrentSortItem] = useState<SortItem|undefined>(loadState<SortItem>(DEFAULT_FILTER_SORTING, { element: SortElement.NAME, status: SortStatus.INCREASE }));
   const [inputValue, setInputValue] = useState<string>('');
   const [openFilter, setOpenFiler] = useState<boolean>(false);
 
-  const onImportClick = () : void => {
-    return ;
-  };
-
-  const onCreateClick = () : void => {
-    return ;
-  };
   const onFilterClick = () : void => {
     setOpenFiler(true);
   };
@@ -72,7 +68,6 @@ function Studies(props: PropTypes) {
     setOpenFiler(false);
   };
 
-
   const getAllStudies = async (refresh: boolean) => {
     setLoaded(false);
     try {
@@ -82,7 +77,7 @@ function Studies(props: PropTypes) {
         setFilteredStudies(allStudies);
       }
     } catch (e) {
-    // enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoretrievestudies'), e as AxiosError);
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoretrievestudies'), e as AxiosError);
     } finally {
       setLoaded(true);
     }
@@ -114,12 +109,11 @@ function Studies(props: PropTypes) {
 
   const insideFolder = (study: StudyMetadata) : boolean => {
     let studyNodeId = '';
-    if (study.folder !== undefined && study.folder !== null)
-    studyNodeId = `root/${study.workspace}/${study.folder}`;
+    if (study.folder !== undefined && study.folder !== null) studyNodeId = `root/${study.workspace}/${study.folder}`;
     else studyNodeId = `root/${study.workspace}`;
 
     return studyNodeId.startsWith(currentFolder as string);
-  }
+  };
 
   const filter = (currentName: string): StudyMetadata[] => sortStudies()
     .filter((s) => !currentName || (s.name.search(new RegExp(currentName, 'i')) !== -1) || (s.id.search(new RegExp(currentName, 'i')) !== -1))
@@ -130,27 +124,27 @@ function Studies(props: PropTypes) {
     .filter((s) => insideFolder(s));
 
   const applyFilter = () : void => {
-    setLoaded(true);
+    setLoaded(false);
     const f = filter(inputValue);
     setFilteredStudies(f);
-    setLoaded(false);
-  }
+    setLoaded(true);
+  };
 
   const onChange = async (currentName: string) => {
-    setLoaded(true);
+    setLoaded(false);
     const f = filter(currentName);
     setFilteredStudies(f);
-    setLoaded(false);
+    setLoaded(true);
     if (currentName !== inputValue) setInputValue(currentName);
   };
 
   const handleFavoriteClick = (value: GenericInfo) => {
     const favorite = currentFavorite as Array<GenericInfo>;
-    if(favorite.findIndex((elm) => (elm.id as string) === (value.id as string)) < 0) {
+    if (favorite.findIndex((elm) => (elm.id as string) === (value.id as string)) < 0) {
       setCurrentFavorite(favorite.concat(value));
-      return ;
+      return;
     }
-    setCurrentFavorite(favorite.filter((elm) => (elm.id  as string) !== (value.id as string)));
+    setCurrentFavorite(favorite.filter((elm) => (elm.id as string) !== (value.id as string)));
   };
 
   const init = async () => {
@@ -160,7 +154,6 @@ function Studies(props: PropTypes) {
 
       const groupRes = await getGroups();
       setGroupList(groupRes);
-
     } catch (error) {
       console.log(error);
     }
@@ -168,10 +161,11 @@ function Studies(props: PropTypes) {
 
   useEffect(() => {
     init();
-    getAllStudies(false);
     if (!versions) {
       loadVersions();
     }
+    getAllStudies(false);
+    console.log('AFTER STUDIES');
   }, []);
 
   useEffect(() => {
@@ -186,7 +180,7 @@ function Studies(props: PropTypes) {
 
   useEffect(() => {
     saveState(DEFAULT_FAVORITE_STUDIES, currentFavorite);
-  }, [currentFavorite])
+  }, [currentFavorite]);
 
   return (
     <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" boxSizing="border-box" overflow="hidden">
@@ -195,7 +189,15 @@ function Studies(props: PropTypes) {
       <Box flex={1} width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box">
         <SideNav studies={studies} folder={currentFolder as string} setFolder={setCurrentFolder} favorite={currentFavorite as Array<GenericInfo>} />
         <Divider sx={{ width: '1px', height: '98%', bgcolor: 'divider' }} />
-        <StudiesList studies={filteredStudies}  sortItem={currentSortItem as SortItem} setSortItem={setCurrentSortItem} folder={currentFolder as string} setFolder={setCurrentFolder} favorite={currentFavorite !== undefined ? currentFavorite.map((elm) => elm.id as string) : []} onFavoriteClick={handleFavoriteClick} />
+        {!loaded && <MainContentLoader />}
+        {loaded && studies && 
+          <StudiesList studies={filteredStudies} 
+                       sortItem={currentSortItem as SortItem} 
+                       setSortItem={setCurrentSortItem} 
+                       folder={currentFolder as string} 
+                       setFolder={setCurrentFolder} 
+                       favorite={currentFavorite !== undefined ? currentFavorite.map((elm) => elm.id as string) : []} 
+                       onFavoriteClick={handleFavoriteClick} />}
         {openFilter && (
           <FilterDrawer
             open={openFilter}

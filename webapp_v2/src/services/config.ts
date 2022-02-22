@@ -16,6 +16,7 @@ export interface Config {
   hidden: boolean;
   downloadHostUrl?: string;
   version: APIVersion;
+  maintenanceMode: boolean;
 }
 
 let config: Config = {
@@ -29,6 +30,7 @@ let config: Config = {
     version: 'unknown',
     gitcommit: 'unknown',
   },
+  maintenanceMode: false,
 };
 
 if (process.env.NODE_ENV === 'development') {
@@ -70,6 +72,6 @@ export const initConfig = async (callback: any): Promise<void> => {
   }
 
   info('config is', config);
-
-  callback();
+  // to let the initAxiosClient complete
+  setTimeout(() => callback(), 50);
 };

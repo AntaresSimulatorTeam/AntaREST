@@ -86,8 +86,13 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
   );
 
   return (
-    <Box display="flex" width="100vw" height="100vh" overflow="hidden"
-          sx={{ background: 'linear-gradient(140deg, rgba(33,32,50,1) 0%, rgba(29,28,48,1) 35%, rgba(27,11,36,1) 100%)' }}>
+    <Box
+      display="flex"
+      width="100vw"
+      height="100vh"
+      overflow="hidden"
+      sx={{ background: 'linear-gradient(140deg, rgba(33,32,50,1) 0%, rgba(29,28,48,1) 35%, rgba(27,11,36,1) 100%)' }}
+    >
       <CssBaseline />
       <NavDrawer
         extended={extended}

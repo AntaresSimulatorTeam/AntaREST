@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { styled } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
@@ -40,13 +40,14 @@ interface Props {
 
 function Header(props: Props) {
   const [t] = useTranslation();
+  const theme = useTheme();
   const { inputValue, setInputValue, onFilterClick, managedFilter, setManageFilter } = props;
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
 
   const onActionButtonClick = () : void => {
     console.log('ACTION');
     setOpenCreateModal(false);
-  }
+  };
   return (
     <Root>
       <Box width="100%" alignItems="center" display="flex" px={3}>
@@ -76,22 +77,46 @@ function Header(props: Props) {
                 <InputAdornment position="start">
                   <SearchOutlinedIcon />
                 </InputAdornment>
-              ) }}
+              ),
+              sx: {
+                '.MuiOutlinedInput-root': {
+                  '&.MuiOutlinedInput-notchedOutline': {
+                    borderColor: `${theme.palette.primary.main} !important`,
+                  },
+                },
+                '.Mui-focused': {
+                  //borderColor: `${theme.palette.primary.main} !important`
+                },
+                '.MuiOutlinedInput-notchedOutline': {
+                  borderWidth: '1px',
+                  borderColor: `${theme.palette.text.secondary} !important`,
+                }
+              } }}
+              InputLabelProps={{
+                sx: {
+                  '.MuiInputLabel-root': {
+                    color : theme.palette.text.secondary,
+                  },
+                  '.Mui-focused': {
+                  }
+                },
+              }}
+
           />
           <Divider sx={{ width: '1px', height: '40px', bgcolor: 'divider', margin: '0px 16px' }} />
           <Button color="secondary" variant="outlined" onClick={onFilterClick}>
             {t('main:filter')}
           </Button>
           {
-            managedFilter && 
+            managedFilter && (
             <Chip
-            label={t('studymanager:managedStudiesFilter')}
-            variant="filled"
-            color="secondary"
-            onDelete={() => setManageFilter(false)}
-            sx={{ mx: 2 }}
-          />
-          }
+              label={t('studymanager:managedStudiesFilter')}
+              variant="filled"
+              color="secondary"
+              onDelete={() => setManageFilter(false)}
+              sx={{ mx: 2 }}
+            />
+            )}
         </Box>
       </Box>
     </Root>

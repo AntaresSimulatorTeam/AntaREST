@@ -29,6 +29,8 @@
   "versionFilter": "Filter by version",
   "copyWith": "Copy with outputs",
   "copyWithout": "Copy without outputs",
+  "export": "Export",
+  "delete": "Delete",
   "exportWith": "Export with outputs",
   "exportWithout": "Export without outputs",
   "sortBy": "View by",
@@ -42,5 +44,6 @@
   "metadata": "Metadata",
   "group": "Group",
   "tag": "Tag",
-  "enterTag": "Enter a tag"
+  "enterTag": "Enter a tag",
+  "exploreButton": "Explore"
 }

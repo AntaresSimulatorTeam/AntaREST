@@ -29,10 +29,12 @@
   "versionFilter": "Filtrer par version",
   "copyWith": "Copier avec les sorties",
   "copyWithout": "Copier sans les sorties",
+  "export": "Exporter",
+  "delete": "Supprimer",
   "exportWith": "Exporter avec les sorties",
   "exportWithout": "Exporter sans les sorties",
   "sortBy": "Filtrer par",
-  "createNewStudy": "Create a new study",
+  "createNewStudy": "Créer une nouvelle étude",
   "studyName": "Nom de l'étude",
   "version": "Version",
   "baselineStudy": "Etude de base",
@@ -42,5 +44,6 @@
   "metadata": "Métadonnées",
   "group": "Groupe",
   "tag": "Tag",
-  "enterTag": "Entrer un tag"
+  "enterTag": "Entrer un tag",
+  "exploreButton": "Explorer"
 }

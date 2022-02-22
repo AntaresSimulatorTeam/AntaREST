@@ -37,35 +37,31 @@ function FilterDrawer(props: Props) {
   const [currentManaged, setCurrentManaged] = useState<boolean>(managedFilter);
 
   const setVersions = (data: Array<string>) : void => {
-    if(data.length === 0) {
+    if (data.length === 0) {
       setCurrentVersions(undefined);
-      return ;
+      return;
     }
     setCurrentVersions(convertVersions(data || []));
   };
 
   const setUsers = (data: Array<string>) : void => {
-    if(data.length === 0) {
+    if (data.length === 0) {
       setCurrentUsers(undefined);
-      return ;
+      return;
     }
     setCurrentUsers(data.map((elm) => {
-      const index = userList.findIndex((item) => {
-        return item.id.toString() === elm;
-      });
+      const index = userList.findIndex((item) => item.id.toString() === elm);
       return { id: userList[index].id, name: userList[index].name };
     }));
   };
 
   const setGroups = (data: Array<string>) : void => {
-    if(data.length === 0) {
+    if (data.length === 0) {
       setCurrentGroups(undefined);
-      return ;
+      return;
     }
     setCurrentGroups(data.map((elm) => {
-      const index = groupList.findIndex((item) => {
-        return item.id === elm;
-      });
+      const index = groupList.findIndex((item) => item.id === elm);
       return { id: groupList[index].id, name: groupList[index].name };
     }));
   };

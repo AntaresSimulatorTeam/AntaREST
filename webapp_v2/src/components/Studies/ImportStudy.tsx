@@ -30,7 +30,7 @@ const connector = connect(mapState, mapDispatch);
 type PropsFromRedux = ConnectedProps<typeof connector>;
 type PropTypes = PropsFromRedux;
 
-const ImportStudyForm = (props: PropTypes) => {
+function ImportStudyForm(props: PropTypes) {
   const [t] = useTranslation();
   const { addStudy, createUpload, updateUploadCompletion, endUpload } = props;
   const { register, handleSubmit } = useForm<Inputs>();
@@ -62,12 +62,12 @@ const ImportStudyForm = (props: PropTypes) => {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Button variant="outlined" type="submit" color="primary" startIcon={<GetAppOutlinedIcon />} onClick={onButtonClick}>
-            {t('main:import')}
+        {t('main:import')}
       </Button>
-      <input style={{ display: 'none' }} type="file" accept="application/zip" {...register("study", { required: true })} ref={(e) => { inputRef.current = e; }} />
+      <input style={{ display: 'none' }} type="file" accept="application/zip" {...register('study', { required: true })} ref={(e) => { inputRef.current = e; }} />
       {uploadProgress && <LinearProgress style={{ flexGrow: 1 }} variant="determinate" value={uploadProgress} />}
     </form>
   );
-};
+}
 
 export default connector(ImportStudyForm);
