@@ -13,7 +13,6 @@ import ArrowRightIcon from '@material-ui/icons/ArrowRight';
 import DeleteIcon from '@material-ui/icons/Delete';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import { XpansionCandidate, XpansionSettings } from './types';
-import ConstraintsModal from './ConstraintsModal';
 
 const ROW_ITEM_SIZE = 60;
 const BUTTONS_SIZE = 40;
@@ -64,10 +63,10 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropsType {
     candidates: Array<XpansionCandidate>;
-    settings: XpansionSettings;
+    settings: XpansionSettings | undefined;
     constraints: string;
-    selectedItem: XpansionCandidate | XpansionSettings | undefined;
-    setSelectedItem: (item: XpansionCandidate | XpansionSettings) => void;
+    selectedItem: XpansionCandidate | XpansionSettings | string | undefined;
+    setSelectedItem: (item: XpansionCandidate | XpansionSettings | string) => void;
     deleteXpansion: () => void;
 }
 
@@ -90,8 +89,6 @@ const CandidateListing = (props: PropsType) => {
   const [t] = useTranslation();
   const { candidates, settings, constraints, selectedItem, setSelectedItem, deleteXpansion } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
-  const [openConstraintsModal, setOpenConstraintsModal] = useState<boolean>(false);
-  // const [openConstraintsModal, setOpenConstraintsModal] = useState<boolean>(false);
 
   return (
     <>
@@ -113,8 +110,8 @@ const CandidateListing = (props: PropsType) => {
                     {Row}
                   </FixedSizeList>
                   <div className={classes.buttons} style={{ width }}>
-                    <Button className={classes.button} size="small" onClick={() => setSelectedItem(settings)}>Settings</Button>
-                    <Button className={classes.button} size="small" onClick={() => setOpenConstraintsModal(true)}>Constraints</Button>
+                    <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>Settings</Button>
+                    <Button className={classes.button} size="small" onClick={() => setSelectedItem(constraints)}>Constraints</Button>
                     <DeleteIcon className={classes.deleteIcon} onClick={() => setOpenConfirmationModal(true)} />
                   </div>
                 </>
@@ -124,14 +121,6 @@ const CandidateListing = (props: PropsType) => {
           </AutoSizer>
         )}
       </div>
-      {openConstraintsModal && constraints && (
-        <ConstraintsModal
-          open={openConstraintsModal}
-          title="Constraints"
-          content={constraints}
-          onClose={() => setOpenConstraintsModal(false)}
-        />
-      )}
       {openConfirmationModal && candidates && (
         <ConfirmationModal
           open={openConfirmationModal}

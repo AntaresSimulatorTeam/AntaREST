@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { AxiosError } from 'axios';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
 import XpansionPropsView from './XpansionPropsView';
 import { StudyMetadata } from '../../../common/types';
 import SplitLayoutView from '../../ui/SplitLayoutView';
@@ -7,6 +9,8 @@ import CreateCandidateModal from './CreateCandidateModal';
 import fakeCandidates from './mockdata.json';
 import { XpansionCandidate, XpansionSettings } from './types';
 import XpansionForm from './XpansionForm';
+import { getAllCandidates, getXpansionSettings } from '../../../services/api/xpansion';
+import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 
 interface Props {
     study: StudyMetadata;
@@ -51,9 +55,12 @@ const fakeSettings = {
 
 const XpansionView = (props: Props) => {
   const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const { study } = props;
   const [openModal, setOpenModal] = useState<boolean>(false);
-  const [selectedItem, setSelectedItem] = useState<XpansionCandidate | XpansionSettings>();
+  const [selectedItem, setSelectedItem] = useState<XpansionCandidate | XpansionSettings | string>();
+  const [settings, setSettings] = useState<XpansionSettings>();
+  const [candidates, setCandidates] = useState<XpansionCandidate>();
 
   const deleteXpansion = () => {
     console.log('delete');
@@ -77,6 +84,23 @@ const XpansionView = (props: Props) => {
   const updateSettings = (value: XpansionSettings) => {
     console.log(value.master);
   };
+
+  /*
+  useEffect(() => {
+    const init = async () => {
+      try {
+        // const tempSettings = await getXpansionSettings(study.id);
+        const tempCandidates = await getAllCandidates(study.id);
+        // console.log(tempSettings);
+        console.log(tempCandidates);
+        // setSettings(tempSettings);
+      } catch (e) {
+        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtoloadstudy'), e as AxiosError);
+      }
+    };
+    init();
+  });
+  */
 
   const onClose = () => setOpenModal(false);
 

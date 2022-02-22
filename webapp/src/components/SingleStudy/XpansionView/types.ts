@@ -42,7 +42,6 @@ export interface XpansionCandidate {
     link_profile?: string;
     // eslint-disable-next-line camelcase
     already_installed_link_profile?: string;
-
 }
 
 export default {};

@@ -5,6 +5,8 @@ import {
   Theme,
   Paper,
   Typography,
+  Divider,
+  Box,
 } from '@material-ui/core';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -39,7 +41,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     layout: {
       display: 'flex',
-      justifyContent: 'space-between',
+      justifyContent: 'space-evenly',
       alignItems: 'center',
       width: '100%',
       height: '100%',
@@ -48,8 +50,8 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       alignItems: 'flex-start',
       justifyContent: 'center',
-      width: '80%',
-      height: '100%',
+      width: '76%',
+      height: '98%',
       position: 'relative',
     },
     left: {
@@ -57,6 +59,9 @@ const useStyles = makeStyles((theme: Theme) =>
       width: '20%',
       height: '100%',
       position: 'relative',
+    },
+    divider: {
+      height: '96%',
     },
   }));
 
@@ -75,14 +80,15 @@ const SplitLayoutView = (props: Props) => {
       <div className={classes.header}>
         <Typography className={classes.title}>{title}</Typography>
       </div>
-      <div className={classes.layout}>
-        <div className={classes.left}>
+      <Box className={classes.layout}>
+        <Box className={classes.left}>
           {left}
-        </div>
-        <div className={classes.right}>
+        </Box>
+        <Divider className={classes.divider} orientation="vertical" variant="middle" />
+        <Box className={classes.right}>
           {right}
-        </div>
-      </div>
+        </Box>
+      </Box>
     </Paper>
   );
 };

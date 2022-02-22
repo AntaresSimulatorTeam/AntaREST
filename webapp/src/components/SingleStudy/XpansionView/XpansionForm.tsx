@@ -7,6 +7,7 @@ import {
 import { XpansionCandidate, XpansionSettings } from './types';
 import CandidateForm from './CandidateForm';
 import SettingsForm from './SettingsForm';
+import ConstraintsView from './ConstraintsView';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -19,10 +20,14 @@ const useStyles = makeStyles((theme: Theme) =>
       flexWrap: 'wrap',
       padding: theme.spacing(1),
     },
+    constraints: {
+      width: '100%',
+      height: '100%',
+    },
   }));
 
 interface PropType {
-    selectedItem: XpansionCandidate | XpansionSettings | undefined;
+    selectedItem: XpansionCandidate | XpansionSettings | string | undefined;
     deleteCandidate: (name: string) => void;
     updateCandidate: (value: XpansionCandidate) => void;
     updateSettings: (value: XpansionSettings) => void;
@@ -34,14 +39,20 @@ const XpansionForm = (props: PropType) => {
 
   return (
     <>
-      <div className={classes.form}>
-        {selectedItem && (selectedItem as XpansionCandidate).name && (
-          <CandidateForm candidate={selectedItem as XpansionCandidate} deleteCandidate={deleteCandidate} updateCandidate={updateCandidate} />
-        )}
-        {selectedItem && (selectedItem as XpansionSettings).master && (
-          <SettingsForm settings={selectedItem as XpansionSettings} updateSettings={updateSettings} />
-        )}
-      </div>
+      {(selectedItem as XpansionCandidate).name || (selectedItem as XpansionSettings).master ? (
+        <div className={classes.form}>
+          {selectedItem && (selectedItem as XpansionCandidate).name && (
+            <CandidateForm candidate={selectedItem as XpansionCandidate} deleteCandidate={deleteCandidate} updateCandidate={updateCandidate} />
+          )}
+          {selectedItem && (selectedItem as XpansionSettings).master && (
+            <SettingsForm settings={selectedItem as XpansionSettings} updateSettings={updateSettings} />
+          )}
+        </div>
+      ) : (
+        <div className={classes.constraints}>
+          <ConstraintsView content={selectedItem as string} />
+        </div>
+      )}
     </>
   );
 };

@@ -4,6 +4,8 @@ import {
   createStyles,
   Theme,
   TextField,
+  Box,
+  Divider,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -14,7 +16,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     fields: {
       display: 'flex',
-      justifyContent: 'space-evenly',
+      justifyContent: 'flex-start',
       alignItems: 'center',
       width: '100%',
       flexWrap: 'wrap',
@@ -31,6 +33,10 @@ const useStyles = makeStyles((theme: Theme) =>
       right: '20px',
       bottom: '20px',
     },
+    divider: {
+      marginTop: theme.spacing(1),
+      marginBottom: theme.spacing(1),
+    },
   }));
 
 interface PropType {
@@ -46,22 +52,40 @@ const CandidateForm = (props: PropType) => {
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
   return (
-    <>
-      <div className={classes.fields}>
-        <TextField label="name" variant="filled" value={candidate.name} onBlur={() => updateCandidate(candidate)} />
-        <TextField label="link" variant="filled" value={candidate.link} onBlur={() => updateCandidate(candidate)} />
-        <TextField label="annual_cost_per_mw" variant="filled" value={candidate.annual_cost_per_mw} onBlur={() => updateCandidate(candidate)} />
-      </div>
-      <div className={classes.fields}>
-        <TextField label="unit_size" variant="filled" value={candidate.unit_size || ''} onBlur={() => updateCandidate(candidate)} />
-        <TextField label="max_units" variant="filled" value={candidate.max_units || ''} onBlur={() => updateCandidate(candidate)} />
-        <TextField label="max_investment" variant="filled" value={candidate.max_investment || ''} onBlur={() => updateCandidate(candidate)} />
-      </div>
-      <div className={classes.fields}>
-        <TextField label="already_installed_capacity" variant="filled" value={candidate.already_installed_capacity || ''} onBlur={() => updateCandidate(candidate)} />
-        <TextField label="link_profile" variant="filled" value={candidate.link_profile || ''} onBlur={() => updateCandidate(candidate)} />
-        <TextField label="already_installed_link_profile" variant="filled" value={candidate.already_installed_link_profile || ''} onBlur={() => updateCandidate(candidate)} />
-      </div>
+    <Box>
+      <Box>
+        <div>
+          Général
+        </div>
+        <Divider className={classes.divider} />
+        <div className={classes.fields}>
+          <TextField label="name" variant="filled" value={candidate.name} onBlur={() => updateCandidate(candidate)} />
+          <TextField label="link" variant="filled" value={candidate.link} onBlur={() => updateCandidate(candidate)} />
+        </div>
+      </Box>
+      <Box>
+        <div>
+          Paramètres
+        </div>
+        <Divider className={classes.divider} />
+        <div className={classes.fields}>
+          <TextField label="annual_cost_per_mw" variant="filled" value={candidate.annual_cost_per_mw} onBlur={() => updateCandidate(candidate)} />
+          <TextField label="unit_size" variant="filled" value={candidate.unit_size || ''} onBlur={() => updateCandidate(candidate)} />
+          <TextField label="max_units" variant="filled" value={candidate.max_units || ''} onBlur={() => updateCandidate(candidate)} />
+          <TextField label="max_investment" variant="filled" value={candidate.max_investment || ''} onBlur={() => updateCandidate(candidate)} />
+          <TextField label="already_installed_capacity" variant="filled" value={candidate.already_installed_capacity || ''} onBlur={() => updateCandidate(candidate)} />
+          <TextField label="already_installed_link_profile" variant="filled" value={candidate.already_installed_link_profile || ''} onBlur={() => updateCandidate(candidate)} />
+        </div>
+      </Box>
+      <Box>
+        <div>
+          Time series
+        </div>
+        <Divider className={classes.divider} />
+        <div className={classes.fields}>
+          <TextField label="link_profile" variant="filled" value={candidate.link_profile || ''} onBlur={() => updateCandidate(candidate)} />
+        </div>
+      </Box>
       <div className={classes.buttons}>
         <DeleteIcon className={classes.deleteIcon} onClick={() => setOpenConfirmationModal(true)} />
       </div>
@@ -74,7 +98,7 @@ const CandidateForm = (props: PropType) => {
           handleNo={() => setOpenConfirmationModal(false)}
         />
       )}
-    </>
+    </Box>
   );
 };
 

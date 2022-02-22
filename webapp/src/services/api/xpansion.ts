@@ -12,7 +12,7 @@ export const deleteXpansion = async (uuid: string, name: string): Promise<Xpansi
 };
 
 export const getXpansionSettings = async (uuid: string): Promise<XpansionSettings> => {
-  const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/settings`);
+  const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/settings?${uuid}`);
   return res.data;
 };
 

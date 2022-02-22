@@ -24,10 +24,10 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropsType {
   candidateList: Array<XpansionCandidate>;
-  settings: XpansionSettings;
+  settings: XpansionSettings | undefined;
   constraints: string;
-  selectedItem: XpansionCandidate | XpansionSettings | undefined;
-  setSelectedItem: (item: XpansionCandidate | XpansionSettings) => void;
+  selectedItem: XpansionCandidate | XpansionSettings | string | undefined;
+  setSelectedItem: (item: XpansionCandidate | XpansionSettings | string) => void;
   onAdd: () => void;
   deleteXpansion: () => void;
 }
