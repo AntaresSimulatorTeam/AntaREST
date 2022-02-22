@@ -10,7 +10,7 @@ from time import time
 from typing import List, IO, Optional, cast, Union, Dict, Callable
 from uuid import uuid4
 
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse
 
@@ -1799,20 +1799,38 @@ class StudyService:
         self._assert_study_unarchived(study)
         return self.xpansion_manager.delete_candidate(study, candidate_name)
 
-    def update_xpansion_constraints(
-        self, uuid: str, constraints_file_name: str, params: RequestParameters
+    def update_xpansion_constraints_settings(
+        self,
+        uuid: str,
+        constraints_file_name: Optional[str],
+        params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.update_xpansion_constraints(
+        return self.xpansion_manager.update_xpansion_constraints_settings(
             study, constraints_file_name
         )
 
-    def delete_xpansion_constraints(
-        self, uuid: str, params: RequestParameters
+    def add_xpansion_constraints_files(
+        self,
+        uuid: str,
+        files: List[UploadFile],
+        params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.delete_xpansion_constraints(study)
+        return self.xpansion_manager.add_xpansion_constraints_files(
+            study, files
+        )
+
+    def delete_xpansion_constraints_file(
+        self, uuid: str, filename: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.delete_xpansion_constraints_file(
+            study, filename
+        )

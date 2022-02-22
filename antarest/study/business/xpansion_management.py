@@ -1,7 +1,8 @@
 from http import HTTPStatus
+from io import BytesIO
 from typing import Optional, Literal, Union, List
 
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from pydantic import Field, BaseModel
 
 from antarest.core.model import JSON
@@ -391,14 +392,17 @@ class XpansionManager:
             ["user", "expansion", "candidates", candidate_id]
         )
 
-    def update_xpansion_constraints(
-        self, study: Study, constraints_file_name: str
+    def update_xpansion_constraints_settings(
+        self, study: Study, constraints_file_name: Optional[str]
     ) -> None:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
         try:
-            file_study.tree.get(["user", "expansion", constraints_file_name])
+            if constraints_file_name is not None:
+                file_study.tree.get(
+                    ["user", "expansion", constraints_file_name]
+                )
         except ChildNotFoundError:
             raise ConstraintsNotFoundError(
                 f"The constraints file {constraints_file_name} does not exist"
@@ -416,14 +420,42 @@ class XpansionManager:
 
         file_study.tree.save(new_settings_data)
 
-    def delete_xpansion_constraints(self, study: Study) -> None:
+    def add_xpansion_constraints_files(
+        self, study: Study, files: List[UploadFile]
+    ) -> None:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
-        file_study.tree.save(
-            {
-                "user": {
-                    "expansion": {"settings": {"additional-constraints": None}}
-                }
-            }
+        data: JSON = {"user": {"expansion": {}}}
+        for file in files:
+            data["user"]["expansion"][
+                file.filename
+            ] = file.file.read().encode()
+
+        file_study.tree.save(data)
+
+    def delete_xpansion_constraints_file(
+        self, study: Study, filename: str
+    ) -> None:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
         )
+        file_study.tree.delete(["user", "expansion", filename])
+        # update settings
+        if (
+            str(
+                file_study.tree.get(
+                    ["user", "expansion", "settings", "additional-constraints"]
+                )
+            )
+            == filename
+        ):
+            file_study.tree.save(
+                {
+                    "user": {
+                        "expansion": {
+                            "settings": {"additional-constraints": None}
+                        }
+                    }
+                }
+            )
