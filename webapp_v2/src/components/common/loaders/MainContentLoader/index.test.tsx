@@ -8,7 +8,7 @@ import MainContentLoader from './index';
 /** ******************************************* */
 
 describe('Test MainContentLoader component', (): void => {
-  let container: HTMLElement = null;
+  let container: HTMLElement | null = null;
   beforeEach((): void => {
     // Sets up a DOM element as a render target
     container = document.createElement('div');
@@ -19,9 +19,11 @@ describe('Test MainContentLoader component', (): void => {
 
   afterEach((): void => {
     // clean
-    unmountComponentAtNode(container);
-    container.remove();
-    container = null;
+    if (container) {
+      unmountComponentAtNode(container);
+      container.remove();  
+      container = null;
+    }
   });
 
   it('Test 1', (): void => {
