@@ -91,7 +91,7 @@ export const setMessageInfo = (data: string): SetMessageInfoAction => ({
 });
 
 type GlobalAction = AddOnCloseListenerAction
-  | RemoveOnCloseListenerAction | SetMessageInfoAction | SetMaintenanceModeAction;
+  | RemoveOnCloseListenerAction | SetMaintenanceModeAction | SetMessageInfoAction;
 
 /** ******************************************* */
 /* Selectors / Misc                             */

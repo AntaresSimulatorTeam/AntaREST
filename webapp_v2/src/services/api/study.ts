@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { LaunchJob, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode } from '../../common/types';
+import { FileStudyTreeConfigDTO, LaunchJob, MatrixAggregationResult, StudyOutputDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode, AreasConfig, SingleAreaConfig, StudyProperties } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 import { FileDownloadTask } from './downloads';
@@ -33,6 +33,16 @@ export const getComments = async (sid: string): Promise<any> => {
   return res.data;
 };
 
+export const getSynthesis = async (uuid: string): Promise<StudyProperties> => {
+  const res = await client.get(`/v1/studies/${uuid}/synthesis`);
+  return res.data;
+};
+
+export const getAreaPositions = async (uuid: string, path: string, depth = -1): Promise<AreasConfig | SingleAreaConfig> => {
+  const res = await client.get(`v1/studies/${uuid}/raw?path=/input/areas/${encodeURIComponent(path)}/ui&depth=${depth}`);
+  return res.data;
+};
+
 export const getStudyMetadata = async (sid: string, summary = true): Promise<StudyMetadata> => {
   const res = await client.get(`/v1/studies/${sid}?summary=${summary}`);
   return convertStudyDtoToMetadata(sid, res.data);
@@ -40,6 +50,23 @@ export const getStudyMetadata = async (sid: string, summary = true): Promise<Stu
 
 export const getStudyOutputs = async (sid: string): Promise<Array<StudyOutput>> => {
   const res = await client.get(`/v1/studies/${sid}/outputs`);
+  return res.data;
+};
+
+export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfigDTO> => {
+  const res = await client.get(`/v1/studies/${sid}/synthesis`);
+  return res.data;
+};
+
+export const downloadOutput = async (sid: string, output: string, data: StudyOutputDownloadDTO, jsonFormat = false, useTask = true): Promise<FileDownloadTask | MatrixAggregationResult> => {
+  const restconfig = {
+    headers: {
+      Accept: 'application/zip',
+      responseType: 'blob',
+      'Access-Control-Allow-Origin': '*',
+    },
+  };
+  const res = await client.post(`/v1/studies/${sid}/outputs/${output}/download?use_task=${useTask}`, data, jsonFormat ? {} : restconfig);
   return res.data;
 };
 
@@ -135,11 +162,15 @@ export const importFile = async (file: File, study: string, path: string, onProg
 export interface LaunchOptions {
   xpansion?: boolean;
   // eslint-disable-next-line camelcase
+  xpansion_r_version?: boolean;
+  // eslint-disable-next-line camelcase
   nb_cpu?: number;
   // eslint-disable-next-line camelcase
   time_limit?: number;
   // eslint-disable-next-line camelcase
   post_processing?: boolean;
+  // eslint-disable-next-line camelcase
+  adequacy_patch?: object;
 }
 
 export const launchStudy = async (sid: string, options: LaunchOptions = {}): Promise<string> => {

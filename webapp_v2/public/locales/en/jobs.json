@@ -2,5 +2,8 @@
   "failedtoretrievejobs": "Failed to retrieve job information",
   "failedtoretrievelogs": "Failed to retrieve job logs",
   "failedtoretrievedownloads": "Failed to retrieve downloads list",
-  "logdetails": "No logs found"
+  "logdetails": "No logs found",
+  "launches": "Launches",
+  "exports": "Exports",
+  "others": "Others"
 }

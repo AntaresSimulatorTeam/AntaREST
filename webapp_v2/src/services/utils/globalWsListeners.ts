@@ -38,7 +38,7 @@ const maintenanceListener = (reduxStore: Store<AppState>) => (ev: WSMessage): vo
   }
 };
 
-export const addWsListeners = (reduxStore: Store<AppState>) => {
+export const addWsListeners = async (reduxStore: Store<AppState>): Promise<void> => {
   /* ADD LISTENERS HERE */
   reduxStore.dispatch(addListenerAction(studyListener(reduxStore)));
   reduxStore.dispatch(addListenerAction(maintenanceListener(reduxStore)));

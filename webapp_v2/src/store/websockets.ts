@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+/* eslint-disable @typescript-eslint/camelcase */
 import debug from 'debug';
 import { Action } from 'redux';
 import { ThunkAction } from 'redux-thunk';
@@ -126,11 +128,13 @@ export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, u
     if (!reconnectionTimer) {
       logInfo(`Reconnecting websocket in ${RECONNECTION_DEFAULT_DELAY}ms`);
       const current_user = getState().auth.user;
-      reconnectionTimer = setTimeout(() => {
-        dispatch(disconnectWebsocket());
-        dispatch(connectWebsocket(current_user));
-        reconnectionTimer = null;
-      }, RECONNECTION_DEFAULT_DELAY);
+      reconnectionTimer = setTimeout(
+        () => {
+          dispatch(disconnectWebsocket());
+          dispatch(connectWebsocket(current_user));
+          reconnectionTimer = null;
+        }, RECONNECTION_DEFAULT_DELAY,
+      );
     } else {
       logInfo('Already trying to reconnect to websockets');
     }
@@ -165,7 +169,7 @@ export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, u
           clearTimeout(reconnectionTimer);
           reconnectionTimer = null;
         }
-        const { channels } = websockets;
+        const { channels } = getState().websockets;
         sendSubscribeMessage(channels, websockets.socket);
       };
       socket.onclose = (): void => {
