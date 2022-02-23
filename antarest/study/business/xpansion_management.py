@@ -472,7 +472,7 @@ class XpansionManager:
             bytes, file_study.tree.get(["user", "expansion", filename])
         )
 
-    def get_all_xpansion_constraints(self, study: Study):
+    def get_all_xpansion_constraints(self, study: Study) -> JSON:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )

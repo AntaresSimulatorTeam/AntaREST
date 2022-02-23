@@ -272,7 +272,7 @@ def create_study_routes(
         tags=[APITag.xpansion_study_management],
         summary="Getting all Xpansion Constraints Files",
     )
-    def delete_constraints(
+    def get_all_constraints(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
