@@ -11,12 +11,19 @@ import { XpansionSettings } from './types';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
+    title: {
+      color: theme.palette.primary.main,
+    },
     fields: {
       display: 'flex',
       justifyContent: 'flex-start',
       alignItems: 'center',
       width: '100%',
       flexWrap: 'wrap',
+      marginBottom: theme.spacing(2),
+      '&> div': {
+        marginRight: theme.spacing(2),
+      },
     },
     divider: {
       marginTop: theme.spacing(1),
@@ -35,7 +42,7 @@ const SettingsForm = (props: PropType) => {
 
   return (
     <Box>
-      <div>
+      <div className={classes.title}>
         Settings
       </div>
       <Divider className={classes.divider} />

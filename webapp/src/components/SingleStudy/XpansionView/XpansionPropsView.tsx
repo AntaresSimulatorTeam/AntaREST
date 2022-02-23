@@ -23,11 +23,11 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropsType {
-  candidateList: Array<XpansionCandidate>;
+  candidateList?: Array<XpansionCandidate>;
   settings: XpansionSettings | undefined;
-  constraints: string;
-  selectedItem: XpansionCandidate | XpansionSettings | string | undefined;
-  setSelectedItem: (item: XpansionCandidate | XpansionSettings | string) => void;
+  constraints: string[] | string;
+  selectedItem: XpansionCandidate | XpansionSettings | string | string[] | undefined;
+  setSelectedItem: (item: XpansionCandidate | XpansionSettings | string | string[]) => void;
   onAdd: () => void;
   deleteXpansion: () => void;
 }
@@ -73,6 +73,10 @@ const XpansionPropsView = (props: PropsType) => {
       />
     </>
   );
+};
+
+XpansionPropsView.defaultProps = {
+  candidateList: undefined,
 };
 
 export default XpansionPropsView;

@@ -10,7 +10,6 @@ import { useTranslation } from 'react-i18next';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList, areEqual, ListChildComponentProps } from 'react-window';
 import ArrowRightIcon from '@material-ui/icons/ArrowRight';
-import DeleteIcon from '@material-ui/icons/Delete';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 import { XpansionCandidate, XpansionSettings } from './types';
 
@@ -45,28 +44,24 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     buttons: {
       display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
       color: theme.palette.secondary.dark,
     },
     button: {
       color: theme.palette.primary.main,
     },
-    deleteIcon: {
-      cursor: 'pointer',
-      color: theme.palette.error.light,
-      '&:hover': {
-        color: theme.palette.error.main,
-      },
+    delete: {
+      color: theme.palette.error.main,
     },
   }));
 
 interface PropsType {
-    candidates: Array<XpansionCandidate>;
+    candidates: Array<XpansionCandidate> | undefined;
     settings: XpansionSettings | undefined;
-    constraints: string;
-    selectedItem: XpansionCandidate | XpansionSettings | string | undefined;
-    setSelectedItem: (item: XpansionCandidate | XpansionSettings | string) => void;
+    constraints: string[] | string;
+    selectedItem: XpansionCandidate | XpansionSettings | string | string[] | undefined;
+    setSelectedItem: (item: XpansionCandidate | XpansionSettings | string | string[]) => void;
     deleteXpansion: () => void;
 }
 
@@ -87,13 +82,13 @@ const Row = React.memo((props: ListChildComponentProps) => {
 const CandidateListing = (props: PropsType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { candidates, settings, constraints, selectedItem, setSelectedItem, deleteXpansion } = props;
+  const { candidates = [], settings, constraints, selectedItem, setSelectedItem, deleteXpansion } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
   return (
     <>
       <div className={classes.root}>
-        {candidates.length > 0 && candidates && (
+        {candidates && candidates.length > 0 && (
           <AutoSizer>
             { ({ height, width }) => {
               const idealHeight = ROW_ITEM_SIZE * candidates.length;
@@ -112,7 +107,7 @@ const CandidateListing = (props: PropsType) => {
                   <div className={classes.buttons} style={{ width }}>
                     <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>Settings</Button>
                     <Button className={classes.button} size="small" onClick={() => setSelectedItem(constraints)}>Constraints</Button>
-                    <DeleteIcon className={classes.deleteIcon} onClick={() => setOpenConfirmationModal(true)} />
+                    <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>Supprimer</Button>
                   </div>
                 </>
               );

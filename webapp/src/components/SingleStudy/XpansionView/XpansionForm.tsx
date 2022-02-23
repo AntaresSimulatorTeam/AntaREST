@@ -12,7 +12,7 @@ import ConstraintsView from './ConstraintsView';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     form: {
-      width: '90%',
+      width: '100%',
       height: '40%',
       display: 'flex',
       justifyContent: 'center',
@@ -27,7 +27,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropType {
-    selectedItem: XpansionCandidate | XpansionSettings | string | undefined;
+    selectedItem: XpansionCandidate | XpansionSettings | string | string[] | undefined;
     deleteCandidate: (name: string) => void;
     updateCandidate: (value: XpansionCandidate) => void;
     updateSettings: (value: XpansionSettings) => void;
@@ -50,7 +50,11 @@ const XpansionForm = (props: PropType) => {
         </div>
       ) : (
         <div className={classes.constraints}>
-          <ConstraintsView content={selectedItem as string} />
+          {(selectedItem as string[]).length > 1 ? (
+            <ConstraintsView content={selectedItem as string[]} />
+          ) : (
+            <ConstraintsView content={selectedItem as string} />
+          )}
         </div>
       )}
     </>

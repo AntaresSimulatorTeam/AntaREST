@@ -14,12 +14,19 @@ import { XpansionCandidate } from './types';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
+    title: {
+      color: theme.palette.primary.main,
+    },
     fields: {
       display: 'flex',
       justifyContent: 'flex-start',
       alignItems: 'center',
       width: '100%',
       flexWrap: 'wrap',
+      marginBottom: theme.spacing(2),
+      '&> div': {
+        marginRight: theme.spacing(2),
+      },
     },
     deleteIcon: {
       cursor: 'pointer',
@@ -54,7 +61,7 @@ const CandidateForm = (props: PropType) => {
   return (
     <Box>
       <Box>
-        <div>
+        <div className={classes.title}>
           Général
         </div>
         <Divider className={classes.divider} />
@@ -64,7 +71,7 @@ const CandidateForm = (props: PropType) => {
         </div>
       </Box>
       <Box>
-        <div>
+        <div className={classes.title}>
           Paramètres
         </div>
         <Divider className={classes.divider} />
@@ -78,7 +85,7 @@ const CandidateForm = (props: PropType) => {
         </div>
       </Box>
       <Box>
-        <div>
+        <div className={classes.title}>
           Time series
         </div>
         <Divider className={classes.divider} />

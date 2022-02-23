@@ -45,7 +45,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropType {
-    content: string;
+    content: string | string[];
 }
 
 const ConstraintsView = (props: PropType) => {
