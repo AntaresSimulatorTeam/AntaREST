@@ -283,4 +283,51 @@ def create_study_routes(
         params = RequestParameters(user=current_user)
         return study_service.get_all_xpansion_constraints(uuid, params)
 
+    @bp.post(
+        "/studies/{uuid}/extensions/xpansion/capa",
+        tags=[APITag.xpansion_study_management],
+        summary="Adding New Capa File",
+    )
+    def add_capa(
+        uuid: str,
+        file: UploadFile,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        raise NotImplementedError()
+
+    @bp.delete(
+        "/studies/{uuid}/extensions/xpansion/capa/{filename}",
+        tags=[APITag.xpansion_study_management],
+        summary="Deleting Capa File",
+    )
+    def delete_capa(
+        uuid: str,
+        filename: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        raise NotImplementedError()
+
+    @bp.get(
+        "/studies/{uuid}/extensions/xpansion/capa/{filename}",
+        tags=[APITag.xpansion_study_management],
+        summary="Getting Capa File",
+    )
+    def get_single_capa(
+        uuid: str,
+        filename: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        raise NotImplementedError()
+
+    @bp.get(
+        "/studies/{uuid}/extensions/xpansion/capa/",
+        tags=[APITag.xpansion_study_management],
+        summary="Getting All Capa File",
+    )
+    def get_single_capa(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        raise NotImplementedError()
+
     return bp
