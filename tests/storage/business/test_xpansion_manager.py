@@ -1,10 +1,12 @@
 import os
 import uuid
+from io import StringIO
 from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
+from fastapi import UploadFile
 
 from antarest.core.model import JSON
 from antarest.study.business.xpansion_management import (
@@ -511,6 +513,36 @@ def test_update_constraints(tmp_path: Path):
 
 
 @pytest.mark.unit_test
+def test_add_constraints(tmp_path: Path):
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+
+    filename1 = "constraints1.txt"
+    filename2 = "constraints2.txt"
+    content1 = "0"
+    content2 = "1"
+
+    upload_file_list = [
+        UploadFile(filename=filename1, file=StringIO(content1)),
+        UploadFile(filename=filename2, file=StringIO(content2)),
+    ]
+
+    xpansion_manager.add_xpansion_constraints(study, upload_file_list)
+
+    assert filename1 in empty_study.tree.get(["user", "expansion"])
+    assert content1.encode() == empty_study.tree.get(
+        ["user", "expansion", filename1]
+    )
+
+    assert filename2 in empty_study.tree.get(["user", "expansion"])
+    assert content2.encode() == empty_study.tree.get(
+        ["user", "expansion", filename2]
+    )
+
+
+@pytest.mark.unit_test
 def test_get_single_constraints(tmp_path: Path):
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
@@ -534,3 +566,28 @@ def test_get_single_constraints(tmp_path: Path):
         )
         == constraints_file_content
     )
+
+
+@pytest.mark.unit_test
+def test_get_all_constraints(tmp_path: Path):
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+
+    filename1 = "constraints1.txt"
+    filename2 = "constraints2.txt"
+    content1 = "0"
+    content2 = "1"
+
+    upload_file_list = [
+        UploadFile(filename=filename1, file=StringIO(content1)),
+        UploadFile(filename=filename2, file=StringIO(content2)),
+    ]
+
+    xpansion_manager.add_xpansion_constraints(study, upload_file_list)
+
+    assert xpansion_manager.get_all_xpansion_constraints(study) == {
+        filename1: content1.encode(),
+        filename2: content2.encode(),
+    }

@@ -20,16 +20,17 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.settin
 
 
 class Expansion(BucketNode):
+    registered_files = [
+        RegisteredFile(
+            key="candidates",
+            node=ExpansionCandidates,
+            filename="candidates.ini",
+        ),
+        RegisteredFile(
+            key="settings", node=ExpansionSettings, filename="settings.ini"
+        ),
+        RegisteredFile(key="capa", node=ExpansionCapa),
+    ]
+
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        registered_files = [
-            RegisteredFile(
-                key="candidates",
-                node=ExpansionCandidates,
-                filename="candidates.ini",
-            ),
-            RegisteredFile(
-                key="settings", node=ExpansionSettings, filename="settings.ini"
-            ),
-            RegisteredFile(key="capa", node=ExpansionCapa),
-        ]
-        super().__init__(context, config, registered_files)
+        super().__init__(context, config, self.registered_files)

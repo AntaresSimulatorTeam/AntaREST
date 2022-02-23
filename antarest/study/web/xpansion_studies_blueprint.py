@@ -251,6 +251,7 @@ def create_study_routes(
         "/studies/{uuid}/extensions/xpansion/constraints/{filename}",
         tags=[APITag.xpansion_study_management],
         summary="Getting Xpansion Constraints File",
+        response_model=bytes,
     )
     def get_constraints(
         uuid: str,
@@ -266,39 +267,20 @@ def create_study_routes(
             uuid, filename, params
         )
 
-    #
-    # @bp.get(
-    #     "/studies/{uuid}/extensions/xpansion/constraints",
-    #     tags=[APITag.xpansion_study_management],
-    #     summary="Delete Xpansion Constraints File",
-    # )
-    # def delete_constraints(
-    #         uuid: str,
-    #         filename: str,
-    #         current_user: JWTUser = Depends(auth.get_current_user),
-    # ) -> Any:
-    #     logger.info(
-    #         f"Deleting xpansion constraints file",
-    #         extra={"user": current_user.id},
-    #     )
-    #     params = RequestParameters(user=current_user)
-    #     return study_service.delete_xpansion_constraints_file(
-    #         uuid, filename, params
-    #     )
-
-    # @bp.post(
-    #     "/studies/{uuid}/extensions/xpansion/constraints/delete",
-    #     tags=[APITag.xpansion_study_management],
-    #     summary="Delete Xpansion Constraints parameter",
-    # )
-    # def delete_constraints(
-    #         uuid: str,
-    #         current_user: JWTUser = Depends(auth.get_current_user),
-    # ) -> Any:
-    #     logger.info(
-    #         f"Deleting xpansion constraints", extra={"user": current_user.id}
-    #     )
-    #     params = RequestParameters(user=current_user)
-    #     return study_service.delete_xpansion_constraints(uuid, params)
+    @bp.get(
+        "/studies/{uuid}/extensions/xpansion/constraints",
+        tags=[APITag.xpansion_study_management],
+        summary="Getting all Xpansion Constraints Files",
+    )
+    def delete_constraints(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Getting xpansion constraints file",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.get_all_xpansion_constraints(uuid, params)
 
     return bp

@@ -1836,10 +1836,17 @@ class StudyService:
     def get_single_xpansion_constraints(
         self, uuid: str, filename: str, params: RequestParameters
     ) -> bytes:
-
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         return self.xpansion_manager.get_single_xpansion_constraints(
             study, filename
         )
+
+    def get_all_xpansion_constraints(
+        self, uuid: str, params: RequestParameters
+    ) -> JSON:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_all_xpansion_constraints(study)

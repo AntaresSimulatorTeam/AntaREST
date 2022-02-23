@@ -11,6 +11,9 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
 )
+from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expansion import (
+    Expansion,
+)
 from antarest.study.storage.storage_service import StudyStorageService
 
 
@@ -439,6 +442,7 @@ class XpansionManager:
             study
         )
         file_study.tree.delete(["user", "expansion", filename])
+
         # update settings
         if (
             str(
@@ -467,3 +471,23 @@ class XpansionManager:
         return cast(
             bytes, file_study.tree.get(["user", "expansion", filename])
         )
+
+    def get_all_xpansion_constraints(self, study: Study):
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        registered_filenames = [
+            registered_file.key
+            for registered_file in Expansion.registered_files
+        ]
+        constraints_filenames = [
+            key
+            for key in file_study.tree.get(["user", "expansion"])
+            if key not in registered_filenames
+        ]
+        return {
+            constraints_filename: self.get_single_xpansion_constraints(
+                study, constraints_filename
+            )
+            for constraints_filename in constraints_filenames
+        }
