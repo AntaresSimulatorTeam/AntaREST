@@ -420,7 +420,7 @@ class XpansionManager:
 
         file_study.tree.save(new_settings_data)
 
-    def add_xpansion_constraints_files(
+    def add_xpansion_constraints(
         self, study: Study, files: List[UploadFile]
     ) -> None:
         file_study = self.study_storage_service.get_storage(study).get_raw(
@@ -434,9 +434,7 @@ class XpansionManager:
 
         file_study.tree.save(data)
 
-    def delete_xpansion_constraints_file(
-        self, study: Study, filename: str
-    ) -> None:
+    def delete_xpansion_constraints(self, study: Study, filename: str) -> None:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )

@@ -226,9 +226,7 @@ def create_study_routes(
             f"Add xpansion constraints files", extra={"user": current_user.id}
         )
         params = RequestParameters(user=current_user)
-        return study_service.add_xpansion_constraints_files(
-            uuid, files, params
-        )
+        return study_service.add_xpansion_constraints(uuid, files, params)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/constraints/{filename}",
@@ -245,7 +243,7 @@ def create_study_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.delete_xpansion_constraints_file(
+        return study_service.delete_xpansion_constraints(
             uuid, filename, params
         )
 

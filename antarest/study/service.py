@@ -1812,7 +1812,7 @@ class StudyService:
             study, constraints_file_name
         )
 
-    def add_xpansion_constraints_files(
+    def add_xpansion_constraints(
         self,
         uuid: str,
         files: List[UploadFile],
@@ -1821,16 +1821,14 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.add_xpansion_constraints_files(
-            study, files
-        )
+        return self.xpansion_manager.add_xpansion_constraints(study, files)
 
-    def delete_xpansion_constraints_file(
+    def delete_xpansion_constraints(
         self, uuid: str, filename: str, params: RequestParameters
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.delete_xpansion_constraints_file(
+        return self.xpansion_manager.delete_xpansion_constraints(
             study, filename
         )
