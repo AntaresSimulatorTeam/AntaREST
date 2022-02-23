@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from io import BytesIO
-from typing import Optional, Literal, Union, List
+from typing import Optional, Literal, Union, List, cast
 
 from fastapi import HTTPException, UploadFile
 from pydantic import Field, BaseModel
@@ -457,3 +457,13 @@ class XpansionManager:
                     }
                 }
             )
+
+    def get_single_xpansion_constraints(
+        self, study: Study, filename: str
+    ) -> bytes:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        return cast(
+            bytes, file_study.tree.get(["user", "expansion", filename])
+        )

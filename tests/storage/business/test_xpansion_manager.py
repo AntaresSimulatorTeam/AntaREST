@@ -508,3 +508,29 @@ def test_update_constraints(tmp_path: Path):
         xpansion_manager.get_xpansion_settings(study).additional_constraints
         is None
     )
+
+
+@pytest.mark.unit_test
+def test_get_single_constraints(tmp_path: Path):
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+
+    constraints_file_content = b"0"
+    constraints_file_name = "constraints.txt"
+
+    empty_study.tree.save(
+        {
+            "user": {
+                "expansion": {constraints_file_name: constraints_file_content}
+            }
+        }
+    )
+
+    assert (
+        xpansion_manager.get_single_xpansion_constraints(
+            study, constraints_file_name
+        )
+        == constraints_file_content
+    )

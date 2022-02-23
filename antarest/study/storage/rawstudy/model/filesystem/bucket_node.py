@@ -40,15 +40,15 @@ class BucketNode(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         registered_files: Optional[List[RegisteredFile]] = None,
-        default_node: Callable[
+        default_file_node: Callable[
             [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
         ] = RawFileNode,
     ):
         super().__init__(context, config)
         self.registered_files: List[RegisteredFile] = registered_files or []
-        self.default_node: Callable[
+        self.default_file_node: Callable[
             [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
-        ] = default_node
+        ] = default_file_node
 
     def _get_registered_file(self, key: str) -> Optional[RegisteredFile]:
         for registered_file in self.registered_files:
@@ -92,9 +92,9 @@ class BucketNode(FolderNode):
 
             node(self.context, self.config.next_file(filename)).save(data)
         elif isinstance(data, (str, bytes)):
-            self.default_node(self.context, self.config.next_file(key)).save(
-                data
-            )
+            self.default_file_node(
+                self.context, self.config.next_file(key)
+            ).save(data)
         elif isinstance(data, dict):
             BucketNode(self.context, self.config.next_file(key)).save(data)
 
@@ -111,7 +111,7 @@ class BucketNode(FolderNode):
                     self.context, self.config.next_file(item.name)
                 )
             elif item.is_file():
-                children[item.name] = self.default_node(
+                children[item.name] = self.default_file_node(
                     self.context, self.config.next_file(item.name)
                 )
             else:
