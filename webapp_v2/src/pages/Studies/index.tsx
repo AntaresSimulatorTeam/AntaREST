@@ -165,7 +165,6 @@ function Studies(props: PropTypes) {
       loadVersions();
     }
     getAllStudies(false);
-    console.log('AFTER STUDIES');
   }, []);
 
   useEffect(() => {
@@ -181,6 +180,10 @@ function Studies(props: PropTypes) {
   useEffect(() => {
     saveState(DEFAULT_FAVORITE_STUDIES, currentFavorite);
   }, [currentFavorite]);
+
+  useEffect(() => {
+    applyFilter();
+  }, [studies]);
 
   return (
     <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" boxSizing="border-box" overflow="hidden">

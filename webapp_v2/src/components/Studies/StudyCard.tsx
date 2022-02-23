@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Card, CardActions, CardContent, Button, Typography, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Card, CardActions, CardContent, Button, Typography, Menu, MenuItem, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import StarPurple500OutlinedIcon from '@mui/icons-material/StarPurple500Outlined';
 import StarOutlineOutlinedIcon from '@mui/icons-material/StarOutlineOutlined';
@@ -50,12 +50,14 @@ export default function StudyCard(props: Props) {
   };
 
   return (
-    <Card variant="outlined" sx={{ minWidth: 275 }}>
+    <Card variant="outlined" sx={{ minWidth: 275, flex: 'none' }}>
       <CardContent>
         <Box width="100%" height="60px" display="flex" flexDirection="row" justifyContent="space-between" p={0.5}>
-          <Typography sx={{ width: '90%' }} noWrap variant="h5" component="div" color="white">
-            {study.name}
-          </Typography>
+          <Tooltip title={study.name}>
+            <Typography sx={{ width: '90%' }} noWrap variant="h5" component="div" color="white">
+              {study.name}
+            </Typography>
+          </Tooltip>
           {favorite ? <StarPurple500OutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" /> :
           <StarOutlineOutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" />
           }
@@ -122,6 +124,7 @@ export default function StudyCard(props: Props) {
                   {t('studymanager:export')}
                 </ListItemText>
               </MenuItem>
+              {study.managed &&
               <MenuItem onClick={() => { onArchiveClick(study); handleClose(); }}>
                 <ListItemIcon>
                   <ArchiveOutlinedIcon sx={{ color: 'action.active', width: '24px', height: '24px' }} />
@@ -129,7 +132,7 @@ export default function StudyCard(props: Props) {
                 <ListItemText>
                   {t('studymanager:archive')}
                 </ListItemText>
-              </MenuItem>
+              </MenuItem>}
               </div>
             }
             {

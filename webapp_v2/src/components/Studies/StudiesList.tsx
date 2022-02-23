@@ -169,7 +169,7 @@ function StudiesList(props: PropTypes) {
         boxSizing="border-box"
         sx={{ overflowX: 'hidden', overflowY: 'auto', ...scrollbarStyle }}
       >
-        <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} p={2}>
+        <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} p={2} sx={{ flex: 'none' }}>
           {studies.map((elm) => (
             <Grid item xs={2} sm={4} md={4} key={elm.id}>
               <StudyCard study={elm}
