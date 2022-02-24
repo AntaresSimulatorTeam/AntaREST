@@ -1,6 +1,7 @@
 import logging
+from enum import Enum
 from http import HTTPStatus
-from typing import Optional, Literal, Union, List, cast
+from typing import Optional, Union, List, cast
 
 from fastapi import HTTPException, UploadFile
 from pydantic import Field, BaseModel
@@ -23,13 +24,36 @@ from antarest.study.storage.storage_service import StudyStorageService
 logger = logging.getLogger(__name__)
 
 
+class UcType(str, Enum):
+    EXPANSION_FAST = "expansion_fast"
+    EXPANSION_ACCURATE = "expansion_accurate"
+
+
+class Master(str, Enum):
+    INTEGER = "integer"
+    RELAXED = "relaxed"
+
+
+class CutType(str, Enum):
+    AVERAGE = "average"
+    YEARLY = "yearly"
+    WEEKLY = "weekly"
+
+
+class Solver(str, Enum):
+    CBC = "Cbc"
+    COIN = "Coin"
+
+
+class MaxIteration(str, Enum):
+    INF = "inf"
+
+
 class XpansionSettingsDTO(BaseModel):
     optimality_gap: Optional[float] = None
-    max_iteration: Optional[Union[int, Literal["inf"]]] = None
-    uc_type: Union[
-        Literal["expansion_fast"], Literal["expansion_accurate"]
-    ] = "expansion_fast"
-    master: Union[Literal["integer"], Literal["relaxed"]] = "integer"
+    max_iteration: Optional[Union[int, MaxIteration]] = None
+    uc_type: UcType = UcType.EXPANSION_FAST
+    master: Master = Master.INTEGER
     yearly_weight: Optional[str] = None
     additional_constraints: Optional[str] = Field(
         None, alias="additional-constraints"
@@ -37,16 +61,14 @@ class XpansionSettingsDTO(BaseModel):
     relaxed_optimality_gap: Optional[float] = Field(
         None, alias="relaxed-optimality-gap"
     )
-    cut_type: Optional[
-        Union[Literal["average"], Literal["yearly"], Literal["weekly"]]
-    ] = Field(None, alias="cut-type")
+    cut_type: Optional[CutType] = Field(None, alias="cut-type")
     ampl_solver: Optional[str] = Field(None, alias="ampl.solver")
     ampl_presolve: Optional[int] = Field(None, alias="ampl.presolve")
     ampl_solve_bounds_frequency: Optional[int] = Field(
         None, alias="ampl.solve_bounds_frequency"
     )
     relative_gap: Optional[float] = None
-    solver: Optional[Union[Literal["Cbc"], Literal["Coin"]]] = None
+    solver: Optional[Solver] = None
 
 
 class XpansionCandidateDTO(BaseModel):
