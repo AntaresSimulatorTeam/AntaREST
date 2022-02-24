@@ -36,6 +36,7 @@ export function initI18n(version = 'unknown') {
         'data',
         'variants',
         'downloads',
+        'xpansion',
       ],
       defaultNS: 'main',
     });

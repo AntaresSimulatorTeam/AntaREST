@@ -6,13 +6,18 @@ import {
   Box,
   Divider,
   Theme,
+  Typography,
 } from '@material-ui/core';
+import { useTranslation } from 'react-i18next';
 import { XpansionSettings } from './types';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     title: {
       color: theme.palette.primary.main,
+      fontSize: '1.25rem',
+      fontWeight: 400,
+      lineHeight: 1.334,
     },
     fields: {
       display: 'flex',
@@ -23,11 +28,12 @@ const useStyles = makeStyles((theme: Theme) =>
       marginBottom: theme.spacing(2),
       '&> div': {
         marginRight: theme.spacing(2),
+        marginBottom: theme.spacing(2),
       },
     },
     divider: {
       marginTop: theme.spacing(1),
-      marginBottom: theme.spacing(1),
+      marginBottom: theme.spacing(2),
     },
   }));
 
@@ -38,28 +44,29 @@ interface PropType {
 
 const SettingsForm = (props: PropType) => {
   const classes = useStyles();
+  const [t] = useTranslation();
   const { settings, updateSettings } = props;
 
   return (
     <Box>
-      <div className={classes.title}>
-        Settings
-      </div>
+      <Typography className={classes.title}>
+        {t('main:settings')}
+      </Typography>
       <Divider className={classes.divider} />
       <div className={classes.fields}>
-        <TextField label="uc_type" variant="filled" value={settings.uc_type} onBlur={() => updateSettings(settings)} />
-        <TextField label="master" variant="filled" value={settings.master} onBlur={() => updateSettings(settings)} />
-        <TextField label="optimaly_gap" variant="filled" value={settings.optimaly_gap || ''} onBlur={() => updateSettings(settings)} />
-        <TextField label="max_iteration" variant="filled" value={settings.max_iteration || ''} onBlur={() => updateSettings(settings)} />
-        <TextField label="yearly_weight" variant="filled" value={settings.yearly_weight || ''} onBlur={() => updateSettings(settings)} />
-        <TextField label="additional_constraints" variant="filled" value={settings.additional_constraints || ''} onBlur={() => updateSettings(settings)} />
-        <TextField label="relaxed_optimality_gap" variant="filled" value={settings.relaxed_optimality_gap || ''} onBlur={() => updateSettings(settings)} />
-        <TextField label="cut_type" variant="filled" value={settings.cut_type || ''} onBlur={() => updateSettings(settings)} />
-        <TextField label="ampl_solver" variant="filled" value={settings.ampl_solver || ''} onBlur={() => updateSettings(settings)} />
-        <TextField label="ampl_presolve" variant="filled" value={settings.ampl_presolve || ''} onBlur={() => updateSettings(settings)} />
-        <TextField label="ampl_solve_bounds_frequency" variant="filled" value={settings.ampl_solve_bounds_frequency || ''} onBlur={() => updateSettings(settings)} />
-        <TextField label="relative_gap" variant="filled" value={settings.relative_gap || ''} onBlur={() => updateSettings(settings)} />
-        <TextField label="solver" variant="filled" value={settings.solver || ''} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:ucType')} variant="filled" value={settings.uc_type} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:master')} variant="filled" value={settings.master} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:optimalyGap')} variant="filled" value={settings.optimality_gap} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:maxIteration')} variant="filled" value={settings.max_iteration || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:yearlyWeight')} variant="filled" value={settings.yearly_weight || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:additionalConstraints')} variant="filled" value={settings['additional-constraints'] || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:relaxedOptimalityGap')} variant="filled" value={settings['relaxed-optimality-gap'] || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:cutType')} variant="filled" value={settings.cut_type || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:amplSolver')} variant="filled" value={settings['ampl.solver'] || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:amplPresolve')} variant="filled" value={settings['ampl.presolve'] || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:amplSolverBoundsFrequency')} variant="filled" value={settings['ampl.solve_bounds_frequency'] || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:relativeGap')} variant="filled" value={settings.relative_gap || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:solver')} variant="filled" value={settings.solver || undefined} onBlur={() => updateSettings(settings)} />
       </div>
     </Box>
   );

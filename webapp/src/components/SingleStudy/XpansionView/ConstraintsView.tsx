@@ -11,6 +11,7 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import ImportForm from '../../ui/ImportForm';
+import { XpansionConstraints } from './types';
 
 const logErr = debug('antares:createimportform:error');
 
@@ -45,7 +46,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropType {
-    content: string | string[];
+    content: XpansionConstraints;
 }
 
 const ConstraintsView = (props: PropType) => {
@@ -72,7 +73,7 @@ const ConstraintsView = (props: PropType) => {
       </Box>
       <Box className={classes.main}>
         <div className={classes.content}>
-          <code>{content}</code>
+          {Object.keys(content).map((item) => (<code>{content[item]}</code>))}
         </div>
       </Box>
     </Box>

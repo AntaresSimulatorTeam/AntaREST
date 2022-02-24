@@ -4,10 +4,11 @@ import {
   createStyles,
   Theme,
 } from '@material-ui/core';
-import { XpansionCandidate, XpansionSettings } from './types';
+import { XpansionCandidate, XpansionConstraints, XpansionSettings } from './types';
 import CandidateForm from './CandidateForm';
 import SettingsForm from './SettingsForm';
 import ConstraintsView from './ConstraintsView';
+import { LinkCreationInfo } from '../MapView/types';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -27,7 +28,8 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropType {
-    selectedItem: XpansionCandidate | XpansionSettings | string | string[] | undefined;
+    selectedItem: XpansionCandidate | XpansionSettings | XpansionConstraints | undefined;
+    links: Array<LinkCreationInfo>;
     deleteCandidate: (name: string) => void;
     updateCandidate: (value: XpansionCandidate) => void;
     updateSettings: (value: XpansionSettings) => void;
@@ -35,14 +37,14 @@ interface PropType {
 
 const XpansionForm = (props: PropType) => {
   const classes = useStyles();
-  const { selectedItem, deleteCandidate, updateCandidate, updateSettings } = props;
+  const { selectedItem, links, deleteCandidate, updateCandidate, updateSettings } = props;
 
   return (
     <>
       {(selectedItem as XpansionCandidate).name || (selectedItem as XpansionSettings).master ? (
         <div className={classes.form}>
           {selectedItem && (selectedItem as XpansionCandidate).name && (
-            <CandidateForm candidate={selectedItem as XpansionCandidate} deleteCandidate={deleteCandidate} updateCandidate={updateCandidate} />
+            <CandidateForm candidate={selectedItem as XpansionCandidate} links={links} deleteCandidate={deleteCandidate} updateCandidate={updateCandidate} />
           )}
           {selectedItem && (selectedItem as XpansionSettings).master && (
             <SettingsForm settings={selectedItem as XpansionSettings} updateSettings={updateSettings} />
@@ -50,10 +52,8 @@ const XpansionForm = (props: PropType) => {
         </div>
       ) : (
         <div className={classes.constraints}>
-          {(selectedItem as string[]).length > 1 ? (
-            <ConstraintsView content={selectedItem as string[]} />
-          ) : (
-            <ConstraintsView content={selectedItem as string} />
+          {Object.keys(selectedItem as XpansionConstraints).map((item) => (selectedItem as XpansionConstraints)[item]).length && (
+            <ConstraintsView content={selectedItem as XpansionConstraints} />
           )}
         </div>
       )}

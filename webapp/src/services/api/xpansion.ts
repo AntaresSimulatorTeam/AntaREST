@@ -1,4 +1,4 @@
-import { XpansionCandidate, XpansionSettings } from '../../components/SingleStudy/XpansionView/types';
+import { XpansionCandidate, XpansionConstraints, XpansionSettings } from '../../components/SingleStudy/XpansionView/types';
 import client from './client';
 
 export const createXpansionConfiguration = async (uuid: string): Promise<void> => {
@@ -59,7 +59,7 @@ export const deleteCandidate = async (uuid: string, name: string): Promise<Xpans
   return res.data;
 };
 
-export const getAllConstraints = async (uuid: string): Promise<string[]> => {
+export const getAllConstraints = async (uuid: string): Promise<XpansionConstraints> => {
   const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/constraints`);
   return res.data;
 };

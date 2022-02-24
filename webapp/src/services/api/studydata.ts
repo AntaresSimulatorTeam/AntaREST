@@ -26,4 +26,9 @@ export const deleteLink = async (uuid: string, areaIdFrom: string, areaIdTo: str
   return res.data;
 };
 
+export const getAllLinks = async (uuid: string): Promise<Array<LinkCreationInfo>> => {
+  const res = await client.get(`/v1/studies/${uuid}/links`);
+  return res.data;
+};
+
 export default {};
