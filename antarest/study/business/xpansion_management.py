@@ -7,9 +7,13 @@ from pydantic import Field, BaseModel
 
 from antarest.core.model import JSON
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
+    BucketNode,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     ChildNotFoundError,
+    FolderNode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expansion import (
     Expansion,
@@ -103,7 +107,7 @@ class ConstraintsNotFoundError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class ConstraintsFileCurrentlyUsedInSettings(HTTPException):
+class FileCurrentlyUsedInSettings(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
 
@@ -284,14 +288,14 @@ class XpansionManager:
         candidates: JSON,
         file_study: FileStudy,
         xpansion_candidate_dto: XpansionCandidateDTO,
-        update: bool = False,
+        new_name: bool = False,
     ) -> None:
         self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
         self._assert_link_exist(file_study, xpansion_candidate_dto)
         self._assert_no_illegal_character_is_in_candidate_name(
             xpansion_candidate_dto.name
         )
-        if not update:
+        if new_name:
             self._assert_candidate_name_is_not_already_taken(
                 candidates, xpansion_candidate_dto.name
             )
@@ -369,8 +373,9 @@ class XpansionManager:
 
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
 
+        new_name = candidate_name != xpansion_candidate_dto.name
         self._assert_candidate_is_correct(
-            candidates, file_study, xpansion_candidate_dto, update=True
+            candidates, file_study, xpansion_candidate_dto, new_name=new_name
         )
 
         for id, candidate in candidates.items():
@@ -445,7 +450,7 @@ class XpansionManager:
                 f"raw_file_type {raw_file_type} not implemented"
             )
 
-        data = {}
+        data: JSON = {}
         buffer = data
 
         for key in keys:
@@ -466,24 +471,29 @@ class XpansionManager:
         )
         self._add_raw_files(file_study, files, "constraints")
 
-    def delete_xpansion_constraints(self, study: Study, filename: str) -> None:
-        file_study = self.study_storage_service.get_storage(study).get_raw(
-            study
-        )
-        file_study.tree.delete(["user", "expansion", filename])
-
-        # update settings
-        if (
+    def _is_constraints_file_used(
+        self, file_study: FileStudy, filename: str
+    ) -> bool:
+        return (
             str(
                 file_study.tree.get(
                     ["user", "expansion", "settings", "additional-constraints"]
                 )
             )
             == filename
-        ):
-            raise ConstraintsFileCurrentlyUsedInSettings(
-                f"The file {filename} is still used in the xpansion settings and cannot be deleted"
+        )
+
+    def delete_xpansion_constraints(self, study: Study, filename: str) -> None:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+
+        if self._is_constraints_file_used(file_study, filename):
+            raise FileCurrentlyUsedInSettings(
+                f"The constraints file {filename} is still used in the xpansion settings and cannot be deleted"
             )
+
+        file_study.tree.delete(["user", "expansion", filename])
 
     def get_single_xpansion_constraints(
         self, study: Study, filename: str
@@ -495,7 +505,7 @@ class XpansionManager:
             bytes, file_study.tree.get(["user", "expansion", filename])
         )
 
-    def get_all_xpansion_constraints(self, study: Study) -> JSON:
+    def get_all_xpansion_constraints(self, study: Study) -> List[str]:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
@@ -505,18 +515,65 @@ class XpansionManager:
         ]
         constraints_filenames = [
             key
-            for key in file_study.tree.get(["user", "expansion"])
-            if key not in registered_filenames
-        ]
-        return {
-            constraints_filename: self.get_single_xpansion_constraints(
-                study, constraints_filename
+            for key, node in cast(
+                FolderNode, file_study.tree.get_node(["user", "expansion"])
             )
-            for constraints_filename in constraints_filenames
-        }
+            .build()
+            .items()
+            if key not in registered_filenames and type(node) != BucketNode
+        ]
+        return constraints_filenames
 
     def add_capa(self, study: Study, files: List[UploadFile]) -> None:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
         self._add_raw_files(file_study, files, "capacities")
+
+    def _is_capa_file_used(self, file_study: FileStudy, filename: str) -> bool:
+        try:
+            file_used_in_link_profile = (
+                str(
+                    file_study.tree.get(
+                        ["user", "expansion", "settings", "link-profile"]
+                    )
+                )
+                == filename
+            )
+
+        except KeyError:
+            file_used_in_link_profile = False
+
+        try:
+            file_used_in_already_installed_link_profile = (
+                str(
+                    file_study.tree.get(
+                        [
+                            "user",
+                            "expansion",
+                            "settings",
+                            "already-installed-link-profile",
+                        ]
+                    )
+                )
+                == filename
+            )
+        except KeyError:
+            file_used_in_already_installed_link_profile = False
+
+        return (
+            file_used_in_link_profile
+            or file_used_in_already_installed_link_profile
+        )
+
+    def delete_capa(self, study: Study, filename: str) -> None:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+
+        if self._is_capa_file_used(file_study, filename):
+            raise FileCurrentlyUsedInSettings(
+                f"The capacities file {filename} is still used in the xpansion settings and cannot be deleted"
+            )
+
+        file_study.tree.delete(["user", "expansion", "capa", filename])

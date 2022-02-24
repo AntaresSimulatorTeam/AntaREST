@@ -1846,7 +1846,7 @@ class StudyService:
 
     def get_all_xpansion_constraints(
         self, uuid: str, params: RequestParameters
-    ) -> JSON:
+    ) -> List[str]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
@@ -1859,3 +1859,11 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         return self.xpansion_manager.add_capa(study, files)
+
+    def delete_capa(
+        self, uuid: str, filename: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.delete_capa(study, filename)

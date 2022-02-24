@@ -200,7 +200,7 @@ def create_xpansion_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Deleting candidate {candidate_name}",
+            f"Deleting candidate {candidate_name} of the study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -219,7 +219,8 @@ def create_xpansion_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Add xpansion constraints files", extra={"user": current_user.id}
+            f"Add xpansion constraints files in the study {uuid}",
+            extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         return study_service.add_xpansion_constraints(uuid, files, params)
@@ -235,7 +236,7 @@ def create_xpansion_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Deleting xpansion constraints file",
+            f"Deleting xpansion constraints file from the study{uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -255,7 +256,7 @@ def create_xpansion_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Getting xpansion constraints file",
+            f"Getting xpansion constraints file {filename} from the study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -273,7 +274,7 @@ def create_xpansion_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Getting xpansion constraints file",
+            f"Getting xpansion constraints file from the study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -282,7 +283,7 @@ def create_xpansion_routes(
     @bp.post(
         "/studies/{uuid}/extensions/xpansion/capacities",
         tags=[APITag.xpansion_study_management],
-        summary="Adding New Capa File",
+        summary="Adding New Capa Files",
     )
     def add_capa(
         uuid: str,
@@ -290,7 +291,7 @@ def create_xpansion_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Adding new capa file",
+            f"Adding new capa files to the study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -306,7 +307,12 @@ def create_xpansion_routes(
         filename: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        raise NotImplementedError()
+        logger.info(
+            f"Deleting capa file {filename} from the study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.delete_capa(uuid, filename, params)
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/capacities/{filename}",

@@ -115,7 +115,7 @@ class SimpleKeyValueReader(IReader):
                 line = line.strip()
                 if line and not line.startswith("#"):
                     key, value = line.split("=")
-                    json[key] = value
+                    json[key.strip()] = value.strip()
 
         return self._parse_json(json)
 

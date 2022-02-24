@@ -589,10 +589,10 @@ def test_get_all_constraints(tmp_path: Path):
 
     xpansion_manager.add_xpansion_constraints(study, upload_file_list)
 
-    assert xpansion_manager.get_all_xpansion_constraints(study) == {
-        filename1: content1.encode(),
-        filename2: content2.encode(),
-    }
+    assert xpansion_manager.get_all_xpansion_constraints(study) == [
+        filename1,
+        filename2,
+    ]
 
 
 @pytest.mark.unit_test
@@ -623,3 +623,29 @@ def test_add_capa(tmp_path: Path):
     assert content2.encode() == empty_study.tree.get(
         ["user", "expansion", "capa", filename2]
     )
+
+
+@pytest.mark.unit_test
+def test_delete_capa(tmp_path: Path):
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+
+    filename1 = "capa1.txt"
+    filename2 = "capa2.txt"
+    content1 = "0"
+    content2 = "1"
+
+    upload_file_list = [
+        UploadFile(filename=filename1, file=StringIO(content1)),
+        UploadFile(filename=filename2, file=StringIO(content2)),
+    ]
+
+    xpansion_manager.add_capa(study, upload_file_list)
+
+    xpansion_manager.delete_capa(study, filename1)
+
+    assert filename1 not in empty_study.tree.get(["user", "expansion", "capa"])
+
+    assert filename2 in empty_study.tree.get(["user", "expansion", "capa"])
