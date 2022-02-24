@@ -9,7 +9,7 @@ import {
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList, areEqual, ListChildComponentProps } from 'react-window';
 import ArrowRightIcon from '@material-ui/icons/ArrowRight';
-import { XpansionCandidate, XpansionConstraints, XpansionSettings } from './types';
+import { XpansionCandidate, XpansionSettings } from './types';
 
 const ROW_ITEM_SIZE = 60;
 const BUTTONS_SIZE = 40;
@@ -59,8 +59,8 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface PropsType {
     candidates: Array<XpansionCandidate> | undefined;
-    selectedItem: XpansionCandidate | XpansionSettings | XpansionConstraints | undefined;
-    setSelectedItem: (item: XpansionCandidate | XpansionSettings | XpansionConstraints) => void;
+    selectedItem: XpansionCandidate | XpansionSettings | Array<string> | undefined;
+    setSelectedItem: (item: XpansionCandidate | XpansionSettings | Array<string>) => void;
 }
 
 const Row = React.memo((props: ListChildComponentProps) => {

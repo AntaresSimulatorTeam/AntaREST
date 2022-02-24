@@ -13,7 +13,6 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       width: '99%',
-      height: '100%',
       display: 'flex',
       flexFlow: 'column nowrap',
       justifyContent: 'flex-start',
@@ -21,6 +20,8 @@ const useStyles = makeStyles((theme: Theme) =>
       backgroundColor: 'white',
       margin: theme.spacing(1),
       boxSizing: 'border-box',
+      flexGrow: 1,
+      overflow: 'hidden',
     },
     header: {
       width: '100%',
@@ -34,6 +35,7 @@ const useStyles = makeStyles((theme: Theme) =>
       borderTopLeftRadius: theme.shape.borderRadius,
       borderTopRightRadius: theme.shape.borderRadius,
       paddingLeft: theme.spacing(2),
+      flexShrink: 0,
     },
     title: {
       fontWeight: 'bold',
@@ -44,7 +46,8 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: 'space-evenly',
       alignItems: 'center',
       width: '100%',
-      height: '100%',
+      overflow: 'hidden',
+      flexGrow: 1,
     },
     right: {
       display: 'flex',

@@ -20,5 +20,7 @@
     "amplPresolve": "Ampl presolve",
     "amplSolverBoundsFrequency": "Ampl solve bounds frequency",
     "relativeGap": "Relative gap",
-    "solver": "Solver"
+    "solver": "Solver",
+    "constraints": "Constraints",
+    "confirmDeleteXpansion": "Are you sure you want to delete the configuration of Xpansion ?"
 }

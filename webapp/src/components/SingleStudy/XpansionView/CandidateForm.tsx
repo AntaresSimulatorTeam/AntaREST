@@ -85,8 +85,6 @@ const CandidateForm = (props: PropType) => {
     }
   }, [candidate]);
 
-  console.log(link);
-
   return (
     <Box>
       <Box>

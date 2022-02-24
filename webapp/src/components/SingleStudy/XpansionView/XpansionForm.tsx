@@ -4,11 +4,11 @@ import {
   createStyles,
   Theme,
 } from '@material-ui/core';
-import { XpansionCandidate, XpansionConstraints, XpansionSettings } from './types';
+import { XpansionCandidate, XpansionSettings } from './types';
 import CandidateForm from './CandidateForm';
 import SettingsForm from './SettingsForm';
-import ConstraintsView from './ConstraintsView';
 import { LinkCreationInfo } from '../MapView/types';
+import ConstraintsView from './ConstraintsView';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -24,11 +24,15 @@ const useStyles = makeStyles((theme: Theme) =>
     constraints: {
       width: '100%',
       height: '100%',
+      display: 'flex',
+      overflow: 'hidden',
+      flexGrow: 1,
+      padding: theme.spacing(1),
     },
   }));
 
 interface PropType {
-    selectedItem: XpansionCandidate | XpansionSettings | XpansionConstraints | undefined;
+    selectedItem: XpansionCandidate | XpansionSettings | Array<string> | undefined;
     links: Array<LinkCreationInfo>;
     deleteCandidate: (name: string) => void;
     updateCandidate: (value: XpansionCandidate) => void;
@@ -52,8 +56,8 @@ const XpansionForm = (props: PropType) => {
         </div>
       ) : (
         <div className={classes.constraints}>
-          {Object.keys(selectedItem as XpansionConstraints).map((item) => (selectedItem as XpansionConstraints)[item]).length && (
-            <ConstraintsView content={selectedItem as XpansionConstraints} />
+          {Object.keys(selectedItem as Array<string>).map((item, index) => (selectedItem as Array<string>)[index]).length >= 0 && (
+            <ConstraintsView content={selectedItem as Array<string>} />
           )}
         </div>
       )}

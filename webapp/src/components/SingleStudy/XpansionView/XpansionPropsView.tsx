@@ -8,7 +8,7 @@ import {
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import PropertiesView from '../../ui/PropertiesView';
-import { XpansionCandidate, XpansionConstraints, XpansionSettings } from './types';
+import { XpansionCandidate, XpansionSettings } from './types';
 import CandidateListing from './CandidateListing';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 
@@ -44,9 +44,9 @@ const useStyles = makeStyles((theme: Theme) =>
 interface PropsType {
   candidateList?: Array<XpansionCandidate>;
   settings: XpansionSettings | undefined;
-  constraints: XpansionConstraints | undefined;
-  selectedItem: XpansionCandidate | XpansionSettings | XpansionConstraints | undefined;
-  setSelectedItem: (item: XpansionCandidate | XpansionSettings | XpansionConstraints) => void;
+  constraints: Array<string> | undefined;
+  selectedItem: XpansionCandidate | XpansionSettings | Array<string> | undefined;
+  setSelectedItem: (item: XpansionCandidate | XpansionSettings | Array<string>) => void;
   onAdd: () => void;
   deleteXpansion: () => void;
 }
@@ -82,9 +82,9 @@ const XpansionPropsView = (props: PropsType) => {
           <div className={classes.list}>
             <CandidateListing candidates={candidateList} selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
             <Box className={classes.buttons}>
-              <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>Settings</Button>
-              <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>Constraints</Button>
-              <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>Supprimer</Button>
+              <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>{t('main:settings')}</Button>
+              <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>{t('xpansion:constraints')}</Button>
+              <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
             </Box>
           </div>
           )}
@@ -93,9 +93,9 @@ const XpansionPropsView = (props: PropsType) => {
           <div className={classes.list}>
             <CandidateListing candidates={filteredCandidates} selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
             <Box className={classes.buttons}>
-              <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>Settings</Button>
-              <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>Constraints</Button>
-              <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>Supprimer</Button>
+              <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>{t('main:settings')}</Button>
+              <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>{t('xpansion:constraints')}</Button>
+              <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
             </Box>
           </div>
           )}
@@ -106,7 +106,7 @@ const XpansionPropsView = (props: PropsType) => {
         <ConfirmationModal
           open={openConfirmationModal}
           title={t('main:confirmationModalTitle')}
-          message="Êtes-vous sûr de vouloir supprimer Xpansion?"
+          message={t('xpansion:confirmDeleteXpansion')}
           handleYes={() => { deleteXpansion(); setOpenConfirmationModal(false); }}
           handleNo={() => setOpenConfirmationModal(false)}
         />

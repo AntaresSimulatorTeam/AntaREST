@@ -6,9 +6,9 @@ import XpansionPropsView from './XpansionPropsView';
 import { StudyMetadata } from '../../../common/types';
 import SplitLayoutView from '../../ui/SplitLayoutView';
 import CreateCandidateModal from './CreateCandidateModal';
-import { XpansionCandidate, XpansionConstraints, XpansionSettings } from './types';
+import { XpansionCandidate, XpansionSettings } from './types';
 import XpansionForm from './XpansionForm';
-import { getAllCandidates, getXpansionSettings, createXpansionConfiguration, xpansionConfigurationExist, getAllConstraints } from '../../../services/api/xpansion';
+import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints } from '../../../services/api/xpansion';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { getAllLinks } from '../../../services/api/studydata';
 import { LinkCreationInfo } from '../MapView/types';
@@ -22,10 +22,10 @@ const XpansionView = (props: Props) => {
   const { enqueueSnackbar } = useSnackbar();
   const { study } = props;
   const [openModal, setOpenModal] = useState<boolean>(false);
-  const [selectedItem, setSelectedItem] = useState<XpansionCandidate | XpansionSettings | XpansionConstraints>();
+  const [selectedItem, setSelectedItem] = useState<XpansionCandidate | XpansionSettings | Array<string>>();
   const [settings, setSettings] = useState<XpansionSettings>();
   const [candidates, setCandidates] = useState<Array<XpansionCandidate>>();
-  const [constraints, setConstraints] = useState<XpansionConstraints>();
+  const [constraints, setConstraints] = useState<Array<string>>();
   const [links, setLinks] = useState<Array<LinkCreationInfo>>();
   // state pour savoir si créer ou nom
 
@@ -34,14 +34,12 @@ const XpansionView = (props: Props) => {
       const exist = await xpansionConfigurationExist(study.id);
       if (exist) {
         const tempSettings = await getXpansionSettings(study.id);
-        console.log(tempSettings);
         setSettings(tempSettings);
         const tempCandidates = await getAllCandidates(study.id);
         setCandidates(tempCandidates);
         const tempConstraints = await getAllConstraints(study.id);
         setConstraints(tempConstraints);
         const tempLinks = await getAllLinks(study.id);
-        console.log(tempLinks);
         setLinks(tempLinks);
       } else {
         console.log('faut créer');
@@ -51,6 +49,7 @@ const XpansionView = (props: Props) => {
     }
   }, [study.id, enqueueSnackbar]);
 
+  /*
   const handleCreate = () => {
     try {
       const create = createXpansionConfiguration(study.id);
@@ -58,7 +57,8 @@ const XpansionView = (props: Props) => {
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
     }
-  };
+  }; */
+
   const deleteXpansion = () => {
     console.log('delete');
   };
@@ -86,7 +86,6 @@ const XpansionView = (props: Props) => {
     init();
   }, [init]);
 
-  console.log(settings);
   const onClose = () => setOpenModal(false);
 
   return (

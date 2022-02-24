@@ -44,8 +44,4 @@ export interface XpansionCandidate {
     'already-installed-link-profile'?: string;
 }
 
-export interface XpansionConstraints {
-    [index: string]: string;
-}
-
 export default {};
