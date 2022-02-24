@@ -117,13 +117,13 @@ class XpansionManager:
         self.study_storage_service = study_storage_service
 
     def create_xpansion_configuration(self, study: Study) -> None:
-        logger.info("Initiating xpansion configuration")
+        logger.info(f"Initiating xpansion configuration for study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
         try:
             file_study.tree.get(["user", "expansion"])
-            logger.info("Using existing configuration")
+            logger.info(f"Using existing configuration for study '{study.id}'")
         except ChildNotFoundError:
             study_version = file_study.config.version
 
@@ -159,12 +159,14 @@ class XpansionManager:
             file_study.tree.save(xpansion_configuration_data)
 
     def delete_xpansion_configuration(self, study: Study) -> None:
+        logger.info(f"Deleting xpansion configuration for study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
         file_study.tree.delete(["user", "expansion"])
 
     def get_xpansion_settings(self, study: Study) -> XpansionSettingsDTO:
+        logger.info(f"Getting xpansion settings for study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
@@ -174,6 +176,7 @@ class XpansionManager:
     def update_xpansion_settings(
         self, study: Study, new_xpansion_settings_dto: XpansionSettingsDTO
     ) -> XpansionSettingsDTO:
+        logger.info(f"Updating xpansion settings for study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
@@ -193,7 +196,7 @@ class XpansionManager:
             ["user", "expansion", "capa", xpansion_candidate_dto.link_profile]
         ):
             raise CapaFileNotFoundError(
-                f"The 'link-profile' file {xpansion_candidate_dto.link_profile} does not exist"
+                f"The 'link-profile' file '{xpansion_candidate_dto.link_profile}' does not exist"
             )
         if (
             xpansion_candidate_dto.already_installed_link_profile
@@ -207,7 +210,7 @@ class XpansionManager:
             )
         ):
             raise CapaFileNotFoundError(
-                f"The 'already-installed-link-profile' file {xpansion_candidate_dto.link_profile} does not exist"
+                f"The 'already-installed-link-profile' file '{xpansion_candidate_dto.link_profile}' does not exist"
             )
 
     def _assert_link_exist(
@@ -223,7 +226,7 @@ class XpansionManager:
         area_from, area_to = sorted([area1, area2])
         if area_to not in file_study.config.get_links(area_from):
             raise LinkNotFound(
-                f"The link from {area_from} to {area_to} not found"
+                f"The link from '{area_from}' to '{area_to}' not found"
             )
 
     def _assert_no_illegal_character_is_in_candidate_name(
@@ -290,6 +293,7 @@ class XpansionManager:
         xpansion_candidate_dto: XpansionCandidateDTO,
         new_name: bool = False,
     ) -> None:
+        logger.info(f"Checking given candidate is correct")
         self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
         self._assert_link_exist(file_study, xpansion_candidate_dto)
         self._assert_no_illegal_character_is_in_candidate_name(
@@ -327,7 +331,7 @@ class XpansionManager:
             str(i) for i in range(1, max_id) if str(i) not in candidates
         )  # The primary key is actually the name, the id does not matter and is never checked.
 
-        # Add candidate
+        logger.info(f"Adding candidate '{xpansion_candidate_dto.name}' to study '{study.id}'")
         candidates[next_id] = xpansion_candidate_dto.dict(
             by_alias=True, exclude_none=True
         )
@@ -338,6 +342,7 @@ class XpansionManager:
     def get_candidate(
         self, study: Study, candidate_name: str
     ) -> XpansionCandidateDTO:
+        logger.info(f"Getting candidate '{candidate_name}' of study '{study.id}'")
         # This takes the first candidate with the given name and not the id, because the name is the primary key.
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
@@ -355,6 +360,7 @@ class XpansionManager:
             )
 
     def get_candidates(self, study: Study) -> List[XpansionCandidateDTO]:
+        logger.info(f"Getting all candidates of study {study.id}")
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
@@ -378,8 +384,10 @@ class XpansionManager:
             candidates, file_study, xpansion_candidate_dto, new_name=new_name
         )
 
+        logger.info(f"Checking candidate {candidate_name} exists")
         for id, candidate in candidates.items():
             if candidate["name"] == candidate_name:
+                logger.info(f"Updating candidate '{candidate_name}' of study '{study.id}'")
                 candidates[id] = xpansion_candidate_dto.dict(
                     by_alias=True, exclude_none=True
                 )
@@ -403,6 +411,7 @@ class XpansionManager:
             if candidate["name"] == candidate_name
         )
 
+        logger.info(f"Deleting candidate '{candidate_name}' from study '{study.id}'")
         file_study.tree.delete(
             ["user", "expansion", "candidates", candidate_id]
         )
@@ -415,6 +424,7 @@ class XpansionManager:
         )
         try:
             if constraints_file_name is not None:
+                logger.info(f"Checking xpansion constraints file '{constraints_file_name}' exists in study '{study.id}'")
                 file_study.tree.get(
                     ["user", "expansion", constraints_file_name]
                 )
@@ -423,6 +433,7 @@ class XpansionManager:
                 f"The constraints file {constraints_file_name} does not exist"
             )
 
+        logger.info(f"Updating xpansion 'additional-constraints' setting to '{constraints_file_name}' of study '{study.id}'")
         new_settings_data = {
             "user": {
                 "expansion": {
@@ -447,7 +458,7 @@ class XpansionManager:
             keys = ["user", "expansion", "capa"]
         else:
             raise NotImplementedError(
-                f"raw_file_type {raw_file_type} not implemented"
+                f"raw_file_type '{raw_file_type}' not implemented"
             )
 
         data: JSON = {}
@@ -465,7 +476,7 @@ class XpansionManager:
     def add_xpansion_constraints(
         self, study: Study, files: List[UploadFile]
     ) -> None:
-
+        logger.info(f"Adding xpansion constraints file list to study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
@@ -488,9 +499,10 @@ class XpansionManager:
             study
         )
 
+        logger.info(f"Checking xpansion constraints file '{filename}' is not used in study '{study.id}'")
         if self._is_constraints_file_used(file_study, filename):
             raise FileCurrentlyUsedInSettings(
-                f"The constraints file {filename} is still used in the xpansion settings and cannot be deleted"
+                f"The constraints file '{filename}' is still used in the xpansion settings and cannot be deleted"
             )
 
         file_study.tree.delete(["user", "expansion", filename])
@@ -498,6 +510,7 @@ class XpansionManager:
     def get_single_xpansion_constraints(
         self, study: Study, filename: str
     ) -> bytes:
+        logger.info(f"Getting xpansion constraints file '{filename}' from study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
@@ -506,6 +519,8 @@ class XpansionManager:
         )
 
     def get_all_xpansion_constraints(self, study: Study) -> List[str]:
+        logger.info(f"Getting all xpansion constraints files from study '{study.id}'")
+
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
@@ -525,12 +540,14 @@ class XpansionManager:
         return constraints_filenames
 
     def add_capa(self, study: Study, files: List[UploadFile]) -> None:
+        logger.info(f"Adding xpansion capacities file list to study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
         self._add_raw_files(file_study, files, "capacities")
 
     def _is_capa_file_used(self, file_study: FileStudy, filename: str) -> bool:
+        logger.info(f"Checking xpansion capacities file '{filename}' is not used in study '{filename.config.study_id}'")
         try:
             file_used_in_link_profile = (
                 str(
@@ -573,7 +590,8 @@ class XpansionManager:
 
         if self._is_capa_file_used(file_study, filename):
             raise FileCurrentlyUsedInSettings(
-                f"The capacities file {filename} is still used in the xpansion settings and cannot be deleted"
+                f"The capacities file '{filename}' is still used in the xpansion settings and cannot be deleted"
             )
 
+        logger.info(f"Delete xpansion capacities file '{filename}' from study '{study.id}'")
         file_study.tree.delete(["user", "expansion", "capa", filename])
