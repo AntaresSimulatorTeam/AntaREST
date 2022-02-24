@@ -324,7 +324,12 @@ def create_xpansion_routes(
         filename: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        raise NotImplementedError()
+        logger.info(
+            f"Getting capa file {filename} from the study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.get_single_capa(uuid, filename, params)
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/capacities",
@@ -335,6 +340,11 @@ def create_xpansion_routes(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        raise NotImplementedError()
+        logger.info(
+            f"Getting all capacities files from the study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.get_all_capa(uuid, params)
 
     return bp

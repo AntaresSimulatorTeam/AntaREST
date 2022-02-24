@@ -572,7 +572,7 @@ class XpansionManager:
 
     def _is_capa_file_used(self, file_study: FileStudy, filename: str) -> bool:
         logger.info(
-            f"Checking xpansion capacities file '{filename}' is not used in study '{filename.config.study_id}'"
+            f"Checking xpansion capacities file '{filename}' is not used in study '{file_study.config.study_id}'"
         )
         try:
             file_used_in_link_profile = (
@@ -623,3 +623,28 @@ class XpansionManager:
             f"Delete xpansion capacities file '{filename}' from study '{study.id}'"
         )
         file_study.tree.delete(["user", "expansion", "capa", filename])
+
+    def get_single_capa(self, study: Study, filename: str) -> bytes:
+        logger.info(
+            f"Getting xpansion capacities file '{filename}' from study '{study.id}'"
+        )
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        return cast(
+            bytes, file_study.tree.get(["user", "expansion", "capa", filename])
+        )
+
+    def get_all_capa(self, study: Study) -> List[str]:
+        logger.info(
+            f"Getting all xpansion capacities files from study '{study.id}'"
+        )
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        return [
+            filename
+            for filename in file_study.tree.get(
+                ["user", "expansion", "capa"]
+            ).keys()
+        ]

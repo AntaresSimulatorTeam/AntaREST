@@ -1867,3 +1867,18 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         return self.xpansion_manager.delete_capa(study, filename)
+
+    def get_single_capa(
+        self, uuid: str, filename: str, params: RequestParameters
+    ) -> bytes:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_single_capa(study, filename)
+
+    def get_all_capa(self, uuid: str, params: RequestParameters) -> List[str]:
+
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_all_capa(study)
