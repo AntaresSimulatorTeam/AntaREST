@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { AxiosError } from 'axios';
+import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { Box, Card, CardActions, CardContent, Button, Typography, Menu, MenuItem, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
 import { styled } from '@mui/material/styles';
@@ -12,8 +14,11 @@ import UnarchiveOutlinedIcon from '@mui/icons-material/UnarchiveOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { GenericInfo, StudyMetadata } from '../../common/types';
 import { exportStudy } from '../../services/api/study';
+import enqueueErrorSnackbar from '../common/ErrorSnackBar';
+import { modificationDate } from '../../services/utils';
 
 interface Props {
   study: StudyMetadata
@@ -32,6 +37,7 @@ const TinyText = styled(Typography)(({ theme }) => ({
 export default function StudyCard(props: Props) {
   const { study, favorite, onFavoriteClick, onUnarchiveClick, onArchiveClick, onDeleteClick } = props;
   const [t] = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<string>('');
 
@@ -49,18 +55,60 @@ export default function StudyCard(props: Props) {
     setOpenMenu('');
   };
 
+  const buildModificationDate = () : string => {
+    const duration = modificationDate(study.modificationDate);
+    const days = duration.days() > 0 ? `${duration.days().toString()} ${t('main:daysSymbol')}` : '';
+    const hours = duration.hours() > 0 ? `${duration.hours().toString()} ${t('main:hoursSymbol')}` : '';
+    const minutes = duration.minutes() > 0 ? `${duration.minutes().toString()} ${t('main:minutesSymbol')}` : '';
+    const seconds = duration.seconds() > 0 ? `${duration.seconds().toString()} ${t('main:secondsSymbol')}` : '';
+
+    if(days !== '')
+      return `${days}`;
+    
+    if(hours !== '')
+      return `${hours}`;
+
+    if(minutes !== '')
+    return `${minutes}`;
+
+    return `${seconds}`;
+  }
+
+  const copyId = (): void => {
+    try {
+      navigator.clipboard.writeText(study.id);
+      enqueueSnackbar(t('singlestudy:onStudyIdCopySuccess'), { variant: 'success' });
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:onStudyIdCopyError'), e as AxiosError);
+    }
+  };
+
   return (
     <Card variant="outlined" sx={{ minWidth: 275, flex: 'none' }}>
       <CardContent>
         <Box width="100%" height="60px" display="flex" flexDirection="row" justifyContent="space-between" p={0.5}>
-          <Tooltip title={study.name}>
-            <Typography sx={{ width: '90%' }} noWrap variant="h5" component="div" color="white">
-              {study.name}
+          <Box display="flex" flexDirection="column" justifyContent="center"  alignItems="flex-start" width="calc(100% - 60px)" boxSizing="border-box">
+            <Tooltip title={study.name}>
+              <Typography width="100%" noWrap variant="h5" component="div" color="white" boxSizing="border-box">
+                {study.name}
+              </Typography>
+            </Tooltip>
+            <Typography noWrap color="white" sx={{ fontSize: '16px', color: 'text.secondary'}} >
+                {study.id}
             </Typography>
-          </Tooltip>
-          {favorite ? <StarPurple500OutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" /> :
-          <StarOutlineOutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" />
-          }
+          </Box>
+          <Box display="flex"  height="30px" flexDirection="row" flex="0 0 60px" justifyContent="center"  alignItems="center">
+            <Tooltip title={t('studymanager:copyID') as string}>
+              <ContentCopyIcon sx={{ cursor: 'pointer', 
+                                     width: '20px', 
+                                     height: '20px', 
+                                     '&:hover': { color: 'text.secondary'} }}
+                                onClick={() => copyId()} />
+            </Tooltip>
+            {favorite ? <StarPurple500OutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" /> :
+            <StarOutlineOutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" />
+            }
+          </Box>
         </Box>
         <Box width="100%" display="flex" flexDirection="row" justifyContent="space-between" mt={1}>
           <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
@@ -72,7 +120,7 @@ export default function StudyCard(props: Props) {
           <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
             <UpdateOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
             <TinyText>
-              10 min ago
+              {buildModificationDate()}
             </TinyText>
           </Box>
         </Box>
@@ -82,11 +130,6 @@ export default function StudyCard(props: Props) {
             {study.owner.name}
           </TinyText>
         </Box>
-        <Typography sx={{ textAlign: 'justify', mt: 2 }}>
-          This is a fake content.
-          <br />
-          Real content is coming soon
-        </Typography>
       </CardContent>
       <CardActions>
         <Button size="small" color="primary">{t('studymanager:exploreButton')}</Button>
@@ -151,3 +194,4 @@ export default function StudyCard(props: Props) {
     </Card>
   );
 }
+

@@ -28,14 +28,11 @@ function CreateStudyModal(props: PropTypes) {
   const [t] = useTranslation();
   const { versions, open, onClose, onActionButtonClick } = props;
   const versionList = convertVersions(versions || []);
-  const baselineStudyList: Array<GenericInfo> = []; // Replace by ??
   const rightToChangeList: Array<GenericInfo> = []; // Replace by ??
   const groupList: Array<GenericInfo> = []; // Replace by ??
   const tagList: Array<GenericInfo> = []; // Replace by ??
   const [version, setVersion] = useState<string>();
   const [studyName, setStudyName] = useState<string>('');
-  const [baselineStudy, setBaselineStudy] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
   const [rightToChange, setRightToChange] = useState<string>('');
   const [group, setGroup] = useState<string>('');
   const [tags, setTags] = useState<Array<string>>([]);
@@ -48,7 +45,7 @@ function CreateStudyModal(props: PropTypes) {
       closeButtonLabel={t('main:cancelButton')}
       actionButtonLabel={t('main:create')}
       onActionButtonClick={onActionButtonClick}
-      rootStyle={{ width: '600px', height: '600px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', boxSizing: 'border-box' }}
+      rootStyle={{ width: '600px', height: '500px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', boxSizing: 'border-box' }}
     >
       <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" p={2} boxSizing="border-box">
         <Box width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center" boxSizing="border-box">
@@ -63,23 +60,6 @@ function CreateStudyModal(props: PropTypes) {
             list={versionList}
             data={version}
             setValue={setVersion}
-          />
-        </Box>
-        <Box width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center" my={1} boxSizing="border-box">
-          <SingleSelect
-            name={t('studymanager:baselineStudy')}
-            list={baselineStudyList}
-            data={baselineStudy}
-            setValue={setBaselineStudy}
-            sx={{ flexGrow: 1 }}
-          />
-        </Box>
-        <Box width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center" boxSizing="border-box">
-          <FilledTextInput
-            label={t('studymanager:description')}
-            value={description}
-            onChange={setDescription}
-            sx={{ flexGrow: 1 }}
           />
         </Box>
         <Box width="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box">

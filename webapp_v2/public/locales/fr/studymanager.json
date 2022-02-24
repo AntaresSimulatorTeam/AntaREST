@@ -35,5 +35,19 @@
   "export": "Exporter",
   "delete": "Supprimer",
   "exportWith": "Exporter avec les sorties",
-  "exportWithout": "Exporter sans les sorties"
+  "exportWithout": "Exporter sans les sorties",
+  "sortBy": "Trier par",
+  "createNewStudy": "Créer une nouvelle étude",
+  "studyName": "Nom de l'étude",
+  "version": "Version",
+  "baselineStudy": "Etude de base",
+  "description": "Description",
+  "Permission": "Permission",
+  "rightToChange": "Droit de changement",
+  "metadata": "Métadonnées",
+  "group": "Groupe",
+  "tag": "Tag",
+  "enterTag": "Entrer un tag",
+  "exploreButton": "Explorer",
+  "copyID": "Copier l'ID"
 }

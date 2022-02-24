@@ -100,6 +100,16 @@ export const getStudyExtendedName = (study: StudyMetadata): string => {
 
 export const convertUTCToLocalTime = (date: string): string => moment.utc(date).local().format('YYYY-MM-DD HH:mm:ss');
 
+
+export interface ElementsDate {
+
+}
+
+export const modificationDate = (date: string) : moment.Duration => {
+  return moment.duration(moment(Date.now()).diff(moment(date)), 'milliseconds');
+  //return `${duration.days()}d${duration.hours()}h${duration.minutes()}m${duration.seconds()}s`;
+}
+
 export const exportText = (fileData: string, filename: string): void => {
   const blob = new Blob([fileData], { type: 'application/txt' });
   const url = URL.createObjectURL(blob);

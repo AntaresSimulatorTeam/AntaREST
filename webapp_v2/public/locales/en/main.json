@@ -22,7 +22,6 @@
   "jobs": "Jobs",
   "exports": "Exports",
   "unknown": "Unkown",
-  "search": "Search",
   "confirmationModalTitle": "Confirmation",
   "yesButton": "Yes",
   "noButton": "No",
@@ -39,5 +38,9 @@
   "comeBackLater": "Please come back later.",
   "onGetMessageInfoError": "Unable to retrieve message info",
   "onGetMaintenanceError": "Unable to retrieve maintenance status",
-  "search": "Search"
+  "search": "Search",
+  "daysSymbol": "days",
+  "hoursSymbol": "hours",
+  "minutesSymbol": "minutes",
+  "secondsSymbol": "seconds"
 }

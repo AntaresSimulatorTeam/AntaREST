@@ -22,7 +22,6 @@
   "jobs": "Tâches",
   "exports": "Exports",
   "unknown": "Inconnu",
-  "search": "Recherche",
   "confirmationModalTitle": "Confirmation",
   "yesButton": "Oui",
   "noButton": "Non",
@@ -39,5 +38,9 @@
   "comeBackLater": "Merci de revenir plus tard",
   "onGetMessageInfoError": "Impossible de récupérer le message d'info",
   "onGetMaintenanceError": "Impossible de récupérer le status de maintenance de l'application",
-  "search": "Rechercher"
+  "search": "Rechercher",
+  "daysSymbol": "jours",
+  "hoursSymbol": "heures",
+  "minutesSymbol": "minutes",
+  "secondsSymbol": "secondes"
 }

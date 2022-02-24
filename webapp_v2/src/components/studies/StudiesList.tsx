@@ -146,7 +146,8 @@ function StudiesList(props: PropTypes) {
             variant="filled"
             onChange={(e: SelectChangeEvent<string>) => setSortItem({ element: e.target.value as SortElement, status: SortStatus.INCREASE })}
             sx={{
-              height: '40px',
+              width: '200px',
+              height: '50px',
               background: 'rgba(255, 255, 255, 0)',
               borderRadius: '4px 4px 0px 0px',
               borderBottom: '1px solid rgba(255, 255, 255, 0.42)',
