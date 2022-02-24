@@ -430,19 +430,41 @@ class XpansionManager:
 
         file_study.tree.save(new_settings_data)
 
+    def _add_raw_files(
+        self,
+        file_study: FileStudy,
+        files: List[UploadFile],
+        raw_file_type: str,
+    ) -> None:
+        if raw_file_type == "constraints":
+            keys = ["user", "expansion"]
+        elif raw_file_type == "capacities":
+            keys = ["user", "expansion", "capa"]
+        else:
+            raise NotImplementedError(
+                f"raw_file_type {raw_file_type} not implemented"
+            )
+
+        data = {}
+        buffer = data
+
+        for key in keys:
+            buffer[key] = {}
+            buffer = buffer[key]
+
+        for file in files:
+            buffer[file.filename] = file.file.read().encode()
+
+        file_study.tree.save(data)
+
     def add_xpansion_constraints(
         self, study: Study, files: List[UploadFile]
     ) -> None:
+
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
-        data: JSON = {"user": {"expansion": {}}}
-        for file in files:
-            data["user"]["expansion"][
-                file.filename
-            ] = file.file.read().encode()
-
-        file_study.tree.save(data)
+        self._add_raw_files(file_study, files, "constraints")
 
     def delete_xpansion_constraints(self, study: Study, filename: str) -> None:
         file_study = self.study_storage_service.get_storage(study).get_raw(
@@ -492,3 +514,9 @@ class XpansionManager:
             )
             for constraints_filename in constraints_filenames
         }
+
+    def add_capa(self, study: Study, files: List[UploadFile]) -> None:
+        file_study = self.study_storage_service.get_storage(study).get_raw(
+            study
+        )
+        self._add_raw_files(file_study, files, "capacities")

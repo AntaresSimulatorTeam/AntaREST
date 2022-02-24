@@ -1851,3 +1851,11 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
         return self.xpansion_manager.get_all_xpansion_constraints(study)
+
+    def add_capa(
+        self, uuid: str, files: List[UploadFile], params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.add_capa(study, files)

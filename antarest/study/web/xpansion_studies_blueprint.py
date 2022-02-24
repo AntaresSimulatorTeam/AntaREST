@@ -286,10 +286,15 @@ def create_xpansion_routes(
     )
     def add_capa(
         uuid: str,
-        file: UploadFile,
+        files: List[UploadFile],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        raise NotImplementedError()
+        logger.info(
+            f"Adding new capa file",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.add_capa(uuid, files, params)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/capacities/{filename}",
