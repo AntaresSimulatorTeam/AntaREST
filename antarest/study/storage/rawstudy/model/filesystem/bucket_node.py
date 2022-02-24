@@ -1,4 +1,4 @@
-from typing import Optional, List, Union, Dict, Callable, Any, Mapping
+from typing import Optional, List, Union, Dict, Callable, Any
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -20,8 +20,10 @@ class RegisteredFile:
     def __init__(
         self,
         key: str,
-        node: Callable[
-            [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
+        node: Optional[
+            Callable[
+                [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
+            ]
         ],
         filename: str = "",
     ):
@@ -73,9 +75,10 @@ class BucketNode(FolderNode):
             if len(url) > 1:
                 registered_file = self._get_registered_file(key)
                 if registered_file:
-                    registered_file.node(
-                        self.context, self.config.next_file(key)
-                    ).save(data, url[1:])
+                    node = registered_file.node or self.default_file_node
+                    node(self.context, self.config.next_file(key)).save(
+                        data, url[1:]
+                    )
                 else:
                     BucketNode(self.context, self.config.next_file(key)).save(
                         data, url[1:]
@@ -88,7 +91,10 @@ class BucketNode(FolderNode):
     ) -> None:
         registered_file = self._get_registered_file(key)
         if registered_file:
-            node, filename = registered_file.node, registered_file.filename
+            node, filename = (
+                registered_file.node or self.default_file_node,
+                registered_file.filename,
+            )
 
             node(self.context, self.config.next_file(filename)).save(data)
         elif isinstance(data, (str, bytes)):
@@ -107,7 +113,8 @@ class BucketNode(FolderNode):
             key = item.name.split(".")[0]
             registered_file = self._get_registered_file(key)
             if registered_file:
-                children[key] = registered_file.node(
+                node = registered_file.node or self.default_file_node
+                children[key] = node(
                     self.context, self.config.next_file(item.name)
                 )
             elif item.is_file():

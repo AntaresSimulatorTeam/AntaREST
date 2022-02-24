@@ -434,7 +434,9 @@ def test_update_candidates(tmp_path: Path):
             "max-investment": 1,
         }
     )
-    xpansion_manager.update_candidate(study, new_candidate2)
+    xpansion_manager.update_candidate(
+        study, new_candidate.name, new_candidate2
+    )
 
     assert (
         xpansion_manager.get_candidate(

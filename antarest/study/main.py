@@ -8,7 +8,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
 from antarest.core.tasks.service import ITaskService
 from antarest.login.service import LoginService
-from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.common.uri_resolver_service import (
     UriResolverService,
 )
@@ -23,7 +23,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
 from antarest.study.storage.rawstudy.raw_study_service import (
     RawStudyService,
 )
-from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -34,10 +33,13 @@ from antarest.study.storage.variantstudy.repository import (
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
-from antarest.study.web.study_data_blueprint import create_study_data_routes
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
+from antarest.study.web.study_data_blueprint import create_study_data_routes
 from antarest.study.web.variant_blueprint import create_study_variant_routes
+from antarest.study.web.xpansion_studies_blueprint import (
+    create_xpansion_routes,
+)
 
 
 def build_study_service(
@@ -143,6 +145,9 @@ def build_study_service(
                 variant_study_service=variant_study_service,
                 config=config,
             )
+        )
+        application.include_router(
+            create_xpansion_routes(study_service, config)
         )
 
     return study_service

@@ -1,10 +1,9 @@
 import logging
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile
 
 from antarest.core.config import Config
-from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
@@ -18,8 +17,8 @@ from antarest.study.service import StudyService
 logger = logging.getLogger(__name__)
 
 
-def create_study_routes(
-    study_service: StudyService, ftm: FileTransferManager, config: Config
+def create_xpansion_routes(
+    study_service: StudyService, config: Config
 ) -> APIRouter:
     """
     Endpoint implementation for xpansion studies management
@@ -31,7 +30,7 @@ def create_study_routes(
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1/")
+    bp = APIRouter(prefix="/v1")
     auth = Auth(config)
 
     @bp.post(
@@ -185,12 +184,9 @@ def create_study_routes(
             f"Updating xpansion candidate {xpansion_candidate_dto.name} of the study {uuid}",
             extra={"user": current_user.id},
         )
-        assert (
-            candidate_name == xpansion_candidate_dto.name
-        )  # Not sure about this. Should we keep the name in the endpoint if it is in the DTO ?
         params = RequestParameters(user=current_user)
         return study_service.update_xpansion_candidate(
-            uuid, xpansion_candidate_dto, params
+            uuid, candidate_name, xpansion_candidate_dto, params
         )
 
     @bp.delete(
@@ -284,7 +280,7 @@ def create_study_routes(
         return study_service.get_all_xpansion_constraints(uuid, params)
 
     @bp.post(
-        "/studies/{uuid}/extensions/xpansion/capa",
+        "/studies/{uuid}/extensions/xpansion/capacities",
         tags=[APITag.xpansion_study_management],
         summary="Adding New Capa File",
     )
@@ -296,7 +292,7 @@ def create_study_routes(
         raise NotImplementedError()
 
     @bp.delete(
-        "/studies/{uuid}/extensions/xpansion/capa/{filename}",
+        "/studies/{uuid}/extensions/xpansion/capacities/{filename}",
         tags=[APITag.xpansion_study_management],
         summary="Deleting Capa File",
     )
@@ -308,7 +304,7 @@ def create_study_routes(
         raise NotImplementedError()
 
     @bp.get(
-        "/studies/{uuid}/extensions/xpansion/capa/{filename}",
+        "/studies/{uuid}/extensions/xpansion/capacities/{filename}",
         tags=[APITag.xpansion_study_management],
         summary="Getting Capa File",
     )
@@ -320,11 +316,11 @@ def create_study_routes(
         raise NotImplementedError()
 
     @bp.get(
-        "/studies/{uuid}/extensions/xpansion/capa/",
+        "/studies/{uuid}/extensions/xpansion/capacities",
         tags=[APITag.xpansion_study_management],
         summary="Getting All Capa File",
     )
-    def get_single_capa(
+    def get_all_capa(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:

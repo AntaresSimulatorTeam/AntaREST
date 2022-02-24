@@ -1,5 +1,5 @@
+import logging
 from http import HTTPStatus
-from io import BytesIO
 from typing import Optional, Literal, Union, List, cast
 
 from fastapi import HTTPException, UploadFile
@@ -15,6 +15,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expans
     Expansion,
 )
 from antarest.study.storage.storage_service import StudyStorageService
+
+logger = logging.getLogger(__name__)
 
 
 class XpansionSettingsDTO(BaseModel):
@@ -66,12 +68,7 @@ class LinkNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class LinkProfileNotFoundError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, message)
-
-
-class AlreadyInstalledLinkProfileNotFoundError(Exception):
+class CapaFileNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
@@ -106,16 +103,23 @@ class ConstraintsNotFoundError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class ConstraintsFileCurrentlyUsedInSettings(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+
 class XpansionManager:
     def __init__(self, study_storage_service: StudyStorageService):
         self.study_storage_service = study_storage_service
 
     def create_xpansion_configuration(self, study: Study) -> None:
+        logger.info("Initiating xpansion configuration")
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
         try:
             file_study.tree.get(["user", "expansion"])
+            logger.info("Using existing configuration")
         except ChildNotFoundError:
             study_version = file_study.config.version
 
@@ -184,8 +188,8 @@ class XpansionManager:
         if xpansion_candidate_dto.link_profile and not file_study.tree.get(
             ["user", "expansion", "capa", xpansion_candidate_dto.link_profile]
         ):
-            raise LinkProfileNotFoundError(
-                f"The file {xpansion_candidate_dto.link_profile} does not exist"
+            raise CapaFileNotFoundError(
+                f"The 'link-profile' file {xpansion_candidate_dto.link_profile} does not exist"
             )
         if (
             xpansion_candidate_dto.already_installed_link_profile
@@ -198,8 +202,8 @@ class XpansionManager:
                 ]
             )
         ):
-            raise AlreadyInstalledLinkProfileNotFoundError(
-                f"The file {xpansion_candidate_dto.already_installed_link_profile} does not exist"
+            raise CapaFileNotFoundError(
+                f"The 'already-installed-link-profile' file {xpansion_candidate_dto.link_profile} does not exist"
             )
 
     def _assert_link_exist(
@@ -354,7 +358,10 @@ class XpansionManager:
         return [XpansionCandidateDTO(**c) for c in candidates.values()]
 
     def update_candidate(
-        self, study: Study, xpansion_candidate_dto: XpansionCandidateDTO
+        self,
+        study: Study,
+        candidate_name: str,
+        xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
@@ -367,7 +374,7 @@ class XpansionManager:
         )
 
         for id, candidate in candidates.items():
-            if candidate["name"] == xpansion_candidate_dto.name:
+            if candidate["name"] == candidate_name:
                 candidates[id] = xpansion_candidate_dto.dict(
                     by_alias=True, exclude_none=True
                 )
@@ -452,14 +459,8 @@ class XpansionManager:
             )
             == filename
         ):
-            file_study.tree.save(
-                {
-                    "user": {
-                        "expansion": {
-                            "settings": {"additional-constraints": None}
-                        }
-                    }
-                }
+            raise ConstraintsFileCurrentlyUsedInSettings(
+                f"The file {filename} is still used in the xpansion settings and cannot be deleted"
             )
 
     def get_single_xpansion_constraints(
