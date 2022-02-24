@@ -94,7 +94,7 @@ class LinkNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class CapaFileNotFoundError(HTTPException):
+class XpansionFileNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
@@ -130,6 +130,11 @@ class ConstraintsNotFoundError(HTTPException):
 
 
 class FileCurrentlyUsedInSettings(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class FileAlreadyExistsError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
 
@@ -197,6 +202,25 @@ class XpansionManager:
         json = file_study.tree.get(["user", "expansion", "settings"])
         return XpansionSettingsDTO.parse_obj(json)
 
+    def _assert_xpansion_settings_additional_constraints_is_valid(
+        self,
+        file_study: FileStudy,
+        additional_constraints: str,
+    ) -> None:
+        if additional_constraints:
+            try:
+                file_study.tree.get(
+                    [
+                        "user",
+                        "expansion",
+                        additional_constraints,
+                    ]
+                )
+            except ChildNotFoundError:
+                raise XpansionFileNotFoundError(
+                    f"The 'additional-constraints' file '{additional_constraints}' does not exist"
+                )
+
     def update_xpansion_settings(
         self, study: Study, new_xpansion_settings_dto: XpansionSettingsDTO
     ) -> XpansionSettingsDTO:
@@ -204,6 +228,10 @@ class XpansionManager:
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
+        if new_xpansion_settings_dto.additional_constraints:
+            self._assert_xpansion_settings_additional_constraints_is_valid(
+                file_study, new_xpansion_settings_dto.additional_constraints
+            )
 
         file_study.tree.save(
             new_xpansion_settings_dto.dict(by_alias=True),
@@ -219,7 +247,7 @@ class XpansionManager:
         if xpansion_candidate_dto.link_profile and not file_study.tree.get(
             ["user", "expansion", "capa", xpansion_candidate_dto.link_profile]
         ):
-            raise CapaFileNotFoundError(
+            raise XpansionFileNotFoundError(
                 f"The 'link-profile' file '{xpansion_candidate_dto.link_profile}' does not exist"
             )
         if (
@@ -233,7 +261,7 @@ class XpansionManager:
                 ]
             )
         ):
-            raise CapaFileNotFoundError(
+            raise XpansionFileNotFoundError(
                 f"The 'already-installed-link-profile' file '{xpansion_candidate_dto.link_profile}' does not exist"
             )
 
@@ -451,36 +479,12 @@ class XpansionManager:
     def update_xpansion_constraints_settings(
         self, study: Study, constraints_file_name: Optional[str]
     ) -> None:
-        file_study = self.study_storage_service.get_storage(study).get_raw(
-            study
+        self.update_xpansion_settings(
+            study,
+            XpansionSettingsDTO.parse_obj(
+                {"additional-constraints": constraints_file_name}
+            ),
         )
-        try:
-            if constraints_file_name is not None:
-                logger.info(
-                    f"Checking xpansion constraints file '{constraints_file_name}' exists in study '{study.id}'"
-                )
-                file_study.tree.get(
-                    ["user", "expansion", constraints_file_name]
-                )
-        except ChildNotFoundError:
-            raise ConstraintsNotFoundError(
-                f"The constraints file {constraints_file_name} does not exist"
-            )
-
-        logger.info(
-            f"Updating xpansion 'additional-constraints' setting to '{constraints_file_name}' of study '{study.id}'"
-        )
-        new_settings_data = {
-            "user": {
-                "expansion": {
-                    "settings": {
-                        "additional-constraints": constraints_file_name
-                    }
-                }
-            }
-        }
-
-        file_study.tree.save(new_settings_data)
 
     def _add_raw_files(
         self,
@@ -499,6 +503,11 @@ class XpansionManager:
 
         data: JSON = {}
         buffer = data
+
+        list_names = [file.name for file in files]
+        for name in list_names:
+            if name in file_study.tree.get(keys):
+                raise FileAlreadyExistsError(f"File '{name}' already exists")
 
         for key in keys:
             buffer[key] = {}

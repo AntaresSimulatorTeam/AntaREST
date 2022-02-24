@@ -15,6 +15,7 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     LinkNotFound,
     ConstraintsNotFoundError,
+    XpansionFileNotFoundError,
 )
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
@@ -489,7 +490,7 @@ def test_update_constraints(tmp_path: Path):
     xpansion_manager = make_xpansion_manager(empty_study)
     xpansion_manager.create_xpansion_configuration(study)
 
-    with pytest.raises(ConstraintsNotFoundError):
+    with pytest.raises(XpansionFileNotFoundError):
         xpansion_manager.update_xpansion_constraints_settings(
             study=study, constraints_file_name="non_existent_file"
         )

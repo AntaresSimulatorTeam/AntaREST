@@ -109,16 +109,16 @@ def create_xpansion_routes(
     )
     def update_additional_constraints_settings(
         uuid: str,
-        additional_constraints_filename: Optional[str],
+        filename: Optional[str],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"Updating Xpansion Settings Of Study {uuid} with additional constraints {additional_constraints_filename}",
+            f"Updating Xpansion Settings Of Study {uuid} with additional constraints {filename}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.update_xpansion_constraints_settings(
-            uuid, additional_constraints_filename, params
+        study_service.update_xpansion_constraints_settings(
+            uuid, filename, params
         )
 
     @bp.post(
