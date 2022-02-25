@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
-import { Box, Grid, Typography, Breadcrumbs, Select, MenuItem, ListItemText, SelectChangeEvent, Popover } from '@mui/material';
+import { Box, Grid, Typography, Breadcrumbs, Select, MenuItem, ListItemText, SelectChangeEvent, Popover, ListItemIcon } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { AxiosError } from 'axios';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeIcon from '@mui/icons-material/Home';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { GenericInfo, StudyMetadata, SortElement, SortItem, SortStatus } from '../../common/types';
 import StudyCard from './StudyCard';
 import { scrollbarStyle, STUDIES_HEIGHT_HEADER, STUDIES_LIST_HEADER_HEIGHT } from '../../theme';
@@ -50,9 +52,11 @@ function StudiesList(props: PropTypes) {
 
   const open = Boolean(anchorCardMenuEl);
   const id = open ? 'simple-popover' : undefined;
-  const filterList : Array<GenericInfo> = [
-    { id: SortElement.NAME, name: t('studymanager:sortByName') },
-    { id: SortElement.DATE, name: t('studymanager:sortByDate') },
+  const filterList : Array<SortItem & { name: string }> = [
+    { element: SortElement.NAME, name: t('studymanager:sortByName'), status: SortStatus.INCREASE },
+    { element: SortElement.NAME, name: t('studymanager:sortByName'), status: SortStatus.DECREASE },
+    { element: SortElement.DATE, name: t('studymanager:sortByDate'), status: SortStatus.INCREASE },
+    { element: SortElement.DATE, name: t('studymanager:sortByDate'), status: SortStatus.DECREASE },
   ];
 
   const importStudy = async (study: StudyMetadata, withOutputs: boolean) => {
@@ -89,6 +93,21 @@ function StudiesList(props: PropTypes) {
       enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtodeletestudy'), e as AxiosError);
       logError('Failed to delete study', study, e);
     }
+  };
+
+  const getSortItem = (element: string) : SortItem => {
+    const tab = element.split('-');
+    console.log('TAB: ', tab);
+    if (tab.length === 2) {
+      return {
+        element: tab[0] as SortElement,
+        status: tab[1] as SortStatus,
+      };
+    }
+    return {
+      element: SortElement.NAME,
+      status: SortStatus.INCREASE,
+    };
   };
 
   const onLaunchClick = (study: StudyMetadata) : void => {
@@ -161,12 +180,18 @@ function StudiesList(props: PropTypes) {
           <Select
             labelId={`single-checkbox-label-${t('studymanager:sortBy')}`}
             id={`single-checkbox-${t('studymanager:sortBy')}`}
-            value={sortItem.element}
+            value={`${sortItem.element}-${sortItem.status}`}
             variant="filled"
-            onChange={(e: SelectChangeEvent<string>) => setSortItem({ element: e.target.value as SortElement, status: SortStatus.INCREASE })}
+            onChange={(e: SelectChangeEvent<string>) => setSortItem(getSortItem(e.target.value as string))}
             sx={{
-              width: '200px',
+              width: '230px',
               height: '50px',
+              '.MuiSelect-select': {
+                display: 'flex',
+                flexFlow: 'row nowrap',
+                justifyContent: 'center',
+                alignItems: 'center',
+              },
               background: 'rgba(255, 255, 255, 0)',
               borderRadius: '4px 4px 0px 0px',
               borderBottom: '1px solid rgba(255, 255, 255, 0.42)',
@@ -175,11 +200,25 @@ function StudiesList(props: PropTypes) {
               },
             }}
           >
-            {filterList.map(({ id, name }) => (
-              <MenuItem key={id} value={id}>
-                <ListItemText primary={name} />
-              </MenuItem>
-            ))}
+            {filterList.map(({ element, name, status }) => {
+              const value = `${element}-${status}`;
+              return (
+                <MenuItem
+                  key={value}
+                  value={value}
+                  sx={{
+                    display: 'flex',
+                    flexFlow: 'row nowrap',
+                    justifyContent: 'center',
+                    alignItems: 'center' }}
+                >
+                  <ListItemIcon>
+                    {status === SortStatus.INCREASE ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
+                  </ListItemIcon>
+                  <ListItemText primary={name} />
+                </MenuItem>
+              );
+            })}
           </Select>
         </Box>
       </Box>

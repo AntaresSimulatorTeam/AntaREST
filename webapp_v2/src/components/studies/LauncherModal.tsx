@@ -5,7 +5,6 @@ import { useSnackbar } from 'notistack';
 import { AxiosError } from 'axios';
 import BasicModal from '../common/BasicModal';
 import { StudyMetadata } from '../../common/types';
-import TextSeparator from '../common/TextSeparator';
 import { LaunchOptions, launchStudy } from '../../services/api/study';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
 
