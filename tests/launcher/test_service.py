@@ -81,7 +81,7 @@ def test_service_run_study(get_current_user_mock):
         ),
     )
 
-    assert job_id == uuid
+    assert job_id == str(uuid)
     repository.save.assert_called_once_with(pending)
     event_bus.push.assert_called_once_with(
         Event(

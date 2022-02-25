@@ -49,10 +49,8 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
         params = RequestParameters(user=current_user)
         return JobCreationDTO(
-            job_id=str(
-                service.run_study(
-                    study_id, selected_engine, engine_parameters, params
-                )
+            job_id=service.run_study(
+                study_id, selected_engine, engine_parameters, params
             )
         )
 

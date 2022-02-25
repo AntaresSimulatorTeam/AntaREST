@@ -27,6 +27,8 @@ class LauncherCallbacks(NamedTuple):
     ]
     # args: job_id, study_id, study_export_path, launcher_params
     after_export_flat: Callable[[str, str, Path, Optional[JSON]], None]
+    append_before_log: Callable[[str, str], None]
+    append_after_log: Callable[[str, str], None]
 
 
 class AbstractLauncher(ABC):
@@ -46,10 +48,11 @@ class AbstractLauncher(ABC):
     def run_study(
         self,
         study_uuid: str,
+        job_id: str,
         version: str,
         launcher_parameters: Optional[JSON],
         params: RequestParameters,
-    ) -> UUID:
+    ) -> None:
         raise NotImplementedError()
 
     @abstractmethod
