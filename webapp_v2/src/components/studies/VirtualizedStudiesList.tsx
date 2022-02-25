@@ -29,8 +29,6 @@ const TOTAL_CARD_HEIGHT = CARD_HEIGHT + SPACE;
 const Cell = React.memo((props: GridChildComponentProps) => {
   const { data, style, columnIndex, rowIndex, isScrolling } = props;
   const { studies, favorite, nbColumns, onFavoriteClick, onLaunchClick, importStudy, deleteStudy, archiveStudy, unarchiveStudy } = data;
-  console.log('NB Columns: ', nbColumns, '; rowIndex: ', rowIndex, '; columnIndex: ', columnIndex);
-  console.log('Studies length: ', studies.length, '; Index: ', rowIndex * nbColumns + columnIndex);
 
   if (studies === undefined || studies.length === 0) return null;
 

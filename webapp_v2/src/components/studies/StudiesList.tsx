@@ -57,7 +57,6 @@ function StudiesList(props: PropTypes) {
 
   const importStudy = async (study: StudyMetadata, withOutputs: boolean) => {
     try {
-      console.log('IMPORT');
       await callCopyStudy(study.id, `${study.name} (${t('main:copy')})`, withOutputs);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtocopystudy'), e as AxiosError);

@@ -45,7 +45,6 @@ function Header(props: Props) {
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
 
   const onActionButtonClick = () : void => {
-    console.log('ACTION');
     setOpenCreateModal(false);
   };
   return (

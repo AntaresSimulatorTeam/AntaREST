@@ -7,7 +7,7 @@ import { AppState } from '../../store/reducers';
 import { isStringEmpty } from '.';
 import { setMaintenanceMode, setMessageInfo } from '../../store/global';
 
-const studyListener = (reduxStore: Store<AppState>) => async (ev: WSMessage) => {
+const studyListener = (reduxStore: Store<AppState>) => async (ev: WSMessage): Promise<void> => {
   const studySummary = ev.payload as StudySummary;
   switch (ev.type) {
     case WSEvent.STUDY_CREATED:

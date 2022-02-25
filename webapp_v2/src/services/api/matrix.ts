@@ -14,11 +14,6 @@ export const getMatrix = async (id: string): Promise<MatrixDTO> => {
   return res.data;
 };
 
-export const exportMatrix = async (id: string): Promise<any> => {
-  const res = await client.get(`/v1/matrix/${id}/download`);
-  return res.data;
-};
-
 export const getExportMatrixUrl = (matrixId: string): string =>
   `${getConfig().downloadHostUrl || (getConfig().baseUrl + getConfig().restEndpoint)}/v1/matrix/${matrixId}/download`;
 
@@ -59,7 +54,7 @@ export const updateDataSet = async (id: string, metadata: MatrixDataSetUpdateDTO
   return res.data;
 };
 
-export const deleteDataSet = async (id: string): Promise<any> => {
+export const deleteDataSet = async (id: string): Promise<void> => {
   const res = await client.delete(`/v1/matrixdataset/${id}`);
   return res.data;
 };

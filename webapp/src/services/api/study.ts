@@ -29,7 +29,7 @@ export const getStudyData = async (sid: string, path = '', depth = 1): Promise<a
   return res.data;
 };
 
-export const getComments = async (sid: string): Promise<any> => {
+export const getComments = async (sid: string): Promise<string> => {
   const res = await client.get(`/v1/studies/${sid}/comments`);
   return res.data;
 };

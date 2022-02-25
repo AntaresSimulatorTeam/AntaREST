@@ -7,15 +7,18 @@ import { addWsListeners } from './services/utils/globalWsListeners';
 import './i18n';
 import './index.css';
 import App from './App';
+import { initConfig } from './services/config';
 
-const reduxStore = createStore();
-addWsListeners(reduxStore);
+initConfig(() => {
+  const reduxStore = createStore();
+  addWsListeners(reduxStore);
 
-ReactDOM.render(
-  <StyledEngineProvider injectFirst>
-    <Provider store={reduxStore}>
-      <App />
-    </Provider>
-  </StyledEngineProvider>,
-  document.getElementById('root'),
-);
+  ReactDOM.render(
+    <StyledEngineProvider injectFirst>
+      <Provider store={reduxStore}>
+        <App />
+      </Provider>
+    </StyledEngineProvider>,
+    document.getElementById('root'),
+  );
+});

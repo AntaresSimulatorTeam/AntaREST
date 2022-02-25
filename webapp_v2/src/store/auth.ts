@@ -48,6 +48,7 @@ export interface LoginAction extends Action {
 export const loginUser = (user: UserInfo): ThunkAction<void, AppState, unknown, LoginAction> => (dispatch): void => {
   const tokenData = jwt_decode(user.accessToken);
   setAuth(user.accessToken);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updatedUser = { ...user, expirationDate: moment.unix((tokenData as any).exp) };
   dispatch({
     type: 'AUTH/LOGIN',

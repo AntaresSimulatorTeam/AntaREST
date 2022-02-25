@@ -6,6 +6,7 @@ import { useSnackbar } from 'notistack';
 import { connect, ConnectedProps } from 'react-redux';
 import moment from 'moment';
 import { AxiosError } from 'axios';
+import debug from 'debug';
 import Header from '../../components/studies/Header';
 import SideNav from '../../components/studies/SideNav';
 import StudiesList from '../../components/studies/StudiesList';
@@ -19,6 +20,8 @@ import { initStudies, initStudiesVersion } from '../../store/study';
 import FilterDrawer from '../../components/studies/FilterDrawer';
 import enqueueErrorSnackbar from '../../components/common/ErrorSnackBar';
 import MainContentLoader from '../../components/common/loaders/MainContentLoader';
+
+const logErr = debug('antares:studies:error');
 
 const DEFAULT_FILTER_USER = 'v2.studylisting.filter.user';
 const DEFAULT_FILTER_GROUP = 'v2.studylisting.filter.group';
@@ -156,7 +159,7 @@ function Studies(props: PropTypes) {
       const groupRes = await getGroups();
       setGroupList(groupRes);
     } catch (error) {
-      console.log(error);
+      logErr(error);
     }
   };
 

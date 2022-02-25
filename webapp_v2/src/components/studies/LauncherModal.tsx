@@ -44,7 +44,7 @@ function LauncherModal(props: Props) {
     });
   };
 
-  const timeLimitParse = (value: any): number => {
+  const timeLimitParse = (value: string): number => {
     try {
       return parseInt(value, 10) * 3600;
     } catch {

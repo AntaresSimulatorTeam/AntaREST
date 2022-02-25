@@ -109,6 +109,17 @@ export interface LaunchJob {
   exitCode: number;
 }
 
+export interface LaunchJobDTO {
+  id: string;
+  study_id: string;
+  status: JobStatus;
+  creation_date: string;
+  completion_date: string;
+  msg: string;
+  output_id: string;
+  exit_code: number;
+}
+
 export enum RoleType {
   ADMIN = 40,
   RUNNER = 30,
