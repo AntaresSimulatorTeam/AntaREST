@@ -97,7 +97,6 @@ function StudiesList(props: PropTypes) {
 
   const getSortItem = (element: string) : SortItem => {
     const tab = element.split('-');
-    console.log('TAB: ', tab);
     if (tab.length === 2) {
       return {
         element: tab[0] as SortElement,
