@@ -1,10 +1,9 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { FileStudyTreeConfigDTO, LaunchJob, MatrixAggregationResult, StudyOutputDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode } from '../../common/types';
+import { FileStudyTreeConfigDTO, LaunchJob, MatrixAggregationResult, StudyOutputDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode, AreasConfig, SingleAreaConfig, StudyProperties, LaunchJobDTO } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 import { FileDownloadTask } from './downloads';
-import { AreasConfig, SingleAreaConfig, StudyProperties } from '../../components/SingleStudy/MapView/types';
 
 const getStudiesRaw = async (): Promise<{[sid: string]: StudyMetadataDTO}> => {
   const res = await client.get('/v1/studies?summary=true');
@@ -24,6 +23,7 @@ export const getStudyVersions = async (): Promise<Array<string>> => {
   return res.data;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getStudyData = async (sid: string, path = '', depth = 1): Promise<any> => {
   const res = await client.get(`/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`);
   return res.data;
@@ -76,12 +76,12 @@ export const createStudy = async (name: string, version: number): Promise<string
   return res.data;
 };
 
-export const editStudy = async (data: object, sid: string, path = '', depth = 1): Promise<any> => {
+export const editStudy = async (data: object, sid: string, path = '', depth = 1): Promise<void> => {
   const res = await client.post(`/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`, data);
   return res.data;
 };
 
-export const copyStudy = async (sid: string, name: string, withOutputs: boolean): Promise<any> => {
+export const copyStudy = async (sid: string, name: string, withOutputs: boolean): Promise<void> => {
   const res = await client.post(`/v1/studies/${sid}/copy?dest=${encodeURIComponent(name)}&with_outputs=${withOutputs}`);
   return res.data;
 };
@@ -94,12 +94,12 @@ export const unarchiveStudy = async (sid: string): Promise<void> => {
   await client.put(`/v1/studies/${sid}/unarchive`);
 };
 
-export const deleteStudy = async (sid: string): Promise<any> => {
+export const deleteStudy = async (sid: string): Promise<void> => {
   const res = await client.delete(`/v1/studies/${sid}`);
   return res.data;
 };
 
-export const editComments = async (sid: string, newComments: string): Promise<any> => {
+export const editComments = async (sid: string, newComments: string): Promise<void> => {
   const data = { comments: newComments };
   const res = await client.put(`/v1/studies/${sid}/comments`, data);
   return res.data;
@@ -184,7 +184,7 @@ export const killStudy = async (jid: string): Promise<string> => {
   return res.data;
 };
 
-export const mapLaunchJobDTO = (j: any): LaunchJob => ({
+export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
   id: j.id,
   studyId: j.study_id,
   status: j.status,
@@ -212,12 +212,12 @@ export const changeStudyOwner = async (studyId: string, newOwner: number): Promi
   return res.data;
 };
 
-export const deleteStudyGroup = async (studyId: string, groupId: string): Promise<any> => {
+export const deleteStudyGroup = async (studyId: string, groupId: string): Promise<void> => {
   const res = await client.delete(`/v1/studies/${studyId}/groups/${groupId}`);
   return res.data;
 };
 
-export const addStudyGroup = async (studyId: string, groupId: string): Promise<any> => {
+export const addStudyGroup = async (studyId: string, groupId: string): Promise<void> => {
   const res = await client.put(`/v1/studies/${studyId}/groups/${groupId}`);
   return res.data;
 };
@@ -227,7 +227,7 @@ export const changePublicMode = async (studyId: string, publicMode: StudyPublicM
   return res.data;
 };
 
-export const renameStudy = async (studyId: string, name: string): Promise<any> => {
+export const renameStudy = async (studyId: string, name: string): Promise<void> => {
   const res = await client.put(`/v1/studies/${studyId}`, {
     name,
   });

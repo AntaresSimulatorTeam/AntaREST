@@ -38,7 +38,7 @@ export const getUserInfos = async (id: number): Promise<IdentityDTO> => {
   return res.data;
 };
 
-export const deleteUser = async (id: number): Promise<any> => {
+export const deleteUser = async (id: number): Promise<void> => {
   const res = await client.delete(`/v1/users/${id}`);
   return res.data;
 };
@@ -83,18 +83,18 @@ export const getAllRolesInGroup = async (groupId: string): Promise<Array<RoleDTO
   return res.data;
 };
 
-export const createRole = async (role: RoleCreationDTO): Promise<any> => {
+export const createRole = async (role: RoleCreationDTO): Promise<void> => {
   const data = role;
   const res = await client.post('/v1/roles', data);
   return res.data;
 };
 
-export const deleteUserRole = async (groupId: string, userId: number): Promise<any> => {
+export const deleteUserRole = async (groupId: string, userId: number): Promise<void> => {
   const res = await client.delete(`/v1/roles/${groupId}/${userId}`);
   return res.data;
 };
 
-export const deleteAllRoles = async (id: number): Promise<any> => {
+export const deleteAllRoles = async (id: number): Promise<void> => {
   const res = await client.delete(`/v1/users/roles/${id}`);
   return res.data;
 };
@@ -103,7 +103,7 @@ export const deleteAllRoles = async (id: number): Promise<any> => {
 /* Tokens                                       */
 /** ******************************************* */
 
-export const createNewBot = async (bot: BotCreateDTO): Promise<any> => {
+export const createNewBot = async (bot: BotCreateDTO): Promise<string> => {
   const data = bot;
   const res = await client.post('/v1/bots', data);
   return res.data;
@@ -120,7 +120,7 @@ export const getBotInfos = async (id: number): Promise<BotIdentityDTO> => {
   return res.data;
 };
 
-export const deleteBot = async (id: number): Promise<any> => {
+export const deleteBot = async (id: number): Promise<void> => {
   const res = await client.delete(`/v1/bots/${id}`);
   return res.data;
 };
