@@ -85,22 +85,22 @@ function Header(props: Props) {
                   },
                 },
                 '.Mui-focused': {
-                  //borderColor: `${theme.palette.primary.main} !important`
+                  // borderColor: `${theme.palette.primary.main} !important`
                 },
                 '.MuiOutlinedInput-notchedOutline': {
                   borderWidth: '1px',
                   borderColor: `${theme.palette.text.secondary} !important`,
-                }
-              } }}
-              InputLabelProps={{
-                sx: {
-                  '.MuiInputLabel-root': {
-                    color : theme.palette.text.secondary,
-                  },
-                  '.Mui-focused': {
-                  }
                 },
-              }}
+              } }}
+            InputLabelProps={{
+              sx: {
+                '.MuiInputLabel-root': {
+                  color: theme.palette.text.secondary,
+                },
+                '.Mui-focused': {
+                },
+              },
+            }}
 
           />
           <Divider sx={{ width: '1px', height: '40px', bgcolor: 'divider', margin: '0px 16px' }} />

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import { Box, Divider } from '@mui/material';
 import { useTranslation } from 'react-i18next';
@@ -51,6 +52,13 @@ function Studies(props: PropTypes) {
   const [currentSortItem, setCurrentSortItem] = useState<SortItem|undefined>(loadState<SortItem>(DEFAULT_FILTER_SORTING, { element: SortElement.NAME, status: SortStatus.INCREASE }));
   const [inputValue, setInputValue] = useState<string>('');
   const [openFilter, setOpenFiler] = useState<boolean>(false);
+  const [userList, setUserList] = useState<Array<UserDTO>>([]);
+  const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
+  const [currentUser, setCurrentUser] = useState<Array<UserDTO>|undefined>(loadState<Array<UserDTO>>(DEFAULT_FILTER_USER));
+  const [currentGroup, setCurrentGroup] = useState<Array<GroupDTO>|undefined>(loadState<Array<GroupDTO>>(DEFAULT_FILTER_GROUP));
+  const [currentVersion, setCurrentVersion] = useState<Array<GenericInfo> | undefined>(loadState<Array<GenericInfo>>(DEFAULT_FILTER_VERSION));
+  const [currentFolder, setCurrentFolder] = useState<string | undefined>(loadState<string>(DEFAULT_FILTER_FOLDER, 'root'));
+  const [currentFavorite, setCurrentFavorite] = useState<Array<GenericInfo> | undefined>(loadState<Array<GenericInfo>>(DEFAULT_FAVORITE_STUDIES, []));
 
   const onFilterClick = () : void => {
     setOpenFiler(true);
@@ -84,13 +92,6 @@ function Studies(props: PropTypes) {
   };
 
   const versionList = convertVersions(versions || []);
-  const [userList, setUserList] = useState<Array<UserDTO>>([]);
-  const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
-  const [currentUser, setCurrentUser] = useState<Array<UserDTO>|undefined>(loadState<Array<UserDTO>>(DEFAULT_FILTER_USER));
-  const [currentGroup, setCurrentGroup] = useState<Array<GroupDTO>|undefined>(loadState<Array<GroupDTO>>(DEFAULT_FILTER_GROUP));
-  const [currentVersion, setCurrentVersion] = useState<Array<GenericInfo> | undefined>(loadState<Array<GenericInfo>>(DEFAULT_FILTER_VERSION));
-  const [currentFolder, setCurrentFolder] = useState<string | undefined>(loadState<string>(DEFAULT_FILTER_FOLDER, 'root'));
-  const [currentFavorite, setCurrentFavorite] = useState<Array<GenericInfo> | undefined>(loadState<Array<GenericInfo>>(DEFAULT_FAVORITE_STUDIES, []));
 
   const sortStudies = (): Array<StudyMetadata> => {
     const tmpStudies: Array<StudyMetadata> = ([] as Array<StudyMetadata>).concat(studies);
@@ -175,7 +176,7 @@ function Studies(props: PropTypes) {
     saveState(DEFAULT_FILTER_SORTING, currentSortItem);
     saveState(DEFAULT_FILTER_FOLDER, currentFolder);
     applyFilter();
-  }, [currentVersion, currentUser, currentGroup, currentSortItem, managedFilter, currentFolder]);
+  }, [currentVersion, currentUser, currentGroup, currentSortItem, managedFilter, currentFolder, applyFilter]);
 
   useEffect(() => {
     saveState(DEFAULT_FAVORITE_STUDIES, currentFavorite);

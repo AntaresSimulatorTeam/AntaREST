@@ -18,7 +18,7 @@ function StudyTree(props: Props) {
     const expandedTab : Array<string> = [];
     const tab = nodeId.split('/');
     let lastnodeId = '';
-    for (let i = 0; i < tab.length; i++) {
+    for (let i = 0; i < tab.length; i += 1) {
       lastnodeId += (i === 0) ? tab[i] : `/${tab[i]}`;
       expandedTab.push(lastnodeId);
     }
@@ -41,8 +41,10 @@ function StudyTree(props: Props) {
       </TreeItem>
     );
   });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const getDefaultSelected = useCallback(() => [folder], []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const getDefaultExpanded = useCallback(() => getExpandedTab(folder), []);
 
   return (

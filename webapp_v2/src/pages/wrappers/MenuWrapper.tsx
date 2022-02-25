@@ -50,18 +50,17 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
   const [t] = useTranslation();
 
   const navigation: Array<MenuItem> = [
-    { id: 'studies', link: '/studies', icon: TravelExploreOutlinedIcon },
-    { id: 'data', link: '/data', icon: ShowChartOutlinedIcon },
-    { id: 'tasks', link: '/tasks', icon: PlaylistAddCheckOutlinedIcon },
-    { id: 'api', link: '/api', icon: ApiIcon },
-    { id: 'documentation', link: 'https://antares-web.readthedocs.io/en/latest', newTab: true, icon: ClassOutlinedIcon },
-    { id: 'github', link: 'https://github.com/AntaresSimulatorTeam/AntaREST', newTab: true, icon: GitHubIcon },
-    { id: 'settings', link: '/settings', icon: SettingsOutlinedIcon },
+    { id: 'studies', link: '/studies', icon: (props: any) => <TravelExploreOutlinedIcon {...props} /> },
+    { id: 'data', link: '/data', icon: (props: any) => <ShowChartOutlinedIcon {...props} /> },
+    { id: 'tasks', link: '/tasks', icon: (props: any) => <PlaylistAddCheckOutlinedIcon {...props} /> },
+    { id: 'api', link: '/api', icon: (props: any) => <ApiIcon {...props} /> },
+    { id: 'documentation', link: 'https://antares-web.readthedocs.io/en/latest', newTab: true, icon: (props: any) => <ClassOutlinedIcon {...props} /> },
+    { id: 'github', link: 'https://github.com/AntaresSimulatorTeam/AntaREST', newTab: true, icon: (props: any) => <GitHubIcon {...props} /> },
+    { id: 'settings', link: '/settings', icon: (props: any) => <SettingsOutlinedIcon {...props} /> },
   ];
 
   const settings = navigation[navigation.length - 1];
 
-  // eslint-disable-next-line no-undef
   const drawMenuItem = (elm: MenuItem): JSX.Element => (
     <NavListItem link key={elm.id}>
       {elm.newTab === true ? (

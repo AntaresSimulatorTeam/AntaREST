@@ -1,7 +1,6 @@
 /* eslint-disable camelcase */
 import axios from 'axios';
 import moment from 'moment';
-// eslint-disable-next-line @typescript-eslint/camelcase
 import jwt_decode from 'jwt-decode';
 import client from './client';
 import { UserInfo } from '../../common/types';

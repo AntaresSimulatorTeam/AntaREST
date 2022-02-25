@@ -64,6 +64,7 @@ function ImportStudyForm(props: PropTypes) {
       <Button variant="outlined" type="submit" color="primary" startIcon={<GetAppOutlinedIcon />} onClick={onButtonClick}>
         {t('main:import')}
       </Button>
+      {/* eslint-disable-next-line react/jsx-props-no-spreading */}
       <input style={{ display: 'none' }} type="file" accept="application/zip" {...register('study', { required: true })} ref={(e) => { inputRef.current = e; }} />
       {uploadProgress && <LinearProgress style={{ flexGrow: 1 }} variant="determinate" value={uploadProgress} />}
     </form>

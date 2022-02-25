@@ -109,6 +109,7 @@ function StudiesList(props: PropTypes) {
             folderList.map((elm, index) => (
               index === 0 ? (
                 <HomeIcon
+                  // eslint-disable-next-line react/no-array-index-key
                   key={`${elm}-${index}`}
                   sx={{
                     color: 'text.primary',
@@ -121,6 +122,7 @@ function StudiesList(props: PropTypes) {
                 />
               ) : (
                 <Typography
+                  // eslint-disable-next-line react/no-array-index-key
                   key={`${elm}-${index}`}
                   sx={{
                     color: 'text.primary',
@@ -173,12 +175,14 @@ function StudiesList(props: PropTypes) {
         <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} p={2} sx={{ flex: 'none' }}>
           {studies.map((elm) => (
             <Grid item xs={2} sm={4} md={4} key={elm.id}>
-              <StudyCard study={elm}
-                         favorite={favorite.includes(elm.id)} 
-                         onFavoriteClick={onFavoriteClick}
-                         onArchiveClick={archiveStudy}
-                         onUnarchiveClick={unarchiveStudy}
-                         onDeleteClick={deleteStudy} />
+              <StudyCard
+                study={elm}
+                favorite={favorite.includes(elm.id)}
+                onFavoriteClick={onFavoriteClick}
+                onArchiveClick={archiveStudy}
+                onUnarchiveClick={unarchiveStudy}
+                onDeleteClick={deleteStudy}
+              />
             </Grid>
           ))}
         </Grid>

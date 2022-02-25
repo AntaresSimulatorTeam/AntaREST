@@ -1,5 +1,8 @@
 /* eslint-disable camelcase */
 import { Moment } from 'moment';
+import { ReactNode } from 'react';
+
+export type IDType = number | string;
 
 export enum SortElement {
   DATE='DATE',
@@ -106,49 +109,12 @@ export interface LaunchJob {
   exitCode: number;
 }
 
-export interface MatrixInfoDTO {
-  id: string;
-  name: string;
-}
-
-export interface MatrixDataSetDTO {
-  id: string;
-  name: string;
-  public: boolean;
-  groups: Array<GroupDTO>;
-  matrices: Array<MatrixInfoDTO>;
-  owner: {
-    id: number;
-    name: string;
-  };
-  created_at: string;
-  updated_at: string;
-}
-
-export interface MatrixDataSetUpdateDTO {
-  name: string;
-  groups: Array<string>;
-  public: boolean;
-}
-
-export interface MatrixDTO {
-  width: number;
-  height: number;
-  index: Array<string>;
-  columns: Array<string>;
-  data: Array<Array<number>>;
-  created_at: number;
-  id: string;
-}
-
 export enum RoleType {
   ADMIN = 40,
   RUNNER = 30,
   WRITER = 20,
   READER = 10,
 }
-
-export type IDType = number | string;
 
 export interface RoleDTO {
   group_id: string;
@@ -249,6 +215,41 @@ export interface MatrixType {
   data: Array<Array<number>>;
 }
 
+export interface MatrixInfoDTO {
+  id: string;
+  name: string;
+}
+
+export interface MatrixDataSetDTO {
+  id: string;
+  name: string;
+  public: boolean;
+  groups: Array<GroupDTO>;
+  matrices: Array<MatrixInfoDTO>;
+  owner: {
+    id: number;
+    name: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MatrixDataSetUpdateDTO {
+  name: string;
+  groups: Array<string>;
+  public: boolean;
+}
+
+export interface MatrixDTO {
+  width: number;
+  height: number;
+  index: Array<string>;
+  columns: Array<string>;
+  data: Array<Array<number>>;
+  created_at: number;
+  id: string;
+}
+
 export interface CommandDTO {
   id?: string;
   action: string;
@@ -288,7 +289,7 @@ export interface WSLogMessage {
 }
 
 export type Components = {
-  [item: string]: () => JSX.Element;
+  [item: string]: () => ReactNode;
 }
 
 export interface CommandResultDTO {

@@ -21,7 +21,7 @@ interface Props {
     closeButtonLabel?: string;
     actionButtonLabel?: string;
     onActionButtonClick: () => void;
-    rootStyle?: SxProps<Theme> | undefined;
+    rootStyle: SxProps<Theme> | undefined;
 }
 
 function BasicModal(props: PropsWithChildren<Props>) {
