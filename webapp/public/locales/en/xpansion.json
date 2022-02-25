@@ -22,5 +22,8 @@
     "relativeGap": "Relative gap",
     "solver": "Solver",
     "constraints": "Constraints",
-    "confirmDeleteXpansion": "Are you sure you want to delete the configuration of Xpansion ?"
+    "capacities": "Capacities",
+    "confirmDeleteXpansion": "Are you sure you want to delete the configuration of Xpansion ?",
+    "fileName": "File name",
+    "options": "Options"
 }

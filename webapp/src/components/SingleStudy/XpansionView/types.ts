@@ -29,7 +29,7 @@ export interface XpansionCandidate {
     name: string;
     link: string;
     // eslint-disable-next-line camelcase
-    'annual-cost-per-mw'?: number;
+    'annual-cost-per-mw': number;
     // eslint-disable-next-line camelcase
     'unit-size'?: number;
     // eslint-disable-next-line camelcase

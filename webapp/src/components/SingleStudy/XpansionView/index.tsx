@@ -2,16 +2,18 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
+import { Box, Button } from '@material-ui/core';
 import XpansionPropsView from './XpansionPropsView';
 import { StudyMetadata } from '../../../common/types';
 import SplitLayoutView from '../../ui/SplitLayoutView';
 import CreateCandidateModal from './CreateCandidateModal';
 import { XpansionCandidate, XpansionSettings } from './types';
 import XpansionForm from './XpansionForm';
-import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints, getAllCapacities } from '../../../services/api/xpansion';
+import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints, getAllCapacities, createXpansionConfiguration, deleteXpansionConfiguration, addCandidate, deleteCandidate } from '../../../services/api/xpansion';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { getAllLinks } from '../../../services/api/studydata';
 import { LinkCreationInfo } from '../MapView/types';
+import SimpleLoader from '../../ui/loaders/SimpleLoader';
 
 interface Props {
     study: StudyMetadata;
@@ -29,8 +31,10 @@ const XpansionView = (props: Props) => {
   const [links, setLinks] = useState<Array<LinkCreationInfo>>();
   const [capacities, setCapacities] = useState<Array<string>>();
   // state pour savoir si créer ou nom
+  const [createConfigView, setCreateConfigView] = useState<boolean>(false);
+  const [loaded, setLoaded] = useState<boolean>(false);
 
-  const init = useCallback(async () => {
+  const init = useCallback(async (after: () => void = () => { /* noop */ }) => {
     try {
       const exist = await xpansionConfigurationExist(study.id);
       if (exist) {
@@ -43,38 +47,69 @@ const XpansionView = (props: Props) => {
         const tempLinks = await getAllLinks(study.id);
         setLinks(tempLinks);
         const tempCapa = await getAllCapacities(study.id);
-        console.log(tempCapa);
         setCapacities(tempCapa);
       } else {
-        console.log('faut créer');
+        setCreateConfigView(true);
+      }
+      if (after) {
+        after();
       }
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+    } finally {
+      setLoaded(true);
     }
   }, [study.id, enqueueSnackbar]);
 
-  /*
-  const handleCreate = () => {
+  const handleCreate = async () => {
     try {
-      const create = createXpansionConfiguration(study.id);
-      // state faut plus créer //  init()
+      await createXpansionConfiguration(study.id);
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+    } finally {
+      setCreateConfigView(false);
+      setLoaded(true);
+      init();
     }
-  }; */
-
-  const deleteXpansion = () => {
-    console.log('delete');
   };
 
-  const createCandidate = (name: string) => {
-    setOpenModal(false);
-    console.log(study.id);
-    console.log(name);
+  const deleteXpansion = async () => {
+    try {
+      await deleteXpansionConfiguration(study.id);
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+    } finally {
+      setCreateConfigView(true);
+    }
   };
 
-  const deleteCandidate = (name: string) => {
-    console.log(name);
+  const createCandidate = async (name: string, link: string) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      await addCandidate(study.id, { name, link, 'annual-cost-per-mw': 0, 'max-investment': 0 });
+      setOpenModal(false);
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+    } finally {
+      init(() => setSelectedItem({ name, link, 'annual-cost-per-mw': 0, 'max-investment': 0 }));
+    }
+  };
+
+  const handleDeleteCandidate = async (name: string) => {
+    if (candidates) {
+      const obj = candidates.filter((o) => o.name !== name);
+      try {
+        setCandidates(obj);
+        setSelectedItem(undefined);
+        await deleteCandidate(study.id, name);
+      } catch (e) {
+        setSelectedItem(candidates.find((o) => o.name === name));
+        setCandidates([...candidates]);
+        enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      } finally {
+        init();
+      }
+    }
   };
 
   const updateCandidate = (value: XpansionCandidate) => {
@@ -94,17 +129,27 @@ const XpansionView = (props: Props) => {
 
   return (
     <>
-      <SplitLayoutView
-        title={t('singlestudy:xpansion')}
-        left={
-          <XpansionPropsView candidateList={candidates} settings={settings} constraints={constraints} capacities={capacities} onAdd={() => setOpenModal(true)} selectedItem={selectedItem} setSelectedItem={setSelectedItem} deleteXpansion={deleteXpansion} />
-        }
-        right={
-          selectedItem && (
-            <XpansionForm selectedItem={selectedItem} links={links || []} deleteCandidate={deleteCandidate} updateCandidate={updateCandidate} updateSettings={updateSettings} />
-          )
-        }
-      />
+      {loaded ? createConfigView && (
+        <Box>
+          <Button onClick={handleCreate}>Créer</Button>
+        </Box>
+      ) : (
+        <SimpleLoader />
+      )}
+      {loaded && !createConfigView && (
+        <SplitLayoutView
+          title={t('singlestudy:xpansion')}
+          left={
+            <XpansionPropsView candidateList={candidates} settings={settings} constraints={constraints} capacities={capacities} onAdd={() => setOpenModal(true)} selectedItem={selectedItem} setSelectedItem={setSelectedItem} deleteXpansion={deleteXpansion} />
+          }
+          right={
+            selectedItem && (
+              <XpansionForm selectedItem={selectedItem} links={links || []} constraints={constraints} capacities={capacities} deleteCandidate={handleDeleteCandidate} updateCandidate={updateCandidate} updateSettings={updateSettings} />
+            )
+          }
+        />
+      )}
+
       {openModal && (
         <CreateCandidateModal
           open={openModal}

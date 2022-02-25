@@ -94,6 +94,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }));
 
 interface PropType {
+    title: string;
     content: Array<string>;
 }
 
@@ -101,7 +102,7 @@ const XpansionTable = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { content } = props;
+  const { title, content } = props;
 
   const onImport = async (file: File) => {
     try {
@@ -117,7 +118,7 @@ const XpansionTable = (props: PropType) => {
   return (
     <Box className={classes.root}>
       <Typography className={classes.title}>
-        {t('xpansion:constraints')}
+        {title}
       </Typography>
       <Divider className={classes.divider} />
       <div className={classes.import}>

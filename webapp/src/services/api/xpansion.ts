@@ -45,8 +45,8 @@ export const getAllCandidates = async (uuid: string): Promise<XpansionCandidate[
   return res.data;
 };
 
-export const addCandidate = async (uuid: string, candidate: XpansionCandidate): Promise<XpansionCandidate> => {
-  const res = await client.post(`/v1/studies/${uuid}/extensions/xpansion/candidates/add`, candidate);
+export const addCandidate = async (uuid: string, candidate: XpansionCandidate): Promise<void> => {
+  const res = await client.post(`/v1/studies/${uuid}/extensions/xpansion/candidates`, candidate);
   return res.data;
 };
 
@@ -55,8 +55,23 @@ export const updateCandidate = async (uuid: string, name: string, data: Xpansion
   return res.data;
 };
 
-export const deleteCandidate = async (uuid: string, name: string): Promise<XpansionCandidate> => {
+export const deleteCandidate = async (uuid: string, name: string): Promise<void> => {
   const res = await client.delete(`/v1/studies/${uuid}/extensions/xpansion/candidates/${name}`);
+  return res.data;
+};
+
+export const addConstraints = async (uuid: string, file: File): Promise<void> => {
+  const res = await client.post(`/v1/studies/${uuid}/extensions/xpansion/constraints`, file);
+  return res.data;
+};
+
+export const deleteConstraints = async (uuid: string, filename: string): Promise<void> => {
+  const res = await client.delete(`/v1/studies/${uuid}/extensions/xpansion/constraints/${filename}`);
+  return res.data;
+};
+
+export const getConstraint = async (uuid: string, filename: string): Promise<string> => {
+  const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/constraints/${filename}`);
   return res.data;
 };
 
@@ -65,12 +80,24 @@ export const getAllConstraints = async (uuid: string): Promise<Array<string>> =>
   return res.data;
 };
 
+export const addCapacity = async (uuid: string, file: File): Promise<void> => {
+  const res = await client.post(`/v1/studies/${uuid}/extensions/xpansion/capacities`, file);
+  return res.data;
+};
+
+export const deleteCapacity = async (uuid: string, filename: string): Promise<void> => {
+  const res = await client.delete(`/v1/studies/${uuid}/extensions/xpansion/capacities/${filename}`);
+  return res.data;
+};
+
+export const getCapacity = async (uuid: string, filename: string): Promise<string> => {
+  const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/capacities/${filename}`);
+  return res.data;
+};
+
 export const getAllCapacities = async (uuid: string): Promise<Array<string>> => {
   const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/capacities`);
   return res.data;
 };
-
-// update/remove Constraints
-// add/update/remove capa
 
 export default {};

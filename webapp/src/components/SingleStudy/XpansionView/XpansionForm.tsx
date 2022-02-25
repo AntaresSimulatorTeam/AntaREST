@@ -4,11 +4,12 @@ import {
   createStyles,
   Theme,
 } from '@material-ui/core';
+import { useTranslation } from 'react-i18next';
 import { XpansionCandidate, XpansionSettings } from './types';
 import CandidateForm from './CandidateForm';
 import SettingsForm from './SettingsForm';
 import { LinkCreationInfo } from '../MapView/types';
-import ConstraintsView from './ConstraintsView';
+import XpansionTable from './XpansionTable';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -34,6 +35,8 @@ const useStyles = makeStyles((theme: Theme) =>
 interface PropType {
     selectedItem: XpansionCandidate | XpansionSettings | Array<string> | undefined;
     links: Array<LinkCreationInfo>;
+    constraints: Array<string> | undefined;
+    capacities: Array<string> | undefined;
     deleteCandidate: (name: string) => void;
     updateCandidate: (value: XpansionCandidate) => void;
     updateSettings: (value: XpansionSettings) => void;
@@ -41,7 +44,8 @@ interface PropType {
 
 const XpansionForm = (props: PropType) => {
   const classes = useStyles();
-  const { selectedItem, links, deleteCandidate, updateCandidate, updateSettings } = props;
+  const [t] = useTranslation();
+  const { selectedItem, links, constraints, capacities, deleteCandidate, updateCandidate, updateSettings } = props;
 
   return (
     <>
@@ -56,9 +60,11 @@ const XpansionForm = (props: PropType) => {
         </div>
       ) : (
         <div className={classes.constraints}>
-          {Object.keys(selectedItem as Array<string>).map((item, index) => (selectedItem as Array<string>)[index]).length >= 0 && (
-            <ConstraintsView content={selectedItem as Array<string>} />
-          )}
+          {constraints === selectedItem ? (
+            <XpansionTable title={t('xpansion:constraints')} content={selectedItem as Array<string>} />
+          ) : (capacities === selectedItem && (
+            <XpansionTable title={t('xpansion:capacities')} content={selectedItem as Array<string>} />
+          ))}
         </div>
       )}
     </>

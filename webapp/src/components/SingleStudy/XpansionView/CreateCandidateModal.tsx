@@ -18,7 +18,7 @@ const useStyles = makeStyles((theme: Theme) =>
 interface PropType {
     open: boolean;
     onClose: () => void;
-    onSave: (name: string) => void;
+    onSave: (name: string, link: string) => void;
 }
 
 const CreateCandidateModal = (props: PropType) => {
@@ -26,12 +26,13 @@ const CreateCandidateModal = (props: PropType) => {
   const [t] = useTranslation();
   const { open, onClose, onSave } = props;
   const [name, setName] = useState<string>('');
+  const [link, setLink] = useState<string>('');
 
   return (
     <GenericModal
       open={open}
       handleClose={onClose}
-      handleAction={() => onSave(name)}
+      handleAction={() => onSave(name, link)}
       title="Nouveau candidat"
     >
       <div className={classes.name}>
@@ -40,6 +41,13 @@ const CreateCandidateModal = (props: PropType) => {
           variant="outlined"
           onChange={(event) => setName(event.target.value as string)}
           value={name}
+          size="small"
+        />
+        <TextField
+          label={t('xpansion:link')}
+          variant="outlined"
+          onChange={(event) => setLink(event.target.value as string)}
+          value={link}
           size="small"
         />
       </div>
