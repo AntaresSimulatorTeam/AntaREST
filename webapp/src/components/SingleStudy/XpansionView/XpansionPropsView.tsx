@@ -45,6 +45,7 @@ interface PropsType {
   candidateList?: Array<XpansionCandidate>;
   settings: XpansionSettings | undefined;
   constraints: Array<string> | undefined;
+  capacities: Array<string> | undefined;
   selectedItem: XpansionCandidate | XpansionSettings | Array<string> | undefined;
   setSelectedItem: (item: XpansionCandidate | XpansionSettings | Array<string>) => void;
   onAdd: () => void;
@@ -54,7 +55,7 @@ interface PropsType {
 const XpansionPropsView = (props: PropsType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { candidateList, settings, constraints, selectedItem, setSelectedItem, onAdd, deleteXpansion } = props;
+  const { candidateList, settings, constraints, capacities, selectedItem, setSelectedItem, onAdd, deleteXpansion } = props;
   const [filteredCandidates, setFilteredCandidates] = useState<Array<XpansionCandidate>>();
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
@@ -84,6 +85,7 @@ const XpansionPropsView = (props: PropsType) => {
             <Box className={classes.buttons}>
               <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>{t('main:settings')}</Button>
               <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>{t('xpansion:constraints')}</Button>
+              <Button className={classes.button} size="small" onClick={() => { if (capacities) { setSelectedItem(capacities); } }}>Capacities</Button>
               <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
             </Box>
           </div>
@@ -95,6 +97,7 @@ const XpansionPropsView = (props: PropsType) => {
             <Box className={classes.buttons}>
               <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>{t('main:settings')}</Button>
               <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>{t('xpansion:constraints')}</Button>
+              <Button className={classes.button} size="small" onClick={() => { if (capacities) { setSelectedItem(capacities); } }}>Capacities</Button>
               <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
             </Box>
           </div>

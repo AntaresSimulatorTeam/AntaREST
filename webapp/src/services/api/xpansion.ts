@@ -65,6 +65,11 @@ export const getAllConstraints = async (uuid: string): Promise<Array<string>> =>
   return res.data;
 };
 
+export const getAllCapacities = async (uuid: string): Promise<Array<string>> => {
+  const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/capacities`);
+  return res.data;
+};
+
 // update/remove Constraints
 // add/update/remove capa
 

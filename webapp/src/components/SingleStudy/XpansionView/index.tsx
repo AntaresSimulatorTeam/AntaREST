@@ -8,7 +8,7 @@ import SplitLayoutView from '../../ui/SplitLayoutView';
 import CreateCandidateModal from './CreateCandidateModal';
 import { XpansionCandidate, XpansionSettings } from './types';
 import XpansionForm from './XpansionForm';
-import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints } from '../../../services/api/xpansion';
+import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints, getAllCapacities } from '../../../services/api/xpansion';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { getAllLinks } from '../../../services/api/studydata';
 import { LinkCreationInfo } from '../MapView/types';
@@ -27,6 +27,7 @@ const XpansionView = (props: Props) => {
   const [candidates, setCandidates] = useState<Array<XpansionCandidate>>();
   const [constraints, setConstraints] = useState<Array<string>>();
   const [links, setLinks] = useState<Array<LinkCreationInfo>>();
+  const [capacities, setCapacities] = useState<Array<string>>();
   // state pour savoir si créer ou nom
 
   const init = useCallback(async () => {
@@ -41,6 +42,9 @@ const XpansionView = (props: Props) => {
         setConstraints(tempConstraints);
         const tempLinks = await getAllLinks(study.id);
         setLinks(tempLinks);
+        const tempCapa = await getAllCapacities(study.id);
+        console.log(tempCapa);
+        setCapacities(tempCapa);
       } else {
         console.log('faut créer');
       }
@@ -93,7 +97,7 @@ const XpansionView = (props: Props) => {
       <SplitLayoutView
         title={t('singlestudy:xpansion')}
         left={
-          <XpansionPropsView candidateList={candidates} settings={settings} constraints={constraints} onAdd={() => setOpenModal(true)} selectedItem={selectedItem} setSelectedItem={setSelectedItem} deleteXpansion={deleteXpansion} />
+          <XpansionPropsView candidateList={candidates} settings={settings} constraints={constraints} capacities={capacities} onAdd={() => setOpenModal(true)} selectedItem={selectedItem} setSelectedItem={setSelectedItem} deleteXpansion={deleteXpansion} />
         }
         right={
           selectedItem && (
