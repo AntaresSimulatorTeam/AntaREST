@@ -11,7 +11,7 @@ from time import time
 from typing import List, IO, Optional, cast, Union, Dict, Callable
 from uuid import uuid4
 
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
 
@@ -58,6 +58,11 @@ from antarest.study.business.area_management import (
     AreaUI,
 )
 from antarest.study.business.link_management import LinkManager, LinkInfoDTO
+from antarest.study.business.xpansion_management import (
+    XpansionManager,
+    XpansionSettingsDTO,
+    XpansionCandidateDTO,
+)
 from antarest.study.model import (
     Study,
     StudyContentStatus,
@@ -153,6 +158,7 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.storage_service)
         self.links = LinkManager(self.storage_service)
+        self.xpansion_manager = XpansionManager(self.storage_service)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
@@ -1713,3 +1719,174 @@ class StudyService:
     @staticmethod
     def get_studies_versions(params: RequestParameters) -> List[str]:
         return list(STUDY_REFERENCE_TEMPLATES.keys())
+
+    def create_xpansion_configuration(
+        self, uuid: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        self.xpansion_manager.create_xpansion_configuration(study)
+
+    def delete_xpansion_configuration(
+        self, uuid: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        self.xpansion_manager.delete_xpansion_configuration(study)
+
+    def get_xpansion_settings(
+        self, uuid: str, params: RequestParameters
+    ) -> XpansionSettingsDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_xpansion_settings(study)
+
+    def update_xpansion_settings(
+        self,
+        uuid: str,
+        xpansion_settings_dto: XpansionSettingsDTO,
+        params: RequestParameters,
+    ) -> XpansionSettingsDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.update_xpansion_settings(
+            study, xpansion_settings_dto
+        )
+
+    def add_candidate(
+        self,
+        uuid: str,
+        xpansion_candidate_dto: XpansionCandidateDTO,
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.add_candidate(
+            study, xpansion_candidate_dto
+        )
+
+    def get_candidate(
+        self, uuid: str, candidate_name: str, params: RequestParameters
+    ) -> XpansionCandidateDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_candidate(study, candidate_name)
+
+    def get_candidates(
+        self, uuid: str, params: RequestParameters
+    ) -> List[XpansionCandidateDTO]:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_candidates(study)
+
+    def update_xpansion_candidate(
+        self,
+        uuid: str,
+        candidate_name: str,
+        xpansion_candidate_dto: XpansionCandidateDTO,
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.update_candidate(
+            study, candidate_name, xpansion_candidate_dto
+        )
+
+    def delete_xpansion_candidate(
+        self, uuid: str, candidate_name: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.delete_candidate(study, candidate_name)
+
+    def update_xpansion_constraints_settings(
+        self,
+        uuid: str,
+        constraints_file_name: Optional[str],
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.update_xpansion_constraints_settings(
+            study, constraints_file_name
+        )
+
+    def add_xpansion_constraints(
+        self,
+        uuid: str,
+        files: List[UploadFile],
+        params: RequestParameters,
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.add_xpansion_constraints(study, files)
+
+    def delete_xpansion_constraints(
+        self, uuid: str, filename: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.delete_xpansion_constraints(
+            study, filename
+        )
+
+    def get_single_xpansion_constraints(
+        self, uuid: str, filename: str, params: RequestParameters
+    ) -> bytes:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_single_xpansion_constraints(
+            study, filename
+        )
+
+    def get_all_xpansion_constraints(
+        self, uuid: str, params: RequestParameters
+    ) -> List[str]:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_all_xpansion_constraints(study)
+
+    def add_capa(
+        self, uuid: str, files: List[UploadFile], params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.add_capa(study, files)
+
+    def delete_capa(
+        self, uuid: str, filename: str, params: RequestParameters
+    ) -> None:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.delete_capa(study, filename)
+
+    def get_single_capa(
+        self, uuid: str, filename: str, params: RequestParameters
+    ) -> bytes:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_single_capa(study, filename)
+
+    def get_all_capa(self, uuid: str, params: RequestParameters) -> List[str]:
+
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        self._assert_study_unarchived(study)
+        return self.xpansion_manager.get_all_capa(study)

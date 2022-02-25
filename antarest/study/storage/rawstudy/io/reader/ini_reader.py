@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional, Union
 
-from antarest.core.model import ELEMENT, JSON
+from antarest.core.model import ELEMENT, JSON, SUB_JSON
 
 
 class IReader(ABC):
@@ -50,7 +50,7 @@ class IniReader(IReader):
             return None
 
     @staticmethod
-    def parse_value(value: str) -> ELEMENT:
+    def parse_value(value: str) -> SUB_JSON:
         parsed: Union[str, int, float, bool, None] = IniReader._parse_bool(
             value
         )
@@ -90,7 +90,7 @@ class SimpleKeyValueReader(IReader):
             return None
 
     @staticmethod
-    def parse_value(value: str) -> ELEMENT:
+    def parse_value(value: str) -> SUB_JSON:
         parsed: Union[
             str, int, float, bool, None
         ] = SimpleKeyValueReader._parse_inf(value)
@@ -115,7 +115,7 @@ class SimpleKeyValueReader(IReader):
                 line = line.strip()
                 if line and not line.startswith("#"):
                     key, value = line.split("=")
-                    json[key] = value
+                    json[key.strip()] = value.strip()
 
         return self._parse_json(json)
 

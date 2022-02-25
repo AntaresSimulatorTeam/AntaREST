@@ -385,8 +385,8 @@ def test_revert(command_context: CommandContext):
             command_context=command_context,
         )
     ]
-    base.command_context.command_extractor.extract_binding_constraint.side_effect = (
-        ChildNotFoundError()
+    base.command_context.command_extractor.extract_binding_constraint.side_effect = ChildNotFoundError(
+        ""
     )
     base.revert([], study)
     base.command_context.command_extractor.extract_binding_constraint.assert_called_with(

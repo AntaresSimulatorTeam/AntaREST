@@ -197,7 +197,7 @@ def test_revert(command_context: CommandContext):
     base = RemoveDistrict(id="id", command_context=command_context)
     study = FileStudy(config=Mock(), tree=Mock())
     base.command_context.command_extractor.extract_district.side_effect = (
-        ChildNotFoundError()
+        ChildNotFoundError("")
     )
     base.revert([], study)
     base.command_context.command_extractor.extract_district.assert_called_with(

@@ -128,7 +128,7 @@ class TestRemoveLink:
         )
         study = FileStudy(config=Mock(), tree=Mock())
         base.command_context.command_extractor.extract_link.side_effect = (
-            ChildNotFoundError()
+            ChildNotFoundError("")
         )
         base.revert([], study)
         base.command_context.command_extractor.extract_link.assert_called_with(
