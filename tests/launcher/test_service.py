@@ -43,7 +43,6 @@ def test_service_run_study(get_current_user_mock):
 
     uuid = uuid4()
     launcher_mock = Mock()
-    launcher_mock.run_study.return_value = uuid
     factory_launcher_mock = Mock()
     factory_launcher_mock.build_launcher.return_value = {
         "local": launcher_mock
@@ -67,6 +66,7 @@ def test_service_run_study(get_current_user_mock):
         factory_launcher=factory_launcher_mock,
         event_bus=event_bus,
     )
+    launcher_service._generate_new_id = lambda: str(uuid)
 
     job_id = launcher_service.run_study(
         "study_uuid",

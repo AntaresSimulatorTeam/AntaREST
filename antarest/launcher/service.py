@@ -171,6 +171,10 @@ class LauncherService:
         if launcher not in self.launchers:
             raise LauncherServiceNotAvailableException(launcher)
 
+    @staticmethod
+    def _generate_new_id() -> str:
+        return str(uuid4())
+
     def run_study(
         self,
         study_uuid: str,
@@ -189,7 +193,7 @@ class LauncherService:
             study=study_info,
             permission_type=StudyPermissionType.RUN,
         )
-        job_uuid = str(uuid4())
+        job_uuid = self._generate_new_id()
         job_status = JobResult(
             id=job_uuid,
             study_id=study_uuid,
@@ -339,12 +343,10 @@ class LauncherService:
                 self.launchers[job_result.launcher].get_log(job_id, log_type)
                 or ""
             )
-            return (
-                "\n".join(app_logs[JobLogType.BEFORE])
-                + "\n"
-                + launcher_logs
-                + "\n"
-                + "\n".join(app_logs[JobLogType.AFTER])
+            return "\n".join(
+                app_logs[JobLogType.BEFORE]
+                + [launcher_logs]
+                + app_logs[JobLogType.AFTER]
             )
 
         raise JobNotFound()

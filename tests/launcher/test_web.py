@@ -38,7 +38,7 @@ def test_run() -> None:
     study = "my-study"
 
     service = Mock()
-    service.run_study.return_value = job
+    service.run_study.return_value = str(job)
 
     app = create_app(service)
     client = TestClient(app)
