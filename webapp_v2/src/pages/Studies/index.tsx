@@ -176,7 +176,7 @@ function Studies(props: PropTypes) {
     saveState(DEFAULT_FILTER_SORTING, currentSortItem);
     saveState(DEFAULT_FILTER_FOLDER, currentFolder);
     applyFilter();
-  }, [currentVersion, currentUser, currentGroup, currentSortItem, managedFilter, currentFolder, applyFilter]);
+  }, [currentVersion, currentUser, currentGroup, currentSortItem, managedFilter, currentFolder]);
 
   useEffect(() => {
     saveState(DEFAULT_FAVORITE_STUDIES, currentFavorite);
