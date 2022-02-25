@@ -7,7 +7,6 @@ jsonref~=0.2
 PyYAML~=5.4.1
 filelock~=3.4.2
 SQLAlchemy~=1.4.31
-dataclasses~=0.6
 redis~=4.1.2
 requests~=2.27.1
 pandas~=1.4.0
