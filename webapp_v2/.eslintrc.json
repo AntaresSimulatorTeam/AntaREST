@@ -4,7 +4,9 @@
         "es6": true
     },
     "extends": [
+        "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
         "airbnb",
         "airbnb/hooks"
     ],
@@ -49,6 +51,10 @@
          "react/jsx-filename-extension": [2, { "extensions": [".jsx", ".tsx"] }],
          "@typescript-eslint/explicit-function-return-type": "off",
          "import/no-extraneous-dependencies": "off",
+         "@typescript-eslint/no-unused-vars": "off",
+         "no-unused-vars": "off",
+         "no-shadow": "off",
+         "@typescript-eslint/no-shadow": "off",
          // prettier compat
          "implicit-arrow-linebreak": "off",
          "operator-linebreak": "off",

@@ -101,6 +101,7 @@ type GlobalAction = AddOnCloseListenerAction
 /* Reducer                                      */
 /** ******************************************* */
 
+// eslint-disable-next-line default-param-last
 export default (state = initialState, action: GlobalAction): GlobalState => {
   switch (action.type) {
     case 'GLOBAL/ADD_ONCLOSE_LISTENER': {

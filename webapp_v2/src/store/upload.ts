@@ -90,6 +90,7 @@ type UploadAction = AddUploadAction | UpdateUploadAction | CompleteUploadAction 
 /* Reducer                                      */
 /** ******************************************* */
 
+// eslint-disable-next-line default-param-last
 export default (state = initialState, action: UploadAction): UploadState => {
   switch (action.type) {
     case 'UPLOAD/ADD':

@@ -58,6 +58,7 @@ type UIAction = SetMenuExtensionStatusAction | SetAppPageAction;
 /* Reducer                                      */
 /** ******************************************* */
 
+// eslint-disable-next-line default-param-last
 export default (state = initialState, action: UIAction): UIState => {
   switch (action.type) {
     case 'UI/SET_MENU_EXTENSION_STATUS': {

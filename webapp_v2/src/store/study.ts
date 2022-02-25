@@ -111,6 +111,7 @@ export const getCurrentStudy = (state: AppState): StudyMetadata | undefined => s
 /* Reducer                                      */
 /** ******************************************* */
 
+// eslint-disable-next-line default-param-last
 export default (state = initialState, action: StudyAction): StudyState => {
   switch (action.type) {
     case 'STUDY/VIEW_STUDY':

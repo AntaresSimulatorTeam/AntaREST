@@ -1,5 +1,4 @@
 /* eslint-disable camelcase */
-/* eslint-disable @typescript-eslint/camelcase */
 import { Action } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import jwt_decode from 'jwt-decode';
@@ -75,6 +74,7 @@ type AuthAction = LoginAction | LogoutAction;
 /* Reducer                                      */
 /** ******************************************* */
 
+// eslint-disable-next-line default-param-last
 export default (state = initialState, action: AuthAction): AuthState => {
   switch (action.type) {
     case 'AUTH/LOGIN':

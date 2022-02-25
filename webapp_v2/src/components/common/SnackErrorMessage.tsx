@@ -49,21 +49,23 @@ const SnackErrorMessage = forwardRef<HTMLDivElement, Props>((props: Props, ref) 
   return (
     <Snackbar ref={ref}>
       <Card sx={{
-          bgcolor: 'error.main',
-          width: '100%',
-          color: 'white',
-      }}>
+        bgcolor: 'error.main',
+        width: '100%',
+        color: 'white',
+      }}
+      >
         <CardActions
-            sx={{
-              root: {
-                padding: '8px 8px 8px 16px',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }
-            }}>
+          sx={{
+            root: {
+              padding: '8px 8px 8px 16px',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            },
+          }}
+        >
           <CancelRoundedIcon sx={{ width: '20px', height: '20px', mx: 1 }} />
           <Typography variant="subtitle2">{message}</Typography>
-          <Box ml='auto'>
+          <Box ml="auto">
             <ExpandButton
               aria-label="Show more"
               expanded={expanded}

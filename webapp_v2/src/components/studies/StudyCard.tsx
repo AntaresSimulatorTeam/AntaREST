@@ -62,17 +62,14 @@ export default function StudyCard(props: Props) {
     const minutes = duration.minutes() > 0 ? `${duration.minutes().toString()} ${t('main:minutesSymbol')}` : '';
     const seconds = duration.seconds() > 0 ? `${duration.seconds().toString()} ${t('main:secondsSymbol')}` : '';
 
-    if(days !== '')
-      return `${days}`;
-    
-    if(hours !== '')
-      return `${hours}`;
+    if (days !== '') { return `${days}`; }
 
-    if(minutes !== '')
-    return `${minutes}`;
+    if (hours !== '') { return `${hours}`; }
+
+    if (minutes !== '') { return `${minutes}`; }
 
     return `${seconds}`;
-  }
+  };
 
   const copyId = (): void => {
     try {
@@ -87,23 +84,25 @@ export default function StudyCard(props: Props) {
     <Card variant="outlined" sx={{ minWidth: 275, flex: 'none' }}>
       <CardContent>
         <Box width="100%" height="60px" display="flex" flexDirection="row" justifyContent="space-between" p={0.5}>
-          <Box display="flex" flexDirection="column" justifyContent="center"  alignItems="flex-start" width="calc(100% - 60px)" boxSizing="border-box">
+          <Box display="flex" flexDirection="column" justifyContent="center" alignItems="flex-start" width="calc(100% - 60px)" boxSizing="border-box">
             <Tooltip title={study.name}>
               <Typography width="100%" noWrap variant="h5" component="div" color="white" boxSizing="border-box">
                 {study.name}
               </Typography>
             </Tooltip>
-            <Typography noWrap color="white" sx={{ fontSize: '16px', color: 'text.secondary'}} >
-                {study.id}
+            <Typography noWrap color="white" sx={{ fontSize: '16px', color: 'text.secondary' }}>
+              {study.id}
             </Typography>
           </Box>
-          <Box display="flex"  height="30px" flexDirection="row" flex="0 0 60px" justifyContent="center"  alignItems="center">
+          <Box display="flex" height="30px" flexDirection="row" flex="0 0 60px" justifyContent="center" alignItems="center">
             <Tooltip title={t('studymanager:copyID') as string}>
-              <ContentCopyIcon sx={{ cursor: 'pointer', 
-                                     width: '20px', 
-                                     height: '20px', 
-                                     '&:hover': { color: 'text.secondary'} }}
-                                onClick={() => copyId()} />
+              <ContentCopyIcon
+                sx={{ cursor: 'pointer',
+                  width: '20px',
+                  height: '20px',
+                  '&:hover': { color: 'text.secondary' } }}
+                onClick={() => copyId()}
+              />
             </Tooltip>
             {favorite ? <StarPurple500OutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" /> :
             <StarOutlineOutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" />
@@ -133,32 +132,35 @@ export default function StudyCard(props: Props) {
       </CardContent>
       <CardActions>
         <Button size="small" color="primary">{t('studymanager:exploreButton')}</Button>
-        <Button size="small"
-                aria-controls="menu-elements"
-                aria-haspopup="true"
-                id="menu"
-                color="primary" 
-                sx={{ width: 'auto', minWidth: 0, p: 0 }} 
-                onClick={handleClick}>
+        <Button
+          size="small"
+          aria-controls="menu-elements"
+          aria-haspopup="true"
+          id="menu"
+          color="primary"
+          sx={{ width: 'auto', minWidth: 0, p: 0 }}
+          onClick={handleClick}
+        >
           <MoreVertIcon />
         </Button>
         <Menu
-              id="menu-elements"
-              anchorEl={anchorEl}
-              keepMounted
-              open={openMenu === 'menu'}
-              onClose={handleClose}
-            >
-            { study.archived ? 
-              <MenuItem onClick={() => { onUnarchiveClick(study); handleClose(); }}>
-                <ListItemIcon>
-                  <UnarchiveOutlinedIcon sx={{ color: 'action.active', width: '24px', height: '24px' }} />
-                </ListItemIcon>
-                <ListItemText>
+          id="menu-elements"
+          anchorEl={anchorEl}
+          keepMounted
+          open={openMenu === 'menu'}
+          onClose={handleClose}
+        >
+          { study.archived ? (
+            <MenuItem onClick={() => { onUnarchiveClick(study); handleClose(); }}>
+              <ListItemIcon>
+                <UnarchiveOutlinedIcon sx={{ color: 'action.active', width: '24px', height: '24px' }} />
+              </ListItemIcon>
+              <ListItemText>
                 {t('studymanager:unarchive')}
-                </ListItemText>
-              </MenuItem> :
-              <div>
+              </ListItemText>
+            </MenuItem>
+          ) : (
+            <div>
               <MenuItem onClick={() => { exportStudy(study.id, false); handleClose(); }}>
                 <ListItemIcon>
                   <DownloadOutlinedIcon sx={{ color: 'action.active', width: '24px', height: '24px' }} />
@@ -167,19 +169,20 @@ export default function StudyCard(props: Props) {
                   {t('studymanager:export')}
                 </ListItemText>
               </MenuItem>
-              {study.managed &&
-              <MenuItem onClick={() => { onArchiveClick(study); handleClose(); }}>
-                <ListItemIcon>
-                  <ArchiveOutlinedIcon sx={{ color: 'action.active', width: '24px', height: '24px' }} />
-                </ListItemIcon>
-                <ListItemText>
-                  {t('studymanager:archive')}
-                </ListItemText>
-              </MenuItem>}
-              </div>
-            }
-            {
-              study.managed && 
+              {study.managed && (
+                <MenuItem onClick={() => { onArchiveClick(study); handleClose(); }}>
+                  <ListItemIcon>
+                    <ArchiveOutlinedIcon sx={{ color: 'action.active', width: '24px', height: '24px' }} />
+                  </ListItemIcon>
+                  <ListItemText>
+                    {t('studymanager:archive')}
+                  </ListItemText>
+                </MenuItem>
+              )}
+            </div>
+          )}
+          {
+              study.managed && (
               <MenuItem onClick={() => { onDeleteClick(study); handleClose(); }}>
                 <ListItemIcon>
                   <DeleteOutlinedIcon sx={{ color: 'error.light', width: '24px', height: '24px' }} />
@@ -188,10 +191,9 @@ export default function StudyCard(props: Props) {
                   {t('studymanager:delete')}
                 </ListItemText>
               </MenuItem>
-            }
+              )}
         </Menu>
       </CardActions>
     </Card>
   );
 }
-

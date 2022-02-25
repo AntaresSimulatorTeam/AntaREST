@@ -193,14 +193,17 @@ function Studies(props: PropTypes) {
         <SideNav studies={studies} folder={currentFolder as string} setFolder={setCurrentFolder} favorite={currentFavorite as Array<GenericInfo>} />
         <Divider sx={{ width: '1px', height: '98%', bgcolor: 'divider' }} />
         {!loaded && <MainContentLoader />}
-        {loaded && studies && 
-          <StudiesList studies={filteredStudies} 
-                       sortItem={currentSortItem as SortItem} 
-                       setSortItem={setCurrentSortItem} 
-                       folder={currentFolder as string} 
-                       setFolder={setCurrentFolder} 
-                       favorite={currentFavorite !== undefined ? currentFavorite.map((elm) => elm.id as string) : []} 
-                       onFavoriteClick={handleFavoriteClick} />}
+        {loaded && studies && (
+          <StudiesList
+            studies={filteredStudies}
+            sortItem={currentSortItem as SortItem}
+            setSortItem={setCurrentSortItem}
+            folder={currentFolder as string}
+            setFolder={setCurrentFolder}
+            favorite={currentFavorite !== undefined ? currentFavorite.map((elm) => elm.id as string) : []}
+            onFavoriteClick={handleFavoriteClick}
+          />
+        )}
         {openFilter && (
           <FilterDrawer
             open={openFilter}

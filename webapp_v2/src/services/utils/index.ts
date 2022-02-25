@@ -25,6 +25,7 @@ export const convertVariantTreeDTO = (variantTree: VariantTreeDTO): VariantTree 
   children: (variantTree.children || []).map((child: VariantTreeDTO) => convertVariantTreeDTO(child)),
 });
 
+// eslint-disable-next-line no-undef
 export const useNotif = (): (message: React.ReactNode, options?: OptionsObject | undefined) => React.ReactText => {
   const { enqueueSnackbar } = useSnackbar();
   return enqueueSnackbar;
@@ -100,15 +101,13 @@ export const getStudyExtendedName = (study: StudyMetadata): string => {
 
 export const convertUTCToLocalTime = (date: string): string => moment.utc(date).local().format('YYYY-MM-DD HH:mm:ss');
 
-
 export interface ElementsDate {
 
 }
 
-export const modificationDate = (date: string) : moment.Duration => {
-  return moment.duration(moment(Date.now()).diff(moment(date)), 'milliseconds');
-  //return `${duration.days()}d${duration.hours()}h${duration.minutes()}m${duration.seconds()}s`;
-}
+export const modificationDate = (date: string) : moment.Duration =>
+  moment.duration(moment(Date.now()).diff(moment(date)), 'milliseconds');
+  // return `${duration.days()}d${duration.hours()}h${duration.minutes()}m${duration.seconds()}s`;
 
 export const exportText = (fileData: string, filename: string): void => {
   const blob = new Blob([fileData], { type: 'application/txt' });

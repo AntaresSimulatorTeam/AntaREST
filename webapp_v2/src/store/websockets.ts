@@ -1,5 +1,5 @@
+/* eslint-disable no-use-before-define */
 /* eslint-disable camelcase */
-/* eslint-disable @typescript-eslint/camelcase */
 import debug from 'debug';
 import { Action } from 'redux';
 import { ThunkAction } from 'redux-thunk';
@@ -118,6 +118,7 @@ export interface ConnectAction extends Action {
 }
 
 const RECONNECTION_DEFAULT_DELAY = 3000;
+// eslint-disable-next-line no-undef
 let reconnectionTimer: NodeJS.Timeout | null = null;
 
 export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, unknown, Action> => (dispatch, getState): void => {
@@ -128,13 +129,11 @@ export const connectWebsocket = (user?: UserInfo): ThunkAction<void, AppState, u
     if (!reconnectionTimer) {
       logInfo(`Reconnecting websocket in ${RECONNECTION_DEFAULT_DELAY}ms`);
       const current_user = getState().auth.user;
-      reconnectionTimer = setTimeout(
-        () => {
-          dispatch(disconnectWebsocket());
-          dispatch(connectWebsocket(current_user));
-          reconnectionTimer = null;
-        }, RECONNECTION_DEFAULT_DELAY,
-      );
+      reconnectionTimer = setTimeout(() => {
+        dispatch(disconnectWebsocket());
+        dispatch(connectWebsocket(current_user));
+        reconnectionTimer = null;
+      }, RECONNECTION_DEFAULT_DELAY);
     } else {
       logInfo('Already trying to reconnect to websockets');
     }
@@ -283,6 +282,7 @@ type WebsocketAction = ConnectAction
 /* Reducer                                      */
 /** ******************************************* */
 
+// eslint-disable-next-line default-param-last
 export default (state = initialState, action: WebsocketAction): WebsocketState => {
   switch (action.type) {
     case 'WS/CONNECT':
