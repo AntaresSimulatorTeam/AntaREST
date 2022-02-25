@@ -20,7 +20,7 @@ import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import ReadMoreOutlinedIcon from '@mui/icons-material/ReadMoreOutlined';
 
-import { useTheme } from '@mui/material';
+import { SvgIconProps, useTheme } from '@mui/material';
 import logo from '../../assets/logo.png';
 import { AppState } from '../../store/reducers';
 import { setMenuExtensionStatusAction } from '../../store/ui';
@@ -30,8 +30,7 @@ interface MenuItem {
   id: string;
   link: string;
   newTab?: boolean;
-  // eslint-disable-next-line no-undef
-  icon: (props: any) => JSX.Element;
+  icon: React.FunctionComponent<SvgIconProps>;
 }
 
 const mapState = (state: AppState) => ({
@@ -52,31 +51,23 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
   const [t] = useTranslation();
 
   const navigation: Array<MenuItem> = [
-    // eslint-disable-next-line react/no-unstable-nested-components
-    { id: 'studies', link: '/studies', icon: (props: any) => <TravelExploreOutlinedIcon {...props} /> },
-    // eslint-disable-next-line react/no-unstable-nested-components
-    { id: 'data', link: '/data', icon: (props: any) => <ShowChartOutlinedIcon {...props} /> },
-    // eslint-disable-next-line react/no-unstable-nested-components
-    { id: 'tasks', link: '/tasks', icon: (props: any) => <PlaylistAddCheckOutlinedIcon {...props} /> },
-    // eslint-disable-next-line react/no-unstable-nested-components
-    { id: 'api', link: '/api', icon: (props: any) => <ApiIcon {...props} /> },
-    // eslint-disable-next-line react/no-unstable-nested-components
-    { id: 'documentation', link: 'https://antares-web.readthedocs.io/en/latest', newTab: true, icon: (props: any) => <ClassOutlinedIcon {...props} /> },
-    // eslint-disable-next-line react/no-unstable-nested-components
-    { id: 'github', link: 'https://github.com/AntaresSimulatorTeam/AntaREST', newTab: true, icon: (props: any) => <GitHubIcon {...props} /> },
-    // eslint-disable-next-line react/no-unstable-nested-components
-    { id: 'settings', link: '/settings', icon: (props: any) => <SettingsOutlinedIcon {...props} /> },
+    { id: 'studies', link: '/studies', icon: TravelExploreOutlinedIcon },
+    { id: 'data', link: '/data', icon: ShowChartOutlinedIcon },
+    { id: 'tasks', link: '/tasks', icon: PlaylistAddCheckOutlinedIcon },
+    { id: 'api', link: '/api', icon: ApiIcon },
+    { id: 'documentation', link: 'https://antares-web.readthedocs.io/en/latest', newTab: true, icon: ClassOutlinedIcon },
+    { id: 'github', link: 'https://github.com/AntaresSimulatorTeam/AntaREST', newTab: true, icon: GitHubIcon },
+    { id: 'settings', link: '/settings', icon: SettingsOutlinedIcon },
   ];
 
   const settings = navigation[navigation.length - 1];
 
-  // eslint-disable-next-line no-undef
-  const drawMenuItem = (elm: MenuItem): JSX.Element => (
+  const drawMenuItem = (elm: MenuItem): React.ReactNode => (
     <NavListItem link key={elm.id}>
       {elm.newTab === true ? (
         <NavExternalLink href={elm.link} target="_blank">
           <NavListItemIcon>
-            {elm.icon({ sx: { color: 'grey.400' } })}
+            <elm.icon sx={{ color: 'grey.400' }} />
           </NavListItemIcon>
           {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
         </NavExternalLink>
@@ -87,7 +78,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
             background: isActive ? theme.palette.primary.outlinedHoverBackground : undefined })}
         >
           <NavListItemIcon>
-            {elm.icon({ sx: { color: 'grey.400' } })}
+            <elm.icon sx={{ color: 'grey.400' }} />
           </NavListItemIcon>
           {extended && <NavListItemText primary={t(`main:${elm.id}`)} />}
         </NavInternalLink>
