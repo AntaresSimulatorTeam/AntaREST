@@ -504,17 +504,25 @@ class XpansionManager:
         data: JSON = {}
         buffer = data
 
-        list_names = [file.name for file in files]
+        list_names = [file.filename for file in files]
         for name in list_names:
             if name in file_study.tree.get(keys):
                 raise FileAlreadyExistsError(f"File '{name}' already exists")
+
+        if len(list_names) != len(set(list_names)):
+            raise FileAlreadyExistsError(
+                f"Some files have the same name: {list_names}"
+            )
 
         for key in keys:
             buffer[key] = {}
             buffer = buffer[key]
 
         for file in files:
-            buffer[file.filename] = file.file.read().encode()
+            content = file.file.read()
+            if type(content) != bytes:
+                content = content.encode()
+            buffer[file.filename] = content
 
         file_study.tree.save(data)
 
@@ -532,14 +540,22 @@ class XpansionManager:
     def _is_constraints_file_used(
         self, file_study: FileStudy, filename: str
     ) -> bool:
-        return (
-            str(
-                file_study.tree.get(
-                    ["user", "expansion", "settings", "additional-constraints"]
+        try:
+            return (
+                str(
+                    file_study.tree.get(
+                        [
+                            "user",
+                            "expansion",
+                            "settings",
+                            "additional-constraints",
+                        ]
+                    )
                 )
+                == filename
             )
-            == filename
-        )
+        except KeyError:
+            return False
 
     def delete_xpansion_constraints(self, study: Study, filename: str) -> None:
         file_study = self.study_storage_service.get_storage(study).get_raw(
@@ -605,40 +621,17 @@ class XpansionManager:
         logger.info(
             f"Checking xpansion capacities file '{filename}' is not used in study '{file_study.config.study_id}'"
         )
-        try:
-            file_used_in_link_profile = (
-                str(
-                    file_study.tree.get(
-                        ["user", "expansion", "settings", "link-profile"]
-                    )
-                )
-                == filename
-            )
 
-        except KeyError:
-            file_used_in_link_profile = False
-
-        try:
-            file_used_in_already_installed_link_profile = (
-                str(
-                    file_study.tree.get(
-                        [
-                            "user",
-                            "expansion",
-                            "settings",
-                            "already-installed-link-profile",
-                        ]
-                    )
-                )
-                == filename
-            )
-        except KeyError:
-            file_used_in_already_installed_link_profile = False
-
-        return (
-            file_used_in_link_profile
-            or file_used_in_already_installed_link_profile
-        )
+        candidates = file_study.tree.get(["user", "expansion", "candidates"])
+        all_link_profiles = [
+            candidate.get("link-profile", None)
+            for candidate in candidates.values()
+        ]
+        all_link_profiles += [
+            candidate.get("already-installed-link-profile", None)
+            for candidate in candidates.values()
+        ]
+        return filename in all_link_profiles
 
     def delete_capa(self, study: Study, filename: str) -> None:
         file_study = self.study_storage_service.get_storage(study).get_raw(
