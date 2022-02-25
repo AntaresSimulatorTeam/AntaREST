@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-props-no-spreading */
 import React, { PropsWithChildren } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +30,7 @@ interface MenuItem {
   id: string;
   link: string;
   newTab?: boolean;
+  // eslint-disable-next-line no-undef
   icon: (props: any) => JSX.Element;
 }
 
@@ -50,17 +52,25 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
   const [t] = useTranslation();
 
   const navigation: Array<MenuItem> = [
+    // eslint-disable-next-line react/no-unstable-nested-components
     { id: 'studies', link: '/studies', icon: (props: any) => <TravelExploreOutlinedIcon {...props} /> },
+    // eslint-disable-next-line react/no-unstable-nested-components
     { id: 'data', link: '/data', icon: (props: any) => <ShowChartOutlinedIcon {...props} /> },
+    // eslint-disable-next-line react/no-unstable-nested-components
     { id: 'tasks', link: '/tasks', icon: (props: any) => <PlaylistAddCheckOutlinedIcon {...props} /> },
+    // eslint-disable-next-line react/no-unstable-nested-components
     { id: 'api', link: '/api', icon: (props: any) => <ApiIcon {...props} /> },
+    // eslint-disable-next-line react/no-unstable-nested-components
     { id: 'documentation', link: 'https://antares-web.readthedocs.io/en/latest', newTab: true, icon: (props: any) => <ClassOutlinedIcon {...props} /> },
+    // eslint-disable-next-line react/no-unstable-nested-components
     { id: 'github', link: 'https://github.com/AntaresSimulatorTeam/AntaREST', newTab: true, icon: (props: any) => <GitHubIcon {...props} /> },
+    // eslint-disable-next-line react/no-unstable-nested-components
     { id: 'settings', link: '/settings', icon: (props: any) => <SettingsOutlinedIcon {...props} /> },
   ];
 
   const settings = navigation[navigation.length - 1];
 
+  // eslint-disable-next-line no-undef
   const drawMenuItem = (elm: MenuItem): JSX.Element => (
     <NavListItem link key={elm.id}>
       {elm.newTab === true ? (
