@@ -8,7 +8,7 @@ interface PropTypes {
   color?: string;
 }
 
-const SimpleLoader = (props: PropTypes) => {
+function SimpleLoader(props: PropTypes) {
   const [t] = useTranslation();
   const { progress, message, color } = props;
   return (
@@ -25,7 +25,7 @@ const SimpleLoader = (props: PropTypes) => {
       <Box display="flex" alignItems="center" justifyContent="center" position="absolute" width="100%" height="100%" zIndex={998} sx={{ opacity: 0.9, bgcolor: color }} />
     </>
   );
-};
+}
 
 SimpleLoader.defaultProps = {
   progress: undefined,

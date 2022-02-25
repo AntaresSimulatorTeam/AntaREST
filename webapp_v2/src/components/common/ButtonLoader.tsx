@@ -6,9 +6,9 @@ interface OwnProps {
   // eslint-disable-next-line react/no-unused-prop-types
   progressColor?: string;
   fakeDelay?: number;
-};
+}
 
-const ButtonLoader = (props: ButtonProps & OwnProps) => {
+function ButtonLoader(props: ButtonProps & OwnProps) {
   const { children, onClick, fakeDelay = 0 } = props;
   const [loading, setLoading] = React.useState(false);
 
@@ -26,15 +26,17 @@ const ButtonLoader = (props: ButtonProps & OwnProps) => {
   };
 
   const forwardedProps = { ...props };
+  const { progressColor } = forwardedProps;
   delete forwardedProps.fakeDelay;
   delete forwardedProps.progressColor;
 
   return (
     <Box sx={{
-        m: 1,
-        position: 'relative',
-        display: 'inline',       
-    }}>
+      m: 1,
+      position: 'relative',
+      display: 'inline',
+    }}
+    >
       <Button
         // eslint-disable-next-line react/jsx-props-no-spreading
         {...forwardedProps}
@@ -43,18 +45,22 @@ const ButtonLoader = (props: ButtonProps & OwnProps) => {
       >
         {children}
       </Button>
-      {loading && <CircularProgress size={24}
-                                    sx={{
-                                        color: props.progressColor,
-                                        position: 'absolute',
-                                        top: '50%',
-                                        left: '50%',
-                                        marginTop: -12,
-                                        marginLeft: -12,
-                                    }} />}
+      {loading && (
+      <CircularProgress
+        size={24}
+        sx={{
+          color: progressColor,
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          marginTop: -12,
+          marginLeft: -12,
+        }}
+      />
+      )}
     </Box>
   );
-};
+}
 
 ButtonLoader.defaultProps = {
   progressColor: blue[400],
