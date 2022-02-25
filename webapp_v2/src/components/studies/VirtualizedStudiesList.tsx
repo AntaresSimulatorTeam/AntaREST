@@ -15,7 +15,8 @@ import { scrollbarStyle, STUDIES_HEIGHT_HEADER, STUDIES_LIST_HEADER_HEIGHT } fro
 import { AppState } from '../../store/reducers';
 import { removeStudies } from '../../store/study';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
-import study, { deleteStudy as callDeleteStudy, copyStudy as callCopyStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy } from '../../services/api/study';
+import { deleteStudy as callDeleteStudy, copyStudy as callCopyStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy } from '../../services/api/study';
+import LauncherModal from './LauncherModal';
 
 const logError = debug('antares:studieslist:error');
 
@@ -27,29 +28,30 @@ const TOTAL_CARD_HEIGHT = CARD_HEIGHT + SPACE;
 
 const Cell = React.memo((props: GridChildComponentProps) => {
   const { data, style, columnIndex, rowIndex, isScrolling } = props;
-  const { studies, favorite, nbColumns, onFavoriteClick, deleteStudy, archiveStudy, unarchiveStudy } = data;
+  const { studies, favorite, nbColumns, onFavoriteClick, onLaunchClick, importStudy, deleteStudy, archiveStudy, unarchiveStudy } = data;
   console.log('NB Columns: ', nbColumns, '; rowIndex: ', rowIndex, '; columnIndex: ', columnIndex);
-  console.log('Studies length: ', studies.length, '; Index: ', rowIndex*nbColumns + columnIndex);
+  console.log('Studies length: ', studies.length, '; Index: ', rowIndex * nbColumns + columnIndex);
 
-  if(studies === undefined || studies.length === 0) return null;
+  if (studies === undefined || studies.length === 0) return null;
 
-  const study = studies[rowIndex*nbColumns + columnIndex];
+  const study = studies[rowIndex * nbColumns + columnIndex];
   return (
-      <Box width={CARD_WIDTH} height={CARD_HEIGHT} display="flex" flexDirection="column" justifyContent="center" alignItems="center" boxSizing="border-box">
-        <StudyCard
-                key={study.id}
-                study={study}
-                favorite={favorite.includes(study.id)} 
-                onFavoriteClick={onFavoriteClick}
-                onArchiveClick={archiveStudy}
-                onUnarchiveClick={unarchiveStudy}
-                onDeleteClick={deleteStudy} />          
-      </Box>
-        
+    <Box width={CARD_WIDTH} height={CARD_HEIGHT} display="flex" flexDirection="column" justifyContent="center" alignItems="center" boxSizing="border-box">
+      <StudyCard
+        key={study.id}
+        study={study}
+        favorite={favorite.includes(study.id)}
+        onFavoriteClick={onFavoriteClick}
+        onLaunchClick={() => onLaunchClick(study)}
+        onImportStudy={importStudy}
+        onArchiveClick={archiveStudy}
+        onUnarchiveClick={unarchiveStudy}
+        onDeleteClick={deleteStudy}
+      />
+    </Box>
+
   );
 }, areEqual);
-
-
 
 const mapState = (state: AppState) => ({
   scrollPosition: state.study.scrollPosition,
@@ -76,6 +78,8 @@ function StudiesList(props: PropTypes) {
   const { studies, folder, sortItem, setFolder, favorite, setSortItem, onFavoriteClick, removeStudy } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+  const [openLaunncherModal, setOpenLauncherModal] = useState<boolean>(false);
+  const [currentLaunchStudy, setCurrentLaunchStudy] = useState<StudyMetadata>();
   const [folderList, setFolderList] = useState<Array<string>>([]);
   const [anchorCardMenuEl, setCardMenuAnchorEl] = useState<HTMLButtonElement | null>(null);
 
@@ -85,6 +89,15 @@ function StudiesList(props: PropTypes) {
     { id: SortElement.NAME, name: t('studymanager:sortByName') },
     { id: SortElement.DATE, name: t('studymanager:sortByDate') },
   ];
+
+  const importStudy = async (study: StudyMetadata, withOutputs: boolean) => {
+    try {
+      await callCopyStudy(study.id, `${study.name} (${t('main:copy')})`, withOutputs);
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtocopystudy'), e as AxiosError);
+      logError('Failed to copy/import study', study, e);
+    }
+  };
 
   const archiveStudy = async (study: StudyMetadata) => {
     try {
@@ -111,6 +124,11 @@ function StudiesList(props: PropTypes) {
       enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtodeletestudy'), e as AxiosError);
       logError('Failed to delete study', study, e);
     }
+  };
+
+  const onLaunchClick = (study: StudyMetadata) : void => {
+    setCurrentLaunchStudy(study);
+    setOpenLauncherModal(true);
   };
 
   useEffect(() => {
@@ -143,6 +161,7 @@ function StudiesList(props: PropTypes) {
             folderList.map((elm, index) => (
               index === 0 ? (
                 <HomeIcon
+                  // eslint-disable-next-line react/no-array-index-key
                   key={`${elm}-${index}`}
                   sx={{
                     color: 'text.primary',
@@ -155,6 +174,7 @@ function StudiesList(props: PropTypes) {
                 />
               ) : (
                 <Typography
+                  // eslint-disable-next-line react/no-array-index-key
                   key={`${elm}-${index}`}
                   sx={{
                     color: 'text.primary',
@@ -205,27 +225,27 @@ function StudiesList(props: PropTypes) {
       >
         <AutoSizer>
           { ({ height, width }) => {
-             const COLUMNS = Math.floor(width/TOTAL_CARD_WIDTH);
-             const rowRest = studies.length%COLUMNS;
-             const ROWS = Math.floor(studies.length / COLUMNS) + (rowRest > 0 ? 1 : 0);
-             console.log('COLUMNS: ', COLUMNS);
-             console.log('ROWS: ', ROWS);
-        return (
-            <FixedSizeGrid
-              height={height}
-              width={width}
-              columnCount={COLUMNS}
-              columnWidth={TOTAL_CARD_WIDTH}
-              rowCount={ROWS}
-              rowHeight={TOTAL_CARD_HEIGHT}
-              style={{ backgroundColor: 'green' }}
-              itemData={{ studies, nbColumns: COLUMNS, favorite, onFavoriteClick, deleteStudy, archiveStudy, unarchiveStudy }}
-            >
-              {Cell}
-            </FixedSizeGrid>
-          )}
+            const COLUMNS = Math.floor(width / TOTAL_CARD_WIDTH);
+            const rowRest = studies.length % COLUMNS;
+            const ROWS = Math.floor(studies.length / COLUMNS) + (rowRest > 0 ? 1 : 0);
+            return (
+              <FixedSizeGrid
+                height={height}
+                width={width}
+                columnCount={COLUMNS}
+                columnWidth={TOTAL_CARD_WIDTH}
+                rowCount={ROWS}
+                rowHeight={TOTAL_CARD_HEIGHT}
+                style={{ backgroundColor: 'green' }}
+                itemData={{ studies, onLaunchClick, nbColumns: COLUMNS, favorite, onFavoriteClick, importStudy, deleteStudy, archiveStudy, unarchiveStudy }}
+              >
+                {Cell}
+              </FixedSizeGrid>
+            );
+          }
       }
         </AutoSizer>
+        {openLaunncherModal && <LauncherModal open={openLaunncherModal} study={currentLaunchStudy} onClose={() => setOpenLauncherModal(false)} />}
       </Box>
     </Box>
   );
@@ -233,11 +253,7 @@ function StudiesList(props: PropTypes) {
 
 export default connector(StudiesList);
 
-
-
-
-
-/*import React, { forwardRef, useEffect, useState } from 'react';
+/* import React, { forwardRef, useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
@@ -418,4 +434,4 @@ const StudyListing = (props: PropTypes) => {
   );
 };
 
-export default connector(StudyListing);*/
+export default connector(StudyListing); */

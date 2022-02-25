@@ -14,6 +14,7 @@ import { AppState } from '../../store/reducers';
 import { removeStudies } from '../../store/study';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
 import { deleteStudy as callDeleteStudy, copyStudy as callCopyStudy, archiveStudy as callArchiveStudy, unarchiveStudy as callUnarchiveStudy } from '../../services/api/study';
+import LauncherModal from './LauncherModal';
 
 const logError = debug('antares:studieslist:error');
 
@@ -43,6 +44,8 @@ function StudiesList(props: PropTypes) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [folderList, setFolderList] = useState<Array<string>>([]);
+  const [openLaunncherModal, setOpenLauncherModal] = useState<boolean>(false);
+  const [currentLaunchStudy, setCurrentLaunchStudy] = useState<StudyMetadata>();
   const [anchorCardMenuEl, setCardMenuAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const open = Boolean(anchorCardMenuEl);
@@ -51,6 +54,16 @@ function StudiesList(props: PropTypes) {
     { id: SortElement.NAME, name: t('studymanager:sortByName') },
     { id: SortElement.DATE, name: t('studymanager:sortByDate') },
   ];
+
+  const importStudy = async (study: StudyMetadata, withOutputs: boolean) => {
+    try {
+      console.log('IMPORT');
+      await callCopyStudy(study.id, `${study.name} (${t('main:copy')})`, withOutputs);
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtocopystudy'), e as AxiosError);
+      logError('Failed to copy/import study', study, e);
+    }
+  };
 
   const archiveStudy = async (study: StudyMetadata) => {
     try {
@@ -77,6 +90,11 @@ function StudiesList(props: PropTypes) {
       enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtodeletestudy'), e as AxiosError);
       logError('Failed to delete study', study, e);
     }
+  };
+
+  const onLaunchClick = (study: StudyMetadata) : void => {
+    setCurrentLaunchStudy(study);
+    setOpenLauncherModal(true);
   };
 
   useEffect(() => {
@@ -178,13 +196,16 @@ function StudiesList(props: PropTypes) {
               <StudyCard
                 study={elm}
                 favorite={favorite.includes(elm.id)}
+                onLaunchClick={() => onLaunchClick(elm)}
                 onFavoriteClick={onFavoriteClick}
+                onImportStudy={importStudy}
                 onArchiveClick={archiveStudy}
                 onUnarchiveClick={unarchiveStudy}
                 onDeleteClick={deleteStudy}
               />
             </Grid>
           ))}
+          {openLaunncherModal && <LauncherModal open={openLaunncherModal} study={currentLaunchStudy} onClose={() => setOpenLauncherModal(false)} />}
         </Grid>
       </Box>
     </Box>

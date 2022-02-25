@@ -15,15 +15,19 @@ import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import BoltIcon from '@mui/icons-material/Bolt';
+import FileCopyOutlinedIcon from '@mui/icons-material/FileCopyOutlined';
 import { GenericInfo, StudyMetadata } from '../../common/types';
 import { exportStudy } from '../../services/api/study';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
-import { modificationDate } from '../../services/utils';
+import { convertUTCToLocalTime, modificationDate } from '../../services/utils';
 
 interface Props {
   study: StudyMetadata
   favorite: boolean;
   onFavoriteClick: (value: GenericInfo) => void;
+  onLaunchClick: () => void;
+  onImportStudy: (study: StudyMetadata, withOutputs: boolean) => void;
   onArchiveClick: (study: StudyMetadata) => void;
   onUnarchiveClick: (study: StudyMetadata) => void;
   onDeleteClick: (study: StudyMetadata) => void;
@@ -35,7 +39,7 @@ const TinyText = styled(Typography)(({ theme }) => ({
 }));
 
 export default function StudyCard(props: Props) {
-  const { study, favorite, onFavoriteClick, onUnarchiveClick, onArchiveClick, onDeleteClick } = props;
+  const { study, favorite, onFavoriteClick, onLaunchClick, onImportStudy, onUnarchiveClick, onArchiveClick, onDeleteClick } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -83,37 +87,39 @@ export default function StudyCard(props: Props) {
   return (
     <Card variant="outlined" sx={{ minWidth: 275, flex: 'none' }}>
       <CardContent>
-        <Box width="100%" height="60px" display="flex" flexDirection="row" justifyContent="space-between" p={0.5}>
-          <Box display="flex" flexDirection="column" justifyContent="center" alignItems="flex-start" width="calc(100% - 60px)" boxSizing="border-box">
+        <Box width="100%" height="60px" display="flex" flexDirection="column" justifyContent="flex-start" p={0.5}>
+          <Box display="flex" flexDirection="row" justifyContent="space-between" alignItems="flex-start" width="100%" boxSizing="border-box">
             <Tooltip title={study.name}>
-              <Typography width="100%" noWrap variant="h5" component="div" color="white" boxSizing="border-box">
+              <Typography noWrap variant="h5" component="div" color="white" boxSizing="border-box">
                 {study.name}
               </Typography>
-            </Tooltip>
-            <Typography noWrap color="white" sx={{ fontSize: '16px', color: 'text.secondary' }}>
-              {study.id}
-            </Typography>
-          </Box>
-          <Box display="flex" height="30px" flexDirection="row" flex="0 0 60px" justifyContent="center" alignItems="center">
-            <Tooltip title={t('studymanager:copyID') as string}>
-              <ContentCopyIcon
-                sx={{ cursor: 'pointer',
-                  width: '20px',
-                  height: '20px',
-                  '&:hover': { color: 'text.secondary' } }}
-                onClick={() => copyId()}
-              />
             </Tooltip>
             {favorite ? <StarPurple500OutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" /> :
             <StarOutlineOutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" />
             }
+          </Box>
+          <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="flex-start" width="100%" boxSizing="border-box">
+            <Typography noWrap color="white" sx={{ fontSize: '13px', color: 'text.secondary' }}>
+              {study.id}
+            </Typography>
+            <Tooltip title={t('studymanager:copyID') as string}>
+              <ContentCopyIcon
+                sx={{ cursor: 'pointer',
+                  width: '16px',
+                  height: '16px',
+                  mx: 1,
+                  color: 'text.secondary',
+                  '&:hover': { color: 'primary.main' } }}
+                onClick={() => copyId()}
+              />
+            </Tooltip>
           </Box>
         </Box>
         <Box width="100%" display="flex" flexDirection="row" justifyContent="space-between" mt={1}>
           <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
             <ScheduleOutlinedIcon sx={{ color: 'text.secondary', mr: 1 }} />
             <TinyText>
-              {study.creationDate}
+              {convertUTCToLocalTime(study.creationDate)}
             </TinyText>
           </Box>
           <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
@@ -161,6 +167,22 @@ export default function StudyCard(props: Props) {
             </MenuItem>
           ) : (
             <div>
+              <MenuItem onClick={() => { onLaunchClick(); handleClose(); }}>
+                <ListItemIcon>
+                  <BoltIcon sx={{ color: 'action.active', width: '24px', height: '24px' }} />
+                </ListItemIcon>
+                <ListItemText>
+                  {t('main:launch')}
+                </ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => { onImportStudy(study, false); handleClose(); }}>
+                <ListItemIcon>
+                  <FileCopyOutlinedIcon sx={{ color: 'action.active', width: '24px', height: '24px' }} />
+                </ListItemIcon>
+                <ListItemText>
+                  {t('studymanager:importcopy')}
+                </ListItemText>
+              </MenuItem>
               <MenuItem onClick={() => { exportStudy(study.id, false); handleClose(); }}>
                 <ListItemIcon>
                   <DownloadOutlinedIcon sx={{ color: 'action.active', width: '24px', height: '24px' }} />
