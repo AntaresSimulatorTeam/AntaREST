@@ -420,13 +420,14 @@ class SlurmLauncher(AbstractLauncher):
         self._delete_workspace_file(
             self.local_workspace / STUDIES_INPUT_DIR_NAME / launch_id
         )
-        for finished_zip in (
-            self.local_workspace / STUDIES_OUTPUT_DIR_NAME
-        ).iterdir():
-            if finished_zip.is_file() and re.match(
-                f"finished_{launch_id}_\\d+", finished_zip.name
-            ):
-                self._delete_workspace_file(finished_zip)
+        if (self.local_workspace / STUDIES_OUTPUT_DIR_NAME).exists():
+            for finished_zip in (
+                self.local_workspace / STUDIES_OUTPUT_DIR_NAME
+            ).iterdir():
+                if finished_zip.is_file() and re.match(
+                    f"finished_{launch_id}_\\d+", finished_zip.name
+                ):
+                    self._delete_workspace_file(finished_zip)
         del self.job_id_to_study_id[launch_id]
 
     def _run_study(
