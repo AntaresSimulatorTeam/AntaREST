@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import re
 import shutil
 import tempfile
 import threading
@@ -9,6 +10,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Optional, Dict, Awaitable, List
 from uuid import UUID, uuid4
+
+from filelock import FileLock
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
@@ -43,6 +46,11 @@ logging.getLogger("paramiko").setLevel("WARN")
 MAX_NB_CPU = 24
 MAX_TIME_LIMIT = 604800
 MIN_TIME_LIMIT = 3600
+WORKSPACE_LOCK_FILE_NAME = ".lock"
+LOCK_FILE_NAME = "slurm_launcher_init.lock"
+LOG_DIR_NAME = "LOGS"
+STUDIES_INPUT_DIR_NAME = "STUDIES_IN"
+STUDIES_OUTPUT_DIR_NAME = "OUTPUT"
 
 
 class VersionNotSupportedError(Exception):
@@ -61,6 +69,7 @@ class SlurmLauncher(AbstractLauncher):
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         use_private_workspace: bool = True,
+        retrieve_existing_jobs: bool = False,
     ) -> None:
         super().__init__(config, study_service, callbacks, event_bus)
         if config.launcher.slurm is None:
@@ -76,11 +85,8 @@ class SlurmLauncher(AbstractLauncher):
         self.job_id_to_study_id: Dict[str, str] = {}
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
-        self.local_workspace = (
-            Path(tempfile.mkdtemp(dir=str(self.slurm_config.local_workspace)))
-            if use_private_workspace
-            else Path(self.slurm_config.local_workspace)
-        )
+        with FileLock(LOCK_FILE_NAME):
+            self.local_workspace = self._init_workspace(use_private_workspace)
 
         self.log_tail_manager = LogTailManager(
             Path(self.slurm_config.local_workspace)
@@ -98,12 +104,57 @@ class SlurmLauncher(AbstractLauncher):
             ),
             db_primary_key=self.launcher_params.db_primary_key,
         )
+        if retrieve_existing_jobs:
+            self._retrieve_running_jobs()
 
     def _check_config(self) -> None:
         assert (
             self.slurm_config.local_workspace.exists()
             and self.slurm_config.local_workspace.is_dir()
         )  # and check write permission
+
+    def _init_workspace(self, use_private_workspace: bool) -> Path:
+        if use_private_workspace:
+            for (
+                existing_workspace
+            ) in self.slurm_config.local_workspace.iterdir():
+                lock_file = existing_workspace / WORKSPACE_LOCK_FILE_NAME
+                if (
+                    existing_workspace.is_dir()
+                    and existing_workspace
+                    != self.slurm_config.local_workspace / LOG_DIR_NAME
+                    and not lock_file.exists()
+                ):
+                    logger.info(
+                        f"Initiating slurm workspace into existing directory {existing_workspace}"
+                    )
+                    lock_file.touch()
+                    return existing_workspace
+            new_workspace = Path(
+                tempfile.mkdtemp(dir=str(self.slurm_config.local_workspace))
+            )
+            logger.info(
+                f"Initiating slurm workspace in new directory {new_workspace}"
+            )
+            return new_workspace
+        else:
+            return Path(self.slurm_config.local_workspace)
+
+    def _retrieve_running_jobs(self) -> None:
+        with db():
+            for study in self.data_repo_tinydb.get_list_of_studies():
+                job_result = self.callbacks.get_job_result(study.name)
+                if job_result:
+                    logger.info(
+                        f"Adding job/study mapping for launch id {study.name}"
+                    )
+                    self.job_id_to_study_id[study.name] = job_result.study_id
+                else:
+                    logger.warning(
+                        f"Failed to retrieve job result for job launch {study.name}"
+                    )
+        if len(self.job_id_to_study_id) > 0:
+            self.start()
 
     def _loop(self) -> None:
         while self.check_state:
@@ -129,14 +180,16 @@ class SlurmLauncher(AbstractLauncher):
             studies_in_dir=str(
                 (
                     Path(local_workspace or self.slurm_config.local_workspace)
-                    / "STUDIES_IN"
+                    / STUDIES_INPUT_DIR_NAME
                 )
             ),
-            log_dir=str((Path(self.slurm_config.local_workspace) / "LOGS")),
+            log_dir=str(
+                (Path(self.slurm_config.local_workspace) / LOG_DIR_NAME)
+            ),
             finished_dir=str(
                 (
                     Path(local_workspace or self.slurm_config.local_workspace)
-                    / "OUTPUT"
+                    / STUDIES_OUTPUT_DIR_NAME
                 )
             ),
             ssh_config_file_is_required=False,
@@ -178,8 +231,8 @@ class SlurmLauncher(AbstractLauncher):
         )
         return main_parameters
 
-    def _delete_study(self, study_path: Path) -> None:
-        logger.info(f"Deleting study export at {study_path}")
+    def _delete_workspace_file(self, study_path: Path) -> None:
+        logger.info(f"Deleting workspace file at {study_path}")
         if self.local_workspace.absolute() in study_path.absolute().parents:
             if study_path.exists():
                 shutil.rmtree(study_path)
@@ -210,23 +263,29 @@ class SlurmLauncher(AbstractLauncher):
             ]
         return self.storage_service.import_output(
             study_id,
-            self.local_workspace / "OUTPUT" / job_id / "output",
+            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
             params=RequestParameters(DEFAULT_ADMIN_USER),
             additional_logs=launcher_logs,
         )
 
     def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
-        output_path = self.local_workspace / "OUTPUT" / job_id / "output"
+        output_path = (
+            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output"
+        )
         if output_path.exists() and len(os.listdir(output_path)) == 1:
             output_path = output_path / os.listdir(output_path)[0]
             shutil.copytree(
-                self.local_workspace / "OUTPUT" / job_id / "input" / "links",
+                self.local_workspace
+                / STUDIES_OUTPUT_DIR_NAME
+                / job_id
+                / "input"
+                / "links",
                 output_path / "updated_links",
             )
             if xpansion_mode == "r":
                 shutil.copytree(
                     self.local_workspace
-                    / "OUTPUT"
+                    / STUDIES_OUTPUT_DIR_NAME
                     / job_id
                     / "user"
                     / "expansion",
@@ -252,7 +311,9 @@ class SlurmLauncher(AbstractLauncher):
 
         for study in study_list:
             if study.name not in self.job_id_to_study_id:
-                # this job is handled by another worker process
+                logger.warning(
+                    f"Antares launcher job {study.name} not found in local job list !"
+                )
                 continue
 
             all_done = all_done and (study.finished or study.with_error)
@@ -353,7 +414,19 @@ class SlurmLauncher(AbstractLauncher):
     def _clean_up_study(self, launch_id: str) -> None:
         logger.info(f"Cleaning up study with launch_id {launch_id}")
         self.data_repo_tinydb.remove_study(launch_id)
-        self._delete_study(self.local_workspace / "OUTPUT" / launch_id)
+        self._delete_workspace_file(
+            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / launch_id
+        )
+        self._delete_workspace_file(
+            self.local_workspace / STUDIES_INPUT_DIR_NAME / launch_id
+        )
+        for finished_zip in (
+            self.local_workspace / STUDIES_OUTPUT_DIR_NAME
+        ).iterdir():
+            if finished_zip.is_file() and re.match(
+                f"finished_{launch_id}_\\d+", finished_zip.name
+            ):
+                self._delete_workspace_file(finished_zip)
         del self.job_id_to_study_id[launch_id]
 
     def _run_study(
@@ -419,7 +492,7 @@ class SlurmLauncher(AbstractLauncher):
             if not self.thread:
                 self.start()
 
-            self._delete_study(study_path)
+            self._delete_workspace_file(study_path)
 
     def _check_and_apply_launcher_params(
         self, launcher_params: Optional[JSON]

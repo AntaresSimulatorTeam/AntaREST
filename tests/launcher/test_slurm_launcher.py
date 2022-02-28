@@ -155,7 +155,7 @@ def test_slurm_launcher_delete_function(tmp_path: str):
     directory_path.mkdir()
     (directory_path / "file.txt").touch()
 
-    slurm_launcher._delete_study(directory_path)
+    slurm_launcher._delete_workspace_file(directory_path)
 
     assert not directory_path.exists()
 
@@ -247,7 +247,7 @@ def test_run_study(
     slurm_launcher.launcher_args = argument
     slurm_launcher._clean_local_workspace = Mock()
     slurm_launcher.start = Mock()
-    slurm_launcher._delete_study = Mock()
+    slurm_launcher._delete_workspace_file = Mock()
 
     slurm_launcher._run_study(
         study_uuid, str(uuid.uuid4()), None, params=params
@@ -260,7 +260,7 @@ def test_run_study(
     )
     slurm_launcher.start.assert_called_once()
     if job_status == JobStatus.RUNNING:
-        slurm_launcher._delete_study.assert_called_once()
+        slurm_launcher._delete_workspace_file.assert_called_once()
 
 
 @pytest.mark.unit_test
@@ -281,7 +281,7 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
         event_bus=Mock(),
     )
     slurm_launcher._import_study_output = Mock()
-    slurm_launcher._delete_study = Mock()
+    slurm_launcher._delete_workspace_file = Mock()
     slurm_launcher.stop = Mock()
 
     study1 = Mock()
@@ -310,7 +310,7 @@ def test_check_state(tmp_path: Path, launcher_config: Config):
 
     assert slurm_launcher.callbacks.update_status.call_count == 2
     assert slurm_launcher._import_study_output.call_count == 1
-    assert slurm_launcher._delete_study.call_count == 2
+    assert slurm_launcher._delete_workspace_file.call_count == 2
     assert data_repo_tinydb.remove_study.call_count == 2
     slurm_launcher.stop.assert_called_once()
 
