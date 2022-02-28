@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import create_engine
 
 from antarest.core.config import (
     Config,
@@ -14,6 +15,8 @@ from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo
 from antarest.core.requests import RequestParameters
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.dbmodel import Base
 from antarest.launcher.model import (
     JobResult,
     JobStatus,
@@ -305,6 +308,48 @@ def test_service_kill_job():
     )
 
 
+def test_append_logs():
+    study_service = Mock()
+    study_service.get_study.return_value = Mock(
+        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
+    )
+
+    launcher_service = LauncherService(
+        config=Mock(),
+        study_service=study_service,
+        job_result_repository=Mock(),
+        event_bus=Mock(),
+        factory_launcher=Mock(),
+    )
+    launcher = "slurm"
+    job_id = "job_id"
+    job_result_mock = Mock()
+    job_result_mock.id = job_id
+    job_result_mock.study_id = "study_id"
+    job_result_mock.output_id = None
+    job_result_mock.launcher = launcher
+    job_result_mock.logs = []
+    launcher_service.job_result_repository.get.return_value = job_result_mock
+
+    launcher_service.append_log(job_id, "test", JobLogType.BEFORE)
+    launcher_service.job_result_repository.save.assert_not_called()
+
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+    launcher_service.append_log(job_id, "test", JobLogType.BEFORE)
+    launcher_service.job_result_repository.save.assert_called_with(
+        job_result_mock
+    )
+    assert job_result_mock.logs[0].message == "test"
+    assert job_result_mock.logs[0].job_id == "job_id"
+    assert job_result_mock.logs[0].log_type == str(JobLogType.BEFORE)
+
+
 def test_get_logs():
     study_service = Mock()
     study_service.get_study.return_value = Mock(
@@ -326,9 +371,9 @@ def test_get_logs():
     job_result_mock.output_id = None
     job_result_mock.launcher = launcher
     job_result_mock.logs = [
-        JobLog(message="first message", log_type=JobLogType.BEFORE),
-        JobLog(message="second message", log_type=JobLogType.BEFORE),
-        JobLog(message="last message", log_type=JobLogType.AFTER),
+        JobLog(message="first message", log_type=str(JobLogType.BEFORE)),
+        JobLog(message="second message", log_type=str(JobLogType.BEFORE)),
+        JobLog(message="last message", log_type=str(JobLogType.AFTER)),
     ]
     launcher_service.job_result_repository.get.return_value = job_result_mock
     slurm_launcher = Mock()

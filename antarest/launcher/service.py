@@ -320,7 +320,7 @@ class LauncherService:
     ) -> Dict[JobLogType, List[str]]:
         logs[
             JobLogType.AFTER
-            if log.log_type == JobLogType.AFTER
+            if log.log_type == str(JobLogType.AFTER)
             else JobLogType.BEFORE
         ].append(log.message)
         return logs
