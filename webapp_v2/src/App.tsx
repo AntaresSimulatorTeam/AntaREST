@@ -9,6 +9,7 @@ import Data from './pages/Data';
 import Tasks from './pages/Tasks';
 import Settings from './pages/Settings';
 import Api from './pages/Api';
+import LoginWrapper from './pages/wrappers/LoginWrapper';
 
 function App() {
   return (
@@ -16,19 +17,21 @@ function App() {
       <ThemeProvider theme={maintheme}>
         <SnackbarProvider maxSnack={5}>
           <CssBaseline />
-          <MenuWrapper>
-            <Routes>
-              <Route path="/studies" element={<Studies />} />
-              <Route path="/data" element={<Data />} />
-              <Route path="/tasks" element={<Tasks />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/api" element={<Api />} />
-              <Route
-                path="*"
-                element={<Navigate to="/studies" />}
-              />
-            </Routes>
-          </MenuWrapper>
+          <LoginWrapper>
+            <MenuWrapper>
+              <Routes>
+                <Route path="/studies" element={<Studies />} />
+                <Route path="/data" element={<Data />} />
+                <Route path="/tasks" element={<Tasks />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/api" element={<Api />} />
+                <Route
+                  path="*"
+                  element={<Navigate to="/studies" />}
+                />
+              </Routes>
+            </MenuWrapper>
+          </LoginWrapper>
         </SnackbarProvider>
       </ThemeProvider>
     </Router>
