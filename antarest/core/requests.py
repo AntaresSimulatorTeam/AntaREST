@@ -9,8 +9,7 @@ from antarest.core.jwt import JWTUser
 
 RATE_LIMIT_CONFIG = {
     r"^/v1/launcher/run": [
-        Rule(second=1, group="default"),
-        Rule(second=1, group="admin"),
+        Rule(second=1),
     ],
 }
 
