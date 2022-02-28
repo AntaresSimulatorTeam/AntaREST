@@ -14,7 +14,13 @@ from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo
 from antarest.core.requests import RequestParameters
-from antarest.launcher.model import JobResult, JobStatus
+from antarest.launcher.model import (
+    JobResult,
+    JobStatus,
+    LogType,
+    JobLog,
+    JobLogType,
+)
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO, OwnerInfo, PublicMode, Study
@@ -297,3 +303,39 @@ def test_service_kill_job():
     launcher_service.job_result_repository.save.assert_called_once_with(
         job_status
     )
+
+
+def test_get_logs():
+    study_service = Mock()
+    study_service.get_study.return_value = Mock(
+        spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE
+    )
+
+    launcher_service = LauncherService(
+        config=Mock(),
+        study_service=study_service,
+        job_result_repository=Mock(),
+        event_bus=Mock(),
+        factory_launcher=Mock(),
+    )
+    launcher = "slurm"
+    job_id = "job_id"
+    job_result_mock = Mock()
+    job_result_mock.id = job_id
+    job_result_mock.study_id = "study_id"
+    job_result_mock.output_id = None
+    job_result_mock.launcher = launcher
+    job_result_mock.logs = [
+        JobLog(message="first message", log_type=JobLogType.BEFORE),
+        JobLog(message="second message", log_type=JobLogType.BEFORE),
+        JobLog(message="last message", log_type=JobLogType.AFTER),
+    ]
+    launcher_service.job_result_repository.get.return_value = job_result_mock
+    slurm_launcher = Mock()
+    launcher_service.launchers = {"slurm": slurm_launcher}
+    slurm_launcher.get_log.return_value = "launcher logs"
+
+    logs = launcher_service.get_log(
+        job_id, LogType.STDOUT, RequestParameters(DEFAULT_ADMIN_USER)
+    )
+    assert logs == "first message\nsecond message\nlauncher logs\nlast message"
