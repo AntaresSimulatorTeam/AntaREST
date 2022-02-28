@@ -163,12 +163,17 @@ class LauncherService:
                 if job_result is not None:
                     job_result.logs.append(
                         JobLog(
-                            job_id=job_id, message=message, log_type=str(log_type)
+                            job_id=job_id,
+                            message=message,
+                            log_type=str(log_type),
                         )
                     )
                     self.job_result_repository.save(job_result)
         except Exception as e:
-            logger.error(f"Failed to append log with message {message} to job {job_id}", exc_info=e)
+            logger.error(
+                f"Failed to append log with message {message} to job {job_id}",
+                exc_info=e,
+            )
 
     def _assert_launcher_is_initialized(self, launcher: str) -> None:
         if launcher not in self.launchers:
