@@ -331,9 +331,6 @@ def test_append_logs():
     job_result_mock.logs = []
     launcher_service.job_result_repository.get.return_value = job_result_mock
 
-    launcher_service.append_log(job_id, "test", JobLogType.BEFORE)
-    launcher_service.job_result_repository.save.assert_not_called()
-
     engine = create_engine("sqlite:///:memory:", echo=True)
     Base.metadata.create_all(engine)
     DBSessionMiddleware(
