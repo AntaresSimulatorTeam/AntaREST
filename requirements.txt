@@ -32,3 +32,6 @@ python-json-logger~=2.0.2
 click~=8.0.3
 PyQt5~=5.15.6
 plyer~=2.0.0
+asgi-ratelimit[redis]
+
+python-dateutil~=2.8.2

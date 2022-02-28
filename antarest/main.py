@@ -7,8 +7,11 @@ from typing import Tuple, Any, Optional, Dict, cast
 
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi_jwt_auth import AuthJWT  # type: ignore
+from ratelimit import RateLimitMiddleware  # type: ignore
+from ratelimit.backends.redis import RedisBackend  # type: ignore
+from ratelimit.backends.simple import MemoryBackend  # type: ignore
 from sqlalchemy import create_engine
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -24,9 +27,11 @@ from antarest.core.exceptions import UnknownModuleError
 from antarest.core.filetransfer.main import build_filetransfer_service
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.jwt import JWTUser
 from antarest.core.logging.utils import configure_logger, LoggingMiddleware
 from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.persistence import upgrade_db
+from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
@@ -426,6 +431,17 @@ def fastapi_app(
             },
             status_code=500,
         )
+
+    # rate limiter
+    auth_manager = Auth(config)
+    application.add_middleware(
+        RateLimitMiddleware,
+        authenticate=auth_manager.create_auth_function(),
+        backend=RedisBackend(config.redis.host, config.redis.port, 1)
+        if config.redis is not None
+        else MemoryBackend(),
+        config=RATE_LIMIT_CONFIG,
+    )
 
     services = create_services(config, application)
 

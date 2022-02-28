@@ -1,11 +1,13 @@
 import json
 import logging
 from datetime import timedelta
-from typing import Dict, Any, Callable, Tuple, Union, Optional
+from typing import Dict, Any, Callable, Tuple, Union, Optional, Coroutine
 
 from fastapi import Depends
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from pydantic import BaseModel
+from ratelimit.types import Scope  # type: ignore
+from starlette.requests import Request
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
@@ -33,6 +35,16 @@ class Auth:
         self.disabled = config.security.disabled
         self.verify = verify
         self.get_identity = get_identity
+
+    def create_auth_function(
+        self,
+    ) -> Callable[[Scope], Coroutine[Any, Any, Tuple[str, str]]]:
+        async def auth(scope: Scope) -> Tuple[str, str]:
+            auth_jwt = AuthJWT(Request(scope))
+            user = self.get_current_user(auth_jwt)
+            return str(user.id), "admin" if user.is_site_admin() else "default"
+
+        return auth
 
     def get_current_user(self, auth_jwt: AuthJWT = Depends()) -> JWTUser:
         """
