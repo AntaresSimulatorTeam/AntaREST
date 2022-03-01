@@ -371,8 +371,14 @@ class SlurmLauncher(AbstractLauncher):
             try:
                 # export study
                 with self.antares_launcher_lock:
+                    self.callbacks.append_before_log(
+                        launch_uuid, f"Extracting study {study_uuid}"
+                    )
                     self.storage_service.export_study_flat(
                         study_uuid, params, study_path, outputs=False
+                    )
+                    self.callbacks.append_before_log(
+                        launch_uuid, f"Study extracted"
                     )
                     self.callbacks.after_export_flat(
                         launch_uuid, study_uuid, study_path, launcher_params
@@ -383,8 +389,14 @@ class SlurmLauncher(AbstractLauncher):
                     launcher_args = self._check_and_apply_launcher_params(
                         launcher_params
                     )
+                    self.callbacks.append_before_log(
+                        launch_uuid, f"Submitting study to slurm launcher"
+                    )
                     run_with(
                         launcher_args, self.launcher_params, show_banner=False
+                    )
+                    self.callbacks.append_before_log(
+                        launch_uuid, f"Study submitted"
                     )
                     logger.info("Study exported and run with launcher")
 
@@ -394,6 +406,10 @@ class SlurmLauncher(AbstractLauncher):
             except Exception as e:
                 logger.error(
                     f"Failed to launch study {study_uuid}", exc_info=e
+                )
+                self.callbacks.append_after_log(
+                    launch_uuid,
+                    f"Unexpected error when launching study : {str(e)}",
                 )
                 self.callbacks.update_status(
                     str(launch_uuid), JobStatus.FAILED, str(e), None
@@ -445,19 +461,17 @@ class SlurmLauncher(AbstractLauncher):
     def run_study(
         self,
         study_uuid: str,
+        job_id: str,
         version: str,
         launcher_parameters: Optional[JSON],
         params: RequestParameters,
-    ) -> UUID:  # TODO: version ?
-        launch_uuid = uuid4()
+    ) -> None:  # TODO: version ?
 
         thread = threading.Thread(
             target=self._run_study,
-            args=(study_uuid, launch_uuid, launcher_parameters, params),
+            args=(study_uuid, job_id, launcher_parameters, params),
         )
         thread.start()
-
-        return launch_uuid
 
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         log_path: Optional[Path] = None

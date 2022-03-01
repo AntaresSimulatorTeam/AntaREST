@@ -4,7 +4,7 @@ from typing import Optional, List
 from sqlalchemy import exists  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult
+from antarest.launcher.model import JobResult, JobLogType, JobLog
 
 logger = logging.getLogger(__name__)
 

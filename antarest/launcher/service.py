@@ -1,9 +1,10 @@
 import logging
 from datetime import datetime
+from functools import reduce
 from http import HTTPStatus
 from pathlib import Path
 from typing import List, Optional, cast, Dict
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 
@@ -19,13 +20,20 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import (
     RequestParameters,
 )
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import (
     AdequacyPatchExtension,
 )
 from antarest.launcher.extensions.interface import ILauncherExtension
-from antarest.launcher.model import JobResult, JobStatus, LogType
+from antarest.launcher.model import (
+    JobResult,
+    JobStatus,
+    LogType,
+    JobLog,
+    JobLogType,
+)
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
 from antarest.core.model import (
@@ -75,6 +83,12 @@ class LauncherService:
                 ),
                 after_export_flat=lambda job_id, study_id, study_path, launcher_opts: self.after_export_flat_hooks(
                     job_id, study_id, study_path, launcher_opts
+                ),
+                append_before_log=lambda jobid, message: self.append_log(
+                    jobid, message, JobLogType.BEFORE
+                ),
+                append_after_log=lambda jobid, message: self.append_log(
+                    jobid, message, JobLogType.AFTER
                 ),
             ),
             event_bus,
@@ -140,9 +154,34 @@ class LauncherService:
             )
         logger.info(f"Study status set")
 
+    def append_log(
+        self, job_id: str, message: str, log_type: JobLogType
+    ) -> None:
+        try:
+            with db():
+                job_result = self.job_result_repository.get(job_id)
+                if job_result is not None:
+                    job_result.logs.append(
+                        JobLog(
+                            job_id=job_id,
+                            message=message,
+                            log_type=str(log_type),
+                        )
+                    )
+                    self.job_result_repository.save(job_result)
+        except Exception as e:
+            logger.error(
+                f"Failed to append log with message {message} to job {job_id}",
+                exc_info=e,
+            )
+
     def _assert_launcher_is_initialized(self, launcher: str) -> None:
         if launcher not in self.launchers:
             raise LauncherServiceNotAvailableException(launcher)
+
+    @staticmethod
+    def _generate_new_id() -> str:
+        return str(uuid4())
 
     def run_study(
         self,
@@ -150,7 +189,7 @@ class LauncherService:
         launcher: str,
         launcher_parameters: Optional[JSON],
         params: RequestParameters,
-    ) -> UUID:
+    ) -> str:
         study_info = self.study_service.get_study_information(
             uuid=study_uuid, params=params
         )
@@ -162,18 +201,23 @@ class LauncherService:
             study=study_info,
             permission_type=StudyPermissionType.RUN,
         )
-
-        job_uuid: UUID = self.launchers[launcher].run_study(
-            study_uuid, str(study_version), launcher_parameters, params
-        )
-
+        job_uuid = self._generate_new_id()
         job_status = JobResult(
-            id=str(job_uuid),
+            id=job_uuid,
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
         )
         self.job_result_repository.save(job_status)
+
+        self.launchers[launcher].run_study(
+            study_uuid,
+            job_uuid,
+            str(study_version),
+            launcher_parameters,
+            params,
+        )
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_JOB_STARTED,
@@ -181,7 +225,6 @@ class LauncherService:
                 permissions=create_permission_from_study(study_info),
             )
         )
-
         return job_uuid
 
     def kill_job(self, job_id: str, params: RequestParameters) -> JobResult:
@@ -271,13 +314,30 @@ class LauncherService:
             job_results=job_results, user=params.user
         )
 
+    @staticmethod
+    def sort_log(
+        log: JobLog, logs: Dict[JobLogType, List[str]]
+    ) -> Dict[JobLogType, List[str]]:
+        logs[
+            JobLogType.AFTER
+            if log.log_type == str(JobLogType.AFTER)
+            else JobLogType.BEFORE
+        ].append(log.message)
+        return logs
+
     def get_log(
         self, job_id: str, log_type: LogType, params: RequestParameters
     ) -> Optional[str]:
         job_result = self.job_result_repository.get(str(job_id))
         if job_result:
+            app_logs: Dict[JobLogType, List[str]] = reduce(
+                lambda logs, log: LauncherService.sort_log(log, logs),
+                job_result.logs or [],
+                {JobLogType.BEFORE: [], JobLogType.AFTER: []},
+            )
+
             if job_result.output_id:
-                return cast(
+                launcher_logs = cast(
                     str,
                     self.study_service.get(
                         job_result.study_id,
@@ -287,10 +347,20 @@ class LauncherService:
                         params=params,
                     ),
                 )
-            self._assert_launcher_is_initialized(job_result.launcher)
-            return self.launchers[job_result.launcher].get_log(
-                job_id, log_type
+            else:
+                self._assert_launcher_is_initialized(job_result.launcher)
+                launcher_logs = (
+                    self.launchers[job_result.launcher].get_log(
+                        job_id, log_type
+                    )
+                    or ""
+                )
+            return "\n".join(
+                app_logs[JobLogType.BEFORE]
+                + [launcher_logs]
+                + app_logs[JobLogType.AFTER]
             )
+
         raise JobNotFound()
 
     def get_versions(self, params: RequestParameters) -> Dict[str, List[str]]:

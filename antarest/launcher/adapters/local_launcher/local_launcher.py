@@ -54,10 +54,11 @@ class LocalLauncher(AbstractLauncher):
     def run_study(
         self,
         study_uuid: str,
+        job_id: str,
         version: str,
         launcher_parameters: Optional[JSON],
         params: RequestParameters,
-    ) -> UUID:
+    ) -> None:
         if self.config.launcher.local is None:
             raise LauncherInitException()
 
@@ -65,19 +66,17 @@ class LocalLauncher(AbstractLauncher):
         if antares_solver_path is None:
             raise StudyVersionNotSupported()
         else:
-            uuid = uuid4()
             job = threading.Thread(
                 target=LocalLauncher._compute,
                 args=(
                     self,
                     antares_solver_path,
                     study_uuid,
-                    uuid,
+                    job_id,
                     launcher_parameters,
                 ),
             )
             job.start()
-            return uuid
 
     def _compute(
         self,
