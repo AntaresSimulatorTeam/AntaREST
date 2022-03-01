@@ -54,6 +54,7 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.tools.admin_lib import clean_locks
 
 logger = logging.getLogger(__name__)
 
@@ -471,6 +472,7 @@ if __name__ == "__main__":
         sys.exit()
     else:
         if module == Module.APP:
+            clean_locks(config_file)
             app, _ = fastapi_app(
                 config_file,
                 mount_front=not no_front,

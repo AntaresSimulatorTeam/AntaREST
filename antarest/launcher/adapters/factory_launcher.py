@@ -33,6 +33,10 @@ class FactoryLauncher:
             )
         if config.launcher.slurm is not None:
             dict_launchers["slurm"] = SlurmLauncher(
-                config, storage_service, callbacks, event_bus
+                config,
+                storage_service,
+                callbacks,
+                event_bus,
+                retrieve_existing_jobs=True,
             )
         return dict_launchers

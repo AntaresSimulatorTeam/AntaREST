@@ -90,6 +90,9 @@ class LauncherService:
                 append_after_log=lambda jobid, message: self.append_log(
                     jobid, message, JobLogType.AFTER
                 ),
+                get_job_result=lambda jobid: self.job_result_repository.get(
+                    jobid
+                ),
             ),
             event_bus,
         )

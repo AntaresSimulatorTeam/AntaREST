@@ -151,8 +151,7 @@ resources/templates/index.html
 resources/commit_id
 /examples/studies/
 
-watcher.lock
 watcher
-matrix_constant_init.lock
+*.lock
 
 **/bucket

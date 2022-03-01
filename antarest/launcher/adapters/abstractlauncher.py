@@ -12,7 +12,7 @@ from antarest.core.interfaces.eventbus import (
 )
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.launcher.model import JobStatus, LogType
+from antarest.launcher.model import JobStatus, LogType, JobResult
 from antarest.study.service import StudyService
 
 
@@ -29,6 +29,7 @@ class LauncherCallbacks(NamedTuple):
     after_export_flat: Callable[[str, str, Path, Optional[JSON]], None]
     append_before_log: Callable[[str, str], None]
     append_after_log: Callable[[str, str], None]
+    get_job_result: Callable[[str], Optional[JobResult]]
 
 
 class AbstractLauncher(ABC):
