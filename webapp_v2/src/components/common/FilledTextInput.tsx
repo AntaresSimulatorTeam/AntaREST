@@ -1,20 +1,26 @@
 import React from 'react';
-import { TextField, SxProps, Theme } from '@mui/material';
+import { TextField, SxProps, Theme, InputBaseComponentProps } from '@mui/material';
 
 interface Props {
     label: string;
-    value: string;
-    onChange: (value: string) => void;
+    value?: string;
+    fullWidth?: boolean,
+    type?: React.HTMLInputTypeAttribute | undefined,
+    onChange?: (value: string) => void;
     sx?: SxProps<Theme> | undefined;
+    inputProps?: InputBaseComponentProps | undefined;
 }
 function FilledTextInput(props: Props) {
-  const { label, value, onChange, sx } = props;
+  const { label, fullWidth, value, onChange, sx, inputProps, type } = props;
   return (
     <TextField
       label={label}
       value={value}
-      onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => onChange(e.target.value as string)}
+      fullWidth={fullWidth}
+      type={type}
+      onChange={onChange !== undefined ? (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => onChange(e.target.value as string) : onChange}
       variant="filled"
+      inputProps={inputProps}
       sx={{
         ...sx,
         background: 'rgba(255, 255, 255, 0.09)',
@@ -27,6 +33,11 @@ function FilledTextInput(props: Props) {
 
 FilledTextInput.defaultProps = {
   sx: undefined,
+  inputProps: undefined,
+  onChange: undefined,
+  value: undefined,
+  fullWidth: undefined,
+  type: undefined,
 };
 
 export default FilledTextInput;

@@ -20,7 +20,7 @@ interface Props {
     onClose: () => void;
     closeButtonLabel?: string;
     actionButtonLabel?: string;
-    onActionButtonClick: () => void;
+    onActionButtonClick?: () => void;
     rootStyle: SxProps<Theme> | undefined;
 }
 
@@ -46,9 +46,11 @@ function BasicModal(props: PropsWithChildren<Props>) {
           <Button variant="text" color="error" onClick={onClose}>
             {closeButtonLabel !== undefined ? closeButtonLabel : t('main:closeButton')}
           </Button>
-          <Button sx={{ mx: 2 }} color="success" variant="contained" onClick={onActionButtonClick}>
-            {actionButtonLabel !== undefined ? actionButtonLabel : t('main:save')}
-          </Button>
+          {actionButtonLabel !== undefined && onActionButtonClick !== undefined && (
+            <Button sx={{ mx: 2 }} color="success" variant="contained" onClick={onActionButtonClick}>
+              {actionButtonLabel !== undefined ? actionButtonLabel : t('main:save')}
+            </Button>
+          )}
         </Box>
       </Paper>
     </Modal>
@@ -58,6 +60,7 @@ function BasicModal(props: PropsWithChildren<Props>) {
 BasicModal.defaultProps = {
   closeButtonLabel: undefined,
   actionButtonLabel: undefined,
+  onActionButtonClick: undefined,
 };
 
 export default BasicModal;

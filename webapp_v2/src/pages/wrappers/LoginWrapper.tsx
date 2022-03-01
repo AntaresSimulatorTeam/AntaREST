@@ -1,32 +1,23 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { PropsWithChildren, useState, useEffect } from 'react';
-import { Box, Button, CircularProgress, styled, TextField, Typography } from '@mui/material';
-import Particles from 'react-tsparticles';
-import { IOptions, RecursivePartial } from 'tsparticles';
+import { Box, Button, CircularProgress, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { ConnectedProps, connect } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import debug from 'debug';
-import { AppState } from '../../../store/reducers';
-import { loginUser, logoutAction } from '../../../store/auth';
-import { login as loginRequest, needAuth, refresh } from '../../../services/api/auth';
-import particleOptions from './particle';
-import logo from './antarestlogo.png';
-import GlobalPageLoadingError from '../../../components/common/loaders/GlobalPageLoadingError';
-import AppLoader from '../../../components/common/loaders/AppLoader';
-import { updateRefreshInterceptor } from '../../../services/api/client';
-import { UserInfo } from '../../../common/types';
-import { reconnectWebsocket } from '../../../store/websockets';
+import { AppState } from '../../store/reducers';
+import { loginUser, logoutAction } from '../../store/auth';
+import { login as loginRequest, needAuth, refresh } from '../../services/api/auth';
+import logo from '../../assets/logo.png';
+import topRightBackground from '../../assets/top-right-background.png';
+import GlobalPageLoadingError from '../../components/common/loaders/GlobalPageLoadingError';
+import AppLoader from '../../components/common/loaders/AppLoader';
+import { updateRefreshInterceptor } from '../../services/api/client';
+import { UserInfo } from '../../common/types';
+import { reconnectWebsocket } from '../../store/websockets';
+import FilledTextInput from '../../components/common/FilledTextInput';
 
 const logError = debug('antares:loginwrapper:error');
-
-const StyledParticles = styled(Particles)(({ theme }) => ({
-  position: 'absolute',
-  width: '100%',
-  height: '100%',
-  boxSizing: 'border-box',
-  overflow: 'hidden',
-}));
 
 type FormStatus = 'loading' | 'default' | 'success';
 
@@ -117,17 +108,9 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
   }
 
   return (
-    <Box display="flex" height="100vh">
-      <Box flex="40% 0 0" bgcolor="outlineBorder">
-        <Box sx={{ height: '100%', position: 'relative' }}>
-          <StyledParticles
-            id="tsparticles"
-            options={particleOptions as RecursivePartial<IOptions>}
-          />
-          <Box sx={{ zIndex: 50, position: 'absolute', top: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
-            <img style={{ backgroundColor: '#fff' }} height="140px" src={logo} alt="logo" />
-          </Box>
-        </Box>
+    <Box display="flex" height="100vh" sx={{ background: 'linear-gradient(140deg, rgba(33,32,50,1) 0%, rgba(29,28,48,1) 35%, rgba(27,11,36,1) 100%)' }}>
+      <Box position="absolute" top="0px" right="0px" display="flex" justifyContent="center" alignItems="center" flexDirection="column" flexWrap="nowrap" boxSizing="border-box">
+        <img src={topRightBackground} alt="logo" style={{ height: 'auto' }} />
       </Box>
       <Box
         flexGrow={1}
@@ -135,28 +118,16 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
         alignItems="center"
         justifyContent="center"
         zIndex={999}
-        bgcolor="grey.200"
       >
         <Box>
-          <Typography variant="h2" component="h1">Antares Web</Typography>
-          <Box width="70%">
+          <Box display="flex" width="70%" height="100%" justifyContent="center" alignItems="center" flexDirection="column" flexWrap="nowrap" boxSizing="border-box">
+            <img src={logo} alt="logo" style={{ height: '96px' }} />
+            <Typography variant="h4" component="h4" color="primary" my={2}>Antares Web</Typography>
+          </Box>
+          <Box width="70%" my={2}>
             <form style={{ marginTop: '16px' }} onSubmit={handleSubmit(onSubmit)}>
-              <TextField
-                required
-                id="login"
-                label="NNI"
-                fullWidth
-                sx={{ my: 2 }}
-                inputProps={{ ...register('username', { required: true }) }}
-              />
-              <TextField
-                id="password"
-                label={t('main:password')}
-                required
-                fullWidth
-                type="password"
-                inputProps={{ ...register('password', { required: true }) }}
-              />
+              <FilledTextInput label="NNI *" fullWidth inputProps={{ ...register('username', { required: true }) }} sx={{ my: 3 }} />
+              <FilledTextInput type="password" label={t('main:password')} fullWidth inputProps={{ ...register('password', { required: true }) }} />
               {loginError && (
                 <Box mt={2} color="error.main" mb={4} sx={{ fontSize: '0.9rem' }}>{loginError}</Box>
               )}
