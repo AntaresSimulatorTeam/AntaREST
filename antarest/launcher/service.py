@@ -330,8 +330,14 @@ class LauncherService:
     ) -> Optional[str]:
         job_result = self.job_result_repository.get(str(job_id))
         if job_result:
+            app_logs: Dict[JobLogType, List[str]] = reduce(
+                lambda logs, log: LauncherService.sort_log(log, logs),
+                job_result.logs or [],
+                {JobLogType.BEFORE: [], JobLogType.AFTER: []},
+            )
+
             if job_result.output_id:
-                return cast(
+                launcher_logs = cast(
                     str,
                     self.study_service.get(
                         job_result.study_id,
@@ -341,16 +347,14 @@ class LauncherService:
                         params=params,
                     ),
                 )
-            self._assert_launcher_is_initialized(job_result.launcher)
-            app_logs: Dict[JobLogType, List[str]] = reduce(
-                lambda logs, log: LauncherService.sort_log(log, logs),
-                job_result.logs,
-                {JobLogType.BEFORE: [], JobLogType.AFTER: []},
-            )
-            launcher_logs = (
-                self.launchers[job_result.launcher].get_log(job_id, log_type)
-                or ""
-            )
+            else:
+                self._assert_launcher_is_initialized(job_result.launcher)
+                launcher_logs = (
+                    self.launchers[job_result.launcher].get_log(
+                        job_id, log_type
+                    )
+                    or ""
+                )
             return "\n".join(
                 app_logs[JobLogType.BEFORE]
                 + [launcher_logs]
