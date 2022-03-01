@@ -6,9 +6,11 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { AxiosError } from 'axios';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import HomeIcon from '@mui/icons-material/Home';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import { areEqual, FixedSizeGrid, FixedSizeGridProps, GridChildComponentProps } from 'react-window';
 import { GenericInfo, StudyMetadata, SortElement, SortItem, SortStatus } from '../../common/types';
 import StudyCard from './StudyCard';
 import { scrollbarStyle, STUDIES_HEIGHT_HEADER, STUDIES_LIST_HEADER_HEIGHT } from '../../theme';
@@ -19,6 +21,30 @@ import { deleteStudy as callDeleteStudy, copyStudy as callCopyStudy, archiveStud
 import LauncherModal from './LauncherModal';
 
 const logError = debug('antares:studieslist:error');
+
+const StudyCardCell = React.memo((props: GridChildComponentProps) => {
+  const { data, columnIndex, rowIndex, style } = props;
+  const { studies, importStudy, onLaunchClick, columnCount, itemWidth, favorite, onFavoriteClick, deleteStudy, archiveStudy, unarchiveStudy } = data;
+  const study = studies[columnIndex + rowIndex * columnCount];
+  if (study) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', ...style }}>
+        <StudyCard
+          study={study}
+          width={itemWidth}
+          favorite={favorite.includes(study.id)}
+          onLaunchClick={() => onLaunchClick(study)}
+          onFavoriteClick={onFavoriteClick}
+          onImportStudy={importStudy}
+          onArchiveClick={archiveStudy}
+          onUnarchiveClick={unarchiveStudy}
+          onDeleteClick={deleteStudy}
+        />
+      </div>
+    );
+  }
+  return <div />;
+}, areEqual);
 
 const mapState = (state: AppState) => ({
   scrollPosition: state.study.scrollPosition,
@@ -227,24 +253,30 @@ function StudiesList(props: PropTypes) {
         boxSizing="border-box"
         sx={{ overflowX: 'hidden', overflowY: 'auto', ...scrollbarStyle }}
       >
-        <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} p={2} sx={{ flex: 'none' }}>
-          {studies.map((elm) => (
-            <Grid item xs={2} sm={4} md={4} key={elm.id}>
-              <StudyCard
-                study={elm}
-                favorite={favorite.includes(elm.id)}
-                onLaunchClick={() => onLaunchClick(elm)}
-                onFavoriteClick={onFavoriteClick}
-                onImportStudy={importStudy}
-                onArchiveClick={archiveStudy}
-                onUnarchiveClick={unarchiveStudy}
-                onDeleteClick={deleteStudy}
-              />
-            </Grid>
-          ))}
-          {openLaunncherModal && <LauncherModal open={openLaunncherModal} study={currentLaunchStudy} onClose={() => setOpenLauncherModal(false)} />}
-        </Grid>
+        <AutoSizer>
+          { ({ height, width }) => {
+            const paddedWidth = width - 10;
+            const baseColumnCount = Math.floor(paddedWidth / 400);
+            const itemWidth = (paddedWidth / Math.round(paddedWidth / 400));
+            const columnCount = Math.floor(paddedWidth / itemWidth);
+            return (
+              <FixedSizeGrid
+                columnCount={columnCount}
+                columnWidth={itemWidth}
+                height={height}
+                rowCount={Math.ceil(studies.length / columnCount)}
+                rowHeight={220}
+                width={width}
+                itemData={{ studies, importStudy, onLaunchClick, columnCount, itemWidth, favorite, onFavoriteClick, deleteStudy, archiveStudy, unarchiveStudy }}
+              >
+                {StudyCardCell}
+              </FixedSizeGrid>
+            );
+          }
+        }
+        </AutoSizer>
       </Box>
+      {openLaunncherModal && <LauncherModal open={openLaunncherModal} study={currentLaunchStudy} onClose={() => setOpenLauncherModal(false)} />}
     </Box>
   );
 }
