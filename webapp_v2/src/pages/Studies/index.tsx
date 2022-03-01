@@ -50,7 +50,7 @@ function Studies(props: PropTypes) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [filteredStudies, setFilteredStudies] = useState<Array<StudyMetadata>>(studies);
-  const [loaded, setLoaded] = useState(true);
+  const [loaded, setLoaded] = useState(false);
   const [managedFilter, setManageFilter] = useState(loadState<boolean>(DEFAULT_FILTER_MANAGED, false));
   const [currentSortItem, setCurrentSortItem] = useState<SortItem|undefined>(loadState<SortItem>(DEFAULT_FILTER_SORTING, { element: SortElement.NAME, status: SortStatus.INCREASE }));
   const [inputValue, setInputValue] = useState<string>('');
