@@ -237,7 +237,7 @@ function StudiesList(props: PropTypes) {
                     justifyContent: 'center',
                     alignItems: 'center' }}
                 >
-                  <ListItemIcon>
+                  <ListItemIcon sx={{ minWidth: '30px' }}>
                     {status === SortStatus.INCREASE ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
                   </ListItemIcon>
                   <ListItemText primary={name} />
