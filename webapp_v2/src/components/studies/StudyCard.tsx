@@ -86,7 +86,7 @@ export default function StudyCard(props: Props) {
   };
 
   return (
-    <Card variant="outlined" sx={{ width: width - 10, height: 200, margin: '10px', flex: 'none' }}>
+    <Card variant="outlined" sx={{ width: width - 10, height: 200, marginLeft: '10px', marginTop: '5px', marginBottom: '5px', flex: 'none' }}>
       <CardContent>
         <Box width="100%" height="60px" display="flex" flexDirection="column" justifyContent="flex-start" p={0.5}>
           <Box display="flex" flexDirection="row" justifyContent="space-between" alignItems="flex-start" width="100%" boxSizing="border-box">

@@ -255,7 +255,7 @@ function StudiesList(props: PropTypes) {
       >
         <AutoSizer>
           { ({ height, width }) => {
-            const paddedWidth = width - 10;
+            const paddedWidth = width - 20;
             const baseColumnCount = Math.floor(paddedWidth / 400);
             const itemWidth = (paddedWidth / Math.round(paddedWidth / 400));
             const columnCount = Math.floor(paddedWidth / itemWidth);
@@ -265,7 +265,7 @@ function StudiesList(props: PropTypes) {
                 columnWidth={itemWidth}
                 height={height}
                 rowCount={Math.ceil(studies.length / columnCount)}
-                rowHeight={220}
+                rowHeight={210}
                 width={width}
                 itemData={{ studies, importStudy, onLaunchClick, columnCount, itemWidth, favorite, onFavoriteClick, deleteStudy, archiveStudy, unarchiveStudy }}
               >
