@@ -10,6 +10,7 @@ class APITag:
     study_outputs = "Manage Outputs"
     downloads = "Manage downloads"
     matrix = "Manage Matrix"
+    tasks = "Manage tasks"
     misc = "Miscellaneous"
 
 
@@ -30,6 +31,9 @@ tags_metadata = [
         "name": APITag.launcher,
     },
     {
+        "name": APITag.xpansion_study_management,
+    },
+    {
         "name": APITag.study_outputs,
     },
     {
@@ -37,6 +41,9 @@ tags_metadata = [
     },
     {
         "name": APITag.downloads,
+    },
+    {
+        "name": APITag.tasks,
     },
     {
         "name": APITag.study_permissions,
