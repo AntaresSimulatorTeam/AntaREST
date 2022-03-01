@@ -42,5 +42,7 @@
   "daysSymbol": "days",
   "hoursSymbol": "hours",
   "minutesSymbol": "minutes",
-  "secondsSymbol": "seconds"
+  "secondsSymbol": "seconds",
+  "loading": "Loading",
+  "logoutModalMessage": "Are you sure you want to logout ?"
 }

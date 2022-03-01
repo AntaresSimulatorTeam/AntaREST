@@ -42,5 +42,7 @@
   "daysSymbol": "jours",
   "hoursSymbol": "heures",
   "minutesSymbol": "minutes",
-  "secondsSymbol": "secondes"
+  "secondsSymbol": "secondes",
+  "loading": "Chargement",
+  "logoutModalMessage": "Êtes vous sûr de vouloir vous déconnecter ?"
 }

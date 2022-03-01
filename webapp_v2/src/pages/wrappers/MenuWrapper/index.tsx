@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import React, { PropsWithChildren } from 'react';
+import React, { PropsWithChildren, useState } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
@@ -17,14 +17,17 @@ import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
 import GitHubIcon from '@mui/icons-material/GitHub';
 
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
+import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import ReadMoreOutlinedIcon from '@mui/icons-material/ReadMoreOutlined';
 
 import { SvgIconProps, useTheme } from '@mui/material';
-import logo from '../../assets/logo.png';
-import { AppState } from '../../store/reducers';
-import { setMenuExtensionStatusAction } from '../../store/ui';
-import { NavDrawer, NavListItem, NavExternalLink, NavInternalLink, NavListItemText, NavListItemIcon } from '../../components/MenuWrapperComponents';
+import logo from '../../../assets/logo.png';
+import topRightBackground from '../../../assets/top-right-background.png';
+import { AppState } from '../../../store/reducers';
+import { setMenuExtensionStatusAction } from '../../../store/ui';
+import { NavDrawer, NavListItem, NavExternalLink, NavInternalLink, NavListItemText, NavListItemIcon } from '../../../components/MenuWrapperComponents';
+import LogoutModal from './LogoutModal';
 
 interface MenuItem {
   id: string;
@@ -49,6 +52,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
   const { children, extended, setExtended } = props;
   const theme = useTheme();
   const [t] = useTranslation();
+  const [openLogoutModal, setOpenLogoutModal] = useState<boolean>(false);
 
   const navigation: Array<MenuItem> = [
     { id: 'studies', link: '/studies', icon: TravelExploreOutlinedIcon },
@@ -95,6 +99,9 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
       sx={{ background: 'linear-gradient(140deg, rgba(33,32,50,1) 0%, rgba(29,28,48,1) 35%, rgba(27,11,36,1) 100%)' }}
     >
       <CssBaseline />
+      <Box position="absolute" top="0px" right="0px" display="flex" justifyContent="center" alignItems="center" flexDirection="column" flexWrap="nowrap" boxSizing="border-box">
+        <img src={topRightBackground} alt="logo" style={{ height: 'auto' }} />
+      </Box>
       <NavDrawer
         extended={extended}
         variant="permanent"
@@ -121,11 +128,11 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
         <Divider />
         <List>
           {drawMenuItem(settings)}
-          <NavListItem>
+          <NavListItem onClick={() => setOpenLogoutModal(true)}>
             <NavListItemIcon>
-              <AccountCircleOutlinedIcon sx={{ color: 'grey.400' }} />
+              <LogoutIcon sx={{ color: 'grey.400' }} />
             </NavListItemIcon>
-            {extended && <NavListItemText primary={t('main:connexion')} />}
+            {extended && <NavListItemText primary={t('main:logout')} />}
           </NavListItem>
           <NavListItem onClick={() => setExtended(!extended)}>
             <NavListItemIcon>
@@ -134,6 +141,7 @@ function MenuWrapper(props: PropsWithChildren<PropTypes>) {
             {extended && <NavListItemText primary={t('main:hide')} />}
           </NavListItem>
         </List>
+        { openLogoutModal && <LogoutModal open={openLogoutModal} onClose={() => setOpenLogoutModal(false)} /> }
       </NavDrawer>
       <Box
         component="main"
