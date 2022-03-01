@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '@mui/material';
-import logo from '../../../assets/logo.png';
 import topRightBackground from '../../../assets/top-right-background.png';
 
 function AppLoader() {
@@ -21,7 +20,11 @@ function AppLoader() {
       >
         <Box display="flex" justifyContent="center" alignItems="center" flexDirection="column">
           <Box display="flex" width="100%" justifyContent="center" alignItems="center" flexDirection="column" flexWrap="nowrap" boxSizing="border-box">
-            <Typography variant="h4" component="h4" color="primary" my={2}>Oups, an unexpected error happened. Please try to refresh the page.</Typography>
+            <Typography variant="h4" component="h4" color="primary" my={2}>
+              Oups, an unexpected error happened.
+              <br />
+              Please try to refresh the page.
+            </Typography>
           </Box>
         </Box>
       </Box>

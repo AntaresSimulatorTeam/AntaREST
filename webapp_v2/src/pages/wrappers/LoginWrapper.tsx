@@ -60,6 +60,7 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
         login(res);
       } catch (e) {
         setStatus('default');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setLoginError((e as any).data?.message || t('main:loginError'));
       } finally {
         reset({ username: data.username });

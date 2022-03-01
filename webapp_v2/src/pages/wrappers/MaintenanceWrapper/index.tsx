@@ -82,15 +82,15 @@ function MaintenanceWrapper(props: PropsWithChildren<PropTypes>) {
         sx={{ background: 'linear-gradient(140deg, rgba(33,32,50,1) 0%, rgba(29,28,48,1) 35%, rgba(27,11,36,1) 100%)' }}
       >
         <Stars />
-        <Button variant="text" sx={{ color: 'white', position: 'absolute', top: '10px', right: '10px' }} onClick={onClick}>
+        <Button variant="text" sx={{ color: 'primary.main', position: 'absolute', top: '10px', right: '10px' }} onClick={onClick}>
           {t('main:connexion')}
         </Button>
         <Box display="flex" flexDirection="row" justifyContent="center" alignItems="center" zIndex={999}>
           <StyledErrorIcon />
           <Typography sx={{
             fontSize: '3.5em',
-            color: 'white',
             fontWeight: 'bold',
+            color: 'primary.main',
           }}
           >
             {t('main:appUnderMaintenance')}

@@ -52,11 +52,11 @@ function MessageInfoModal(props: PropTypes) {
 
   return (
     <BasicModal
-      title={t('main:logout')}
+      title="Information"
       open={open}
       onClose={() => setOpen(false)}
-      closeButtonLabel={t('main:noButton')}
-      rootStyle={{ width: '600px', height: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', boxSizing: 'border-box' }}
+      closeButtonLabel={t('main:closeButton')}
+      rootStyle={{ width: '600px', height: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', boxSizing: 'border-box' }}
     >
       <Box width="90%" height="100%" display="flex" flexDirection="column" justifyContent="center" alignItems="center" p={2} mb={3} boxSizing="border-box">
         <Typography variant="body1" style={{ whiteSpace: 'pre-wrap' }}>{messageInfo}</Typography>
