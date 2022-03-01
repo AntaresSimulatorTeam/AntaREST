@@ -133,6 +133,8 @@ class SlurmLauncher(AbstractLauncher):
             new_workspace = Path(
                 tempfile.mkdtemp(dir=str(self.slurm_config.local_workspace))
             )
+            lock_file = new_workspace / WORKSPACE_LOCK_FILE_NAME
+            lock_file.touch()
             logger.info(
                 f"Initiating slurm workspace in new directory {new_workspace}"
             )

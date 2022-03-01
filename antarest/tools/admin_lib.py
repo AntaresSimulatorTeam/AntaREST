@@ -10,12 +10,9 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
 logger = logging.getLogger(__name__)
 
 
-def clean_locks(config: Path) -> None:
-    """Clean app locks"""
-    res = get_local_path() / "resources"
-    config_obj = Config.from_yaml_file(res=res, file=config)
-    if config_obj.launcher.slurm:
-        slurm_workspace = config_obj.launcher.slurm.local_workspace
+def clean_locks_from_config(config: Config) -> None:
+    if config.launcher.slurm:
+        slurm_workspace = config.launcher.slurm.local_workspace
         if slurm_workspace.exists() and slurm_workspace.is_dir():
             for workspace in slurm_workspace.iterdir():
                 lock_file = workspace / WORKSPACE_LOCK_FILE_NAME
@@ -24,3 +21,10 @@ def clean_locks(config: Path) -> None:
                         f"Removing slurm workspace lock file {lock_file}"
                     )
                     lock_file.unlink()
+
+
+def clean_locks(config: Path) -> None:
+    """Clean app locks"""
+    res = get_local_path() / "resources"
+    config_obj = Config.from_yaml_file(res=res, file=config)
+    clean_locks_from_config(config_obj)

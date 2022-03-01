@@ -10,14 +10,19 @@ from sqlalchemy import create_engine
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters
+from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import Config, LauncherConfig, SlurmConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
+    WORKSPACE_LOCK_FILE_NAME,
+    LOG_DIR_NAME,
 )
-from antarest.launcher.model import JobStatus
+from antarest.launcher.model import JobStatus, JobResult
 from antarest.study.model import StudyMetadataDTO, RawStudy
+from antarest.tools.admin_lib import clean_locks_from_config
 
 
 @pytest.fixture
@@ -470,3 +475,74 @@ def test_kill_job(
     run_with_mock.assert_called_with(
         launcher_arguments, launcher_parameters, show_banner=False
     )
+
+
+@patch("antarest.launcher.adapters.slurm_launcher.slurm_launcher.run_with")
+def test_launcher_workspace_init(
+    run_with_mock, tmp_path: Path, launcher_config: Config
+):
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    Base.metadata.create_all(engine)
+    DBSessionMiddleware(
+        Mock(),
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+
+    callbacks = Mock(get_job_result=lambda x: JobResult(study_id="study_id"))
+    (tmp_path / LOG_DIR_NAME).mkdir()
+
+    slurm_launcher = SlurmLauncher(
+        config=launcher_config,
+        study_service=Mock(),
+        callbacks=callbacks,
+        event_bus=Mock(),
+        retrieve_existing_jobs=True,
+    )
+    workspaces = list(
+        filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())
+    )
+    assert len(workspaces) == 1
+    assert (workspaces[0] / WORKSPACE_LOCK_FILE_NAME).exists()
+
+    clean_locks_from_config(launcher_config)
+    assert not (workspaces[0] / WORKSPACE_LOCK_FILE_NAME).exists()
+
+    slurm_launcher.data_repo_tinydb.save_study(
+        StudyDTO(
+            path="somepath",
+        )
+    )
+    run_with_mock.assert_not_called()
+
+    # will use existing private workspace
+    slurm_launcher = SlurmLauncher(
+        config=launcher_config,
+        study_service=Mock(),
+        callbacks=callbacks,
+        event_bus=Mock(),
+        retrieve_existing_jobs=True,
+    )
+    assert (
+        len(list(filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())))
+        == 1
+    )
+    assert len(slurm_launcher.job_id_to_study_id) == 1
+    assert slurm_launcher.job_id_to_study_id["somepath"] == "study_id"
+    run_with_mock.assert_called()
+
+    run_with_mock.reset_mock()
+    # will create a new one since there is a lock on previous one
+    slurm_launcher = SlurmLauncher(
+        config=launcher_config,
+        study_service=Mock(),
+        callbacks=callbacks,
+        event_bus=Mock(),
+        retrieve_existing_jobs=True,
+    )
+    assert (
+        len(list(filter(lambda x: x.name != LOG_DIR_NAME, tmp_path.iterdir())))
+        == 2
+    )
+    assert len(slurm_launcher.job_id_to_study_id) == 0
+    run_with_mock.assert_not_called()
