@@ -11,7 +11,7 @@ from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
-    IniFileNode,
+    IniFileNode, DEFAULT_INI_VALIDATOR,
 )
 
 
@@ -40,6 +40,7 @@ class ExpansionSettings(IniFileNode):
         super().__init__(
             context,
             config,
+            validator=DEFAULT_INI_VALIDATOR,
             reader=SimpleKeyValueReader(),
             writer=SimpleKeyValueWriter(),
         )

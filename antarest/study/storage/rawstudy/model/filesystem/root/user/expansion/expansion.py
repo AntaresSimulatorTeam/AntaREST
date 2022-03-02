@@ -8,8 +8,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.candidates import (
-    ExpansionCandidates,
+from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.candidate import (
+    ExpansionCandidate,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.capa import (
     ExpansionCapa,
@@ -23,7 +23,7 @@ class Expansion(BucketNode):
     registered_files = [
         RegisteredFile(
             key="candidates",
-            node=ExpansionCandidates,
+            node=ExpansionCandidate,
             filename="candidates.ini",
         ),
         RegisteredFile(

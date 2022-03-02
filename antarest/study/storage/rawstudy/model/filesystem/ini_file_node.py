@@ -43,7 +43,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        validator: Validator,
+        validator: Validator = DEFAULT_INI_VALIDATOR,
         reader: Optional[IReader] = None,
         writer: Optional[IniWriter] = None,
     ):
