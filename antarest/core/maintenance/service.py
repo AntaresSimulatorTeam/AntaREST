@@ -1,4 +1,7 @@
 import logging
+import shutil
+import time
+from threading import Thread
 from typing import Optional, Callable
 
 from fastapi import HTTPException
@@ -36,6 +39,20 @@ class MaintenanceService:
         self.repo = repository
         self.event_bus = event_bus
         self.cache = cache
+        self._init()
+
+    def _init(self):
+        self.thread = Thread(target=self.check_disk_usage, daemon=True)
+        self.thread.start()
+
+    def check_disk_usage(self):
+        while True:
+            for name, workspace in self.config.storage.workspaces.items():
+                usage = shutil.disk_usage(workspace.path)
+                logger.info(
+                    f"Disk usage for {name}: {(100 * usage.used / usage.total):.2f}% ({(usage.free / 1000000000):.3f}GB free)"
+                )
+            time.sleep(3600)
 
     def _get_maintenance_data(
         self,
