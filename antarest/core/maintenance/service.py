@@ -41,11 +41,11 @@ class MaintenanceService:
         self.cache = cache
         self._init()
 
-    def _init(self):
+    def _init(self) -> None:
         self.thread = Thread(target=self.check_disk_usage, daemon=True)
         self.thread.start()
 
-    def check_disk_usage(self):
+    def check_disk_usage(self) -> None:
         while True:
             for name, workspace in self.config.storage.workspaces.items():
                 usage = shutil.disk_usage(workspace.path)
