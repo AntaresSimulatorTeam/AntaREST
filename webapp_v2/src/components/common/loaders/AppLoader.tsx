@@ -37,7 +37,7 @@ function AppLoader() {
             <img src={logo} alt="logo" style={{ height: '96px' }} />
             <Typography variant="h4" component="h4" color="primary" my={2}>Antares Web</Typography>
           </Box>
-          <Typography sx={{ my: 3 }}>{`${t('main:loading')}${[...Array(value).keys()].map((elm) => '.').join('')}`}</Typography>
+          <Typography sx={{ my: 3 }}>{`${t('main:loading')}${Array(value).fill(0).map((elm) => '.').join('')}`}</Typography>
         </Box>
       </Box>
     </Box>
