@@ -38,6 +38,8 @@
   "exportWithout": "Export without outputs",
   "sortBy": "View by",
   "createNewStudy": "Create a new study",
+  "createStudySuccess": "Study {{studyname}} created successfully",
+  "createStudyFailed": "Study {{studyname}} not created",
   "studyName": "Study name",
   "version": "Version",
   "baselineStudy": "Baseline study",

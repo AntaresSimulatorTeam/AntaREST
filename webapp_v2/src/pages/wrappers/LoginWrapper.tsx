@@ -120,7 +120,7 @@ function LoginWrapper(props: PropsWithChildren<PropTypes>) {
         justifyContent="center"
         zIndex={999}
       >
-        <Box>
+        <Box display="flex" justifyContent="center" alignItems="center" flexDirection="column" flexWrap="nowrap" boxSizing="border-box">
           <Box display="flex" width="70%" height="100%" justifyContent="center" alignItems="center" flexDirection="column" flexWrap="nowrap" boxSizing="border-box">
             <img src={logo} alt="logo" style={{ height: '96px' }} />
             <Typography variant="h4" component="h4" color="primary" my={2}>Antares Web</Typography>

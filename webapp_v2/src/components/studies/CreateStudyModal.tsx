@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import debug from 'debug';
+import { useSnackbar } from 'notistack';
 import { Box } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
 import BasicModal from '../common/BasicModal';
 import SingleSelect from '../common/SelectSingle';
@@ -9,18 +11,14 @@ import MultiSelect from '../common/SelectMulti';
 import { AppState } from '../../store/reducers';
 import { convertVersions } from '../../services/utils';
 import FilledTextInput from '../common/FilledTextInput';
-import { GenericInfo, GroupDTO, RoleType, StudyMetadata } from '../../common/types';
+import { GenericInfo, GroupDTO, StudyMetadata, StudyPublicMode } from '../../common/types';
 import TextSeparator from '../common/TextSeparator';
-import { createStudy, getStudyMetadata } from '../../services/api/study';
+import { changePublicMode, createStudy, getStudyMetadata } from '../../services/api/study';
 import { addStudies, initStudiesVersion } from '../../store/study';
 import { getGroups } from '../../services/api/user';
+import enqueueErrorSnackbar from '../common/ErrorSnackBar';
 
 const logErr = debug('antares:createstudyform:error');
-
-interface Inputs {
-  studyname: string;
-  version: number;
-}
 
 const mapState = (state: AppState) => ({
   versions: state.study.versionList,
@@ -36,18 +34,18 @@ const connector = connect(mapState, mapDispatch);
   interface OwnProps {
     open: boolean;
     onClose: () => void;
-    onActionButtonClick: () => void;
   }
   type PropTypes = PropsFromRedux & OwnProps;
 
 function CreateStudyModal(props: PropTypes) {
   const [t] = useTranslation();
-  const { versions, open, addStudy, onClose, onActionButtonClick } = props;
+  const { versions, open, addStudy, onClose } = props;
+  const { enqueueSnackbar } = useSnackbar();
   const versionList = convertVersions(versions || []);
   const tagList: Array<GenericInfo> = []; // Replace by ??
   const [version, setVersion] = useState<string>(versionList[versionList.length - 1].id.toString());
   const [studyName, setStudyName] = useState<string>('');
-  const [rightToChange, setRightToChange] = useState<string>('');
+  const [rightToChange, setRightToChange] = useState<StudyPublicMode>('NONE');
   const [group, setGroup] = useState<string>('');
   const [tags, setTags] = useState<Array<string>>([]);
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
@@ -62,19 +60,23 @@ function CreateStudyModal(props: PropTypes) {
         }
         const sid = await createStudy(studyName, vrs, group !== '' ? [group] : undefined);
         const metadata = await getStudyMetadata(sid);
+        await changePublicMode(sid, rightToChange);
         addStudy(metadata);
+        enqueueSnackbar(t('singlestudy:createStudySuccess', { studyname: studyName }), { variant: 'success' });
       } catch (e) {
         logErr('Failed to create new study', studyName, e);
+        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:createStudyFailed', { studyname: studyName }), e as AxiosError);
       }
     }
     onClose();
   };
 
   const rightToChangeList: Array<GenericInfo> = [
-    { id: RoleType.ADMIN, name: t('settings:adminRole') },
-    { id: RoleType.RUNNER, name: t('settings:runnerRole') },
-    { id: RoleType.WRITER, name: t('settings:writerRole') },
-    { id: RoleType.READER, name: t('settings:readerRole') }];
+    { id: 'NONE', name: t('singlestudy:nonePublicMode') },
+    { id: 'READ', name: t('singlestudy:readPublicMode') },
+    { id: 'EXECUTE', name: t('singlestudy:executePublicMode') },
+    { id: 'EDIT', name: t('singlestudy:editPublicMode') },
+    { id: 'FULL', name: t('singlestudy:fullPublicMode') }];
 
   const init = async () => {
     try {
@@ -121,7 +123,7 @@ function CreateStudyModal(props: PropTypes) {
               name={t('studymanager:rightToChange')}
               list={rightToChangeList}
               data={rightToChange}
-              setValue={setRightToChange}
+              setValue={(value: string) => setRightToChange(value as StudyPublicMode)}
               sx={{ flexGrow: 1, mr: 1 }}
             />
             <SingleSelect

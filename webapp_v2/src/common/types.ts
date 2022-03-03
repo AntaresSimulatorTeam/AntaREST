@@ -21,7 +21,7 @@ export interface SortItem {
 
 export type StudyDataType = 'json' | 'file' | 'matrixfile' | 'matrix';
 
-export type StudyPublicMode = "'NONE' | 'READ' | 'EXECUTE' | 'EDIT' | 'FULL'";
+export type StudyPublicMode = 'NONE' | 'READ' | 'EXECUTE' | 'EDIT' | 'FULL';
 
 export interface GenericInfo {
   id: IDType;
