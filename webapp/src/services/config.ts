@@ -48,7 +48,7 @@ if (process.env.NODE_ENV === 'development') {
 
 export const getConfig = (): Config => config;
 
-export const initConfig = async (callback: any): Promise<void> => {
+export const initConfig = async (callback: (appConfig: Config) => void): Promise<void> => {
   try {
     const res = await axios.get('/config.json', { baseURL: '/' });
     config = {
@@ -74,5 +74,5 @@ export const initConfig = async (callback: any): Promise<void> => {
 
   info('config is', config);
   // to let the initAxiosClient complete
-  setTimeout(() => callback(), 50);
+  setTimeout(() => callback(config), 50);
 };
