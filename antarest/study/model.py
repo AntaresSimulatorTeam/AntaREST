@@ -124,10 +124,12 @@ class PatchStudy(BaseModel):
     doc: Optional[str] = None
     status: Optional[str] = None
     comments: Optional[str] = None
+    tags: List[str] = []
 
 
 class PatchArea(BaseModel):
     country: Optional[str] = None
+    tags: List[str] = []
 
 
 class PatchCluster(BaseModel):
@@ -174,6 +176,7 @@ class StudyMetadataDTO(BaseModel):
     status: Optional[str]
     doc: Optional[str]
     folder: Optional[str] = None
+    tags: List[str] = []
 
 
 class StudyMetadataPatchDTO(BaseModel):
@@ -182,6 +185,7 @@ class StudyMetadataPatchDTO(BaseModel):
     scenario: Optional[str] = None
     status: Optional[str] = None
     doc: Optional[str] = None
+    tags: List[str] = []
 
 
 class StudySimSettingsDTO(BaseModel):

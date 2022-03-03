@@ -447,7 +447,7 @@ def test_area_management(app: FastAPI):
     assert res_areas.json() == [
         {
             "id": "all areas",
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": [],
             "thermals": None,
@@ -463,7 +463,7 @@ def test_area_management(app: FastAPI):
         json={
             "name": "area 1",
             "type": AreaType.AREA.value,
-            "metadata": {"country": "FR"},
+            "metadata": {"country": "FR", "tags": ["a"]},
         },
     )
     res = client.post(
@@ -504,7 +504,7 @@ def test_area_management(app: FastAPI):
     assert res_areas.json() == [
         {
             "id": "area 1",
-            "metadata": {"country": "FR"},
+            "metadata": {"country": "FR", "tags": ["a"]},
             "name": "area 1",
             "set": None,
             "thermals": [],
@@ -512,7 +512,7 @@ def test_area_management(app: FastAPI):
         },
         {
             "id": "area 2",
-            "metadata": {"country": "DE"},
+            "metadata": {"country": "DE", "tags": []},
             "name": "area 2",
             "set": None,
             "thermals": [],
@@ -520,7 +520,7 @@ def test_area_management(app: FastAPI):
         },
         {
             "id": "all areas",
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": ANY,  # because some time the order is not the same
             "thermals": None,
@@ -597,7 +597,7 @@ def test_area_management(app: FastAPI):
     assert res_areas.json() == [
         {
             "id": "area 2",
-            "metadata": {"country": "DE"},
+            "metadata": {"country": "DE", "tags": []},
             "name": "area 2",
             "set": None,
             "thermals": [],
@@ -605,7 +605,7 @@ def test_area_management(app: FastAPI):
         },
         {
             "id": "all areas",
-            "metadata": {"country": None},
+            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": ["area 2"],
             "thermals": None,
