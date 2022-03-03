@@ -10,9 +10,7 @@ import initFontAwesome from './services/utils/initFontAwesome';
 import { Config, initConfig } from './services/config';
 import { loadState, saveState } from './services/utils/localStorage';
 
-
 initFontAwesome();
-
 // eslint-disable-next-line react/no-render-return-value
 initConfig((config: Config) => {
   const VERSION_INSTALLED_KEY = 'antaresweb.version';
@@ -24,9 +22,6 @@ initConfig((config: Config) => {
   }
 
   initI18n(config.version.gitcommit);
-
-  const reduxStore = createStore();
-  addWsListeners(reduxStore);
 
   ReactDOM.render(<App />, document.getElementById('root'));
 });
