@@ -152,12 +152,12 @@ const TaskView = (props: PropTypes) => {
   const [logModalContentLoading, setLogModalContentLoading] = useState(false);
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
-  const openLogView = (jobId: string) => {
+  const openLogView = (jobId: string, errorLogs = false) => {
     setJobIdDetail(jobId);
     setLogModalContentLoading(true);
     (async () => {
       try {
-        const logData = await getStudyJobLog(jobId);
+        const logData = await getStudyJobLog(jobId, errorLogs ? 'STDERR' : 'STDOUT');
         setLogModalContent(logData);
       } catch (e) {
         enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failtofetchlogs'), e as AxiosError);
@@ -249,6 +249,10 @@ const TaskView = (props: PropTypes) => {
                         {`${t('singlestudy:taskMessage')} / `}
                         <span onClick={() => openLogView(item.id)} className={classes.logButton}>
                           {t('singlestudy:taskLog')}
+                        </span>
+                        {' / '}
+                        <span onClick={() => openLogView(item.id, true)} className={classes.logButton}>
+                          {t('singlestudy:taskErrorLog')}
                         </span>
                       </Typography>
                       <Typography>{item.msg}</Typography>

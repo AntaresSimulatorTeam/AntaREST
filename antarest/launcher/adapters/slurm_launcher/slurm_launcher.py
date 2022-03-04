@@ -237,7 +237,10 @@ class SlurmLauncher(AbstractLauncher):
         logger.info(f"Deleting workspace file at {study_path}")
         if self.local_workspace.absolute() in study_path.absolute().parents:
             if study_path.exists():
-                shutil.rmtree(study_path)
+                if study_path.is_dir():
+                    shutil.rmtree(study_path)
+                else:
+                    os.unlink(study_path)
 
     def _import_study_output(
         self,
@@ -249,20 +252,20 @@ class SlurmLauncher(AbstractLauncher):
         if xpansion_mode is not None:
             self._import_xpansion_result(job_id, xpansion_mode)
 
-        launcher_logs: List[Path] = []
+        launcher_logs: Dict[str, Path] = {}
         if log_dir is not None:
-            launcher_logs = [
-                log_path
-                for log_path in [
-                    SlurmLauncher._get_log_path_from_log_dir(
+            launcher_logs = {
+                log_name: log_path
+                for log_name, log_path in {
+                    "antares-out.log": SlurmLauncher._get_log_path_from_log_dir(
                         Path(log_dir), LogType.STDOUT
                     ),
-                    SlurmLauncher._get_log_path_from_log_dir(
+                    "antares-err.log": SlurmLauncher._get_log_path_from_log_dir(
                         Path(log_dir), LogType.STDERR
                     ),
-                ]
+                }.items()
                 if log_path
-            ]
+            }
         return self.storage_service.import_output(
             study_id,
             self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",

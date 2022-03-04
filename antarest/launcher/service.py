@@ -333,23 +333,36 @@ class LauncherService:
     ) -> Optional[str]:
         job_result = self.job_result_repository.get(str(job_id))
         if job_result:
-            app_logs: Dict[JobLogType, List[str]] = reduce(
-                lambda logs, log: LauncherService.sort_log(log, logs),
-                job_result.logs or [],
-                {JobLogType.BEFORE: [], JobLogType.AFTER: []},
-            )
-
             if job_result.output_id:
-                launcher_logs = str(
-                    self.study_service.get(
-                        job_result.study_id,
-                        f"/output/{job_result.output_id}/simulation",
-                        depth=1,
-                        formatted=True,
-                        params=params,
-                    )
-                )
-
+                if log_type == LogType.STDOUT:
+                    launcher_logs = cast(
+                        bytes,
+                        self.study_service.get(
+                            job_result.study_id,
+                            f"/output/{job_result.output_id}/antares-out",
+                            depth=1,
+                            formatted=True,
+                            params=params,
+                        )
+                        or self.study_service.get(
+                            job_result.study_id,
+                            f"/output/{job_result.output_id}/simulation",
+                            depth=1,
+                            formatted=True,
+                            params=params,
+                        ),
+                    ).decode("utf-8")
+                else:
+                    launcher_logs = cast(
+                        bytes,
+                        self.study_service.get(
+                            job_result.study_id,
+                            f"/output/{job_result.output_id}/antares-err",
+                            depth=1,
+                            formatted=True,
+                            params=params,
+                        ),
+                    ).decode("utf-8")
             else:
                 self._assert_launcher_is_initialized(job_result.launcher)
                 launcher_logs = str(
@@ -358,11 +371,18 @@ class LauncherService:
                     )
                     or ""
                 )
-            return "\n".join(
-                app_logs[JobLogType.BEFORE]
-                + [launcher_logs]
-                + app_logs[JobLogType.AFTER]
-            )
+            if log_type == LogType.STDOUT:
+                app_logs: Dict[JobLogType, List[str]] = reduce(
+                    lambda logs, log: LauncherService.sort_log(log, logs),
+                    job_result.logs or [],
+                    {JobLogType.BEFORE: [], JobLogType.AFTER: []},
+                )
+                return "\n".join(
+                    app_logs[JobLogType.BEFORE]
+                    + [launcher_logs]
+                    + app_logs[JobLogType.AFTER]
+                )
+            return launcher_logs
 
         raise JobNotFound()
 

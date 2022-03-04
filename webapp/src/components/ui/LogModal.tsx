@@ -81,6 +81,7 @@ interface OwnTypes {
   isOpen: boolean;
   title: string;
   jobId?: string;
+  followLogs?: boolean;
   content?: string;
   close: () => void;
   // eslint-disable-next-line react/require-default-props
@@ -101,7 +102,7 @@ type ReduxProps = ConnectedProps<typeof connector>;
 type PropTypes = ReduxProps & OwnTypes;
 
 const LogModal = (props: PropTypes) => {
-  const { title, style, jobId, loading, isOpen, content, close, addWsListener, removeWsListener } = props;
+  const { title, style, jobId, followLogs, loading, isOpen, content, close, addWsListener, removeWsListener } = props;
   const [logDetail, setLogDetail] = useState(content);
   const divRef = useRef<HTMLDivElement | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
@@ -167,9 +168,12 @@ const LogModal = (props: PropTypes) => {
   }, [logDetail, autoscroll]);
 
   useEffect(() => {
-    addWsListener(updateLog);
-    return () => removeWsListener(updateLog);
-  }, [updateLog, addWsListener, removeWsListener]);
+    if (followLogs) {
+      addWsListener(updateLog);
+      return () => removeWsListener(updateLog);
+    }
+    return () => { /* noop */ };
+  }, [updateLog, followLogs, addWsListener, removeWsListener]);
 
   return (
     <Modal
@@ -211,6 +215,7 @@ const LogModal = (props: PropTypes) => {
 LogModal.defaultProps = {
   content: undefined,
   jobId: undefined,
+  followLogs: false,
   loading: false,
 };
 

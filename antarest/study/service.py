@@ -1104,7 +1104,7 @@ class StudyService:
         uuid: str,
         output: Union[IO[bytes], Path],
         params: RequestParameters,
-        additional_logs: Optional[List[Path]] = None,
+        additional_logs: Optional[Dict[str, Path]] = None,
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -1125,9 +1125,9 @@ class StudyService:
             study, output
         )
         if res is not None and additional_logs:
-            for log_path in additional_logs:
+            for log_name, log_path in additional_logs.items():
                 shutil.copyfile(
-                    log_path, Path(study.path) / "output" / res / log_path.name
+                    log_path, Path(study.path) / "output" / res / log_name
                 )
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info(
