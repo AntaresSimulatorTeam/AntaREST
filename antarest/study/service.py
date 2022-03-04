@@ -354,7 +354,10 @@ class StudyService:
             ).get_study_information(study, summary)
         except Exception as e:
             logger.warning(
-                "Failed to build study %s metadata", study.id, exc_info=e
+                "Failed to build study %s (%s) metadata",
+                study.id,
+                study.path,
+                exc_info=e,
             )
         return None
 
