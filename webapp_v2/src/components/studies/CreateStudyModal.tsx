@@ -45,33 +45,35 @@ function CreateStudyModal(props: PropTypes) {
   const tagList: Array<GenericInfo> = []; // Replace by ??
   const [version, setVersion] = useState<string>(versionList[versionList.length - 1].id.toString());
   const [studyName, setStudyName] = useState<string>('');
-  const [rightToChange, setRightToChange] = useState<StudyPublicMode>('NONE');
-  const [group, setGroup] = useState<string>('');
+  const [publicMode, setPublicMode] = useState<StudyPublicMode>('NONE');
+  const [group, setGroup] = useState<Array<string>>([]);
   const [tags, setTags] = useState<Array<string>>([]);
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
 
   const onSubmit = async () => {
-    if (studyName && studyName.replace(/\s+/g, '') !== '' && versionList.length > 0) {
+    if (studyName && studyName.replace(/\s+/g, '') !== '') {
       try {
         let vrs = versionList[versionList.length - 1].id as number;
         if (version) {
           const index = versionList.findIndex((elm) => elm.id.toString() === version);
           if (index >= 0) { vrs = versionList[index].id as number; }
         }
-        const sid = await createStudy(studyName, vrs, group !== '' ? [group] : undefined);
+        const sid = await createStudy(studyName, vrs, group);
         const metadata = await getStudyMetadata(sid);
-        await changePublicMode(sid, rightToChange);
+        await changePublicMode(sid, publicMode);
         addStudy(metadata);
-        enqueueSnackbar(t('singlestudy:createStudySuccess', { studyname: studyName }), { variant: 'success' });
+        enqueueSnackbar(t('studymanager:createStudySuccess', { studyname: studyName }), { variant: 'success' });
       } catch (e) {
         logErr('Failed to create new study', studyName, e);
-        enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:createStudyFailed', { studyname: studyName }), e as AxiosError);
+        enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:createStudyFailed', { studyname: studyName }), e as AxiosError);
       }
+      onClose();
+    } else {
+      enqueueSnackbar(t('data:emptyName'), { variant: 'error' });
     }
-    onClose();
   };
 
-  const rightToChangeList: Array<GenericInfo> = [
+  const publicModeList: Array<GenericInfo> = [
     { id: 'NONE', name: t('singlestudy:nonePublicMode') },
     { id: 'READ', name: t('singlestudy:readPublicMode') },
     { id: 'EXECUTE', name: t('singlestudy:executePublicMode') },
@@ -120,13 +122,13 @@ function CreateStudyModal(props: PropTypes) {
           <TextSeparator text={t('studymanager:permission')} />
           <Box width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
             <SingleSelect
-              name={t('studymanager:rightToChange')}
-              list={rightToChangeList}
-              data={rightToChange}
-              setValue={(value: string) => setRightToChange(value as StudyPublicMode)}
+              name={t('singlestudy:publicMode')}
+              list={publicModeList}
+              data={publicMode}
+              setValue={(value: string) => setPublicMode(value as StudyPublicMode)}
               sx={{ flexGrow: 1, mr: 1 }}
             />
-            <SingleSelect
+            <MultiSelect
               name={t('studymanager:group')}
               list={groupList}
               data={group}
