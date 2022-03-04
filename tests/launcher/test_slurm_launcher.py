@@ -366,7 +366,7 @@ def test_import_study_output(launcher_config):
         / "1"
         / "output",
         params=ANY,
-        additional_logs=[],
+        additional_logs={},
     )
     assert res == "output"
 
