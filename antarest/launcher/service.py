@@ -281,7 +281,10 @@ class LauncherService:
                 ):
                     allowed_job_results.append(job_result)
             except StudyNotFoundError:
-                pass
+                logger.info(
+                    f"Removing job result {job_result.id} because of missing study"
+                )
+                self.job_result_repository.delete(job_result.id)
         return allowed_job_results
 
     def get_result(
