@@ -340,19 +340,19 @@ class LauncherService:
             )
 
             if job_result.output_id:
-                launcher_logs = cast(
-                    str,
+                launcher_logs = str(
                     self.study_service.get(
                         job_result.study_id,
                         f"/output/{job_result.output_id}/simulation",
                         depth=1,
                         formatted=True,
                         params=params,
-                    ),
+                    )
                 )
+
             else:
                 self._assert_launcher_is_initialized(job_result.launcher)
-                launcher_logs = (
+                launcher_logs = str(
                     self.launchers[job_result.launcher].get_log(
                         job_id, log_type
                     )
