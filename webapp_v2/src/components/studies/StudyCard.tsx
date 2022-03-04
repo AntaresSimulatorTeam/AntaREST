@@ -99,7 +99,7 @@ export default function StudyCard(props: Props) {
             <StarOutlineOutlinedIcon sx={{ cursor: 'pointer' }} onClick={handleFavoriteClick} color="primary" />
             }
           </Box>
-          <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="flex-start" width="100%" boxSizing="border-box">
+          <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center" width="100%" boxSizing="border-box">
             <Typography noWrap color="white" sx={{ fontSize: '13px', color: 'text.secondary' }}>
               {study.id}
             </Typography>

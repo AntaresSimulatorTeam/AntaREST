@@ -59,7 +59,7 @@ function Header(props: Props) {
           <Button sx={{ m: 2 }} variant="contained" color="primary" startIcon={<AddCircleOutlineOutlinedIcon />} onClick={() => setOpenCreateModal(true)}>
             {t('main:create')}
           </Button>
-          {openCreateModal && <CreateStudyModal open={openCreateModal} onClose={() => setOpenCreateModal(false)} onActionButtonClick={onActionButtonClick} />}
+          {openCreateModal && <CreateStudyModal open={openCreateModal} onClose={() => setOpenCreateModal(false)} />}
         </Box>
       </Box>
       <Box display="flex" width="100%" alignItems="center" py={2} px={3}>

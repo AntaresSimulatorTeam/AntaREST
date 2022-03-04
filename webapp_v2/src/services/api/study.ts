@@ -71,8 +71,9 @@ export const downloadOutput = async (sid: string, output: string, data: StudyOut
   return res.data;
 };
 
-export const createStudy = async (name: string, version: number): Promise<string> => {
-  const res = await client.post(`/v1/studies?name=${encodeURIComponent(name)}&version=${version}`);
+export const createStudy = async (name: string, version: number, groups?: Array<string>): Promise<string> => {
+  const groupIds = groups && groups.length > 0 ? `&groups=${groups.join(',')}` : '';
+  const res = await client.post(`/v1/studies?name=${encodeURIComponent(name)}&version=${version}${groupIds}`);
   return res.data;
 };
 
