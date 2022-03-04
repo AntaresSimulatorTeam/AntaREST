@@ -200,6 +200,7 @@ function StudiesList(props: PropTypes) {
               )
             ))}
         </Breadcrumbs>
+        <Typography>{studies.length}</Typography>
         <Box display="flex" flexDirection="column" justifyContent="center" alignItems="flex-start" boxSizing="border-box">
           <Typography sx={{ mt: 1, p: 0, color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>{t('studymanager:sortBy')}</Typography>
           <Select
