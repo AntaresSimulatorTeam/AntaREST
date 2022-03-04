@@ -31,6 +31,7 @@ let config: Config = {
     gitcommit: 'unknown',
   },
   maintenanceMode: false,
+
 };
 
 if (process.env.NODE_ENV === 'development') {
@@ -47,7 +48,7 @@ if (process.env.NODE_ENV === 'development') {
 
 export const getConfig = (): Config => config;
 
-export const initConfig = async (callback: () => void): Promise<void> => {
+export const initConfig = async (callback: (appConfig: Config) => void): Promise<void> => {
   try {
     const res = await axios.get('/config.json', { baseURL: '/' });
     config = {
@@ -73,5 +74,5 @@ export const initConfig = async (callback: () => void): Promise<void> => {
 
   info('config is', config);
   // to let the initAxiosClient complete
-  setTimeout(() => callback(), 50);
+  setTimeout(() => callback(config), 50);
 };
