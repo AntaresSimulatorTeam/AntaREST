@@ -18,11 +18,13 @@ PATCH_CONTENT = """
     "scenario": "BAU2025",
     "doc": null,
     "status": null,
-    "comments": null
+    "comments": null,
+    "tags": []
   },
   "areas": {
     "a1": {
-      "country": "FR"
+      "country": "FR",
+      "tags": []
     }
   },
   "thermal_clusters": null,

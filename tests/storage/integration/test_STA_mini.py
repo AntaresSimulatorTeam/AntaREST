@@ -508,6 +508,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "status": None,
             "doc": None,
             "folder": None,
+            "tags": [],
         }
     }
     url = "/v1/studies"

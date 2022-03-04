@@ -65,6 +65,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             scenario=metadata.scenario,
             doc=metadata.doc,
             status=metadata.status,
+            tags=metadata.tags,
         )
         self.patch_service.save(
             study,
@@ -146,6 +147,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             status=patch_metadata.status,
             doc=patch_metadata.doc,
             folder=folder,
+            tags=patch_metadata.tags,
         )
 
     def get(
