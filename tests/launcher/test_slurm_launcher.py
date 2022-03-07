@@ -160,9 +160,15 @@ def test_slurm_launcher_delete_function(tmp_path: str):
     directory_path.mkdir()
     (directory_path / "file.txt").touch()
 
+    file_path = Path(tmp_path) / "some.log"
+    file_path.touch()
+    assert file_path.exists()
+
     slurm_launcher._delete_workspace_file(directory_path)
+    slurm_launcher._delete_workspace_file(file_path)
 
     assert not directory_path.exists()
+    assert not file_path.exists()
 
 
 def test_extra_parameters(launcher_config: Config):
@@ -347,7 +353,7 @@ def test_clean_local_workspace(tmp_path: Path, launcher_config: Config):
 
 
 @pytest.mark.unit_test
-def test_import_study_output(launcher_config):
+def test_import_study_output(launcher_config, tmp_path):
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
         study_service=Mock(),
@@ -413,6 +419,27 @@ def test_import_study_output(launcher_config):
     slurm_launcher._import_study_output("1", "r")
     assert (output_dir / "results" / "something_else").exists()
     assert (output_dir / "results" / "something_else").read_text() == "world"
+
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    log_info = log_dir / "antares-out-xxxx.txt"
+    log_error = log_dir / "antares-err-xxxx.txt"
+    log_info.touch()
+    log_error.touch()
+    slurm_launcher.storage_service.import_output.reset_mock()
+    slurm_launcher._import_study_output("1", None, str(log_dir))
+    slurm_launcher.storage_service.import_output.assert_called_once_with(
+        "2",
+        launcher_config.launcher.slurm.local_workspace
+        / "OUTPUT"
+        / "1"
+        / "output",
+        params=ANY,
+        additional_logs={
+            "antares-out.log": log_info,
+            "antares-err.log": log_error,
+        },
+    )
 
 
 @patch("antarest.launcher.adapters.slurm_launcher.slurm_launcher.run_with")
