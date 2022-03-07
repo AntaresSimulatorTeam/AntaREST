@@ -401,22 +401,29 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     ) -> None:
         if variant_study.snapshot:
             variant_study.snapshot.last_executed_command = None
+            for child in self.repository.get_children(
+                parent_id=variant_study.id
+            ):
+                self._invalidate_snapshot(child, save_to_db=True)
             if save_to_db:
                 self.repository.save(
                     metadata=variant_study, update_modification_date=True
                 )
 
     def get_all_variants_children(
-        self, parent_id: str, params: RequestParameters
+        self,
+        parent_id: str,
+        params: RequestParameters,
     ) -> VariantTreeDTO:
         study = self._get_variant_study(
             parent_id, params, raw_study_accepted=True
         )
 
         children_tree = VariantTreeDTO(
-            node=self.get_study_information(study, summary=True), children=[]
+            node=self.get_study_information(study, summary=True),
+            children=[],
         )
-        children = self._get_variants_children(parent_id)
+        children = self.repository.get_children(parent_id=parent_id)
         for child in children:
             try:
                 children_tree.children.append(
@@ -428,19 +435,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 )
 
         return children_tree
-
-    def _get_variants_children(self, parent_id: str) -> List[StudyMetadataDTO]:
-        children = self.repository.get_children(parent_id=parent_id)
-        output_list: List[StudyMetadataDTO] = []
-        for child in children:
-            output_list.append(
-                self.get_study_information(
-                    child,
-                    summary=True,
-                )
-            )
-
-        return output_list
 
     def get_variants_parents(
         self, id: str, params: RequestParameters
