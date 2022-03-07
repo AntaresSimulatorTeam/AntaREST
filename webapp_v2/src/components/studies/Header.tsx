@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { styled, useTheme } from '@mui/material/styles';
+import { purple } from '@mui/material/colors';
 import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
@@ -9,6 +10,7 @@ import { Box, Button, Divider, InputAdornment, Typography, Chip } from '@mui/mat
 import { STUDIES_HEIGHT_HEADER } from '../../theme';
 import ImportStudy from './ImportStudy';
 import CreateStudyModal from './CreateStudyModal';
+import { GenericInfo, GroupDTO, UserDTO } from '../../common/types';
 
 const Root = styled('div')(({ theme }) => ({
   width: '100%',
@@ -35,18 +37,21 @@ interface Props {
     setInputValue: (value: string) => void;
     onFilterClick: () => void;
     managedFilter: boolean;
+    versions: Array<GenericInfo> | undefined;
+    users: Array<UserDTO> | undefined;
+    groups: Array<GroupDTO> | undefined;
     setManageFilter: (value: boolean) => void;
+    setVersions: (value: Array<GenericInfo>) => void;
+    setUsers: (value: Array<UserDTO>) => void;
+    setGroups: (value: Array<GroupDTO>) => void;
 }
 
 function Header(props: Props) {
   const [t] = useTranslation();
   const theme = useTheme();
-  const { inputValue, setInputValue, onFilterClick, managedFilter, setManageFilter } = props;
+  const { inputValue, managedFilter, users, versions, groups, setInputValue, setVersions, setUsers, setGroups, onFilterClick, setManageFilter } = props;
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
 
-  const onActionButtonClick = () : void => {
-    setOpenCreateModal(false);
-  };
   return (
     <Root>
       <Box width="100%" alignItems="center" display="flex" px={3}>
@@ -106,16 +111,63 @@ function Header(props: Props) {
           <Button color="secondary" variant="outlined" onClick={onFilterClick}>
             {t('main:filter')}
           </Button>
-          {
+          <Box
+            flex={1}
+            display="flex"
+            flexDirection="row"
+            justifyContent="flex-start"
+            alignItems="center"
+            px={2}
+            sx={{ overflowX: 'auto', overflowY: 'hidden' }}
+          >
+            {
             managedFilter && (
             <Chip
               label={t('studymanager:managedStudiesFilter')}
               variant="filled"
               color="secondary"
               onDelete={() => setManageFilter(false)}
-              sx={{ mx: 2 }}
+              sx={{ mx: 1 }}
             />
-            )}
+            )
+          }
+            { versions &&
+              versions.map((elm) => (
+                <Chip
+                  key={elm.id}
+                  label={elm.name}
+                  variant="filled"
+                  color="primary"
+                  onDelete={() => setVersions(versions.filter((item) => item.id !== elm.id))}
+                  sx={{ mx: 1 }}
+                />
+              ))
+          }
+            { users &&
+              users.map((elm) => (
+                <Chip
+                  key={elm.id}
+                  label={elm.name}
+                  variant="filled"
+                  onDelete={() => setUsers(users.filter((item) => item.id !== elm.id))}
+                  sx={{ mx: 1, bgcolor: purple[500] }}
+                />
+              ))
+          }
+            { groups &&
+              groups.map((elm) => (
+                <Chip
+                  key={elm.id}
+                  label={elm.name}
+                  variant="filled"
+                  color="success"
+                  onDelete={() => setGroups(groups.filter((item) => item.id !== elm.id))}
+                  sx={{ mx: 1 }}
+                />
+              ))
+          }
+
+          </Box>
         </Box>
       </Box>
     </Root>

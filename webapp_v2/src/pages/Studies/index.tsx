@@ -191,7 +191,19 @@ function Studies(props: PropTypes) {
 
   return (
     <Box width="100%" height="100%" display="flex" flexDirection="column" justifyContent="flex-start" alignItems="center" boxSizing="border-box" overflow="hidden">
-      <Header managedFilter={managedFilter as boolean} setManageFilter={setManageFilter} inputValue={inputValue} setInputValue={onChange} onFilterClick={onFilterClick} />
+      <Header
+        managedFilter={managedFilter as boolean}
+        setManageFilter={setManageFilter}
+        versions={currentVersion}
+        users={currentUser}
+        groups={currentGroup}
+        setVersions={setCurrentVersion}
+        setUsers={setCurrentUser}
+        setGroups={setCurrentGroup}
+        inputValue={inputValue}
+        setInputValue={onChange}
+        onFilterClick={onFilterClick}
+      />
       <Divider sx={{ width: '98%' }} />
       <Box flex={1} width="100%" display="flex" flexDirection="row" justifyContent="flex-start" alignItems="flex-start" boxSizing="border-box">
         <SideNav studies={studies} folder={currentFolder as string} setFolder={setCurrentFolder} favorite={currentFavorite as Array<GenericInfo>} />

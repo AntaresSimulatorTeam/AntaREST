@@ -21,6 +21,11 @@ export const convertStudyDtoToMetadata = (sid: string, metadata: StudyMetadataDT
   managed: metadata.managed,
   archived: metadata.archived,
   folder: metadata.folder,
+  horizon: metadata.horizon,
+  scenario: metadata.scenario,
+  status: metadata.status,
+  doc: metadata.doc,
+  tags: metadata.tags,
 });
 
 export const convertVariantTreeDTO = (variantTree: VariantTreeDTO): VariantTree => ({

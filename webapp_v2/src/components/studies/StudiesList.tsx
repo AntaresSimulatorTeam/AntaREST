@@ -165,42 +165,48 @@ function StudiesList(props: PropTypes) {
         alignItems="center"
         boxSizing="border-box"
       >
-        <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
-          {
-            folderList.map((elm, index) => (
-              index === 0 ? (
-                <HomeIcon
-                  // eslint-disable-next-line react/no-array-index-key
-                  key={`${elm}-${index}`}
-                  sx={{
-                    color: 'text.primary',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      color: 'primary.main',
-                    },
-                  }}
-                  onClick={() => setFolder('root')}
-                />
-              ) : (
-                <Typography
-                  // eslint-disable-next-line react/no-array-index-key
-                  key={`${elm}-${index}`}
-                  sx={{
-                    color: 'text.primary',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                      color: 'primary.main',
-                    },
-                  }}
-                  onClick={() => setFolder(folderList.slice(0, index + 1).join('/'))}
-                >
-                  {elm}
-                </Typography>
-              )
-            ))}
-        </Breadcrumbs>
-        <Typography>{studies.length}</Typography>
+        <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center" boxSizing="border-box">
+          <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
+            {
+              folderList.map((elm, index) => (
+                index === 0 ? (
+                  <HomeIcon
+                    // eslint-disable-next-line react/no-array-index-key
+                    key={`${elm}-${index}`}
+                    sx={{
+                      color: 'text.primary',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        color: 'primary.main',
+                      },
+                    }}
+                    onClick={() => setFolder('root')}
+                  />
+                ) : (
+                  <Typography
+                    // eslint-disable-next-line react/no-array-index-key
+                    key={`${elm}-${index}`}
+                    sx={{
+                      color: 'text.primary',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                        color: 'primary.main',
+                      },
+                    }}
+                    onClick={() => setFolder(folderList.slice(0, index + 1).join('/'))}
+                  >
+                    {elm}
+                  </Typography>
+                )
+              ))}
+          </Breadcrumbs>
+          <Typography mx={2} color="primary">
+            (
+            {`${studies.length} ${t('studymanager:studies').toLowerCase()}`}
+            )
+          </Typography>
+        </Box>
         <Box display="flex" flexDirection="column" justifyContent="center" alignItems="flex-start" boxSizing="border-box">
           <Typography sx={{ mt: 1, p: 0, color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>{t('studymanager:sortBy')}</Typography>
           <Select

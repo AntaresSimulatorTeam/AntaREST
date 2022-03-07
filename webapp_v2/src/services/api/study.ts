@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import client from './client';
-import { FileStudyTreeConfigDTO, LaunchJob, MatrixAggregationResult, StudyOutputDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode, AreasConfig, SingleAreaConfig, StudyProperties, LaunchJobDTO } from '../../common/types';
+import { FileStudyTreeConfigDTO, LaunchJob, MatrixAggregationResult, StudyOutputDownloadDTO, StudyMetadata, StudyMetadataDTO, StudyOutput, StudyPublicMode, AreasConfig, SingleAreaConfig, StudyProperties, LaunchJobDTO, StudyMetadataPatchDTO } from '../../common/types';
 import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 import { FileDownloadTask } from './downloads';
@@ -232,6 +232,11 @@ export const renameStudy = async (studyId: string, name: string): Promise<void> 
   const res = await client.put(`/v1/studies/${studyId}`, {
     name,
   });
+  return res.data;
+};
+
+export const updateStudyMetadata = async (studyId: string, data: StudyMetadataPatchDTO): Promise<void> => {
+  const res = await client.put(`/v1/studies/${studyId}`, data);
   return res.data;
 };
 

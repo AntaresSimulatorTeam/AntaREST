@@ -13,7 +13,7 @@ import { convertVersions } from '../../services/utils';
 import FilledTextInput from '../common/FilledTextInput';
 import { GenericInfo, GroupDTO, StudyMetadata, StudyPublicMode } from '../../common/types';
 import TextSeparator from '../common/TextSeparator';
-import { changePublicMode, createStudy, getStudyMetadata } from '../../services/api/study';
+import { changePublicMode, createStudy, getStudyMetadata, updateStudyMetadata } from '../../services/api/study';
 import { addStudies, initStudiesVersion } from '../../store/study';
 import { getGroups } from '../../services/api/user';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
@@ -61,6 +61,7 @@ function CreateStudyModal(props: PropTypes) {
         const sid = await createStudy(studyName, vrs, group);
         const metadata = await getStudyMetadata(sid);
         await changePublicMode(sid, publicMode);
+        if (tags.length > 0) await updateStudyMetadata(sid, { tags });
         addStudy(metadata);
         enqueueSnackbar(t('studymanager:createStudySuccess', { studyname: studyName }), { variant: 'success' });
       } catch (e) {
