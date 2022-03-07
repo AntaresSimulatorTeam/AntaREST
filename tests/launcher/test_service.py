@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, call
 from uuid import uuid4
 
 import pytest
@@ -381,3 +381,45 @@ def test_get_logs():
         job_id, LogType.STDOUT, RequestParameters(DEFAULT_ADMIN_USER)
     )
     assert logs == "first message\nsecond message\nlauncher logs\nlast message"
+    logs = launcher_service.get_log(
+        job_id, LogType.STDERR, RequestParameters(DEFAULT_ADMIN_USER)
+    )
+    assert logs == "launcher logs"
+
+    study_service.get.side_effect = [b"", b"some sim log", b"error log"]
+    job_result_mock.output_id = "some id"
+    logs = launcher_service.get_log(
+        job_id, LogType.STDOUT, RequestParameters(DEFAULT_ADMIN_USER)
+    )
+    assert logs == "first message\nsecond message\nsome sim log\nlast message"
+
+    logs = launcher_service.get_log(
+        job_id, LogType.STDERR, RequestParameters(DEFAULT_ADMIN_USER)
+    )
+    assert logs == "error log"
+
+    study_service.get.assert_has_calls(
+        [
+            call(
+                "study_id",
+                f"/output/some id/antares-out",
+                depth=1,
+                formatted=True,
+                params=RequestParameters(DEFAULT_ADMIN_USER),
+            ),
+            call(
+                "study_id",
+                f"/output/some id/simulation",
+                depth=1,
+                formatted=True,
+                params=RequestParameters(DEFAULT_ADMIN_USER),
+            ),
+            call(
+                "study_id",
+                f"/output/some id/antares-err",
+                depth=1,
+                formatted=True,
+                params=RequestParameters(DEFAULT_ADMIN_USER),
+            ),
+        ]
+    )
