@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
 MAX_NB_CPU = 24
-MAX_TIME_LIMIT = 604800
+MAX_TIME_LIMIT = 864000
 MIN_TIME_LIMIT = 3600
 WORKSPACE_LOCK_FILE_NAME = ".lock"
 LOCK_FILE_NAME = "slurm_launcher_init.lock"
@@ -513,12 +513,16 @@ class SlurmLauncher(AbstractLauncher):
                 )
             time_limit = launcher_params.get("time_limit", None)
             if time_limit and isinstance(time_limit, int):
-                if MIN_TIME_LIMIT < time_limit < MAX_TIME_LIMIT:
-                    launcher_args.time_limit = time_limit
-                else:
+                if MIN_TIME_LIMIT > time_limit:
                     logger.warning(
-                        f"Invalid slurm launcher time limit ({time_limit}), should be between {MIN_TIME_LIMIT} and {MAX_TIME_LIMIT}"
+                        f"Invalid slurm launcher time limit ({time_limit}), should be higher than {MIN_TIME_LIMIT}. Using min limit."
                     )
+                    launcher_args.time_limit = MIN_TIME_LIMIT
+                elif time_limit >= MAX_TIME_LIMIT:
+                    logger.warning(
+                        f"Invalid slurm launcher time limit ({time_limit}), should be lower than {MAX_TIME_LIMIT}. Using max limit."
+                    )
+                    launcher_args.time_limit = MAX_TIME_LIMIT - 3600
             post_processing = launcher_params.get("post_processing", False)
             if isinstance(post_processing, bool):
                 launcher_args.post_processing = post_processing

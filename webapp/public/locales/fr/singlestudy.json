@@ -7,7 +7,7 @@
   "useXpansionVersionR": "Utiliser la version R d'Xpansion",
   "postProcessing": "Post processing",
   "timeLimit": "Limite de temps",
-  "timeLimitHelper": "Limite de temps (en heures)",
+  "timeLimitHelper": "Limite de temps (en heures). Max: 240h.",
   "nbCpu": "Nombre de coeurs",
   "synthesis": "Synthèse",
   "level": "Niveau",

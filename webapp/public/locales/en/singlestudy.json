@@ -7,7 +7,7 @@
   "useXpansionVersionR": "Use the R legacy Xpansion mode",
   "postProcessing": "Post processing",
   "timeLimit": "Time limit",
-  "timeLimitHelper": "Time limit (in hours)",
+  "timeLimitHelper": "Time limit (in hours). Max: 240h.",
   "nbCpu": "Number of core",
   "synthesis": "Synthesis",
   "level": "Level",
