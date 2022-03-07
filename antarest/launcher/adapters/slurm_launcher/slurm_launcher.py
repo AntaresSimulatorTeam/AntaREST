@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
 MAX_NB_CPU = 24
-MAX_TIME_LIMIT = 604800
+MAX_TIME_LIMIT = 864000
 MIN_TIME_LIMIT = 3600
 WORKSPACE_LOCK_FILE_NAME = ".lock"
 LOCK_FILE_NAME = "slurm_launcher_init.lock"
@@ -237,7 +237,10 @@ class SlurmLauncher(AbstractLauncher):
         logger.info(f"Deleting workspace file at {study_path}")
         if self.local_workspace.absolute() in study_path.absolute().parents:
             if study_path.exists():
-                shutil.rmtree(study_path)
+                if study_path.is_dir():
+                    shutil.rmtree(study_path)
+                else:
+                    os.unlink(study_path)
 
     def _import_study_output(
         self,
@@ -249,20 +252,20 @@ class SlurmLauncher(AbstractLauncher):
         if xpansion_mode is not None:
             self._import_xpansion_result(job_id, xpansion_mode)
 
-        launcher_logs: List[Path] = []
+        launcher_logs: Dict[str, Path] = {}
         if log_dir is not None:
-            launcher_logs = [
-                log_path
-                for log_path in [
-                    SlurmLauncher._get_log_path_from_log_dir(
+            launcher_logs = {
+                log_name: log_path
+                for log_name, log_path in {
+                    "antares-out.log": SlurmLauncher._get_log_path_from_log_dir(
                         Path(log_dir), LogType.STDOUT
                     ),
-                    SlurmLauncher._get_log_path_from_log_dir(
+                    "antares-err.log": SlurmLauncher._get_log_path_from_log_dir(
                         Path(log_dir), LogType.STDERR
                     ),
-                ]
+                }.items()
                 if log_path
-            ]
+            }
         return self.storage_service.import_output(
             study_id,
             self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
@@ -510,12 +513,18 @@ class SlurmLauncher(AbstractLauncher):
                 )
             time_limit = launcher_params.get("time_limit", None)
             if time_limit and isinstance(time_limit, int):
-                if MIN_TIME_LIMIT < time_limit < MAX_TIME_LIMIT:
-                    launcher_args.time_limit = time_limit
-                else:
+                if MIN_TIME_LIMIT > time_limit:
                     logger.warning(
-                        f"Invalid slurm launcher time limit ({time_limit}), should be between {MIN_TIME_LIMIT} and {MAX_TIME_LIMIT}"
+                        f"Invalid slurm launcher time limit ({time_limit}), should be higher than {MIN_TIME_LIMIT}. Using min limit."
                     )
+                    launcher_args.time_limit = MIN_TIME_LIMIT
+                elif time_limit >= MAX_TIME_LIMIT:
+                    logger.warning(
+                        f"Invalid slurm launcher time limit ({time_limit}), should be lower than {MAX_TIME_LIMIT}. Using max limit."
+                    )
+                    launcher_args.time_limit = MAX_TIME_LIMIT - 3600
+                else:
+                    launcher_args.time_limit = time_limit
             post_processing = launcher_params.get("post_processing", False)
             if isinstance(post_processing, bool):
                 launcher_args.post_processing = post_processing
