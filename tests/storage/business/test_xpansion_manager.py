@@ -7,6 +7,7 @@ from zipfile import ZipFile
 
 import pytest
 from fastapi import UploadFile
+from pandas.errors import ParserError
 
 from antarest.core.model import JSON
 from antarest.study.business.xpansion_management import (
@@ -662,7 +663,7 @@ def test_get_single_capa(tmp_path: Path):
     filename1 = "capa1.txt"
     filename2 = "capa2.txt"
     content1 = "0"
-    content2 = "1"
+    content2 = "3\nbc\td"
 
     upload_file_list = [
         UploadFile(filename=filename1, file=StringIO(content1)),
@@ -671,16 +672,17 @@ def test_get_single_capa(tmp_path: Path):
 
     xpansion_manager.add_capa(study, upload_file_list)
 
-    assert (
-        xpansion_manager.get_single_capa(study, filename1) == content1.encode()
-    )
-    assert (
-        xpansion_manager.get_single_capa(study, filename2) == content2.encode()
-    )
+    assert xpansion_manager.get_single_capa(study, filename1) == {
+        "columns": [0],
+        "data": [[0.0]],
+        "index": [0],
+    }
+    with pytest.raises(ParserError):
+        xpansion_manager.get_single_capa(study, filename2)
 
 
 @pytest.mark.unit_test
-def test_get_single_capa(tmp_path: Path):
+def test_get_all_capa(tmp_path: Path):
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)

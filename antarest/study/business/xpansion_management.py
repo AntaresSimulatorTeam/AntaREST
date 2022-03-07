@@ -648,16 +648,14 @@ class XpansionManager:
         )
         file_study.tree.delete(["user", "expansion", "capa", filename])
 
-    def get_single_capa(self, study: Study, filename: str) -> bytes:
+    def get_single_capa(self, study: Study, filename: str) -> JSON:
         logger.info(
             f"Getting xpansion capacities file '{filename}' from study '{study.id}'"
         )
         file_study = self.study_storage_service.get_storage(study).get_raw(
             study
         )
-        return cast(
-            bytes, file_study.tree.get(["user", "expansion", "capa", filename])
-        )
+        return file_study.tree.get(["user", "expansion", "capa", filename])
 
     def get_all_capa(self, study: Study) -> List[str]:
         logger.info(

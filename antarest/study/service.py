@@ -1919,7 +1919,7 @@ class StudyService:
 
     def get_single_capa(
         self, uuid: str, filename: str, params: RequestParameters
-    ) -> bytes:
+    ) -> JSON:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
