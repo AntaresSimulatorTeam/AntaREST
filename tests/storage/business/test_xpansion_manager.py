@@ -617,14 +617,18 @@ def test_add_capa(tmp_path: Path):
     xpansion_manager.add_capa(study, upload_file_list)
 
     assert filename1 in empty_study.tree.get(["user", "expansion", "capa"])
-    assert content1.encode() == empty_study.tree.get(
-        ["user", "expansion", "capa", filename1]
-    )
+    assert {
+        "columns": [0],
+        "data": [[0.0]],
+        "index": [0],
+    } == empty_study.tree.get(["user", "expansion", "capa", filename1])
 
     assert filename2 in empty_study.tree.get(["user", "expansion", "capa"])
-    assert content2.encode() == empty_study.tree.get(
-        ["user", "expansion", "capa", filename2]
-    )
+    assert {
+        "columns": [0],
+        "data": [[1.0]],
+        "index": [0],
+    } == empty_study.tree.get(["user", "expansion", "capa", filename2])
 
 
 @pytest.mark.unit_test

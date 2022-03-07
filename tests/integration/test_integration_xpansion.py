@@ -314,14 +314,14 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     filename_capa1 = "filename_capa1.txt"
     filename_capa2 = "filename_capa2.txt"
     filename_capa3 = "filename_capa3.txt"
-    content_capa1 = "content_capa1"
-    content_capa2 = "content_capa2"
-    content_capa3 = "content_capa3"
+    content_capa1 = "0"
+    content_capa2 = "1"
+    content_capa3 = "2"
     files = {
         "files": (
             filename_capa1,
             StringIO(content_capa1),
-            "image/jpeg",
+            "txt/csv",
         )
     }
     res = client.post(
@@ -353,7 +353,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
             (
                 filename_capa2,
                 StringIO(content_capa2),
-                "image/jpeg",
+                "txt/csv",
             ),
         ),
         (
@@ -361,7 +361,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
             (
                 filename_capa3,
                 StringIO(content_capa3),
-                "image/jpeg",
+                "txt/csv",
             ),
         ),
     ]
@@ -378,7 +378,11 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
         headers=headers,
     )
     assert res.status_code == 200
-    assert res.json() == content_capa1
+    assert res.json() == {
+        "columns": [0],
+        "data": [[0.0]],
+        "index": [0],
+    }
 
     res = client.get(
         f"{xpansion_base_url}/capacities",
