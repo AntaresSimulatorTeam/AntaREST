@@ -19,6 +19,8 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
     WORKSPACE_LOCK_FILE_NAME,
     LOG_DIR_NAME,
+    MAX_TIME_LIMIT,
+    MIN_TIME_LIMIT,
 )
 from antarest.launcher.model import JobStatus, JobResult
 from antarest.study.model import StudyMetadataDTO, RawStudy
@@ -195,9 +197,14 @@ def test_extra_parameters(launcher_config: Config):
     assert launcher_params.n_cpu == 1
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
+        {"time_limit": 10}
+    )
+    assert launcher_params.time_limit == MIN_TIME_LIMIT
+
+    launcher_params = slurm_launcher._check_and_apply_launcher_params(
         {"time_limit": 999999999}
     )
-    assert launcher_params.time_limit == 0
+    assert launcher_params.time_limit == MAX_TIME_LIMIT - 3600
 
     launcher_params = slurm_launcher._check_and_apply_launcher_params(
         {"time_limit": 99999}

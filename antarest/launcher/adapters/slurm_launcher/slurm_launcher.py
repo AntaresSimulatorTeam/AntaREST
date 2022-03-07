@@ -523,6 +523,8 @@ class SlurmLauncher(AbstractLauncher):
                         f"Invalid slurm launcher time limit ({time_limit}), should be lower than {MAX_TIME_LIMIT}. Using max limit."
                     )
                     launcher_args.time_limit = MAX_TIME_LIMIT - 3600
+                else:
+                    launcher_args.time_limit = time_limit
             post_processing = launcher_params.get("post_processing", False)
             if isinstance(post_processing, bool):
                 launcher_args.post_processing = post_processing
