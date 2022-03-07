@@ -55,13 +55,17 @@ const useStyles = makeStyles((theme: Theme) =>
       marginBottom: theme.spacing(2),
     },
     formControl: {
-      minWidth: 120,
+      minWidth: '120px',
+    },
+    alreadyInstalled: {
+      minWidth: '250px',
     },
   }));
 
 interface PropType {
     candidate: XpansionCandidate;
     links: Array<LinkCreationInfo>;
+    capacities: Array<string>;
     deleteCandidate: (name: string) => void;
     updateCandidate: (value: XpansionCandidate) => void;
 }
@@ -69,19 +73,31 @@ interface PropType {
 const CandidateForm = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { candidate, links, deleteCandidate, updateCandidate } = props;
+  const { candidate, links, capacities, deleteCandidate, updateCandidate } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [currentCandidate, setCurrentCandidate] = useState<XpansionCandidate>(candidate);
   const [link, setLink] = useState<string>(candidate.link);
+  const [capa, setCapa] = useState<string>(candidate['link-profile'] || '');
+  const [installedLink, setInstalledLink] = useState<string>(candidate['already-installed-link-profile'] || '');
 
-  const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+  const handleLinkChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     setLink(event.target.value as string);
+  };
+
+  const handleLinkProfileChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setCapa(event.target.value as string);
+  };
+
+  const handleInstalledLinkChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setInstalledLink(event.target.value as string);
   };
 
   useEffect(() => {
     if (candidate) {
       setCurrentCandidate(candidate);
       setLink(candidate.link);
+      setCapa(candidate['link-profile'] || '');
+      setInstalledLink(candidate['already-installed-link-profile'] || '');
     }
   }, [candidate]);
 
@@ -100,7 +116,8 @@ const CandidateForm = (props: PropType) => {
               labelId="link-label"
               id="link-select-filled"
               value={link}
-              onChange={handleChange}
+              defaultValue=""
+              onChange={handleLinkChange}
             >
               {links.map((item) => (
                 <MenuItem key={`${item.area1} - ${item.area2}`} value={`${item.area1} - ${item.area2}`}>{`${item.area1} - ${item.area2}`}</MenuItem>
@@ -128,8 +145,32 @@ const CandidateForm = (props: PropType) => {
         </Typography>
         <Divider className={classes.divider} />
         <Box className={classes.fields}>
-          <TextField label={t('xpansion:linkProfile')} variant="filled" value={currentCandidate['link-profile'] || ''} onBlur={() => updateCandidate(candidate)} />
-          <TextField label={t('xpansion:alreadyILinkProfile')} variant="filled" value={currentCandidate['already-installed-link-profile'] || ''} onBlur={() => updateCandidate(candidate)} />
+          <FormControl variant="filled" className={classes.formControl}>
+            <InputLabel id="link-label">{t('xpansion:linkProfile')}</InputLabel>
+            <Select
+              labelId="link-profile-label"
+              id="link-profile-select-filled"
+              value={capa || ''}
+              onChange={handleLinkProfileChange}
+            >
+              {capacities.map((item) => (
+                <MenuItem value={item} key={item}>{item}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl variant="filled" className={classes.alreadyInstalled}>
+            <InputLabel id="link-label">{t('xpansion:alreadyILinkProfile')}</InputLabel>
+            <Select
+              labelId="already-installed-link-label"
+              id="already-installed-link-select-filled"
+              value={installedLink || ''}
+              onChange={handleInstalledLinkChange}
+            >
+              {capacities.map((item) => (
+                <MenuItem value={item} key={item}>{item}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
       </Box>
       <Box className={classes.buttons}>

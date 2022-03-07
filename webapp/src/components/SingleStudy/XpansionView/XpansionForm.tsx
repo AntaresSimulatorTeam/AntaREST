@@ -35,8 +35,8 @@ const useStyles = makeStyles((theme: Theme) =>
 interface PropType {
     selectedItem: XpansionCandidate | XpansionSettings | Array<string> | undefined;
     links: Array<LinkCreationInfo>;
-    constraints: Array<string> | undefined;
-    capacities: Array<string> | undefined;
+    constraints: Array<string>;
+    capacities: Array<string>;
     deleteCandidate: (name: string) => void;
     updateCandidate: (value: XpansionCandidate) => void;
     updateSettings: (value: XpansionSettings) => void;
@@ -52,10 +52,10 @@ const XpansionForm = (props: PropType) => {
       {(selectedItem as XpansionCandidate).name || (selectedItem as XpansionSettings).master ? (
         <div className={classes.form}>
           {selectedItem && (selectedItem as XpansionCandidate).name && (
-            <CandidateForm candidate={selectedItem as XpansionCandidate} links={links} deleteCandidate={deleteCandidate} updateCandidate={updateCandidate} />
+            <CandidateForm candidate={selectedItem as XpansionCandidate} links={links} capacities={capacities} deleteCandidate={deleteCandidate} updateCandidate={updateCandidate} />
           )}
           {selectedItem && (selectedItem as XpansionSettings).master && (
-            <SettingsForm settings={selectedItem as XpansionSettings} updateSettings={updateSettings} />
+            <SettingsForm settings={selectedItem as XpansionSettings} constraints={constraints} updateSettings={updateSettings} />
           )}
         </div>
       ) : (

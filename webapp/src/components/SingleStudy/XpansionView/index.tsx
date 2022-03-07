@@ -9,7 +9,7 @@ import SplitLayoutView from '../../ui/SplitLayoutView';
 import CreateCandidateModal from './CreateCandidateModal';
 import { XpansionCandidate, XpansionSettings } from './types';
 import XpansionForm from './XpansionForm';
-import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints, getAllCapacities, createXpansionConfiguration, deleteXpansionConfiguration, addCandidate, deleteCandidate } from '../../../services/api/xpansion';
+import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints, getAllCapacities, createXpansionConfiguration, deleteXpansionConfiguration, addCandidate, deleteCandidate, deleteConstraints, deleteCapacity } from '../../../services/api/xpansion';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { getAllLinks } from '../../../services/api/studydata';
 import { LinkCreationInfo } from '../MapView/types';
@@ -61,7 +61,7 @@ const XpansionView = (props: Props) => {
     }
   }, [study.id, enqueueSnackbar]);
 
-  const handleCreate = async () => {
+  const createXpansion = async () => {
     try {
       await createXpansionConfiguration(study.id);
     } catch (e) {
@@ -121,6 +121,32 @@ const XpansionView = (props: Props) => {
     console.log(value.master);
   };
 
+  const deleteConstraint = async (filename: string) => {
+    if (constraints) {
+      const array = constraints.filter((a) => a !== filename);
+      try {
+        setConstraints(array);
+        await deleteConstraints(study.id, filename);
+      } catch (e) {
+        setConstraints([...constraints]);
+        enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      }
+    }
+  };
+
+  const deleteCapa = async (filename: string) => {
+    if (capacities) {
+      const array = capacities.filter((a) => a !== filename);
+      try {
+        setCapacities(array);
+        await deleteCapacity(study.id, filename);
+      } catch (e) {
+        setCapacities([...capacities]);
+        enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+      }
+    }
+  };
+
   useEffect(() => {
     init();
   }, [init]);
@@ -131,7 +157,7 @@ const XpansionView = (props: Props) => {
     <>
       {loaded ? createConfigView && (
         <Box>
-          <Button onClick={handleCreate}>Créer</Button>
+          <Button onClick={createXpansion}>Créer</Button>
         </Box>
       ) : (
         <SimpleLoader />
@@ -144,7 +170,7 @@ const XpansionView = (props: Props) => {
           }
           right={
             selectedItem && (
-              <XpansionForm selectedItem={selectedItem} links={links || []} constraints={constraints} capacities={capacities} deleteCandidate={handleDeleteCandidate} updateCandidate={updateCandidate} updateSettings={updateSettings} />
+              <XpansionForm selectedItem={selectedItem} links={links || []} constraints={constraints || []} capacities={capacities || []} deleteCandidate={handleDeleteCandidate} updateCandidate={updateCandidate} updateSettings={updateSettings} />
             )
           }
         />

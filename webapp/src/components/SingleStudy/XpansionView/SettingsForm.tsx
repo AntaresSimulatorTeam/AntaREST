@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   makeStyles,
   createStyles,
@@ -7,6 +7,10 @@ import {
   Divider,
   Theme,
   Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import { XpansionSettings } from './types';
@@ -35,17 +39,34 @@ const useStyles = makeStyles((theme: Theme) =>
       marginTop: theme.spacing(1),
       marginBottom: theme.spacing(2),
     },
+    formControl: {
+      minWidth: '210px',
+    },
   }));
 
 interface PropType {
     settings: XpansionSettings;
+    constraints: Array<string>;
     updateSettings: (value: XpansionSettings) => void;
 }
 
 const SettingsForm = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { settings, updateSettings } = props;
+  const { settings, constraints, updateSettings } = props;
+  const [currentSettings, setCurrentSettings] = useState<XpansionSettings>(settings);
+  const [constraint, setConstraint] = useState<string>(settings['additional-constraints'] || '');
+
+  const handleConstraintChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setConstraint(event.target.value as string);
+  };
+
+  useEffect(() => {
+    if (settings) {
+      setCurrentSettings(settings);
+      setConstraint(settings['additional-constraints'] || '');
+    }
+  }, [settings]);
 
   return (
     <Box>
@@ -54,19 +75,31 @@ const SettingsForm = (props: PropType) => {
       </Typography>
       <Divider className={classes.divider} />
       <div className={classes.fields}>
-        <TextField label={t('xpansion:ucType')} variant="filled" value={settings.uc_type} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:master')} variant="filled" value={settings.master} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:optimalyGap')} variant="filled" value={settings.optimality_gap} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:maxIteration')} variant="filled" value={settings.max_iteration || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:yearlyWeight')} variant="filled" value={settings.yearly_weight || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:additionalConstraints')} variant="filled" value={settings['additional-constraints'] || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:relaxedOptimalityGap')} variant="filled" value={settings['relaxed-optimality-gap'] || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:cutType')} variant="filled" value={settings.cut_type || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:amplSolver')} variant="filled" value={settings['ampl.solver'] || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:amplPresolve')} variant="filled" value={settings['ampl.presolve'] || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:amplSolverBoundsFrequency')} variant="filled" value={settings['ampl.solve_bounds_frequency'] || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:relativeGap')} variant="filled" value={settings.relative_gap || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:solver')} variant="filled" value={settings.solver || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:ucType')} variant="filled" value={currentSettings.uc_type} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:master')} variant="filled" value={currentSettings.master} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:optimalyGap')} variant="filled" value={currentSettings.optimality_gap} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:maxIteration')} variant="filled" value={currentSettings.max_iteration || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:yearlyWeight')} variant="filled" value={currentSettings.yearly_weight || undefined} onBlur={() => updateSettings(settings)} />
+        <FormControl variant="filled" className={classes.formControl}>
+          <InputLabel id="link-label">{t('xpansion:additionalConstraints')}</InputLabel>
+          <Select
+            labelId="additional-constraints-label"
+            id="additional-constraints-select-filled"
+            value={constraint || ''}
+            onChange={handleConstraintChange}
+          >
+            {constraints.map((item) => (
+              <MenuItem value={item} key={item}>{item}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <TextField label={t('xpansion:relaxedOptimalityGap')} variant="filled" value={currentSettings['relaxed-optimality-gap'] || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:cutType')} variant="filled" value={currentSettings.cut_type || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:amplSolver')} variant="filled" value={currentSettings['ampl.solver'] || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:amplPresolve')} variant="filled" value={currentSettings['ampl.presolve'] || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:amplSolverBoundsFrequency')} variant="filled" value={currentSettings['ampl.solve_bounds_frequency'] || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:relativeGap')} variant="filled" value={currentSettings.relative_gap || undefined} onBlur={() => updateSettings(settings)} />
+        <TextField label={t('xpansion:solver')} variant="filled" value={currentSettings.solver || undefined} onBlur={() => updateSettings(settings)} />
       </div>
     </Box>
   );
