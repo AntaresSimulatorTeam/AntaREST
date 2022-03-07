@@ -40,12 +40,14 @@ interface PropType {
     deleteCandidate: (name: string) => void;
     updateCandidate: (value: XpansionCandidate) => void;
     updateSettings: (value: XpansionSettings) => void;
+    deleteConstraint: (filename: string) => void;
+    deleteCapa: (filename: string) => void;
 }
 
 const XpansionForm = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { selectedItem, links, constraints, capacities, deleteCandidate, updateCandidate, updateSettings } = props;
+  const { selectedItem, links, constraints, capacities, deleteCandidate, updateCandidate, updateSettings, deleteConstraint, deleteCapa } = props;
 
   return (
     <>
@@ -61,9 +63,9 @@ const XpansionForm = (props: PropType) => {
       ) : (
         <div className={classes.constraints}>
           {constraints === selectedItem ? (
-            <XpansionTable title={t('xpansion:constraints')} content={selectedItem as Array<string>} />
+            <XpansionTable title={t('xpansion:constraints')} content={selectedItem as Array<string>} onDelete={deleteConstraint} />
           ) : (capacities === selectedItem && (
-            <XpansionTable title={t('xpansion:capacities')} content={selectedItem as Array<string>} />
+            <XpansionTable title={t('xpansion:capacities')} content={selectedItem as Array<string>} onDelete={deleteCapa} />
           ))}
         </div>
       )}

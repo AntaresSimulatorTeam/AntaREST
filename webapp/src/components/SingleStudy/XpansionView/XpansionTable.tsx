@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AxiosError } from 'axios';
 import {
   makeStyles,
@@ -21,6 +21,7 @@ import VisibilityIcon from '@material-ui/icons/Visibility';
 import DeleteIcon from '@material-ui/icons/Delete';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import ImportForm from '../../ui/ImportForm';
+import ConfirmationModal from '../../ui/ConfirmationModal';
 
 const logErr = debug('antares:createimportform:error');
 
@@ -96,13 +97,15 @@ const useStyles = makeStyles((theme: Theme) =>
 interface PropType {
     title: string;
     content: Array<string>;
+    onDelete: (filename: string) => void;
 }
 
 const XpansionTable = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { title, content } = props;
+  const { title, content, onDelete } = props;
+  const [openConfirmationModal, setOpenConfirmationModal] = useState<string>('');
 
   const onImport = async (file: File) => {
     try {
@@ -142,7 +145,7 @@ const XpansionTable = (props: PropType) => {
                     </TableCell>
                     <TableCell align="right" className={classes.buttons}>
                       <VisibilityIcon className={classes.icon} color="primary" />
-                      <DeleteIcon className={classes.delete} color="primary" />
+                      <DeleteIcon className={classes.delete} color="primary" onClick={() => setOpenConfirmationModal(row)} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -151,6 +154,15 @@ const XpansionTable = (props: PropType) => {
           </TableContainer>
         </div>
       </div>
+      {openConfirmationModal && openConfirmationModal.length > 0 && (
+        <ConfirmationModal
+          open={!!openConfirmationModal}
+          title={t('main:confirmationModalTitle')}
+          message={t('xpansion:confirmDeleteXpansion')}
+          handleYes={() => { onDelete(openConfirmationModal); setOpenConfirmationModal(''); }}
+          handleNo={() => setOpenConfirmationModal('')}
+        />
+      )}
     </Box>
   );
 };

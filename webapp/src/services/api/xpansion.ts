@@ -56,7 +56,7 @@ export const updateCandidate = async (uuid: string, name: string, data: Xpansion
 };
 
 export const deleteCandidate = async (uuid: string, name: string): Promise<void> => {
-  const res = await client.delete(`/v1/studies/${uuid}/extensions/xpansion/candidates/${name}`);
+  const res = await client.delete(`/v1/studies/${uuid}/extensions/xpansion/candidates/${encodeURIComponent(name)}`);
   return res.data;
 };
 
@@ -66,7 +66,7 @@ export const addConstraints = async (uuid: string, file: File): Promise<void> =>
 };
 
 export const deleteConstraints = async (uuid: string, filename: string): Promise<void> => {
-  const res = await client.delete(`/v1/studies/${uuid}/extensions/xpansion/constraints/${filename}`);
+  const res = await client.delete(`/v1/studies/${uuid}/extensions/xpansion/constraints/${encodeURIComponent(filename)}`);
   return res.data;
 };
 
@@ -86,7 +86,7 @@ export const addCapacity = async (uuid: string, file: File): Promise<void> => {
 };
 
 export const deleteCapacity = async (uuid: string, filename: string): Promise<void> => {
-  const res = await client.delete(`/v1/studies/${uuid}/extensions/xpansion/capacities/${filename}`);
+  const res = await client.delete(`/v1/studies/${uuid}/extensions/xpansion/capacities/${encodeURIComponent(filename)}`);
   return res.data;
 };
 
