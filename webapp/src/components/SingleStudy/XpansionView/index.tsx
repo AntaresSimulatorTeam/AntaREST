@@ -4,16 +4,18 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { Box, Button } from '@material-ui/core';
 import XpansionPropsView from './XpansionPropsView';
-import { StudyMetadata } from '../../../common/types';
+import { MatrixType, StudyMetadata } from '../../../common/types';
 import SplitLayoutView from '../../ui/SplitLayoutView';
 import CreateCandidateModal from './CreateCandidateModal';
 import { XpansionCandidate, XpansionSettings } from './types';
 import XpansionForm from './XpansionForm';
-import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints, getAllCapacities, createXpansionConfiguration, deleteXpansionConfiguration, addCandidate, deleteCandidate, deleteConstraints, deleteCapacity, getConstraint } from '../../../services/api/xpansion';
+import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints, getAllCapacities, createXpansionConfiguration, deleteXpansionConfiguration, addCandidate, deleteCandidate, deleteConstraints, deleteCapacity, getConstraint, getCapacity } from '../../../services/api/xpansion';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { getAllLinks } from '../../../services/api/studydata';
 import { LinkCreationInfo } from '../MapView/types';
 import SimpleLoader from '../../ui/loaders/SimpleLoader';
+import XpansionTableModal from './XpansionTableModal';
+import MatrixView from '../../ui/MatrixView';
 
 interface Props {
     study: StudyMetadata;
@@ -30,9 +32,10 @@ const XpansionView = (props: Props) => {
   const [constraints, setConstraints] = useState<Array<string>>();
   const [links, setLinks] = useState<Array<LinkCreationInfo>>();
   const [capacities, setCapacities] = useState<Array<string>>();
-  // state pour savoir si créer ou nom
   const [createConfigView, setCreateConfigView] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(false);
+  const [singleConstraint, setSingleConstraint] = useState<{filename: string; content: string}>();
+  const [singleCapa, setSingleCapa] = useState<{filename: string; content: MatrixType}>();
 
   const init = useCallback(async (after: () => void = () => { /* noop */ }) => {
     try {
@@ -123,7 +126,8 @@ const XpansionView = (props: Props) => {
 
   const getOneConstraint = async (filename: string) => {
     try {
-      const constraint = await getConstraint(study.id, filename);
+      const content = await getConstraint(study.id, filename);
+      setSingleConstraint({ filename, content });
     } catch (e) {
       enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
     }
@@ -141,6 +145,15 @@ const XpansionView = (props: Props) => {
         setSelectedItem([...constraints]);
         enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
       }
+    }
+  };
+
+  const getOneCapa = async (filename: string) => {
+    try {
+      const content = await getCapacity(study.id, filename);
+      setSingleCapa({ filename, content });
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
     }
   };
 
@@ -182,7 +195,7 @@ const XpansionView = (props: Props) => {
           }
           right={
             selectedItem && (
-              <XpansionForm selectedItem={selectedItem} links={links || []} constraints={constraints || []} capacities={capacities || []} deleteCandidate={handleDeleteCandidate} updateCandidate={updateCandidate} updateSettings={updateSettings} deleteConstraint={deleteConstraint} deleteCapa={deleteCapa} />
+              <XpansionForm selectedItem={selectedItem} links={links || []} constraints={constraints || []} capacities={capacities || []} deleteCandidate={handleDeleteCandidate} updateCandidate={updateCandidate} updateSettings={updateSettings} deleteConstraint={deleteConstraint} deleteCapa={deleteCapa} getConstraint={getOneConstraint} getCapacity={getOneCapa} />
             )
           }
         />
@@ -194,6 +207,27 @@ const XpansionView = (props: Props) => {
           onClose={onClose}
           onSave={createCandidate}
         />
+      )}
+      {!!singleConstraint && (
+        <XpansionTableModal
+          open={!!singleConstraint}
+          title={singleConstraint.filename}
+          handleClose={() => setSingleConstraint(undefined)}
+        >
+          <code style={{ whiteSpace: 'pre' }}>{singleConstraint.content}</code>
+        </XpansionTableModal>
+      )}
+      {!!singleCapa && (
+        <XpansionTableModal
+          open={!!singleCapa}
+          title={singleCapa.filename}
+          handleClose={() => setSingleCapa(undefined)}
+        >
+          <MatrixView
+            matrix={singleCapa.content}
+            readOnly
+          />
+        </XpansionTableModal>
       )}
     </>
   );

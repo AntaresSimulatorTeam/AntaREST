@@ -23,7 +23,8 @@
     "solver": "Solver",
     "constraints": "Constraints",
     "capacities": "Capacities",
-    "confirmDeleteXpansion": "Are you sure you want to delete the configuration of Xpansion ?",
+    "confirmDeleteXpansion": "Are you sure you want to delete the configuration of Xpansion?",
     "fileName": "File name",
-    "options": "Options"
+    "options": "Options",
+    "deleteFile": "Are you sure you want to delete this file?"
 }

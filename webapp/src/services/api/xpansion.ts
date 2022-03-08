@@ -1,3 +1,4 @@
+import { MatrixType } from '../../common/types';
 import { XpansionCandidate, XpansionSettings } from '../../components/SingleStudy/XpansionView/types';
 import client from './client';
 
@@ -90,7 +91,7 @@ export const deleteCapacity = async (uuid: string, filename: string): Promise<vo
   return res.data;
 };
 
-export const getCapacity = async (uuid: string, filename: string): Promise<string> => {
+export const getCapacity = async (uuid: string, filename: string): Promise<MatrixType> => {
   const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/capacities/${filename}`);
   return res.data;
 };
