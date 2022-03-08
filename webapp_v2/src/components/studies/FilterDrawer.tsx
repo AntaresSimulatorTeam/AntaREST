@@ -15,6 +15,8 @@ interface Props {
     managedFilter: boolean;
     versionList: Array<GenericInfo>;
     versions: Array<GenericInfo>;
+    tagList: Array<string>;
+    tags: Array<string>;
     userList: Array<UserDTO>;
     users: Array<UserDTO>;
     groupList: Array<GroupDTO>;
@@ -22,19 +24,32 @@ interface Props {
     onFilterActionClick: (managed: boolean,
                           versions: Array<GenericInfo> | undefined,
                           users: Array<UserDTO> | undefined,
-                          groups: Array<GroupDTO> | undefined) => void;
+                          groups: Array<GroupDTO> | undefined,
+                          tags: Array<string> | undefined) => void;
     onClose: () => void;
 }
 
 function FilterDrawer(props: Props) {
   const theme = useTheme();
   const [t] = useTranslation();
-  const { open, managedFilter, versionList, versions, userList, users, groupList, groups, onFilterActionClick, onClose } = props;
+  const { open, managedFilter, tagList, tags, versionList, versions, userList, users, groupList, groups, onFilterActionClick, onClose } = props;
 
   const [currentUsers, setCurrentUsers] = useState<Array<UserDTO>|undefined>(users);
   const [currentGroups, setCurrentGroups] = useState<Array<GroupDTO>|undefined>(groups);
   const [currentVersions, setCurrentVersions] = useState<Array<GenericInfo> | undefined>(versions);
+  const [currentTags, setCurrentTags] = useState<Array<string> | undefined>(tags);
   const [currentManaged, setCurrentManaged] = useState<boolean>(managedFilter);
+
+  const setTags = (data: Array<string>) : void => {
+    if (data.length === 0) {
+      setCurrentTags(undefined);
+      return;
+    }
+    setCurrentTags(data.map((elm) => {
+      const index = tagList.findIndex((item) => item === elm);
+      return tagList[index];
+    }));
+  };
 
   const setVersions = (data: Array<string>) : void => {
     if (data.length === 0) {
@@ -71,7 +86,7 @@ function FilterDrawer(props: Props) {
   };
 
   const onFilterClick = (): void => {
-    onFilterActionClick(currentManaged, currentVersions, currentUsers, currentGroups);
+    onFilterActionClick(currentManaged, currentVersions, currentUsers, currentGroups, currentTags);
   };
 
   const onResetFilterClick = (): void => {
@@ -114,6 +129,9 @@ function FilterDrawer(props: Props) {
         </ListItem>
         <ListItem>
           <SelectMulti name="Groups" list={groupList.map((elm) => ({ id: elm.id, name: elm.name }))} data={currentGroups !== undefined ? currentGroups.map((elm) => elm.id) : []} setValue={setGroups} />
+        </ListItem>
+        <ListItem>
+          <SelectMulti name="Tags" list={tagList.map((elm) => ({ id: elm, name: elm }))} data={currentTags !== undefined ? currentTags : []} setValue={setTags} />
         </ListItem>
       </List>
       <Box display="flex" width="100%" flexGrow={1} justifyContent="flex-end" alignItems="center" flexDirection="column" flexWrap="nowrap" boxSizing="border-box">

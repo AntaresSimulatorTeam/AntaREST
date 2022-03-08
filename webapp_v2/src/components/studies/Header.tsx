@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { styled, useTheme } from '@mui/material/styles';
-import { purple } from '@mui/material/colors';
+import { purple, indigo } from '@mui/material/colors';
 import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
@@ -40,16 +40,18 @@ interface Props {
     versions: Array<GenericInfo> | undefined;
     users: Array<UserDTO> | undefined;
     groups: Array<GroupDTO> | undefined;
+    tags: Array<string> | undefined;
     setManageFilter: (value: boolean) => void;
-    setVersions: (value: Array<GenericInfo>) => void;
-    setUsers: (value: Array<UserDTO>) => void;
-    setGroups: (value: Array<GroupDTO>) => void;
+    setVersions: (value: Array<GenericInfo> | undefined) => void;
+    setUsers: (value: Array<UserDTO> | undefined) => void;
+    setGroups: (value: Array<GroupDTO> | undefined) => void;
+    setTags: (value: Array<string> | undefined) => void;
 }
 
 function Header(props: Props) {
   const [t] = useTranslation();
   const theme = useTheme();
-  const { inputValue, managedFilter, users, versions, groups, setInputValue, setVersions, setUsers, setGroups, onFilterClick, setManageFilter } = props;
+  const { inputValue, managedFilter, users, versions, groups, tags, setInputValue, setVersions, setUsers, setGroups, setTags, onFilterClick, setManageFilter } = props;
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
 
   return (
@@ -138,7 +140,10 @@ function Header(props: Props) {
                   label={elm.name}
                   variant="filled"
                   color="primary"
-                  onDelete={() => setVersions(versions.filter((item) => item.id !== elm.id))}
+                  onDelete={() => {
+                    const newVersions = versions.filter((item) => item.id !== elm.id);
+                    setVersions(newVersions.length > 0 ? newVersions : undefined);
+                  }}
                   sx={{ mx: 1 }}
                 />
               ))
@@ -149,7 +154,10 @@ function Header(props: Props) {
                   key={elm.id}
                   label={elm.name}
                   variant="filled"
-                  onDelete={() => setUsers(users.filter((item) => item.id !== elm.id))}
+                  onDelete={() => {
+                    const newUsers = users.filter((item) => item.id !== elm.id);
+                    setUsers(newUsers.length > 0 ? newUsers : undefined);
+                  }}
                   sx={{ mx: 1, bgcolor: purple[500] }}
                 />
               ))
@@ -161,8 +169,25 @@ function Header(props: Props) {
                   label={elm.name}
                   variant="filled"
                   color="success"
-                  onDelete={() => setGroups(groups.filter((item) => item.id !== elm.id))}
+                  onDelete={() => {
+                    const newGroups = groups.filter((item) => item.id !== elm.id);
+                    setGroups(newGroups.length > 0 ? newGroups : undefined);
+                  }}
                   sx={{ mx: 1 }}
+                />
+              ))
+          }
+            { tags &&
+              tags.map((elm) => (
+                <Chip
+                  key={elm}
+                  label={elm}
+                  variant="filled"
+                  onDelete={() => {
+                    const newTags = tags.filter((item) => item !== elm);
+                    setTags(newTags.length > 0 ? newTags : undefined);
+                  }}
+                  sx={{ mx: 1, bgcolor: indigo[300] }}
                 />
               ))
           }

@@ -5,13 +5,13 @@ import { getConfig } from '../config';
 import { convertStudyDtoToMetadata } from '../utils';
 import { FileDownloadTask } from './downloads';
 
-const getStudiesRaw = async (): Promise<{[sid: string]: StudyMetadataDTO}> => {
-  const res = await client.get('/v1/studies?summary=true');
+const getStudiesRaw = async (summary = true): Promise<{[sid: string]: StudyMetadataDTO}> => {
+  const res = await client.get(`/v1/studies?summary=${summary}`);
   return res.data;
 };
 
-export const getStudies = async (): Promise<StudyMetadata[]> => {
-  const rawStudyList = await getStudiesRaw();
+export const getStudies = async (summary = true): Promise<StudyMetadata[]> => {
+  const rawStudyList = await getStudiesRaw(summary);
   return Object.keys(rawStudyList).map((sid) => {
     const study = rawStudyList[sid];
     return convertStudyDtoToMetadata(sid, study);

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
-import { Box, Card, CardActions, CardContent, Button, Typography, Menu, MenuItem, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
+import { Box, Card, CardActions, CardContent, Button, Typography, Menu, MenuItem, ListItemIcon, ListItemText, Tooltip, Chip } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { indigo } from '@mui/material/colors';
 import StarPurple500OutlinedIcon from '@mui/icons-material/StarPurple500Outlined';
 import StarOutlineOutlinedIcon from '@mui/icons-material/StarOutlineOutlined';
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined';
@@ -21,6 +22,7 @@ import { GenericInfo, StudyMetadata } from '../../common/types';
 import { exportStudy } from '../../services/api/study';
 import enqueueErrorSnackbar from '../common/ErrorSnackBar';
 import { convertUTCToLocalTime, modificationDate } from '../../services/utils';
+import { scrollbarStyle } from '../../theme';
 
 interface Props {
   study: StudyMetadata;
@@ -86,7 +88,7 @@ export default function StudyCard(props: Props) {
   };
 
   return (
-    <Card variant="outlined" sx={{ width: width - 10, height: 200, marginLeft: '10px', marginTop: '5px', marginBottom: '5px', flex: 'none' }}>
+    <Card variant="outlined" sx={{ width: width - 10, height: 250, marginLeft: '10px', marginTop: '5px', marginBottom: '5px', flex: 'none' }}>
       <CardContent>
         <Box width="100%" height="60px" display="flex" flexDirection="column" justifyContent="flex-start" p={0.5}>
           <Box display="flex" flexDirection="row" justifyContent="space-between" alignItems="flex-start" width="100%" boxSizing="border-box">
@@ -135,6 +137,33 @@ export default function StudyCard(props: Props) {
           <TinyText>
             {study.owner.name}
           </TinyText>
+        </Box>
+        <Box
+          my={1}
+          width="100%"
+          height="45px"
+          display="flex"
+          flexDirection="row"
+          flexWrap="wrap"
+          justifyContent="flex-start"
+          alignItems="center"
+          sx={{ overflowX: 'hidden', overflowY: 'auto', ...scrollbarStyle }}
+        >
+          <Chip
+            label={study.workspace}
+            variant="filled"
+            sx={{ m: 0.25, bgcolor: study.managed ? 'secondary.main' : 'gray' }}
+          />
+          { study.tags &&
+              study.tags.map((elm) => (
+                <Chip
+                  key={elm}
+                  label={elm}
+                  variant="filled"
+                  sx={{ m: 0.25, bgcolor: indigo[300] }}
+                />
+              ))
+          }
         </Box>
       </CardContent>
       <CardActions>
