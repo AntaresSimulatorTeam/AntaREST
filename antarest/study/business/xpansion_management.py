@@ -76,7 +76,7 @@ class XpansionCandidateDTO(BaseModel):
     # The names should be the section titles of the file, and the id should be removed
     name: str
     link: str
-    annual_cost_per_mw: int = Field(alias="annual-cost-per-mw")
+    annual_cost_per_mw: float = Field(alias="annual-cost-per-mw")
     unit_size: Optional[float] = Field(None, alias="unit-size")
     max_units: Optional[int] = Field(None, alias="max-units")
     max_investment: Optional[float] = Field(None, alias="max-investment")

@@ -56,51 +56,79 @@ const SettingsForm = (props: PropType) => {
   const { settings, constraints, updateSettings } = props;
   const [currentSettings, setCurrentSettings] = useState<XpansionSettings>(settings);
   const [constraint, setConstraint] = useState<string>(settings['additional-constraints'] || '');
+  const [yearlyWeight, setYearlyWeight] = useState<string>(settings.yearly_weight || '');
 
   const handleConstraintChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     setConstraint(event.target.value as string);
+  };
+
+  const handleWeightChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setYearlyWeight(event.target.value as string);
   };
 
   useEffect(() => {
     if (settings) {
       setCurrentSettings(settings);
       setConstraint(settings['additional-constraints'] || '');
+      setYearlyWeight(settings.yearly_weight || '');
     }
   }, [settings]);
 
   return (
     <Box>
-      <Typography className={classes.title}>
-        {t('main:settings')}
-      </Typography>
-      <Divider className={classes.divider} />
-      <div className={classes.fields}>
-        <TextField label={t('xpansion:ucType')} variant="filled" value={currentSettings.uc_type} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:master')} variant="filled" value={currentSettings.master} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:optimalyGap')} variant="filled" value={currentSettings.optimality_gap} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:maxIteration')} variant="filled" value={currentSettings.max_iteration || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:yearlyWeight')} variant="filled" value={currentSettings.yearly_weight || undefined} onBlur={() => updateSettings(settings)} />
-        <FormControl variant="filled" className={classes.formControl}>
-          <InputLabel id="link-label">{t('xpansion:additionalConstraints')}</InputLabel>
-          <Select
-            labelId="additional-constraints-label"
-            id="additional-constraints-select-filled"
-            value={constraint || ''}
-            onChange={handleConstraintChange}
-          >
-            {constraints.map((item) => (
-              <MenuItem value={item} key={item}>{item}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <TextField label={t('xpansion:relaxedOptimalityGap')} variant="filled" value={currentSettings['relaxed-optimality-gap'] || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:cutType')} variant="filled" value={currentSettings.cut_type || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:amplSolver')} variant="filled" value={currentSettings['ampl.solver'] || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:amplPresolve')} variant="filled" value={currentSettings['ampl.presolve'] || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:amplSolverBoundsFrequency')} variant="filled" value={currentSettings['ampl.solve_bounds_frequency'] || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:relativeGap')} variant="filled" value={currentSettings.relative_gap || undefined} onBlur={() => updateSettings(settings)} />
-        <TextField label={t('xpansion:solver')} variant="filled" value={currentSettings.solver || undefined} onBlur={() => updateSettings(settings)} />
-      </div>
+      <Box>
+        <Typography className={classes.title}>
+          {t('main:settings')}
+        </Typography>
+        <Divider className={classes.divider} />
+        <Box className={classes.fields}>
+          <TextField label={t('xpansion:ucType')} variant="filled" value={currentSettings.uc_type} onBlur={() => updateSettings(settings)} />
+          <TextField label={t('xpansion:master')} variant="filled" value={currentSettings.master} onBlur={() => updateSettings(settings)} />
+          <TextField label={t('xpansion:optimalyGap')} variant="filled" value={currentSettings.optimality_gap} onBlur={() => updateSettings(settings)} />
+          <TextField label={t('xpansion:maxIteration')} variant="filled" value={currentSettings.max_iteration || undefined} onBlur={() => updateSettings(settings)} />
+          <TextField label={t('xpansion:relaxedOptimalityGap')} variant="filled" value={currentSettings['relaxed-optimality-gap'] || undefined} onBlur={() => updateSettings(settings)} />
+          <TextField label={t('xpansion:cutType')} variant="filled" value={currentSettings.cut_type || undefined} onBlur={() => updateSettings(settings)} />
+          <TextField label={t('xpansion:amplSolver')} variant="filled" value={currentSettings['ampl.solver'] || undefined} onBlur={() => updateSettings(settings)} />
+          <TextField label={t('xpansion:amplPresolve')} variant="filled" value={currentSettings['ampl.presolve'] || undefined} onBlur={() => updateSettings(settings)} />
+          <TextField label={t('xpansion:amplSolverBoundsFrequency')} variant="filled" value={currentSettings['ampl.solve_bounds_frequency'] || undefined} onBlur={() => updateSettings(settings)} />
+          <TextField label={t('xpansion:relativeGap')} variant="filled" value={currentSettings.relative_gap || undefined} onBlur={() => updateSettings(settings)} />
+          <TextField label={t('xpansion:solver')} variant="filled" value={currentSettings.solver || undefined} onBlur={() => updateSettings(settings)} />
+        </Box>
+      </Box>
+      <Box>
+        <Typography className={classes.title}>
+          Extra
+        </Typography>
+        <Divider className={classes.divider} />
+        <Box className={classes.fields}>
+          <FormControl variant="filled" className={classes.formControl}>
+            <InputLabel id="link-label">{t('xpansion:yearlyWeight')}</InputLabel>
+            <Select
+              labelId="yearly-weight-label"
+              id="yearly-weight-select-filled"
+              value={yearlyWeight || ''}
+              onChange={handleWeightChange}
+            >
+              {constraints.map((item) => (
+                <MenuItem value={item} key={item}>{item}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl variant="filled" className={classes.formControl}>
+            <InputLabel id="link-label">{t('xpansion:additionalConstraints')}</InputLabel>
+            <Select
+              labelId="additional-constraints-label"
+              id="additional-constraints-select-filled"
+              value={constraint || ''}
+              onChange={handleConstraintChange}
+            >
+              {constraints.map((item) => (
+                <MenuItem value={item} key={item}>{item}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
     </Box>
   );
 };

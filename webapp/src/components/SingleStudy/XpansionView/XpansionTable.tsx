@@ -97,20 +97,21 @@ const useStyles = makeStyles((theme: Theme) =>
 interface PropType {
     title: string;
     content: Array<string>;
-    onDelete: (filename: string) => void;
-    onRead: (filename: string) => void;
+    onDelete: (filename: string) => Promise<void>;
+    onRead: (filename: string) => Promise<void>;
+    uploadFile: (file: File) => Promise<void>;
 }
 
 const XpansionTable = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const { title, content, onDelete, onRead } = props;
+  const { title, content, onDelete, onRead, uploadFile } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<string>('');
 
   const onImport = async (file: File) => {
     try {
-      console.log(file);
+      await uploadFile(file);
     } catch (e) {
       logErr('Failed to import file', file, e);
       enqueueErrorSnackbar(enqueueSnackbar, t('studymanager:failtosavedata'), e as AxiosError);

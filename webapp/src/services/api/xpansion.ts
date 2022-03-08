@@ -1,3 +1,4 @@
+import { AxiosRequestConfig } from 'axios';
 import { MatrixType } from '../../common/types';
 import { XpansionCandidate, XpansionSettings } from '../../components/SingleStudy/XpansionView/types';
 import client from './client';
@@ -61,9 +62,29 @@ export const deleteCandidate = async (uuid: string, name: string): Promise<void>
   return res.data;
 };
 
-export const addConstraints = async (uuid: string, file: File): Promise<void> => {
-  const res = await client.post(`/v1/studies/${uuid}/extensions/xpansion/constraints`, file);
+export const uploadFile = async (url: string, file: File, onProgress?: (progress: number) => void): Promise<void> => {
+  const options: AxiosRequestConfig = {};
+  if (onProgress) {
+    options.onUploadProgress = (progressEvent): void => {
+      const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+      onProgress(percentCompleted);
+    };
+  }
+  const formData = new FormData();
+  formData.append('file', file);
+  const restconfig = {
+    ...options,
+    headers: {
+      'content-type': 'multipart/form-data',
+      'Access-Control-Allow-Origin': '*',
+    },
+  };
+  const res = await client.post(url, formData, restconfig);
   return res.data;
+};
+
+export const addConstraints = async (uuid: string, file: File): Promise<void> => {
+  await uploadFile(`/v1/studies/${uuid}/extensions/xpansion/constraints`, file);
 };
 
 export const deleteConstraints = async (uuid: string, filename: string): Promise<void> => {
@@ -82,8 +103,7 @@ export const getAllConstraints = async (uuid: string): Promise<Array<string>> =>
 };
 
 export const addCapacity = async (uuid: string, file: File): Promise<void> => {
-  const res = await client.post(`/v1/studies/${uuid}/extensions/xpansion/capacities`, file);
-  return res.data;
+  await uploadFile(`/v1/studies/${uuid}/extensions/xpansion/capacities`, file);
 };
 
 export const deleteCapacity = async (uuid: string, filename: string): Promise<void> => {

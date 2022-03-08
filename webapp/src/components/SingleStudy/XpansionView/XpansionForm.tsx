@@ -40,16 +40,18 @@ interface PropType {
     deleteCandidate: (name: string) => void;
     updateCandidate: (value: XpansionCandidate) => void;
     updateSettings: (value: XpansionSettings) => void;
-    deleteConstraint: (filename: string) => void;
-    deleteCapa: (filename: string) => void;
-    getConstraint: (filename: string) => void;
-    getCapacity: (filename: string) => void;
+    deleteConstraint: (filename: string) => Promise<void>;
+    deleteCapa: (filename: string) => Promise<void>;
+    getConstraint: (filename: string) => Promise<void>;
+    getCapacity: (filename: string) => Promise<void>;
+    addConstraint: (file: File) => Promise<void>;
+    addCapacity: (file: File) => Promise<void>;
 }
 
 const XpansionForm = (props: PropType) => {
   const classes = useStyles();
   const [t] = useTranslation();
-  const { selectedItem, links, constraints, capacities, deleteCandidate, updateCandidate, updateSettings, deleteConstraint, deleteCapa, getConstraint, getCapacity } = props;
+  const { selectedItem, links, constraints, capacities, deleteCandidate, updateCandidate, updateSettings, deleteConstraint, deleteCapa, getConstraint, getCapacity, addConstraint, addCapacity } = props;
 
   return (
     <>
@@ -65,9 +67,9 @@ const XpansionForm = (props: PropType) => {
       ) : (
         <div className={classes.constraints}>
           {constraints === selectedItem ? (
-            <XpansionTable title={t('xpansion:constraints')} content={selectedItem as Array<string>} onDelete={deleteConstraint} onRead={getConstraint} />
+            <XpansionTable title={t('main:files')} content={selectedItem as Array<string>} onDelete={deleteConstraint} onRead={getConstraint} uploadFile={addConstraint} />
           ) : (capacities === selectedItem && (
-            <XpansionTable title={t('xpansion:capacities')} content={selectedItem as Array<string>} onDelete={deleteCapa} onRead={getCapacity} />
+            <XpansionTable title={t('xpansion:capacities')} content={selectedItem as Array<string>} onDelete={deleteCapa} onRead={getCapacity} uploadFile={addCapacity} />
           ))}
         </div>
       )}

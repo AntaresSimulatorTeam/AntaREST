@@ -84,7 +84,7 @@ const XpansionPropsView = (props: PropsType) => {
             <CandidateListing candidates={candidateList} selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
             <Box className={classes.buttons}>
               <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>{t('main:settings')}</Button>
-              <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>{t('xpansion:constraints')}</Button>
+              <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>{t('main:files')}</Button>
               <Button className={classes.button} size="small" onClick={() => { if (capacities) { setSelectedItem(capacities); } }}>{t('xpansion:capacities')}</Button>
               <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
             </Box>
@@ -96,7 +96,7 @@ const XpansionPropsView = (props: PropsType) => {
             <CandidateListing candidates={filteredCandidates} selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
             <Box className={classes.buttons}>
               <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>{t('main:settings')}</Button>
-              <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>{t('xpansion:constraints')}</Button>
+              <Button className={classes.button} size="small" onClick={() => { if (constraints) { setSelectedItem(constraints); } }}>{t('main:files')}</Button>
               <Button className={classes.button} size="small" onClick={() => { if (capacities) { setSelectedItem(capacities); } }}>{t('xpansion:capacities')}</Button>
               <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
             </Box>

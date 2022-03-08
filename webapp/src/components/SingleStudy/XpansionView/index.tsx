@@ -9,7 +9,7 @@ import SplitLayoutView from '../../ui/SplitLayoutView';
 import CreateCandidateModal from './CreateCandidateModal';
 import { XpansionCandidate, XpansionSettings } from './types';
 import XpansionForm from './XpansionForm';
-import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints, getAllCapacities, createXpansionConfiguration, deleteXpansionConfiguration, addCandidate, deleteCandidate, deleteConstraints, deleteCapacity, getConstraint, getCapacity } from '../../../services/api/xpansion';
+import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints, getAllCapacities, createXpansionConfiguration, deleteXpansionConfiguration, addCandidate, deleteCandidate, deleteConstraints, deleteCapacity, getConstraint, getCapacity, addCapacity, addConstraints } from '../../../services/api/xpansion';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { getAllLinks } from '../../../services/api/studydata';
 import { LinkCreationInfo } from '../MapView/types';
@@ -135,14 +135,12 @@ const XpansionView = (props: Props) => {
 
   const deleteConstraint = async (filename: string) => {
     if (constraints) {
-      const array = constraints.filter((a) => a !== filename);
+      const tempConstraints = constraints.filter((a) => a !== filename);
       try {
-        setConstraints(array);
-        setSelectedItem(array);
         await deleteConstraints(study.id, filename);
+        setConstraints(tempConstraints);
+        setSelectedItem(tempConstraints);
       } catch (e) {
-        setConstraints([...constraints]);
-        setSelectedItem([...constraints]);
         enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
       }
     }
@@ -159,14 +157,12 @@ const XpansionView = (props: Props) => {
 
   const deleteCapa = async (filename: string) => {
     if (capacities) {
-      const array = capacities.filter((a) => a !== filename);
+      const tempCapa = capacities.filter((a) => a !== filename);
       try {
-        setCapacities(array);
-        setSelectedItem(array);
         await deleteCapacity(study.id, filename);
+        setCapacities(tempCapa);
+        setSelectedItem(tempCapa);
       } catch (e) {
-        setCapacities([...capacities]);
-        setSelectedItem([...capacities]);
         enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
       }
     }
@@ -195,7 +191,7 @@ const XpansionView = (props: Props) => {
           }
           right={
             selectedItem && (
-              <XpansionForm selectedItem={selectedItem} links={links || []} constraints={constraints || []} capacities={capacities || []} deleteCandidate={handleDeleteCandidate} updateCandidate={updateCandidate} updateSettings={updateSettings} deleteConstraint={deleteConstraint} deleteCapa={deleteCapa} getConstraint={getOneConstraint} getCapacity={getOneCapa} />
+              <XpansionForm selectedItem={selectedItem} links={links || []} constraints={constraints || []} capacities={capacities || []} deleteCandidate={handleDeleteCandidate} updateCandidate={updateCandidate} updateSettings={updateSettings} deleteConstraint={deleteConstraint} deleteCapa={deleteCapa} getConstraint={getOneConstraint} getCapacity={getOneCapa} addCapacity={(file) => addCapacity(study.id, file)} addConstraint={(file) => addConstraints(study.id, file)} />
             )
           }
         />

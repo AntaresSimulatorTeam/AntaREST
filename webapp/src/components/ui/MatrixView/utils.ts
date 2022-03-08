@@ -13,6 +13,16 @@ export const createDatesFromIndex = (index: Array<string|number>): Array<string>
     if (dateMatch) {
       return index.map((e) => moment(e, 'MM/DD').format('MM/DD HH:mm'));
     }
+    // daily without information
+    // TODO this should depends on the study general settings (calendar)
+    // this case is when no such information is available
+    console.log('here');
+    if (index.length > 100) {
+      const startDate = moment('01/01/2000 00:00:00', 'DD/MM/YYYY hh:mm:ss');
+      console.log(startDate);
+      console.log(index.map((e, i) => moment(startDate).add(i, 'h').format('YYYY/MM/DD HH:mm')));
+      return index.map((e, i) => moment(startDate).add(i, 'h').format('YYYY/MM/DD HH:mm'));
+    }
     // weekly
     if (index.length > 12) {
       const startDate = moment(_.padStart(String(sample), 2, '0'), 'WW').year(2005);

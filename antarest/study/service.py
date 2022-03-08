@@ -1865,13 +1865,13 @@ class StudyService:
     def add_xpansion_constraints(
         self,
         uuid: str,
-        files: List[UploadFile],
+        file: UploadFile,
         params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.add_xpansion_constraints(study, files)
+        return self.xpansion_manager.add_xpansion_constraints(study, [file])
 
     def delete_xpansion_constraints(
         self, uuid: str, filename: str, params: RequestParameters
@@ -1902,12 +1902,12 @@ class StudyService:
         return self.xpansion_manager.get_all_xpansion_constraints(study)
 
     def add_capa(
-        self, uuid: str, files: List[UploadFile], params: RequestParameters
+        self, uuid: str, file: UploadFile, params: RequestParameters
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.add_capa(study, files)
+        return self.xpansion_manager.add_capa(study, [file])
 
     def delete_capa(
         self, uuid: str, filename: str, params: RequestParameters

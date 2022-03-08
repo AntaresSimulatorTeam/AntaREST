@@ -55,7 +55,7 @@ const useStyles = makeStyles((theme: Theme) =>
       marginBottom: theme.spacing(2),
     },
     formControl: {
-      minWidth: '120px',
+      minWidth: '130px',
     },
     alreadyInstalled: {
       minWidth: '250px',
@@ -76,7 +76,7 @@ const CandidateForm = (props: PropType) => {
   const { candidate, links, capacities, deleteCandidate, updateCandidate } = props;
   const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [currentCandidate, setCurrentCandidate] = useState<XpansionCandidate>(candidate);
-  const [link, setLink] = useState<string>(candidate.link);
+  const [link, setLink] = useState<string>(candidate.link.toLowerCase());
   const [capa, setCapa] = useState<string>(candidate['link-profile'] || '');
   const [installedLink, setInstalledLink] = useState<string>(candidate['already-installed-link-profile'] || '');
 
@@ -95,11 +95,14 @@ const CandidateForm = (props: PropType) => {
   useEffect(() => {
     if (candidate) {
       setCurrentCandidate(candidate);
-      setLink(candidate.link);
+      setLink(candidate.link.toLowerCase());
       setCapa(candidate['link-profile'] || '');
       setInstalledLink(candidate['already-installed-link-profile'] || '');
     }
   }, [candidate]);
+
+  // onBlur/onChange => setCurrentCandidate({ valeur: valeur qui a changé, ...currentCandidate })
+  // onSubmit => updateCandidate(currentCandidate)
 
   return (
     <Box>
@@ -109,7 +112,7 @@ const CandidateForm = (props: PropType) => {
         </Typography>
         <Divider className={classes.divider} />
         <Box className={classes.fields}>
-          <TextField label={t('main:name')} variant="filled" value={candidate.name} onBlur={() => updateCandidate(candidate)} />
+          <TextField label={t('main:name')} variant="filled" value={currentCandidate.name} onBlur={() => updateCandidate(candidate)} />
           <FormControl variant="filled" className={classes.formControl}>
             <InputLabel id="link-label">{t('xpansion:link')}</InputLabel>
             <Select

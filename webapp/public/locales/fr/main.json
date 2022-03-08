@@ -33,5 +33,6 @@
   "comeBackLater": "Merci de revenir plus tard",
   "onGetMessageInfoError": "Impossible de récupérer le message d'info",
   "onGetMaintenanceError": "Impossible de récupérer le status de maintenance de l'application",
-  "search": "Rechercher"
+  "search": "Rechercher",
+  "files": "Fichiers"
 }
