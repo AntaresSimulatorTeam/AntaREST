@@ -23,6 +23,7 @@ from antarest.core.interfaces.eventbus import (
 from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
 from antarest.core.requests import (
     RequestParameters,
+    UserHasNotPermissionError,
 )
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
@@ -305,7 +306,7 @@ class LauncherService:
                 ):
                     allowed_job_results.append(job_result)
             except StudyNotFoundError:
-                pass
+                allowed_job_results.append(job_result)
         return allowed_job_results
 
     def get_result(
@@ -327,6 +328,13 @@ class LauncherService:
             pass
 
         raise JobNotFound()
+
+    def remove_job(self, job_id: str, params: RequestParameters) -> None:
+        if params.user and params.user.is_site_admin():
+            logger.info(f"Deleting job {job_id}")
+            self.job_result_repository.delete(job_id)
+            return
+        raise UserHasNotPermissionError()
 
     def get_jobs(
         self,

@@ -141,6 +141,19 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         params = RequestParameters(user=current_user)
         return service.get_result(job_id, params).to_dto()
 
+    @bp.delete(
+        "/launcher/jobs/{job_id}",
+        tags=[APITag.launcher],
+        summary="Retrieve job info from job id",
+        response_model=JobResultDTO,
+    )
+    def remove_result(
+        job_id: UUID, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> Any:
+        logger.info(f"Removing job {job_id}", extra={"user": current_user.id})
+        params = RequestParameters(user=current_user)
+        service.remove_job(job_id, params)
+
     @bp.get(
         "/launcher/engines",
         tags=[APITag.launcher],

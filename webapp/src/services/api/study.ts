@@ -195,9 +195,9 @@ export const mapLaunchJobDTO = (j: any): LaunchJob => ({
   exitCode: j.exit_code,
 });
 
-export const getStudyJobs = async (sid?: string): Promise<LaunchJob[]> => {
+export const getStudyJobs = async (sid?: string, filterOrphans = true): Promise<LaunchJob[]> => {
   const query = sid ? `?study=${sid}` : '';
-  const res = await client.get(`/v1/launcher/jobs${query}`);
+  const res = await client.get(`/v1/launcher/jobs${query}?filter_orphans=${filterOrphans}`);
   const data = await res.data;
   return data.map(mapLaunchJobDTO);
 };

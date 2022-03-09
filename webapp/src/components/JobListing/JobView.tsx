@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import { connect, ConnectedProps } from 'react-redux';
-import { makeStyles, createStyles, Theme, Paper, Typography, IconButton, useTheme, Button } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, Paper, Typography, IconButton, useTheme, Button, Tooltip } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
@@ -147,6 +147,14 @@ const JobView = (props: PropTypes) => {
     return <div />;
   };
 
+  const exportJobOutput = async (jobId: string): Promise<void> => {
+    try {
+      await downloadJobOutput(jobId);
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, t('singlestudy:failedToExportOutput'), e as AxiosError);
+    }
+  };
+
   const killTask = (jobId: string) => {
     (async () => {
       try {
@@ -179,16 +187,16 @@ const JobView = (props: PropTypes) => {
           </Link>
           )}
           {!study && (
-          <Typography className={classes.title}>
-            {t('main:unknown')}
-          </Typography>
+            <Typography className={classes.title}>
+              {`${t('main:unknown')} (${job.id})`}
+            </Typography>
           )}
         </div>
         <div>
           {job.status === 'running' ? <Button variant="contained" color="primary" onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button> : <Button color="primary" variant="contained" className={classes.killButtonHide} onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button>}
         </div>
         <div>
-          {job.status === 'success' ? <Button variant="contained" color="primary" onClick={() => downloadJobOutput(job.id)}>{t('singlestudy:killStudy')}</Button> : <Button color="primary" variant="contained" className={classes.killButtonHide} onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button>}
+          {job.status === 'success' ? <Button variant="contained" color="secondary" onClick={() => exportJobOutput(job.id)}>{t('launcher:download')}</Button> : <div />}
         </div>
         <div className={classes.dateandicon}>
           <div className={classes.dateblock}>

@@ -54,7 +54,7 @@ const JobManagement = (props: PropTypes) => {
         const allStudies = await getStudies();
         loadStudies(allStudies);
       }
-      const allJobs = await getStudyJobs();
+      const allJobs = await getStudyJobs(undefined, false);
       setJobs(allJobs);
     } catch (e) {
       logError('woops', e);
