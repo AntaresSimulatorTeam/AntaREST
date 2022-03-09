@@ -9,7 +9,7 @@ import SplitLayoutView from '../../ui/SplitLayoutView';
 import CreateCandidateModal from './CreateCandidateModal';
 import { XpansionCandidate, XpansionSettings } from './types';
 import XpansionForm from './XpansionForm';
-import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints, getAllCapacities, createXpansionConfiguration, deleteXpansionConfiguration, addCandidate, deleteCandidate, deleteConstraints, deleteCapacity, getConstraint, getCapacity, addCapacity, addConstraints } from '../../../services/api/xpansion';
+import { getAllCandidates, getXpansionSettings, xpansionConfigurationExist, getAllConstraints, getAllCapacities, createXpansionConfiguration, deleteXpansionConfiguration, addCandidate, deleteCandidate, deleteConstraints, deleteCapacity, getConstraint, getCapacity, addCapacity, addConstraints, updateCandidate, updateXpansionSettings } from '../../../services/api/xpansion';
 import enqueueErrorSnackbar from '../../ui/ErrorSnackBar';
 import { getAllLinks } from '../../../services/api/studydata';
 import { LinkCreationInfo } from '../MapView/types';
@@ -115,13 +115,24 @@ const XpansionView = (props: Props) => {
     }
   };
 
-  const updateCandidate = (value: XpansionCandidate) => {
-    console.log(value.name);
-    console.log('on a edit un commit');
+  const handleUpdateCandidate = async (name: string, value: XpansionCandidate) => {
+    try {
+      await updateCandidate(study.id, name, value);
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+    } finally {
+      init(() => setSelectedItem(value));
+    }
   };
 
-  const updateSettings = (value: XpansionSettings) => {
-    console.log(value.master);
+  const updateSettings = async (value: XpansionSettings) => {
+    try {
+      await updateXpansionSettings(study.id, value);
+    } catch (e) {
+      enqueueErrorSnackbar(enqueueSnackbar, 'marche pas', e as AxiosError);
+    } finally {
+      init(() => setSelectedItem(value));
+    }
   };
 
   const getOneConstraint = async (filename: string) => {
@@ -191,7 +202,7 @@ const XpansionView = (props: Props) => {
           }
           right={
             selectedItem && (
-              <XpansionForm selectedItem={selectedItem} links={links || []} constraints={constraints || []} capacities={capacities || []} deleteCandidate={handleDeleteCandidate} updateCandidate={updateCandidate} updateSettings={updateSettings} deleteConstraint={deleteConstraint} deleteCapa={deleteCapa} getConstraint={getOneConstraint} getCapacity={getOneCapa} addCapacity={(file) => addCapacity(study.id, file)} addConstraint={(file) => addConstraints(study.id, file)} />
+              <XpansionForm selectedItem={selectedItem} links={links || []} constraints={constraints || []} capacities={capacities || []} deleteCandidate={handleDeleteCandidate} updateCandidate={handleUpdateCandidate} updateSettings={updateSettings} deleteConstraint={deleteConstraint} deleteCapa={deleteCapa} getConstraint={getOneConstraint} getCapacity={getOneCapa} addCapacity={(file) => addCapacity(study.id, file)} addConstraint={(file) => addConstraints(study.id, file)} />
             )
           }
         />

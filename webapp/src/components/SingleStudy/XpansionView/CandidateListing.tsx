@@ -11,7 +11,7 @@ import { FixedSizeList, areEqual, ListChildComponentProps } from 'react-window';
 import ArrowRightIcon from '@material-ui/icons/ArrowRight';
 import { XpansionCandidate, XpansionSettings } from './types';
 
-const ROW_ITEM_SIZE = 30;
+const ROW_ITEM_SIZE = 40;
 const BUTTONS_SIZE = 40;
 
 const useStyles = makeStyles((theme: Theme) =>

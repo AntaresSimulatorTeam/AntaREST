@@ -26,5 +26,6 @@
     "confirmDeleteXpansion": "Are you sure you want to delete the configuration of Xpansion?",
     "fileName": "File name",
     "options": "Options",
-    "deleteFile": "Are you sure you want to delete this file?"
+    "deleteFile": "Are you sure you want to delete this file?",
+    "extra": "Extra"
 }

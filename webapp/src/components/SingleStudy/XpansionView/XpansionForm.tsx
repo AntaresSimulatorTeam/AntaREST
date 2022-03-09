@@ -38,8 +38,8 @@ interface PropType {
     constraints: Array<string>;
     capacities: Array<string>;
     deleteCandidate: (name: string) => void;
-    updateCandidate: (value: XpansionCandidate) => void;
-    updateSettings: (value: XpansionSettings) => void;
+    updateCandidate: (name: string, value: XpansionCandidate) => Promise<void>;
+    updateSettings: (value: XpansionSettings) => Promise<void>;
     deleteConstraint: (filename: string) => Promise<void>;
     deleteCapa: (filename: string) => Promise<void>;
     getConstraint: (filename: string) => Promise<void>;
@@ -58,10 +58,10 @@ const XpansionForm = (props: PropType) => {
       {(selectedItem as XpansionCandidate).name || (selectedItem as XpansionSettings).master ? (
         <div className={classes.form}>
           {selectedItem && (selectedItem as XpansionCandidate).name && (
-            <CandidateForm candidate={selectedItem as XpansionCandidate} links={links} capacities={capacities} deleteCandidate={deleteCandidate} updateCandidate={updateCandidate} />
+            <CandidateForm candidate={selectedItem as XpansionCandidate} links={links} capacities={capacities} deleteCandidate={deleteCandidate} updateCandidate={updateCandidate} onRead={getCapacity} />
           )}
           {selectedItem && (selectedItem as XpansionSettings).master && (
-            <SettingsForm settings={selectedItem as XpansionSettings} constraints={constraints} updateSettings={updateSettings} />
+            <SettingsForm settings={selectedItem as XpansionSettings} constraints={constraints} updateSettings={updateSettings} onRead={getConstraint} />
           )}
         </div>
       ) : (
