@@ -1,7 +1,8 @@
 import logging
 import os
 import shutil
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 from functools import reduce
 from http import HTTPStatus
 from pathlib import Path
@@ -69,6 +70,9 @@ class LauncherServiceNotAvailableException(HTTPException):
         super(LauncherServiceNotAvailableException, self).__init__(
             HTTPStatus.BAD_REQUEST, f"The engine {engine} is not available"
         )
+
+
+ORPHAN_JOBS_VISIBILITY_THRESHOLD = 10  # days
 
 
 class LauncherService:
@@ -295,6 +299,9 @@ class LauncherService:
         if not user:
             return []
 
+        orphan_visibility_threshold = datetime.utcnow() - timedelta(
+            days=ORPHAN_JOBS_VISIBILITY_THRESHOLD
+        )
         allowed_job_results = []
         for job_result in job_results:
             try:
@@ -306,7 +313,10 @@ class LauncherService:
                 ):
                     allowed_job_results.append(job_result)
             except StudyNotFoundError:
-                allowed_job_results.append(job_result)
+                if user and user.is_site_admin():
+                    allowed_job_results.append(job_result)
+                elif job_result.creation_date >= orphan_visibility_threshold:
+                    allowed_job_results.append(job_result)
         return allowed_job_results
 
     def get_result(

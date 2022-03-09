@@ -148,7 +148,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         response_model=JobResultDTO,
     )
     def remove_result(
-        job_id: UUID, current_user: JWTUser = Depends(auth.get_current_user)
+        job_id: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> Any:
         logger.info(f"Removing job {job_id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
