@@ -240,8 +240,6 @@ def test_run_study(
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    study_metadata_dto = Mock(spec=StudyMetadataDTO)
-    study_metadata_dto.version = version
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
         callbacks=Mock(),
@@ -257,7 +255,9 @@ def test_run_study(
     slurm_launcher.start = Mock()
     slurm_launcher._delete_workspace_file = Mock()
 
-    slurm_launcher._run_study(study_uuid, str(uuid.uuid4()), None, "42")
+    slurm_launcher._run_study(
+        study_uuid, str(uuid.uuid4()), None, str(version)
+    )
 
     #    slurm_launcher._clean_local_workspace.assert_called_once()
     slurm_launcher.callbacks.export_study.assert_called_once()

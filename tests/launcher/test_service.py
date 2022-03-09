@@ -74,6 +74,8 @@ def test_service_run_study(get_current_user_mock):
         job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=event_bus,
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
     launcher_service._generate_new_id = lambda: str(uuid)
 
@@ -131,6 +133,8 @@ def test_service_get_result_from_launcher():
         job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
 
     job_id = uuid4()
@@ -172,6 +176,8 @@ def test_service_get_result_from_database():
         job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
 
     assert (
@@ -214,6 +220,8 @@ def test_service_get_jobs_from_database():
         job_result_repository=repository,
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
 
     study_id = uuid4()
@@ -265,6 +273,8 @@ def test_service_get_versions(config_local, config_slurm, expected_output):
         job_result_repository=Mock(),
         factory_launcher=Mock(),
         event_bus=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
 
     assert expected_output == launcher_service.get_versions(params=Mock())
@@ -283,6 +293,8 @@ def test_service_kill_job():
         job_result_repository=Mock(),
         event_bus=Mock(),
         factory_launcher=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
     launcher = "slurm"
     job_id = "job_id"
@@ -320,6 +332,8 @@ def test_append_logs():
         job_result_repository=Mock(),
         event_bus=Mock(),
         factory_launcher=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
     launcher = "slurm"
     job_id = "job_id"
@@ -359,6 +373,8 @@ def test_get_logs():
         job_result_repository=Mock(),
         event_bus=Mock(),
         factory_launcher=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
     )
     launcher = "slurm"
     job_id = "job_id"
