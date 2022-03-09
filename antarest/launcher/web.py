@@ -80,7 +80,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/launcher/jobs/{job_id}/logs",
         tags=[APITag.launcher],
         summary="Retrieve job logs from job id",
-        response_model=FileDownloadTaskDTO,
     )
     def get_job_log(
         job_id: str,
@@ -97,6 +96,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/launcher/jobs/{job_id}/output",
         tags=[APITag.launcher],
         summary="Export job output",
+        response_model=FileDownloadTaskDTO,
     )
     def get_job_log(
         job_id: str,
