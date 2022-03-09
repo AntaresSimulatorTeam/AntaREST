@@ -196,8 +196,8 @@ export const mapLaunchJobDTO = (j: any): LaunchJob => ({
 });
 
 export const getStudyJobs = async (sid?: string, filterOrphans = true): Promise<LaunchJob[]> => {
-  const query = sid ? `?study=${sid}` : '';
-  const res = await client.get(`/v1/launcher/jobs${query}?filter_orphans=${filterOrphans}`);
+  const query = sid ? `?study=${sid}&filter_orphans=${filterOrphans}` : `?filter_orphans=${filterOrphans}`;
+  const res = await client.get(`/v1/launcher/jobs${query}`);
   const data = await res.data;
   return data.map(mapLaunchJobDTO);
 };
