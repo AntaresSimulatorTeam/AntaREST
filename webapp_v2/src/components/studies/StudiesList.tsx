@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import debug from 'debug';
 import { connect, ConnectedProps } from 'react-redux';
-import { Box, Grid, Typography, Breadcrumbs, Select, MenuItem, ListItemText, SelectChangeEvent, Popover, ListItemIcon, Button, Tooltip } from '@mui/material';
+import { Box, Grid, Typography, Breadcrumbs, Select, MenuItem, ListItemText, SelectChangeEvent, Popover, ListItemIcon, Button, Tooltip, FormControl, InputLabel } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { AxiosError } from 'axios';
@@ -203,14 +203,14 @@ function StudiesList(props: PropTypes) {
                 )
               ))}
           </Breadcrumbs>
-          <Typography mx={2} color="primary">
+          <Typography mx={2} sx={{ color: 'white' }}>
             (
             {`${studies.length} ${t('studymanager:studies').toLowerCase()}`}
             )
           </Typography>
         </Box>
-        <Box display="flex" flexDirection="row" justifyContent="center" alignItems="flex-end" boxSizing="border-box">
-          <Tooltip title={t('studymanager:refresh') as string} sx={{ mr: 2 }}>
+        <Box display="flex" flexDirection="row" justifyContent="center" alignItems="center" boxSizing="border-box">
+          <Tooltip title={t('studymanager:refresh') as string} sx={{ mr: 4 }}>
             <Button
               color="primary"
               onClick={refresh}
@@ -219,17 +219,20 @@ function StudiesList(props: PropTypes) {
               <RefreshIcon />
             </Button>
           </Tooltip>
-          <Box display="flex" flexDirection="column" justifyContent="center" alignItems="flex-start" boxSizing="border-box">
-            <Typography sx={{ mt: 1, p: 0, color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>{t('studymanager:sortBy')}</Typography>
+          <FormControl sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', boxSizing: 'border-box' }}>
+            <InputLabel variant="standard" htmlFor={`single-checkbox-${t('studymanager:sortBy')}`}>
+              {t('studymanager:sortBy')}
+            </InputLabel>
             <Select
               labelId={`single-checkbox-label-${t('studymanager:sortBy')}`}
               id={`single-checkbox-${t('studymanager:sortBy')}`}
               value={`${sortItem.element}-${sortItem.status}`}
+              label={t('studymanager:sortBy')}
               variant="filled"
               onChange={(e: SelectChangeEvent<string>) => setSortItem(getSortItem(e.target.value as string))}
               sx={{
                 width: '230px',
-                height: '50px',
+                height: '45px',
                 '.MuiSelect-select': {
                   display: 'flex',
                   flexFlow: 'row nowrap',
@@ -264,7 +267,7 @@ function StudiesList(props: PropTypes) {
                 );
               })}
             </Select>
-          </Box>
+          </FormControl>
         </Box>
       </Box>
       <Box

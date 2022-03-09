@@ -66,7 +66,7 @@ function Studies(props: PropTypes) {
   const [currentFavorite, setCurrentFavorite] = useState<Array<GenericInfo> | undefined>(loadState<Array<GenericInfo>>(DEFAULT_FAVORITE_STUDIES, []));
 
   // NOTE: GET TAG LIST FROM BACKEND
-  const tagList: Array<string> = ['#Yo', '#Yes', '#No', '#Eradicator', '#Vaporisator', '#Escalator'];
+  const tagList: Array<string> = [];
 
   const onFilterClick = () : void => {
     setOpenFiler(true);

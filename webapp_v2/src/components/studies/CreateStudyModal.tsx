@@ -46,7 +46,7 @@ function CreateStudyModal(props: PropTypes) {
   const versionList = convertVersions(versions || []);
 
   // NOTE: GET TAG LIST FROM BACKEND
-  const tagList: Array<string> = ['#Yo', '#Yes', '#No', '#Eradicator', '#Vaporisator', '#Escalator'];
+  const tagList: Array<string> = [];
 
   const [version, setVersion] = useState<string>(versionList[versionList.length - 1].id.toString());
   const [studyName, setStudyName] = useState<string>('');

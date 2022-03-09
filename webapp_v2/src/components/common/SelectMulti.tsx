@@ -25,9 +25,12 @@ function SelectMulti(props: Props) {
   const chipRender = (selected: Array<string>) : React.ReactNode =>
     (
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-        {selected.map((value) => (
-          <Chip key={value} label={value} />
-        ))}
+        {selected.map((value) => {
+          const element = list.find((item) => (typeof item.id === 'string' ? item.id === value : item.id.toString() === value));
+          if (element) { return <Chip key={element.id} label={element.name} />; }
+          return undefined;
+        })
+        }
       </Box>
     );
 
@@ -71,7 +74,7 @@ function SelectMulti(props: Props) {
 SelectMulti.defaultProps = {
   sx: { m: 1, width: 200 },
   placeholder: undefined,
-  tagsMode: true,
+  tagsMode: undefined,
 };
 
 export default SelectMulti;
