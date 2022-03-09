@@ -93,6 +93,7 @@ function FilterDrawer(props: Props) {
     setCurrentVersions(undefined);
     setCurrentUsers(undefined);
     setCurrentGroups(undefined);
+    setCurrentTags(undefined);
     setManaged(false);
   };
 
@@ -122,16 +123,16 @@ function FilterDrawer(props: Props) {
       <Divider style={{ height: '1px', backgroundColor: theme.palette.grey[800] }} />
       <List>
         <ListItem>
-          <SelectMulti name="Version" list={versionList} data={currentVersions !== undefined ? currentVersions.map((elm) => elm.id as string) : []} setValue={setVersions} />
+          <SelectMulti name={t('studymanager:versionsLabel')} list={versionList} data={currentVersions !== undefined ? currentVersions.map((elm) => elm.id as string) : []} setValue={setVersions} />
         </ListItem>
         <ListItem>
-          <SelectMulti name="Users" list={userList.map((elm) => ({ id: elm.id.toString(), name: elm.name }))} data={currentUsers !== undefined ? currentUsers.map((elm) => elm.id.toString()) : []} setValue={setUsers} />
+          <SelectMulti name={t('studymanager:usersLabel')} list={userList.map((elm) => ({ id: elm.id.toString(), name: elm.name }))} data={currentUsers !== undefined ? currentUsers.map((elm) => elm.id.toString()) : []} setValue={setUsers} />
         </ListItem>
         <ListItem>
-          <SelectMulti name="Groups" list={groupList.map((elm) => ({ id: elm.id, name: elm.name }))} data={currentGroups !== undefined ? currentGroups.map((elm) => elm.id) : []} setValue={setGroups} />
+          <SelectMulti name={t('studymanager:groupsLabel')} list={groupList.map((elm) => ({ id: elm.id, name: elm.name }))} data={currentGroups !== undefined ? currentGroups.map((elm) => elm.id) : []} setValue={setGroups} />
         </ListItem>
         <ListItem>
-          <SelectMulti name="Tags" list={tagList.map((elm) => ({ id: elm, name: elm }))} data={currentTags !== undefined ? currentTags : []} setValue={setTags} />
+          <SelectMulti name={t('studymanager:tagsLabel')} list={tagList.map((elm) => ({ id: elm, name: elm }))} data={currentTags !== undefined ? currentTags : []} setValue={setTags} />
         </ListItem>
       </List>
       <Box display="flex" width="100%" flexGrow={1} justifyContent="flex-end" alignItems="center" flexDirection="column" flexWrap="nowrap" boxSizing="border-box">
