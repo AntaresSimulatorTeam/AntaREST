@@ -98,7 +98,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Export job output",
         response_model=FileDownloadTaskDTO,
     )
-    def get_job_log(
+    def export_job_output(
         job_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
