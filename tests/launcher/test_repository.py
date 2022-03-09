@@ -8,6 +8,8 @@ from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import db, DBSessionMiddleware
 from antarest.launcher.model import JobResult, JobStatus, JobLog, JobLogType
 from antarest.launcher.repository import JobResultRepository
+from antarest.study.model import RawStudy
+from antarest.study.repository import StudyMetadataRepository
 
 
 @pytest.mark.unit_test
@@ -23,6 +25,8 @@ def test_job_result() -> None:
     with db():
         repo = JobResultRepository()
         study_id = str(uuid4())
+        study_repo = StudyMetadataRepository(Mock())
+        study_repo.save(RawStudy(id=study_id))
         a = JobResult(
             id=str(uuid4()),
             study_id=study_id,
@@ -62,6 +66,12 @@ def test_job_result() -> None:
         d = repo.find_by_study(study_id)
         assert len(d) == 3
         assert a == d[0]
+
+        all = repo.get_all()
+        assert len(all) == 4
+
+        all = repo.get_all(filter_orphan=True)
+        assert len(all) == 3
 
         repo.delete(a.id)
         assert repo.get(a.id) is None

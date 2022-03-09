@@ -62,6 +62,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def get_job(
         study: Optional[str] = None,
+        filter_orphans: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -69,7 +70,10 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return [job.to_dto() for job in service.get_jobs(study, params)]
+        return [
+            job.to_dto()
+            for job in service.get_jobs(study, params, filter_orphans)
+        ]
 
     @bp.get(
         "/launcher/jobs/{job_id}/logs",

@@ -281,10 +281,7 @@ class LauncherService:
                 ):
                     allowed_job_results.append(job_result)
             except StudyNotFoundError:
-                logger.info(
-                    f"Removing job result {job_result.id} because of missing study"
-                )
-                self.job_result_repository.delete(job_result.id)
+                pass
         return allowed_job_results
 
     def get_result(
@@ -308,13 +305,18 @@ class LauncherService:
         raise JobNotFound()
 
     def get_jobs(
-        self, study_uid: Optional[str], params: RequestParameters
+        self,
+        study_uid: Optional[str],
+        params: RequestParameters,
+        filter_orphans: bool = True,
     ) -> List[JobResult]:
 
         if study_uid is not None:
             job_results = self.job_result_repository.find_by_study(study_uid)
         else:
-            job_results = self.job_result_repository.get_all()
+            job_results = self.job_result_repository.get_all(
+                filter_orphan=filter_orphans
+            )
 
         return self._filter_from_user_permission(
             job_results=job_results, user=params.user
