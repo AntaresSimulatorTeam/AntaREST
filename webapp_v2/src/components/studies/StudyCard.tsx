@@ -152,7 +152,7 @@ export default function StudyCard(props: Props) {
           <Chip
             label={study.workspace}
             variant="filled"
-            sx={{ m: 0.25, bgcolor: study.managed ? 'secondary.main' : 'gray' }}
+            sx={{ m: 0.25, color: 'black', bgcolor: study.managed ? 'secondary.main' : 'gray' }}
           />
           { study.tags &&
               study.tags.map((elm) => (
@@ -160,7 +160,7 @@ export default function StudyCard(props: Props) {
                   key={elm}
                   label={elm}
                   variant="filled"
-                  sx={{ m: 0.25, bgcolor: indigo[300] }}
+                  sx={{ m: 0.25, color: 'black', bgcolor: indigo[300] }}
                 />
               ))
           }

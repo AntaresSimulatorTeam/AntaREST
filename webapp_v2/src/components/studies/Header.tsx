@@ -187,7 +187,7 @@ function Header(props: Props) {
                     const newTags = tags.filter((item) => item !== elm);
                     setTags(newTags.length > 0 ? newTags : undefined);
                   }}
-                  sx={{ mx: 1, bgcolor: indigo[300] }}
+                  sx={{ mx: 1, color: 'black', bgcolor: indigo[300] }}
                 />
               ))
           }

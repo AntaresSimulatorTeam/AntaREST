@@ -91,9 +91,6 @@ function Studies(props: PropTypes) {
     try {
       if (studies.length === 0 || refresh) {
         const allStudies = await getStudies(false);
-        allStudies.forEach((elm) => {
-          if (elm.tags && elm.tags.length > 0) { console.log('------ STUDIES TAGS FOR ', elm.name, ' : ', elm.tags); }
-        });
         loadStudies(allStudies);
         setFilteredStudies(allStudies);
       }
