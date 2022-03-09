@@ -26,6 +26,9 @@ def create_app(service: Mock) -> FastAPI:
 
     build_launcher(
         app,
+        study_service=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
         service_launcher=service,
         config=Config(security=SecurityConfig(disabled=True)),
     )

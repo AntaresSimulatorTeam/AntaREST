@@ -25,6 +25,7 @@ from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.exceptions import UnknownModuleError
 from antarest.core.filetransfer.main import build_filetransfer_service
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
@@ -34,6 +35,7 @@ from antarest.core.persistence import upgrade_db
 from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
 from antarest.core.tasks.main import build_taskjob_manager
+from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import (
     get_default_config_path,
@@ -186,7 +188,15 @@ def init_db(
 
 def create_core_services(
     application: Optional[FastAPI], config: Config
-) -> Tuple[ICache, IEventBus, LoginService, MatrixService, StudyService]:
+) -> Tuple[
+    ICache,
+    IEventBus,
+    ITaskService,
+    FileTransferManager,
+    LoginService,
+    MatrixService,
+    StudyService,
+]:
     redis_client = (
         new_redis_instance(config.redis) if config.redis is not None else None
     )
@@ -218,6 +228,8 @@ def create_core_services(
     return (
         cache,
         event_bus,
+        task_service,
+        filetransfer_service,
         login_service,
         matrix_service,
         study_service,
@@ -232,7 +244,9 @@ def create_watcher(
     if study_service:
         return Watcher(config=config, service=study_service)
     else:
-        _, _, _, _, study_service = create_core_services(application, config)
+        _, _, _, _, _, _, study_service = create_core_services(
+            application, config
+        )
 
         return Watcher(config=config, service=study_service)
 
@@ -251,7 +265,7 @@ def create_matrix_gc(
             matrix_service=matrix_service,
         )
     else:
-        _, _, _, matrix_service, study_service = create_core_services(
+        _, _, _, _, _, matrix_service, study_service = create_core_services(
             application, config
         )
         return MatrixGarbageCollector(
@@ -269,6 +283,8 @@ def create_services(
     (
         cache,
         event_bus,
+        task_service,
+        file_transfer_manager,
         user_service,
         matrix_service,
         study_service,
@@ -283,6 +299,8 @@ def create_services(
         config,
         study_service=study_service,
         event_bus=event_bus,
+        task_service=task_service,
+        file_transfer_manager=file_transfer_manager,
     )
 
     if Module.WATCHER.value in config.server.services or create_all:

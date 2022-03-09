@@ -1,4 +1,6 @@
 import logging
+import os
+import shutil
 from datetime import datetime
 from functools import reduce
 from http import HTTPStatus
@@ -11,6 +13,7 @@ from fastapi import HTTPException
 from antarest.core.config import Config
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import (
     IEventBus,
     Event,
@@ -21,6 +24,8 @@ from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
 from antarest.core.requests import (
     RequestParameters,
 )
+from antarest.core.tasks.model import TaskResult, TaskType
+from antarest.core.tasks.service import TaskUpdateNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
@@ -46,6 +51,8 @@ from antarest.core.model import (
 from antarest.study.storage.utils import (
     assert_permission,
     create_permission_from_study,
+    extract_output_name,
+    fix_study_root,
 )
 
 logger = logging.getLogger(__name__)
@@ -70,12 +77,16 @@ class LauncherService:
         study_service: StudyService,
         job_result_repository: JobResultRepository,
         event_bus: IEventBus,
+        file_transfer_manager: FileTransferManager,
+        task_service: ITaskService,
         factory_launcher: FactoryLauncher = FactoryLauncher(),
     ) -> None:
         self.config = config
         self.study_service = study_service
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
+        self.file_transfer_manager = file_transfer_manager
+        self.task_service = task_service
         self.launchers = factory_launcher.build_launcher(
             config,
             study_service,
@@ -418,10 +429,32 @@ class LauncherService:
                 job_id, study_id, target_path, launcher_params
             )
 
+    def _get_job_output_fallback_path(self, job_id: str) -> Path:
+        return self.config.storage.tmp_dir / f"output_{job_id}"
+
     def _import_fallback_output(
         self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
     ) -> Optional[str]:
-        raise NotImplementedError()
+        output_name: Optional[str] = None
+        job_output_path = self._get_job_output_fallback_path(job_id)
+        try:
+            os.mkdir(job_output_path)
+            imported_output = job_output_path / "imported"
+            shutil.copytree(output_path, imported_output)
+            fix_study_root(imported_output)
+            output_name = extract_output_name(imported_output)
+            imported_output.rename(Path(job_output_path, output_name))
+            if additional_logs:
+                for log_name, log_path in additional_logs.items():
+                    shutil.copyfile(
+                        log_path, Path(job_output_path, output_name) / log_name
+                    )
+        except Exception as e:
+            logger.error(
+                "Failed to import output in fallback mode", exc_info=e
+            )
+            shutil.rmtree(job_output_path, ignore_errors=True)
+        return output_name
 
     def _import_output(
         self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
@@ -441,10 +474,52 @@ class LauncherService:
                 )
         raise JobNotFound()
 
-    def _download_fallback_output(self, job_id: str) -> FileDownloadTaskDTO:
-        raise NotImplementedError()
+    def _download_fallback_output(
+        self, job_id: str, params: RequestParameters
+    ) -> FileDownloadTaskDTO:
+        output_path = self._get_job_output_fallback_path(job_id)
+        if output_path.exists():
+            logger.info(f"Exporting {job_id} fallback output")
+            export_name = f"Job output {output_path.name} export"
+            export_file_download = self.file_transfer_manager.request_download(
+                f"{job_id}.zip",
+                export_name,
+                params.user,
+            )
+            export_path = Path(export_file_download.path)
+            export_id = export_file_download.id
 
-    def download_output(self, job_id: str) -> FileDownloadTaskDTO:
+            def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+                try:
+                    shutil.make_archive(
+                        base_name=os.path.splitext(export_path)[0],
+                        format="zip",
+                        root_dir=output_path,
+                    )
+                    self.file_transfer_manager.set_ready(export_id)
+                    return TaskResult(success=True, message="")
+                except Exception as e:
+                    self.file_transfer_manager.fail(export_id, str(e))
+                    raise e
+
+            task_id = self.task_service.add_task(
+                export_task,
+                export_name,
+                task_type=TaskType.EXPORT,
+                ref_id=None,
+                custom_event_messages=None,
+                request_params=params,
+            )
+
+            return FileDownloadTaskDTO(
+                file=export_file_download.to_dto(), task=task_id
+            )
+
+        raise FileNotFoundError()
+
+    def download_output(
+        self, job_id: str, params: RequestParameters
+    ) -> FileDownloadTaskDTO:
         job_result = self.job_result_repository.get(job_id)
         if job_result and job_result.output_id:
             try:
@@ -452,10 +527,10 @@ class LauncherService:
                 return self.study_service.export_output(
                     job_result.study_id,
                     job_result.output_id,
-                    RequestParameters(DEFAULT_ADMIN_USER),
+                    params,
                 )
             except StudyNotFoundError:
-                return self._download_fallback_output(job_id)
+                return self._download_fallback_output(job_id, params)
         raise JobNotFound()
 
     def get_versions(self, params: RequestParameters) -> Dict[str, List[str]]:
