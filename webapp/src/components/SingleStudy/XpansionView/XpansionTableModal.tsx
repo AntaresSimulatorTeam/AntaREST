@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from 'react';
-import { createStyles, makeStyles, Theme, Button, Paper, Typography } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, Button, Paper, Typography, Box } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
@@ -91,15 +91,15 @@ const ConstraintModal = (props: PropsWithChildren<PropTypes>) => {
     >
       <Fade in={open}>
         <Paper className={classes.main} onKeyDown={handleGlobalKeyDown}>
-          <div className={classes.titlebox}>
+          <Box className={classes.titlebox}>
             <Typography className={classes.title}>
               {title}
             </Typography>
-          </div>
-          <div className={classes.content}>
+          </Box>
+          <Box className={classes.content}>
             {children}
-          </div>
-          <div className={classes.footer}>
+          </Box>
+          <Box className={classes.footer}>
             {handleClose && (
             <Button
               variant="contained"
@@ -109,7 +109,7 @@ const ConstraintModal = (props: PropsWithChildren<PropTypes>) => {
               {t('settings:cancelButton')}
             </Button>
             )}
-          </div>
+          </Box>
         </Paper>
       </Fade>
     </Modal>

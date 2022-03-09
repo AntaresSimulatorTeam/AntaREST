@@ -80,7 +80,7 @@ const XpansionPropsView = (props: PropsType) => {
       <PropertiesView
         content={
           !filteredCandidates && (
-          <div className={classes.list}>
+          <Box className={classes.list}>
             <CandidateListing candidates={candidateList} selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
             <Box className={classes.buttons}>
               <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>{t('main:settings')}</Button>
@@ -88,11 +88,11 @@ const XpansionPropsView = (props: PropsType) => {
               <Button className={classes.button} size="small" onClick={() => { if (capacities) { setSelectedItem(capacities); } }}>{t('xpansion:capacities')}</Button>
               <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
             </Box>
-          </div>
+          </Box>
           )}
         filter={
           filteredCandidates && (
-          <div className={classes.list}>
+          <Box className={classes.list}>
             <CandidateListing candidates={filteredCandidates} selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
             <Box className={classes.buttons}>
               <Button className={classes.button} size="small" onClick={() => { if (settings) { setSelectedItem(settings); } }}>{t('main:settings')}</Button>
@@ -100,7 +100,7 @@ const XpansionPropsView = (props: PropsType) => {
               <Button className={classes.button} size="small" onClick={() => { if (capacities) { setSelectedItem(capacities); } }}>{t('xpansion:capacities')}</Button>
               <Button className={classes.delete} size="small" onClick={() => setOpenConfirmationModal(true)}>{t('main:delete')}</Button>
             </Box>
-          </div>
+          </Box>
           )}
         onChange={(e) => onChange(e as string)}
         onAdd={onAdd}

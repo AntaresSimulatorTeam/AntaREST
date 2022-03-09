@@ -213,6 +213,7 @@ const XpansionView = (props: Props) => {
           open={openModal}
           onClose={onClose}
           onSave={createCandidate}
+          links={links || []}
         />
       )}
       {!!singleConstraint && (

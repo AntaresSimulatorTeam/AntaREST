@@ -126,11 +126,11 @@ const XpansionTable = (props: PropType) => {
         {title}
       </Typography>
       <Divider className={classes.divider} />
-      <div className={classes.import}>
+      <Box className={classes.import}>
         <ImportForm text={t('main:import')} onImport={onImport} />
-      </div>
-      <div className={classes.main}>
-        <div className={classes.content}>
+      </Box>
+      <Box className={classes.main}>
+        <Box className={classes.content}>
           <TableContainer component={Box}>
             <Table className={classes.table} aria-label="simple table">
               <TableHead>
@@ -154,8 +154,8 @@ const XpansionTable = (props: PropType) => {
               </TableBody>
             </Table>
           </TableContainer>
-        </div>
-      </div>
+        </Box>
+      </Box>
       {openConfirmationModal && openConfirmationModal.length > 0 && (
         <ConfirmationModal
           open={!!openConfirmationModal}

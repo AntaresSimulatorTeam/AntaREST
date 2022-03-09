@@ -3,6 +3,7 @@ import {
   makeStyles,
   createStyles,
   Theme,
+  Box,
 } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import { XpansionCandidate, XpansionSettings } from './types';
@@ -56,22 +57,22 @@ const XpansionForm = (props: PropType) => {
   return (
     <>
       {(selectedItem as XpansionCandidate).name || (selectedItem as XpansionSettings).master ? (
-        <div className={classes.form}>
+        <Box className={classes.form}>
           {selectedItem && (selectedItem as XpansionCandidate).name && (
             <CandidateForm candidate={selectedItem as XpansionCandidate} links={links} capacities={capacities} deleteCandidate={deleteCandidate} updateCandidate={updateCandidate} onRead={getCapacity} />
           )}
           {selectedItem && (selectedItem as XpansionSettings).master && (
             <SettingsForm settings={selectedItem as XpansionSettings} constraints={constraints} updateSettings={updateSettings} onRead={getConstraint} />
           )}
-        </div>
+        </Box>
       ) : (
-        <div className={classes.constraints}>
+        <Box className={classes.constraints}>
           {constraints === selectedItem ? (
             <XpansionTable title={t('main:files')} content={selectedItem as Array<string>} onDelete={deleteConstraint} onRead={getConstraint} uploadFile={addConstraint} />
           ) : (capacities === selectedItem && (
             <XpansionTable title={t('xpansion:capacities')} content={selectedItem as Array<string>} onDelete={deleteCapa} onRead={getCapacity} uploadFile={addCapacity} />
           ))}
-        </div>
+        </Box>
       )}
     </>
   );

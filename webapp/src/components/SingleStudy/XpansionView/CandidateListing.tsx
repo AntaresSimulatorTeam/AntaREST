@@ -5,6 +5,7 @@ import {
   createStyles,
   Theme,
   Typography,
+  Box,
 } from '@material-ui/core';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList, areEqual, ListChildComponentProps } from 'react-window';
@@ -70,10 +71,10 @@ const Row = React.memo((props: ListChildComponentProps) => {
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-    <div style={selectedItem && selectedItem.name === candidate.name ? { display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', ...style, textDecoration: 'underline' } : { display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', ...style }} onClick={() => setSelectedItem(candidate)}>
+    <Box style={selectedItem && selectedItem.name === candidate.name ? { display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', ...style, textDecoration: 'underline' } : { display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', ...style }} onClick={() => setSelectedItem(candidate)}>
       <Typography style={{ display: 'block', width: '200px', textOverflow: 'ellipsis', overflow: 'hidden', paddingLeft: '30px' }}>{candidate.name}</Typography>
       <ArrowRightIcon style={selectedItem && selectedItem.name === candidate.name ? { color: '#B26A00' } : { color: '#FF9800' }} />
-    </div>
+    </Box>
   );
 }, areEqual);
 
@@ -83,7 +84,7 @@ const CandidateListing = (props: PropsType) => {
 
   return (
     <>
-      <div className={classes.root}>
+      <Box className={classes.root}>
         {candidates && candidates.length > 0 && (
           <AutoSizer>
             { ({ height, width }) => {
@@ -104,7 +105,7 @@ const CandidateListing = (props: PropsType) => {
             }
           </AutoSizer>
         )}
-      </div>
+      </Box>
     </>
   );
 };
