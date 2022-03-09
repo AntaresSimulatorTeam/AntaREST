@@ -549,9 +549,10 @@ class StudyService:
         Returns:
 
         """
+        all_studies = self.repository.get_all()
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
-        for study in self.repository.get_all():
+        for study in all_studies:
             if (
                 isinstance(study, RawStudy)
                 and not study.archived
@@ -561,8 +562,9 @@ class StudyService:
                 )
             ):
                 logger.info(
-                    "Study=%s is not present in disk and will be deleted",
+                    "Study %s at %s is not present in disk and will be deleted",
                     study.id,
+                    study.path,
                 )
                 self.event_bus.push(
                     Event(
@@ -574,13 +576,11 @@ class StudyService:
                 self.repository.delete(study.id)
 
         # Add new studies
-        paths = [
-            study.path
-            for study in self.repository.get_all()
-            if isinstance(study, RawStudy)
+        study_paths = [
+            study.path for study in all_studies if isinstance(study, RawStudy)
         ]
         for folder in folders:
-            if str(folder.path) not in paths:
+            if str(folder.path) not in study_paths:
                 try:
                     base_path = self.config.storage.workspaces[
                         folder.workspace
@@ -608,7 +608,9 @@ class StudyService:
                     # study.content_status = self._analyse_study(study)
 
                     logger.info(
-                        "Study=%s appears on disk and will be added", study.id
+                        "Study at %s appears on disk and will be added as %s",
+                        study.path,
+                        study.id,
                     )
                     self.event_bus.push(
                         Event(

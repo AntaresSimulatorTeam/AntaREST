@@ -40,11 +40,10 @@ class LocalLauncher(AbstractLauncher):
     def __init__(
         self,
         config: Config,
-        storage_service: StudyService,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
     ) -> None:
-        super().__init__(config, storage_service, callbacks, event_bus)
+        super().__init__(config, callbacks, event_bus)
         self.tmpdir = config.storage.tmp_dir
         self.job_id_to_study_id: Dict[  # type: ignore
             str, Tuple[str, Path, subprocess.Popen]
@@ -97,16 +96,9 @@ class LocalLauncher(AbstractLauncher):
         )
         export_path = Path(tmp_path) / "export"
         try:
-            with db():
-                self.storage_service.export_study_flat(
-                    study_uuid,
-                    RequestParameters(DEFAULT_ADMIN_USER),
-                    export_path,
-                    outputs=False,
-                )
-                self.callbacks.after_export_flat(
-                    str(uuid), study_uuid, export_path, launcher_parameters
-                )
+            self.callbacks.export_study(
+                str(uuid), study_uuid, export_path, launcher_parameters
+            )
 
             process = subprocess.Popen(
                 [antares_solver_path, export_path],
@@ -159,7 +151,9 @@ class LocalLauncher(AbstractLauncher):
 
             try:
                 with db():
-                    output_id = self._import_output(study_uuid, export_path)
+                    output_id = self.callbacks.import_output(
+                        str(uuid), export_path / "output", {}
+                    )
             except Exception as e:
                 logger.error(
                     f"Failed to import output for study {study_uuid} located at {export_path}",
@@ -189,15 +183,6 @@ class LocalLauncher(AbstractLauncher):
             logger.info(f"Removing launch {uuid} export path at {tmp_path}")
             end = True
             shutil.rmtree(tmp_path)
-
-    def _import_output(
-        self, study_id: str, study_launch_path: Path
-    ) -> Optional[str]:
-        return self.storage_service.import_output(
-            study_id,
-            study_launch_path / "output",
-            params=RequestParameters(DEFAULT_ADMIN_USER),
-        )
 
     def create_update_log(
         self, job_id: str, study_id: str

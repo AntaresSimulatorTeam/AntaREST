@@ -10,13 +10,14 @@ from fastapi import HTTPException
 
 from antarest.core.config import Config
 from antarest.core.exceptions import StudyNotFoundError
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.eventbus import (
     IEventBus,
     Event,
     EventType,
     EventChannelDirectory,
 )
-from antarest.core.jwt import JWTUser
+from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
 from antarest.core.requests import (
     RequestParameters,
 )
@@ -35,6 +36,7 @@ from antarest.launcher.model import (
     JobLogType,
 )
 from antarest.launcher.repository import JobResultRepository
+from antarest.study.model import ExportFormat
 from antarest.study.service import StudyService
 from antarest.core.model import (
     StudyPermissionType,
@@ -81,8 +83,8 @@ class LauncherService:
                 update_status=lambda jobid, status, msg, output_id: self.update(
                     jobid, status, msg, output_id
                 ),
-                after_export_flat=lambda job_id, study_id, study_path, launcher_opts: self.after_export_flat_hooks(
-                    job_id, study_id, study_path, launcher_opts
+                export_study=lambda job_id, study_id, target_path, launcher_opts: self._export_study(
+                    job_id, study_id, target_path, launcher_opts
                 ),
                 append_before_log=lambda jobid, message: self.append_log(
                     jobid, message, JobLogType.BEFORE
@@ -92,6 +94,9 @@ class LauncherService:
                 ),
                 get_job_result=lambda jobid: self.job_result_repository.get(
                     jobid
+                ),
+                import_output=lambda jobid, output_path, additional_logs: self._import_output(
+                    jobid, output_path, additional_logs
                 ),
             ),
             event_bus,
@@ -389,6 +394,68 @@ class LauncherService:
                 )
             return launcher_logs
 
+        raise JobNotFound()
+
+    def _export_study(
+        self,
+        job_id: str,
+        study_id: str,
+        target_path: Path,
+        launcher_params: Optional[JSON],
+    ) -> None:
+        with db():
+            self.append_log(
+                job_id, f"Extracting study {study_id}", JobLogType.BEFORE
+            )
+            self.study_service.export_study_flat(
+                study_id,
+                RequestParameters(DEFAULT_ADMIN_USER),
+                target_path,
+                outputs=False,
+            )
+            self.append_log(job_id, "Study extracted", JobLogType.BEFORE)
+            self.after_export_flat_hooks(
+                job_id, study_id, target_path, launcher_params
+            )
+
+    def _import_fallback_output(
+        self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
+    ) -> Optional[str]:
+        raise NotImplementedError()
+
+    def _import_output(
+        self, job_id: str, output_path: Path, additional_logs: Dict[str, Path]
+    ) -> Optional[str]:
+        job_result = self.job_result_repository.get(job_id)
+        if job_result:
+            try:
+                return self.study_service.import_output(
+                    job_result.study_id,
+                    output_path,
+                    RequestParameters(DEFAULT_ADMIN_USER),
+                    additional_logs,
+                )
+            except StudyNotFoundError:
+                return self._import_fallback_output(
+                    job_id, output_path, additional_logs
+                )
+        raise JobNotFound()
+
+    def _download_fallback_output(self, job_id: str) -> FileDownloadTaskDTO:
+        raise NotImplementedError()
+
+    def download_output(self, job_id: str) -> FileDownloadTaskDTO:
+        job_result = self.job_result_repository.get(job_id)
+        if job_result and job_result.output_id:
+            try:
+                self.study_service.get_study(job_result.study_id)
+                return self.study_service.export_output(
+                    job_result.study_id,
+                    job_result.output_id,
+                    RequestParameters(DEFAULT_ADMIN_USER),
+                )
+            except StudyNotFoundError:
+                return self._download_fallback_output(job_id)
         raise JobNotFound()
 
     def get_versions(self, params: RequestParameters) -> Dict[str, List[str]]:
