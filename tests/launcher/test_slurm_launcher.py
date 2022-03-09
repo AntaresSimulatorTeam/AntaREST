@@ -492,15 +492,7 @@ def test_kill_job(
 def test_launcher_workspace_init(
     run_with_mock, tmp_path: Path, launcher_config: Config
 ):
-    engine = create_engine("sqlite:///:memory:", echo=True)
-    Base.metadata.create_all(engine)
-    DBSessionMiddleware(
-        Mock(),
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
-    callbacks = Mock(get_job_result=lambda x: JobResult(study_id="study_id"))
+    callbacks = Mock(get_job_study_id=lambda x: "study_id")
     (tmp_path / LOG_DIR_NAME).mkdir()
 
     slurm_launcher = SlurmLauncher(
