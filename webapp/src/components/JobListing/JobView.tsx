@@ -11,7 +11,7 @@ import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import { AppState } from '../../App/reducers';
 import { LaunchJob } from '../../common/types';
-import { getStudyJobLog, killStudy } from '../../services/api/study';
+import { downloadJobOutput, getStudyJobLog, killStudy } from '../../services/api/study';
 import { convertUTCToLocalTime, useNotif } from '../../services/utils';
 import SimpleLoader from '../ui/loaders/SimpleLoader';
 import enqueueErrorSnackbar from '../ui/ErrorSnackBar';
@@ -186,6 +186,9 @@ const JobView = (props: PropTypes) => {
         </div>
         <div>
           {job.status === 'running' ? <Button variant="contained" color="primary" onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button> : <Button color="primary" variant="contained" className={classes.killButtonHide} onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button>}
+        </div>
+        <div>
+          {job.status === 'success' ? <Button variant="contained" color="primary" onClick={() => downloadJobOutput(job.id)}>{t('singlestudy:killStudy')}</Button> : <Button color="primary" variant="contained" className={classes.killButtonHide} onClick={() => setOpenConfirmationModal(true)}>{t('singlestudy:killStudy')}</Button>}
         </div>
         <div className={classes.dateandicon}>
           <div className={classes.dateblock}>

@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
@@ -79,6 +80,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/launcher/jobs/{job_id}/logs",
         tags=[APITag.launcher],
         summary="Retrieve job logs from job id",
+        response_model=FileDownloadTaskDTO,
     )
     def get_job_log(
         job_id: str,
@@ -90,6 +92,22 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         )
         params = RequestParameters(user=current_user)
         return service.get_log(job_id, log_type, params)
+
+    @bp.get(
+        "/launcher/jobs/{job_id}/output",
+        tags=[APITag.launcher],
+        summary="Export job output",
+    )
+    def get_job_log(
+        job_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        logger.info(
+            f"Exporting output for job {job_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return service.download_output(job_id, params)
 
     @bp.post(
         "/launcher/jobs/{job_id}/kill",

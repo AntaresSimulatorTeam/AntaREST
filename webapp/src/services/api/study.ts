@@ -207,6 +207,11 @@ export const getStudyJobLog = async (jid: string, logType = 'STDOUT'): Promise<s
   return res.data;
 };
 
+export const downloadJobOutput = async (jobId: string): Promise<any> => {
+  const res = await client.get(`/v1/launcher/jobs/${jobId}/output`);
+  return res.data;
+};
+
 export const changeStudyOwner = async (studyId: string, newOwner: number): Promise<string|undefined> => {
   const res = await client.put(`/v1/studies/${studyId}/owner/${newOwner}`);
   return res.data;
